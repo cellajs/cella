@@ -1,25 +1,19 @@
 import { Bird, Plus } from 'lucide-react';
-import { type Key, useEffect, useState } from 'react';
-import { type RenderRowProps, Row, type SortColumn } from 'react-data-grid';
+import { useEffect, useState, useMemo } from 'react';
+import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { type Task, useElectric } from '~/modules/common/electric/electrify';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
-import { TaskProvider } from '../task/task-context';
 import { useColumns } from './columns';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import SelectStatus from './status';
-
-const renderRow = (key: Key, props: RenderRowProps<Task>) => {
-  return (
-    <TaskProvider key={key} task={props.row}>
-      <Row {...props} />
-    </TaskProvider>
-  );
-};
+import { useLiveQuery } from 'electric-sql/react';
+import ColumnsView from '~/modules/common/data-table/columns-view';
+import SelectProject from './project';
 
 const LIMIT = 100;
 
@@ -35,10 +29,11 @@ export default function TasksTable() {
       setSearchQuery,
     }),
   );
-  const [columns] = useColumns();
+  const [columns, setColumns] = useColumns();
   const [rows, setRows] = useState<Task[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
   const [isFetching, setIsFetching] = useState(false);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'created_at', direction: 'DESC' }]);
@@ -48,8 +43,51 @@ export default function TasksTable() {
 
   const isFiltered = !!searchQuery || selectedStatuses.length > 0;
 
+  const queryOptions = useMemo(() => {
+    return {
+      where: {
+        project_id: {
+          in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
+        },
+        ...(selectedStatuses.length > 0 && {
+          status: {
+            in: selectedStatuses,
+          },
+        }),
+        parent_id: null,
+        OR: [
+          {
+            summary: {
+              contains: searchQuery,
+            },
+          },
+          {
+            markdown: {
+              contains: searchQuery,
+            },
+          },
+        ],
+      },
+      take: LIMIT,
+      skip: offset,
+      orderBy: {
+        [sort]: order,
+      },
+    };
+  }, [projects, sort, order, searchQuery, selectedStatuses, offset, selectedProjects]);
+
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
+
+  // TODO: Refactor this when Electric supports count
+  const { results: allTasks } = useLiveQuery(
+    electric.db.tasks.liveMany({
+      select: {
+        id: true,
+      },
+      where: queryOptions.where,
+    }),
+  );
 
   useEffect(() => {
     (async () => {
@@ -57,38 +95,12 @@ export default function TasksTable() {
       const newOffset = 0;
       setOffset(newOffset);
       const results = await electric.db.tasks.findMany({
-        where: {
-          project_id: {
-            in: projects.map((project) => project.id),
-          },
-          ...(selectedStatuses.length > 0 && {
-            status: {
-              in: selectedStatuses,
-            },
-          }),
-          OR: [
-            {
-              summary: {
-                contains: searchQuery,
-              },
-            },
-            {
-              markdown: {
-                contains: searchQuery,
-              },
-            },
-          ],
-        },
-        take: LIMIT,
-        skip: newOffset,
-        orderBy: {
-          [sort]: order,
-        },
+        ...queryOptions,
       });
       setTasks(results as Task[]);
       setIsFetching(false);
     })();
-  }, [projects, sort, order, searchQuery, selectedStatuses]);
+  }, [searchQuery, selectedStatuses, selectedProjects, sort, order]);
 
   // const filteredTasks = useMemo(() => {
   //   if (!tasks) return;
@@ -106,33 +118,8 @@ export default function TasksTable() {
     const newOffset = offset + LIMIT;
     setOffset(newOffset);
     const results = await electric.db.tasks.findMany({
-      where: {
-        project_id: {
-          in: projects.map((project) => project.id),
-        },
-        ...(selectedStatuses.length > 0 && {
-          status: {
-            in: selectedStatuses,
-          },
-        }),
-        OR: [
-          {
-            summary: {
-              contains: searchQuery,
-            },
-          },
-          {
-            markdown: {
-              contains: searchQuery,
-            },
-          },
-        ],
-      },
-      take: LIMIT,
+      ...queryOptions,
       skip: newOffset,
-      orderBy: {
-        [sort]: order,
-      },
     });
     setTasks((prevTasks) => [...prevTasks, ...(results as Task[])]);
     setIsFetching(false);
@@ -199,10 +186,11 @@ export default function TasksTable() {
 
           <FilterBarContent>
             <SelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
+            <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
             {/* <TableSearch value={query} setQuery={onSearch} /> */}
           </FilterBarContent>
         </TableFilterBar>
-        {/* <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} /> */}
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         {/* <Export
           className="max-lg:hidden"
           filename={`${config.slug}-organizations`}
@@ -222,9 +210,9 @@ export default function TasksTable() {
           limit: 10,
           rowHeight: 42,
           onRowsChange,
+          totalCount: allTasks?.length,
           isLoading: tasks === undefined,
           isFetching,
-          renderRow,
           isFiltered: !!searchQuery,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,

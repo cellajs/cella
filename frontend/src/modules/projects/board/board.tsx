@@ -1,13 +1,20 @@
-import { Fragment, type LegacyRef, useEffect, useState } from 'react';
+import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
-import type { Project } from '~/types';
+import type { Project, TaskCardFocusEvent } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
 import { Bird, Redo } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { boardProjectFiltering } from '../helpers';
+import { type Task, useElectric } from '../../common/electric/electrify';
+import { useLiveQuery } from 'electric-sql/react';
+import { taskStatuses } from '../tasks-table/status';
+import { useWorkspaceStore } from '~/store/workspace';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
 const EMPTY_SPACE_WIDTH = 300;
@@ -20,9 +27,17 @@ function getScrollerWidth(containerWidth: number, projectsLength: number) {
 function BoardDesktop({
   workspaceId,
   projects,
+  tasks,
+  updatedAt,
+  columnTaskCreate,
+  toggleCreateForm,
 }: {
   projects: Project[];
   workspaceId: string;
+  tasks: Task[];
+  updatedAt?: Date;
+  columnTaskCreate: Record<string, boolean>;
+  toggleCreateForm: (projectId: string) => void;
 }) {
   const { ref, bounds } = useMeasure();
   const scrollerWidth = getScrollerWidth(bounds.width, projects.length);
@@ -32,16 +47,26 @@ function BoardDesktop({
     <div className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto" ref={ref as LegacyRef<HTMLDivElement>}>
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
         <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspaceId}>
-          {projects.map((project, index) => (
-            <Fragment key={project.id}>
-              <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
-                <BoardColumn key={project.id} project={project} />
-              </ResizablePanel>
-              {projects.length > index + 1 && (
-                <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
-              )}
-            </Fragment>
-          ))}
+          {projects.map((project, index) => {
+            const isFormOpen = columnTaskCreate[project.id] || false;
+            return (
+              <Fragment key={project.id}>
+                <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
+                  <BoardColumn
+                    createForm={isFormOpen}
+                    toggleCreateForm={toggleCreateForm}
+                    tasks={tasks.filter((t) => t.project_id === project.id)}
+                    updatedAt={updatedAt}
+                    key={project.id}
+                    project={project}
+                  />
+                </ResizablePanel>
+                {projects.length > index + 1 && (
+                  <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
+                )}
+              </Fragment>
+            );
+          })}
         </ResizablePanelGroup>
       </div>
     </div>
@@ -49,31 +74,137 @@ function BoardDesktop({
 }
 
 export default function Board() {
-  const { workspace, projects } = useWorkspaceContext(({ workspace, projects }) => ({
-    workspace,
-    projects,
-  }));
-  const { t } = useTranslation();
-  const [mappedProjects, setMappedProjects] = useState<Project[]>(
-    projects
-      .filter((p) => p.membership && !p.membership.archived)
-      .sort((a, b) => {
-        if (a.membership === null || b.membership === null) return 0;
-        return a.membership.order - b.membership.order;
-      }),
+  const { workspace, searchQuery, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceContext(
+    ({ workspace, searchQuery, projects, focusedTaskId, setFocusedTaskId }) => ({
+      workspace,
+      searchQuery,
+      projects,
+      focusedTaskId,
+      setFocusedTaskId,
+    }),
   );
+  const { workspaces, getWorkspaceViewOptions } = useWorkspaceStore();
+  const { t } = useTranslation();
   const isDesktopLayout = useBreakpoints('min', 'sm');
+  const mappedProjects = useMemo(() => boardProjectFiltering(projects), [projects]);
+  const [viewOptions, setViewOptions] = useState(getWorkspaceViewOptions(workspace.id));
+  const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
+
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const electric = useElectric()!;
+
+  // TODO: Add debounce to searchQuery & change loading updatedAt logic for skeleton
+  const { results: tasks = [], updatedAt } = useLiveQuery(
+    electric.db.tasks.liveMany({
+      where: {
+        project_id: { in: mappedProjects.map((p) => p.id) },
+        // ...(selectedStatuses.length > 0 && {
+        //   status: {
+        //     in: selectedStatuses,
+        //   },
+        // }),
+        ...(viewOptions.type.length > 0 && {
+          type: {
+            in: viewOptions.type,
+          },
+        }),
+        OR: [
+          {
+            summary: {
+              contains: searchQuery,
+            },
+          },
+          {
+            markdown: {
+              contains: searchQuery,
+            },
+          },
+        ],
+        status: {
+          in: [0, 6, ...viewOptions.status.map((s) => taskStatuses.find(({ status }) => status === s)?.value || 0)],
+        },
+      },
+    }),
+  ) as {
+    results: Task[];
+    updatedAt: Date | undefined;
+  };
+
+  const toggleCreateTaskForm = (itemId: string) => {
+    setColumnTaskCreate((prevState) => ({
+      ...prevState,
+      [itemId]: !prevState[itemId],
+    }));
+  };
+
+  const handleVerticalArrowKeyDown = (event: KeyboardEvent) => {
+    if (!tasks.length || !mappedProjects.length) return;
+
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    const triggeredEvent = new CustomEvent('task-change', {
+      detail: {
+        taskId: focusedTask.id,
+        projectId: focusedTask.project_id,
+        direction,
+      },
+    });
+    document.dispatchEvent(triggeredEvent);
+
+    //add scroll to target
+  };
+
+  const handleHorizontalArrowKeyDown = (event: KeyboardEvent) => {
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
+    const currentProjectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
+
+    const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;
+    const nextProject = mappedProjects[nextProjectIndex];
+
+    if (!nextProject) return;
+
+    const triggeredEvent = new CustomEvent('project-change', {
+      detail: {
+        projectId: nextProject.id,
+      },
+    });
+    document.dispatchEvent(triggeredEvent);
+    //add scroll to target
+  };
+
+  const handleTKeyDown = () => {
+    if (!tasks.length || !mappedProjects.length) return;
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
+    const projectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
+    if (projectIndex === -1) return;
+
+    toggleCreateTaskForm(mappedProjects[projectIndex].id);
+  };
+
+  useHotkeys([
+    ['ArrowRight', handleHorizontalArrowKeyDown],
+    ['ArrowLeft', handleHorizontalArrowKeyDown],
+    ['ArrowDown', handleVerticalArrowKeyDown],
+    ['ArrowUp', handleVerticalArrowKeyDown],
+    ['T', handleTKeyDown],
+  ]);
 
   useEffect(() => {
-    setMappedProjects(
-      projects
-        .filter((p) => p.membership && !p.membership.archived)
-        .sort((a, b) => {
-          if (a.membership === null || b.membership === null) return 0;
-          return a.membership.order - b.membership.order;
-        }),
-    );
-  }, [projects]);
+    if (workspaces[workspace.id].viewOptions) setViewOptions(workspaces[workspace.id].viewOptions);
+  }, [workspaces[workspace.id]]);
+
+  useEffect(() => {
+    const handleFocus = (event: Event) => {
+      const { taskId } = (event as TaskCardFocusEvent).detail;
+      setFocusedTaskId(taskId);
+    };
+
+    document.addEventListener('task-card-focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('task-card-focus', handleFocus);
+    };
+  }, []);
 
   if (!mappedProjects.length) {
     return (
@@ -100,14 +231,34 @@ export default function Board() {
   }
 
   // On desktop we render all columns in a board
-  if (isDesktopLayout) return <BoardDesktop projects={mappedProjects} workspaceId={workspace.id} />;
+  if (isDesktopLayout)
+    return (
+      <BoardDesktop
+        columnTaskCreate={columnTaskCreate}
+        toggleCreateForm={toggleCreateTaskForm}
+        tasks={tasks}
+        updatedAt={updatedAt}
+        projects={mappedProjects}
+        workspaceId={workspace.id}
+      />
+    );
 
   // On mobile we just render one column
   return (
     <div className="flex flex-col gap-4">
-      {mappedProjects.map((project) => (
-        <BoardColumn key={project.id} project={project} />
-      ))}
+      {mappedProjects.map((project) => {
+        const isFormOpen = columnTaskCreate[project.id] || false;
+        return (
+          <BoardColumn
+            createForm={isFormOpen}
+            toggleCreateForm={toggleCreateTaskForm}
+            tasks={tasks.filter((t) => t.project_id === project.id)}
+            updatedAt={updatedAt}
+            key={project.id}
+            project={project}
+          />
+        );
+      })}
     </div>
   );
 }

@@ -51,14 +51,14 @@ export const SelectLanguages = ({ onChange }: { onChange: (value: string[]) => v
           aria-expanded={open}
         >
           {selectedLanguages.length > 0 ? (
-            <div className="flex items-center">
+            <div className="flex items-center flex-nowrap truncate">
               {selectedLanguages.map((lang, index) => {
                 const language = languages.find((l) => l.value === lang);
                 if (!language) return null;
                 return (
-                  <span key={lang} className="flex items-center mr-2">
-                    <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
-                    {language.label}
+                  <span key={lang} className="flex items-center mr-2 flex-nowrap truncate">
+                    <CountryFlag countryCode={language.value} imgType="png" className="mr-2 shrink-0" />
+                    <span className="truncate">{language.label}</span>
                     {index !== selectedLanguages.length - 1 && <span className="ml-1">,</span>}
                   </span>
                 );
@@ -83,9 +83,9 @@ export const SelectLanguages = ({ onChange }: { onChange: (value: string[]) => v
                   onSelect={() => toggleLanguageSelection(language.value)}
                   className="group rounded-md flex justify-between items-center w-full leading-normal"
                 >
-                  <div className="flex items-center">
-                    <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
-                    {language.label}
+                  <div className="flex items-center flex-nowrap truncate">
+                    <CountryFlag countryCode={language.value} imgType="png" className="mr-2 shrink-0" />
+                    <span className="truncate">{language.label}</span>
                   </div>
                   {selectedLanguages.includes(language.value) && <Check className="h-4 w-4 text-success" />}
                 </CommandItem>
@@ -129,9 +129,9 @@ export const SelectLanguage = ({
       </SelectTrigger>
       <SelectContent>
         {languages.map((language: Language) => (
-          <SelectItem key={language.value} value={language.value} disabled={disabledItemFunction?.(language.value)}>
-            <CountryFlag countryCode={language.value} imgType="png" className="mr-2" />
-            {language.label}
+          <SelectItem key={language.value} value={language.value} disabled={disabledItemFunction?.(language.value)} className="truncate">
+            <CountryFlag countryCode={language.value} imgType="png" className="mr-2 shrink-0" />
+            <span className="truncate">{language.label}</span>
           </SelectItem>
         ))}
       </SelectContent>

@@ -18,6 +18,12 @@
   grid-template-rows: none !important;
 }
 
+@media (max-width: 480px) {
+  .rdg-cell[aria-selected='true'] {
+    outline: none !important;
+  }
+}
+
 .rdg-cell {
   display: flex;
   align-items: center;

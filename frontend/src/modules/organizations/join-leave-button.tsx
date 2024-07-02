@@ -59,9 +59,9 @@ const JoinLeaveButton = ({ organization }: Props) => {
   return organization.membership?.role ? (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="darkSuccess" aria-label="Leave" className="items-center gap-1">
+        <Button size="sm" variant="darkSuccess" aria-label="Leave">
           <Check size={16} />
-          <span>{t('common:joined')}</span>
+          <span className="max-xs:hidden ml-1">{t('common:joined')}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-44 p-0 rounded-lg pointer" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4} align="end">
@@ -80,7 +80,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
   ) : (
     <Button size="sm" onClick={onJoin} aria-label="Join">
       <UserRoundCheck size={16} />
-      <span className="ml-1">{t('common:join')}</span>
+      <span className="max-xs:hidden ml-1">{t('common:join')}</span>
     </Button>
   );
 };

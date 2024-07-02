@@ -12,8 +12,6 @@ interface WorkspaceProps {
   setSearchQuery: (query: string) => void;
   focusedTaskId: string | null;
   setFocusedTaskId: (taskId: string | null) => void;
-  focusedProjectIndex: number | null;
-  setFocusedProjectIndex: (index: number | null) => void;
 }
 
 interface WorkspaceState extends WorkspaceProps {}
@@ -30,8 +28,6 @@ const createWorkspaceStore = (initProps?: Partial<WorkspaceProps>) => {
     setSearchQuery: () => {},
     focusedTaskId: null,
     setFocusedTaskId: () => {},
-    focusedProjectIndex: null,
-    setFocusedProjectIndex: () => {},
   };
   return createStore<WorkspaceState>()(() => ({
     ...DEFAULT_PROPS,

@@ -16,7 +16,7 @@ export default {
     screens: config.theme.screenSizes,
     container: {
       center: true,
-      padding: '1rem',
+      padding: '.75rem',
       screens: {
         '2xl': '1400px',
       },

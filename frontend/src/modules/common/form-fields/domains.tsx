@@ -67,9 +67,9 @@ const DomainsFormField = ({ control, label, description, required }: Props) => {
                 activeTagIndex={null}
                 setActiveTagIndex={() => {}}
                 styleClasses={{
-                  input: 'px-1 py-0 h-[1.38rem]',
-                  tag: { body: 'h-[1.38rem] py-0' },
-                  inlineTagsContainer: `${fieldActive ? (!checkValidInput(currentValue) ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : 'ring-2 ring-offset-2 ring-white') : ''}`,
+                  input: 'px-1 py-0 h-[1.38rem] shadow-none',
+                  tag: { body: 'h-7 py-0 rounded-full -m-1 gap-1', closeButton: 'h-6 mr-0.5 w-6 ring-inset focus-visible:ring-2 p-0 rounded-full' },
+                  inlineTagsContainer: `${fieldActive ? (!checkValidInput(currentValue) ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : 'max-sm:ring-offset-0  max-sm:ring-transparent ring-2 ring-offset-2 ring-white') : ''}`,
                 }}
               />
             </FormControl>
