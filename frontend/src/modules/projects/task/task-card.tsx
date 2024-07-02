@@ -15,7 +15,6 @@ import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
 import SelectStatus, { taskStatuses, statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
 import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context.tsx';
 import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
@@ -44,31 +43,29 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
 
 interface TaskProps {
   task: Task;
+  subTasks: Task[];
   isExpanded: boolean;
+  isSelected: boolean;
+  isFocused: boolean;
   setIsExpanded: (exp: boolean) => void;
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
+  handleTaskSelect: (selected: boolean, taskId: string) => void;
 }
 
-export function TaskCard({ task, handleTaskChange, isExpanded, setIsExpanded }: TaskProps) {
+export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, handleTaskChange, handleTaskSelect, setIsExpanded }: TaskProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const { labels, tasks, members } = useProjectContext(({ labels, tasks, members }) => ({ labels, tasks, members }));
-  const { setSelectedTasks, selectedTasks, focusedTaskId } = useWorkspaceContext(({ setSelectedTasks, selectedTasks, focusedTaskId }) => ({
-    setSelectedTasks,
-    selectedTasks,
-    focusedTaskId,
-  }));
+  const { labels, members } = useProjectContext(({ labels, tasks, members }) => ({ labels, tasks, members }));
   const [isEditing, setIsEditing] = useState(false);
   const [createSubTask, setCreateSubTask] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const subTasks = tasks.filter((t) => t.parent_id === task.id);
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   const variants = cva('task-card', {
@@ -183,11 +180,11 @@ export function TaskCard({ task, handleTaskChange, isExpanded, setIsExpanded }: 
           taskRef.current?.focus();
         }}
         onFocus={() => dispatchCustomFocusEvent(task.id, task.project_id)}
-        tabIndex={focusedTaskId === task.id ? 0 : -1}
+        tabIndex={isFocused ? 0 : -1}
         ref={taskRef}
         className={cn(
           `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
-        focus-visible:none relative border-l-2 ${focusedTaskId === task.id ? 'border-l-primary is-focused' : 'border-l-transparent'}
+        focus-visible:none relative border-l-2 ${isFocused ? 'border-l-primary is-focused' : 'border-l-transparent'}
         via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''} ${
           isExpanded ? 'is-expanded' : 'is-collapsed'
         }`,
@@ -207,14 +204,8 @@ export function TaskCard({ task, handleTaskChange, isExpanded, setIsExpanded }: 
                     !isExpanded && 'opacity-0 -z-[1] pointer-events-none',
                     isExpanded && 'opacity-100',
                   )}
-                  checked={selectedTasks.includes(task.id)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setSelectedTasks([...selectedTasks, task.id]);
-                      return;
-                    }
-                    setSelectedTasks(selectedTasks.filter((id) => id !== task.id));
-                  }}
+                  checked={isSelected}
+                  onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
                 />
                 <SelectTaskType
                   className={cn('group-[.is-selected]/column:mt-8 transition-spacing', isExpanded && 'mt-8')}

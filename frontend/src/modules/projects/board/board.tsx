@@ -93,7 +93,7 @@ export default function Board() {
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
 
-  // TODO: Add debounce to searchQuery
+  // TODO: Add debounce to searchQuery & change loading updatedAt logic for skeleton
   const { results: tasks = [], updatedAt } = useLiveQuery(
     electric.db.tasks.liveMany({
       where: {

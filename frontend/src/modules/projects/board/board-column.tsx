@@ -63,12 +63,13 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
-  const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId } = useWorkspaceContext(
-    ({ workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId }) => ({
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceContext(
+    ({ workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId }) => ({
       workspace,
       selectedTasks,
       searchQuery,
       focusedTaskId,
+      setSelectedTasks,
       setFocusedTaskId,
     }),
   );
@@ -195,6 +196,10 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
       text: t('common:project_settings.text'),
       id: 'edit-project',
     });
+  };
+  const handleTaskSelect = (selected: boolean, taskId: string) => {
+    if (selected) return setSelectedTasks([...selectedTasks, taskId]);
+    return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
   const handleTaskFormClick = () => {
@@ -334,8 +339,12 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
                           <TaskCard
                             key={task.id}
                             task={task}
-                            handleTaskChange={handleChange}
+                            subTasks={tasks.filter((t) => t.parent_id === task.id)}
                             isExpanded={expandedTasks[task.id] || false}
+                            isSelected={selectedTasks.includes(task.id)}
+                            isFocused={task.id === focusedTaskId}
+                            handleTaskChange={handleChange}
+                            handleTaskSelect={handleTaskSelect}
                             setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
                           />
                         ))}
