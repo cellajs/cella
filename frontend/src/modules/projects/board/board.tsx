@@ -141,38 +141,46 @@ export default function Board() {
   const handleVerticalArrowKeyDown = (event: KeyboardEvent) => {
     if (!tasks.length || !mappedProjects.length) return;
 
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
-    const direction = (event.key === 'ArrowDown') ? 1 : -1;
+    const focusedTask =
+      (focusedTaskId ? tasks.find((t) => t.id === focusedTaskId) : tasks.filter((t) => t.project_id === mappedProjects[0].id)[0]) || tasks[0];
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    const triggeredEvent = new CustomEvent('task-change', {
+      detail: {
+        taskId: focusedTask.id,
+        projectId: focusedTask.project_id,
+        direction,
+      },
+    });
+    document.dispatchEvent(triggeredEvent);
 
-    console.log('focusedTask', focusedTask.project_id, focusedTask.id, direction);
-
-    // TODO, dispatch CustomEvent to board-column of project to find the correct task AND then scroll to it.
-    // 
+    //add scroll to target
   };
 
   const handleHorizontalArrowKeyDown = (event: KeyboardEvent) => {
     if (!tasks.length || !mappedProjects.length) return;
 
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
+    const focusedTask =
+      (focusedTaskId ? tasks.find((t) => t.id === focusedTaskId) : tasks.filter((t) => t.project_id === mappedProjects[0].id)[0]) || tasks[0];
     const projectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
 
     let nextIndex = projectIndex;
-    if (event.key === 'ArrowRight') nextIndex = projectIndex + 1;
-    else nextIndex = projectIndex - 1;
+    if (event.key === 'ArrowRight') nextIndex = projectIndex === mappedProjects.length - 1 ? 0 : projectIndex + 1;
+    else nextIndex = projectIndex === 0 ? mappedProjects.length - 1 : projectIndex - 1;
 
     const nextProject = mappedProjects[nextIndex];
     if (!nextProject) return;
 
-    console.log('go to this project and focus on first task', nextProject.id);
-
-        // TODO, dispatch CustomEvent to board-column of project to find the FIRST task AND then scroll to it.
-
+    const triggeredEvent = new CustomEvent('project-change', {
+      detail: {
+        projectId: nextProject.id,
+      },
+    });
+    document.dispatchEvent(triggeredEvent);
+    //add scroll to target
   };
 
   const handleTKeyDown = () => {
     if (!tasks.length || !mappedProjects.length) return;
-
-    console.log('create task in focused project');
     const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
     const projectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
     if (projectIndex === -1) return;

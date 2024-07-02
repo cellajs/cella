@@ -30,6 +30,20 @@ import { WorkspaceRoute } from '~/routes/workspaces';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
+interface TaskChangeEvent extends Event {
+  detail: {
+    taskId: string;
+    projectId: string;
+    direction: number;
+  };
+}
+
+interface ProjectChangeEvent extends Event {
+  detail: {
+    projectId: string;
+  };
+}
+
 interface BoardColumnProps {
   project: Project;
   tasks: Task[];
@@ -47,11 +61,14 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
-  const { workspace, searchQuery, selectedTasks } = useWorkspaceContext(({ workspace, searchQuery, selectedTasks }) => ({
-    workspace,
-    selectedTasks,
-    searchQuery,
-  }));
+  const { workspace, searchQuery, selectedTasks, setFocusedTaskId } = useWorkspaceContext(
+    ({ workspace, searchQuery, selectedTasks, setFocusedTaskId }) => ({
+      workspace,
+      selectedTasks,
+      searchQuery,
+      setFocusedTaskId,
+    }),
+  );
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
@@ -116,6 +133,42 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
     }
     toggleCreateForm(project.id);
   };
+
+  useEffect(() => {
+    const handleChange = (event: Event) => {
+      const { taskId, direction, projectId } = (event as TaskChangeEvent).detail;
+      if (projectId !== project.id) return;
+      const currentFocusedIndex = showingTasks.findIndex((t) => t.id === taskId);
+      if (currentFocusedIndex + direction < 0) {
+        const newFocusedTask = showingTasks.slice(-1)[0];
+        return setFocusedTaskId(newFocusedTask.id);
+      }
+      if (currentFocusedIndex + direction > showingTasks.length - 1) {
+        const newFocusedTask = showingTasks[0];
+        return setFocusedTaskId(newFocusedTask.id);
+      }
+      const newFocusedTask = showingTasks[currentFocusedIndex + direction];
+      setFocusedTaskId(newFocusedTask.id);
+    };
+
+    document.addEventListener('task-change', handleChange);
+
+    return () => {
+      document.removeEventListener('task-change', handleChange);
+    };
+  });
+
+  useEffect(() => {
+    const handleChange = (event: Event) => {
+      const { projectId } = (event as ProjectChangeEvent).detail;
+      if (projectId !== project.id) return;
+      setFocusedTaskId(showingTasks[0].id);
+    };
+    document.addEventListener('project-change', handleChange);
+    return () => {
+      document.removeEventListener('project-change', handleChange);
+    };
+  });
 
   useEffect(() => {
     return combine(

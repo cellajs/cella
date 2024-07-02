@@ -167,8 +167,6 @@ export function TaskCard({
     latency: 250,
   });
 
-  // console.log('rerender task');
-
   const handleEscKeyPress = () => {
     if (focusedTaskId !== task.id) return;
     setIsExpanded(false);
