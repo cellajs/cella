@@ -17,6 +17,7 @@ const useTaskFilters = (tasks: Task[], showAccepted: boolean, showIced: boolean)
         if (showIced && task.status === 0) return true;
         return task.status !== 0 && task.status !== 6;
       })
+      .filter((task) => task.parent_id === null) // Filter sub-tasks
       .sort((a, b) => sortTaskOrder(a, b)); // Sort tasks
 
     return { showingTasks: filteredTasks, acceptedCount, icedCount };

@@ -98,7 +98,6 @@ export default function Board() {
     electric.db.tasks.liveMany({
       where: {
         project_id: { in: mappedProjects.map((p) => p.id) },
-        parent_id: null,
         // ...(selectedStatuses.length > 0 && {
         //   status: {
         //     in: selectedStatuses,
@@ -141,8 +140,7 @@ export default function Board() {
   const handleVerticalArrowKeyDown = (event: KeyboardEvent) => {
     if (!tasks.length || !mappedProjects.length) return;
 
-    const focusedTask =
-      (focusedTaskId ? tasks.find((t) => t.id === focusedTaskId) : tasks.filter((t) => t.project_id === mappedProjects[0].id)[0]) || tasks[0];
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
     const direction = event.key === 'ArrowDown' ? 1 : -1;
     const triggeredEvent = new CustomEvent('task-change', {
       detail: {
@@ -157,17 +155,12 @@ export default function Board() {
   };
 
   const handleHorizontalArrowKeyDown = (event: KeyboardEvent) => {
-    if (!tasks.length || !mappedProjects.length) return;
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
+    const currentProjectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
 
-    const focusedTask =
-      (focusedTaskId ? tasks.find((t) => t.id === focusedTaskId) : tasks.filter((t) => t.project_id === mappedProjects[0].id)[0]) || tasks[0];
-    const projectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
+    const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;
+    const nextProject = mappedProjects[nextProjectIndex];
 
-    let nextIndex = projectIndex;
-    if (event.key === 'ArrowRight') nextIndex = projectIndex === mappedProjects.length - 1 ? 0 : projectIndex + 1;
-    else nextIndex = projectIndex === 0 ? mappedProjects.length - 1 : projectIndex - 1;
-
-    const nextProject = mappedProjects[nextIndex];
     if (!nextProject) return;
 
     const triggeredEvent = new CustomEvent('project-change', {

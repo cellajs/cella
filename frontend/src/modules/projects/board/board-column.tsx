@@ -19,14 +19,15 @@ import ContentPlaceholder from '../../common/content-placeholder';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
 import CreateTaskForm from '../task/create-task-form';
-import { DraggableTaskCard, isTaskData } from '../task/draggable-task-card';
-import { TaskProvider } from '../task/task-context';
+import { TaskCard, isTaskData } from '../task/task-card';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
 import { ProjectProvider } from './project-context';
 import { ProjectSettings } from '../project-settings';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { WorkspaceRoute } from '~/routes/workspaces';
+import { getTaskOrder } from '../task/helpers';
+import { toast } from 'sonner';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -83,16 +84,68 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
   });
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
+  const Electric = useElectric()!;
 
   const { results: labels = [] } = useLiveQuery(
-    electric.db.labels.liveMany({
+    Electric.db.labels.liveMany({
       where: {
         project_id: project.id,
       },
     }),
   ) as {
     results: Label[] | undefined;
+  };
+
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const handleChange = (field: keyof Task, value: any, taskId: string) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    const db = Electric.db;
+    if (field === 'assigned_to' && Array.isArray(value)) {
+      db.tasks.update({
+        data: {
+          assigned_to: value.map((user) => user.id),
+        },
+        where: {
+          id: taskId,
+        },
+      });
+      return;
+    }
+
+    // TODO: Review this
+    if (field === 'labels' && Array.isArray(value)) {
+      db.tasks.update({
+        data: {
+          labels: value.map((label) => label.id),
+        },
+        where: {
+          id: taskId,
+        },
+      });
+      return;
+    }
+    if (field === 'status') {
+      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
+      db.tasks.update({
+        data: {
+          status: value,
+          ...(newOrder && { sort_order: newOrder }),
+        },
+        where: {
+          id: taskId,
+        },
+      });
+      return;
+    }
+
+    db.tasks.update({
+      data: {
+        [field]: value,
+      },
+      where: {
+        id: taskId,
+      },
+    });
   };
 
   const handleIcedClick = () => {
@@ -139,14 +192,6 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
       const { taskId, direction, projectId } = (event as TaskChangeEvent).detail;
       if (projectId !== project.id) return;
       const currentFocusedIndex = showingTasks.findIndex((t) => t.id === taskId);
-      if (currentFocusedIndex + direction < 0) {
-        const newFocusedTask = showingTasks.slice(-1)[0];
-        return setFocusedTaskId(newFocusedTask.id);
-      }
-      if (currentFocusedIndex + direction > showingTasks.length - 1) {
-        const newFocusedTask = showingTasks[0];
-        return setFocusedTaskId(newFocusedTask.id);
-      }
       const newFocusedTask = showingTasks[currentFocusedIndex + direction];
       setFocusedTaskId(newFocusedTask.id);
     };
@@ -188,7 +233,7 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
               const edge: Edge | null = extractClosestEdge(targetData);
               const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
               // Update order of dragged task
-              electric?.db.tasks.update({
+              Electric?.db.tasks.update({
                 data: {
                   sort_order: newOrder,
                   project_id: targetData.item.project_id,
@@ -203,7 +248,7 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
               const edge: Edge | null = extractClosestEdge(targetData);
               const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
               // Update order of dragged task
-              electric?.db.tasks.update({
+              Electric?.db.tasks.update({
                 data: {
                   sort_order: newOrder,
                 },
@@ -263,9 +308,7 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
                           )}
                         </Button>
                         {showingTasks.map((task) => (
-                          <TaskProvider key={task.id} task={task}>
-                            <DraggableTaskCard />
-                          </TaskProvider>
+                          <TaskCard key={task.id} task={task} handleTaskChange={handleChange} />
                         ))}
                         <Button
                           onClick={handleIcedClick}

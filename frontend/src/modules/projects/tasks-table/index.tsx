@@ -1,12 +1,11 @@
 import { Bird, Plus } from 'lucide-react';
-import { type Key, useEffect, useState, useMemo } from 'react';
-import { type RenderRowProps, Row, type SortColumn } from 'react-data-grid';
+import { useEffect, useState, useMemo } from 'react';
+import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { type Task, useElectric } from '~/modules/common/electric/electrify';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
-import { TaskProvider } from '../task/task-context';
 import { useColumns } from './columns';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { Button } from '~/modules/ui/button';
@@ -15,14 +14,6 @@ import SelectStatus from './status';
 import { useLiveQuery } from 'electric-sql/react';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import SelectProject from './project';
-
-const renderRow = (key: Key, props: RenderRowProps<Task>) => {
-  return (
-    <TaskProvider key={key} task={props.row}>
-      <Row {...props} />
-    </TaskProvider>
-  );
-};
 
 const LIMIT = 100;
 
@@ -195,11 +186,7 @@ export default function TasksTable() {
 
           <FilterBarContent>
             <SelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
-            <SelectProject
-              projects={projects}
-              selectedProjects={selectedProjects}
-              setSelectedProjects={setSelectedProjects}
-            />
+            <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
             {/* <TableSearch value={query} setQuery={onSearch} /> */}
           </FilterBarContent>
         </TableFilterBar>
@@ -226,7 +213,6 @@ export default function TasksTable() {
           totalCount: allTasks?.length,
           isLoading: tasks === undefined,
           isFetching,
-          renderRow,
           isFiltered: !!searchQuery,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,
@@ -235,12 +221,7 @@ export default function TasksTable() {
           enableVirtualization: false,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <ContentPlaceholder
-              Icon={Bird}
-              title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
-            />
-          ),
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
         }}
       />
     </div>
