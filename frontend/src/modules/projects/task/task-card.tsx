@@ -12,7 +12,7 @@ import type { Task } from '../../common/electric/electrify.ts';
 import { Checkbox } from '../../ui/checkbox.tsx';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
 import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
-import SelectStatus, { taskStatuses, statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
+import SelectStatus, { statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
 import { SelectTaskType } from './task-selectors/select-task-type.tsx';
 import './style.css';
 import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
@@ -34,6 +34,8 @@ import { getDraggableItemData } from '~/lib/utils';
 import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '../../common/drop-indicator';
 import { useProjectContext } from '../board/project-context';
+import { dropDown } from '~/modules/common/dropdowner/state.ts';
+import { taskStatuses } from '../tasks-table/status.tsx';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
@@ -65,7 +67,6 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
   const [dragging, setDragging] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
-
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   const variants = cva('task-card', {
@@ -383,46 +384,58 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
                     )}
                   </Button>
                 </AssignMembers>
-                <SelectStatus
-                  taskStatus={task.status as TaskStatus}
-                  changeTaskStatus={(newStatus) => {
-                    handleTaskChange('status', newStatus, task.id);
-                    toast.success(t('common:success.new_status', { status: t(taskStatuses[newStatus as TaskStatus].status).toLowerCase() }));
-                  }}
-                  nextButton={
-                    <Button
-                      variant="outlineGhost"
-                      size="xs"
-                      className={cn(
-                        'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100',
-                        statusVariants({ status: task.status as TaskStatus }),
-                      )}
-                      onClick={() => {
-                        handleTaskChange('status', task.status + 1, task.id);
-                        toast.success(
-                          t('common:success.new_status', { status: t(taskStatuses[(task.status + 1) as TaskStatus].status).toLowerCase() }),
-                        );
-                      }}
-                      disabled={(task.status as TaskStatus) === 6}
-                    >
-                      {t(taskStatuses[task.status as TaskStatus].action)}
-                    </Button>
-                  }
-                  inputPlaceholder={t('common:placeholder.set_status')}
-                  trigger={
-                    <Button
-                      aria-label="Set status"
-                      variant="outlineGhost"
-                      size="xs"
-                      className={cn(
-                        statusVariants({ status: task.status as TaskStatus }),
-                        'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
-                      )}
-                    >
-                      <ChevronDown size={12} />
-                    </Button>
-                  }
-                />
+                <>
+                  <Button
+                    variant="outlineGhost"
+                    size="xs"
+                    className={cn(
+                      'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100',
+                      statusVariants({ status: task.status as TaskStatus }),
+                    )}
+                    onClick={() => {
+                      handleTaskChange('status', task.status + 1, task.id);
+                      toast.success(
+                        t('common:success.new_status', { status: t(taskStatuses[(task.status + 1) as TaskStatus].status).toLowerCase() }),
+                      );
+                    }}
+                    disabled={(task.status as TaskStatus) === 6}
+                  >
+                    {t(taskStatuses[task.status as TaskStatus].action)}
+                  </Button>
+                  <Button
+                    onClick={(event) => {
+                      const button = event.currentTarget;
+                      const buttonRect = button.getBoundingClientRect();
+                      dropDown(
+                        <SelectStatus
+                          taskStatus={task.status as TaskStatus}
+                          changeTaskStatus={(newStatus) => {
+                            handleTaskChange('status', newStatus, task.id);
+                            toast.success(t('common:success.new_status', { status: t(taskStatuses[newStatus as TaskStatus].status).toLowerCase() }));
+                          }}
+                          inputPlaceholder={t('common:placeholder.set_status')}
+                        />,
+                        {
+                          id: `select-status-${task.id}`,
+                          trigger: event.currentTarget,
+                          position: {
+                            top: buttonRect.top + buttonRect.height,
+                            left: buttonRect.right - 240,
+                          },
+                        },
+                      );
+                    }}
+                    aria-label="Set status"
+                    variant="outlineGhost"
+                    size="xs"
+                    className={cn(
+                      statusVariants({ status: task.status as TaskStatus }),
+                      'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
+                    )}
+                  >
+                    <ChevronDown size={12} />
+                  </Button>
+                </>
               </div>
             </div>
           </div>

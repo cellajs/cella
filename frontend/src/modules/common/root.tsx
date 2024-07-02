@@ -9,6 +9,7 @@ import { Sheeter } from '~/modules/common/sheeter';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { DownAlert } from './down-alert';
+import { DropDowner } from './dropdowner';
 
 function Root() {
   // Lazy load
@@ -22,9 +23,9 @@ function Root() {
       <Sheeter />
       <ReloadPrompt />
 
-      <Toaster richColors toastOptions={{className: 'max-sm:mb-16'}} />
+      <Toaster richColors toastOptions={{ className: 'max-sm:mb-16' }} />
       <DownAlert />
-
+      <DropDowner />
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
     </TooltipProvider>
   );

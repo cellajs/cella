@@ -6,7 +6,7 @@ import { useDebounce } from '~/hooks/use-debounce.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Button } from '~/modules/ui/button';
-import { Project } from '~/types';
+import type { Project } from '~/types';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 
 interface Props {
@@ -85,12 +85,7 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent
-        className="p-0 rounded-lg"
-        align="end"
-        onCloseAutoFocus={(e) => e.preventDefault()}
-        sideOffset={4}
-      >
+      <PopoverContent className="p-0 rounded-lg" align="end" onCloseAutoFocus={(e) => e.preventDefault()} sideOffset={4}>
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
@@ -113,13 +108,7 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
                     <div className="flex items-center gap-3">
-                      <AvatarWrap
-                        type="USER"
-                        id={project.id}
-                        name={project.name}
-                        url={project.thumbnailUrl}
-                        className="h-6 w-6 text-xs"
-                      />
+                      <AvatarWrap type="USER" id={project.id} name={project.name} url={project.thumbnailUrl} className="h-6 w-6 text-xs" />
                       <span>{project.name}</span>
                     </div>
                     <div className="flex items-center">
