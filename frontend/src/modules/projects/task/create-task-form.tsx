@@ -30,6 +30,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import type { Member } from '~/types/index.ts';
 import { Badge } from '../../ui/badge.tsx';
 import { getTaskOrder } from './helpers.ts';
+import { dropDown } from '~/modules/common/dropdowner/state.ts';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
@@ -53,7 +54,7 @@ const formSchema = z.object({
       id: z.string(),
       name: z.string(),
       thumbnailUrl: z.string().nullable(),
-      bio: z.string(),
+      bio: z.string().nullable(),
     }),
   ),
   labels: z.array(
@@ -73,7 +74,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore(({ user }) => ({ user }));
-
+  const defaultId = nanoid();
   const { ref, bounds } = useMeasure();
   const Electric = useElectric();
 
@@ -102,7 +103,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: nanoid(),
+        id: defaultId,
         markdown: '',
         summary: '',
         type: 'feature',
@@ -393,24 +394,37 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                   return (
                     <FormItem className="gap-0 w-8">
                       <FormControl>
-                        <SelectStatus
-                          taskStatus={1}
-                          changeTaskStatus={(newStatus) => {
-                            onChange(newStatus);
-                            onSubmit(form.getValues());
+                        <Button
+                          type="button"
+                          aria-label="Set status"
+                          variant={'default'}
+                          size="xs"
+                          className="rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
+                          onClick={(event) => {
+                            const button = event.currentTarget;
+                            const buttonRect = button.getBoundingClientRect();
+                            dropDown(
+                              <SelectStatus
+                                taskStatus={1}
+                                changeTaskStatus={(newStatus) => {
+                                  onChange(newStatus);
+                                  onSubmit(form.getValues());
+                                }}
+                                inputPlaceholder={t('common:placeholder.create_with_status')}
+                              />,
+                              {
+                                id: `select-status-${defaultId}`,
+                                trigger: event.currentTarget,
+                                position: {
+                                  top: buttonRect.top + buttonRect.height,
+                                  left: buttonRect.right - 240,
+                                },
+                              },
+                            );
                           }}
-                          trigger={
-                            <Button
-                              aria-label="Set status"
-                              variant={'default'}
-                              size="xs"
-                              className="rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
-                            >
-                              <ChevronDown size={16} />
-                            </Button>
-                          }
-                          inputPlaceholder={t('common:placeholder.create_with_status')}
-                        />
+                        >
+                          <ChevronDown size={16} />
+                        </Button>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

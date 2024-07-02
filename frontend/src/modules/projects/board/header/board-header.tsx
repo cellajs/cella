@@ -111,12 +111,6 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
               <span className="max-sm:hidden ml-1">{t('common:add')}</span>
             </Button>
           </TooltipButton>
-          <TooltipButton className="max-xs:hidden" toolTipContent={t('common:manage_labels')}>
-            <Button variant="outline" onClick={openLabelsSheet}>
-              <Tag size={16} />
-              <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
-            </Button>
-          </TooltipButton>
         </div>
       )}
       {!!searchQuery.length && (
@@ -150,6 +144,12 @@ const BoardHeader = ({ showPageHeader, handleShowPageHeader }: BoardHeaderProps)
       )}
 
       <BoardSearch />
+      <TooltipButton className="max-xs:hidden" toolTipContent={t('common:manage_labels')}>
+        <Button variant="outline" onClick={openLabelsSheet}>
+          <Tag size={16} />
+          <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
+        </Button>
+      </TooltipButton>
       <TooltipButton toolTipContent={t('common:workspace_settings')}>
         <Button variant="outline" onClick={openSettingsSheet}>
           <Settings size={16} />

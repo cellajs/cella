@@ -36,19 +36,19 @@ export const SheetAccount = () => {
   const isSystemAdmin = user.role === 'ADMIN';
 
   const bgClass = user.bannerUrl ? 'bg-background' : getColorClass(user.id);
-  const bannerClass = `relative my-4 group transition-all duration-300 hover:-mx-8 -mx-4 bg-cover bg-center h-24 ${bgClass}`;
+  const bannerClass = `relative group transition-all duration-300 hover:-mx-8 -mx-4 bg-cover bg-center h-24 ${bgClass}`;
 
   return (
-    <div className="flex flex-col gap-4 min-h-[calc(100vh-2rem)]">
+    <div className="flex flex-col gap-4 min-h-[calc(100vh-3rem)]">
       <SheetTitle>{t('common:account')}</SheetTitle>
 
       <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full">
         <div className={bannerClass} style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}>
-          <div className="absolute z-10 flex justify-center items-center bg-background/50 w-full group-hover:opacity-100 group-hover:delay-300 transition duration-300 h-full opacity-0">
+          <div className="absolute z-10 flex justify-center items-center bg-background/50 w-full group-hover:opacity-100 transition duration-300 h-full opacity-0">
             {t('common:view_profile')}
           </div>
           <AvatarWrap
-            className="h-16 w-16 relative top-4 text-2xl transition duration-300 delay-300 group-hover:-translate-x-24 group-hover:delay-0 mx-auto border-bg border-2 rounded-full"
+            className="h-16 w-16 relative top-4 text-2xl transition duration-300 ml-8 border-bg border-2 rounded-full"
             type="USER"
             id={user.id}
             name={user.name}

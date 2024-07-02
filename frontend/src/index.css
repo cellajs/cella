@@ -91,12 +91,7 @@
       overflow: hidden;
       position: relative;
     }
-
-    #app-root > .container {
-      padding-left: .75rem;
-      padding-right: 0.75rem;
-    }
-
+    
     #app-content {
       flex: 1;
       height: 100%;

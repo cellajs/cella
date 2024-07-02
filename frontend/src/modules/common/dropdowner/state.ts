@@ -1,17 +1,14 @@
 import type React from 'react';
 
-let dropDownsCounter = 1;
-
 export type DropDownT = {
   id: number | string;
+  position: { top: number; left: number };
+  trigger?: HTMLElement;
   drawerOnMobile?: boolean;
-  container?: HTMLElement | null;
-  className?: string;
   refocus?: boolean;
   autoFocus?: boolean;
   hideClose?: boolean;
   content?: React.ReactNode;
-  trigger?: React.ReactNode;
 };
 
 export type DropDownToRemove = {
@@ -29,70 +26,67 @@ export const isDropDown = (dropDown: DropDownT | DropDownToRemove): dropDown is 
 };
 
 class Observer {
-  subscribers: Array<(dropDown: DropDownT | DropDownToRemove) => void>;
-  dropDowns: (DropDownT | DropDownToRemove)[];
+  subscriber: ((dropDown: DropDownT | DropDownToRemove) => void) | null;
+  dropDown: DropDownT | null;
 
   constructor() {
-    this.subscribers = [];
-    this.dropDowns = [];
+    this.subscriber = null;
+    this.dropDown = null;
   }
 
   subscribe = (subscriber: (dropDown: DropDownT | DropDownToRemove) => void) => {
-    this.subscribers.push(subscriber);
-
+    this.subscriber = subscriber;
+    if (this.dropDown) {
+      this.subscriber(this.dropDown);
+    }
     return () => {
-      const index = this.subscribers.indexOf(subscriber);
-      this.subscribers.splice(index, 1);
+      this.subscriber = null;
     };
   };
 
-  publish = (data: DropDownT) => {
-    for (const subscriber of this.subscribers) {
-      subscriber(data);
+  publish = (data: DropDownT | DropDownToRemove) => {
+    this.dropDown = isDropDown(data) ? data : null;
+    if (this.subscriber) {
+      this.subscriber(data);
     }
   };
 
   set = (data: DropDownT) => {
     this.publish(data);
-    this.dropDowns = [...this.dropDowns, data];
   };
 
   get = (id: number | string) => {
-    return this.dropDowns.find((dropDown) => dropDown.id === id);
+    return this.dropDown?.id === id;
   };
 
-  remove = (refocus = true, id?: number | string) => {
-    if (id) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id, remove: true, refocus });
-      }
-
-      return;
-    }
-
-    // Remove all dropDowns
-    for (const dropDown of this.dropDowns) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id: dropDown.id, remove: true, refocus });
-      }
-    }
+  remove = (refocus = true) => {
+    if (this.dropDown) this.publish({ ...this.dropDown, remove: true, refocus });
   };
 }
 
 export const dropDownState = new Observer();
 
-const dropDownFunction = (content: React.ReactNode, trigger: React.ReactNode, data?: ExternalDropDown) => {
-  const id = data?.id || dropDownsCounter++;
+const dropDownFunction = (content: React.ReactNode, data?: ExternalDropDown) => {
+  const id = data?.id || 1;
 
+  //if exist close
+  const existingDropDown = dropDownState.get(id);
+  if (existingDropDown) {
+    dropDownState.remove();
+    return null;
+  }
+
+  const position = data?.position || { top: 0, left: 0 };
   dropDownState.set({
-    trigger,
     content,
     drawerOnMobile: true,
     refocus: true,
     autoFocus: true,
     hideClose: false,
-    ...data,
+    position,
     id,
+
+    ...data,
   });
   return id;
 };

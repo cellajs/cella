@@ -82,7 +82,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                 <span
                   ref={prefixRef}
                   onClick={prefixClick}
-                  className="absolute font-light left-3 text-sm"
+                  className="absolute font-light left-3 text-xs"
                   style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
                 >
                   {prefix || icon}

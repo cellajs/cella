@@ -33,7 +33,6 @@ const WorkspacePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showPageHeader, setShowPageHeader] = useState(false);
   const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
-  const [focusedProjectIndex, setFocusedProjectIndex] = useState<number | null>(null);
 
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
@@ -60,8 +59,6 @@ const WorkspacePage = () => {
       setSelectedTasks={setSelectedTasks}
       focusedTaskId={focusedTaskId}
       setFocusedTaskId={setFocusedTaskId}
-      focusedProjectIndex={focusedProjectIndex}
-      setFocusedProjectIndex={setFocusedProjectIndex}
     >
       {showPageHeader && (
         <PageHeader

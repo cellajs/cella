@@ -8,9 +8,9 @@ const SelectCountry = ({ onChange }: { onChange: (value: string) => void }) => {
   const options = getCountries(countries);
 
   const renderCountryOption = (option: { value: string; label: string }) => (
-    <div className="flex items-center">
-      <CountryFlag countryCode={option.value} imgType="png" className="mr-2" />
-      {option.label}
+    <div className="flex items-center flex-nowrap truncate">
+      <CountryFlag countryCode={option.value} imgType="png" className="mr-2 shrink-0" />
+      <span className="truncate">{option.label}</span>
     </div>
   );
   return (

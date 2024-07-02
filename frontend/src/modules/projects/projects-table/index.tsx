@@ -66,12 +66,12 @@ export const projectsQueryOptions = ({
 
 const LIMIT = 40;
 
-export default function ProjectsTable({ userId }: { userId?: string }) {
+export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: boolean; userId?: string }) {
   const { t } = useTranslation();
 
   const [rows, setRows] = useState<Project[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [columns, setColumns] = useColumns();
+  const [columns, setColumns] = useColumns(IsSheet);
   const [query, setQuery] = useState<GetProjectsParams['q']>('');
   const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'createdAt', direction: 'DESC' }]);
 

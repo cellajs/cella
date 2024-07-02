@@ -20,7 +20,12 @@ export type DraggableItemData<T> = {
   dragItem: true;
   order: number;
 };
-
+export interface TaskCardFocusEvent extends Event {
+  detail: {
+    taskId: string;
+    projectId: string;
+  };
+}
 export type Entity = (typeof config.entityTypes)[number];
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
 
