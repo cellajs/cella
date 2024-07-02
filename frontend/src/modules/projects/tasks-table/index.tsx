@@ -109,7 +109,7 @@ export default function TasksTable() {
       setTasks(results as Task[]);
       setIsFetching(false);
     })();
-  }, [queryOptions]);
+  }, [searchQuery, selectedStatuses, selectedProjects, sort, order]);
 
   // const filteredTasks = useMemo(() => {
   //   if (!tasks) return;
