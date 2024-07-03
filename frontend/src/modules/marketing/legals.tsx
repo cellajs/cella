@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import StickyBox from 'react-sticky-box';
+import StickyBox from '~/modules/common/sticky-box';
 import PublicPage from '~/modules/marketing/page';
 import { AsideAnchor } from '../common/aside-anchor';
 import { AsideNav } from '../common/aside-nav';

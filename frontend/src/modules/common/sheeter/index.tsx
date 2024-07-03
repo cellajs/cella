@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import StickyBox from 'react-sticky-box';
+import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
 import { SheetState, type SheetT, type SheetToRemove, type SheetToReset } from './state';
 

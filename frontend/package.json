@@ -79,7 +79,7 @@
     "emblor": "^1.4.0",
     "framer-motion": "^11.2.11",
     "gleap": "^13.7.3",
-    "hono": "4.4.5",
+    "hono": "4.4.11",
     "i18next": "^23.11.5",
     "i18next-browser-languagedetector": "^7.2.1",
     "i18next-http-backend": "^2.5.2",

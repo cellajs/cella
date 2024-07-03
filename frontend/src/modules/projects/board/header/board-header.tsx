@@ -92,7 +92,7 @@ const BoardHeader = ({ mode, children}: { mode: 'table' | 'board', children?: Re
   };
 
   return (
-    <StickyBox enabled={mode === 'table'} className="flex items-center max-sm:justify-between gap-2 z-[100] bg-background p-2 -m-2 md:p-3 md:-m-3">
+    <StickyBox enabled={mode === 'table'} className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
       {!selectedTasks.length && !searchQuery.length && (
         <div className="flex gap-2">
           <TooltipButton toolTipContent={t('common:page_view')}>

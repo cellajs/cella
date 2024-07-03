@@ -6,7 +6,7 @@ import { config } from 'config';
 import { History, Loader2, Search, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import StickyBox from 'react-sticky-box';
+import StickyBox from '~/modules/common/sticky-box';
 import type { z } from 'zod';
 import { getSuggestions } from '~/api/general';
 import { dialog } from '~/modules/common/dialoger/state';

@@ -17,7 +17,6 @@ import { useUserStore } from '~/store/user.ts';
 import { useElectric } from '~/modules/common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
 import { useProjectContext } from '../board/project-context.tsx';
-import { getTaskOrder } from './helpers.ts';
 
 const formSchema = z.object({
   id: z.string(),
@@ -43,7 +42,7 @@ export const CreateSubTaskForm = ({
 
   const Electric = useElectric();
 
-  const { project, tasks } = useProjectContext(({ project, tasks, labels }) => ({ project, tasks, labels }));
+  const { project } = useProjectContext(({ project }) => ({ project }));
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
     (event) => {
@@ -83,7 +82,6 @@ export const CreateSubTaskForm = ({
     // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
-    const projectTasks = tasks.filter((task) => task.project_id === project.id);
 
     Electric.db.tasks
       .create({
@@ -102,7 +100,9 @@ export const CreateSubTaskForm = ({
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: getTaskOrder(values.status, values.status, projectTasks),
+          sort_order: 1,
+          // TODO: instead of parentTaskId, import complete parentTask and use the array of substasks to get the sort_order
+          // sort_order: getTaskOrder(values.status, values.status, projectTasks),
         },
       })
       .then(() => {

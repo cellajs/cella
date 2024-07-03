@@ -5,7 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import StickyBox from 'react-sticky-box';
+import StickyBox from '~/modules/common/sticky-box';
 import { toast } from 'sonner';
 import { AsideNav } from '~/modules/common/aside-nav';
 import { AsideAnchor } from '../common/aside-anchor';
