@@ -35,6 +35,21 @@
       "persistent": true
     },
     "check:types": {},
-    "email:dev": {}
+    "email:dev": {},
+    "push": {},
+    "migrate": {},
+    "migrate:pg": {},
+    "electric:migrate": {},
+    "generate": {},
+    "generate:pg": {},
+    "electric:generate": {},
+    "electric:generate:custom": {},
+    "studio": {},
+    "electric:studio": {},
+    "seed": {},
+    "seed:pivotal": {},
+    "seed:user": {},
+    "seed:organizations": {},
+    "seed:data": {}
   }
 }
