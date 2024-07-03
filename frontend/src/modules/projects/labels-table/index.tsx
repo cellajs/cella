@@ -88,7 +88,7 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
   }, [filteredLabels]);
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4 h-full">
       <div className={'flex pt-2 w-full max-sm:justify-between gap-2'}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={false}>
           {/* {!selectedLabels.length && !searchQuery.length && (

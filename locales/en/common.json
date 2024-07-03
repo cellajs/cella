@@ -404,7 +404,7 @@
   "upload": "Upload",
   "upload_cover": "Upload cover",
   "upload_image": "Upload image",
-  "upload_img_max_10mb.text": "Upload a PNG or JPEG under 10MB",
+  "upload_img_max_10mb.text": "Upload a PNG or JPG under 10MB",
   "upload_profile_picture": "Upload profile picture",
   "user": "User",
   "user_handle": "User handle",
@@ -435,5 +435,7 @@
   "click_fetch.text": "Click to load more",
   "summary": "Summary",
   "status": "Status",
-  "manage": "Manage"
+  "manage": "Manage",
+  "placeholder.type_name": "Type name ...",
+  "checkout": "Checkout"
 }

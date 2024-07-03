@@ -118,7 +118,7 @@ export const DataTable = <TData,>({
   }, [isLoading]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full mb-4 md:mb-8">
       {initialDone ? ( // Render skeleton only on initial load
         <>
           {error && rows.length === 0 ? (
