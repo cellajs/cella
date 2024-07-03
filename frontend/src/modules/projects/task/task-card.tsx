@@ -8,15 +8,13 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import type { Label, Task } from '~/modules/common/electric/electrify.ts';
+import type { Task } from '~/modules/common/electric/electrify.ts';
 import { Checkbox } from '../../ui/checkbox.tsx';
-import type { TaskImpact, TaskType } from './create-task-form.tsx';
-import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
-import SelectStatus, { statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
-import { SelectTaskType, taskTypes } from './task-selectors/select-task-type.tsx';
+import { impacts } from './task-selectors/select-impact.tsx';
+import { statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
+import { taskTypes } from './task-selectors/select-task-type.tsx';
 import './style.css';
-import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
-import AssignMembers from './task-selectors/select-members.tsx';
+import { badgeStyle } from './task-selectors/select-labels.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
 import SubTask from './sub-task-card.tsx';
 import CreateSubTaskForm from './create-sub-task-form.tsx';
@@ -33,9 +31,7 @@ import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/externa
 import { getDraggableItemData } from '~/lib/utils';
 import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '~/modules/common/drop-indicator';
-import { dropDown } from '~/modules/common/dropdowner/state.ts';
 import { taskStatuses } from '../tasks-table/status.tsx';
-import type { Member } from '~/types';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
@@ -45,8 +41,6 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
 
 interface TaskProps {
   task: Task;
-  labels: Label[];
-  members: Member[];
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
@@ -54,9 +48,19 @@ interface TaskProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
   handleTaskSelect: (selected: boolean, taskId: string) => void;
+  handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
 }
 
-export function TaskCard({ task, labels, members, isSelected, isFocused, isExpanded, handleTaskChange, handleTaskSelect, setIsExpanded }: TaskProps) {
+export function TaskCard({
+  task,
+  isSelected,
+  isFocused,
+  isExpanded,
+  handleTaskChange,
+  handleTaskSelect,
+  handleTaskActionClick,
+  setIsExpanded,
+}: TaskProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const taskRef = useRef<HTMLDivElement>(null);
@@ -209,20 +213,8 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                   onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
                 />
                 <Button
-                  onClick={(event) => {
-                    dropDown(
-                      <SelectTaskType
-                        className={cn('group-[.is-selected]/column:mt-8 transition-spacing', isExpanded && 'mt-8')}
-                        currentType={task.type as TaskType}
-                        changeTaskType={(newType) => handleTaskChange('type', newType, task.id)}
-                      />,
-                      {
-                        id: `select-type-${task.id}`,
-                        trigger: event.currentTarget,
-                      },
-                    );
-                  }}
-                  aria-label="Set status"
+                  onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
+                  aria-label="Set type"
                   variant="ghost"
                   size="xs"
                   className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
@@ -311,18 +303,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
             <div className="flex items-start justify-between gap-1">
               {task.type !== 'bug' && (
                 <Button
-                  onClick={(event) => {
-                    dropDown(
-                      <SelectImpact
-                        value={task.impact as TaskImpact}
-                        changeTaskImpact={(newImpact) => handleTaskChange('impact', newImpact, task.id)}
-                      />,
-                      {
-                        id: `select-impact-${task.id}`,
-                        trigger: event.currentTarget,
-                      },
-                    );
-                  }}
+                  onClick={(event) => handleTaskActionClick(task, 'impact', event.currentTarget)}
                   aria-label="Set impact"
                   variant="ghost"
                   size="xs"
@@ -331,7 +312,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                   {selectedImpact !== null ? (
                     <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
                   ) : (
-                    <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+                    <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
                   )}
                 </Button>
               )}
@@ -340,21 +321,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                 // TODO: Bind the entire task object instead of individual IDs
               }
               <Button
-                onClick={(event) => {
-                  dropDown(
-                    <SetLabels
-                      labels={labels}
-                      value={task.virtualLabels}
-                      organizationId={task.organization_id}
-                      projectId={task.project_id}
-                      changeLabels={(newLabels) => handleTaskChange('labels', newLabels, task.id)}
-                    />,
-                    {
-                      id: `select-labels-${task.id}`,
-                      trigger: event.currentTarget,
-                    },
-                  );
-                }}
+                onClick={(event) => handleTaskActionClick(task, 'labels', event.currentTarget)}
                 aria-label="Set labels"
                 variant="ghost"
                 size="xs"
@@ -383,19 +350,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
 
               <div className="flex gap-1 ml-auto mr-1">
                 <Button
-                  onClick={(event) => {
-                    dropDown(
-                      <AssignMembers
-                        users={members}
-                        value={task.virtualAssignedTo}
-                        changeAssignedTo={(newMembers) => handleTaskChange('assigned_to', newMembers, task.id)}
-                      />,
-                      {
-                        id: `assign-members-${task.id}`,
-                        trigger: event.currentTarget,
-                      },
-                    );
-                  }}
+                  onClick={(event) => handleTaskActionClick(task, 'assigned_to', event.currentTarget)}
                   aria-label="Assign"
                   variant="ghost"
                   size="xs"
@@ -433,22 +388,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                     {t(taskStatuses[task.status as TaskStatus].action)}
                   </Button>
                   <Button
-                    onClick={(event) => {
-                      dropDown(
-                        <SelectStatus
-                          taskStatus={task.status as TaskStatus}
-                          changeTaskStatus={(newStatus) => {
-                            handleTaskChange('status', newStatus, task.id);
-                            toast.success(t('common:success.new_status', { status: t(taskStatuses[newStatus as TaskStatus].status).toLowerCase() }));
-                          }}
-                          inputPlaceholder={t('common:placeholder.set_status')}
-                        />,
-                        {
-                          id: `select-status-${task.id}`,
-                          trigger: event.currentTarget,
-                        },
-                      );
-                    }}
+                    onClick={(event) => handleTaskActionClick(task, 'status', event.currentTarget)}
                     aria-label="Set status"
                     variant="outlineGhost"
                     size="xs"

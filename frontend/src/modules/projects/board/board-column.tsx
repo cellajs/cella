@@ -19,7 +19,7 @@ import type { Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
-import CreateTaskForm from '../task/create-task-form';
+import CreateTaskForm, { type TaskImpact, type TaskType } from '../task/create-task-form';
 import { TaskCard, isTaskData } from '../task/task-card';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
@@ -30,6 +30,13 @@ import { getTaskOrder } from '../task/helpers';
 import { toast } from 'sonner';
 import type { ProjectState } from './board';
 import { useInView } from 'react-intersection-observer';
+import { dropDown } from '~/modules/common/dropdowner/state';
+import { SelectImpact } from '../task/task-selectors/select-impact';
+import SetLabels from '../task/task-selectors/select-labels';
+import { taskStatuses } from '../tasks-table/status';
+import { SelectTaskType } from '../task/task-selectors/select-task-type';
+import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
+import AssignMembers from '../task/task-selectors/select-members';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -113,105 +120,113 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
     const db = Electric.db;
     if (field === 'assigned_to' && Array.isArray(value)) {
       const assignedTo = value.map((user) => user.id);
-      db.tasks.update({
-        data: {
-          assigned_to: assignedTo,
-        },
-        where: {
-          id: taskId,
-        },
-      }).then(() => {
-        setProjectState({
-          ...projectState,
-          tasks: tasks.map((task) => {
-            if (task.id === taskId) {
-              return {
-                ...task,
-                assigned_to: assignedTo,
-              };
-            }
-            return task;
-          }),
+      db.tasks
+        .update({
+          data: {
+            assigned_to: assignedTo,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then(() => {
+          setProjectState({
+            ...projectState,
+            tasks: tasks.map((task) => {
+              if (task.id === taskId) {
+                return {
+                  ...task,
+                  assigned_to: assignedTo,
+                };
+              }
+              return task;
+            }),
+          });
         });
-      });
       return;
     }
 
     // TODO: Review this
     if (field === 'labels' && Array.isArray(value)) {
       const labels = value.map((label) => label.id);
-      db.tasks.update({
-        data: {
-          labels,
-        },
-        where: {
-          id: taskId,
-        },
-      }).then(() => {
-        setProjectState({
-          ...projectState,
-          tasks: tasks.map((task) => {
-            if (task.id === taskId) {
-              return {
-                ...task,
-                labels,
-              };
-            }
-            return task;
-          }),
+      db.tasks
+        .update({
+          data: {
+            labels,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then(() => {
+          setProjectState({
+            ...projectState,
+            tasks: tasks.map((task) => {
+              if (task.id === taskId) {
+                return {
+                  ...task,
+                  labels,
+                };
+              }
+              return task;
+            }),
+          });
         });
-      });
       return;
     }
     if (field === 'status') {
       const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
-      db.tasks.update({
+      db.tasks
+        .update({
+          data: {
+            status: value,
+            ...(newOrder && { sort_order: newOrder }),
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then(() => {
+          setProjectState({
+            ...projectState,
+            tasks: tasks.map((task) => {
+              if (task.id === taskId) {
+                return {
+                  ...task,
+                  status: value,
+                  sort_order: newOrder,
+                };
+              }
+              return task;
+            }),
+          });
+        });
+      return;
+    }
+
+    db.tasks
+      .update({
         data: {
-          status: value,
-          ...(newOrder && { sort_order: newOrder }),
+          [field]: value,
         },
         where: {
           id: taskId,
         },
-      }).then(() => {
+      })
+      .then(() => {
         setProjectState({
           ...projectState,
           tasks: tasks.map((task) => {
             if (task.id === taskId) {
               return {
                 ...task,
-                status: value,
-                sort_order: newOrder,
+                [field]: value,
               };
             }
             return task;
           }),
         });
       });
-      return;
-    }
-
-    db.tasks.update({
-      data: {
-        [field]: value,
-      },
-      where: {
-        id: taskId,
-      },
-    }).then(() => {
-      setProjectState({
-        ...projectState,
-        tasks: tasks.map((task) => {
-          if (task.id === taskId) {
-            return {
-              ...task,
-              [field]: value,
-            };
-          }
-          return task;
-        }),
-      });
-    });
   };
 
   const setTaskExpanded = (taskId: string, isExpanded: boolean) => {
@@ -262,6 +277,71 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
   const handleTaskSelect = (selected: boolean, taskId: string) => {
     if (selected) return setSelectedTasks([...selectedTasks, taskId]);
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
+  };
+
+  const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
+    if (field === 'impact')
+      dropDown(<SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />, {
+        id: `impact-${task.id}`,
+        trigger,
+      });
+
+    if (field === 'labels')
+      dropDown(
+        <SetLabels
+          labels={labels}
+          value={task.virtualLabels}
+          organizationId={task.organization_id}
+          projectId={task.project_id}
+          changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
+        />,
+        {
+          id: `labels-${task.id}`,
+          trigger,
+        },
+      );
+
+    if (field === 'assigned_to')
+      dropDown(
+        <AssignMembers
+          users={members}
+          value={task.virtualAssignedTo}
+          changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
+        />,
+        {
+          id: `assigned_to-${task.id}`,
+          trigger,
+        },
+      );
+
+    if (field === 'status')
+      dropDown(
+        <SelectStatus
+          taskStatus={task.status as TaskStatus}
+          changeTaskStatus={(newStatus) => {
+            handleChange('status', newStatus, task.id);
+            toast.success(t('common:success.new_status', { status: t(taskStatuses[newStatus as TaskStatus].status).toLowerCase() }));
+          }}
+          inputPlaceholder={t('common:placeholder.set_status')}
+        />,
+        {
+          id: `status-${task.id}`,
+          trigger,
+        },
+      );
+
+    if (field === 'type')
+      dropDown(
+        <SelectTaskType
+          className="group-[.is-selected]/column:mt-8 transition-spacing"
+          currentType={task.type as TaskType}
+          changeTaskType={(newType) => handleChange('type', newType, task.id)}
+        />,
+        {
+          id: `type-${task.id}`,
+          trigger,
+        },
+      );
   };
 
   const handleTaskFormClick = () => {
@@ -427,12 +507,11 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
                         <TaskCard
                           key={task.id}
                           task={task}
-                          labels={labels}
-                          members={members}
                           isExpanded={expandedTasks[task.id] || false}
                           isSelected={selectedTasks.includes(task.id)}
                           isFocused={task.id === focusedTaskId}
                           handleTaskChange={handleChange}
+                          handleTaskActionClick={handleTaskActionClick}
                           handleTaskSelect={handleTaskSelect}
                           setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
                         />
