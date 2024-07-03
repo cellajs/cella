@@ -7,7 +7,7 @@
   },
   "scripts": {
     "start": "tsx dist/index.cjs",
-    "dev": "tsup --watch --onSuccess \"tsx dist/index.cjs\"",
+    "dev": "pnpm run studio & tsup --watch --onSuccess \"tsx dist/index.cjs\"",
     "check:types": "tsc",
     "build": "NODE_ENV=production tsup",
     "build:dev": "tsup",
