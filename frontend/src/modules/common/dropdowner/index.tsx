@@ -4,7 +4,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 export function DropDowner() {
   const [dropDown, setDropDown] = useState<DropDownT | null>(null);
-
+  const [offset, setOffset] = useState(0);
   const removeDropDown = useCallback((dropDown: DropDownT | DropDownToRemove) => {
     if (dropDown.id === dropDown?.id) setDropDown(null);
   }, []);
@@ -15,6 +15,14 @@ export function DropDowner() {
       else setDropDown(dropDown as DropDownT);
     });
   }, []);
+
+  useEffect(() => {
+    if (!dropDown) return;
+    const dropdownElement = document.querySelector('[data-side]');
+    if (!dropdownElement || !dropDown.trigger) return setOffset(0);
+    if (window.innerHeight < dropdownElement.clientHeight + dropDown.position.top) return setOffset(dropDown.trigger.clientHeight * 1.8);
+    return setOffset(-(dropDown.trigger.clientHeight / 2));
+  }, [dropDown]);
 
   if (!dropDown) return null;
 
@@ -30,6 +38,8 @@ export function DropDowner() {
       <DropdownMenu.Root open={!!dropDown}>
         <DropdownMenu.Trigger />
         <DropdownMenu.Content
+          sideOffset={offset}
+          side="bottom"
           align="end"
           onCloseAutoFocus={() => {
             if (dropDown.refocus && dropDown.trigger) dropDown.trigger.focus();
