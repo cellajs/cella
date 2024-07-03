@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import type { Label, Task } from '~/modules/common/electric/electrify';
 import { sortTaskOrder } from '~/modules/projects/task/helpers';
+import type { Member } from '~/types';
 
-const useTaskFilters = (tasks: Task[], showAccepted: boolean, showIced: boolean, labels: Label[]) => {
+const useTaskFilters = (tasks: Task[], showAccepted: boolean, showIced: boolean, labels: Label[], members: Member[]) => {
   const { showingTasks, acceptedCount, icedCount } = useMemo(() => {
     let acceptedCount = 0;
     let icedCount = 0;
@@ -19,19 +20,21 @@ const useTaskFilters = (tasks: Task[], showAccepted: boolean, showIced: boolean,
       })
       .sort((a, b) => sortTaskOrder(a, b)); // Sort tasks
 
-      filteredTasks = filteredTasks.map((task) => {
-        task.virtualLabels = [];
-        
-        if (!task.labels?.length) return task;
-      
-        // TODO: This is a temporary solution to get the labels for the tasks
-        // Perhaps we should store in db as labelIds and call them labels here
-        task.virtualLabels = labels.filter((l) => task.labels?.includes(l.id));
-        return task;
-      });
+    filteredTasks = filteredTasks.map((task) => {
+      // TODO: This is a temporary solution to get the labels and assignedTo for the tasks
+      // Perhaps we should store in db as labelIds and call them labels here
+      const virtualAssignedTo = task.assigned_to?.length ? members.filter((m) => task.assigned_to?.includes(m.id)) : [];
+      const virtualLabels = task.labels?.length ? labels.filter((l) => task.labels?.includes(l.id)) : [];
+
+      return {
+        ...task,
+        virtualAssignedTo,
+        virtualLabels,
+      };
+    });
 
     return { showingTasks: filteredTasks, acceptedCount, icedCount };
-  }, [tasks, showAccepted, showIced]);
+  }, [tasks, showAccepted, showIced, labels, members]);
 
   return { showingTasks, acceptedCount, icedCount };
 };

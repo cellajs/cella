@@ -98,7 +98,7 @@ export function BoardColumn({ project, tasks, createForm, toggleCreateForm, upda
     results: Label[] | undefined;
   };
 
-  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, labels);
+  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, labels, members);
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any, taskId: string) => {
