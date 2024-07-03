@@ -59,7 +59,7 @@ export const SheetAccount = () => {
 
       <div className="flex flex-col gap-1 max-sm:mt-4">
         <AccountButton lucideButton={CircleUserRound} id="btn-profile" label={t('common:view_profile')} accountAction={`/user/${user.slug}`} />
-        <AccountButton lucideButton={UserCog} id="btn-account" label={t('common:account_settings')} accountAction="/user/settings" />
+        <AccountButton lucideButton={UserCog} id="btn-account" label={t('common:account')} accountAction="/user/settings" />
         {isSystemAdmin && <AccountButton lucideButton={Wrench} id="btn-system" label={t('common:system_panel')} accountAction="/system/users" />}
         <AccountButton lucideButton={LogOut} id="btn-signout" label={t('common:sign_out')} accountAction="/sign-out" />
       </div>

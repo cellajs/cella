@@ -8,7 +8,7 @@ import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
 import { UserProfile } from '~/modules/users/user-profile';
 import UserSettings from '~/modules/users/user-settings';
-import { IndexRoute } from './routeTree';
+import { AppRoute } from '.';
 
 export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -18,8 +18,8 @@ export const userQueryOptions = (idOrSlug: string) =>
 
 export const UserProfileRoute = createRoute({
   path: '/user/$idOrSlug',
-  staticData: { pageTitle: 'Profile' },
-  getParentRoute: () => IndexRoute,
+  staticData: { pageTitle: 'Profile', isAuth: true },
+  getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
     queryClient.ensureQueryData(userQueryOptions(idOrSlug));
   },
@@ -37,7 +37,7 @@ export const UserProfileRoute = createRoute({
 
 export const UserSettingsRoute = createRoute({
   path: '/user/settings',
-  staticData: { pageTitle: 'Settings' },
-  getParentRoute: () => IndexRoute,
+  staticData: { pageTitle: 'Settings', isAuth: true },
+  getParentRoute: () => AppRoute,
   component: () => <UserSettings />,
 });

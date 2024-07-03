@@ -1,9 +1,8 @@
-import { Outlet, useMatches } from '@tanstack/react-router';
+import { Outlet } from '@tanstack/react-router';
 import { Info } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppAlert } from '~/modules/common/app-alert';
-import { AppFooter } from '~/modules/common/app-footer';
 import { useNavigationStore } from '~/store/navigation';
 
 export const AppContent = () => {
@@ -11,7 +10,6 @@ export const AppContent = () => {
   const { activeSheet, keepMenuOpen, setSheet, focusView } = useNavigationStore();
 
   const clickContentRef = useRef<HTMLDivElement>(null);
-  const [showFooter, setShowFooter] = useState(false);
 
   // Move content to the right when the menu is open
   const addPadding = keepMenuOpen && activeSheet?.id === 'menu' ? 'xl:pl-80' : 'pl-0';
@@ -29,14 +27,6 @@ export const AppContent = () => {
       document.removeEventListener('click', handleClickContent);
     };
   }, []);
-
-  // Custom hook for setting document title
-  const matches = useMatches();
-
-  useEffect(() => {
-    const hide = matches.find((match) => match.staticData.hideFooter);
-    if (!!hide === showFooter) setShowFooter(!showFooter);
-  }, [matches]);
 
   return (
     <div
@@ -58,7 +48,6 @@ export const AppContent = () => {
 
           <Outlet />
         </main>
-        {showFooter && <AppFooter className="container my-16" />}
       </div>
     </div>
   );
