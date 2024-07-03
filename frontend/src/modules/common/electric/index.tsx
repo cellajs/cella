@@ -2,12 +2,13 @@ import { config } from 'config';
 import { ElectricDatabase, electrify } from 'electric-sql/browser';
 import { uniqueTabId } from 'electric-sql/util';
 import { LIB_VERSION } from 'electric-sql/version';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
+import { Button } from '~/modules/ui/button';
 interface Props {
   children: React.ReactNode;
 }
@@ -31,6 +32,7 @@ const ElectricProvider = ({ children }: Props) => {
   const { menu } = useNavigationStore();
 
   const [electric, setElectric] = useState<Electric>();
+  const [showAlert, setShowAlert] = useState(true);
 
   // TODO: can we move this out of a useEffect?
   useEffect(() => {
@@ -69,9 +71,7 @@ const ElectricProvider = ({ children }: Props) => {
         // Resolves when the shape subscription has been established.
         // TODO: Improve the following section by deriving project IDs differently.
         // TODO: Update projectIds to sync whenever the user's menu changes.
-        const projectIds = menu.workspaces
-          .map((workspace) => workspace.submenu?.map((project) => project.id) || [])
-          .flat();
+        const projectIds = menu.workspaces.flatMap((workspace) => workspace.submenu?.map((project) => project.id) || []);
         const tasksShape = await electric.db.tasks.sync({
           where: {
             project_id: {
@@ -112,9 +112,12 @@ const ElectricProvider = ({ children }: Props) => {
   return (
     <>
       <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>
-      {electric === undefined && (
+      {(electric === undefined || showAlert) && (
         <div className="fixed z-[300] max-sm:bottom-[4rem] bottom-0 border-0 p-4 flex w-full justify-center">
           <Alert variant="plain" className="border-0 w-auto">
+            <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={() => setShowAlert(false)}>
+              <X size={14} />
+            </Button>
             <AlertDescription className="pr-8 font-light flex items-center justify-center">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="ml-2">Initializing local database</span>
