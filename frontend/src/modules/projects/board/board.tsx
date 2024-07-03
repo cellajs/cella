@@ -38,9 +38,7 @@ const defaultProjectState: ProjectState = {
 
 function getScrollerWidth(containerWidth: number, projectsLength: number) {
   if (containerWidth === 0) return '100%';
-  return containerWidth / projectsLength > PANEL_MIN_WIDTH
-    ? '100%'
-    : projectsLength * PANEL_MIN_WIDTH + EMPTY_SPACE_WIDTH;
+  return containerWidth / projectsLength > PANEL_MIN_WIDTH ? '100%' : projectsLength * PANEL_MIN_WIDTH + EMPTY_SPACE_WIDTH;
 }
 
 function BoardDesktop({
@@ -58,21 +56,12 @@ function BoardDesktop({
 }) {
   const { ref, bounds } = useMeasure();
   const scrollerWidth = getScrollerWidth(bounds.width, projects.length);
-  const panelMinSize =
-    typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
+  const panelMinSize = typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
 
   return (
-    <div
-      className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto"
-      ref={ref as LegacyRef<HTMLDivElement>}
-    >
+    <div className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto" ref={ref as LegacyRef<HTMLDivElement>}>
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="flex gap-2 group/board"
-          id="project-panels"
-          autoSaveId={workspaceId}
-        >
+        <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspaceId}>
           {projects.map((project, index) => {
             const isFormOpen = columnTaskCreate[project.id] || false;
             return (
@@ -196,6 +185,7 @@ export default function Board() {
   const tasks = useMemo(
     () =>
       Object.values(projectStates).reduce((acc, state) => {
+        // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
         return [...acc, ...state.tasks];
       }, [] as Task[]),
     [projectStates],
@@ -211,8 +201,7 @@ export default function Board() {
   const handleVerticalArrowKeyDown = (event: KeyboardEvent) => {
     if (!tasks.length || !mappedProjects.length) return;
 
-    const focusedTask =
-      tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
     const direction = event.key === 'ArrowDown' ? 1 : -1;
     const triggeredEvent = new CustomEvent('task-change', {
       detail: {
@@ -227,8 +216,7 @@ export default function Board() {
   };
 
   const handleHorizontalArrowKeyDown = (event: KeyboardEvent) => {
-    const focusedTask =
-      tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
     const currentProjectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
 
     const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;

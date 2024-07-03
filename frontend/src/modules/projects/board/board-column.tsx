@@ -23,13 +23,12 @@ import CreateTaskForm from '../task/create-task-form';
 import { TaskCard, isTaskData } from '../task/task-card';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
-import { ProjectProvider } from './project-context';
 import { ProjectSettings } from '../project-settings';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { getTaskOrder } from '../task/helpers';
 import { toast } from 'sonner';
-import { ProjectState } from './board';
+import type { ProjectState } from './board';
 import { useInView } from 'react-intersection-observer';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
@@ -64,17 +63,16 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
-  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } =
-    useWorkspaceContext(
-      ({ workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId }) => ({
-        workspace,
-        selectedTasks,
-        searchQuery,
-        focusedTaskId,
-        setSelectedTasks,
-        setFocusedTaskId,
-      }),
-    );
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceContext(
+    ({ workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId }) => ({
+      workspace,
+      selectedTasks,
+      searchQuery,
+      focusedTaskId,
+      setSelectedTasks,
+      setFocusedTaskId,
+    }),
+  );
   const { workspaces, changeColumn } = useWorkspaceStore();
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
@@ -107,6 +105,7 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
   };
 
   const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, labels, members);
+  console.log('showingTasks:', showingTasks);
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any, taskId: string) => {
@@ -315,72 +314,76 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
   return (
-    <ProjectProvider key={project.id} project={project} tasks={tasks} labels={labels} members={members}>
-      <div ref={columnRef} className="flex flex-col h-full">
-        <BoardColumnHeader
-          createFormClick={handleTaskFormClick}
-          openSettings={openSettingsSheet}
-          createFormOpen={createForm}
-        />
-        <div
-          className={cn(
-            'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b opacity-100',
-            selectedTasks.length && 'is-selected',
+    <div ref={columnRef} className="flex flex-col h-full">
+      <BoardColumnHeader
+        id={project.id}
+        name={project.name}
+        color={project.color}
+        createFormClick={handleTaskFormClick}
+        openSettings={openSettingsSheet}
+        createFormOpen={createForm}
+      />
+      <div
+        className={cn(
+          'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b opacity-100',
+          selectedTasks.length && 'is-selected',
+        )}
+      >
+        {stickyBackground}
+
+        <div className="h-full border-l border-r">
+          {createForm && (
+            <CreateTaskForm
+              projectId={project.id}
+              organizationId={project.organizationId}
+              tasks={tasks}
+              labels={labels}
+              members={members}
+              onCloseForm={() => toggleCreateForm(project.id)}
+            />
           )}
-        >
-          {stickyBackground}
 
-          <div className="h-full border-l border-r">
-            {createForm && <CreateTaskForm onCloseForm={() => toggleCreateForm(project.id)} />}
+          <div ref={containerRef} />
 
-            <div ref={containerRef} />
-
-            {isLoading ? (
-              <ColumnSkeleton />
-            ) : (
-              <>
-                <div className="h-full" ref={cardListRef}>
-                  {!!tasks.length && (
-                    <ScrollArea
-                      ref={scrollableRef}
-                      id={project.id}
-                      size="indicatorVertical"
-                      className="h-full mx-[-.07rem]"
-                    >
-                      <ScrollBar size="indicatorVertical" />
-                      <div className="px-0 relative">
-                        <Button
-                          onClick={handleAcceptedClick}
-                          variant="ghost"
-                          disabled={!acceptedCount}
-                          size="sm"
-                          className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[.07rem]"
-                        >
-                          <span className="text-xs">
-                            {acceptedCount} {t('common:accepted').toLowerCase()}
-                          </span>
-                          {!!acceptedCount && (
-                            <ChevronDown
-                              size={16}
-                              className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`}
-                            />
-                          )}
-                        </Button>
-                        {showingTasks.map((task) => (
-                          <TaskCard
-                            key={task.id}
-                            task={task}
-                            subTasks={tasks.filter((t) => t.parent_id === task.id)}
-                            isExpanded={expandedTasks[task.id] || false}
-                            isSelected={selectedTasks.includes(task.id)}
-                            isFocused={task.id === focusedTaskId}
-                            handleTaskChange={handleChange}
-                            handleTaskSelect={handleTaskSelect}
-                            setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
-                          />
-                        ))}
-                        {/* Infinite loading measure ref */}
-                        {/* <div
+          {isLoading ? (
+            <ColumnSkeleton />
+          ) : (
+            <>
+              <div className="h-full" ref={cardListRef}>
+                {!!tasks.length && (
+                  <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
+                    <ScrollBar size="indicatorVertical" />
+                    <div className="px-0 relative">
+                      <Button
+                        onClick={handleAcceptedClick}
+                        variant="ghost"
+                        disabled={!acceptedCount}
+                        size="sm"
+                        className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[.07rem]"
+                      >
+                        <span className="text-xs">
+                          {acceptedCount} {t('common:accepted').toLowerCase()}
+                        </span>
+                        {!!acceptedCount && (
+                          <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+                        )}
+                      </Button>
+                      {showingTasks.map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          labels={labels}
+                          members={members}
+                          isExpanded={expandedTasks[task.id] || false}
+                          isSelected={selectedTasks.includes(task.id)}
+                          isFocused={task.id === focusedTaskId}
+                          handleTaskChange={handleChange}
+                          handleTaskSelect={handleTaskSelect}
+                          setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
+                        />
+                      ))}
+                      {/* Infinite loading measure ref */}
+                      {/* <div
                           key={totalCount}
                           ref={measureRef}
                           className="h-4 w-0 bg-red-700 absolute bottom-0 z-[200]"
@@ -389,62 +392,53 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
                             maxHeight: `${TASK_CARD_HEIGHT * LIMIT}px`,
                           }}
                         /> */}
-                      </div>
-                      <Button
-                        ref={measureRef}
-                        onClick={handleIcedClick}
-                        variant="ghost"
-                        disabled={!icedCount}
-                        size="sm"
-                        className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[.07rem]"
-                      >
-                        <span className="text-xs">
-                          {icedCount} {t('common:iced').toLowerCase()}
-                        </span>
-                        {!!icedCount && (
-                          <ChevronDown
-                            size={16}
-                            className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`}
-                          />
-                        )}
-                      </Button>
-                    </ScrollArea>
-                  )}
+                    </div>
+                    <Button
+                      ref={measureRef}
+                      onClick={handleIcedClick}
+                      variant="ghost"
+                      disabled={!icedCount}
+                      size="sm"
+                      className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[.07rem]"
+                    >
+                      <span className="text-xs">
+                        {icedCount} {t('common:iced').toLowerCase()}
+                      </span>
+                      {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
+                    </Button>
+                  </ScrollArea>
+                )}
 
-                  {!tasks.length && !searchQuery && (
-                    <ContentPlaceholder
-                      Icon={Palmtree}
-                      title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
-                      text={
-                        !createForm && (
-                          <>
-                            <Undo
-                              size={200}
-                              strokeWidth={0.2}
-                              className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
-                            />
-                            <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
-                              <span>{t('common:click')}</span>
-                              <span className="text-primary">{`+${t('common:task')}`}</span>
-                              <span>{t('common:no_tasks.text')}</span>
-                            </p>
-                          </>
-                        )
-                      }
-                    />
-                  )}
-                  {!tasks.length && searchQuery && (
-                    <ContentPlaceholder
-                      Icon={Search}
-                      title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })}
-                    />
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+                {!tasks.length && !searchQuery && (
+                  <ContentPlaceholder
+                    Icon={Palmtree}
+                    title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
+                    text={
+                      !createForm && (
+                        <>
+                          <Undo
+                            size={200}
+                            strokeWidth={0.2}
+                            className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
+                          />
+                          <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
+                            <span>{t('common:click')}</span>
+                            <span className="text-primary">{`+${t('common:task')}`}</span>
+                            <span>{t('common:no_tasks.text')}</span>
+                          </p>
+                        </>
+                      )
+                    }
+                  />
+                )}
+                {!tasks.length && searchQuery && (
+                  <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </ProjectProvider>
+    </div>
   );
 }

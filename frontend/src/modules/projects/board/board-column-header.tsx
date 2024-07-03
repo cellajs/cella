@@ -5,17 +5,18 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useWorkspaceStore } from '~/store/workspace';
-import { useProjectContext } from './project-context';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 
 interface BoardColumnHeaderProps {
+  id: string;
+  name: string;
+  color: string;
   createFormOpen: boolean;
   openSettings: () => void;
   createFormClick: () => void;
 }
 
-export function BoardColumnHeader({ createFormOpen, openSettings, createFormClick }: BoardColumnHeaderProps) {
-  const { project } = useProjectContext(({ project }) => ({ project }));
+export function BoardColumnHeader({ id, name, color, createFormOpen, openSettings, createFormClick }: BoardColumnHeaderProps) {
   const { workspace } = useWorkspaceContext(({ workspace }) => ({ workspace }));
   const { changeColumn } = useWorkspaceStore();
   const { t } = useTranslation();
@@ -23,7 +24,7 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
 
   const MinimizeClick = () => {
     setMinimize(!minimize);
-    changeColumn(workspace.id, project.id, {
+    changeColumn(workspace.id, id, {
       minimized: !minimize,
     });
   };
@@ -33,8 +34,8 @@ export function BoardColumnHeader({ createFormOpen, openSettings, createFormClic
   return (
     <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
       {/* Omit style background if projects will be without a color preference. */}
-      <AvatarWrap className="h-8 w-8 text-xs" name={project.name} backgroundColor={project.color} />
-      <div className="truncate leading-6">{project.name}</div>
+      <AvatarWrap className="h-8 w-8 text-xs" name={name} backgroundColor={color} />
+      <div className="truncate leading-6">{name}</div>
       <div className="grow" />
       <TooltipButton toolTipContent={t('common:project_settings')} side="bottom" sideOffset={13} className="max-sm:hidden">
         <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={openSettings}>

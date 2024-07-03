@@ -11,6 +11,7 @@ export type Task = Omit<BaseTask, 'labels' | 'assigned_to'> & {
   virtualLabels: Label[];
   assigned_to: string[] | null;
   virtualAssignedTo: Member[];
+  subTasks: Task[];
 };
 
 export const { ElectricProvider, useElectric } = makeElectricContext<Electric>();

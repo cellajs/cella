@@ -18,7 +18,6 @@ import { dialog } from '~/modules/common/dialoger/state.ts';
 import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
-import { useProjectContext } from '../board/project-context.tsx';
 import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
 import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
@@ -38,6 +37,11 @@ export type TaskImpact = 0 | 1 | 2 | 3 | null;
 export const taskTypes = ['feature', 'chore', 'bug'];
 
 interface CreateTaskFormProps {
+  tasks: Task[];
+  labels: Label[];
+  members: Member[];
+  projectId: string;
+  organizationId: string;
   dialog?: boolean;
   onCloseForm?: () => void;
   onFormSubmit?: (task: Task, isNew?: boolean, toStatus?: TaskStatus) => void;
@@ -70,15 +74,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onCloseForm }) => {
+const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members, projectId, organizationId, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore(({ user }) => ({ user }));
   const defaultId = nanoid();
   const { ref, bounds } = useMeasure();
   const Electric = useElectric();
-
-  const { project, tasks, labels, members } = useProjectContext(({ project, tasks, labels, members }) => ({ project, tasks, labels, members }));
 
   const handleCloseForm = () => {
     if (isDialog) dialog.remove();
@@ -117,13 +119,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
   );
 
   // Form with draft in local storage
-  const form = useFormWithDraft<FormValues>(`create-task-${project.id}`, formOptions);
+  const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
-    const projectTasks = tasks.filter((task) => task.project_id === project.id);
+    const projectTasks = tasks.filter((task) => task.project_id === projectId);
 
     Electric.db.tasks
       .create({
@@ -136,8 +138,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           labels: values.labels.map((label) => label.id),
           assigned_to: values.assignedTo.map((user) => user.id),
           status: values.status,
-          organization_id: project.organizationId,
-          project_id: project.id,
+          organization_id: organizationId,
+          project_id: projectId,
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
@@ -321,8 +323,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                     labels={labels}
                     value={value as Label[]}
                     triggerWidth={bounds.width}
-                    projectId={project.id}
-                    organizationId={project.organizationId}
+                    projectId={projectId}
+                    organizationId={organizationId}
                     changeLabels={onChange}
                   >
                     <Button

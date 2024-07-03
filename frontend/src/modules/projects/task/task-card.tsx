@@ -8,7 +8,7 @@ import { cn } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import type { Task } from '../../common/electric/electrify.ts';
+import type { Label, Task } from '~/modules/common/electric/electrify.ts';
 import { Checkbox } from '../../ui/checkbox.tsx';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
 import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
@@ -32,10 +32,10 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { getDraggableItemData } from '~/lib/utils';
 import type { DraggableItemData } from '~/types';
-import { DropIndicator } from '../../common/drop-indicator';
-import { useProjectContext } from '../board/project-context';
+import { DropIndicator } from '~/modules/common/drop-indicator';
 import { dropDown } from '~/modules/common/dropdowner/state.ts';
 import { taskStatuses } from '../tasks-table/status.tsx';
+import type { Member } from '~/types';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
@@ -45,7 +45,8 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
 
 interface TaskProps {
   task: Task;
-  subTasks: Task[];
+  labels: Label[];
+  members: Member[];
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
@@ -55,13 +56,12 @@ interface TaskProps {
   handleTaskSelect: (selected: boolean, taskId: string) => void;
 }
 
-export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, handleTaskChange, handleTaskSelect, setIsExpanded }: TaskProps) {
+export function TaskCard({ task, labels, members, isSelected, isFocused, isExpanded, handleTaskChange, handleTaskSelect, setIsExpanded }: TaskProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const { labels, members } = useProjectContext(({ labels, tasks, members }) => ({ labels, tasks, members }));
   const [isEditing, setIsEditing] = useState(false);
   const [createSubTask, setCreateSubTask] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -241,11 +241,11 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
                         <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
                           {t('common:more').toLowerCase()}
                         </Button>
-                        {subTasks.length > 0 && (
+                        {task.subTasks.length > 0 && (
                           <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
-                            <span className="text-success">{subTasks.filter((t) => t.status === 6).length}</span>
+                            <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
                             <span className="font-light">/</span>
-                            <span className="font-light">{subTasks.length}</span>
+                            <span className="font-light">{task.subTasks.length}</span>
                           </Button>
                         )}
                         <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
@@ -265,27 +265,27 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
                       </Button>
                     </div>
 
-                    {subTasks.length > 0 && (
+                    {task.subTasks.length > 0 && (
                       <div className="inline-flex py-0 h-4 items-center mt-4 gap-1">
-                        <span className="text-success">{subTasks.filter((t) => t.status === 6).length}</span>
+                        <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
                         <span>/</span>
-                        <span>{subTasks.length}</span>
+                        <span>{task.subTasks.length}</span>
                         <span>{t('common:completed_todo')}</span>
                       </div>
                     )}
 
                     <div className="-ml-10 -mr-2">
                       <div className="flex flex-col">
-                        {subTasks.map((task) => (
+                        {task.subTasks.map((task) => (
                           <SubTask key={task.id} task={task} handleChange={handleTaskChange} />
                         ))}
                       </div>
 
                       <CreateSubTaskForm
-                        firstSubTask={subTasks.length < 1}
+                        firstSubTask={task.subTasks.length < 1}
                         formOpen={createSubTask}
                         setFormState={(value) => setCreateSubTask(value)}
-                        parentTaskId={task.id}
+                        parentTask={task}
                       />
                     </div>
                   </>
@@ -315,7 +315,7 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
               }
               <SetLabels
                 labels={labels}
-                value={labels.filter((l) => task.labels?.includes(l.id))}
+                value={task.virtualLabels}
                 organizationId={task.organization_id}
                 projectId={task.project_id}
                 changeLabels={(newLabels) => handleTaskChange('labels', newLabels, task.id)}
@@ -350,7 +350,7 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
               <div className="flex gap-1 ml-auto mr-1">
                 <AssignMembers
                   users={members}
-                  value={members.filter((m) => task.assigned_to?.includes(m.id))}
+                  value={task.virtualAssignedTo}
                   changeAssignedTo={(newMembers) => handleTaskChange('assigned_to', newMembers, task.id)}
                 >
                   <Button
@@ -359,21 +359,12 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
                     size="xs"
                     className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
                   >
-                    {members.filter((m) => task.assigned_to?.includes(m.id)).length ? (
+                    {task.virtualAssignedTo.length ? (
                       <AvatarGroup limit={3}>
                         <AvatarGroupList>
-                          {members
-                            .filter((m) => task.assigned_to?.includes(m.id))
-                            .map((user) => (
-                              <AvatarWrap
-                                type="USER"
-                                key={user.id}
-                                id={user.id}
-                                name={user.name}
-                                url={user.thumbnailUrl}
-                                className="h-6 w-6 text-xs"
-                              />
-                            ))}
+                          {task.virtualAssignedTo.map((user) => (
+                            <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                          ))}
                         </AvatarGroupList>
                         <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
                       </AvatarGroup>
