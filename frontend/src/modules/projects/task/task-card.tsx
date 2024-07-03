@@ -418,7 +418,7 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
                           trigger: event.currentTarget,
                           position: {
                             top: buttonRect.top + buttonRect.height,
-                            left: buttonRect.right - 240,
+                            left: buttonRect.right,
                           },
                         },
                       );
