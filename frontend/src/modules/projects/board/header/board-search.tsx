@@ -4,16 +4,12 @@ import React, { useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import router from '~/lib/router';
 import { Input } from '~/modules/ui/input';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { TableFilterBarContext } from '../../../common/data-table/table-filter-bar';
+import { useWorkspaceStore } from '~/store/workspace';
 
 const BoardSearch = () => {
   const { t } = useTranslation();
-  const { searchQuery, setSearchQuery, setSelectedTasks } = useWorkspaceContext(({ searchQuery, setSearchQuery, setSelectedTasks }) => ({
-    searchQuery,
-    setSearchQuery,
-    setSelectedTasks,
-  }));
+  const { searchQuery, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const { isFilterActive } = useContext(TableFilterBarContext);
   const navigate = useNavigate();
 

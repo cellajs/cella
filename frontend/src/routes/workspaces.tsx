@@ -11,6 +11,7 @@ import { workspaceQueryOptions } from '~/modules/workspaces';
 import { AppRoute } from '.';
 import { membersSearchSchema } from './organizations';
 import { z } from 'zod';
+import { useWorkspaceStore } from '~/store/workspace';
 
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));
@@ -28,7 +29,8 @@ export const WorkspaceRoute = createRoute({
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
-    await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    const workspace = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    useWorkspaceStore.getState().setWorkspace(workspace);
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {

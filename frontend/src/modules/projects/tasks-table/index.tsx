@@ -5,27 +5,20 @@ import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { type Task, useElectric } from '~/modules/common/electric/electrify';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useColumns } from './columns';
 import SelectStatus from './status';
 import { useLiveQuery } from 'electric-sql/react';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import SelectProject from './project';
 import BoardHeader from '../board/header/board-header';
-import { boardProjectFiltering } from '../helpers';
+import { useWorkspaceStore } from '~/store/workspace';
 
 const LIMIT = 100;
 
 export default function TasksTable() {
   const { t } = useTranslation();
-  const { searchQuery, selectedTasks, setSelectedTasks, projects } = useWorkspaceContext(
-    ({ searchQuery, selectedTasks, setSelectedTasks, projects }) => ({
-      searchQuery,
-      selectedTasks,
-      setSelectedTasks,
-      projects,
-    }),
-  );
+  const { searchQuery, selectedTasks, setSelectedTasks, projects } = useWorkspaceStore();
+
   const [columns, setColumns] = useColumns();
   const [rows, setRows] = useState<Task[]>([]);
   const [tasks, setTasks] = useState<Task[]>();
@@ -44,7 +37,7 @@ export default function TasksTable() {
     return {
       where: {
         project_id: {
-          in: selectedProjects.length > 0 ? selectedProjects : boardProjectFiltering(projects).map((project) => project.id),
+          in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
         },
         ...(selectedStatuses.length > 0 && {
           status: {
@@ -141,7 +134,7 @@ export default function TasksTable() {
     <>
       <BoardHeader mode="table">
         <SelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
-        <SelectProject projects={boardProjectFiltering(projects)} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
+        <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         {/* <Export
           className="max-lg:hidden"

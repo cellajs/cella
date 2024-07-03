@@ -1,17 +1,16 @@
 import { Fragment, type LegacyRef, useEffect, useMemo, useState, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import type { Project, TaskCardFocusEvent } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
 import { Bird, Redo } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { boardProjectFiltering } from '../helpers';
 import { type Task, useElectric } from '../../common/electric/electrify';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import BoardHeader from './header/board-header';
+import { useWorkspaceStore } from '~/store/workspace';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -96,18 +95,11 @@ function BoardDesktop({
 }
 
 export default function Board() {
-  const { workspace, searchQuery, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceContext(
-    ({ workspace, searchQuery, projects, focusedTaskId, setFocusedTaskId }) => ({
-      workspace,
-      searchQuery,
-      projects,
-      focusedTaskId,
-      setFocusedTaskId,
-    }),
-  );
   const { t } = useTranslation();
+  const { workspace, searchQuery, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
+
   const isDesktopLayout = useBreakpoints('min', 'sm');
-  const mappedProjects = useMemo(() => boardProjectFiltering(projects), [projects]);
+
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
   const [projectStates, setProjectStates] = useState<Record<string, ProjectState>>({});
 
@@ -161,7 +153,7 @@ export default function Board() {
 
   useEffect(() => {
     (async () => {
-      for (const project of mappedProjects) {
+      for (const project of projects) {
         setProjectStates((prevState) => ({
           ...prevState,
           [project.id]: defaultProjectState,
@@ -207,9 +199,9 @@ export default function Board() {
   };
 
   const handleVerticalArrowKeyDown = (event: KeyboardEvent) => {
-    if (!tasks.length || !mappedProjects.length) return;
+    if (!tasks.length || !projects.length) return;
 
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === projects[0].id) || tasks[0];
     const direction = event.key === 'ArrowDown' ? 1 : -1;
     const triggeredEvent = new CustomEvent('task-change', {
       detail: {
@@ -224,11 +216,11 @@ export default function Board() {
   };
 
   const handleHorizontalArrowKeyDown = (event: KeyboardEvent) => {
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
-    const currentProjectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === projects[0].id) || tasks[0];
+    const currentProjectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
 
     const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;
-    const nextProject = mappedProjects[nextProjectIndex];
+    const nextProject = projects[nextProjectIndex];
 
     if (!nextProject) return;
 
@@ -242,12 +234,12 @@ export default function Board() {
   };
 
   const handleTKeyDown = () => {
-    if (!tasks.length || !mappedProjects.length) return;
+    if (!tasks.length || !projects.length) return;
     const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
-    const projectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
+    const projectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
     if (projectIndex === -1) return;
 
-    toggleCreateTaskForm(mappedProjects[projectIndex].id);
+    toggleCreateTaskForm(projects[projectIndex].id);
   };
 
   useHotkeys([
@@ -274,7 +266,7 @@ export default function Board() {
   return (
     <>
       <BoardHeader mode="board" />
-      {!mappedProjects.length && (
+      {!projects.length && (
         <ContentPlaceholder
           className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"
           Icon={Bird}
@@ -295,19 +287,19 @@ export default function Board() {
           }
         />
       )}
-      {mappedProjects.length && isDesktopLayout && (
+      {projects.length && isDesktopLayout && (
         <BoardDesktop
           columnTaskCreate={columnTaskCreate}
           toggleCreateForm={toggleCreateTaskForm}
           setProjectStates={setProjectStates}
           projectStates={projectStates}
-          projects={mappedProjects}
+          projects={projects}
           workspaceId={workspace.id}
         />
       )}
-      {mappedProjects.length && !isDesktopLayout && (
+      {projects.length && !isDesktopLayout && (
         <div className="flex flex-col gap-4">
-          {mappedProjects.map((project) => {
+          {projects.map((project) => {
             const isFormOpen = columnTaskCreate[project.id] || false;
             return (
               <BoardColumn

@@ -12,9 +12,8 @@ import { cn, getReorderDestinationOrder } from '~/lib/utils';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
-import { useWorkspaceStore } from '~/store/workspace';
+import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
@@ -37,6 +36,7 @@ import { taskStatuses } from '../tasks-table/status';
 import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
 import AssignMembers from '../task/task-selectors/select-members';
+import { useWorkspaceStore } from '~/store/workspace';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -71,17 +71,9 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
-  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceContext(
-    ({ workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId }) => ({
-      workspace,
-      selectedTasks,
-      searchQuery,
-      focusedTaskId,
-      setSelectedTasks,
-      setFocusedTaskId,
-    }),
-  );
-  const { workspaces, changeColumn } = useWorkspaceStore();
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceStore();
+  const { workspaces, changeColumn } = useWorkspaceUIStore();
+
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);

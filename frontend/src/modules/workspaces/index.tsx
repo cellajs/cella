@@ -1,13 +1,11 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
 import { getProjects } from '~/api/projects';
 import { getWorkspace } from '~/api/workspaces';
 import { WorkspaceRoute } from '~/routes/workspaces';
-import { useNavigationStore } from '~/store/navigation';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
-import { WorkspaceProvider } from './workspace-context';
+import { useWorkspaceStore } from '~/store/workspace';
 
 export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -23,44 +21,27 @@ export const workspaceProjectsQueryOptions = (workspaceId: string, organizationI
         workspaceId,
         organizationId,
       }),
+    select: (data) =>
+      data.items
+        .filter((p) => p.membership && !p.membership.archived)
+        .sort((a, b) => {
+          if (a.membership === null || b.membership === null) return 0;
+          return a.membership.order - b.membership.order;
+        }),
   });
 
 const WorkspacePage = () => {
-  const { setFocusView } = useNavigationStore();
-
-  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showPageHeader, setShowPageHeader] = useState(false);
-  const [focusedTaskId, setFocusedTaskId] = useState<string | null>(null);
+  const { showPageHeader, setProjects } = useWorkspaceStore();
 
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data;
 
   const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id, workspace.organizationId));
-  const projects = projectsQuery.data.items;
+  setProjects(projectsQuery.data);
 
-  const togglePageHeader = () => {
-    if (!showPageHeader) setFocusView(false);
-    setShowPageHeader(!showPageHeader);
-  };
-
-  useEffect(() => {
-    setSearchQuery('');
-  }, [workspace]);
   return (
-    <WorkspaceProvider
-      workspace={workspace}
-      projects={projects}
-      searchQuery={searchQuery}
-      setSearchQuery={setSearchQuery}
-      selectedTasks={selectedTasks}
-      setSelectedTasks={setSelectedTasks}
-      focusedTaskId={focusedTaskId}
-      setFocusedTaskId={setFocusedTaskId}
-      showPageHeader={showPageHeader}
-      togglePageHeader={togglePageHeader}
-    >
+    <FocusViewContainer>
       {showPageHeader && (
         <PageHeader
           type="WORKSPACE"
@@ -71,12 +52,10 @@ const WorkspacePage = () => {
           organizationId={workspace.organizationId}
         />
       )}
-      <FocusViewContainer>
-        <div className="flex flex-col gap-2 md:gap-3 p-2 md:p-3 group/workspace">
-          <Outlet />
-        </div>
-      </FocusViewContainer>
-    </WorkspaceProvider>
+      <div className="flex flex-col gap-2 md:gap-3 p-2 md:p-3 group/workspace">
+        <Outlet />
+      </div>
+    </FocusViewContainer>
   );
 };
 

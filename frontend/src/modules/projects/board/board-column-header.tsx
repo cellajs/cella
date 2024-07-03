@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
-import { useWorkspaceStore } from '~/store/workspace';
+import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { useWorkspaceStore } from '~/store/workspace';
 
 interface BoardColumnHeaderProps {
   id: string;
@@ -17,8 +17,9 @@ interface BoardColumnHeaderProps {
 }
 
 export function BoardColumnHeader({ id, name, color, createFormOpen, openSettings, createFormClick }: BoardColumnHeaderProps) {
-  const { workspace } = useWorkspaceContext(({ workspace }) => ({ workspace }));
-  const { changeColumn } = useWorkspaceStore();
+  const { workspace } = useWorkspaceStore();
+  
+  const { changeColumn } = useWorkspaceUIStore();
   const { t } = useTranslation();
   const [minimize, setMinimize] = useState(false);
 

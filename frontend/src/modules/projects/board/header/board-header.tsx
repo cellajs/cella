@@ -8,7 +8,6 @@ import { sheet } from '~/modules/common/sheeter/state';
 import BoardSearch from '~/modules/projects/board/header/board-search';
 import DisplayOptions from '~/modules/projects/board/header/display-options';
 import { Button } from '~/modules/ui/button';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { AvatarWrap } from '../../../common/avatar-wrap';
 import { type Label, useElectric } from '../../../common/electric/electrify';
@@ -18,21 +17,14 @@ import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
 import StickyBox from '~/modules/common/sticky-box';
 import type React from 'react';
+import { useWorkspaceStore } from '~/store/workspace';
+import { useNavigationStore } from '~/store/navigation';
 
-const BoardHeader = ({ mode, children}: { mode: 'table' | 'board', children?: React.ReactNode  }) => {
+const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: React.ReactNode }) => {
   const { t } = useTranslation();
 
-  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, showPageHeader, togglePageHeader } = useWorkspaceContext(
-    ({ workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, showPageHeader, togglePageHeader }) => ({
-      workspace,
-      selectedTasks,
-      setSelectedTasks,
-      searchQuery,
-      setSearchQuery,
-      showPageHeader,
-      togglePageHeader,
-    }),
-  );
+  const { setFocusView } = useNavigationStore();
+  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, showPageHeader, togglePageHeader } = useWorkspaceStore();
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
@@ -91,12 +83,17 @@ const BoardHeader = ({ mode, children}: { mode: 'table' | 'board', children?: Re
     });
   };
 
+  const handleTogglePageHeader = () => {
+    setFocusView(false);
+    togglePageHeader();
+  };
+
   return (
     <StickyBox enabled={mode === 'table'} className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
       {!selectedTasks.length && !searchQuery.length && (
         <div className="flex gap-2">
           <TooltipButton toolTipContent={t('common:page_view')}>
-            <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={togglePageHeader}>
+            <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
               {showPageHeader ? (
                 <PanelTopClose size={16} />
               ) : (

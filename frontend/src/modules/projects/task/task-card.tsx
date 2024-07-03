@@ -177,223 +177,221 @@ export function TaskCard({
   }, [task]);
 
   return (
-    <div className="relative">
-      <Card
-        onMouseDown={() => {
-          if (isEditing) return;
-          taskRef.current?.focus();
-        }}
-        onFocus={() => dispatchCustomFocusEvent(task.id, task.project_id)}
-        tabIndex={0}
-        ref={taskRef}
-        className={cn(
-          `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
+    <Card
+      onMouseDown={() => {
+        if (isEditing) return;
+        taskRef.current?.focus();
+      }}
+      onFocus={() => dispatchCustomFocusEvent(task.id, task.project_id)}
+      tabIndex={0}
+      ref={taskRef}
+      className={cn(
+        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
         focus-visible:none border-l-2 ${isFocused ? 'border-l-primary is-focused' : 'border-l-transparent'}
         via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''} ${
           isExpanded ? 'is-expanded' : 'is-collapsed'
         }`,
-          variants({
-            status: task.status as TaskStatus,
-          }),
-        )}
-      >
-        <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-1 pb-2 space-between flex flex-col relative">
-          <div className="flex flex-col gap-1">
-            <div className="flex gap-1 w-full">
-              <div className="flex flex-col justify-between gap-0.5 relative">
-                <Button
-                  onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
-                  aria-label="Set type"
-                  variant="ghost"
-                  size="xs"
-                  className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
-                >
-                  {taskTypes[taskTypes.findIndex((t) => t.value === task.type)].icon()}
-                </Button>
-              </div>
-              <div className="flex flex-col grow gap-2 mt-1.5 mr-1">
-                {!isExpanded && (
-                  <div className="inline">
-                    <MDEditor.Markdown
-                      source={task.summary || ''}
-                      style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                      className="inline summary before:!content-none after:!content-none prose font-light text-start max-w-none"
-                    />
+        variants({
+          status: task.status as TaskStatus,
+        }),
+      )}
+    >
+      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-1 pb-2 space-between flex flex-col relative">
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-1 w-full">
+            <div className="flex flex-col justify-between gap-0.5 relative">
+              <Button
+                onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
+                aria-label="Set type"
+                variant="ghost"
+                size="xs"
+                className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
+              >
+                {taskTypes[taskTypes.findIndex((t) => t.value === task.type)].icon()}
+              </Button>
+            </div>
+            <div className="flex flex-col grow gap-2 mt-1.5 mr-1">
+              {!isExpanded && (
+                <div className="inline">
+                  <MDEditor.Markdown
+                    source={task.summary || ''}
+                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                    className="inline summary before:!content-none after:!content-none prose font-light text-start max-w-none"
+                  />
 
-                    <div className="opacity-50 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 text-xs inline ml-1 font-light gap-1">
-                      <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
-                        {t('common:more').toLowerCase()}
+                  <div className="opacity-50 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 text-xs inline ml-1 font-light gap-1">
+                    <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
+                      {t('common:more').toLowerCase()}
+                    </Button>
+                    {task.subTasks.length > 0 && (
+                      <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.1rem]">
+                        <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
+                        <span className="font-light">/</span>
+                        <span className="font-light">{task.subTasks.length}</span>
                       </Button>
-                      {task.subTasks.length > 0 && (
-                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.1rem]">
-                          <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
-                          <span className="font-light">/</span>
-                          <span className="font-light">{task.subTasks.length}</span>
-                        </Button>
-                      )}
-                      {/* <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
+                    )}
+                    {/* <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
                         <Paperclip size={10} className="transition-transform -rotate-45" />
                         <span>3</span>
                       </Button> */}
-                    </div>
                   </div>
-                )}
-
-                {/* //TODO: put this in a separate task-expanded component */}
-                {isExpanded && (
-                  <>
-                    {isEditing ? (
-                      <TaskEditor
-                        mode={mode}
-                        markdown={task.markdown || ''}
-                        setMarkdown={(newMarkdown) => handleTaskChange('markdown', newMarkdown, task.id)}
-                        setSummary={(newSummary) => handleTaskChange('summary', newSummary, task.id)}
-                        toggleEditorState={toggleEditorState}
-                        id={task.id}
-                      />
-                    ) : (
-                      <MDEditor.Markdown
-                        source={task.markdown || ''}
-                        style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                        className="markdown inline before:!content-none after:!content-none prose font-light text-start max-w-none"
-                      />
-                    )}
-                    <div>
-                      <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
-                        {t('common:less').toLowerCase()}
-                      </Button>
-                    </div>
-
-                    {task.subTasks.length > 0 && (
-                      <div className="inline-flex py-0 h-4 items-center mt-4 gap-1 text-sm">
-                        <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
-                        <span>/</span>
-                        <span>{task.subTasks.length}</span>
-                        <span>{t('common:todos')}</span>
-                      </div>
-                    )}
-
-                    <div className="-ml-10 -mr-2">
-                      <div className="flex flex-col">
-                        {task.subTasks.map((task) => (
-                          <SubTask key={task.id} task={task} handleChange={handleTaskChange} />
-                        ))}
-                      </div>
-
-                      <CreateSubTaskForm
-                        firstSubTask={task.subTasks.length < 1}
-                        formOpen={createSubTask}
-                        setFormState={(value) => setCreateSubTask(value)}
-                        parentTask={task}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="flex items-start justify-between gap-1">
-              <Checkbox
-                className="group-hover/task:opacity-100 mt-1.5 border-foreground/25 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-70"
-                checked={isSelected}
-                onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
-              />
-
-              {task.type !== 'bug' && (
-                <Button
-                  onClick={(event) => handleTaskActionClick(task, 'impact', event.currentTarget)}
-                  aria-label="Set impact"
-                  variant="ghost"
-                  size="xs"
-                  className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
-                >
-                  {selectedImpact === null ? (
-                    <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
-                  ) : (
-                    <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
-                  )}
-                </Button>
+                </div>
               )}
 
-              {
-                // TODO: Bind the entire task object instead of individual IDs
-              }
-              <Button
-                onClick={(event) => handleTaskActionClick(task, 'labels', event.currentTarget)}
-                aria-label="Set labels"
-                variant="ghost"
-                size="xs"
-                className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
-              >
-                <div className="flex truncate flex-wrap gap-[.07rem]">
-                  {task.virtualLabels.length > 0 ? (
-                    task.virtualLabels.map(({ name, id }) => {
-                      return (
-                        <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
-                          <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
-                            {name}
-                          </Badge>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <Tag size={16} className="opacity-50" />
-                  )}
-                </div>
-              </Button>
-
-              <div className="flex gap-1 ml-auto mr-1">
-                <Button
-                  onClick={(event) => handleTaskActionClick(task, 'assigned_to', event.currentTarget)}
-                  aria-label="Assign"
-                  variant="ghost"
-                  size="xs"
-                  className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
-                >
-                  {task.virtualAssignedTo.length > 0 ? (
-                    <AvatarGroup limit={3}>
-                      <AvatarGroupList>
-                        {task.virtualAssignedTo.map((user) => (
-                          <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
-                        ))}
-                      </AvatarGroupList>
-                      <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
-                    </AvatarGroup>
-                  ) : (
-                    <UserX className="h-4 w-4 opacity-50" />
-                  )}
-                </Button>
+              {/* //TODO: put this in a separate task-expanded component */}
+              {isExpanded && (
                 <>
-                  <Button
-                    onClick={() => handleTaskChange('status', task.status + 1, task.id)}
-                    disabled={(task.status as TaskStatus) === 6}
-                    variant="outlineGhost"
-                    size="xs"
-                    className={cn(
-                      'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100',
-                      statusVariants({ status: task.status as TaskStatus }),
-                    )}
-                  >
-                    {t(taskStatuses[task.status as TaskStatus].action)}
-                  </Button>
-                  <Button
-                    onClick={(event) => handleTaskActionClick(task, 'status', event.currentTarget)}
-                    aria-label="Set status"
-                    variant="outlineGhost"
-                    size="xs"
-                    className={cn(
-                      statusVariants({ status: task.status as TaskStatus }),
-                      'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
-                    )}
-                  >
-                    <ChevronDown size={12} />
-                  </Button>
+                  {isEditing ? (
+                    <TaskEditor
+                      mode={mode}
+                      markdown={task.markdown || ''}
+                      setMarkdown={(newMarkdown) => handleTaskChange('markdown', newMarkdown, task.id)}
+                      setSummary={(newSummary) => handleTaskChange('summary', newSummary, task.id)}
+                      toggleEditorState={toggleEditorState}
+                      id={task.id}
+                    />
+                  ) : (
+                    <MDEditor.Markdown
+                      source={task.markdown || ''}
+                      style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                      className="markdown inline before:!content-none after:!content-none prose font-light text-start max-w-none"
+                    />
+                  )}
+                  <div>
+                    <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
+                      {t('common:less').toLowerCase()}
+                    </Button>
+                  </div>
+
+                  {task.subTasks.length > 0 && (
+                    <div className="inline-flex py-0 h-4 items-center mt-4 gap-1 text-sm">
+                      <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
+                      <span>/</span>
+                      <span>{task.subTasks.length}</span>
+                      <span>{t('common:todos')}</span>
+                    </div>
+                  )}
+
+                  <div className="-ml-10 -mr-2">
+                    <div className="flex flex-col">
+                      {task.subTasks.map((task) => (
+                        <SubTask key={task.id} task={task} handleChange={handleTaskChange} />
+                      ))}
+                    </div>
+
+                    <CreateSubTaskForm
+                      firstSubTask={task.subTasks.length < 1}
+                      formOpen={createSubTask}
+                      setFormState={(value) => setCreateSubTask(value)}
+                      parentTask={task}
+                    />
+                  </div>
                 </>
-              </div>
+              )}
             </div>
           </div>
-        </CardContent>
-      </Card>
-      {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap="-0.5" />}
-    </div>
+          <div className="flex items-start justify-between gap-1">
+            <Checkbox
+              className="group-hover/task:opacity-100 mt-1.5 border-foreground/25 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-70"
+              checked={isSelected}
+              onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
+            />
+
+            {task.type !== 'bug' && (
+              <Button
+                onClick={(event) => handleTaskActionClick(task, 'impact', event.currentTarget)}
+                aria-label="Set impact"
+                variant="ghost"
+                size="xs"
+                className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+              >
+                {selectedImpact === null ? (
+                  <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
+                ) : (
+                  <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                )}
+              </Button>
+            )}
+
+            {
+              // TODO: Bind the entire task object instead of individual IDs
+            }
+            <Button
+              onClick={(event) => handleTaskActionClick(task, 'labels', event.currentTarget)}
+              aria-label="Set labels"
+              variant="ghost"
+              size="xs"
+              className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
+            >
+              <div className="flex truncate flex-wrap gap-[.07rem]">
+                {task.virtualLabels.length > 0 ? (
+                  task.virtualLabels.map(({ name, id }) => {
+                    return (
+                      <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
+                        <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
+                          {name}
+                        </Badge>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <Tag size={16} className="opacity-50" />
+                )}
+              </div>
+            </Button>
+
+            <div className="flex gap-1 ml-auto mr-1">
+              <Button
+                onClick={(event) => handleTaskActionClick(task, 'assigned_to', event.currentTarget)}
+                aria-label="Assign"
+                variant="ghost"
+                size="xs"
+                className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+              >
+                {task.virtualAssignedTo.length > 0 ? (
+                  <AvatarGroup limit={3}>
+                    <AvatarGroupList>
+                      {task.virtualAssignedTo.map((user) => (
+                        <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                      ))}
+                    </AvatarGroupList>
+                    <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
+                  </AvatarGroup>
+                ) : (
+                  <UserX className="h-4 w-4 opacity-50" />
+                )}
+              </Button>
+              <>
+                <Button
+                  onClick={() => handleTaskChange('status', task.status + 1, task.id)}
+                  disabled={(task.status as TaskStatus) === 6}
+                  variant="outlineGhost"
+                  size="xs"
+                  className={cn(
+                    'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
+                    statusVariants({ status: task.status as TaskStatus }),
+                  )}
+                >
+                  {t(taskStatuses[task.status as TaskStatus].action)}
+                </Button>
+                <Button
+                  onClick={(event) => handleTaskActionClick(task, 'status', event.currentTarget)}
+                  aria-label="Set status"
+                  variant="outlineGhost"
+                  size="xs"
+                  className={cn(
+                    statusVariants({ status: task.status as TaskStatus }),
+                    'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
+                  )}
+                >
+                  <ChevronDown size={12} />
+                </Button>
+              </>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
+    </Card>
   );
 }
