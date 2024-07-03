@@ -36,13 +36,21 @@
     },
     "check:types": {},
     "email:dev": {},
-    "push": {},
+    "push": {
+      "persistent": true
+    },
     "migrate": {},
     "migrate:pg": {},
     "electric:migrate": {},
-    "generate": {},
-    "generate:pg": {},
-    "electric:generate": {},
+    "generate": {
+      "persistent": true
+    },
+    "generate:pg": {
+      "persistent": true
+    },
+    "electric:generate": {
+      "persistent": true
+    },
     "electric:generate:custom": {},
     "studio": {},
     "electric:studio": {},
