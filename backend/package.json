@@ -29,7 +29,7 @@
     "studio": "drizzle-kit studio --config drizzle.config.ts",
     "electric:studio": "drizzle-kit studio --config drizzle.config.electric.ts",
     "electric:proxy": "electric-sql proxy-tunnel --service https://electric-sync.cellajs.com --local-port 65432",
-    "predeploy": "pnpm run electric:proxy && pnpm run electric:migrate"
+    "predeploy": "pnpm run electric:proxy & pnpm run electric:migrate"
   },
   "dependencies": {
     "@cellajs/imado": "^0.1.2",
