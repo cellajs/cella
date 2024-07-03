@@ -13,7 +13,7 @@ import { Checkbox } from '../../ui/checkbox.tsx';
 import type { TaskImpact, TaskType } from './create-task-form.tsx';
 import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
 import SelectStatus, { statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
-import { SelectTaskType } from './task-selectors/select-task-type.tsx';
+import { SelectTaskType, taskTypes } from './task-selectors/select-task-type.tsx';
 import './style.css';
 import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
@@ -209,11 +209,33 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                   checked={isSelected}
                   onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
                 />
-                <SelectTaskType
-                  className={cn('group-[.is-selected]/column:mt-8 transition-spacing', isExpanded && 'mt-8')}
-                  currentType={task.type as TaskType}
-                  changeTaskType={(newType) => handleTaskChange('type', newType, task.id)}
-                />
+                <Button
+                  onClick={(event) => {
+                    const button = event.currentTarget;
+                    const buttonRect = button.getBoundingClientRect();
+                    dropDown(
+                      <SelectTaskType
+                        className={cn('group-[.is-selected]/column:mt-8 transition-spacing', isExpanded && 'mt-8')}
+                        currentType={task.type as TaskType}
+                        changeTaskType={(newType) => handleTaskChange('type', newType, task.id)}
+                      />,
+                      {
+                        id: `select-type-${task.id}`,
+                        trigger: event.currentTarget,
+                        position: {
+                          top: buttonRect.top,
+                          left: buttonRect.right,
+                        },
+                      },
+                    );
+                  }}
+                  aria-label="Set status"
+                  variant="ghost"
+                  size="xs"
+                  className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
+                >
+                  {taskTypes[taskTypes.findIndex((t) => t.value === task.type)].icon()}
+                </Button>
               </div>
               <div className="flex flex-col grow gap-2 mt-1.5 mr-1">
                 {isEditing && (
@@ -295,85 +317,128 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
             </div>
             <div className="flex items-start justify-between gap-1">
               {task.type !== 'bug' && (
-                <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleTaskChange('impact', newImpact, task.id)}>
-                  <Button
-                    aria-label="Set impact"
-                    variant="ghost"
-                    size="xs"
-                    className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
-                  >
-                    {selectedImpact !== null ? (
-                      <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
-                    ) : (
-                      <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
-                    )}
-                  </Button>
-                </SelectImpact>
+                <Button
+                  onClick={(event) => {
+                    const button = event.currentTarget;
+                    const buttonRect = button.getBoundingClientRect();
+                    dropDown(
+                      <SelectImpact
+                        value={task.impact as TaskImpact}
+                        changeTaskImpact={(newImpact) => handleTaskChange('impact', newImpact, task.id)}
+                      />,
+                      {
+                        id: `select-impact-${task.id}`,
+                        trigger: event.currentTarget,
+                        position: {
+                          top: buttonRect.top,
+                          left: buttonRect.right,
+                        },
+                      },
+                    );
+                  }}
+                  aria-label="Set impact"
+                  variant="ghost"
+                  size="xs"
+                  className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+                >
+                  {selectedImpact !== null ? (
+                    <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                  ) : (
+                    <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+                  )}
+                </Button>
               )}
 
               {
                 // TODO: Bind the entire task object instead of individual IDs
               }
-              <SetLabels
-                labels={labels}
-                value={task.virtualLabels}
-                organizationId={task.organization_id}
-                projectId={task.project_id}
-                changeLabels={(newLabels) => handleTaskChange('labels', newLabels, task.id)}
+              <Button
+                onClick={(event) => {
+                  const button = event.currentTarget;
+                  const buttonRect = button.getBoundingClientRect();
+                  dropDown(
+                    <SetLabels
+                      labels={labels}
+                      value={task.virtualLabels}
+                      organizationId={task.organization_id}
+                      projectId={task.project_id}
+                      changeLabels={(newLabels) => handleTaskChange('labels', newLabels, task.id)}
+                    />,
+                    {
+                      id: `select-labels-${task.id}`,
+                      trigger: event.currentTarget,
+                      position: {
+                        top: buttonRect.top,
+                        left: buttonRect.right,
+                      },
+                    },
+                  );
+                }}
+                aria-label="Set labels"
+                variant="ghost"
+                size="xs"
+                className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
               >
+                <div className="flex truncate flex-wrap gap-[.07rem]">
+                  {task.virtualLabels.length > 0 ? (
+                    task.virtualLabels.map(({ name, id, color }) => {
+                      return (
+                        <div
+                          key={id}
+                          style={badgeStyle(color)}
+                          className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
+                        >
+                          <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
+                            {name}
+                          </Badge>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <Tag size={16} className="opacity-50" />
+                  )}
+                </div>
+              </Button>
+
+              <div className="flex gap-1 ml-auto mr-1">
                 <Button
-                  aria-label="Set labels"
+                  onClick={(event) => {
+                    const button = event.currentTarget;
+                    const buttonRect = button.getBoundingClientRect();
+                    dropDown(
+                      <AssignMembers
+                        users={members}
+                        value={task.virtualAssignedTo}
+                        changeAssignedTo={(newMembers) => handleTaskChange('assigned_to', newMembers, task.id)}
+                      />,
+                      {
+                        id: `assign-members-${task.id}`,
+                        trigger: event.currentTarget,
+                        position: {
+                          top: buttonRect.top,
+                          left: buttonRect.right,
+                        },
+                      },
+                    );
+                  }}
+                  aria-label="Assign"
                   variant="ghost"
                   size="xs"
-                  className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
+                  className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
                 >
-                  <div className="flex truncate flex-wrap gap-[.07rem]">
-                    {task.virtualLabels.length > 0 ? (
-                      task.virtualLabels.map(({ name, id, color }) => {
-                        return (
-                          <div
-                            key={id}
-                            style={badgeStyle(color)}
-                            className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
-                          >
-                            <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
-                              {name}
-                            </Badge>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <Tag size={16} className="opacity-50" />
-                    )}
-                  </div>
+                  {task.virtualAssignedTo.length ? (
+                    <AvatarGroup limit={3}>
+                      <AvatarGroupList>
+                        {task.virtualAssignedTo.map((user) => (
+                          <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                        ))}
+                      </AvatarGroupList>
+                      <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
+                    </AvatarGroup>
+                  ) : (
+                    <UserX className="h-4 w-4 opacity-50" />
+                  )}
                 </Button>
-              </SetLabels>
-              <div className="flex gap-1 ml-auto mr-1">
-                <AssignMembers
-                  users={members}
-                  value={task.virtualAssignedTo}
-                  changeAssignedTo={(newMembers) => handleTaskChange('assigned_to', newMembers, task.id)}
-                >
-                  <Button
-                    aria-label="Assign"
-                    variant="ghost"
-                    size="xs"
-                    className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
-                  >
-                    {task.virtualAssignedTo.length ? (
-                      <AvatarGroup limit={3}>
-                        <AvatarGroupList>
-                          {task.virtualAssignedTo.map((user) => (
-                            <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
-                          ))}
-                        </AvatarGroupList>
-                        <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
-                      </AvatarGroup>
-                    ) : (
-                      <UserX className="h-4 w-4 opacity-50" />
-                    )}
-                  </Button>
-                </AssignMembers>
                 <>
                   <Button
                     variant="outlineGhost"
@@ -409,7 +474,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                           id: `select-status-${task.id}`,
                           trigger: event.currentTarget,
                           position: {
-                            top: buttonRect.top + buttonRect.height,
+                            top: buttonRect.top,
                             left: buttonRect.right,
                           },
                         },
