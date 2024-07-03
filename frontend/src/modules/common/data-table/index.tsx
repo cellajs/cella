@@ -186,8 +186,8 @@ export const DataTable = <TData,>({
 
               {/* Infinite scroll is stuck */}
               {!isFetching && !error && totalCount && totalCount > rows.length && (
-                <Button variant="link" className="w-full my-6 opacity-30" onClick={fetchMore}>
-                  {t('common:click_fetch.text')} {totalCount} {rows.length}
+                <Button variant="ghost" className="w-full my-6 opacity-30" onClick={fetchMore}>
+                  {t('common:click_fetch.text')}
                 </Button>
               )}
 

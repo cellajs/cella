@@ -6,11 +6,11 @@ import ResetPassword from '~/modules/auth/reset-password';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { useUserStore } from '~/store/user';
-import { getAndSetMe, rootRoute } from './routeTree';
+import { getAndSetMe, rootRoute } from '.';
 
 export const AuthRoute = createRoute({
   id: 'auth-layout',
-  staticData: { pageTitle: null },
+  staticData: { pageTitle: null, isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <Outlet />,
 });
@@ -18,7 +18,7 @@ export const AuthRoute = createRoute({
 export const SignInRoute = createRoute({
   path: '/auth/sign-in',
   validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional(), token: z.string().optional() }),
-  staticData: { pageTitle: 'Sign in' },
+  staticData: { pageTitle: 'Sign in', isAuth: false },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ cause, search }) => {
     // Only check auth if entering
@@ -41,21 +41,21 @@ export const SignInRoute = createRoute({
 
 export const ResetPasswordRoute = createRoute({
   path: '/auth/reset-password/$token',
-  staticData: { pageTitle: 'Reset password' },
+  staticData: { pageTitle: 'Reset password', isAuth: false },
   getParentRoute: () => AuthRoute,
   component: () => <ResetPassword />,
 });
 
 export const VerifyEmailRoute = createRoute({
   path: '/auth/verify-email',
-  staticData: { pageTitle: 'Verify email' },
+  staticData: { pageTitle: 'Verify email', isAuth: false },
   getParentRoute: () => AuthRoute,
   component: () => <VerifyEmail />,
 });
 
 export const VerifyEmailRouteWithToken = createRoute({
   path: '/auth/verify-email/$token',
-  staticData: { pageTitle: 'Verify email' },
+  staticData: { pageTitle: 'Verify email', isAuth: false },
   getParentRoute: () => AuthRoute,
   component: () => <VerifyEmail />,
 });
@@ -63,6 +63,6 @@ export const VerifyEmailRouteWithToken = createRoute({
 export const SignOutRoute = createRoute({
   path: '/sign-out',
   getParentRoute: () => rootRoute,
-  staticData: { pageTitle: 'Sign out' },
+  staticData: { pageTitle: 'Sign out', isAuth: false },
   component: SignOut,
 });

@@ -11,7 +11,7 @@ import { organizationsQueryOptions } from '~/modules/organizations/organizations
 import { requestsQueryOptions } from '~/modules/system/requests-table';
 import SystemPanel from '~/modules/system/system-panel';
 import { usersQueryOptions } from '~/modules/users/users-table';
-import { IndexRoute } from './routeTree';
+import { AppRoute } from '.';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
@@ -25,9 +25,9 @@ const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, o
 
 export const SystemPanelRoute = createRoute({
   path: '/system',
-  staticData: { pageTitle: 'System panel' },
+  staticData: { pageTitle: 'System panel', isAuth: true },
   beforeLoad: ({ location }) => noDirectAccess(location.pathname, 'system', '/users'),
-  getParentRoute: () => IndexRoute,
+  getParentRoute: () => AppRoute,
   component: () => <SystemPanel />,
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
 });
@@ -35,7 +35,7 @@ export const SystemPanelRoute = createRoute({
 export const UsersTableRoute = createRoute({
   path: '/users',
   validateSearch: usersSearchSchema,
-  staticData: { pageTitle: 'Users' },
+  staticData: { pageTitle: 'Users', isAuth: true },
   getParentRoute: () => SystemPanelRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ deps: { q, sort, order, role } }) => {
@@ -55,7 +55,7 @@ export const UsersTableRoute = createRoute({
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
   validateSearch: organizationsSearchSchema,
-  staticData: { pageTitle: 'Organizations' },
+  staticData: { pageTitle: 'Organizations', isAuth: true },
   getParentRoute: () => SystemPanelRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {
@@ -75,7 +75,7 @@ export const OrganizationsTableRoute = createRoute({
 export const RequestsTableRoute = createRoute({
   path: '/requests',
   validateSearch: requestSearchSchema,
-  staticData: { pageTitle: 'Requests' },
+  staticData: { pageTitle: 'Requests', isAuth: true },
   getParentRoute: () => SystemPanelRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {

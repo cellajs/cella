@@ -1,6 +1,6 @@
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { createRouter } from '@tanstack/react-router';
-import { routeTree } from '~/routes/routeTree';
+import { routeTree } from '~/routes';
 import { queryClientConfig } from './query-client';
 
 // Set up a QueryClient instance
@@ -28,7 +28,7 @@ declare module '@tanstack/react-router' {
   // Required pageTitle in static data
   interface StaticDataRouteOption {
     pageTitle: string | null;
-    hideFooter?: boolean;
+    isAuth: boolean;
   }
 }
 

@@ -40,25 +40,25 @@ export const getAndSetMenu = async () => {
 };
 
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  staticData: { pageTitle: '' },
+  staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
 });
 
 const ErrorNoticeRoute = createRoute({
   path: '/error',
-  staticData: { pageTitle: 'Error' },
+  staticData: { pageTitle: 'Error', isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <ErrorNotice />,
 });
 
-export const IndexRoute = createRoute({
+export const AppRoute = createRoute({
   id: 'layout',
-  staticData: { pageTitle: '' },
+  staticData: { pageTitle: '', isAuth: false },
   getParentRoute: () => rootRoute,
   beforeLoad: async ({ location, cause }) => {
     const lastUser = useUserStore.getState().lastUser;
 
-    // If no stored user and no desired path, redirect to about
+    // If no stored user and no path requested, redirect to about
     if (location.pathname === '/' && !lastUser) throw redirect({ to: '/about', replace: true });
 
     if (cause !== 'enter') return;
@@ -94,7 +94,7 @@ export const IndexRoute = createRoute({
 
 export const acceptInviteRoute = createRoute({
   path: '/auth/invite/$token',
-  staticData: { pageTitle: 'Accept Invite' },
+  staticData: { pageTitle: 'Accept Invite', isAuth: true },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ params }) => {
     try {
@@ -119,7 +119,7 @@ export const routeTree = rootRoute.addChildren([
   ErrorNoticeRoute,
   SignOutRoute,
   AuthRoute.addChildren([SignInRoute, ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken]), acceptInviteRoute]),
-  IndexRoute.addChildren([
+  AppRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,
     WelcomeRoute,

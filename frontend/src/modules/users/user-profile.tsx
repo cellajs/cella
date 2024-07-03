@@ -40,7 +40,7 @@ export const UserProfile = ({ user, sheet }: { user: User; sheet?: boolean }) =>
             <>
               {isSelf && (
                 <div className="max-xs:hidden flex items-center p-2">
-                  <Button size="sm" onClick={handleSettingCLick} aria-label="Account settings">
+                  <Button size="sm" onClick={handleSettingCLick} aria-label="Account">
                     <UserCog size={16} />
                     <span className="max-sm:hidden ml-1">{t('common:settings')}</span>
                   </Button>

@@ -8,7 +8,7 @@ import { noDirectAccess } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { workspaceQueryOptions } from '~/modules/workspaces';
-import { IndexRoute } from './routeTree';
+import { AppRoute } from '.';
 import { membersSearchSchema } from './organizations';
 import { z } from 'zod';
 
@@ -24,9 +24,9 @@ export const WorkspaceRoute = createRoute({
     ...membersSearchSchema.shape,
     projectSettings: z.enum(['general', 'members']).default('general').optional(),
   }),
-  staticData: { pageTitle: 'Workspace', hideFooter: true },
+  staticData: { pageTitle: 'Workspace', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
-  getParentRoute: () => IndexRoute,
+  getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
     await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
   },
@@ -44,7 +44,7 @@ export const WorkspaceRoute = createRoute({
 
 export const WorkspaceBoardRoute = createRoute({
   path: '/board',
-  staticData: { pageTitle: 'Board', hideFooter: true },
+  staticData: { pageTitle: 'Board', isAuth: true },
   getParentRoute: () => WorkspaceRoute,
   component: () => (
     <Suspense>
@@ -58,7 +58,7 @@ export const WorkspaceTableRoute = createRoute({
   validateSearch: z.object({
     sort: z.enum(['summary', 'project_id', 'status', 'created_at']).default('created_at').optional(),
   }),
-  staticData: { pageTitle: 'Table' },
+  staticData: { pageTitle: 'Table', isAuth: true },
   getParentRoute: () => WorkspaceRoute,
   component: () => (
     <Suspense>
@@ -69,7 +69,7 @@ export const WorkspaceTableRoute = createRoute({
 
 export const WorkspaceOverviewRoute = createRoute({
   path: '/overview',
-  staticData: { pageTitle: 'Overview' },
+  staticData: { pageTitle: 'Overview', isAuth: true },
   getParentRoute: () => WorkspaceRoute,
   component: () => (
     <div className="text-sm text-center mt-12">
