@@ -6,7 +6,7 @@ import MDEditor from '@uiw/react-md-editor';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { cn } from '~/lib/utils';
-import { GripVertical, Trash } from 'lucide-react';
+import { Trash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 
@@ -48,15 +48,6 @@ const SubTask = ({
             if (!checkStatus) handleChange('status', 1, task.id);
           }}
         />
-        <Button
-          //   ref={subTaskDragButtonRef}
-          variant={'ghost'}
-          size="micro"
-          className="max-sm:hidden text-secondary-foreground cursor-grab opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-8 group-[.is-selected]/column:pointer-events-none"
-        >
-          <span className="sr-only"> {t('common:move_task')}</span>
-          <GripVertical size={14} />
-        </Button>
       </div>
       <div className="flex flex-col grow gap-2 mt-1 mx-1">
         {isEditing && (

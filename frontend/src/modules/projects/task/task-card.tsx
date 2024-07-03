@@ -1,7 +1,7 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Paperclip, UserX, Tag, ChevronDown } from 'lucide-react';
-import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
+import { UserX, Tag, ChevronDown } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn } from '~/lib/utils.ts';
@@ -14,15 +14,16 @@ import { impacts } from './task-selectors/select-impact.tsx';
 import { statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
 import './style.css';
-import { badgeStyle } from './task-selectors/select-labels.tsx';
 import { TaskEditor } from './task-selectors/task-editor.tsx';
+import { taskStatuses } from '../tasks-table/status.tsx';
+
 import SubTask from './sub-task-card.tsx';
 import CreateSubTaskForm from './create-sub-task-form.tsx';
 import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { Badge } from '../../ui/badge.tsx';
-import { toast } from 'sonner';
+
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
@@ -31,7 +32,6 @@ import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/externa
 import { getDraggableItemData } from '~/lib/utils';
 import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '~/modules/common/drop-indicator';
-import { taskStatuses } from '../tasks-table/status.tsx';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
@@ -63,15 +63,20 @@ export function TaskCard({
 }: TaskProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [createSubTask, setCreateSubTask] = useState(false);
+
   const [dragging, setDragging] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+
+  // TODO Move to impact-value component
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
+
+  // TODO move this state to task-expanded component
+  const [isEditing, setIsEditing] = useState(false);
+  const [createSubTask, setCreateSubTask] = useState(false);
 
   const variants = cva('task-card', {
     variants: {
@@ -93,12 +98,6 @@ export function TaskCard({
 
   const toggleEditorState = () => {
     setIsEditing(!isEditing);
-  };
-
-  // Pressing ENTER on markdown when focused and expanded should set isEditing to true
-  const handleMarkdownClick: MouseEventHandler<HTMLDivElement> = (event) => {
-    if (!isExpanded) return;
-    if (document.activeElement === event.currentTarget) setIsEditing(true);
   };
 
   useDoubleClick({
@@ -185,7 +184,7 @@ export function TaskCard({
           taskRef.current?.focus();
         }}
         onFocus={() => dispatchCustomFocusEvent(task.id, task.project_id)}
-        tabIndex={isFocused ? 0 : -1}
+        tabIndex={0}
         ref={taskRef}
         className={cn(
           `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
@@ -202,16 +201,6 @@ export function TaskCard({
           <div className="flex flex-col gap-1">
             <div className="flex gap-1 w-full">
               <div className="flex flex-col justify-between gap-0.5 relative">
-                <Checkbox
-                  className={cn(
-                    'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
-                    'transition-all bg-background absolute top-1.5 left-1.5',
-                    !isExpanded && 'opacity-0 -z-[1] pointer-events-none',
-                    isExpanded && 'opacity-100',
-                  )}
-                  checked={isSelected}
-                  onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
-                />
                 <Button
                   onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
                   aria-label="Set type"
@@ -223,50 +212,52 @@ export function TaskCard({
                 </Button>
               </div>
               <div className="flex flex-col grow gap-2 mt-1.5 mr-1">
-                {isEditing && (
-                  <TaskEditor
-                    mode={mode}
-                    markdown={task.markdown || ''}
-                    setMarkdown={(newMarkdown) => handleTaskChange('markdown', newMarkdown, task.id)}
-                    setSummary={(newSummary) => handleTaskChange('summary', newSummary, task.id)}
-                    toggleEditorState={toggleEditorState}
-                    id={task.id}
-                  />
-                )}
-                {!isEditing && (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-                  <div ref={contentRef} onClick={handleMarkdownClick} className="inline">
+                {!isExpanded && (
+                  <div className="inline">
                     <MDEditor.Markdown
-                      source={isExpanded ? task.markdown || '' : task.summary}
+                      source={task.summary || ''}
                       style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                      className={` ${
-                        isExpanded ? 'markdown' : 'summary'
-                      } inline before:!content-none after:!content-none prose font-light text-start max-w-none`}
+                      className="inline summary before:!content-none after:!content-none prose font-light text-start max-w-none"
                     />
 
-                    {!isExpanded && (
-                      <div className="opacity-50 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 text-xs inline font-light gap-1">
-                        <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
-                          {t('common:more').toLowerCase()}
+                    <div className="opacity-50 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 text-xs inline ml-1 font-light gap-1">
+                      <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
+                        {t('common:more').toLowerCase()}
+                      </Button>
+                      {task.subTasks.length > 0 && (
+                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.1rem]">
+                          <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
+                          <span className="font-light">/</span>
+                          <span className="font-light">{task.subTasks.length}</span>
                         </Button>
-                        {task.subTasks.length > 0 && (
-                          <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
-                            <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
-                            <span className="font-light">/</span>
-                            <span className="font-light">{task.subTasks.length}</span>
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
-                          <Paperclip size={10} className="transition-transform -rotate-45" />
-                          <span>3</span>
-                        </Button>
-                      </div>
-                    )}
+                      )}
+                      {/* <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
+                        <Paperclip size={10} className="transition-transform -rotate-45" />
+                        <span>3</span>
+                      </Button> */}
+                    </div>
                   </div>
                 )}
 
+                {/* //TODO: put this in a separate task-expanded component */}
                 {isExpanded && (
                   <>
+                    {isEditing ? (
+                      <TaskEditor
+                        mode={mode}
+                        markdown={task.markdown || ''}
+                        setMarkdown={(newMarkdown) => handleTaskChange('markdown', newMarkdown, task.id)}
+                        setSummary={(newSummary) => handleTaskChange('summary', newSummary, task.id)}
+                        toggleEditorState={toggleEditorState}
+                        id={task.id}
+                      />
+                    ) : (
+                      <MDEditor.Markdown
+                        source={task.markdown || ''}
+                        style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+                        className="markdown inline before:!content-none after:!content-none prose font-light text-start max-w-none"
+                      />
+                    )}
                     <div>
                       <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
                         {t('common:less').toLowerCase()}
@@ -274,11 +265,11 @@ export function TaskCard({
                     </div>
 
                     {task.subTasks.length > 0 && (
-                      <div className="inline-flex py-0 h-4 items-center mt-4 gap-1">
+                      <div className="inline-flex py-0 h-4 items-center mt-4 gap-1 text-sm">
                         <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
                         <span>/</span>
                         <span>{task.subTasks.length}</span>
-                        <span>{t('common:completed_todo')}</span>
+                        <span>{t('common:todos')}</span>
                       </div>
                     )}
 
@@ -301,6 +292,12 @@ export function TaskCard({
               </div>
             </div>
             <div className="flex items-start justify-between gap-1">
+              <Checkbox
+                className="group-hover/task:opacity-100 mt-1.5 border-foreground/25 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-70"
+                checked={isSelected}
+                onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
+              />
+
               {task.type !== 'bug' && (
                 <Button
                   onClick={(event) => handleTaskActionClick(task, 'impact', event.currentTarget)}
@@ -309,10 +306,10 @@ export function TaskCard({
                   size="xs"
                   className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
                 >
-                  {selectedImpact !== null ? (
-                    <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
-                  ) : (
+                  {selectedImpact === null ? (
                     <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
+                  ) : (
+                    <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
                   )}
                 </Button>
               )}
@@ -329,13 +326,9 @@ export function TaskCard({
               >
                 <div className="flex truncate flex-wrap gap-[.07rem]">
                   {task.virtualLabels.length > 0 ? (
-                    task.virtualLabels.map(({ name, id, color }) => {
+                    task.virtualLabels.map(({ name, id }) => {
                       return (
-                        <div
-                          key={id}
-                          style={badgeStyle(color)}
-                          className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
-                        >
+                        <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
                           <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
                             {name}
                           </Badge>
@@ -356,7 +349,7 @@ export function TaskCard({
                   size="xs"
                   className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
                 >
-                  {task.virtualAssignedTo.length ? (
+                  {task.virtualAssignedTo.length > 0 ? (
                     <AvatarGroup limit={3}>
                       <AvatarGroupList>
                         {task.virtualAssignedTo.map((user) => (
@@ -371,19 +364,14 @@ export function TaskCard({
                 </Button>
                 <>
                   <Button
+                    onClick={() => handleTaskChange('status', task.status + 1, task.id)}
+                    disabled={(task.status as TaskStatus) === 6}
                     variant="outlineGhost"
                     size="xs"
                     className={cn(
                       'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100',
                       statusVariants({ status: task.status as TaskStatus }),
                     )}
-                    onClick={() => {
-                      handleTaskChange('status', task.status + 1, task.id);
-                      toast.success(
-                        t('common:success.new_status', { status: t(taskStatuses[(task.status + 1) as TaskStatus].status).toLowerCase() }),
-                      );
-                    }}
-                    disabled={(task.status as TaskStatus) === 6}
                   >
                     {t(taskStatuses[task.status as TaskStatus].action)}
                   </Button>

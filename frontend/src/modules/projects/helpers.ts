@@ -12,7 +12,7 @@ export const boardProjectFiltering = (projects: Project[]) => {
     });
 };
 
-// filtering and sort of projects on board
+// TODO Deprecate this, filtering should be done by SQLITE. filtering and sort of projects on board
 export const boardTaskFiltering = (tasks: Task[], projectId: string, projectSettings?: { expandAccepted: boolean; expandIced: boolean }) => {
   return tasks
     .filter((t) => t.project_id === projectId)

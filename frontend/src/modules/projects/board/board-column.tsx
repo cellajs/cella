@@ -30,7 +30,7 @@ import { getTaskOrder } from '../task/helpers';
 import { toast } from 'sonner';
 import type { ProjectState } from './board';
 import { useInView } from 'react-intersection-observer';
-import { dropDown } from '~/modules/common/dropdowner/state';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 import { SelectImpact } from '../task/task-selectors/select-impact';
 import SetLabels from '../task/task-selectors/select-labels';
 import { taskStatuses } from '../tasks-table/status';
@@ -281,13 +281,13 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     if (field === 'impact')
-      dropDown(<SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />, {
+      dropdowner(<SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />, {
         id: `impact-${task.id}`,
         trigger,
       });
 
     if (field === 'labels')
-      dropDown(
+      dropdowner(
         <SetLabels
           labels={labels}
           value={task.virtualLabels}
@@ -302,7 +302,7 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
       );
 
     if (field === 'assigned_to')
-      dropDown(
+      dropdowner(
         <AssignMembers
           users={members}
           value={task.virtualAssignedTo}
@@ -315,7 +315,7 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
       );
 
     if (field === 'status')
-      dropDown(
+      dropdowner(
         <SelectStatus
           taskStatus={task.status as TaskStatus}
           changeTaskStatus={(newStatus) => {
@@ -331,7 +331,7 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
       );
 
     if (field === 'type')
-      dropDown(
+      dropdowner(
         <SelectTaskType
           className="group-[.is-selected]/column:mt-8 transition-spacing"
           currentType={task.type as TaskType}

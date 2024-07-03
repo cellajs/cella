@@ -10,7 +10,7 @@ import { HighIcon } from './impact-icons/high';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
 import { NoneIcon } from './impact-icons/none';
-import { dropDown } from '~/modules/common/dropdowner/state';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -83,7 +83,7 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
                 setSelectedImpact(currentImpact || null);
                 setSearchValue('');
                 if (changeTaskImpact) changeTaskImpact(impacts.findIndex((impact) => impact.value === value) as TaskImpact);
-                dropDown.remove();
+                dropdowner.remove();
               }}
               className="group rounded-md flex justify-between items-center w-full leading-normal"
             >

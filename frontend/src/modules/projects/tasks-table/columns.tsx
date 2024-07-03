@@ -19,7 +19,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useQuery } from '@tanstack/react-query';
 import { getProject } from '~/api/projects';
 import { taskStatuses } from './status';
-import { dropDown } from '~/modules/common/dropdowner/state.ts';
+import { dropdowner } from '~/modules/common/dropdowner/state.ts';
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
 import { impacts } from '../task/task-selectors/select-impact.tsx';
 import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
@@ -32,13 +32,12 @@ const openTaskCardSheet = (row: Task) => {
     <TaskCard
       key={row.id}
       task={{ ...row, virtualAssignedTo: [], virtualLabels: [], subTasks: [] }}
-      labels={[]}
-      members={[]}
       isExpanded={false}
       isSelected={false}
       isFocused={true}
       handleTaskChange={() => {}}
       handleTaskSelect={() => {}}
+      handleTaskActionClick={() => {}}
       setIsExpanded={() => {}}
     />,
     {
@@ -109,10 +108,10 @@ export const useColumns = () => {
               const impact = row.impact !== null ? impacts[row.impact] : null;
               return (
                 <>
-                  {impact !== null ? (
-                    <impact.icon className="size-4" aria-hidden="true" title="Set impact" />
-                  ) : (
+                  {impact === null ? (
                     <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+                  ) : (
+                    <impact.icon className="size-4" aria-hidden="true" title="Set impact" />
                   )}
                 </>
               );
@@ -163,7 +162,7 @@ export const useColumns = () => {
                     'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
                   )}
                   onClick={(event) => {
-                    dropDown(
+                    dropdowner(
                       <SelectStatus
                         taskStatus={row.status as TaskStatus}
                         changeTaskStatus={(newStatus) => updateStatus(newStatus as TaskStatus, row.id)}
@@ -184,7 +183,7 @@ export const useColumns = () => {
           },
           {
             key: 'subTasks',
-            name: 'TODO`s',
+            name: t('common:todos'),
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
