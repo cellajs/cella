@@ -49,12 +49,13 @@ interface ProjectChangeEvent extends Event {
 
 interface BoardColumnProps {
   projectState: ProjectState;
+  setProjectState: (state: ProjectState) => void;
   project: Project;
   createForm: boolean;
   toggleCreateForm: (projectId: string) => void;
 }
 
-export function BoardColumn({ project, projectState, createForm, toggleCreateForm }: BoardColumnProps) {
+export function BoardColumn({ project, projectState, setProjectState, createForm, toggleCreateForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
   const columnRef = useRef<HTMLDivElement | null>(null);
@@ -111,26 +112,54 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
     const db = Electric.db;
     if (field === 'assigned_to' && Array.isArray(value)) {
+      const assignedTo = value.map((user) => user.id);
       db.tasks.update({
         data: {
-          assigned_to: value.map((user) => user.id),
+          assigned_to: assignedTo,
         },
         where: {
           id: taskId,
         },
+      }).then(() => {
+        setProjectState({
+          ...projectState,
+          tasks: tasks.map((task) => {
+            if (task.id === taskId) {
+              return {
+                ...task,
+                assigned_to: assignedTo,
+              };
+            }
+            return task;
+          }),
+        });
       });
       return;
     }
 
     // TODO: Review this
     if (field === 'labels' && Array.isArray(value)) {
+      const labels = value.map((label) => label.id);
       db.tasks.update({
         data: {
-          labels: value.map((label) => label.id),
+          labels,
         },
         where: {
           id: taskId,
         },
+      }).then(() => {
+        setProjectState({
+          ...projectState,
+          tasks: tasks.map((task) => {
+            if (task.id === taskId) {
+              return {
+                ...task,
+                labels,
+              };
+            }
+            return task;
+          }),
+        });
       });
       return;
     }
@@ -144,6 +173,20 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
         where: {
           id: taskId,
         },
+      }).then(() => {
+        setProjectState({
+          ...projectState,
+          tasks: tasks.map((task) => {
+            if (task.id === taskId) {
+              return {
+                ...task,
+                status: value,
+                sort_order: newOrder,
+              };
+            }
+            return task;
+          }),
+        });
       });
       return;
     }
@@ -155,6 +198,19 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
       where: {
         id: taskId,
       },
+    }).then(() => {
+      setProjectState({
+        ...projectState,
+        tasks: tasks.map((task) => {
+          if (task.id === taskId) {
+            return {
+              ...task,
+              [field]: value,
+            };
+          }
+          return task;
+        }),
+      });
     });
   };
 

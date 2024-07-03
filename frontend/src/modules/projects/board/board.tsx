@@ -1,4 +1,4 @@
-import { Fragment, type LegacyRef, useEffect, useMemo, useState, useCallback } from 'react';
+import { Fragment, type LegacyRef, useEffect, useMemo, useState, useCallback, Dispatch, SetStateAction } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
@@ -47,12 +47,14 @@ function BoardDesktop({
   projectStates,
   columnTaskCreate,
   toggleCreateForm,
+  setProjectStates,
 }: {
   projects: Project[];
   projectStates: Record<string, ProjectState>;
   workspaceId: string;
   columnTaskCreate: Record<string, boolean>;
   toggleCreateForm: (projectId: string) => void;
+  setProjectStates: Dispatch<SetStateAction<Record<string, ProjectState>>>;
 }) {
   const { ref, bounds } = useMeasure();
   const scrollerWidth = getScrollerWidth(bounds.width, projects.length);
@@ -71,6 +73,12 @@ function BoardDesktop({
                     createForm={isFormOpen}
                     toggleCreateForm={toggleCreateForm}
                     projectState={projectStates[project.id] || defaultProjectState}
+                    setProjectState={(state) => {
+                      setProjectStates((prevState) => ({
+                        ...prevState,
+                        [project.id]: state,
+                      }));
+                    }}
                     key={project.id}
                     project={project}
                   />
@@ -291,6 +299,7 @@ export default function Board() {
         <BoardDesktop
           columnTaskCreate={columnTaskCreate}
           toggleCreateForm={toggleCreateTaskForm}
+          setProjectStates={setProjectStates}
           projectStates={projectStates}
           projects={mappedProjects}
           workspaceId={workspace.id}
@@ -305,6 +314,12 @@ export default function Board() {
                 createForm={isFormOpen}
                 toggleCreateForm={toggleCreateTaskForm}
                 projectState={projectStates[project.id] || defaultProjectState}
+                setProjectState={(state) => {
+                  setProjectStates((prevState) => ({
+                    ...prevState,
+                    [project.id]: state,
+                  }));
+                }}
                 key={project.id}
                 project={project}
               />
