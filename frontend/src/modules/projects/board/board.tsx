@@ -1,4 +1,4 @@
-import { Fragment, type LegacyRef, useEffect, useMemo, useState, useCallback, Dispatch, SetStateAction } from 'react';
+import { Fragment, type LegacyRef, useEffect, useMemo, useState, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';

@@ -20,6 +20,33 @@ import { useQuery } from '@tanstack/react-query';
 import { getProject } from '~/api/projects';
 import { taskStatuses } from './status';
 import { dropDown } from '~/modules/common/dropdowner/state.ts';
+import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
+import { impacts } from '../task/task-selectors/select-impact.tsx';
+import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
+import { sheet } from '~/modules/common/sheeter/state.ts';
+import { TaskCard } from '../task/task-card.tsx';
+
+const openTaskCardSheet = (row: Task) => {
+  //TODO rework
+  sheet(
+    <TaskCard
+      key={row.id}
+      task={{ ...row, virtualAssignedTo: [], virtualLabels: [], subTasks: [] }}
+      labels={[]}
+      members={[]}
+      isExpanded={false}
+      isSelected={false}
+      isFocused={true}
+      handleTaskChange={() => {}}
+      handleTaskSelect={() => {}}
+      setIsExpanded={() => {}}
+    />,
+    {
+      className: 'max-w-full lg:max-w-4xl p-0',
+      id: 'task-card-preview',
+    },
+  );
+};
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -55,6 +82,11 @@ export const useColumns = () => {
           to="/user/$idOrSlug"
           params={{ idOrSlug: row.slug }}
           className="inline-flex flex-wrap w-auto outline-0 ring-0 group"
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) return;
+            e.preventDefault();
+            openTaskCardSheet(row);
+          }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>
         </Link>
@@ -67,6 +99,41 @@ export const useColumns = () => {
       ? mobileColumns
       : [
           ...mobileColumns,
+          {
+            key: 'impact',
+            name: t('common:impact'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => {
+              const impact = row.impact !== null ? impacts[row.impact] : null;
+              return (
+                <>
+                  {impact !== null ? (
+                    <impact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                  ) : (
+                    <NotSelected className="size-4 fy" aria-hidden="true" title="Set impact" />
+                  )}
+                </>
+              );
+            },
+            minWidth: 60,
+          },
+          {
+            key: 'type',
+            name: t('common:type'),
+            sortable: true,
+            visible: true,
+            cellClass: 'start',
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => (
+              <>
+                {taskTypes[taskTypes.findIndex((t) => t.value === row.type)].icon()}{' '}
+                <span className="ml-2 font-light">{t(`common:${row.type}`)}</span>
+              </>
+            ),
+            minWidth: 100,
+          },
           {
             key: 'status',
             name: t('common:status'),
@@ -113,7 +180,34 @@ export const useColumns = () => {
                 </Button>
               </div>
             ),
-            minWidth: 120,
+            minWidth: 140,
+          },
+          {
+            key: 'subTasks',
+            name: 'TODO`s',
+            sortable: false,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) =>
+              row.subTasks.length > 0 ? (
+                <div className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
+                  <span className="text-success">{row.subTasks.filter((t) => t.status === 6).length}</span>
+                  <span className="font-light">/</span>
+                  <span className="font-light">{row.subTasks.length}</span>
+                </div>
+              ) : (
+                row.subTasks.length
+              ),
+            width: 120,
+          },
+          {
+            key: 'created_by',
+            name: t('common:created_by'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => row.created_by,
+            minWidth: 180,
           },
           {
             key: 'project_id',
@@ -158,7 +252,16 @@ export const useColumns = () => {
             visible: true,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => dateShort(row.created_at),
-            minWidth: 180,
+            minWidth: 140,
+          },
+          {
+            key: 'modified_at',
+            name: t('common:updated_at'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => dateShort(row.modified_at),
+            minWidth: 140,
           },
         ],
   );

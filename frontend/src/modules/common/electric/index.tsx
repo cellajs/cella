@@ -67,6 +67,7 @@ const ElectricProvider = ({ children }: Props) => {
         }
 
         setElectric(electric);
+        setShowAlert(false);
 
         // Resolves when the shape subscription has been established.
         // TODO: Improve the following section by deriving project IDs differently.

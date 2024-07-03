@@ -12,6 +12,7 @@ import { useLiveQuery } from 'electric-sql/react';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import SelectProject from './project';
 import BoardHeader from '../board/header/board-header';
+import { boardProjectFiltering } from '../helpers';
 
 const LIMIT = 100;
 
@@ -27,7 +28,7 @@ export default function TasksTable() {
   );
   const [columns, setColumns] = useColumns();
   const [rows, setRows] = useState<Task[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>();
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
@@ -43,7 +44,7 @@ export default function TasksTable() {
     return {
       where: {
         project_id: {
-          in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
+          in: selectedProjects.length > 0 ? selectedProjects : boardProjectFiltering(projects).map((project) => project.id),
         },
         ...(selectedStatuses.length > 0 && {
           status: {
@@ -106,7 +107,7 @@ export default function TasksTable() {
       ...queryOptions,
       skip: newOffset,
     });
-    setTasks((prevTasks) => [...prevTasks, ...(results as Task[])]);
+    setTasks((prevTasks) => [...(prevTasks || []), ...(results as Task[])]);
     setIsFetching(false);
   };
 
@@ -125,14 +126,22 @@ export default function TasksTable() {
   };
 
   useEffect(() => {
-    if (tasks) setRows(tasks);
+    if (tasks)
+      setRows(
+        tasks
+          .filter((task) => !task.parent_id)
+          .map((task) => ({
+            ...task,
+            subTasks: tasks.filter((t) => t.parent_id === task.id),
+          })),
+      );
   }, [tasks]);
 
   return (
     <>
       <BoardHeader mode="table">
         <SelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
-        <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
+        <SelectProject projects={boardProjectFiltering(projects)} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         {/* <Export
           className="max-lg:hidden"
@@ -155,6 +164,7 @@ export default function TasksTable() {
           onRowsChange,
           totalCount: allTasks?.length,
           isLoading: tasks === undefined,
+
           isFetching,
           isFiltered: !!searchQuery,
           selectedRows: new Set<string>(selectedTasks),

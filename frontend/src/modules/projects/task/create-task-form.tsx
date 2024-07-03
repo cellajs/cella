@@ -238,15 +238,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                       className="w-full text-left font-light flex gap-2 justify-start border"
                       type="button"
                       onClick={(event) => {
-                        const button = event.currentTarget;
-                        const buttonRect = button.getBoundingClientRect();
                         dropDown(<SelectImpact value={selectedImpactValue} triggerWidth={bounds.width} changeTaskImpact={onChange} />, {
                           id: `select-status-${defaultId}`,
                           trigger: event.currentTarget,
-                          position: {
-                            top: buttonRect.top,
-                            left: buttonRect.right,
-                          },
                         });
                       }}
                     >
@@ -284,15 +278,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                     className="flex justify-start gap-2 font-light w-full text-left border"
                     type="button"
                     onClick={(event) => {
-                      const button = event.currentTarget;
-                      const buttonRect = button.getBoundingClientRect();
                       dropDown(<AssignMembers users={members} value={value as Member[]} triggerWidth={bounds.width} changeAssignedTo={onChange} />, {
                         id: `select-status-${defaultId}`,
                         trigger: event.currentTarget,
-                        position: {
-                          top: buttonRect.top,
-                          left: buttonRect.right,
-                        },
                       });
                     }}
                   >
@@ -350,8 +338,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                     size="sm"
                     className="flex h-auto justify-start font-light w-full  text-left min-h-9 py-1 border hover:bg-accent/20"
                     onClick={(event) => {
-                      const button = event.currentTarget;
-                      const buttonRect = button.getBoundingClientRect();
                       dropDown(
                         <SetLabels
                           labels={labels}
@@ -364,10 +350,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                         {
                           id: `select-labels-${defaultId}`,
                           trigger: event.currentTarget,
-                          position: {
-                            top: buttonRect.top,
-                            left: buttonRect.right,
-                          },
                         },
                       );
                     }}
