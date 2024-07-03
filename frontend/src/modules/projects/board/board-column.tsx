@@ -105,7 +105,6 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
   };
 
   const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, labels, members);
-  console.log('showingTasks:', showingTasks);
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any, taskId: string) => {

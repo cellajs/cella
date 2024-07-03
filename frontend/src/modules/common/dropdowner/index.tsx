@@ -18,6 +18,11 @@ export function DropDowner() {
 
   useEffect(() => {
     if (!dropDown) return;
+    const dropDownWrapper = document.querySelector('[data-radix-popper-content-wrapper]') as HTMLDivElement | null;
+    if (dropDownWrapper) {
+      dropDownWrapper.style.top = `${dropDown.position.top}px`;
+      dropDownWrapper.style.left = `${dropDown.position.left}px`;
+    }
     const dropdownElement = document.querySelector('[data-side]');
     if (!dropdownElement || !dropDown.trigger) return setOffset(0);
     if (window.innerHeight < dropdownElement.clientHeight + dropDown.position.top) return setOffset(dropDown.trigger.clientHeight * 1.8);
@@ -25,22 +30,19 @@ export function DropDowner() {
   }, [dropDown]);
 
   if (!dropDown) return null;
-
-  const positionStyle = {
-    top: dropDown.position.top,
-    left: dropDown.position.left,
-    position: 'fixed' as const,
-    z: 1000,
-  };
-
+  // const positionStyle = {
+  //   top: `${dropDown.position.top} !important`,
+  //   left: `${dropDown.position.left} !important`,
+  // };
   return (
-    <div style={positionStyle}>
-      <DropdownMenu.Root open={!!dropDown}>
-        <DropdownMenu.Trigger />
+    // <div style={positionStyle}>
+    <DropdownMenu.Root open={!!dropDown}>
+      <DropdownMenu.Trigger />
+      <DropdownMenu.Portal container={document.getElementById('drop-down-container')}>
         <DropdownMenu.Content
           sideOffset={offset}
           side="bottom"
-          align="end"
+          align="start"
           onCloseAutoFocus={() => {
             if (dropDown.refocus && dropDown.trigger) dropDown.trigger.focus();
           }}
@@ -49,7 +51,8 @@ export function DropDowner() {
         >
           {dropDown.content}
         </DropdownMenu.Content>
-      </DropdownMenu.Root>
-    </div>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+    // </div>
   );
 }
