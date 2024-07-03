@@ -174,7 +174,7 @@ export function TaskCard({ task, subTasks, isSelected, isFocused, isExpanded, ha
   }, [task]);
 
   return (
-    <div className="relative">
+    <div id="drop-down-container" className="relative">
       <Card
         onMouseDown={() => {
           if (isEditing) return;

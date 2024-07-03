@@ -3,7 +3,7 @@ import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 // import { useHotkeys } from '~/hooks/use-hot-keys';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Kbd } from '../../../common/kbd';
 import type { TaskImpact } from '../create-task-form';
@@ -80,6 +80,11 @@ export const SelectImpact = ({ value, children, changeTaskImpact, triggerWidth =
           />
           {!isSearching && <Kbd value="I" className="absolute top-3 right-2.5" />}
           <CommandList>
+            {!!searchValue.length && (
+              <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+                {t('common:no_resource_found', { resource: t('common:impact').toLowerCase() })}
+              </CommandEmpty>
+            )}
             <CommandGroup>
               {impacts.map((Impact, index) => (
                 <CommandItem

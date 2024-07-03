@@ -7,6 +7,7 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~
 import { Kbd } from '~/modules/common/kbd';
 import { dropDown } from '~/modules/common/dropdowner/state';
 import { taskStatuses } from '../../tasks-table/status';
+import { CommandEmpty } from 'cmdk';
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];
@@ -86,8 +87,13 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: Select
       />
       {!isSearching && <Kbd value="S" className="absolute top-3 right-2.5" />}
 
-      <CommandGroup>
-        <CommandList>
+      <CommandList>
+        {!!searchValue.length && (
+          <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+            {t('common:no_resource_found', { resource: t('common:status').toLowerCase() })}
+          </CommandEmpty>
+        )}
+        <CommandGroup>
           {taskStatuses.map((status, index) => {
             return (
               <CommandItem
@@ -109,8 +115,8 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: Select
               </CommandItem>
             );
           })}
-        </CommandList>
-      </CommandGroup>
+        </CommandGroup>
+      </CommandList>
     </Command>
   );
 };

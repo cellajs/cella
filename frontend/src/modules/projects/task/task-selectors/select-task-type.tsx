@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 // import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Kbd } from '~/modules/common/kbd';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Button } from '../../../ui/button';
 import type { TaskType } from '../create-task-form';
@@ -83,6 +83,11 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
           />
           {!isSearching && <Kbd value="T" className="absolute top-3 right-2.5" />}
           <CommandList>
+            {!!searchValue.length && (
+              <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+                {t('common:no_resource_found', { resource: t('common:type').toLowerCase() })}
+              </CommandEmpty>
+            )}
             <CommandGroup>
               {types.map((Type, index) => (
                 <CommandItem

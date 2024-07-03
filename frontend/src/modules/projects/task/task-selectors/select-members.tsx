@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { Member } from '~/types/index.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
 
 interface AssignMembersProps {
@@ -82,6 +82,11 @@ const AssignMembers = ({ users, children, value, changeAssignedTo, triggerWidth 
           />
           {!isSearching && <Kbd value="A" className="absolute top-3 right-2.5" />}
           <CommandList>
+            {!!searchValue.length && (
+              <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+                {t('common:no_resource_found', { resource: t('common:members').toLowerCase() })}
+              </CommandEmpty>
+            )}
             {users && (
               <CommandGroup>
                 {users.map((user, index) => (
