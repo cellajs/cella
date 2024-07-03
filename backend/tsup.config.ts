@@ -1,14 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: [
-    'src/index.ts',
-    'src/db/migrate.ts',
-    'src/db/migrate.electric.ts',
-    'seed/template/user.ts',
-    'seed/template/data.ts',
-    'seed/app-specific/data.ts',
-  ],
+  entry: ['src/index.ts'],
   splitting: false,
   sourcemap: true,
   clean: true,

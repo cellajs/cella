@@ -1,7 +1,0 @@
-{
-  "name": "env",
-  "type": "module",
-  "exports": {
-    ".": "./index.ts"
-  }
-}

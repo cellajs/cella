@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import cron from 'node-cron';
 
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { env } from 'env';
+import { env } from '../env';
 import { resetDb } from './cron/reset-db';
 import { db } from './db/db';
 // import { db as dbElectric } from './db/db.electric';

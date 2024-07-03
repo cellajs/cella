@@ -3,7 +3,7 @@ import { GitHub, Google, MicrosoftEntraId } from 'arctic';
 import { config } from 'config';
 import { Lucia, type SessionCookieOptions, TimeSpan } from 'lucia';
 
-import { env } from 'env';
+import { env } from '../../env';
 import authRoutesConfig from '../modules/auth/routes';
 import { db } from './db';
 import { sessionsTable } from './schema/sessions';

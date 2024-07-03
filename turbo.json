@@ -1,38 +1,40 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["NODE_ENV"],
-  "globalDotEnv": ["env/.env"],
-  "globalDependencies": ["config"],
-  "pipeline": {
+  "globalEnv": [
+    "NODE_ENV"
+  ],
+  "globalDependencies": [
+    "config",
+    ".env"
+  ],
+  "ui": "tui",
+  "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "build:dev": {
-      "dependsOn": ["^build:dev"],
-      "outputs": ["dist/**"]
+      "dependsOn": [
+        "^build:dev"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "start": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
-    "push": {},
-    "migrate:pg": {},
-    "migrate:electric": {},
-    "generate:pg": {},
-    "generate:electric": {},
-    "generate:electric:custom": {},
-    "studio": {},
-    "studio:electric": {},
-    "seed:pivotal": {},
-    "seed:user": {},
-    "seed:organizations": {},
-    "seed:data": {},
     "check:types": {},
-    "prepare:electric": {},
-    "prepare:electric:dev": {}
+    "email:dev": {}
   }
 }

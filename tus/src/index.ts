@@ -1,6 +1,6 @@
 import { ImadoTus } from '@cellajs/imado';
 import { config } from 'config';
-import { env } from 'env';
+import { env } from '../env';
 
 const tus = ImadoTus({
   secret: env.TUS_UPLOAD_API_SECRET,

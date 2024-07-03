@@ -9,14 +9,19 @@
     "start": "NODE_ENV=production tsx dist/index.cjs",
     "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.cjs\""
   },
-  "keywords": ["tus", "imado"],
+  "keywords": [
+    "tus",
+    "imado"
+  ],
   "author": "CellaJS <info@cellajs.com>",
   "license": "UNLICENSED",
   "dependencies": {
     "@cellajs/imado": "^0.1.2",
+    "@t3-oss/env-core": "^0.10.1",
     "config": "workspace:*",
-    "env": "workspace:*",
-    "tsx": "^4.7.0"
+    "dotenv": "^16.4.5",
+    "tsx": "^4.7.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "tsup": "^8.0.1",
