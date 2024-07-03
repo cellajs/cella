@@ -1,4 +1,4 @@
-import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
+import { Fragment, type LegacyRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
 import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { boardProjectFiltering } from '../helpers';
 import { type Task, useElectric } from '../../common/electric/electrify';
-import { useLiveQuery } from 'electric-sql/react';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import BoardHeader from './header/board-header';
 
@@ -18,34 +17,62 @@ const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
 const EMPTY_SPACE_WIDTH = 300;
 
+const LIMIT = 100;
+
+export type ProjectState = {
+  offset: number;
+  isLoading: boolean;
+  isFetching: boolean;
+  tasks: Task[];
+  fetchMore: () => Promise<void>;
+  totalCount?: number;
+};
+
+const defaultProjectState: ProjectState = {
+  offset: 0,
+  isLoading: true,
+  isFetching: true,
+  tasks: [],
+  fetchMore: async () => {},
+};
+
 function getScrollerWidth(containerWidth: number, projectsLength: number) {
   if (containerWidth === 0) return '100%';
-  return containerWidth / projectsLength > PANEL_MIN_WIDTH ? '100%' : projectsLength * PANEL_MIN_WIDTH + EMPTY_SPACE_WIDTH;
+  return containerWidth / projectsLength > PANEL_MIN_WIDTH
+    ? '100%'
+    : projectsLength * PANEL_MIN_WIDTH + EMPTY_SPACE_WIDTH;
 }
 
 function BoardDesktop({
   workspaceId,
   projects,
-  tasks,
-  updatedAt,
+  projectStates,
   columnTaskCreate,
   toggleCreateForm,
 }: {
   projects: Project[];
+  projectStates: Record<string, ProjectState>;
   workspaceId: string;
-  tasks: Task[];
-  updatedAt?: Date;
   columnTaskCreate: Record<string, boolean>;
   toggleCreateForm: (projectId: string) => void;
 }) {
   const { ref, bounds } = useMeasure();
   const scrollerWidth = getScrollerWidth(bounds.width, projects.length);
-  const panelMinSize = typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
+  const panelMinSize =
+    typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
 
   return (
-    <div className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto" ref={ref as LegacyRef<HTMLDivElement>}>
+    <div
+      className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto"
+      ref={ref as LegacyRef<HTMLDivElement>}
+    >
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
-        <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspaceId}>
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="flex gap-2 group/board"
+          id="project-panels"
+          autoSaveId={workspaceId}
+        >
           {projects.map((project, index) => {
             const isFormOpen = columnTaskCreate[project.id] || false;
             return (
@@ -54,8 +81,7 @@ function BoardDesktop({
                   <BoardColumn
                     createForm={isFormOpen}
                     toggleCreateForm={toggleCreateForm}
-                    tasks={tasks.filter((t) => t.project_id === project.id)}
-                    updatedAt={updatedAt}
+                    projectState={projectStates[project.id] || defaultProjectState}
                     key={project.id}
                     project={project}
                   />
@@ -86,40 +112,94 @@ export default function Board() {
   const isDesktopLayout = useBreakpoints('min', 'sm');
   const mappedProjects = useMemo(() => boardProjectFiltering(projects), [projects]);
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
+  const [projectStates, setProjectStates] = useState<Record<string, ProjectState>>({});
+
+  const getQueryOptions = useCallback(
+    (projectId: string, limit?: number, offset?: number) => {
+      return {
+        where: {
+          project_id: projectId,
+          OR: [
+            {
+              summary: {
+                contains: searchQuery,
+              },
+            },
+            {
+              markdown: {
+                contains: searchQuery,
+              },
+            },
+          ],
+          // status: {
+          //   in: [0, 6],
+          // },
+        },
+        take: limit,
+        skip: offset,
+      };
+    },
+    [searchQuery],
+  );
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
 
-  const { results: tasks = [], updatedAt } = useLiveQuery(
-    electric.db.tasks.liveMany({
-      where: {
-        project_id: { in: mappedProjects.map((p) => p.id) },
-        // ...(selectedStatuses.length > 0 && {
-        //   status: {
-        //     in: selectedStatuses,
-        //   },
-        // }),
-        OR: [
-          {
-            summary: {
-              contains: searchQuery,
-            },
-          },
-          {
-            markdown: {
-              contains: searchQuery,
-            },
-          },
-        ],
-        // status: {
-        //   in: [0, 6],
-        // },
+  const fetchMore = useCallback(async (projectId: string, offset: number) => {
+    const queryOptions = getQueryOptions(projectId, LIMIT, offset);
+    const results = await electric.db.tasks.findMany({
+      ...queryOptions,
+    });
+    setProjectStates((prevStates) => ({
+      ...prevStates,
+      [projectId]: {
+        ...prevStates[projectId],
+        isFetching: false,
+        offset,
+        tasks: [...prevStates[projectId].tasks, ...(results as Task[])],
+        fetchMore: () => fetchMore(projectId, offset + LIMIT),
       },
-    }),
-  ) as {
-    results: Task[];
-    updatedAt: Date | undefined;
-  };
+    }));
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      for (const project of mappedProjects) {
+        setProjectStates((prevState) => ({
+          ...prevState,
+          [project.id]: defaultProjectState,
+        }));
+        const queryOptions = getQueryOptions(project.id, LIMIT, 0);
+        const results = await electric.db.tasks.findMany({
+          ...queryOptions,
+        });
+        const queryOptionsCount = getQueryOptions(project.id);
+        const allResults = await electric.db.tasks.findMany({
+          ...queryOptionsCount,
+        });
+        const totalCount = allResults.length;
+        setProjectStates((prevState) => ({
+          ...prevState,
+          [project.id]: {
+            offset: 0,
+            isLoading: false,
+            isFetching: false,
+            tasks: results as Task[],
+            totalCount,
+            fetchMore: () => fetchMore(project.id, LIMIT),
+          },
+        }));
+      }
+    })();
+  }, [searchQuery]);
+
+  const tasks = useMemo(
+    () =>
+      Object.values(projectStates).reduce((acc, state) => {
+        return [...acc, ...state.tasks];
+      }, [] as Task[]),
+    [projectStates],
+  );
 
   const toggleCreateTaskForm = (itemId: string) => {
     setColumnTaskCreate((prevState) => ({
@@ -131,7 +211,8 @@ export default function Board() {
   const handleVerticalArrowKeyDown = (event: KeyboardEvent) => {
     if (!tasks.length || !mappedProjects.length) return;
 
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
+    const focusedTask =
+      tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
     const direction = event.key === 'ArrowDown' ? 1 : -1;
     const triggeredEvent = new CustomEvent('task-change', {
       detail: {
@@ -146,7 +227,8 @@ export default function Board() {
   };
 
   const handleHorizontalArrowKeyDown = (event: KeyboardEvent) => {
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
+    const focusedTask =
+      tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
     const currentProjectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
 
     const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;
@@ -221,8 +303,7 @@ export default function Board() {
         <BoardDesktop
           columnTaskCreate={columnTaskCreate}
           toggleCreateForm={toggleCreateTaskForm}
-          tasks={tasks}
-          updatedAt={updatedAt}
+          projectStates={projectStates}
           projects={mappedProjects}
           workspaceId={workspace.id}
         />
@@ -235,8 +316,7 @@ export default function Board() {
               <BoardColumn
                 createForm={isFormOpen}
                 toggleCreateForm={toggleCreateTaskForm}
-                tasks={tasks.filter((t) => t.project_id === project.id)}
-                updatedAt={updatedAt}
+                projectState={projectStates[project.id] || defaultProjectState}
                 key={project.id}
                 project={project}
               />
