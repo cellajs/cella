@@ -176,7 +176,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
   return (
     <div className="relative">
       <Card
-        id="drop-down-container"
         onMouseDown={() => {
           if (isEditing) return;
           taskRef.current?.focus();
@@ -211,8 +210,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                 />
                 <Button
                   onClick={(event) => {
-                    const button = event.currentTarget;
-                    const buttonRect = button.getBoundingClientRect();
                     dropDown(
                       <SelectTaskType
                         className={cn('group-[.is-selected]/column:mt-8 transition-spacing', isExpanded && 'mt-8')}
@@ -222,10 +219,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                       {
                         id: `select-type-${task.id}`,
                         trigger: event.currentTarget,
-                        position: {
-                          top: buttonRect.top,
-                          left: buttonRect.right,
-                        },
                       },
                     );
                   }}
@@ -319,8 +312,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
               {task.type !== 'bug' && (
                 <Button
                   onClick={(event) => {
-                    const button = event.currentTarget;
-                    const buttonRect = button.getBoundingClientRect();
                     dropDown(
                       <SelectImpact
                         value={task.impact as TaskImpact}
@@ -329,10 +320,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                       {
                         id: `select-impact-${task.id}`,
                         trigger: event.currentTarget,
-                        position: {
-                          top: buttonRect.top,
-                          left: buttonRect.right,
-                        },
                       },
                     );
                   }}
@@ -354,8 +341,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
               }
               <Button
                 onClick={(event) => {
-                  const button = event.currentTarget;
-                  const buttonRect = button.getBoundingClientRect();
                   dropDown(
                     <SetLabels
                       labels={labels}
@@ -367,10 +352,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                     {
                       id: `select-labels-${task.id}`,
                       trigger: event.currentTarget,
-                      position: {
-                        top: buttonRect.top,
-                        left: buttonRect.right,
-                      },
                     },
                   );
                 }}
@@ -403,8 +384,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
               <div className="flex gap-1 ml-auto mr-1">
                 <Button
                   onClick={(event) => {
-                    const button = event.currentTarget;
-                    const buttonRect = button.getBoundingClientRect();
                     dropDown(
                       <AssignMembers
                         users={members}
@@ -414,10 +393,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                       {
                         id: `assign-members-${task.id}`,
                         trigger: event.currentTarget,
-                        position: {
-                          top: buttonRect.top,
-                          left: buttonRect.right,
-                        },
                       },
                     );
                   }}
@@ -459,8 +434,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                   </Button>
                   <Button
                     onClick={(event) => {
-                      const button = event.currentTarget;
-                      const buttonRect = button.getBoundingClientRect();
                       dropDown(
                         <SelectStatus
                           taskStatus={task.status as TaskStatus}
@@ -473,10 +446,6 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                         {
                           id: `select-status-${task.id}`,
                           trigger: event.currentTarget,
-                          position: {
-                            top: buttonRect.top,
-                            left: buttonRect.right,
-                          },
                         },
                       );
                     }}

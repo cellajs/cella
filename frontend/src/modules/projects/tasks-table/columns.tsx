@@ -96,8 +96,6 @@ export const useColumns = () => {
                     'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
                   )}
                   onClick={(event) => {
-                    const button = event.currentTarget;
-                    const buttonRect = button.getBoundingClientRect();
                     dropDown(
                       <SelectStatus
                         taskStatus={row.status as TaskStatus}
@@ -107,10 +105,6 @@ export const useColumns = () => {
                       {
                         id: `select-status-${row.id}`,
                         trigger: event.currentTarget,
-                        position: {
-                          top: buttonRect.top + buttonRect.height,
-                          left: buttonRect.right - 240,
-                        },
                       },
                     );
                   }}

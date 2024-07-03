@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { type DropDownT, type DropDownToRemove, dropDownState } from '../dropdowner/state';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import ReactDOM from 'react-dom';
 
 export function DropDowner() {
   const [dropDown, setDropDown] = useState<DropDownT | null>(null);
-  const [offset, setOffset] = useState(0);
   const removeDropDown = useCallback((dropDown: DropDownT | DropDownToRemove) => {
     if (dropDown.id === dropDown?.id) setDropDown(null);
   }, []);
@@ -16,43 +16,26 @@ export function DropDowner() {
     });
   }, []);
 
-  useEffect(() => {
-    if (!dropDown) return;
-    const dropDownWrapper = document.querySelector('[data-radix-popper-content-wrapper]') as HTMLDivElement | null;
-    if (dropDownWrapper) {
-      dropDownWrapper.style.top = `${dropDown.position.top}px`;
-      dropDownWrapper.style.left = `${dropDown.position.left}px`;
-    }
-    const dropdownElement = document.querySelector('[data-side]');
-    if (!dropdownElement || !dropDown.trigger) return setOffset(0);
-    if (window.innerHeight < dropdownElement.clientHeight + dropDown.position.top) return setOffset(dropDown.trigger.clientHeight * 1.8);
-    return setOffset(-(dropDown.trigger.clientHeight / 2));
-  }, [dropDown]);
+  if (!dropDown?.trigger) return null;
+  
+  const dropdownContainer = document.createElement('div');
+  dropDown.trigger.appendChild(dropdownContainer);
 
-  if (!dropDown) return null;
-  // const positionStyle = {
-  //   top: `${dropDown.position.top} !important`,
-  //   left: `${dropDown.position.left} !important`,
-  // };
-  return (
-    // <div style={positionStyle}>
-    <DropdownMenu.Root open={!!dropDown}>
-      <DropdownMenu.Trigger />
-      <DropdownMenu.Portal container={document.getElementById('drop-down-container')}>
-        <DropdownMenu.Content
-          sideOffset={offset}
-          side="bottom"
-          align="start"
-          onCloseAutoFocus={() => {
-            if (dropDown.refocus && dropDown.trigger) dropDown.trigger.focus();
-          }}
-          onEscapeKeyDown={() => dropDownState.remove()}
-          onInteractOutside={() => dropDownState.remove()}
-        >
-          {dropDown.content}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
-    // </div>
+  return ReactDOM.createPortal(
+    <DropdownMenu key={dropDown.id} open={true}>
+      <DropdownMenuTrigger />
+      <DropdownMenuContent
+        sideOffset={4}
+        side="bottom"
+        align="end"
+        onCloseAutoFocus={() => {
+          if (dropDown.refocus && dropDown.trigger) dropDown.trigger.focus();
+        }}
+        onEscapeKeyDown={() => dropDownState.remove()}
+        onInteractOutside={() => dropDownState.remove()}
+      >
+        {dropDown.content}
+      </DropdownMenuContent>
+    </DropdownMenu>, dropdownContainer
   );
 }

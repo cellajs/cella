@@ -441,8 +441,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                           size="xs"
                           className="rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
                           onClick={(event) => {
-                            const button = event.currentTarget;
-                            const buttonRect = button.getBoundingClientRect();
                             dropDown(
                               <SelectStatus
                                 taskStatus={1}
@@ -455,10 +453,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                               {
                                 id: `select-status-${defaultId}`,
                                 trigger: event.currentTarget,
-                                position: {
-                                  top: buttonRect.top,
-                                  left: buttonRect.right,
-                                },
                               },
                             );
                           }}

@@ -2,12 +2,9 @@ import type React from 'react';
 
 export type DropDownT = {
   id: number | string;
-  position: { top: number; left: number };
   trigger?: HTMLElement;
-  drawerOnMobile?: boolean;
   refocus?: boolean;
   autoFocus?: boolean;
-  hideClose?: boolean;
   content?: React.ReactNode;
 };
 
@@ -76,16 +73,11 @@ const dropDownFunction = (content: React.ReactNode, data?: ExternalDropDown) => 
     return null;
   }
 
-  const position = data?.position || { top: 0, left: 0 };
   dropDownState.set({
     content,
-    drawerOnMobile: true,
     refocus: true,
     autoFocus: true,
-    hideClose: false,
-    position,
     id,
-
     ...data,
   });
   return id;
