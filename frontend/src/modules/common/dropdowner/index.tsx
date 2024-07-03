@@ -74,7 +74,7 @@ export function DropDowner() {
       };
     }
     document.body.style.overflow = 'auto';
-  }, [dropDown]);
+  }, [dropDown, contentNode]);
 
   if (!dropDown) return null;
   const positionStyle = {
