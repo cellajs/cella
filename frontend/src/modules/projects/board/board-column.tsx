@@ -224,6 +224,13 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
+  const createLabel = (newLabel: Label) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    // TODO: Implement the following
+    // Save the new label to the database
+    Electric.db.labels.create({ data: newLabel });
+  };
+
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
@@ -237,6 +244,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
           organizationId={task.organization_id}
           projectId={task.project_id}
           changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
+          createLabel={createLabel}
         />
       );
     else if (field === 'assigned_to')

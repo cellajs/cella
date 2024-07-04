@@ -2,10 +2,8 @@ import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-// import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { nanoid } from '~/lib/utils.ts';
-import { type Label, useElectric } from '../../../common/electric/electrify.ts';
+import type { Label } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
@@ -21,10 +19,11 @@ interface SetLabelsProps {
   organizationId: string;
   projectId: string;
   changeLabels: (labels: Label[]) => void;
+  createLabel: (label: Label) => void;
   triggerWidth?: number;
 }
 
-const SetLabels = ({ value, changeLabels, projectId, organizationId, labels, triggerWidth = 280 }: SetLabelsProps) => {
+const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId, labels, triggerWidth = 280 }: SetLabelsProps) => {
   const { t } = useTranslation();
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
@@ -34,8 +33,6 @@ const SetLabels = ({ value, changeLabels, projectId, organizationId, labels, tri
     if (isSearching) return labels.filter((l) => l.name.includes(searchValue));
     return [];
   }, [searchValue, labels]);
-
-  const Electric = useElectric();
 
   const handleSelectClick = (value?: string) => {
     if (!value) return;
@@ -71,13 +68,6 @@ const SetLabels = ({ value, changeLabels, projectId, organizationId, labels, tri
     const updatedLabels = [...selectedLabels, newLabel];
     setSelectedLabels(updatedLabels);
     changeLabels(updatedLabels);
-  };
-
-  const createLabel = (newLabel: Label) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // TODO: Implement the following
-    // Save the new label to the database
-    Electric.db.labels.create({ data: newLabel });
   };
 
   const renderLabels = (labels: Label[]) => {

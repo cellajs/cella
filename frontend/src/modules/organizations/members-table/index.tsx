@@ -131,7 +131,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
 
   // Build columns
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Member>[]>([]);
-  useMemo(() => setColumns(useColumns(t, isMobile, isAdmin)), [isAdmin]);
+  useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet)), [isAdmin]);
   // Map (updated) query data to rows
   useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
 
