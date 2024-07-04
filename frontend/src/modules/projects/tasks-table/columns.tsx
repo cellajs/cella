@@ -5,12 +5,12 @@ import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
-import type { Electric, Label, Task } from '~/modules/common/electric/electrify';
+import type { Task } from '~/modules/common/electric/electrify';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { TaskStatus } from '../task/task-selectors/select-status';
-import type { Project, User } from '~/types';
+import type { Project } from '~/types';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { useQuery } from '@tanstack/react-query';
 import { getProject } from '~/api/projects';
@@ -19,9 +19,6 @@ import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
 import { impacts } from '../task/task-selectors/select-impact.tsx';
 import { sheet } from '~/modules/common/sheeter/state.ts';
 import { TaskCard } from '../task/task-card.tsx';
-import { getUser } from '~/api/users';
-import { getMembers } from '~/api/general';
-import type { Member } from '~/types';
 
 const statusTextColors = {
   0: 'text-sky-500',
@@ -35,41 +32,39 @@ const statusTextColors = {
 
 const openTaskCardSheet = async (
   row: Task,
-  electric: Electric,
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
-  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement, labels: Label[], members: Member[]) => void,
+  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
+  handleTaskDeleteClick: (taskId: string) => void,
 ) => {
-  const members = await getMembers({ idOrSlug: row.project_id, entityType: 'PROJECT' }).then((data) => data.items);
-  const labels = (await electric.db.labels.findMany({ where: { project_id: row.project_id } })) as Label[];
   sheet(
     <TaskCard
       key={row.id}
-      task={{
-        ...row,
-        virtualAssignedTo: row.assigned_to?.length ? members.filter((m) => row.assigned_to?.includes(m.id)) : [],
-        virtualLabels: row.labels?.length ? labels.filter((l) => row.labels?.includes(l.id)) : [],
-      }}
+      task={row}
       isExpanded={true}
       isSelected={false}
       isFocused={true}
       handleTaskChange={handleTaskChange}
-      handleTaskActionClick={(task: Task, field: string, trigger: HTMLElement) => handleTaskActionClick(task, field, trigger, labels, members)}
+      handleTaskActionClick={handleTaskActionClick}
+      handleTaskDeleteClick={() => {
+        handleTaskDeleteClick(row.id);
+        sheet.remove(`task-card-preview-${row.id}`);
+      }}
     />,
     {
       className: 'max-w-full lg:max-w-4xl p-0',
       title: <span className="pl-4">Task card preview</span>,
       text: <span className="pl-4">Here you can modify or delete your task</span>,
-      id: 'task-card-preview',
+      id: `task-card-preview-${row.id}`,
     },
   );
 };
 
 export const useColumns = (
-  electric: Electric,
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
-  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement, labels: Label[], members: Member[]) => void,
+  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
+  handleTaskDeleteClick: (taskId: string) => void,
 ) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
@@ -92,7 +87,7 @@ export const useColumns = (
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;
             e.preventDefault();
-            openTaskCardSheet(row, electric, handleTaskChange, handleTaskActionClick);
+            openTaskCardSheet(row, handleTaskChange, handleTaskActionClick, handleTaskDeleteClick);
           }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>
@@ -169,12 +164,7 @@ export const useColumns = (
             visible: true,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row, tabIndex }) => {
-              const { data: user, isFetching } = useQuery<User>({
-                queryKey: ['users', row.created_by],
-                queryFn: () => getUser(row.created_by),
-                staleTime: Number.POSITIVE_INFINITY,
-              });
-              if (isFetching) return <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />;
+              const user = row.virtualCreatedBy;
               if (!user) return row.created_by;
               return (
                 <Link

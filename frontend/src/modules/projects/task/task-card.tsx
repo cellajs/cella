@@ -44,11 +44,12 @@ interface TaskProps {
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
-  setIsExpanded?: (exp: boolean) => void;
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
-  handleTaskSelect?: (selected: boolean, taskId: string) => void;
   handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
+  setIsExpanded?: (exp: boolean) => void;
+  handleTaskDeleteClick?: () => void;
+  handleTaskSelect?: (selected: boolean, taskId: string) => void;
 }
 
 export function TaskCard({
@@ -60,6 +61,7 @@ export function TaskCard({
   handleTaskSelect,
   handleTaskActionClick,
   setIsExpanded,
+  handleTaskDeleteClick,
 }: TaskProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
@@ -293,15 +295,16 @@ export function TaskCard({
             </div>
           </div>
           <div className="flex items-end justify-between gap-1">
-            {handleTaskSelect ? (
+            {handleTaskSelect && (
               <Checkbox
                 className="group-hover/task:opacity-100 mb-1.5 border-foreground/25 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-70"
                 checked={isSelected}
                 onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
               />
-            ) : (
+            )}
+            {handleTaskDeleteClick && (
               <Button
-                onClick={() => console.log('delete Task')}
+                onClick={handleTaskDeleteClick}
                 aria-label="Delete Task"
                 variant="ghost"
                 size="xs"

@@ -33,11 +33,12 @@ const useTaskFilters = (tasks: Task[], showAccepted: boolean, showIced: boolean,
       // Perhaps we should store in db as labelIds and call them labels here
       const virtualAssignedTo = task.assigned_to?.length ? members.filter((m) => task.assigned_to?.includes(m.id)) : [];
       const virtualLabels = task.labels?.length ? labels.filter((l) => task.labels?.includes(l.id)) : [];
-
+      const virtualCreatedBy = members.find((m) => m.id === task.created_by);
       return {
         ...task,
         virtualAssignedTo,
         virtualLabels,
+        virtualCreatedBy,
       };
     });
 
