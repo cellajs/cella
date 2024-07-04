@@ -17,14 +17,15 @@ interface PageHeaderProps {
   bannerUrl?: string | null;
   panel?: React.ReactNode;
   organizationId?: string;
+  disableScroll?: boolean;
 }
 
 // PageHeader Component
-const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizationId }: PageHeaderProps) => {
+const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizationId, disableScroll }: PageHeaderProps) => {
   const { t } = useTranslation();
   const scrollToRef = useRef<HTMLDivElement>(null);
   // Scroll to page header on load
-  useScrollTo(scrollToRef);
+  if (!disableScroll) useScrollTo(scrollToRef);
 
   return (
     <div className="relative">
