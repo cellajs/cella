@@ -27,8 +27,6 @@ import { SheetNav } from '~/modules/common/sheet-nav';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { getTaskOrder } from '../task/helpers';
 import { toast } from 'sonner';
-import type { ProjectState } from './board';
-import { useInView } from 'react-intersection-observer';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { SelectImpact } from '../task/task-selectors/select-impact';
 import SetLabels from '../task/task-selectors/select-labels';
@@ -54,14 +52,12 @@ interface ProjectChangeEvent extends Event {
 }
 
 interface BoardColumnProps {
-  projectState: ProjectState;
-  setProjectState: (state: ProjectState) => void;
   project: Project;
   createForm: boolean;
   toggleCreateForm: (projectId: string) => void;
 }
 
-export function BoardColumn({ project, projectState, setProjectState, createForm, toggleCreateForm }: BoardColumnProps) {
+export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
   const columnRef = useRef<HTMLDivElement | null>(null);
@@ -77,12 +73,6 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
-  const { ref: measureRef, inView } = useInView({
-    triggerOnce: false,
-    threshold: 0,
-  });
-
-  const { tasks, isFetching, isLoading, fetchMore, totalCount } = projectState;
 
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
@@ -92,6 +82,31 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
+
+  const { results: tasks = [], updatedAt } = useLiveQuery(
+    Electric.db.tasks.liveMany({
+      where: {
+        project_id: project.id,
+        OR: [
+          {
+            summary: {
+              contains: searchQuery,
+            },
+          },
+          {
+            markdown: {
+              contains: searchQuery,
+            },
+          },
+        ],
+      },
+    }),
+  ) as {
+    results: Task[] | undefined;
+    updatedAt: Date | undefined;
+  };
+
+  const isLoading = !updatedAt;
 
   const { results: labels = [] } = useLiveQuery(
     Electric.db.labels.liveMany({
@@ -119,20 +134,6 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
           where: {
             id: taskId,
           },
-        })
-        .then(() => {
-          setProjectState({
-            ...projectState,
-            tasks: tasks.map((task) => {
-              if (task.id === taskId) {
-                return {
-                  ...task,
-                  assigned_to: assignedTo,
-                };
-              }
-              return task;
-            }),
-          });
         });
       return;
     }
@@ -148,20 +149,6 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
           where: {
             id: taskId,
           },
-        })
-        .then(() => {
-          setProjectState({
-            ...projectState,
-            tasks: tasks.map((task) => {
-              if (task.id === taskId) {
-                return {
-                  ...task,
-                  labels,
-                };
-              }
-              return task;
-            }),
-          });
         });
       return;
     }
@@ -176,21 +163,6 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
           where: {
             id: taskId,
           },
-        })
-        .then(() => {
-          setProjectState({
-            ...projectState,
-            tasks: tasks.map((task) => {
-              if (task.id === taskId) {
-                return {
-                  ...task,
-                  status: value,
-                  sort_order: newOrder,
-                };
-              }
-              return task;
-            }),
-          });
         });
       return;
     }
@@ -203,20 +175,6 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
         where: {
           id: taskId,
         },
-      })
-      .then(() => {
-        setProjectState({
-          ...projectState,
-          tasks: tasks.map((task) => {
-            if (task.id === taskId) {
-              return {
-                ...task,
-                [field]: value,
-              };
-            }
-            return task;
-          }),
-        });
       });
   };
 
@@ -317,17 +275,6 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
     ['Escape', handleEscKeyPress],
     ['Enter', handleEnterKeyPress],
   ]);
-
-  useEffect(() => {
-    if (!tasks.length) return;
-
-    if (inView && !isFetching) {
-      if (typeof totalCount === 'number' && tasks.length >= totalCount) {
-        return;
-      }
-      fetchMore();
-    }
-  }, [inView, isFetching]);
 
   useEffect(() => {
     const handleChange = (event: Event) => {
@@ -477,19 +424,8 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
                           setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
                         />
                       ))}
-                      {/* Infinite loading measure ref */}
-                      {/* <div
-                          key={totalCount}
-                          ref={measureRef}
-                          className="h-4 w-0 bg-red-700 absolute bottom-0 z-[200]"
-                          style={{
-                            height: `${showingTasks.length * 0.2 * TASK_CARD_HEIGHT}px`,
-                            maxHeight: `${TASK_CARD_HEIGHT * LIMIT}px`,
-                          }}
-                        /> */}
                     </div>
                     <Button
-                      ref={measureRef}
                       onClick={handleIcedClick}
                       variant="ghost"
                       disabled={!icedCount}

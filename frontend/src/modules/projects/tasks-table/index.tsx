@@ -12,10 +12,10 @@ import ColumnsView from '~/modules/common/data-table/columns-view';
 import SelectProject from './project';
 import BoardHeader from '../board/header/board-header';
 import { useSearch } from '@tanstack/react-router';
-import { WorkspaceTableRoute, tasksSearchSchema } from '~/routes/workspaces';
+import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { useDebounce } from '~/hooks/use-debounce';
-import { z } from 'zod';
+import type { z } from 'zod';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { useWorkspaceStore } from '~/store/workspace';
 
@@ -25,14 +25,14 @@ type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
 export default function TasksTable() {
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  
+
   const { t } = useTranslation();
   const { searchQuery, selectedTasks, setSelectedTasks, projects } = useWorkspaceStore(
     ({ searchQuery, selectedTasks, setSelectedTasks, projects }) => ({
       searchQuery,
       selectedTasks,
       setSelectedTasks,
-      projects
+      projects,
     }),
   );
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
@@ -52,18 +52,18 @@ export default function TasksTable() {
 
   const isFiltered = !!q;
 
-    // Save filters in search params
-    const filters = useMemo(
-      () => ({
-        q,
-        sort,
-        order,
-        project_id: selectedProjects,
-        status: selectedStatuses,
-      }),
-      [q, sort, order, selectedStatuses, selectedProjects],
-    );
-    useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
+  // Save filters in search params
+  const filters = useMemo(
+    () => ({
+      q,
+      sort,
+      order,
+      project_id: selectedProjects,
+      status: selectedStatuses,
+    }),
+    [q, sort, order, selectedStatuses, selectedProjects],
+  );
+  useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
 
   const queryOptions = useMemo(() => {
     return {
