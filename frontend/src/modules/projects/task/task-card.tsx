@@ -205,7 +205,7 @@ export function TaskCard({
                 aria-label="Set type"
                 variant="ghost"
                 size="xs"
-                className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
+                className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
               >
                 {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
               </Button>
@@ -303,7 +303,7 @@ export function TaskCard({
                 aria-label="Set impact"
                 variant="ghost"
                 size="xs"
-                className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+                className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
               >
                 {selectedImpact === null ? (
                   <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
@@ -321,7 +321,7 @@ export function TaskCard({
               aria-label="Set labels"
               variant="ghost"
               size="xs"
-              className="flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
+              className="relative flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
             >
               <div className="flex truncate flex-wrap gap-[.07rem]">
                 {task.virtualLabels.length > 0 ? (
@@ -346,7 +346,7 @@ export function TaskCard({
                 aria-label="Assign"
                 variant="ghost"
                 size="xs"
-                className="flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+                className="relative flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
               >
                 {task.virtualAssignedTo.length > 0 ? (
                   <AvatarGroup limit={3}>
@@ -368,7 +368,7 @@ export function TaskCard({
                   variant="outlineGhost"
                   size="xs"
                   className={cn(
-                    'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
+                    'relative border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
                     statusVariants({ status: task.status as TaskStatus }),
                   )}
                 >
@@ -380,8 +380,8 @@ export function TaskCard({
                   variant="outlineGhost"
                   size="xs"
                   className={cn(
+                    'relative rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
                     statusVariants({ status: task.status as TaskStatus }),
-                    'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
                   )}
                 >
                   <ChevronDown size={12} />

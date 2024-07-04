@@ -19,6 +19,7 @@ export function DropDowner() {
   if (!dropdowner?.trigger) return null;
 
   const dropdownContainer = document.createElement('div');
+  dropdownContainer.classList.add('absolute', 'bottom-0', dropdowner.align === 'start' ? 'left-0' : 'right-0');
   dropdowner.trigger.appendChild(dropdownContainer);
 
   return ReactDOM.createPortal(
@@ -26,9 +27,9 @@ export function DropDowner() {
       <DropdownMenuTrigger />
       <DropdownMenuContent
         className="p-0"
-        sideOffset={4}
+        sideOffset={12}
         side="bottom"
-        align="end"
+        align={dropdowner.align || 'start'}
         onCloseAutoFocus={() => {
           if (dropdowner.refocus && dropdowner.trigger) dropdowner.trigger.focus();
         }}

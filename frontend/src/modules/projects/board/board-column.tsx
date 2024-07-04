@@ -32,7 +32,6 @@ import { useInView } from 'react-intersection-observer';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { SelectImpact } from '../task/task-selectors/select-impact';
 import SetLabels from '../task/task-selectors/select-labels';
-import { taskStatuses } from '../tasks-table/status';
 import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
 import AssignMembers from '../task/task-selectors/select-members';
@@ -272,68 +271,38 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
   };
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
-    if (field === 'impact')
-      dropdowner(<SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />, {
-        id: `impact-${task.id}`,
-        trigger,
-      });
+    let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
-    if (field === 'labels')
-      dropdowner(
+    if (field === 'impact')
+      component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
+    else if (field === 'labels')
+      component = (
         <SetLabels
           labels={labels}
           value={task.virtualLabels}
           organizationId={task.organization_id}
           projectId={task.project_id}
           changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
-        />,
-        {
-          id: `labels-${task.id}`,
-          trigger,
-        },
+        />
       );
-
-    if (field === 'assigned_to')
-      dropdowner(
+    else if (field === 'assigned_to')
+      component = (
         <AssignMembers
           users={members}
           value={task.virtualAssignedTo}
           changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
-        />,
-        {
-          id: `assigned_to-${task.id}`,
-          trigger,
-        },
+        />
       );
-
-    if (field === 'status')
-      dropdowner(
+    else if (field === 'status')
+      component = (
         <SelectStatus
           taskStatus={task.status as TaskStatus}
-          changeTaskStatus={(newStatus) => {
-            handleChange('status', newStatus, task.id);
-            toast.success(t('common:success.new_status', { status: t(taskStatuses[newStatus as TaskStatus].status).toLowerCase() }));
-          }}
+          changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)}
           inputPlaceholder={t('common:placeholder.set_status')}
-        />,
-        {
-          id: `status-${task.id}`,
-          trigger,
-        },
+        />
       );
 
-    if (field === 'type')
-      dropdowner(
-        <SelectTaskType
-          className="group-[.is-selected]/column:mt-8 transition-spacing"
-          currentType={task.type as TaskType}
-          changeTaskType={(newType) => handleChange('type', newType, task.id)}
-        />,
-        {
-          id: `type-${task.id}`,
-          trigger,
-        },
-      );
+    return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
   };
 
   const handleTaskFormClick = () => {

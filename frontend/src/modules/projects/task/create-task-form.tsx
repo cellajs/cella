@@ -235,11 +235,11 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                       aria-label="Set impact"
                       variant="ghost"
                       size="sm"
-                      className="w-full text-left font-light flex gap-2 justify-start border"
+                      className="relative w-full text-left font-light flex gap-2 justify-start border"
                       type="button"
                       onClick={(event) => {
-                        dropdowner(<SelectImpact value={selectedImpactValue} triggerWidth={bounds.width} changeTaskImpact={onChange} />, {
-                          id: `select-status-${defaultId}`,
+                        dropdowner(<SelectImpact value={selectedImpactValue} triggerWidth={bounds.width - 3} changeTaskImpact={onChange} />, {
+                          id: `impact-${defaultId}`,
                           trigger: event.currentTarget,
                         });
                       }}
@@ -275,13 +275,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                     aria-label="Assign"
                     variant="ghost"
                     size="sm"
-                    className="flex justify-start gap-2 font-light w-full text-left border"
+                    className="relative flex justify-start gap-2 font-light w-full text-left border"
                     type="button"
                     onClick={(event) => {
                       dropdowner(
-                        <AssignMembers users={members} value={value as Member[]} triggerWidth={bounds.width} changeAssignedTo={onChange} />,
+                        <AssignMembers users={members} value={value as Member[]} triggerWidth={bounds.width - 3} changeAssignedTo={onChange} />,
                         {
-                          id: `select-status-${defaultId}`,
+                          id: `assign_to-${defaultId}`,
                           trigger: event.currentTarget,
                         },
                       );
@@ -339,21 +339,18 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                     aria-label="Set labels"
                     variant="ghost"
                     size="sm"
-                    className="flex h-auto justify-start font-light w-full  text-left min-h-9 py-1 border hover:bg-accent/20"
+                    className="relative flex h-auto justify-start font-light w-full text-left min-h-9 py-1 border hover:bg-accent/20"
                     onClick={(event) => {
                       dropdowner(
                         <SetLabels
                           labels={labels}
                           value={value as Label[]}
-                          triggerWidth={bounds.width}
+                          triggerWidth={bounds.width - 3}
                           projectId={projectId}
                           organizationId={organizationId}
                           changeLabels={onChange}
                         />,
-                        {
-                          id: `select-labels-${defaultId}`,
-                          trigger: event.currentTarget,
-                        },
+                        { id: `labels-${defaultId}`, trigger: event.currentTarget },
                       );
                     }}
                   >
@@ -424,7 +421,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                           aria-label="Set status"
                           variant={'default'}
                           size="xs"
-                          className="rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
+                          className="relative rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
                           onClick={(event) => {
                             dropdowner(
                               <SelectStatus
@@ -436,7 +433,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                                 inputPlaceholder={t('common:placeholder.create_with_status')}
                               />,
                               {
-                                id: `select-status-${defaultId}`,
+                                id: `status-${defaultId}`,
                                 trigger: event.currentTarget,
                               },
                             );

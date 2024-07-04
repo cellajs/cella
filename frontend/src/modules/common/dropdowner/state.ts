@@ -6,6 +6,7 @@ export type DropDownT = {
   refocus?: boolean;
   autoFocus?: boolean;
   content?: React.ReactNode;
+  align?: 'start' | 'end';
 };
 
 export type DropDownToRemove = {
@@ -77,6 +78,7 @@ const dropdownerFunction = (content: React.ReactNode, data?: ExternalDropDown) =
     content,
     refocus: true,
     autoFocus: true,
+    align: 'start',
     id,
     ...data,
   });

@@ -19,7 +19,7 @@ import { z } from 'zod';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { useWorkspaceStore } from '~/store/workspace';
 
-const LIMIT = 100;
+const LIMIT = 2000;
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 

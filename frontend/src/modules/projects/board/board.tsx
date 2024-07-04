@@ -211,8 +211,6 @@ export default function Board() {
       },
     });
     document.dispatchEvent(triggeredEvent);
-
-    //add scroll to target
   };
 
   const handleHorizontalArrowKeyDown = (event: KeyboardEvent) => {
@@ -230,7 +228,6 @@ export default function Board() {
       },
     });
     document.dispatchEvent(triggeredEvent);
-    //add scroll to target
   };
 
   const handleTKeyDown = () => {
