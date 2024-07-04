@@ -117,6 +117,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
     [],
   );
 
+  const createLabel = (newLabel: Label) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    // TODO: Implement the following
+    // Save the new label to the database
+    Electric.db.labels.create({ data: newLabel });
+  };
+
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
 
@@ -349,6 +356,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                           projectId={projectId}
                           organizationId={organizationId}
                           changeLabels={onChange}
+                          createLabel={createLabel}
                         />,
                         { id: `labels-${defaultId}`, trigger: event.currentTarget },
                       );

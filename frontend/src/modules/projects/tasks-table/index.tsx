@@ -77,6 +77,13 @@ export default function TasksTable() {
   );
   useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
 
+  const createLabel = (newLabel: Label) => {
+    if (!electric) return toast.error(t('common:local_db_inoperable'));
+    // TODO: Implement the following
+    // Save the new label to the database
+    electric.db.labels.create({ data: newLabel });
+  };
+
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any, taskId: string) => {
     if (!electric) return toast.error(t('common:local_db_inoperable'));
@@ -145,6 +152,7 @@ export default function TasksTable() {
           organizationId={task.organization_id}
           projectId={task.project_id}
           changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
+          createLabel={createLabel}
         />
       );
     else if (field === 'assigned_to')
