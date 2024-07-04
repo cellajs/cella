@@ -5,22 +5,31 @@ import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { type Task, useElectric } from '~/modules/common/electric/electrify';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useColumns } from './columns';
 import SelectStatus from './status';
 import { useLiveQuery } from 'electric-sql/react';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import SelectProject from './project';
 import BoardHeader from '../board/header/board-header';
-import { boardProjectFiltering } from '../helpers';
+import { useSearch } from '@tanstack/react-router';
+import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import { useDebounce } from '~/hooks/use-debounce';
+import type { z } from 'zod';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import { useWorkspaceStore } from '~/store/workspace';
 import { getTaskOrder } from '../task/helpers';
 import { toast } from 'sonner';
 
-const LIMIT = 100;
+const LIMIT = 2000;
+
+type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
 export default function TasksTable() {
+  const search = useSearch({ from: WorkspaceTableRoute.id });
+
   const { t } = useTranslation();
-  const { searchQuery, selectedTasks, setSelectedTasks, projects } = useWorkspaceContext(
+  const { searchQuery, selectedTasks, setSelectedTasks, projects } = useWorkspaceStore(
     ({ searchQuery, selectedTasks, setSelectedTasks, projects }) => ({
       searchQuery,
       selectedTasks,
@@ -31,15 +40,34 @@ export default function TasksTable() {
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
   const [rows, setRows] = useState<Task[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
   const [isFetching, setIsFetching] = useState(true);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'created_at', direction: 'DESC' }]);
-  const sort = sortColumns[0]?.columnKey;
-  const order = sortColumns[0]?.direction.toLowerCase();
+
+  // Search query options
+  const q = useDebounce(search.q || searchQuery, 200);
+  const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
+  const limit = LIMIT;
+
+  const isFiltered = !!q;
+
+  // Save filters in search params
+  const filters = useMemo(
+    () => ({
+      q,
+      sort,
+      order,
+      project_id: selectedProjects,
+      status: selectedStatuses,
+    }),
+    [q, sort, order, selectedStatuses, selectedProjects],
+  );
+  useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
 
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const handleChange = (field: keyof Task, value: any, taskId: string) => {
@@ -104,15 +132,13 @@ export default function TasksTable() {
       })
       .then(() => fetchTasks());
   };
-  // const isFiltered = !!searchQuery || selectedStatuses.length > 0;
 
   const [columns, setColumns] = useColumns(electric, handleChange);
-
   const queryOptions = useMemo(() => {
     return {
       where: {
         project_id: {
-          in: selectedProjects.length > 0 ? selectedProjects : boardProjectFiltering(projects).map((project) => project.id),
+          in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
         },
         ...(selectedStatuses.length > 0 && {
           status: {
@@ -123,23 +149,23 @@ export default function TasksTable() {
         OR: [
           {
             summary: {
-              contains: searchQuery,
+              contains: q,
             },
           },
           {
             markdown: {
-              contains: searchQuery,
+              contains: q,
             },
           },
         ],
       },
-      take: LIMIT,
+      take: limit,
       skip: offset,
       orderBy: {
-        [sort]: order,
+        [sort || 'created_at']: order,
       },
     };
-  }, [projects, sort, order, searchQuery, selectedStatuses, offset, selectedProjects]);
+  }, [projects, sort, order, q, selectedStatuses, offset, selectedProjects]);
 
   // TODO: Refactor this when Electric supports count
   const { results: allTasks } = useLiveQuery(
@@ -163,7 +189,7 @@ export default function TasksTable() {
 
   const fetchMore = async () => {
     setIsFetching(true);
-    const newOffset = offset + LIMIT;
+    const newOffset = offset + limit;
     setOffset(newOffset);
     const results = await electric.db.tasks.findMany({
       ...queryOptions,
@@ -205,20 +231,9 @@ export default function TasksTable() {
     <>
       <BoardHeader mode="table">
         <SelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
-        <SelectProject projects={boardProjectFiltering(projects)} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
+        <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-        {/* <Export
-          className="max-lg:hidden"
-          filename={`${config.slug}-organizations`}
-          columns={columns}
-          selectedRows={selectedOrganizations}
-          fetchRows={async (limit) => {
-            const { items } = await getOrganizations({ limit, q: query, sort, order });
-            return items;
-          }}
-        /> */}
       </BoardHeader>
-
       <DataTable<Task>
         {...{
           columns: columns.filter((column) => column.visible),
@@ -229,7 +244,7 @@ export default function TasksTable() {
           totalCount: allTasks?.length,
           isLoading: isFetching,
           isFetching,
-          isFiltered: !!searchQuery,
+          isFiltered,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,
           fetchMore,

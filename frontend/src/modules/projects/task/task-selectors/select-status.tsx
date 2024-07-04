@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 // import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Kbd } from '~/modules/common/kbd';
-import { dropDown } from '~/modules/common/dropdowner/state';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 import { taskStatuses } from '../../tasks-table/status';
 import { CommandEmpty } from 'cmdk';
 
@@ -62,7 +62,7 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: Select
 
   const handleStatusChangeClick = (index: number) => {
     statusChange(index);
-    dropDown.remove();
+    dropdowner.remove();
     setSearchValue('');
   };
 

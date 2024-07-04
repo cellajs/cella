@@ -1,41 +1,44 @@
 import { useCallback, useEffect, useState } from 'react';
-import { type DropDownT, type DropDownToRemove, dropDownState } from '../dropdowner/state';
+import { type DropDownT, type DropDownToRemove, dropdownerState } from '../dropdowner/state';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import ReactDOM from 'react-dom';
 
 export function DropDowner() {
-  const [dropDown, setDropDown] = useState<DropDownT | null>(null);
-  const removeDropDown = useCallback((dropDown: DropDownT | DropDownToRemove) => {
-    if (dropDown.id === dropDown?.id) setDropDown(null);
+  const [dropdowner, setDropdowner] = useState<DropDownT | null>(null);
+  const removeDropDown = useCallback((dropdowner: DropDownT | DropDownToRemove) => {
+    if (dropdowner.id === dropdowner?.id) setDropdowner(null);
   }, []);
 
   useEffect(() => {
-    return dropDownState.subscribe((dropDown) => {
-      if ((dropDown as DropDownToRemove).remove) removeDropDown(dropDown as DropDownT);
-      else setDropDown(dropDown as DropDownT);
+    return dropdownerState.subscribe((dropdowner) => {
+      if ((dropdowner as DropDownToRemove).remove) removeDropDown(dropdowner as DropDownT);
+      else setDropdowner(dropdowner as DropDownT);
     });
   }, []);
 
-  if (!dropDown?.trigger) return null;
-  
+  if (!dropdowner?.trigger) return null;
+
   const dropdownContainer = document.createElement('div');
-  dropDown.trigger.appendChild(dropdownContainer);
+  dropdownContainer.classList.add('absolute', 'bottom-0', dropdowner.align === 'start' ? 'left-0' : 'right-0');
+  dropdowner.trigger.appendChild(dropdownContainer);
 
   return ReactDOM.createPortal(
-    <DropdownMenu key={dropDown.id} open={true}>
+    <DropdownMenu key={dropdowner.id} open={true}>
       <DropdownMenuTrigger />
       <DropdownMenuContent
-        sideOffset={4}
+        className="p-0"
+        sideOffset={12}
         side="bottom"
-        align="end"
+        align={dropdowner.align || 'start'}
         onCloseAutoFocus={() => {
-          if (dropDown.refocus && dropDown.trigger) dropDown.trigger.focus();
+          if (dropdowner.refocus && dropdowner.trigger) dropdowner.trigger.focus();
         }}
-        onEscapeKeyDown={() => dropDownState.remove()}
-        onInteractOutside={() => dropDownState.remove()}
+        onEscapeKeyDown={() => dropdownerState.remove()}
+        onInteractOutside={() => dropdownerState.remove()}
       >
-        {dropDown.content}
+        {dropdowner.content}
       </DropdownMenuContent>
-    </DropdownMenu>, dropdownContainer
+    </DropdownMenu>,
+    dropdownContainer,
   );
 }

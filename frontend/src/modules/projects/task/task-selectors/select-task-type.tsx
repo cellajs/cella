@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from '~/modules/ui/command';
 import type { TaskType } from '../create-task-form';
-import { dropDown } from '~/modules/common/dropdowner/state';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 import { cn } from '~/lib/utils';
 
 type Type = {
@@ -59,7 +59,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
             if (changeTaskType) changeTaskType(taskTypes[searchNumber].value);
             setSelectedType(taskTypes[searchNumber]);
             setSearchValue('');
-            dropDown.remove();
+            dropdowner.remove();
             return;
           }
           setSearchValue(searchValue);
@@ -84,7 +84,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
                 setSelectedType(taskTypes[indexType]);
                 setSearchValue('');
                 if (changeTaskType) changeTaskType(taskTypes[indexType].value);
-                dropDown.remove();
+                dropdowner.remove();
               }}
               className="group rounded-md flex justify-between items-center w-full leading-normal"
             >

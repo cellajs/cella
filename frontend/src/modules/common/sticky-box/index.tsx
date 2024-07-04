@@ -368,7 +368,7 @@ export const useStickyBox = ({ offsetTop = 0, offsetBottom = 0, bottom = false, 
 export type StickyBoxCompProps = StickyBoxConfig & Pick<ComponentProps<'div'>, 'children' | 'className' | 'style'>;
 
 const StickyBox = (props: StickyBoxCompProps) => {
-  const { enabled, offsetTop, offsetBottom, bottom, children, className, style } = props;
+  const { enabled = true, offsetTop, offsetBottom, bottom, children, className, style } = props;
 
   if (!enabled) return (
     <div className={className} >

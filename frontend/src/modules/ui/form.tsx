@@ -152,6 +152,7 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
       <div ref={ref} id={formDescriptionId} className={cn('text-muted-foreground font-light relative !-mt-2 text-sm', className)} {...props}>
         <div className="flex justify-between">
           <Button
+            type="button"
             variant="link"
             size="sm"
             onClick={toggleCollapsed}

@@ -6,6 +6,7 @@ export type DropDownT = {
   refocus?: boolean;
   autoFocus?: boolean;
   content?: React.ReactNode;
+  align?: 'start' | 'end';
 };
 
 export type DropDownToRemove = {
@@ -18,23 +19,23 @@ export type ExternalDropDown = Omit<DropDownT, 'id' | 'content'> & {
   id?: number | string;
 };
 
-export const isDropDown = (dropDown: DropDownT | DropDownToRemove): dropDown is DropDownT => {
-  return !(dropDown as DropDownToRemove).remove;
+export const isDropDown = (dropdowner: DropDownT | DropDownToRemove): dropdowner is DropDownT => {
+  return !(dropdowner as DropDownToRemove).remove;
 };
 
 class Observer {
-  subscriber: ((dropDown: DropDownT | DropDownToRemove) => void) | null;
-  dropDown: DropDownT | null;
+  subscriber: ((dropdowner: DropDownT | DropDownToRemove) => void) | null;
+  dropdowner: DropDownT | null;
 
   constructor() {
     this.subscriber = null;
-    this.dropDown = null;
+    this.dropdowner = null;
   }
 
-  subscribe = (subscriber: (dropDown: DropDownT | DropDownToRemove) => void) => {
+  subscribe = (subscriber: (dropdowner: DropDownT | DropDownToRemove) => void) => {
     this.subscriber = subscriber;
-    if (this.dropDown) {
-      this.subscriber(this.dropDown);
+    if (this.dropdowner) {
+      this.subscriber(this.dropdowner);
     }
     return () => {
       this.subscriber = null;
@@ -42,7 +43,7 @@ class Observer {
   };
 
   publish = (data: DropDownT | DropDownToRemove) => {
-    this.dropDown = isDropDown(data) ? data : null;
+    this.dropdowner = isDropDown(data) ? data : null;
     if (this.subscriber) {
       this.subscriber(data);
     }
@@ -53,37 +54,38 @@ class Observer {
   };
 
   get = (id: number | string) => {
-    return this.dropDown?.id === id;
+    return this.dropdowner?.id === id;
   };
 
   remove = (refocus = true) => {
-    if (this.dropDown) this.publish({ ...this.dropDown, remove: true, refocus });
+    if (this.dropdowner) this.publish({ ...this.dropdowner, remove: true, refocus });
   };
 }
 
-export const dropDownState = new Observer();
+export const dropdownerState = new Observer();
 
-const dropDownFunction = (content: React.ReactNode, data?: ExternalDropDown) => {
+const dropdownerFunction = (content: React.ReactNode, data?: ExternalDropDown) => {
   const id = data?.id || 1;
 
   //if exist close
-  const existingDropDown = dropDownState.get(id);
+  const existingDropDown = dropdownerState.get(id);
   if (existingDropDown) {
-    dropDownState.remove();
+    dropdownerState.remove();
     return null;
   }
 
-  dropDownState.set({
+  dropdownerState.set({
     content,
     refocus: true,
     autoFocus: true,
+    align: 'start',
     id,
     ...data,
   });
   return id;
 };
 
-export const dropDown = Object.assign(dropDownFunction, {
-  remove: dropDownState.remove,
-  get: dropDownState.get,
+export const dropdowner = Object.assign(dropdownerFunction, {
+  remove: dropdownerState.remove,
+  get: dropdownerState.get,
 });

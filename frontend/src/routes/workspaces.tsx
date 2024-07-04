@@ -11,6 +11,7 @@ import { workspaceQueryOptions } from '~/modules/workspaces';
 import { AppRoute } from '.';
 import { membersSearchSchema } from './organizations';
 import { z } from 'zod';
+import { useWorkspaceStore } from '~/store/workspace';
 
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));
@@ -28,7 +29,8 @@ export const WorkspaceRoute = createRoute({
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
-    await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    const workspace = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    useWorkspaceStore.getState().setWorkspace(workspace);
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
@@ -53,11 +55,17 @@ export const WorkspaceBoardRoute = createRoute({
   ),
 });
 
+export const tasksSearchSchema = z.object({
+  q: z.string().optional(),
+  sort: z.enum(['summary', 'project_id', 'status', 'created_at']).default('created_at').optional(),
+  order: z.enum(['asc', 'desc']).default('asc').optional(),
+  projectId: z.array(z.string()).optional(),
+  status: z.array(z.number()).optional(),
+});
+
 export const WorkspaceTableRoute = createRoute({
   path: '/table',
-  validateSearch: z.object({
-    sort: z.enum(['summary', 'project_id', 'status', 'created_at']).default('created_at').optional(),
-  }),
+  validateSearch: tasksSearchSchema,
   staticData: { pageTitle: 'Table', isAuth: true },
   getParentRoute: () => WorkspaceRoute,
   component: () => (

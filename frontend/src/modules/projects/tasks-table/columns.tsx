@@ -44,12 +44,11 @@ const openTaskCardSheet = async (row: Task, electric: Electric, handleTaskChange
         virtualAssignedTo: row.assigned_to?.length ? members.filter((m) => row.assigned_to?.includes(m.id)) : [],
         virtualLabels: row.labels?.length ? labels.filter((l) => row.labels?.includes(l.id)) : [],
       }}
-      labels={labels}
-      members={members}
       isExpanded={true}
       isSelected={false}
       isFocused={true}
       handleTaskChange={handleTaskChange}
+      handleTaskActionClick={() => {}}
     />,
     {
       className: 'max-w-full lg:max-w-4xl p-0',
@@ -118,7 +117,7 @@ export const useColumns = (electric: Electric, handleTaskChange: (field: keyof T
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => (
               <>
-                {taskTypes[taskTypes.findIndex((t) => t.value === row.type)].icon()}{' '}
+                {taskTypes[taskTypes.findIndex((t) => t.value === row.type)]?.icon()}{' '}
                 <span className="ml-2 font-light">{t(`common:${row.type}`)}</span>
               </>
             ),
@@ -137,7 +136,7 @@ export const useColumns = (electric: Electric, handleTaskChange: (field: keyof T
           },
           {
             key: 'subTasks',
-            name: 'TODO`s',
+            name: t('common:todos'),
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
