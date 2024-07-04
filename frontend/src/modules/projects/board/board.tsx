@@ -230,7 +230,7 @@ export default function Board() {
     document.dispatchEvent(triggeredEvent);
   };
 
-  const handleTKeyDown = () => {
+  const handleNKeyDown = () => {
     if (!tasks.length || !projects.length) return;
     const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
     const projectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
@@ -244,7 +244,7 @@ export default function Board() {
     ['ArrowLeft', handleHorizontalArrowKeyDown],
     ['ArrowDown', handleVerticalArrowKeyDown],
     ['ArrowUp', handleVerticalArrowKeyDown],
-    ['T', handleTKeyDown],
+    ['N', handleNKeyDown],
   ]);
 
   useEffect(() => {
