@@ -19,8 +19,6 @@ import type { z } from 'zod';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { useWorkspaceStore } from '~/store/workspace';
 
-const LIMIT = 2000;
-
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
 export default function TasksTable() {
@@ -39,19 +37,12 @@ export default function TasksTable() {
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
   const [columns, setColumns] = useColumns();
   const [rows, setRows] = useState<Task[]>([]);
-  const [tasks, setTasks] = useState<Task[]>();
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [isFetching, setIsFetching] = useState(false);
-
-  console.log('search', search);
-
   // Search query options
   const q = useDebounce(searchQuery, 200);
   const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
-  const limit = LIMIT;
 
   const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
 
@@ -74,8 +65,12 @@ export default function TasksTable() {
   );
   useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
 
-  const queryOptions = useMemo(() => {
-    return {
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const electric = useElectric()!;
+
+  // TODO: Refactor this when Electric supports count
+  const { results: tasks = [], updatedAt } = useLiveQuery(
+    electric.db.tasks.liveMany({
       where: {
         project_id: {
           in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
@@ -99,51 +94,16 @@ export default function TasksTable() {
           },
         ],
       },
-      take: limit,
-      skip: offset,
       orderBy: {
         [sort || 'created_at']: order,
       },
-    };
-  }, [projects, sort, order, q, selectedStatuses, offset, selectedProjects]);
-
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
-
-  // TODO: Refactor this when Electric supports count
-  const { results: allTasks } = useLiveQuery(
-    electric.db.tasks.liveMany({
-      select: {
-        id: true,
-      },
-      where: queryOptions.where,
     }),
-  );
-
-  useEffect(() => {
-    (async () => {
-      setIsFetching(true);
-      const newOffset = 0;
-      setOffset(newOffset);
-      const results = await electric.db.tasks.findMany({
-        ...queryOptions,
-      });
-      setTasks(results as Task[]);
-      setIsFetching(false);
-    })();
-  }, [q, selectedStatuses, selectedProjects, sort, order]);
-
-  const fetchMore = async () => {
-    setIsFetching(true);
-    const newOffset = offset + limit;
-    setOffset(newOffset);
-    const results = await electric.db.tasks.findMany({
-      ...queryOptions,
-      skip: newOffset,
-    });
-    setTasks((prevTasks) => [...(prevTasks || []), ...(results as Task[])]);
-    setIsFetching(false);
+  ) as {
+    results: Task[] | undefined;
+    updatedAt: Date | undefined;
   };
+
+  const isLoading = !updatedAt;
 
   // const onResetFilters = () => {
   //   setSearchQuery('');
@@ -182,19 +142,15 @@ export default function TasksTable() {
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          limit: 10,
           rowHeight: 42,
           onRowsChange,
-          totalCount: allTasks?.length,
-          isLoading: tasks === undefined,
-
-          isFetching,
+          totalCount: tasks.length,
+          isLoading,
           isFiltered,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,
-          fetchMore,
           rowKeyGetter: (row) => row.id,
-          enableVirtualization: false,
+          enableVirtualization: true,
           sortColumns,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
