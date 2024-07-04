@@ -4,9 +4,9 @@ import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import { type Task, useElectric } from '~/modules/common/electric/electrify';
+import { type Task, type Label, useElectric } from '~/modules/common/electric/electrify';
 import { useColumns } from './columns';
-import SelectStatus from './status';
+import HeaderSelectStatus from './status';
 import { useLiveQuery } from 'electric-sql/react';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import SelectProject from './project';
@@ -20,6 +20,14 @@ import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { useWorkspaceStore } from '~/store/workspace';
 import { getTaskOrder } from '../task/helpers';
 import { toast } from 'sonner';
+import { SelectImpact } from '../task/task-selectors/select-impact';
+import { dropdowner } from '~/modules/common/dropdowner/state';
+import SetLabels from '../task/task-selectors/select-labels';
+import { SelectTaskType } from '../task/task-selectors/select-task-type';
+import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
+import AssignMembers from '../task/task-selectors/select-members';
+import type { Member } from '~/types';
+import type { TaskImpact, TaskType } from '../task/create-task-form';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -124,8 +132,42 @@ export default function TasksTable() {
       },
     });
   };
+  const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement, labels: Label[], members: Member[]) => {
+    let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
-  const [columns, setColumns] = useColumns(electric, handleChange);
+    if (field === 'impact')
+      component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
+    else if (field === 'labels')
+      component = (
+        <SetLabels
+          labels={labels}
+          value={task.virtualLabels}
+          organizationId={task.organization_id}
+          projectId={task.project_id}
+          changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
+        />
+      );
+    else if (field === 'assigned_to')
+      component = (
+        <AssignMembers
+          users={members}
+          value={task.virtualAssignedTo}
+          changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
+        />
+      );
+    else if (field === 'status')
+      component = (
+        <SelectStatus
+          taskStatus={task.status as TaskStatus}
+          changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)}
+          inputPlaceholder={t('common:placeholder.set_status')}
+        />
+      );
+
+    return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
+  };
+
+  const [columns, setColumns] = useColumns(electric, handleChange, handleTaskActionClick);
 
   // TODO: Refactor this when Electric supports count
   const { results: tasks = [], updatedAt } = useLiveQuery(
@@ -191,7 +233,7 @@ export default function TasksTable() {
   return (
     <>
       <BoardHeader mode="table">
-        <SelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
+        <HeaderSelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
         <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
       </BoardHeader>

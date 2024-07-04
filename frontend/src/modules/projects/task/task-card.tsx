@@ -274,7 +274,7 @@ export function TaskCard({
                     </div>
                   )}
 
-                  <div className={`${handleTaskSelect ? '-ml-10' : ''} -mr-2`}>
+                  <div className="-ml-10 -mr-1">
                     <div className="flex flex-col">
                       {task.subTasks.map((task) => (
                         <SubTask key={task.id} task={task} handleChange={handleTaskChange} />

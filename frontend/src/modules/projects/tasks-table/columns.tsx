@@ -21,6 +21,7 @@ import { sheet } from '~/modules/common/sheeter/state.ts';
 import { TaskCard } from '../task/task-card.tsx';
 import { getUser } from '~/api/users';
 import { getMembers } from '~/api/general';
+import type { Member } from '~/types';
 
 const statusTextColors = {
   0: 'text-sky-500',
@@ -32,8 +33,13 @@ const statusTextColors = {
   6: 'text-green-500',
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-const openTaskCardSheet = async (row: Task, electric: Electric, handleTaskChange: (field: keyof Task, value: any, taskId: string) => void) => {
+const openTaskCardSheet = async (
+  row: Task,
+  electric: Electric,
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
+  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement, labels: Label[], members: Member[]) => void,
+) => {
   const members = await getMembers({ idOrSlug: row.project_id, entityType: 'PROJECT' }).then((data) => data.items);
   const labels = (await electric.db.labels.findMany({ where: { project_id: row.project_id } })) as Label[];
   sheet(
@@ -48,7 +54,7 @@ const openTaskCardSheet = async (row: Task, electric: Electric, handleTaskChange
       isSelected={false}
       isFocused={true}
       handleTaskChange={handleTaskChange}
-      handleTaskActionClick={() => {}}
+      handleTaskActionClick={(task: Task, field: string, trigger: HTMLElement) => handleTaskActionClick(task, field, trigger, labels, members)}
     />,
     {
       className: 'max-w-full lg:max-w-4xl p-0',
@@ -59,8 +65,12 @@ const openTaskCardSheet = async (row: Task, electric: Electric, handleTaskChange
   );
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export const useColumns = (electric: Electric, handleTaskChange: (field: keyof Task, value: any, taskId: string) => void) => {
+export const useColumns = (
+  electric: Electric,
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
+  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement, labels: Label[], members: Member[]) => void,
+) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -82,7 +92,7 @@ export const useColumns = (electric: Electric, handleTaskChange: (field: keyof T
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;
             e.preventDefault();
-            openTaskCardSheet(row, electric, handleTaskChange);
+            openTaskCardSheet(row, electric, handleTaskChange, handleTaskActionClick);
           }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>
