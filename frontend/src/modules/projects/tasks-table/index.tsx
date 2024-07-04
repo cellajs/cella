@@ -270,7 +270,7 @@ export default function TasksTable() {
   }, [selectedProjects, projects]);
 
   useEffect(() => {
-    if (showingTasks) setRows(showingTasks);
+    if (showingTasks.length > 0) setRows(showingTasks);
   }, [showingTasks]);
 
   return (
