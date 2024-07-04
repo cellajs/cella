@@ -19,6 +19,7 @@ import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
 import { impacts } from '../task/task-selectors/select-impact.tsx';
 import { sheet } from '~/modules/common/sheeter/state.ts';
 import { TaskCard } from '../task/task-card.tsx';
+import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
 
 const statusTextColors = {
   0: 'text-sky-500',
@@ -76,7 +77,7 @@ export const useColumns = (
       name: t('common:summary'),
       visible: true,
       minWidth: 180,
-      sortable: true,
+      sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
@@ -102,18 +103,6 @@ export const useColumns = (
       : [
           ...mobileColumns,
           {
-            key: 'impact',
-            name: t('common:impact'),
-            sortable: true,
-            visible: true,
-            renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => {
-              const impact = row.impact !== null ? impacts[row.impact] : null;
-              return impact !== null ? impact.label : '-';
-            },
-            minWidth: 60,
-          },
-          {
             key: 'type',
             name: t('common:type'),
             sortable: true,
@@ -123,10 +112,35 @@ export const useColumns = (
             renderCell: ({ row }) => (
               <>
                 {taskTypes[taskTypes.findIndex((t) => t.value === row.type)]?.icon()}{' '}
-                <span className="ml-2 font-light">{t(`common:${row.type}`)}</span>
+                <span className="ml-2">{t(`common:${row.type}`)}</span>
               </>
             ),
             minWidth: 100,
+          },
+          {
+            key: 'impact',
+            name: t('common:impact'),
+            sortable: false,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => {
+              if (row.type === 'bug') return '-';
+              
+              const impact = row.impact === null ? null : impacts[row.impact];
+
+              return (
+                <>
+                  {impact === null ? (
+                    <NotSelected className="size-4 mr-2" aria-hidden="true" title="Set impact" />
+                  ) : (
+                    <impact.icon className="size-4 mr-2" aria-hidden="true" title="Set impact" />
+                  )}
+
+                  <span>{impact === null ? '-' : impact.label}</span>
+                </>
+              );
+            },
+            minWidth: 60,
           },
           {
             key: 'status',
@@ -143,7 +157,7 @@ export const useColumns = (
             key: 'subTasks',
             name: t('common:todos'),
             sortable: false,
-            visible: true,
+            visible: false,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) =>
               row.subTasks.length > 0 ? (
@@ -221,7 +235,7 @@ export const useColumns = (
             key: 'modified_at',
             name: t('common:updated_at'),
             sortable: true,
-            visible: true,
+            visible: false,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => dateShort(row.modified_at),
             minWidth: 140,
