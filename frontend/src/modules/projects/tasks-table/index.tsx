@@ -228,7 +228,7 @@ export default function TasksTable() {
   };
 
   useEffect(() => {
-    if (tasks) {
+    if (tasks.length > 0) {
       setRows(
         tasks.map((task) => ({
           ...task,
