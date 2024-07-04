@@ -27,12 +27,13 @@ export default function TasksTable() {
   const search = useSearch({ from: WorkspaceTableRoute.id });
 
   const { t } = useTranslation();
-  const { searchQuery, selectedTasks, setSelectedTasks, projects } = useWorkspaceStore(
-    ({ searchQuery, selectedTasks, setSelectedTasks, projects }) => ({
+  const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery } = useWorkspaceStore(
+    ({ searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery }) => ({
       searchQuery,
       selectedTasks,
       setSelectedTasks,
       projects,
+      setSearchQuery,
     }),
   );
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
@@ -44,13 +45,21 @@ export default function TasksTable() {
   const [offset, setOffset] = useState(0);
   const [isFetching, setIsFetching] = useState(false);
 
+  console.log('search', search);
+
   // Search query options
-  const q = useDebounce(search.q || searchQuery, 200);
+  const q = useDebounce(searchQuery, 200);
   const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
   const limit = LIMIT;
 
-  const isFiltered = !!q;
+  const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
+
+  useEffect(() => {
+    if (search.q) {
+      setSearchQuery(search.q);
+    }
+  }, []);
 
   // Save filters in search params
   const filters = useMemo(
