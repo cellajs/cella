@@ -40,6 +40,7 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
 };
 
 interface TaskProps {
+  style?: React.CSSProperties;
   task: Task;
   isExpanded: boolean;
   isSelected: boolean;
@@ -52,6 +53,7 @@ interface TaskProps {
 }
 
 export function TaskCard({
+  style,
   task,
   isSelected,
   isFocused,
@@ -178,6 +180,7 @@ export function TaskCard({
 
   return (
     <Card
+      style={style}
       onMouseDown={() => {
         if (isEditing) return;
         taskRef.current?.focus();
