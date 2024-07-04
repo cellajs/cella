@@ -39,7 +39,6 @@ const openTaskCardSheet = async (
 ) => {
   sheet(
     <TaskCard
-      key={row.id}
       task={row}
       isExpanded={true}
       isSelected={false}

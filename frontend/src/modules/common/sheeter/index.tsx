@@ -62,6 +62,7 @@ export function Sheeter() {
 
   return sheets.map((sheet) => {
     const existingSheet = updatedSheets.find(({ id }) => id === sheet.id);
+    console.log('existingSheet:', existingSheet);
     return (
       <Sheet key={sheet.id} open={open} onOpenChange={onOpenChange(sheet)} modal={true}>
         <SheetPortal>

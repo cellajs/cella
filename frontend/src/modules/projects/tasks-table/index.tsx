@@ -30,6 +30,9 @@ import AssignMembers from '../task/task-selectors/select-members';
 import type { Member } from '~/types';
 import type { TaskImpact, TaskType } from '../task/create-task-form';
 import { getMembers } from '~/api/general';
+import { sheet } from '~/modules/common/sheeter/state.ts';
+import { TaskCard } from '../task/task-card.tsx';
+import { enhanceTasks } from '~/hooks/use-filtered-task-helpers.ts';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -53,91 +56,6 @@ export default function TasksTable() {
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
-
-  // Search query options
-  const q = useDebounce(searchQuery, 200);
-  const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
-
-  const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
-
-  // Save filters in search params
-  const filters = useMemo(
-    () => ({
-      q,
-      sort,
-      order,
-      project_id: selectedProjects,
-      status: selectedStatuses,
-    }),
-    [q, sort, order, selectedStatuses, selectedProjects],
-  );
-  useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
-
-  const createLabel = (newLabel: Label) => {
-    if (!electric) return toast.error(t('common:local_db_inoperable'));
-    // TODO: Implement the following
-    // Save the new label to the database
-    electric.db.labels.create({ data: newLabel });
-  };
-
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const handleChange = (field: keyof Task, value: any, taskId: string) => {
-    if (!electric) return toast.error(t('common:local_db_inoperable'));
-    const db = electric.db;
-    if (field === 'assigned_to' && Array.isArray(value)) {
-      const assignedTo = value.map((user) => user.id);
-      db.tasks.update({
-        data: {
-          assigned_to: assignedTo,
-        },
-        where: {
-          id: taskId,
-        },
-      });
-      return;
-    }
-
-    // TODO: Review this
-    if (field === 'labels' && Array.isArray(value)) {
-      const labels = value.map((label) => label.id);
-      db.tasks.update({
-        data: {
-          labels,
-        },
-        where: {
-          id: taskId,
-        },
-      });
-
-      return;
-    }
-    if (field === 'status') {
-      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
-      db.tasks.update({
-        data: {
-          status: value,
-          ...(newOrder && { sort_order: newOrder }),
-        },
-        where: {
-          id: taskId,
-        },
-      });
-
-      return;
-    }
-
-    db.tasks.update({
-      data: {
-        [field]: value,
-      },
-      where: {
-        id: taskId,
-      },
-    });
-  };
 
   const handleTaskDeleteClick = (taskId: string) => {
     if (!electric) return toast.error(t('common:local_db_inoperable'));
@@ -186,6 +104,171 @@ export default function TasksTable() {
       );
 
     return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
+  };
+
+  // Search query options
+  const q = useDebounce(searchQuery, 200);
+  const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
+
+  const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const electric = useElectric()!;
+
+  // Save filters in search params
+  const filters = useMemo(
+    () => ({
+      q,
+      sort,
+      order,
+      project_id: selectedProjects,
+      status: selectedStatuses,
+    }),
+    [q, sort, order, selectedStatuses, selectedProjects],
+  );
+  useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
+
+  const createLabel = (newLabel: Label) => {
+    if (!electric) return toast.error(t('common:local_db_inoperable'));
+    // TODO: Implement the following
+    // Save the new label to the database
+    electric.db.labels.create({ data: newLabel });
+  };
+
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const handleChange = (field: keyof Task, value: any, taskId: string) => {
+    if (!electric) return toast.error(t('common:local_db_inoperable'));
+    const db = electric.db;
+    if (field === 'assigned_to' && Array.isArray(value)) {
+      const assignedTo = value.map((user) => user.id);
+      db.tasks
+        .update({
+          data: {
+            assigned_to: assignedTo,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then((resp) => {
+          const [updatedTask] = enhanceTasks([resp as Task], labels, members);
+          sheet.update(`task-card-preview-${updatedTask.id}`, {
+            content: (
+              <TaskCard
+                task={updatedTask}
+                isExpanded={true}
+                isSelected={false}
+                isFocused={true}
+                handleTaskChange={handleChange}
+                handleTaskActionClick={handleTaskActionClick}
+                handleTaskDeleteClick={() => {
+                  handleTaskDeleteClick(updatedTask.id);
+                  sheet.remove(`task-card-preview-${updatedTask.id}`);
+                }}
+              />
+            ),
+          });
+        });
+      return;
+    }
+
+    // TODO: Review this
+    if (field === 'labels' && Array.isArray(value)) {
+      const labels = value.map((label) => label.id);
+      db.tasks
+        .update({
+          data: {
+            labels,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then((resp) => {
+          const [updatedTask] = enhanceTasks([resp as Task], labels, members);
+          sheet.update(`task-card-preview-${updatedTask.id}`, {
+            content: (
+              <TaskCard
+                task={updatedTask}
+                isExpanded={true}
+                isSelected={false}
+                isFocused={true}
+                handleTaskChange={handleChange}
+                handleTaskActionClick={handleTaskActionClick}
+                handleTaskDeleteClick={() => {
+                  handleTaskDeleteClick(updatedTask.id);
+                  sheet.remove(`task-card-preview-${updatedTask.id}`);
+                }}
+              />
+            ),
+          });
+        });
+
+      return;
+    }
+    if (field === 'status') {
+      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
+      db.tasks
+        .update({
+          data: {
+            status: value,
+            ...(newOrder && { sort_order: newOrder }),
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then((resp) => {
+          const [updatedTask] = enhanceTasks([resp as Task], labels, members);
+          sheet.update(`task-card-preview-${updatedTask.id}`, {
+            content: (
+              <TaskCard
+                task={updatedTask}
+                isExpanded={true}
+                isSelected={false}
+                isFocused={true}
+                handleTaskChange={handleChange}
+                handleTaskActionClick={handleTaskActionClick}
+                handleTaskDeleteClick={() => {
+                  handleTaskDeleteClick(updatedTask.id);
+                  sheet.remove(`task-card-preview-${updatedTask.id}`);
+                }}
+              />
+            ),
+          });
+        });
+
+      return;
+    }
+
+    db.tasks
+      .update({
+        data: {
+          [field]: value,
+        },
+        where: {
+          id: taskId,
+        },
+      })
+      .then((resp) => {
+        const [updatedTask] = enhanceTasks([resp as Task], labels, members);
+        sheet.update(`task-card-preview-${updatedTask.id}`, {
+          content: (
+            <TaskCard
+              task={updatedTask}
+              isExpanded={true}
+              isSelected={false}
+              isFocused={true}
+              handleTaskChange={handleChange}
+              handleTaskActionClick={handleTaskActionClick}
+              handleTaskDeleteClick={() => {
+                handleTaskDeleteClick(updatedTask.id);
+                sheet.remove(`task-card-preview-${updatedTask.id}`);
+              }}
+            />
+          ),
+        });
+      });
   };
 
   const [columns, setColumns] = useColumns(handleChange, handleTaskActionClick, handleTaskDeleteClick);
