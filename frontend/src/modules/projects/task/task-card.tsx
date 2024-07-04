@@ -1,6 +1,6 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { UserX, Tag, ChevronDown, Trash } from 'lucide-react';
+import { UserX, Tag, ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
@@ -48,7 +48,6 @@ interface TaskProps {
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
   handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
   setIsExpanded?: (exp: boolean) => void;
-  handleTaskDeleteClick?: () => void;
   handleTaskSelect?: (selected: boolean, taskId: string) => void;
 }
 
@@ -61,7 +60,6 @@ export function TaskCard({
   handleTaskSelect,
   handleTaskActionClick,
   setIsExpanded,
-  handleTaskDeleteClick,
 }: TaskProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
@@ -301,17 +299,6 @@ export function TaskCard({
                 checked={isSelected}
                 onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
               />
-            )}
-            {handleTaskDeleteClick && (
-              <Button
-                onClick={handleTaskDeleteClick}
-                aria-label="Delete Task"
-                variant="ghost"
-                size="xs"
-                className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
-              >
-                <Trash size={14} />
-              </Button>
             )}
             {task.type !== 'bug' && (
               <Button

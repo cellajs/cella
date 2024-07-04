@@ -89,11 +89,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
         project_id: project.id,
         OR: [
           {
-            summary: {
-              contains: searchQuery,
-            },
-          },
-          {
             markdown: {
               contains: searchQuery,
             },

@@ -14,7 +14,6 @@ import BoardHeader from '../board/header/board-header';
 import { useSearch } from '@tanstack/react-router';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import { useDebounce } from '~/hooks/use-debounce';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import type { z } from 'zod';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
@@ -51,24 +50,10 @@ export default function TasksTable() {
   );
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
-  const [rows, setRows] = useState<Task[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
-
-  const handleTaskDeleteClick = (taskId: string) => {
-    if (!electric) return toast.error(t('common:local_db_inoperable'));
-    electric.db.tasks
-      .delete({
-        where: {
-          id: taskId,
-        },
-      })
-      .then(() => {
-        toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
-      });
-  };
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
@@ -107,7 +92,7 @@ export default function TasksTable() {
   };
 
   // Search query options
-  const q = useDebounce(searchQuery, 200);
+  const q = searchQuery;
   const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
@@ -161,10 +146,6 @@ export default function TasksTable() {
                 isFocused={true}
                 handleTaskChange={handleChange}
                 handleTaskActionClick={handleTaskActionClick}
-                handleTaskDeleteClick={() => {
-                  handleTaskDeleteClick(updatedTask.id);
-                  sheet.remove(`task-card-preview-${updatedTask.id}`);
-                }}
               />
             ),
           });
@@ -195,10 +176,6 @@ export default function TasksTable() {
                 isFocused={true}
                 handleTaskChange={handleChange}
                 handleTaskActionClick={handleTaskActionClick}
-                handleTaskDeleteClick={() => {
-                  handleTaskDeleteClick(updatedTask.id);
-                  sheet.remove(`task-card-preview-${updatedTask.id}`);
-                }}
               />
             ),
           });
@@ -229,10 +206,6 @@ export default function TasksTable() {
                 isFocused={true}
                 handleTaskChange={handleChange}
                 handleTaskActionClick={handleTaskActionClick}
-                handleTaskDeleteClick={() => {
-                  handleTaskDeleteClick(updatedTask.id);
-                  sheet.remove(`task-card-preview-${updatedTask.id}`);
-                }}
               />
             ),
           });
@@ -261,17 +234,13 @@ export default function TasksTable() {
               isFocused={true}
               handleTaskChange={handleChange}
               handleTaskActionClick={handleTaskActionClick}
-              handleTaskDeleteClick={() => {
-                handleTaskDeleteClick(updatedTask.id);
-                sheet.remove(`task-card-preview-${updatedTask.id}`);
-              }}
             />
           ),
         });
       });
   };
 
-  const [columns, setColumns] = useColumns(handleChange, handleTaskActionClick, handleTaskDeleteClick);
+  const [columns, setColumns] = useColumns(handleChange, handleTaskActionClick);
 
   // TODO: Refactor this when Electric supports count
   const { results: tasks = [], updatedAt } = useLiveQuery(
@@ -287,11 +256,6 @@ export default function TasksTable() {
         }),
         parent_id: null,
         OR: [
-          {
-            summary: {
-              contains: q,
-            },
-          },
           {
             markdown: {
               contains: q,
@@ -315,15 +279,11 @@ export default function TasksTable() {
   //   setSelectedStatuses([]);
   // };
 
-  const onRowsChange = (changedRows: Task[]) => {
-    setRows(changedRows);
-  };
-
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
     setSelectedTasks(Array.from(selectedRows));
   };
 
-  const { showingTasks } = useTaskFilters(tasks, true, true, labels, members);
+  const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members);
 
   useEffect(() => {
     if (search.q) {
@@ -333,28 +293,23 @@ export default function TasksTable() {
 
   useEffect(() => {
     const fetchLabelsAndMembers = async () => {
-      const mappedProjects = selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id);
       const fetchedLabels = await electric.db.labels.findMany({
         where: {
           project_id: {
-            in: mappedProjects,
+            in: projects.map((p) => p.id),
           },
         },
       });
       setLabels(fetchedLabels as Label[]);
       const fetchedMembers = await Promise.all(
-        mappedProjects.map((p) => getMembers({ idOrSlug: p, entityType: 'PROJECT' }).then(({ items }) => items)),
+        projects.map((p) => getMembers({ idOrSlug: p.id, entityType: 'PROJECT' }).then(({ items }) => items)),
       );
 
       setMembers(fetchedMembers.flat() as Member[]);
     };
 
     fetchLabelsAndMembers();
-  }, [selectedProjects, projects]);
-
-  useEffect(() => {
-    if (showingTasks.length > 0) setRows(showingTasks);
-  }, [showingTasks]);
+  }, []);
 
   return (
     <>
@@ -368,7 +323,6 @@ export default function TasksTable() {
           columns: columns.filter((column) => column.visible),
           rows,
           rowHeight: 42,
-          onRowsChange,
           totalCount: tasks.length,
           isLoading,
           isFiltered,
