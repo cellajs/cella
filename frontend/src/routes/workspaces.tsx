@@ -55,11 +55,17 @@ export const WorkspaceBoardRoute = createRoute({
   ),
 });
 
+export const tasksSearchSchema = z.object({
+  q: z.string().optional(),
+  sort: z.enum(['summary', 'project_id', 'status', 'created_at']).default('created_at').optional(),
+  order: z.enum(['asc', 'desc']).default('asc').optional(),
+  projectId: z.array(z.string()).optional(),
+  status: z.array(z.number()).optional(),
+});
+
 export const WorkspaceTableRoute = createRoute({
   path: '/table',
-  validateSearch: z.object({
-    sort: z.enum(['summary', 'project_id', 'status', 'created_at']).default('created_at').optional(),
-  }),
+  validateSearch: tasksSearchSchema,
   staticData: { pageTitle: 'Table', isAuth: true },
   getParentRoute: () => WorkspaceRoute,
   component: () => (

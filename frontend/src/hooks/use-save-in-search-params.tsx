@@ -2,7 +2,7 @@ import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useEffect } from 'react';
 
 // This hook is used to save values in the URL search params
-const useSaveInSearchParams = (values: Record<string, string | undefined>, defaultValues?: Record<string, string | undefined>) => {
+const useSaveInSearchParams = (values: Record<string, string | string[] | number[] | undefined>, defaultValues?: Record<string, string | undefined>) => {
   const navigate = useNavigate();
   const params = useParams({
     strict: false,
@@ -24,11 +24,16 @@ const useSaveInSearchParams = (values: Record<string, string | undefined>, defau
       if (searchParams[key] === '') {
         searchParams[key] = undefined;
       }
+      if (Array.isArray(searchParams[key]) && searchParams[key]?.length === 0) {
+        searchParams[key] = undefined;
+      }
     }
 
     if (Object.keys(searchParams).length === 0) {
       return;
     }
+
+    console.log('searchParams', searchParams);
 
     navigate({
       params,
