@@ -114,7 +114,7 @@ export const CreateSubTaskForm = ({
   };
   if (!formOpen)
     return (
-      <Button className="w-full rounded-none bg-secondary" onClick={() => setFormState(true)}>
+      <Button className="w-full mb-1 rounded-none bg-secondary" onClick={() => setFormState(true)}>
         <Plus size={16} />
         <span className="ml-1">{firstSubTask ? t('common:create_new_sub_task') : t('common:create_another_sub_task')}</span>
       </Button>

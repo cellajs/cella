@@ -113,105 +113,113 @@ export function BoardColumn({ project, projectState, setProjectState, createForm
     const db = Electric.db;
     if (field === 'assigned_to' && Array.isArray(value)) {
       const assignedTo = value.map((user) => user.id);
-      db.tasks.update({
-        data: {
-          assigned_to: assignedTo,
-        },
-        where: {
-          id: taskId,
-        },
-      }).then(() => {
-        setProjectState({
-          ...projectState,
-          tasks: tasks.map((task) => {
-            if (task.id === taskId) {
-              return {
-                ...task,
-                assigned_to: assignedTo,
-              };
-            }
-            return task;
-          }),
+      db.tasks
+        .update({
+          data: {
+            assigned_to: assignedTo,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then(() => {
+          setProjectState({
+            ...projectState,
+            tasks: tasks.map((task) => {
+              if (task.id === taskId) {
+                return {
+                  ...task,
+                  assigned_to: assignedTo,
+                };
+              }
+              return task;
+            }),
+          });
         });
-      });
       return;
     }
 
     // TODO: Review this
     if (field === 'labels' && Array.isArray(value)) {
       const labels = value.map((label) => label.id);
-      db.tasks.update({
-        data: {
-          labels,
-        },
-        where: {
-          id: taskId,
-        },
-      }).then(() => {
-        setProjectState({
-          ...projectState,
-          tasks: tasks.map((task) => {
-            if (task.id === taskId) {
-              return {
-                ...task,
-                labels,
-              };
-            }
-            return task;
-          }),
+      db.tasks
+        .update({
+          data: {
+            labels,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then(() => {
+          setProjectState({
+            ...projectState,
+            tasks: tasks.map((task) => {
+              if (task.id === taskId) {
+                return {
+                  ...task,
+                  labels,
+                };
+              }
+              return task;
+            }),
+          });
         });
-      });
       return;
     }
     if (field === 'status') {
       const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
-      db.tasks.update({
+      db.tasks
+        .update({
+          data: {
+            status: value,
+            ...(newOrder && { sort_order: newOrder }),
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then(() => {
+          setProjectState({
+            ...projectState,
+            tasks: tasks.map((task) => {
+              if (task.id === taskId) {
+                return {
+                  ...task,
+                  status: value,
+                  sort_order: newOrder,
+                };
+              }
+              return task;
+            }),
+          });
+        });
+      return;
+    }
+
+    db.tasks
+      .update({
         data: {
-          status: value,
-          ...(newOrder && { sort_order: newOrder }),
+          [field]: value,
         },
         where: {
           id: taskId,
         },
-      }).then(() => {
+      })
+      .then(() => {
         setProjectState({
           ...projectState,
           tasks: tasks.map((task) => {
             if (task.id === taskId) {
               return {
                 ...task,
-                status: value,
-                sort_order: newOrder,
+                [field]: value,
               };
             }
             return task;
           }),
         });
       });
-      return;
-    }
-
-    db.tasks.update({
-      data: {
-        [field]: value,
-      },
-      where: {
-        id: taskId,
-      },
-    }).then(() => {
-      setProjectState({
-        ...projectState,
-        tasks: tasks.map((task) => {
-          if (task.id === taskId) {
-            return {
-              ...task,
-              [field]: value,
-            };
-          }
-          return task;
-        }),
-      });
-    });
   };
 
   const setTaskExpanded = (taskId: string, isExpanded: boolean) => {

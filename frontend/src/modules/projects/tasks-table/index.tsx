@@ -13,6 +13,8 @@ import ColumnsView from '~/modules/common/data-table/columns-view';
 import SelectProject from './project';
 import BoardHeader from '../board/header/board-header';
 import { boardProjectFiltering } from '../helpers';
+import { getTaskOrder } from '../task/helpers';
+import { toast } from 'sonner';
 
 const LIMIT = 100;
 
@@ -26,19 +28,85 @@ export default function TasksTable() {
       projects,
     }),
   );
-  const [columns, setColumns] = useColumns();
+
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const electric = useElectric()!;
   const [rows, setRows] = useState<Task[]>([]);
-  const [tasks, setTasks] = useState<Task[]>();
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
-  const [isFetching, setIsFetching] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'created_at', direction: 'DESC' }]);
-
   const sort = sortColumns[0]?.columnKey;
   const order = sortColumns[0]?.direction.toLowerCase();
 
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const handleChange = (field: keyof Task, value: any, taskId: string) => {
+    if (!electric) return toast.error(t('common:local_db_inoperable'));
+    const db = electric.db;
+    if (field === 'assigned_to' && Array.isArray(value)) {
+      const assignedTo = value.map((user) => user.id);
+      db.tasks
+        .update({
+          data: {
+            assigned_to: assignedTo,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then(() => fetchTasks());
+      return;
+    }
+
+    // TODO: Review this
+    if (field === 'labels' && Array.isArray(value)) {
+      const labels = value.map((label) => label.id);
+      db.tasks
+        .update({
+          data: {
+            labels,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then(() => fetchTasks());
+
+      return;
+    }
+    if (field === 'status') {
+      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
+      db.tasks
+        .update({
+          data: {
+            status: value,
+            ...(newOrder && { sort_order: newOrder }),
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then(() => fetchTasks());
+
+      return;
+    }
+
+    db.tasks
+      .update({
+        data: {
+          [field]: value,
+        },
+        where: {
+          id: taskId,
+        },
+      })
+      .then(() => fetchTasks());
+  };
   // const isFiltered = !!searchQuery || selectedStatuses.length > 0;
+
+  const [columns, setColumns] = useColumns(electric, handleChange);
 
   const queryOptions = useMemo(() => {
     return {
@@ -73,9 +141,6 @@ export default function TasksTable() {
     };
   }, [projects, sort, order, searchQuery, selectedStatuses, offset, selectedProjects]);
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
-
   // TODO: Refactor this when Electric supports count
   const { results: allTasks } = useLiveQuery(
     electric.db.tasks.liveMany({
@@ -86,18 +151,15 @@ export default function TasksTable() {
     }),
   );
 
-  useEffect(() => {
-    (async () => {
-      setIsFetching(true);
-      const newOffset = 0;
-      setOffset(newOffset);
-      const results = await electric.db.tasks.findMany({
-        ...queryOptions,
-      });
-      setTasks(results as Task[]);
-      setIsFetching(false);
-    })();
-  }, [searchQuery, selectedStatuses, selectedProjects, sort, order]);
+  const fetchTasks = async () => {
+    const newOffset = 0;
+    setOffset(newOffset);
+    const results = await electric.db.tasks.findMany({
+      ...queryOptions,
+    });
+    setTasks(results as Task[]);
+    setIsFetching(false);
+  };
 
   const fetchMore = async () => {
     setIsFetching(true);
@@ -111,6 +173,9 @@ export default function TasksTable() {
     setIsFetching(false);
   };
 
+  useEffect(() => {
+    fetchTasks();
+  }, [searchQuery, selectedStatuses, selectedProjects, sort, order]);
   // const onResetFilters = () => {
   //   setSearchQuery('');
   //   setSelectedTasks([]);
@@ -126,15 +191,14 @@ export default function TasksTable() {
   };
 
   useEffect(() => {
-    if (tasks)
+    if (tasks) {
       setRows(
-        tasks
-          .filter((task) => !task.parent_id)
-          .map((task) => ({
-            ...task,
-            subTasks: tasks.filter((t) => t.parent_id === task.id),
-          })),
+        tasks.map((task) => ({
+          ...task,
+          subTasks: tasks.filter((t) => t.parent_id === task.id),
+        })),
       );
+    }
   }, [tasks]);
 
   return (
@@ -163,8 +227,7 @@ export default function TasksTable() {
           rowHeight: 42,
           onRowsChange,
           totalCount: allTasks?.length,
-          isLoading: tasks === undefined,
-
+          isLoading: isFetching,
           isFetching,
           isFiltered: !!searchQuery,
           selectedRows: new Set<string>(selectedTasks),

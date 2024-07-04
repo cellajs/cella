@@ -79,13 +79,13 @@ const projectsRoutes = app
     const project = ctx.get('project');
     const memberships = ctx.get('memberships');
     const membership = memberships.find((m) => m.projectId === project.id && m.type === 'PROJECT');
-
+    const [projectToWorkspace] = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.projectId, project.id));
     return ctx.json(
       {
         success: true,
         data: {
           ...project,
-          workspaceId: membership?.workspaceId,
+          workspaceId: projectToWorkspace.workspaceId,
           membership: toMembershipInfo(membership),
           counts: await counts('PROJECT', project.id),
         },

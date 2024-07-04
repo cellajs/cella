@@ -1,6 +1,6 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { Paperclip, UserX, Tag, ChevronDown } from 'lucide-react';
+import { Paperclip, UserX, Tag, ChevronDown, Trash } from 'lucide-react';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
@@ -50,10 +50,10 @@ interface TaskProps {
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
-  setIsExpanded: (exp: boolean) => void;
+  setIsExpanded?: (exp: boolean) => void;
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
-  handleTaskSelect: (selected: boolean, taskId: string) => void;
+  handleTaskSelect?: (selected: boolean, taskId: string) => void;
 }
 
 export function TaskCard({ task, labels, members, isSelected, isFocused, isExpanded, handleTaskChange, handleTaskSelect, setIsExpanded }: TaskProps) {
@@ -100,7 +100,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
   useDoubleClick({
     onDoubleClick: () => {
       toggleEditorState();
-      setIsExpanded(true);
+      setIsExpanded?.(true);
     },
     allowedTargets: ['p', 'div'],
     excludeIds: ['sub-item'],
@@ -144,7 +144,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
         onDragStart: () => {
           setDragging(true);
           setIsEditing(false);
-          setIsExpanded(false);
+          setIsExpanded?.(false);
         },
         onDrop: () => setDragging(false),
       }),
@@ -198,16 +198,29 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
           <div className="flex flex-col gap-1">
             <div className="flex gap-1 w-full">
               <div className="flex flex-col justify-between gap-0.5 relative">
-                <Checkbox
-                  className={cn(
-                    'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
-                    'transition-all bg-background absolute top-1.5 left-1.5',
-                    !isExpanded && 'opacity-0 -z-[1] pointer-events-none',
-                    isExpanded && 'opacity-100',
-                  )}
-                  checked={isSelected}
-                  onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
-                />
+                {handleTaskSelect ? (
+                  <Checkbox
+                    className={cn(
+                      'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
+                      'transition-all bg-background absolute top-1.5 left-1.5',
+                      !isExpanded && 'opacity-0 -z-[1] pointer-events-none',
+                      isExpanded && 'opacity-100',
+                    )}
+                    checked={isSelected}
+                    onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
+                  />
+                ) : (
+                  <Button
+                    onClick={() => console.log('delete Task')}
+                    aria-label="Delete Task"
+                    variant="ghost"
+                    size="xs"
+                    className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
+                  >
+                    <Trash size={14} />
+                  </Button>
+                )}
+
                 <Button
                   onClick={(event) => {
                     dropDown(
@@ -252,7 +265,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                       } inline before:!content-none after:!content-none prose font-light text-start max-w-none`}
                     />
 
-                    {!isExpanded && (
+                    {!isExpanded && setIsExpanded && (
                       <div className="opacity-50 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 text-xs inline font-light gap-1">
                         <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
                           {t('common:more').toLowerCase()}
@@ -275,12 +288,13 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
 
                 {isExpanded && (
                   <>
-                    <div>
-                      <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
-                        {t('common:less').toLowerCase()}
-                      </Button>
-                    </div>
-
+                    {setIsExpanded && (
+                      <div>
+                        <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
+                          {t('common:less').toLowerCase()}
+                        </Button>
+                      </div>
+                    )}
                     {task.subTasks.length > 0 && (
                       <div className="inline-flex py-0 h-4 items-center mt-4 gap-1">
                         <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
@@ -290,7 +304,7 @@ export function TaskCard({ task, labels, members, isSelected, isFocused, isExpan
                       </div>
                     )}
 
-                    <div className="-ml-10 -mr-2">
+                    <div className={`${handleTaskSelect ? '-ml-10' : ''} -mr-2`}>
                       <div className="flex flex-col">
                         {task.subTasks.map((task) => (
                           <SubTask key={task.id} task={task} handleChange={handleTaskChange} />
