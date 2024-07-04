@@ -14,9 +14,8 @@ import { nanoid } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import { useElectric } from '~/modules/common/electric/electrify.ts';
+import { type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
-import { useProjectContext } from '../board/project-context.tsx';
 import { getTaskOrder } from './helpers.ts';
 
 const formSchema = z.object({
@@ -32,18 +31,21 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export const CreateSubTaskForm = ({
-  parentTaskId,
+  parentTask,
   formOpen,
   setFormState,
   firstSubTask,
-}: { parentTaskId: string; firstSubTask: boolean; formOpen: boolean; setFormState: (value: boolean) => void }) => {
+}: {
+  parentTask: Task;
+  firstSubTask: boolean;
+  formOpen: boolean;
+  setFormState: (value: boolean) => void;
+}) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore(({ user }) => ({ user }));
 
   const Electric = useElectric();
-
-  const { project, tasks } = useProjectContext(({ project, tasks, labels }) => ({ project, tasks, labels }));
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
     (event) => {
@@ -66,7 +68,7 @@ export const CreateSubTaskForm = ({
         id: '',
         markdown: '',
         summary: '',
-        parent_id: parentTaskId,
+        parent_id: parentTask.id,
         type: 'chore',
         impact: null,
         status: 1,
@@ -76,14 +78,13 @@ export const CreateSubTaskForm = ({
   );
 
   // Form with draft in local storage
-  const form = useFormWithDraft<FormValues>(`create-sub-task-${parentTaskId}`, formOptions);
+  const form = useFormWithDraft<FormValues>(`create-sub-task-${parentTask.id}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
     // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
-    const projectTasks = tasks.filter((task) => task.project_id === project.id);
 
     Electric.db.tasks
       .create({
@@ -94,15 +95,15 @@ export const CreateSubTaskForm = ({
           type: 'chore',
           impact: null,
           status: 1,
-          parent_id: parentTaskId,
-          organization_id: project.organizationId,
+          parent_id: parentTask.id,
+          organization_id: parentTask.organization_id,
           assigned_to: [],
           labels: [],
-          project_id: project.id,
+          project_id: parentTask.project_id,
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: getTaskOrder(values.status, values.status, projectTasks),
+          sort_order: getTaskOrder(values.status, values.status, parentTask.subTasks),
         },
       })
       .then(() => {
@@ -113,7 +114,7 @@ export const CreateSubTaskForm = ({
   };
   if (!formOpen)
     return (
-      <Button className="w-full rounded-none bg-secondary" onClick={() => setFormState(true)}>
+      <Button className="w-full mb-1 rounded-none bg-secondary" onClick={() => setFormState(true)}>
         <Plus size={16} />
         <span className="ml-1">{firstSubTask ? t('common:create_new_sub_task') : t('common:create_another_sub_task')}</span>
       </Button>

@@ -94,8 +94,8 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
 
       <PopoverContent align="start" style={{ width: `${bounds.left + bounds.right + 2}px` }} className={'p-0'}>
         <Command shouldFilter={false}>
-          <CommandInput value={searchQuery} onValueChange={setSearchQuery} clearValue={setSearchQuery} placeholder={t('common:search_users')} />
-          <ScrollArea className="h-[50vh] sm:h-[40vh] overflow-y-auto">
+          <CommandInput value={searchQuery} onValueChange={setSearchQuery} clearValue={setSearchQuery} placeholder={t('common:placeholder.type_name')} />
+          <ScrollArea className="max-h-[30vh] overflow-y-auto">
             {isLoading && (
               <CommandLoading>
                 <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />

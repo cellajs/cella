@@ -2,7 +2,6 @@ import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, Circl
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Kbd } from '~/modules/common/kbd.tsx';
-import { useDebounce } from '~/hooks/use-debounce.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Button } from '~/modules/ui/button';
@@ -27,7 +26,6 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
 
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const debouncedSearchQuery = useDebounce(searchValue, 300);
 
   const isSearching = searchValue.length > 0;
   const indexArray = [...Array(taskStatuses.length).keys()];
@@ -49,11 +47,11 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
 
   // TODO prevent search results from blick
   useMemo(() => {
-    if (!indexArray.includes(Number.parseInt(debouncedSearchQuery))) return;
+    if (!indexArray.includes(Number.parseInt(searchValue))) return;
     handleSelectClick(taskStatuses[Number.parseInt(searchValue)].value);
     setSearchValue('');
     return;
-  }, [debouncedSearchQuery]);
+  }, [searchValue]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>

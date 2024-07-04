@@ -12,7 +12,7 @@ import { useUserStore } from '~/store/user';
 import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import StickyBox from 'react-sticky-box';
+import StickyBox from '~/modules/common/sticky-box';
 import { toast } from 'sonner';
 import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
@@ -125,10 +125,10 @@ const UserSettings = () => {
   const invertClass = mode === 'dark' ? 'invert' : '';
 
   return (
-    <div className="container md:flex md:flex-row md:mt-8 mx-auto gap-4">
-      <div className="mx-auto md:min-w-48 md:w-[30%] md:mt-2">
+    <div className="container md:flex md:flex-row my-4 md:my-8 mx-auto gap-4">
+      <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-2">
         <StickyBox className="z-10 max-md:!block">
-          <SimpleHeader className="p-3" heading="common:account_settings" text="common:account_settings.text" />
+          <SimpleHeader className="p-3" heading="common:account" text="common:account.text" />
           <AsideNav tabs={tabs} className="py-2" />
         </StickyBox>
       </div>
@@ -155,6 +155,7 @@ const UserSettings = () => {
             <CardContent>
               {sessionsWithoutCurrent.length > 0 && (
                 <Button
+                className="max-xs:w-full"
                   variant="plain"
                   size="sm"
                   disabled={isPending}
@@ -187,7 +188,7 @@ const UserSettings = () => {
               <CardDescription>{t('common:oauth.text')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col space-y-2">
+              <div className="flex flex-col gap-2">
                 {config.enabledOauthProviders.map((id) => {
                   const option = oauthProviders.find((provider) => provider.id === id);
                   if (!option) return;

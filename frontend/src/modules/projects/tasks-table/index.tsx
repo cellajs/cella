@@ -1,26 +1,41 @@
-import { Bird, Plus } from 'lucide-react';
+import { Bird } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import { type Task, useElectric } from '~/modules/common/electric/electrify';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
+import { type Task, type Label, useElectric } from '~/modules/common/electric/electrify';
 import { useColumns } from './columns';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
-import SelectStatus from './status';
+import HeaderSelectStatus from './status';
 import { useLiveQuery } from 'electric-sql/react';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import SelectProject from './project';
+import BoardHeader from '../board/header/board-header';
+import { useSearch } from '@tanstack/react-router';
+import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import { useDebounce } from '~/hooks/use-debounce';
+import type { z } from 'zod';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import { useWorkspaceStore } from '~/store/workspace';
+import { getTaskOrder } from '../task/helpers';
+import { toast } from 'sonner';
+import { SelectImpact } from '../task/task-selectors/select-impact';
+import { dropdowner } from '~/modules/common/dropdowner/state';
+import SetLabels from '../task/task-selectors/select-labels';
+import { SelectTaskType } from '../task/task-selectors/select-task-type';
+import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
+import AssignMembers from '../task/task-selectors/select-members';
+import type { Member } from '~/types';
+import type { TaskImpact, TaskType } from '../task/create-task-form';
 
-const LIMIT = 100;
+type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
 export default function TasksTable() {
+  const search = useSearch({ from: WorkspaceTableRoute.id });
+
   const { t } = useTranslation();
-  const { user } = useUserStore(({ user }) => ({ user }));
-  const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery } = useWorkspaceContext(
+  const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery } = useWorkspaceStore(
     ({ searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery }) => ({
       searchQuery,
       selectedTasks,
@@ -29,22 +44,142 @@ export default function TasksTable() {
       setSearchQuery,
     }),
   );
-  const [columns, setColumns] = useColumns();
+
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const electric = useElectric()!;
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
   const [rows, setRows] = useState<Task[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [isFetching, setIsFetching] = useState(false);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'created_at', direction: 'DESC' }]);
+  // Search query options
+  const q = useDebounce(searchQuery, 200);
+  const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
-  const sort = sortColumns[0]?.columnKey;
-  const order = sortColumns[0]?.direction.toLowerCase();
+  const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
 
-  const isFiltered = !!searchQuery || selectedStatuses.length > 0;
+  useEffect(() => {
+    if (search.q) {
+      setSearchQuery(search.q);
+    }
+  }, []);
 
-  const queryOptions = useMemo(() => {
-    return {
+  // Save filters in search params
+  const filters = useMemo(
+    () => ({
+      q,
+      sort,
+      order,
+      project_id: selectedProjects,
+      status: selectedStatuses,
+    }),
+    [q, sort, order, selectedStatuses, selectedProjects],
+  );
+  useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
+
+  const createLabel = (newLabel: Label) => {
+    if (!electric) return toast.error(t('common:local_db_inoperable'));
+    // TODO: Implement the following
+    // Save the new label to the database
+    electric.db.labels.create({ data: newLabel });
+  };
+
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const handleChange = (field: keyof Task, value: any, taskId: string) => {
+    if (!electric) return toast.error(t('common:local_db_inoperable'));
+    const db = electric.db;
+    if (field === 'assigned_to' && Array.isArray(value)) {
+      const assignedTo = value.map((user) => user.id);
+      db.tasks.update({
+        data: {
+          assigned_to: assignedTo,
+        },
+        where: {
+          id: taskId,
+        },
+      });
+      return;
+    }
+
+    // TODO: Review this
+    if (field === 'labels' && Array.isArray(value)) {
+      const labels = value.map((label) => label.id);
+      db.tasks.update({
+        data: {
+          labels,
+        },
+        where: {
+          id: taskId,
+        },
+      });
+
+      return;
+    }
+    if (field === 'status') {
+      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
+      db.tasks.update({
+        data: {
+          status: value,
+          ...(newOrder && { sort_order: newOrder }),
+        },
+        where: {
+          id: taskId,
+        },
+      });
+
+      return;
+    }
+
+    db.tasks.update({
+      data: {
+        [field]: value,
+      },
+      where: {
+        id: taskId,
+      },
+    });
+  };
+  const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement, labels: Label[], members: Member[]) => {
+    let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
+
+    if (field === 'impact')
+      component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
+    else if (field === 'labels')
+      component = (
+        <SetLabels
+          labels={labels}
+          value={task.virtualLabels}
+          organizationId={task.organization_id}
+          projectId={task.project_id}
+          changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
+          createLabel={createLabel}
+        />
+      );
+    else if (field === 'assigned_to')
+      component = (
+        <AssignMembers
+          users={members}
+          value={task.virtualAssignedTo}
+          changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
+        />
+      );
+    else if (field === 'status')
+      component = (
+        <SelectStatus
+          taskStatus={task.status as TaskStatus}
+          changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)}
+          inputPlaceholder={t('common:placeholder.set_status')}
+        />
+      );
+
+    return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
+  };
+
+  const [columns, setColumns] = useColumns(electric, handleChange, handleTaskActionClick);
+
+  // TODO: Refactor this when Electric supports count
+  const { results: tasks = [], updatedAt } = useLiveQuery(
+    electric.db.tasks.liveMany({
       where: {
         project_id: {
           in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
@@ -58,78 +193,31 @@ export default function TasksTable() {
         OR: [
           {
             summary: {
-              contains: searchQuery,
+              contains: q,
             },
           },
           {
             markdown: {
-              contains: searchQuery,
+              contains: q,
             },
           },
         ],
       },
-      take: LIMIT,
-      skip: offset,
       orderBy: {
-        [sort]: order,
+        [sort || 'created_at']: order,
       },
-    };
-  }, [projects, sort, order, searchQuery, selectedStatuses, offset, selectedProjects]);
-
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
-
-  // TODO: Refactor this when Electric supports count
-  const { results: allTasks } = useLiveQuery(
-    electric.db.tasks.liveMany({
-      select: {
-        id: true,
-      },
-      where: queryOptions.where,
     }),
-  );
-
-  useEffect(() => {
-    (async () => {
-      setIsFetching(true);
-      const newOffset = 0;
-      setOffset(newOffset);
-      const results = await electric.db.tasks.findMany({
-        ...queryOptions,
-      });
-      setTasks(results as Task[]);
-      setIsFetching(false);
-    })();
-  }, [searchQuery, selectedStatuses, selectedProjects, sort, order]);
-
-  // const filteredTasks = useMemo(() => {
-  //   if (!tasks) return;
-  //   if (!searchQuery) return tasks;
-  //   return tasks.filter(
-  //     (task) =>
-  //       task.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //       task.markdown?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  //       task.slug.toLowerCase().includes(searchQuery.toLowerCase()),
-  //   );
-  // }, [tasks, searchQuery]);
-
-  const fetchMore = async () => {
-    setIsFetching(true);
-    const newOffset = offset + LIMIT;
-    setOffset(newOffset);
-    const results = await electric.db.tasks.findMany({
-      ...queryOptions,
-      skip: newOffset,
-    });
-    setTasks((prevTasks) => [...prevTasks, ...(results as Task[])]);
-    setIsFetching(false);
+  ) as {
+    results: Task[] | undefined;
+    updatedAt: Date | undefined;
   };
 
-  const onResetFilters = () => {
-    setSearchQuery('');
-    setSelectedTasks([]);
-    setSelectedStatuses([]);
-  };
+  const isLoading = !updatedAt;
+  // const onResetFilters = () => {
+  //   setSearchQuery('');
+  //   setSelectedTasks([]);
+  //   setSelectedStatuses([]);
+  // };
 
   const onRowsChange = (changedRows: Task[]) => {
     setRows(changedRows);
@@ -140,90 +228,41 @@ export default function TasksTable() {
   };
 
   useEffect(() => {
-    if (tasks) setRows(tasks);
+    if (tasks) {
+      setRows(
+        tasks.map((task) => ({
+          ...task,
+          subTasks: tasks.filter((t) => t.parent_id === task.id),
+        })),
+      );
+    }
   }, [tasks]);
 
   return (
-    <div className="space-y-4 h-full">
-      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-          <FilterBarActions>
-            {selectedTasks.length > 0 ? (
-              <>
-                {/* <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedOrganizations.length}</Badge>
-                  <Trash size={16} />
-                  <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
-                </Button>
-                <Button variant="ghost" onClick={() => setSelectedRows(new Set<string>())}>
-                  <XSquare size={16} />
-                  <span className="ml-1">{t('common:clear')}</span>
-                </Button> */}
-              </>
-            ) : (
-              !isFiltered &&
-              user.role === 'ADMIN' && (
-                <Button
-                // onClick={() => {
-                //   dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
-                //     className: 'md:max-w-2xl',
-                //     id: 'create-organization',
-                //     title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
-                //   });
-                // }}
-                >
-                  <Plus size={16} />
-                  <span className="ml-1">{t('common:create')}</span>
-                </Button>
-              )
-            )}
-            {/* {selectedTasks.length === 0 && (
-              <TableCount count={totalCount} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-            )} */}
-          </FilterBarActions>
-
-          <div className="sm:grow" />
-
-          <FilterBarContent>
-            <SelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
-            <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
-            {/* <TableSearch value={query} setQuery={onSearch} /> */}
-          </FilterBarContent>
-        </TableFilterBar>
+    <>
+      <BoardHeader mode="table">
+        <HeaderSelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
+        <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-        {/* <Export
-          className="max-lg:hidden"
-          filename={`${config.slug}-organizations`}
-          columns={columns}
-          selectedRows={selectedOrganizations}
-          fetchRows={async (limit) => {
-            const { items } = await getOrganizations({ limit, q: query, sort, order });
-            return items;
-          }}
-        />
-        <FocusView iconOnly /> */}
-      </div>
+      </BoardHeader>
       <DataTable<Task>
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          limit: 10,
           rowHeight: 42,
           onRowsChange,
-          totalCount: allTasks?.length,
-          isLoading: tasks === undefined,
-          isFetching,
-          isFiltered: !!searchQuery,
+          totalCount: tasks.length,
+          isLoading,
+          isFiltered,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,
-          fetchMore,
           rowKeyGetter: (row) => row.id,
-          enableVirtualization: false,
+          enableVirtualization: true,
           sortColumns,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
         }}
       />
-    </div>
+    </>
   );
 }

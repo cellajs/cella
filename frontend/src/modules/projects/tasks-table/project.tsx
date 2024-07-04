@@ -2,7 +2,6 @@ import { Check, ChevronDown } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Kbd } from '~/modules/common/kbd.tsx';
-import { useDebounce } from '~/hooks/use-debounce.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Button } from '~/modules/ui/button';
@@ -20,7 +19,6 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
 
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const debouncedSearchQuery = useDebounce(searchValue, 300);
 
   const isSearching = searchValue.length > 0;
 
@@ -41,12 +39,12 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
 
   // TODO prevent search results from blick
   useMemo(() => {
-    const project = projects.find((p) => p.name === debouncedSearchQuery);
+    const project = projects.find((p) => p.name === searchValue);
     if (!project) return;
     handleSelectClick(project.id);
     setSearchValue('');
     return;
-  }, [debouncedSearchQuery]);
+  }, [searchValue]);
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>

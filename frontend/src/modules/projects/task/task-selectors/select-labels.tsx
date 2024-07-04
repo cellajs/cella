@@ -2,14 +2,11 @@ import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-// import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { nanoid } from '~/lib/utils.ts';
-import { type Label, useElectric } from '../../../common/electric/electrify.ts';
+import type { Label } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover.tsx';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -19,16 +16,15 @@ export const badgeStyle = (color?: string | null) => {
 interface SetLabelsProps {
   labels: Label[];
   value: Label[];
-  children: React.ReactNode;
   organizationId: string;
   projectId: string;
   changeLabels: (labels: Label[]) => void;
+  createLabel: (label: Label) => void;
   triggerWidth?: number;
 }
 
-const SetLabels = ({ value, changeLabels, children, projectId, organizationId, labels, triggerWidth = 260 }: SetLabelsProps) => {
+const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId, labels, triggerWidth = 280 }: SetLabelsProps) => {
   const { t } = useTranslation();
-  const [openPopover, setOpenPopover] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
 
@@ -37,8 +33,6 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
     if (isSearching) return labels.filter((l) => l.name.includes(searchValue));
     return [];
   }, [searchValue, labels]);
-
-  const Electric = useElectric();
 
   const handleSelectClick = (value?: string) => {
     if (!value) return;
@@ -74,13 +68,6 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
     const updatedLabels = [...selectedLabels, newLabel];
     setSelectedLabels(updatedLabels);
     changeLabels(updatedLabels);
-  };
-
-  const createLabel = (newLabel: Label) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // TODO: Implement the following
-    // Save the new label to the database
-    Electric.db.labels.create({ data: newLabel });
   };
 
   const renderLabels = (labels: Label[]) => {
@@ -125,53 +112,42 @@ const SetLabels = ({ value, changeLabels, children, projectId, organizationId, l
   }, [value]);
 
   return (
-    <Popover open={openPopover} onOpenChange={setOpenPopover}>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent
-        style={{ width: `${triggerWidth}px` }}
-        className="p-0 rounded-lg"
-        align="start"
-        onCloseAutoFocus={(e) => e.preventDefault()}
-        sideOffset={4}
-      >
-        <Command className="relative rounded-lg">
-          <CommandInput
-            value={searchValue}
-            onValueChange={(searchValue) => {
-              // If the label types a number, select the label like useHotkeys
-              if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(Number.parseInt(searchValue))) {
-                handleSelectClick(labels[Number.parseInt(searchValue)]?.name);
-                setSearchValue('');
-                return;
-              }
-              setSearchValue(searchValue.toLowerCase());
-            }}
-            clearValue={setSearchValue}
-            className="leading-normal"
-            placeholder={t('common:placeholder.search_labels')}
-          />
-          {!isSearching && <Kbd value="L" className="absolute top-3 right-2.5" />}
-          <CommandList>
-            <CommandGroup>
-              {!isSearching ? (
-                <>
-                  {labels.length === 0 && (
-                    <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
-                      {t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })}
-                    </CommandEmpty>
-                  )}
-                  {renderLabels(labels)}
-                </>
-              ) : searchedLabels.length > 0 ? (
-                renderLabels(searchedLabels)
-              ) : (
-                <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} {...{ searchValue, labels }} />
+    <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
+      <CommandInput
+        value={searchValue}
+        onValueChange={(searchValue) => {
+          // If the label types a number, select the label like useHotkeys
+          if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(Number.parseInt(searchValue))) {
+            handleSelectClick(labels[Number.parseInt(searchValue)]?.name);
+            setSearchValue('');
+            return;
+          }
+          setSearchValue(searchValue.toLowerCase());
+        }}
+        clearValue={setSearchValue}
+        className="leading-normal"
+        placeholder={t('common:placeholder.search_labels')}
+      />
+      {!isSearching && <Kbd value="L" className="absolute top-3 right-2.5" />}
+      <CommandList>
+        <CommandGroup>
+          {!isSearching ? (
+            <>
+              {labels.length === 0 && (
+                <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
+                  {t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })}
+                </CommandEmpty>
               )}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+              {renderLabels(labels)}
+            </>
+          ) : searchedLabels.length > 0 ? (
+            renderLabels(searchedLabels)
+          ) : (
+            <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} {...{ searchValue, labels }} />
+          )}
+        </CommandGroup>
+      </CommandList>
+    </Command>
   );
 };
 

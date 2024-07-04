@@ -7,7 +7,7 @@ import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
-import { IndexRoute } from './routeTree';
+import { AppRoute } from '.';
 import type { Organization as OrganizationType } from '~/types';
 
 //Lazy-loaded components
@@ -19,9 +19,9 @@ export const membersSearchSchema = membersQuerySchema.pick({ q: true, sort: true
 
 export const OrganizationRoute = createRoute({
   path: '$idOrSlug',
-  staticData: { pageTitle: 'Organization' },
+  staticData: { pageTitle: 'Organization', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
-  getParentRoute: () => IndexRoute,
+  getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
     await queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
   },
@@ -36,7 +36,7 @@ export const OrganizationRoute = createRoute({
 export const OrganizationMembersRoute = createRoute({
   path: '/members',
   validateSearch: membersSearchSchema,
-  staticData: { pageTitle: 'Members' },
+  staticData: { pageTitle: 'Members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
@@ -61,7 +61,7 @@ export const OrganizationMembersRoute = createRoute({
 
 export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
-  staticData: { pageTitle: 'Settings' },
+  staticData: { pageTitle: 'Settings', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });

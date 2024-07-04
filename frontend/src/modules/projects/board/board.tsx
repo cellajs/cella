@@ -1,19 +1,16 @@
-import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
+import { Fragment, type LegacyRef, useEffect, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import type { Project, TaskCardFocusEvent } from '~/types';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
 import { Bird, Redo } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { boardProjectFiltering } from '../helpers';
-import { type Task, useElectric } from '../../common/electric/electrify';
-import { useLiveQuery } from 'electric-sql/react';
-import { taskStatuses } from '../tasks-table/status';
-import { useWorkspaceStore } from '~/store/workspace';
+import { useElectric } from '../../common/electric/electrify';
 import { useHotkeys } from '~/hooks/use-hot-keys';
+import BoardHeader from './header/board-header';
+import { useWorkspaceStore } from '~/store/workspace';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -27,15 +24,11 @@ function getScrollerWidth(containerWidth: number, projectsLength: number) {
 function BoardDesktop({
   workspaceId,
   projects,
-  tasks,
-  updatedAt,
   columnTaskCreate,
   toggleCreateForm,
 }: {
   projects: Project[];
   workspaceId: string;
-  tasks: Task[];
-  updatedAt?: Date;
   columnTaskCreate: Record<string, boolean>;
   toggleCreateForm: (projectId: string) => void;
 }) {
@@ -52,14 +45,7 @@ function BoardDesktop({
             return (
               <Fragment key={project.id}>
                 <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
-                  <BoardColumn
-                    createForm={isFormOpen}
-                    toggleCreateForm={toggleCreateForm}
-                    tasks={tasks.filter((t) => t.project_id === project.id)}
-                    updatedAt={updatedAt}
-                    key={project.id}
-                    project={project}
-                  />
+                  <BoardColumn createForm={isFormOpen} toggleCreateForm={toggleCreateForm} key={project.id} project={project} />
                 </ResizablePanel>
                 {projects.length > index + 1 && (
                   <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
@@ -74,61 +60,15 @@ function BoardDesktop({
 }
 
 export default function Board() {
-  const { workspace, searchQuery, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceContext(
-    ({ workspace, searchQuery, projects, focusedTaskId, setFocusedTaskId }) => ({
-      workspace,
-      searchQuery,
-      projects,
-      focusedTaskId,
-      setFocusedTaskId,
-    }),
-  );
-  const { workspaces, getWorkspaceViewOptions } = useWorkspaceStore();
   const { t } = useTranslation();
+  const { workspace, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
+
   const isDesktopLayout = useBreakpoints('min', 'sm');
-  const mappedProjects = useMemo(() => boardProjectFiltering(projects), [projects]);
-  const [viewOptions, setViewOptions] = useState(getWorkspaceViewOptions(workspace.id));
+
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
-
-  // TODO: Add debounce to searchQuery & change loading updatedAt logic for skeleton
-  const { results: tasks = [], updatedAt } = useLiveQuery(
-    electric.db.tasks.liveMany({
-      where: {
-        project_id: { in: mappedProjects.map((p) => p.id) },
-        // ...(selectedStatuses.length > 0 && {
-        //   status: {
-        //     in: selectedStatuses,
-        //   },
-        // }),
-        ...(viewOptions.type.length > 0 && {
-          type: {
-            in: viewOptions.type,
-          },
-        }),
-        OR: [
-          {
-            summary: {
-              contains: searchQuery,
-            },
-          },
-          {
-            markdown: {
-              contains: searchQuery,
-            },
-          },
-        ],
-        status: {
-          in: [0, 6, ...viewOptions.status.map((s) => taskStatuses.find(({ status }) => status === s)?.value || 0)],
-        },
-      },
-    }),
-  ) as {
-    results: Task[];
-    updatedAt: Date | undefined;
-  };
 
   const toggleCreateTaskForm = (itemId: string) => {
     setColumnTaskCreate((prevState) => ({
@@ -137,10 +77,23 @@ export default function Board() {
     }));
   };
 
-  const handleVerticalArrowKeyDown = (event: KeyboardEvent) => {
-    if (!tasks.length || !mappedProjects.length) return;
+  const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
+    if (!projects.length) return;
 
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
+    const focusedTask = await electric.db.tasks
+      .findFirst({
+        where: {
+          ...(focusedTaskId
+            ? { id: focusedTaskId }
+            : {
+                project_id: projects[0].id,
+              }),
+        },
+      })
+      .catch((e) => console.error(e));
+
+    if (!focusedTask) return;
+
     const direction = event.key === 'ArrowDown' ? 1 : -1;
     const triggeredEvent = new CustomEvent('task-change', {
       detail: {
@@ -150,16 +103,25 @@ export default function Board() {
       },
     });
     document.dispatchEvent(triggeredEvent);
-
-    //add scroll to target
   };
 
-  const handleHorizontalArrowKeyDown = (event: KeyboardEvent) => {
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks.find((t) => t.project_id === mappedProjects[0].id) || tasks[0];
-    const currentProjectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
+  const handleHorizontalArrowKeyDown = async (event: KeyboardEvent) => {
+    const focusedTask = await electric.db.tasks.findFirst({
+      where: {
+        ...(focusedTaskId
+          ? { id: focusedTaskId }
+          : {
+              project_id: projects[0].id,
+            }),
+      },
+    });
+
+    if (!focusedTask) return;
+
+    const currentProjectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
 
     const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;
-    const nextProject = mappedProjects[nextProjectIndex];
+    const nextProject = projects[nextProjectIndex];
 
     if (!nextProject) return;
 
@@ -169,16 +131,23 @@ export default function Board() {
       },
     });
     document.dispatchEvent(triggeredEvent);
-    //add scroll to target
   };
 
-  const handleTKeyDown = () => {
-    if (!tasks.length || !mappedProjects.length) return;
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId) || tasks[0];
-    const projectIndex = mappedProjects.findIndex((p) => p.id === focusedTask.project_id);
+  const handleNKeyDown = async () => {
+    if (!projects.length) return;
+
+    const focusedTask = await electric.db.tasks.findFirst({
+      where: {
+        ...(focusedTaskId && { id: focusedTaskId }),
+      },
+    });
+
+    if (!focusedTask) return;
+
+    const projectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
     if (projectIndex === -1) return;
 
-    toggleCreateTaskForm(mappedProjects[projectIndex].id);
+    toggleCreateTaskForm(projects[projectIndex].id);
   };
 
   useHotkeys([
@@ -186,12 +155,8 @@ export default function Board() {
     ['ArrowLeft', handleHorizontalArrowKeyDown],
     ['ArrowDown', handleVerticalArrowKeyDown],
     ['ArrowUp', handleVerticalArrowKeyDown],
-    ['T', handleTKeyDown],
+    ['N', handleNKeyDown],
   ]);
-
-  useEffect(() => {
-    if (workspaces[workspace.id].viewOptions) setViewOptions(workspaces[workspace.id].viewOptions);
-  }, [workspaces[workspace.id]]);
 
   useEffect(() => {
     const handleFocus = (event: Event) => {
@@ -206,59 +171,41 @@ export default function Board() {
     };
   }, []);
 
-  if (!mappedProjects.length) {
-    return (
-      <ContentPlaceholder
-        className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"
-        Icon={Bird}
-        title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })}
-        text={
-          <>
-            <Redo
-              size={200}
-              strokeWidth={0.2}
-              className="max-md:hidden absolute scale-x-0 scale-y-75 -rotate-180 text-primary top-4 left-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/workspace:opacity-100 group-hover/workspace:scale-x-100 group-hover/workspace:translate-y-0 group-hover/workspace:rotate-[-130deg]"
-            />
-            <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/workspace:opacity-100">
-              <span>{t('common:click')}</span>
-              <span className="text-primary">{`+ ${t('common:add')}`}</span>
-              <span>{t('common:no_projects.text')}</span>
-            </p>
-          </>
-        }
-      />
-    );
-  }
-
-  // On desktop we render all columns in a board
-  if (isDesktopLayout)
-    return (
-      <BoardDesktop
-        columnTaskCreate={columnTaskCreate}
-        toggleCreateForm={toggleCreateTaskForm}
-        tasks={tasks}
-        updatedAt={updatedAt}
-        projects={mappedProjects}
-        workspaceId={workspace.id}
-      />
-    );
-
-  // On mobile we just render one column
   return (
-    <div className="flex flex-col gap-4">
-      {mappedProjects.map((project) => {
-        const isFormOpen = columnTaskCreate[project.id] || false;
-        return (
-          <BoardColumn
-            createForm={isFormOpen}
-            toggleCreateForm={toggleCreateTaskForm}
-            tasks={tasks.filter((t) => t.project_id === project.id)}
-            updatedAt={updatedAt}
-            key={project.id}
-            project={project}
-          />
-        );
-      })}
-    </div>
+    <>
+      <BoardHeader mode="board" />
+      {!projects.length && (
+        <ContentPlaceholder
+          className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"
+          Icon={Bird}
+          title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })}
+          text={
+            <>
+              <Redo
+                size={200}
+                strokeWidth={0.2}
+                className="max-md:hidden absolute scale-x-0 scale-y-75 -rotate-180 text-primary top-4 left-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/workspace:opacity-100 group-hover/workspace:scale-x-100 group-hover/workspace:translate-y-0 group-hover/workspace:rotate-[-130deg]"
+              />
+              <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/workspace:opacity-100">
+                <span>{t('common:click')}</span>
+                <span className="text-primary">{`+ ${t('common:add')}`}</span>
+                <span>{t('common:no_projects.text')}</span>
+              </p>
+            </>
+          }
+        />
+      )}
+      {projects.length && isDesktopLayout && (
+        <BoardDesktop columnTaskCreate={columnTaskCreate} toggleCreateForm={toggleCreateTaskForm} projects={projects} workspaceId={workspace.id} />
+      )}
+      {projects.length && !isDesktopLayout && (
+        <div className="flex flex-col gap-4">
+          {projects.map((project) => {
+            const isFormOpen = columnTaskCreate[project.id] || false;
+            return <BoardColumn createForm={isFormOpen} toggleCreateForm={toggleCreateTaskForm} key={project.id} project={project} />;
+          })}
+        </div>
+      )}
+    </>
   );
 }

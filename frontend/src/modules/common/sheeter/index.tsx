@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import StickyBox from 'react-sticky-box';
+import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
 import { SheetState, type SheetT, type SheetToRemove, type SheetToReset } from './state';
 
@@ -71,7 +71,7 @@ export function Sheeter() {
                 <SheetTitle>
                   {existingSheet?.title ? existingSheet.title : typeof sheet.title === 'string' ? <span>{sheet.title}</span> : sheet.title}
                 </SheetTitle>
-                <SheetClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                <SheetClose className="mr-1 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
                   <X size={24} strokeWidth={1.25} />
                   <span className="sr-only">{t('common:close')}</span>
                 </SheetClose>

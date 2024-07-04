@@ -5,7 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import StickyBox from 'react-sticky-box';
+import StickyBox from '~/modules/common/sticky-box';
 import { toast } from 'sonner';
 import { AsideNav } from '~/modules/common/aside-nav';
 import { AsideAnchor } from '../common/aside-anchor';
@@ -13,9 +13,11 @@ import { dialog } from '../common/dialoger/state';
 import DeleteOrganizations from './delete-organizations';
 import UpdateOrganizationForm from './update-organization-form';
 import type { Organization } from '~/types';
+import Subscription from './subscription';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
+  { id: 'subscription', label: 'common:subscription' },
   { id: 'delete-organization', label: 'common:delete_resource', resource: 'common:organization' },
 ];
 
@@ -43,14 +45,14 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
   };
 
   return (
-    <div className="md:flex md:flex-row mx-auto gap-4">
-      <div className="mx-auto md:min-w-48 md:w-[30%] flex h-auto flex-col">
+    <div className="md:flex md:flex-row mx-auto gap-4 my-4">
+      <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] flex h-auto flex-col">
         <StickyBox offsetTop={60} className="md:mt-2 z-10 max-md:!block">
           <AsideNav tabs={tabs} className="pb-2" />
         </StickyBox>
       </div>
 
-      <div className="md:w-[70%]  flex flex-col gap-8">
+      <div className="md:w-[70%] flex flex-col gap-8">
         <AsideAnchor id="general">
           <Card>
             <CardHeader>
@@ -69,6 +71,17 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
                   }
                 }}
               />
+            </CardContent>
+          </Card>
+        </AsideAnchor>
+
+        <AsideAnchor id="subscription">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('common:subscription')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Subscription organization={organization} />
             </CardContent>
           </Card>
         </AsideAnchor>

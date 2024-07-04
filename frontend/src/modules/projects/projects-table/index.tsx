@@ -6,7 +6,6 @@ import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type GetProjectsParams, getProjects } from '~/api/projects';
-import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -76,7 +75,7 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
   const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'createdAt', direction: 'DESC' }]);
 
   // Search query options
-  const q = useDebounce(query, 200);
+  const q = query;
   const sort = sortColumns[0]?.columnKey as ProjectsSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as ProjectsSearch['order'];
   const limit = LIMIT;
@@ -133,7 +132,7 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
   };
 
   return (
-    <div className="space-y-4 h-full">
+    <div className="flex flex-col gap-4 h-full">
       <div className={'flex items-center max-sm:justify-between md:gap-2 mt-4'}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>

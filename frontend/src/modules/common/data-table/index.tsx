@@ -23,7 +23,7 @@ interface DataTableProps<TData> {
   error?: Error | null;
   isLoading?: boolean;
   isFetching?: boolean;
-  limit: number;
+  limit?: number;
   isFiltered?: boolean;
   renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
   NoRowsComponent?: React.ReactNode;
@@ -79,7 +79,7 @@ export const DataTable = <TData,>({
   rowKeyGetter,
   error,
   isLoading,
-  limit,
+  limit = 10,
   isFetching,
   NoRowsComponent,
   isFiltered,
@@ -118,7 +118,7 @@ export const DataTable = <TData,>({
   }, [isLoading]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full mb-4 md:mb-8">
       {initialDone ? ( // Render skeleton only on initial load
         <>
           {error && rows.length === 0 ? (
@@ -186,8 +186,8 @@ export const DataTable = <TData,>({
 
               {/* Infinite scroll is stuck */}
               {!isFetching && !error && totalCount && totalCount > rows.length && (
-                <Button variant="link" className="w-full my-6 opacity-30" onClick={fetchMore}>
-                  {t('common:click_fetch.text')} {totalCount} {rows.length}
+                <Button variant="ghost" className="w-full my-6 opacity-30" onClick={fetchMore}>
+                  {t('common:click_fetch.text')}
                 </Button>
               )}
 
