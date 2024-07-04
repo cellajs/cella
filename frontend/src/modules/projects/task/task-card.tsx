@@ -196,7 +196,7 @@ export function TaskCard({
         }),
       )}
     >
-      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-1 pb-2 space-between flex flex-col relative">
+      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-1 pb-2 pr-1.5 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
             <div className="flex flex-col justify-between gap-0.5 relative">
@@ -207,10 +207,10 @@ export function TaskCard({
                 size="xs"
                 className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
               >
-                {taskTypes[taskTypes.findIndex((t) => t.value === task.type)].icon()}
+                {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
               </Button>
             </div>
-            <div className="flex flex-col grow gap-2 mt-1.5 mr-1">
+            <div className="flex flex-col grow gap-2 mt-1.5">
               {!isExpanded && (
                 <div className="inline">
                   <MDEditor.Markdown
@@ -290,9 +290,9 @@ export function TaskCard({
               )}
             </div>
           </div>
-          <div className="flex items-start justify-between gap-1">
+          <div className="flex items-end justify-between gap-1">
             <Checkbox
-              className="group-hover/task:opacity-100 mt-1.5 border-foreground/25 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-70"
+              className="group-hover/task:opacity-100 mb-1.5 border-foreground/25 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-70"
               checked={isSelected}
               onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
             />
