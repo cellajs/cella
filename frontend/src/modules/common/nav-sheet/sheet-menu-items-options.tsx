@@ -82,7 +82,6 @@ const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; 
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { menu } = useNavigationStore();
-
   const callback = parentItemId ? useMutateQueryData(['projects', parentItemId]) : useMutateQueryData([`${itemType.toLowerCase()}s`, item.id]);
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
@@ -175,7 +174,7 @@ const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; 
         if (!target || !isPageData(target.data)) return;
         const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
         const newOrder = getReorderDestinationOrder(target.data.order, closestEdgeOfTarget, 'vertical');
-        baseUpdateMembership({ membershipId: item.membership.id, order: newOrder });
+        updateMembership({ membershipId: item.membership.id, order: newOrder });
       },
     });
   }, [item]);
