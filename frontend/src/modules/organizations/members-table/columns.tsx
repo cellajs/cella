@@ -11,7 +11,7 @@ import type { TFunction } from 'i18next';
 import { Link } from '@tanstack/react-router';
 import { openUserPreviewSheet } from '~/modules/users/users-table/columns';
 
-export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean) => {
+export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean, isSheet: boolean) => {
   const mobileColumns: ColumnOrColumnGroup<Member>[] = [
     {
       key: 'name',
@@ -74,7 +74,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       key: 'createdAt',
       name: t('common:created_at'),
       sortable: true,
-      visible: true,
+      visible: !isSheet,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.createdAt),
       minWidth: 180,
