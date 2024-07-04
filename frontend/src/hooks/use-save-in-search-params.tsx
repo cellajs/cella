@@ -33,8 +33,6 @@ const useSaveInSearchParams = (values: Record<string, string | string[] | number
       return;
     }
 
-    console.log('searchParams', searchParams);
-
     navigate({
       params,
       replace: true,

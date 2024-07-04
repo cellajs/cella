@@ -23,7 +23,7 @@ interface DataTableProps<TData> {
   error?: Error | null;
   isLoading?: boolean;
   isFetching?: boolean;
-  limit: number;
+  limit?: number;
   isFiltered?: boolean;
   renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
   NoRowsComponent?: React.ReactNode;
@@ -79,7 +79,7 @@ export const DataTable = <TData,>({
   rowKeyGetter,
   error,
   isLoading,
-  limit,
+  limit = 10,
   isFetching,
   NoRowsComponent,
   isFiltered,

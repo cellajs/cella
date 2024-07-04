@@ -21,20 +21,19 @@ import { useWorkspaceStore } from '~/store/workspace';
 import { getTaskOrder } from '../task/helpers';
 import { toast } from 'sonner';
 
-const LIMIT = 2000;
-
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
 export default function TasksTable() {
   const search = useSearch({ from: WorkspaceTableRoute.id });
 
   const { t } = useTranslation();
-  const { searchQuery, selectedTasks, setSelectedTasks, projects } = useWorkspaceStore(
-    ({ searchQuery, selectedTasks, setSelectedTasks, projects }) => ({
+  const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery } = useWorkspaceStore(
+    ({ searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery }) => ({
       searchQuery,
       selectedTasks,
       setSelectedTasks,
       projects,
+      setSearchQuery,
     }),
   );
 
@@ -42,19 +41,20 @@ export default function TasksTable() {
   const electric = useElectric()!;
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
   const [rows, setRows] = useState<Task[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [isFetching, setIsFetching] = useState(true);
-
   // Search query options
-  const q = useDebounce(search.q || searchQuery, 200);
+  const q = useDebounce(searchQuery, 200);
   const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
-  const limit = LIMIT;
 
-  const isFiltered = !!q;
+  const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
+
+  useEffect(() => {
+    if (search.q) {
+      setSearchQuery(search.q);
+    }
+  }, []);
 
   // Save filters in search params
   const filters = useMemo(
@@ -75,67 +75,61 @@ export default function TasksTable() {
     const db = electric.db;
     if (field === 'assigned_to' && Array.isArray(value)) {
       const assignedTo = value.map((user) => user.id);
-      db.tasks
-        .update({
-          data: {
-            assigned_to: assignedTo,
-          },
-          where: {
-            id: taskId,
-          },
-        })
-        .then(() => fetchTasks());
+      db.tasks.update({
+        data: {
+          assigned_to: assignedTo,
+        },
+        where: {
+          id: taskId,
+        },
+      });
       return;
     }
 
     // TODO: Review this
     if (field === 'labels' && Array.isArray(value)) {
       const labels = value.map((label) => label.id);
-      db.tasks
-        .update({
-          data: {
-            labels,
-          },
-          where: {
-            id: taskId,
-          },
-        })
-        .then(() => fetchTasks());
+      db.tasks.update({
+        data: {
+          labels,
+        },
+        where: {
+          id: taskId,
+        },
+      });
 
       return;
     }
     if (field === 'status') {
       const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
-      db.tasks
-        .update({
-          data: {
-            status: value,
-            ...(newOrder && { sort_order: newOrder }),
-          },
-          where: {
-            id: taskId,
-          },
-        })
-        .then(() => fetchTasks());
-
-      return;
-    }
-
-    db.tasks
-      .update({
+      db.tasks.update({
         data: {
-          [field]: value,
+          status: value,
+          ...(newOrder && { sort_order: newOrder }),
         },
         where: {
           id: taskId,
         },
-      })
-      .then(() => fetchTasks());
+      });
+
+      return;
+    }
+
+    db.tasks.update({
+      data: {
+        [field]: value,
+      },
+      where: {
+        id: taskId,
+      },
+    });
   };
 
   const [columns, setColumns] = useColumns(electric, handleChange);
-  const queryOptions = useMemo(() => {
-    return {
+
+  // TODO: Refactor this when Electric supports count
+  const { results: tasks = [], updatedAt } = useLiveQuery(
+    electric.db.tasks.liveMany({
       where: {
         project_id: {
           in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
@@ -159,49 +153,16 @@ export default function TasksTable() {
           },
         ],
       },
-      take: limit,
-      skip: offset,
       orderBy: {
         [sort || 'created_at']: order,
       },
-    };
-  }, [projects, sort, order, q, selectedStatuses, offset, selectedProjects]);
-
-  // TODO: Refactor this when Electric supports count
-  const { results: allTasks } = useLiveQuery(
-    electric.db.tasks.liveMany({
-      select: {
-        id: true,
-      },
-      where: queryOptions.where,
     }),
-  );
-
-  const fetchTasks = async () => {
-    const newOffset = 0;
-    setOffset(newOffset);
-    const results = await electric.db.tasks.findMany({
-      ...queryOptions,
-    });
-    setTasks(results as Task[]);
-    setIsFetching(false);
+  ) as {
+    results: Task[] | undefined;
+    updatedAt: Date | undefined;
   };
 
-  const fetchMore = async () => {
-    setIsFetching(true);
-    const newOffset = offset + limit;
-    setOffset(newOffset);
-    const results = await electric.db.tasks.findMany({
-      ...queryOptions,
-      skip: newOffset,
-    });
-    setTasks((prevTasks) => [...(prevTasks || []), ...(results as Task[])]);
-    setIsFetching(false);
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, [searchQuery, selectedStatuses, selectedProjects, sort, order]);
+  const isLoading = !updatedAt;
   // const onResetFilters = () => {
   //   setSearchQuery('');
   //   setSelectedTasks([]);
@@ -238,18 +199,15 @@ export default function TasksTable() {
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          limit: 10,
           rowHeight: 42,
           onRowsChange,
-          totalCount: allTasks?.length,
-          isLoading: isFetching,
-          isFetching,
+          totalCount: tasks.length,
+          isLoading,
           isFiltered,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,
-          fetchMore,
           rowKeyGetter: (row) => row.id,
-          enableVirtualization: false,
+          enableVirtualization: true,
           sortColumns,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
