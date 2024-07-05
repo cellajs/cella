@@ -184,7 +184,7 @@ export default function TasksTable() {
       return;
     }
     if (field === 'status') {
-      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
+      const newOrder = getTaskOrder(taskId, value, tasks);
       db.tasks
         .update({
           data: {
@@ -301,9 +301,7 @@ export default function TasksTable() {
         },
       });
       setLabels(fetchedLabels as Label[]);
-      const fetchedMembers = await Promise.all(
-        projects.map((p) => getMembers({ idOrSlug: p.id, entityType: 'PROJECT' }).then(({ items }) => items)),
-      );
+      const fetchedMembers = await Promise.all(projects.map((p) => getMembers({ idOrSlug: p.id, entityType: 'PROJECT' }).then(({ items }) => items)));
 
       setMembers(fetchedMembers.flat() as Member[]);
     };

@@ -8,7 +8,7 @@ import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { cn, getReorderDestinationOrder } from '~/lib/utils';
+import { cn } from '~/lib/utils';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
@@ -145,7 +145,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       return;
     }
     if (field === 'status') {
-      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
+      const newOrder = getTaskOrder(taskId, value, tasks);
       db.tasks.update({
         data: {
           status: value,
@@ -320,42 +320,39 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
         canMonitor({ source }) {
           return source.data.type === 'task';
         },
-        onDrop({ location, source }) {
+        async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
           const sourceData = source.data;
           if (!target) return;
           const targetData = target.data;
           // Drag a task
           if (isTaskData(sourceData) && isTaskData(targetData)) {
-            // Drag a task in different column
-            if (sourceData.item.project_id !== targetData.item.project_id) {
-              const edge: Edge | null = extractClosestEdge(targetData);
-              const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
-              // Update order of dragged task
-              Electric?.db.tasks.update({
-                data: {
-                  sort_order: newOrder,
-                  project_id: targetData.item.project_id,
-                },
-                where: {
-                  id: sourceData.item.id,
-                },
-              });
-            }
-            // Drag a task in same column
-            if (sourceData.item.project_id === targetData.item.project_id) {
-              const edge: Edge | null = extractClosestEdge(targetData);
-              const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
-              // Update order of dragged task
-              Electric?.db.tasks.update({
-                data: {
-                  sort_order: newOrder,
-                },
-                where: {
-                  id: sourceData.item.id,
-                },
-              });
-            }
+            const edge: Edge | null = extractClosestEdge(targetData);
+            const relativeTask = await Electric?.db.tasks.findFirst({
+              where: {
+                sort_order: { [edge === 'top' ? 'gt' : 'lt']: targetData.order },
+                project_id: targetData.item.project_id,
+              },
+              orderBy: {
+                sort_order: edge === 'top' ? 'asc' : 'desc',
+              },
+            });
+            const newOrder = relativeTask
+              ? (relativeTask.sort_order + targetData.order) / 2
+              : edge === 'top'
+                ? targetData.order + 1
+                : targetData.order / 2;
+            // Update order of dragged task
+            Electric?.db.tasks.update({
+              data: {
+                sort_order: newOrder,
+                // Define drag a task in same or different column
+                ...(sourceData.item.project_id !== targetData.item.project_id && { project_id: targetData.item.project_id }),
+              },
+              where: {
+                id: sourceData.item.id,
+              },
+            });
           }
         },
       }),

@@ -28,7 +28,7 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import type { Member } from '~/types/index.ts';
 import { Badge } from '../../ui/badge.tsx';
-import { getTaskOrder } from './helpers.ts';
+import { getNewTaskOrder } from './helpers.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
 
@@ -149,7 +149,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: getTaskOrder(values.status, values.status, projectTasks),
+          sort_order: getNewTaskOrder(values.status, projectTasks),
         },
       })
       .then(() => {

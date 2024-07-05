@@ -16,7 +16,7 @@ import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
-import { getTaskOrder } from './helpers.ts';
+import { getNewTaskOrder } from './helpers.ts';
 
 const formSchema = z.object({
   id: z.string(),
@@ -103,7 +103,7 @@ export const CreateSubTaskForm = ({
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: getTaskOrder(values.status, values.status, parentTask.subTasks),
+          sort_order: getNewTaskOrder(values.status, parentTask.subTasks),
         },
       })
       .then(() => {
