@@ -201,6 +201,7 @@ export function TaskCard({
           <div className="flex gap-1 w-full">
             <div className="flex flex-col justify-between gap-0.5 relative">
               <Button
+                id="type"
                 onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
                 aria-label="Set type"
                 variant="ghost"
@@ -302,6 +303,7 @@ export function TaskCard({
             )}
             {task.type !== 'bug' && (
               <Button
+                id="impact"
                 onClick={(event) => handleTaskActionClick(task, 'impact', event.currentTarget)}
                 aria-label="Set impact"
                 variant="ghost"
@@ -320,6 +322,7 @@ export function TaskCard({
               // TODO: Bind the entire task object instead of individual IDs
             }
             <Button
+              id="labels"
               onClick={(event) => handleTaskActionClick(task, 'labels', event.currentTarget)}
               aria-label="Set labels"
               variant="ghost"
@@ -345,6 +348,7 @@ export function TaskCard({
 
             <div className="flex gap-1 ml-auto mr-1">
               <Button
+                id="assigned_to"
                 onClick={(event) => handleTaskActionClick(task, 'assigned_to', event.currentTarget)}
                 aria-label="Assign"
                 variant="ghost"
@@ -366,6 +370,7 @@ export function TaskCard({
               </Button>
               <>
                 <Button
+                  id="status"
                   onClick={() => handleTaskChange('status', task.status + 1, task.id)}
                   disabled={(task.status as TaskStatus) === 6}
                   variant="outlineGhost"

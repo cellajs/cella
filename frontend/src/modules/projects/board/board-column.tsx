@@ -272,8 +272,10 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   // Open on key press
   const hotKeyPress = (event: KeyboardEvent, field: string) => {
     const focusedTask = showingTasks.find((t) => t.id === focusedTaskId);
-    if (!focusedTask) return;
-    handleTaskActionClick(focusedTask, field, event.target as HTMLElement);
+    if (!focusedTask || !event.target) return;
+    const trigger = (event.target as HTMLElement).querySelector(`#${field}`);
+    if (!trigger) return dropdowner.remove();
+    handleTaskActionClick(focusedTask, field, trigger as HTMLElement);
   };
 
   useHotkeys([
@@ -299,10 +301,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     };
 
     document.addEventListener('task-change', handleChange);
-
-    return () => {
-      document.removeEventListener('task-change', handleChange);
-    };
+    return () => document.removeEventListener('task-change', handleChange);
   });
 
   useEffect(() => {
@@ -312,9 +311,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       setFocusedTaskId(showingTasks[0].id);
     };
     document.addEventListener('project-change', handleChange);
-    return () => {
-      document.removeEventListener('project-change', handleChange);
-    };
+    return () => document.removeEventListener('project-change', handleChange);
   });
 
   useEffect(() => {
