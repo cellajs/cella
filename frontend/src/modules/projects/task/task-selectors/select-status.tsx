@@ -2,7 +2,6 @@ import { cva } from 'class-variance-authority';
 import { Check, type LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-// import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Kbd } from '~/modules/common/kbd';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -44,15 +43,6 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: Select
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
 
   const isSearching = searchValue.length > 0;
-  // Open on key press
-  // useHotkeys([
-  //   [
-  //     's',
-  //     () => {
-  //       if (focusedTaskId === task.id) setOpenPopover(true);
-  //     },
-  //   ],
-  // ]);
 
   const statusChange = (index: number) => {
     const newStatus = taskStatuses[index];

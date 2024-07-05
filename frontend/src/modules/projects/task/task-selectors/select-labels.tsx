@@ -97,16 +97,6 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
     );
   };
 
-  // Open on key press
-  // useHotkeys([
-  //   [
-  //     'l',
-  //     () => {
-  //       if (focusedTaskId === task.id) setOpenPopover(true);
-  //     },
-  //   ],
-  // ]);
-
   useEffect(() => {
     setSelectedLabels(value);
   }, [value]);

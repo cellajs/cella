@@ -79,7 +79,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'PROJECT' }).then((data) => data.items),
     initialData: [],
   });
-
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
@@ -269,6 +268,21 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     }
     toggleCreateForm(project.id);
   };
+
+  // Open on key press
+  const hotKeyPress = (event: KeyboardEvent, field: string) => {
+    const focusedTask = showingTasks.find((t) => t.id === focusedTaskId);
+    if (!focusedTask) return;
+    handleTaskActionClick(focusedTask, field, event.target as HTMLElement);
+  };
+
+  useHotkeys([
+    ['a', (e) => hotKeyPress(e, 'assigned_to')],
+    ['i', (e) => hotKeyPress(e, 'impact')],
+    ['l', (e) => hotKeyPress(e, 'labels')],
+    ['s', (e) => hotKeyPress(e, 'status')],
+    ['t', (e) => hotKeyPress(e, 'type')],
+  ]);
 
   useHotkeys([
     ['Escape', handleEscKeyPress],

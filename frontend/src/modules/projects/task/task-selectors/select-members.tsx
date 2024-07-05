@@ -1,7 +1,6 @@
 import { Check } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-// import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { Member } from '~/types/index.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
@@ -47,16 +46,6 @@ const AssignMembers = ({ users, value, changeAssignedTo, triggerWidth = 240 }: A
     setSearchValue('');
     return;
   }, [searchValue]);
-
-  // Open on key press
-  // useHotkeys([
-  //   [
-  //     'a',
-  //     () => {
-  //       if (focusedTaskId === task.id) setOpenPopover(true);
-  //     },
-  //   ],
-  // ]);
 
   return (
     <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>

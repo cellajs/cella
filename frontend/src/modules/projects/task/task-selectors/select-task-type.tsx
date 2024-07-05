@@ -1,7 +1,6 @@
 import { Bolt, Bug, Check, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-// import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from '~/modules/ui/command';
 import type { TaskType } from '../create-task-form';
@@ -32,16 +31,6 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
   const [selectedType, setSelectedType] = useState<Type | undefined>(taskTypes[taskTypes.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
-
-  // Open on key press
-  // useHotkeys([
-  //   [
-  //     't',
-  //     () => {
-  //       if (focusedTaskId === task.id) setOpenPopover(true);
-  //     },
-  //   ],
-  // ]);
 
   useEffect(() => {
     setSelectedType(taskTypes[taskTypes.findIndex((type) => type.value === currentType)]);

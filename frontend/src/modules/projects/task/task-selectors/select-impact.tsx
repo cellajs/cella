@@ -2,7 +2,6 @@
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-// import { useHotkeys } from '~/hooks/use-hot-keys';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from '~/modules/ui/command';
 import { Kbd } from '~/modules/common/kbd';
 import type { TaskImpact } from '../create-task-form';
@@ -37,16 +36,6 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
   const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(value ? impacts[value] : null);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
-
-  // Open on key press
-  // useHotkeys([
-  //   [
-  //     'i',
-  //     () => {
-  //       if (focusedTaskId === task.id) setOpenPopover(true);
-  //     },
-  //   ],
-  // ]);
 
   return (
     <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
