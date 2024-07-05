@@ -158,28 +158,30 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).flatMap((_, index) => {
           const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
           const mainTaskId = nanoid();
-
-          const insertSubTasks: InsertTaskModel[] = Array.from({ length: Math.floor(Math.random() * 4) }).map((_, subIndex) => {
-            const subTaskName = organizationsUniqueEnforcer.enforce(() => faker.company.name());
-            return {
-              id: nanoid(),
-              organizationId: organization.id,
-              projectId: project.id,
-              summary: subTaskName,
-              parentId: mainTaskId,
-              slug: faker.helpers.slugify(subTaskName).toLowerCase(),
-              order: subIndex,
-              // status in sub tasks only 1 or 6
-              status: Math.random() < 0.5 ? 1 : 6,
-              impact: 0,
-              type: 'chore',
-              markdown: faker.lorem.paragraphs(),
-              createdAt: faker.date.past(),
-              createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
-              modifiedAt: faker.date.past(),
-              modifiedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
-            };
-          });
+          // 60% change to set Subtasks
+          const insertSubTasks: InsertTaskModel[] = Array.from({ length: Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 3) + 1 }).map(
+            (_, subIndex) => {
+              const subTaskName = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+              return {
+                id: nanoid(),
+                organizationId: organization.id,
+                projectId: project.id,
+                summary: subTaskName,
+                parentId: mainTaskId,
+                slug: faker.helpers.slugify(subTaskName).toLowerCase(),
+                order: subIndex,
+                // status in sub tasks only 1 or 6
+                status: Math.random() < 0.5 ? 1 : 6,
+                impact: 0,
+                type: 'chore',
+                markdown: faker.lorem.paragraphs(),
+                createdAt: faker.date.past(),
+                createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
+                modifiedAt: faker.date.past(),
+                modifiedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
+              };
+            },
+          );
 
           const mainTask: InsertTaskModel = {
             id: mainTaskId,
