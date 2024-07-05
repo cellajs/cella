@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
-import { getDraggableItemData, getReorderDestinationOrder } from '~/lib/utils';
+import { getDraggableItemData } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -55,7 +55,12 @@ export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuIte
 
     return (
       <div key={item.id}>
-        <ItemOptions item={item} itemType={entityType} parentItemId={parentItemId} />
+        <ItemOptions
+          data={[...data].sort((a, b) => b.membership.order - a.membership.order)}
+          item={item}
+          itemType={entityType}
+          parentItemId={parentItemId}
+        />
         {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
           <>
             <SheetMenuItemsOptions data={item.submenu} shownOption={shownOption} />
@@ -73,7 +78,12 @@ export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuIte
   });
 };
 
-const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; item: UserMenuItem; itemType: ContextEntity }) => {
+const ItemOptions = ({
+  data,
+  item,
+  itemType,
+  parentItemId,
+}: { data: UserMenuItem[]; parentItemId?: string; item: UserMenuItem; itemType: ContextEntity }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -171,10 +181,26 @@ const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; 
       },
       onDrop({ location }) {
         const target = location.current.dropTargets[0];
-        if (!target || !isPageData(target.data)) return;
-        const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
-        const newOrder = getReorderDestinationOrder(target.data.order, closestEdgeOfTarget, 'vertical');
-        updateMembership({ membershipId: item.membership.id, order: newOrder });
+        if (!target) return;
+        const targetData = target.data;
+        if (isPageData(targetData)) {
+          const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
+          const targetTaskIndex = data.findIndex((i) => i.id === targetData.item.id);
+          const relativeTaskIndex = closestEdgeOfTarget === 'top' ? targetTaskIndex + 1 : targetTaskIndex - 1;
+
+          const relativeTask = data[relativeTaskIndex];
+          let newOrder: number;
+
+          if (relativeTask === undefined || relativeTask.membership.order === targetData.order) {
+            newOrder = closestEdgeOfTarget === 'top' ? targetData.order / 2 : targetData.order + 1;
+          } else if (relativeTask.id === item.id) {
+            newOrder = item.membership.order;
+          } else {
+            newOrder = (relativeTask.membership.order + targetData.order) / 2;
+          }
+
+          updateMembership({ membershipId: item.membership.id, order: newOrder });
+        }
       },
     });
   }, [item]);

@@ -76,13 +76,15 @@ export const SheetMenu = memo(() => {
       .filter((el) => !el.isSubmenu)
       .map((section) => {
         const menuSection = menu[section.storageType as keyof UserMenu];
+        console.log('menuSection:', menuSection);
+
         return (
           <MenuSection
             entityType={section.type}
             key={section.type}
             sectionType={section.storageType}
-            data={menuSection}
             createForm={section.createForm}
+            data={menuSection}
           />
         );
       });

@@ -337,11 +337,14 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                 sort_order: edge === 'top' ? 'asc' : 'desc',
               },
             });
-            const newOrder = relativeTask
-              ? (relativeTask.sort_order + targetData.order) / 2
-              : edge === 'top'
-                ? targetData.order + 1
-                : targetData.order / 2;
+            let newOrder: number;
+            if (!relativeTask || relativeTask.sort_order === targetData.order) {
+              newOrder = edge === 'top' ? targetData.order + 1 : targetData.order / 2;
+            } else if (relativeTask.id === sourceData.item.id) {
+              newOrder = sourceData.item.sort_order;
+            } else {
+              newOrder = (relativeTask.sort_order + targetData.order) / 2;
+            }
             // Update order of dragged task
             Electric?.db.tasks.update({
               data: {
