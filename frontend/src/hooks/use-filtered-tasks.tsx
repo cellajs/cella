@@ -5,10 +5,9 @@ import { sortAndGetCounts, enhanceTasks } from './use-filtered-task-helpers';
 
 const useTaskFilters = (tasks: Task[], showAccepted: boolean, showIced: boolean, labels: Label[], members: Member[]) => {
   return useMemo(() => {
-    const { sortedTasks, acceptedCount, icedCount } = sortAndGetCounts(tasks, showAccepted, showIced);
-    const enhancedTasks = enhanceTasks(sortedTasks, labels, members);
-
-    return { showingTasks: enhancedTasks, acceptedCount, icedCount };
+    const enhancedTasks = enhanceTasks(tasks, labels, members);
+    const { sortedTasks, acceptedCount, icedCount } = sortAndGetCounts(enhancedTasks, showAccepted, showIced);
+    return { showingTasks: sortedTasks, acceptedCount, icedCount };
   }, [tasks, showAccepted, showIced, labels, members]);
 };
 
