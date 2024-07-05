@@ -104,6 +104,7 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
   return (
     <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
+        autoFocus={true}
         value={searchValue}
         onValueChange={(searchValue) => {
           // If the label types a number, select the label like useHotkeys

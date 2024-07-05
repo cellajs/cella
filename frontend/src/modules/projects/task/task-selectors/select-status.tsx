@@ -63,6 +63,7 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: Select
   return (
     <Command className="relative rounded-lg w-60">
       <CommandInput
+        autoFocus={true}
         value={searchValue}
         clearValue={setSearchValue}
         onValueChange={(searchValue) => {

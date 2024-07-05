@@ -37,8 +37,9 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
   }, [currentType]);
 
   return (
-    <Command className={cn(className, 'relative rounded-lg w-48 p-0 rounded-lg')}>
+    <Command className={cn(className, 'relative w-48 p-0 rounded-lg')}>
       <CommandInput
+        autoFocus={true}
         clearValue={setSearchValue}
         value={searchValue}
         onValueChange={(searchValue) => {

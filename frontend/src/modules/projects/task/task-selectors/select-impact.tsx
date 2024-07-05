@@ -40,6 +40,7 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
   return (
     <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
+        autoFocus={true}
         clearValue={setSearchValue}
         value={searchValue}
         onValueChange={(searchValue) => {

@@ -50,6 +50,7 @@ const AssignMembers = ({ users, value, changeAssignedTo, triggerWidth = 240 }: A
   return (
     <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
+        autoFocus={true}
         value={searchValue}
         onValueChange={setSearchValue}
         clearValue={setSearchValue}

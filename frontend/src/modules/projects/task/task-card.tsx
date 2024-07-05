@@ -71,7 +71,6 @@ export function TaskCard({
   const [dragOver, setDragOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  // TODO Move to impact-value component
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   // TODO move this state to task-expanded component
@@ -333,8 +332,8 @@ export function TaskCard({
                 {task.virtualLabels.length > 0 ? (
                   task.virtualLabels.map(({ name, id }) => {
                     return (
-                      <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
-                        <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
+                      <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border px-0 bg-border">
+                        <Badge variant="outline" key={id} className="border-0 font-normal text-[.75rem] h-5 bg-transparent last:mr-0">
                           {name}
                         </Badge>
                       </div>
