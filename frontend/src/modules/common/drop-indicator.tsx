@@ -5,24 +5,25 @@ import { cn } from '~/lib/utils';
 interface DropIndicatorProps {
   edge: Edge;
   className?: string;
-  gap?: string;
+  gap: number;
 }
 
-const dropIndicatorEdgeStyles = {
-  top: (gap: string) => ({
-    top: `calc(-1 * (${gap} / 2 + 4px / 2))`,
-  }),
-  bottom: (gap: string) => ({
-    bottom: `calc(-1 * (${gap} / 2 + 4px / 2))`,
-  }),
-  left: () => {},
-  right: () => {},
-};
+export const DropIndicator: React.FC<DropIndicatorProps> = ({ edge, className = '', gap = 0 }) => {
 
-export const DropIndicator: React.FC<DropIndicatorProps> = ({ edge, className = '', gap = '0' }) => {
+  const dropIndicatorEdgeStyles = {
+    top: {
+      top: `${-gap / 2}rem`,
+    },
+    bottom: {
+      bottom: `${-gap / 2}rem`,
+    },
+    left: () => {},
+    right: () => {},
+  };
+
   return (
     <div
-      style={{ ...dropIndicatorEdgeStyles[edge](gap), '--gap': gap } as unknown as React.CSSProperties}
+      style={{ ...dropIndicatorEdgeStyles[edge], '--gap': gap } as unknown as React.CSSProperties}
       className={cn(
         'absolute w-full bg-primary rounded-sm z-100',
         ['top', 'bottom'].includes(edge) ? 'left-0 w-full h-1' : 'top-0 h-full w-1',

@@ -1,4 +1,3 @@
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { redirect } from '@tanstack/react-router';
 import type { Entity } from 'backend/types/common';
 import { type ClassValue, clsx } from 'clsx';
@@ -121,29 +120,6 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
 // creating item data for DnD
 export const getDraggableItemData = <T>(item: T, itemOrder: number, type: 'task' | 'menuItem', itemType: Entity): DraggableItemData<T> => {
   return { dragItem: true, item, order: itemOrder, type, itemType: itemType };
-};
-
-// To get target order for drop on DnD
-export const getReorderDestinationOrder = (
-  targetOrder: number,
-  closestEdgeOfTarget: Edge | null,
-  axis: 'vertical' | 'horizontal',
-  sourceOrder?: number,
-): number => {
-  if (!closestEdgeOfTarget && sourceOrder) {
-    if (sourceOrder > targetOrder) return targetOrder - 0.01;
-    if (sourceOrder < targetOrder) return targetOrder + 0.01;
-  }
-  if (axis === 'horizontal') {
-    if (closestEdgeOfTarget === 'left') return targetOrder - 0.01;
-    if (closestEdgeOfTarget === 'right') return targetOrder + 0.01;
-  }
-  if (axis === 'vertical') {
-    if (closestEdgeOfTarget === 'top') return targetOrder - 0.01;
-    if (closestEdgeOfTarget === 'bottom') return targetOrder + 0.01;
-  }
-
-  return targetOrder;
 };
 
 // adding new item on local store user's menu

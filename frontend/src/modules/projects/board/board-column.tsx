@@ -8,29 +8,32 @@ import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { cn, getReorderDestinationOrder } from '~/lib/utils';
+import { cn } from '~/lib/utils';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { useWorkspaceContext } from '~/modules/workspaces/workspace-context';
 import { useNavigationStore } from '~/store/navigation';
-import { useWorkspaceStore } from '~/store/workspace';
+import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
-import CreateTaskForm from '../task/create-task-form';
+import CreateTaskForm, { type TaskImpact, type TaskType } from '../task/create-task-form';
 import { TaskCard, isTaskData } from '../task/task-card';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
-import { ProjectProvider } from './project-context';
 import { ProjectSettings } from '../project-settings';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { getTaskOrder } from '../task/helpers';
 import { toast } from 'sonner';
-import { ProjectState } from './board';
-import { useInView } from 'react-intersection-observer';
+import { dropdowner } from '~/modules/common/dropdowner/state';
+import { SelectImpact } from '../task/task-selectors/select-impact';
+import SetLabels from '../task/task-selectors/select-labels';
+import { SelectTaskType } from '../task/task-selectors/select-task-type';
+import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
+import AssignMembers from '../task/task-selectors/select-members';
+import { useWorkspaceStore } from '~/store/workspace';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -49,13 +52,12 @@ interface ProjectChangeEvent extends Event {
 }
 
 interface BoardColumnProps {
-  projectState: ProjectState;
   project: Project;
   createForm: boolean;
   toggleCreateForm: (projectId: string) => void;
 }
 
-export function BoardColumn({ project, projectState, createForm, toggleCreateForm }: BoardColumnProps) {
+export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
   const columnRef = useRef<HTMLDivElement | null>(null);
@@ -64,37 +66,41 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
-  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } =
-    useWorkspaceContext(
-      ({ workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId }) => ({
-        workspace,
-        selectedTasks,
-        searchQuery,
-        focusedTaskId,
-        setSelectedTasks,
-        setFocusedTaskId,
-      }),
-    );
-  const { workspaces, changeColumn } = useWorkspaceStore();
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceStore();
+  const { workspaces, changeColumn } = useWorkspaceUIStore();
+
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
-  const { ref: measureRef, inView } = useInView({
-    triggerOnce: false,
-    threshold: 0,
-  });
-
-  const { tasks, isFetching, isLoading, fetchMore, totalCount } = projectState;
 
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
     queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'PROJECT' }).then((data) => data.items),
     initialData: [],
   });
-
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
+
+  const { results: tasks = [], updatedAt } = useLiveQuery(
+    Electric.db.tasks.liveMany({
+      where: {
+        project_id: project.id,
+        OR: [
+          {
+            markdown: {
+              contains: searchQuery,
+            },
+          },
+        ],
+      },
+    }),
+  ) as {
+    results: Task[] | undefined;
+    updatedAt: Date | undefined;
+  };
+
+  const isLoading = !updatedAt;
 
   const { results: labels = [] } = useLiveQuery(
     Electric.db.labels.liveMany({
@@ -113,9 +119,10 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
     const db = Electric.db;
     if (field === 'assigned_to' && Array.isArray(value)) {
+      const assignedTo = value.map((user) => user.id);
       db.tasks.update({
         data: {
-          assigned_to: value.map((user) => user.id),
+          assigned_to: assignedTo,
         },
         where: {
           id: taskId,
@@ -126,9 +133,10 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
 
     // TODO: Review this
     if (field === 'labels' && Array.isArray(value)) {
+      const labels = value.map((label) => label.id);
       db.tasks.update({
         data: {
-          labels: value.map((label) => label.id),
+          labels,
         },
         where: {
           id: taskId,
@@ -137,7 +145,7 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
       return;
     }
     if (field === 'status') {
-      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
+      const newOrder = getTaskOrder(taskId, value, tasks);
       db.tasks.update({
         data: {
           status: value,
@@ -210,6 +218,49 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
+  const createLabel = (newLabel: Label) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    // TODO: Implement the following
+    // Save the new label to the database
+    Electric.db.labels.create({ data: newLabel });
+  };
+
+  const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
+    let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
+
+    if (field === 'impact')
+      component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
+    else if (field === 'labels')
+      component = (
+        <SetLabels
+          labels={labels}
+          value={task.virtualLabels}
+          organizationId={task.organization_id}
+          projectId={task.project_id}
+          changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
+          createLabel={createLabel}
+        />
+      );
+    else if (field === 'assigned_to')
+      component = (
+        <AssignMembers
+          users={members}
+          value={task.virtualAssignedTo}
+          changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
+        />
+      );
+    else if (field === 'status')
+      component = (
+        <SelectStatus
+          taskStatus={task.status as TaskStatus}
+          changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)}
+          inputPlaceholder={t('common:placeholder.set_status')}
+        />
+      );
+
+    return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
+  };
+
   const handleTaskFormClick = () => {
     if (!createForm) {
       const container = document.getElementById(`${project.id}-viewport`);
@@ -218,21 +269,27 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
     toggleCreateForm(project.id);
   };
 
+  // Open on key press
+  const hotKeyPress = (event: KeyboardEvent, field: string) => {
+    const focusedTask = showingTasks.find((t) => t.id === focusedTaskId);
+    if (!focusedTask || !event.target) return;
+    const trigger = (event.target as HTMLElement).querySelector(`#${field}`);
+    if (!trigger) return dropdowner.remove();
+    handleTaskActionClick(focusedTask, field, trigger as HTMLElement);
+  };
+
+  useHotkeys([
+    ['a', (e) => hotKeyPress(e, 'assigned_to')],
+    ['i', (e) => hotKeyPress(e, 'impact')],
+    ['l', (e) => hotKeyPress(e, 'labels')],
+    ['s', (e) => hotKeyPress(e, 'status')],
+    ['t', (e) => hotKeyPress(e, 'type')],
+  ]);
+
   useHotkeys([
     ['Escape', handleEscKeyPress],
     ['Enter', handleEnterKeyPress],
   ]);
-
-  useEffect(() => {
-    if (!tasks.length) return;
-
-    if (inView && !isFetching) {
-      if (typeof totalCount === 'number' && tasks.length >= totalCount) {
-        return;
-      }
-      fetchMore();
-    }
-  }, [inView, isFetching]);
 
   useEffect(() => {
     const handleChange = (event: Event) => {
@@ -244,10 +301,7 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
     };
 
     document.addEventListener('task-change', handleChange);
-
-    return () => {
-      document.removeEventListener('task-change', handleChange);
-    };
+    return () => document.removeEventListener('task-change', handleChange);
   });
 
   useEffect(() => {
@@ -257,9 +311,7 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
       setFocusedTaskId(showingTasks[0].id);
     };
     document.addEventListener('project-change', handleChange);
-    return () => {
-      document.removeEventListener('project-change', handleChange);
-    };
+    return () => document.removeEventListener('project-change', handleChange);
   });
 
   useEffect(() => {
@@ -268,42 +320,42 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
         canMonitor({ source }) {
           return source.data.type === 'task';
         },
-        onDrop({ location, source }) {
+        async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
           const sourceData = source.data;
           if (!target) return;
           const targetData = target.data;
           // Drag a task
           if (isTaskData(sourceData) && isTaskData(targetData)) {
-            // Drag a task in different column
-            if (sourceData.item.project_id !== targetData.item.project_id) {
-              const edge: Edge | null = extractClosestEdge(targetData);
-              const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
-              // Update order of dragged task
-              Electric?.db.tasks.update({
-                data: {
-                  sort_order: newOrder,
-                  project_id: targetData.item.project_id,
-                },
-                where: {
-                  id: sourceData.item.id,
-                },
-              });
+            const edge: Edge | null = extractClosestEdge(targetData);
+            const relativeTask = await Electric?.db.tasks.findFirst({
+              where: {
+                sort_order: { [edge === 'top' ? 'gt' : 'lt']: targetData.order },
+                project_id: targetData.item.project_id,
+              },
+              orderBy: {
+                sort_order: edge === 'top' ? 'asc' : 'desc',
+              },
+            });
+            let newOrder: number;
+            if (!relativeTask || relativeTask.sort_order === targetData.order) {
+              newOrder = edge === 'top' ? targetData.order + 1 : targetData.order / 2;
+            } else if (relativeTask.id === sourceData.item.id) {
+              newOrder = sourceData.item.sort_order;
+            } else {
+              newOrder = (relativeTask.sort_order + targetData.order) / 2;
             }
-            // Drag a task in same column
-            if (sourceData.item.project_id === targetData.item.project_id) {
-              const edge: Edge | null = extractClosestEdge(targetData);
-              const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
-              // Update order of dragged task
-              Electric?.db.tasks.update({
-                data: {
-                  sort_order: newOrder,
-                },
-                where: {
-                  id: sourceData.item.id,
-                },
-              });
-            }
+            // Update order of dragged task
+            Electric?.db.tasks.update({
+              data: {
+                sort_order: newOrder,
+                // Define drag a task in same or different column
+                ...(sourceData.item.project_id !== targetData.item.project_id && { project_id: targetData.item.project_id }),
+              },
+              where: {
+                id: sourceData.item.id,
+              },
+            });
           }
         },
       }),
@@ -315,136 +367,119 @@ export function BoardColumn({ project, projectState, createForm, toggleCreateFor
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
   return (
-    <ProjectProvider key={project.id} project={project} tasks={tasks} labels={labels} members={members}>
-      <div ref={columnRef} className="flex flex-col h-full">
-        <BoardColumnHeader
-          createFormClick={handleTaskFormClick}
-          openSettings={openSettingsSheet}
-          createFormOpen={createForm}
-        />
-        <div
-          className={cn(
-            'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b opacity-100',
-            selectedTasks.length && 'is-selected',
+    <div ref={columnRef} className="flex flex-col h-full">
+      <BoardColumnHeader
+        id={project.id}
+        name={project.name}
+        color={project.color}
+        createFormClick={handleTaskFormClick}
+        openSettings={openSettingsSheet}
+        createFormOpen={createForm}
+      />
+      <div
+        className={cn(
+          'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b opacity-100',
+          selectedTasks.length && 'is-selected',
+        )}
+      >
+        {stickyBackground}
+
+        <div className="h-full border-l border-r">
+          {createForm && (
+            <CreateTaskForm
+              projectId={project.id}
+              organizationId={project.organizationId}
+              tasks={tasks}
+              labels={labels}
+              members={members}
+              onCloseForm={() => toggleCreateForm(project.id)}
+            />
           )}
-        >
-          {stickyBackground}
 
-          <div className="h-full border-l border-r">
-            {createForm && <CreateTaskForm onCloseForm={() => toggleCreateForm(project.id)} />}
+          <div ref={containerRef} />
 
-            <div ref={containerRef} />
-
-            {isLoading ? (
-              <ColumnSkeleton />
-            ) : (
-              <>
-                <div className="h-full" ref={cardListRef}>
-                  {!!tasks.length && (
-                    <ScrollArea
-                      ref={scrollableRef}
-                      id={project.id}
-                      size="indicatorVertical"
-                      className="h-full mx-[-.07rem]"
-                    >
-                      <ScrollBar size="indicatorVertical" />
-                      <div className="px-0 relative">
-                        <Button
-                          onClick={handleAcceptedClick}
-                          variant="ghost"
-                          disabled={!acceptedCount}
-                          size="sm"
-                          className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[.07rem]"
-                        >
-                          <span className="text-xs">
-                            {acceptedCount} {t('common:accepted').toLowerCase()}
-                          </span>
-                          {!!acceptedCount && (
-                            <ChevronDown
-                              size={16}
-                              className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`}
-                            />
-                          )}
-                        </Button>
-                        {showingTasks.map((task) => (
-                          <TaskCard
-                            key={task.id}
-                            task={task}
-                            subTasks={tasks.filter((t) => t.parent_id === task.id)}
-                            isExpanded={expandedTasks[task.id] || false}
-                            isSelected={selectedTasks.includes(task.id)}
-                            isFocused={task.id === focusedTaskId}
-                            handleTaskChange={handleChange}
-                            handleTaskSelect={handleTaskSelect}
-                            setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
-                          />
-                        ))}
-                        {/* Infinite loading measure ref */}
-                        {/* <div
-                          key={totalCount}
-                          ref={measureRef}
-                          className="h-4 w-0 bg-red-700 absolute bottom-0 z-[200]"
-                          style={{
-                            height: `${showingTasks.length * 0.2 * TASK_CARD_HEIGHT}px`,
-                            maxHeight: `${TASK_CARD_HEIGHT * LIMIT}px`,
-                          }}
-                        /> */}
-                      </div>
+          {isLoading ? (
+            <ColumnSkeleton />
+          ) : (
+            <>
+              <div className="h-full" ref={cardListRef}>
+                {!!tasks.length && (
+                  <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
+                    <ScrollBar size="indicatorVertical" />
+                    <div className="px-0 relative">
                       <Button
-                        ref={measureRef}
-                        onClick={handleIcedClick}
+                        onClick={handleAcceptedClick}
                         variant="ghost"
-                        disabled={!icedCount}
+                        disabled={!acceptedCount}
                         size="sm"
-                        className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[.07rem]"
+                        className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[.07rem]"
                       >
                         <span className="text-xs">
-                          {icedCount} {t('common:iced').toLowerCase()}
+                          {acceptedCount} {t('common:accepted').toLowerCase()}
                         </span>
-                        {!!icedCount && (
-                          <ChevronDown
-                            size={16}
-                            className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`}
-                          />
+                        {!!acceptedCount && (
+                          <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
                         )}
                       </Button>
-                    </ScrollArea>
-                  )}
+                      {showingTasks.map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          isExpanded={expandedTasks[task.id] || false}
+                          isSelected={selectedTasks.includes(task.id)}
+                          isFocused={task.id === focusedTaskId}
+                          handleTaskChange={handleChange}
+                          handleTaskActionClick={handleTaskActionClick}
+                          handleTaskSelect={handleTaskSelect}
+                          setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
+                        />
+                      ))}
+                    </div>
+                    <Button
+                      onClick={handleIcedClick}
+                      variant="ghost"
+                      disabled={!icedCount}
+                      size="sm"
+                      className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[.07rem]"
+                    >
+                      <span className="text-xs">
+                        {icedCount} {t('common:iced').toLowerCase()}
+                      </span>
+                      {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
+                    </Button>
+                  </ScrollArea>
+                )}
 
-                  {!tasks.length && !searchQuery && (
-                    <ContentPlaceholder
-                      Icon={Palmtree}
-                      title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
-                      text={
-                        !createForm && (
-                          <>
-                            <Undo
-                              size={200}
-                              strokeWidth={0.2}
-                              className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
-                            />
-                            <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
-                              <span>{t('common:click')}</span>
-                              <span className="text-primary">{`+${t('common:task')}`}</span>
-                              <span>{t('common:no_tasks.text')}</span>
-                            </p>
-                          </>
-                        )
-                      }
-                    />
-                  )}
-                  {!tasks.length && searchQuery && (
-                    <ContentPlaceholder
-                      Icon={Search}
-                      title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })}
-                    />
-                  )}
-                </div>
-              </>
-            )}
-          </div>
+                {!tasks.length && !searchQuery && (
+                  <ContentPlaceholder
+                    Icon={Palmtree}
+                    title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
+                    text={
+                      !createForm && (
+                        <>
+                          <Undo
+                            size={200}
+                            strokeWidth={0.2}
+                            className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
+                          />
+                          <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
+                            <span>{t('common:click')}</span>
+                            <span className="text-primary">{`+${t('common:task')}`}</span>
+                            <span>{t('common:no_tasks.text')}</span>
+                          </p>
+                        </>
+                      )
+                    }
+                  />
+                )}
+                {!tasks.length && searchQuery && (
+                  <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </ProjectProvider>
+    </div>
   );
 }

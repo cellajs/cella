@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
 import MDEditor from '@uiw/react-md-editor';
-import { Bolt, Bug, Star, UserX, Tag, X, ChevronDown } from 'lucide-react';
+import { UserX, Tag, X, ChevronDown } from 'lucide-react';
 import { type LegacyRef, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -18,7 +18,6 @@ import { dialog } from '~/modules/common/dialoger/state.ts';
 import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
-import { useProjectContext } from '../board/project-context.tsx';
 import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
 import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
@@ -29,15 +28,19 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import type { Member } from '~/types/index.ts';
 import { Badge } from '../../ui/badge.tsx';
-import { getTaskOrder } from './helpers.ts';
-import { dropDown } from '~/modules/common/dropdowner/state.ts';
+import { getNewTaskOrder } from './helpers.ts';
+import { dropdowner } from '~/modules/common/dropdowner/state.ts';
+import { taskTypes } from './task-selectors/select-task-type.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
 
-export const taskTypes = ['feature', 'chore', 'bug'];
-
 interface CreateTaskFormProps {
+  tasks: Task[];
+  labels: Label[];
+  members: Member[];
+  projectId: string;
+  organizationId: string;
   dialog?: boolean;
   onCloseForm?: () => void;
   onFormSubmit?: (task: Task, isNew?: boolean, toStatus?: TaskStatus) => void;
@@ -70,15 +73,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onCloseForm }) => {
+const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members, projectId, organizationId, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore(({ user }) => ({ user }));
   const defaultId = nanoid();
   const { ref, bounds } = useMeasure();
   const Electric = useElectric();
-
-  const { project, tasks, labels, members } = useProjectContext(({ project, tasks, labels, members }) => ({ project, tasks, labels, members }));
 
   const handleCloseForm = () => {
     if (isDialog) dialog.remove();
@@ -116,14 +117,21 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
     [],
   );
 
+  const createLabel = (newLabel: Label) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    // TODO: Implement the following
+    // Save the new label to the database
+    Electric.db.labels.create({ data: newLabel });
+  };
+
   // Form with draft in local storage
-  const form = useFormWithDraft<FormValues>(`create-task-${project.id}`, formOptions);
+  const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
-    const projectTasks = tasks.filter((task) => task.project_id === project.id);
+    const projectTasks = tasks.filter((task) => task.project_id === projectId);
 
     Electric.db.tasks
       .create({
@@ -136,12 +144,12 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
           labels: values.labels.map((label) => label.id),
           assigned_to: values.assignedTo.map((user) => user.id),
           status: values.status,
-          organization_id: project.organizationId,
-          project_id: project.id,
+          organization_id: organizationId,
+          project_id: projectId,
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: getTaskOrder(values.status, values.status, projectTasks),
+          sort_order: getNewTaskOrder(values.status, projectTasks),
         },
       })
       .then(() => {
@@ -207,11 +215,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                     }}
                   >
                     {taskTypes.map((type) => (
-                      <ToggleGroupItem size="sm" value={type} className="w-full" key={type}>
-                        {type === 'feature' && <Star size={16} className="fill-amber-400 text-amber-500" />}
-                        {type === 'chore' && <Bolt size={16} className="fill-slate-400 text-slate-500" />}
-                        {type === 'bug' && <Bug size={16} className="fill-red-400 text-red-500" />}
-                        <span className="ml-2 font-light">{t(`common:${type}`)}</span>
+                      <ToggleGroupItem size="sm" value={type.value} className="w-full" key={type.label}>
+                        {type.icon()}
+                        <span className="ml-2 font-light">{t(`common:${type.value}`)}</span>
                       </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
@@ -232,26 +238,31 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
               return (
                 <FormItem>
                   <FormControl>
-                    <SelectImpact value={selectedImpactValue} triggerWidth={bounds.width} changeTaskImpact={onChange}>
-                      <Button
-                        aria-label="Set impact"
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-left font-light flex gap-2 justify-start border"
-                      >
-                        {selectedImpact !== null ? (
-                          <>
-                            <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
-                            {selectedImpact.label}
-                          </>
-                        ) : (
-                          <>
-                            <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
-                            {t('common:set_impact')}
-                          </>
-                        )}
-                      </Button>
-                    </SelectImpact>
+                    <Button
+                      aria-label="Set impact"
+                      variant="ghost"
+                      size="sm"
+                      className="relative w-full text-left font-light flex gap-2 justify-start border"
+                      type="button"
+                      onClick={(event) => {
+                        dropdowner(<SelectImpact value={selectedImpactValue} triggerWidth={bounds.width - 3} changeTaskImpact={onChange} />, {
+                          id: `impact-${defaultId}`,
+                          trigger: event.currentTarget,
+                        });
+                      }}
+                    >
+                      {selectedImpact !== null ? (
+                        <>
+                          <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                          {selectedImpact.label}
+                        </>
+                      ) : (
+                        <>
+                          <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
+                          {t('common:set_impact')}
+                        </>
+                      )}
+                    </Button>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -267,39 +278,52 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <AssignMembers users={members} value={value as Member[]} triggerWidth={bounds.width} changeAssignedTo={onChange}>
-                    <Button aria-label="Assign" variant="ghost" size="sm" className="flex justify-start gap-2 font-light w-full text-left border">
-                      {value.length ? (
-                        <>
-                          <AvatarGroup limit={3}>
-                            <AvatarGroupList>
-                              {value.map((user) => (
-                                <AvatarWrap
-                                  type="USER"
-                                  key={user.id}
-                                  id={user.id}
-                                  name={user.name}
-                                  url={user.thumbnailUrl}
-                                  className="h-6 w-6 text-xs"
-                                />
-                              ))}
-                            </AvatarGroupList>
-                            <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
-                          </AvatarGroup>
-                          <span className="ml-2 truncate">
-                            {value.length === 0 && 'Assign to'}
-                            {value.length === 1 && value[0].name}
-                            {value.length === 2 && value.map(({ name }) => name).join(', ')}
-                            {value.length > 2 && `${value.length} assigned`}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <UserX className="h-4 w-4 opacity-50" /> {t('common:assign_to')}
-                        </>
-                      )}
-                    </Button>
-                  </AssignMembers>
+                  <Button
+                    aria-label="Assign"
+                    variant="ghost"
+                    size="sm"
+                    className="relative flex justify-start gap-2 font-light w-full text-left border"
+                    type="button"
+                    onClick={(event) => {
+                      dropdowner(
+                        <AssignMembers users={members} value={value as Member[]} triggerWidth={bounds.width - 3} changeAssignedTo={onChange} />,
+                        {
+                          id: `assign_to-${defaultId}`,
+                          trigger: event.currentTarget,
+                        },
+                      );
+                    }}
+                  >
+                    {value.length ? (
+                      <>
+                        <AvatarGroup limit={3}>
+                          <AvatarGroupList>
+                            {value.map((user) => (
+                              <AvatarWrap
+                                type="USER"
+                                key={user.id}
+                                id={user.id}
+                                name={user.name}
+                                url={user.thumbnailUrl}
+                                className="h-6 w-6 text-xs"
+                              />
+                            ))}
+                          </AvatarGroupList>
+                          <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
+                        </AvatarGroup>
+                        <span className="ml-2 truncate">
+                          {value.length === 0 && 'Assign to'}
+                          {value.length === 1 && value[0].name}
+                          {value.length === 2 && value.map(({ name }) => name).join(', ')}
+                          {value.length > 2 && `${value.length} assigned`}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <UserX className="h-4 w-4 opacity-50" /> {t('common:assign_to')}
+                      </>
+                    )}
+                  </Button>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -317,58 +341,64 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
             return (
               <FormItem>
                 <FormControl>
-                  <SetLabels
-                    labels={labels}
-                    value={value as Label[]}
-                    triggerWidth={bounds.width}
-                    projectId={project.id}
-                    organizationId={project.organizationId}
-                    changeLabels={onChange}
+                  <Button
+                    type="button"
+                    aria-label="Set labels"
+                    variant="ghost"
+                    size="sm"
+                    className="relative flex h-auto justify-start font-light w-full text-left min-h-9 py-1 border hover:bg-accent/20"
+                    onClick={(event) => {
+                      dropdowner(
+                        <SetLabels
+                          labels={labels}
+                          value={value as Label[]}
+                          triggerWidth={bounds.width - 3}
+                          projectId={projectId}
+                          organizationId={organizationId}
+                          changeLabels={onChange}
+                          createLabel={createLabel}
+                        />,
+                        { id: `labels-${defaultId}`, trigger: event.currentTarget },
+                      );
+                    }}
                   >
-                    <Button
-                      aria-label="Set labels"
-                      variant="ghost"
-                      size="sm"
-                      className="flex h-auto justify-start font-light w-full  text-left min-h-9 py-1 border hover:bg-accent/20"
-                    >
-                      <div className="flex truncate flex-wrap gap-[.07rem]">
-                        {value.length > 0 ? (
-                          value.map(({ name, id, color }) => {
-                            return (
-                              <div
-                                key={id}
-                                style={badgeStyle(color)}
-                                className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
-                              >
-                                <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] text-sm h-6 last:mr-0">
-                                  {name}
-                                </Badge>
+                    <div className="flex truncate flex-wrap gap-[.07rem]">
+                      {value.length > 0 ? (
+                        value.map(({ name, id, color }) => {
+                          return (
+                            <div
+                              key={id}
+                              style={badgeStyle(color)}
+                              className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
+                            >
+                              <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] text-sm h-6 last:mr-0">
+                                {name}
+                              </Badge>
 
-                                <button
-                                  type="button"
-                                  className={cn(
-                                    buttonVariants({ size: 'micro', variant: 'ghost' }),
-                                    'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0',
-                                  )}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    onChange(value.filter((l) => l.name !== name));
-                                  }}
-                                >
-                                  <X size={16} strokeWidth={3} />
-                                </button>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <>
-                            <Tag size={16} className="opacity-50" />
-                            <span className="ml-2">{t('common:choose_labels')}</span>
-                          </>
-                        )}
-                      </div>
-                    </Button>
-                  </SetLabels>
+                              <button
+                                type="button"
+                                className={cn(
+                                  buttonVariants({ size: 'micro', variant: 'ghost' }),
+                                  'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0',
+                                )}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  onChange(value.filter((l) => l.name !== name));
+                                }}
+                              >
+                                <X size={16} strokeWidth={3} />
+                              </button>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <>
+                          <Tag size={16} className="opacity-50" />
+                          <span className="ml-2">{t('common:choose_labels')}</span>
+                        </>
+                      )}
+                    </div>
+                  </Button>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -399,11 +429,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                           aria-label="Set status"
                           variant={'default'}
                           size="xs"
-                          className="rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
+                          className="relative rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
                           onClick={(event) => {
-                            const button = event.currentTarget;
-                            const buttonRect = button.getBoundingClientRect();
-                            dropDown(
+                            dropdowner(
                               <SelectStatus
                                 taskStatus={1}
                                 changeTaskStatus={(newStatus) => {
@@ -413,12 +441,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ dialog: isDialog, onClo
                                 inputPlaceholder={t('common:placeholder.create_with_status')}
                               />,
                               {
-                                id: `select-status-${defaultId}`,
+                                id: `status-${defaultId}`,
                                 trigger: event.currentTarget,
-                                position: {
-                                  top: buttonRect.top + buttonRect.height,
-                                  left: buttonRect.right - 240,
-                                },
                               },
                             );
                           }}

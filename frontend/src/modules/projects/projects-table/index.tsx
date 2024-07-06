@@ -132,7 +132,7 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
   };
 
   return (
-    <div className="space-y-4 h-full">
+    <div className="flex flex-col gap-4 h-full">
       <div className={'flex items-center max-sm:justify-between md:gap-2 mt-4'}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>

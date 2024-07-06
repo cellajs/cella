@@ -54,6 +54,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
   let usersCount = 0;
   let organizationsCount = 0;
   let membershipsCount = 0;
+  let adminMembershipsOrder = 1;
 
   // Create 100 users for each organization
   for (const organization of organizations) {
@@ -116,8 +117,9 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         type: 'ORGANIZATION',
         role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
         createdAt: faker.date.past(),
-        order: organizationsCount + 1,
+        order: adminMembershipsOrder,
       });
+      adminMembershipsOrder++;
     }
     membershipsCount += memberships.length;
     if (progressCallback) progressCallback('memberships', membershipsCount, 'inserting');

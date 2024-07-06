@@ -6,6 +6,7 @@ import Logo from '~/modules/common/logo';
 import UserTheme from '~/modules/common/user-theme';
 import { dialog } from './dialoger/state';
 import UserLanguage from './user-language';
+import { Button } from '../ui/button';
 
 export interface FooterLinkProps {
   id: string;
@@ -17,8 +18,8 @@ export const FooterLink = ({ id, href }: FooterLinkProps) => {
 
   return (
     <li>
-      <Link to={href} className="underline-offset-4 transition hover:underline">
-        {t(`common:${id}`)}
+      <Link to={href}>
+        <Button variant="ghost">{t(`common:${id}`)}</Button>
       </Link>
     </li>
   );
@@ -57,19 +58,18 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
   // }, []);
 
   return (
-    <ul className={cn('text-foreground/60 mb-8 flex flex-wrap justify-center gap-x-6 gap-y-4 text-center text-sm', className)}>
+    <ul className={cn('text-foreground/60 mb-8 flex flex-wrap justify-center gap-2 text-center text-sm', className)}>
       {links.map((link) => (
         <FooterLink key={link.id} id={link.id} href={link.href} />
       ))}
       <li>
-        <button
-          className="underline-offset-4 transition hover:underline"
-          type="button"
+        <Button
+          variant="ghost"
           aria-label="Open contact form"
           onClick={handleOpenContactForm}
         >
           {t('common:contact')}
-        </button>
+        </Button>
       </li>
     </ul>
   );
@@ -78,7 +78,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
 // App Footer component
 export const AppFooter = ({className = '' }) => {
   return (
-    <footer className={cn('flex flex-col items-center gap-4', className)}>
+    <footer className={cn('flex flex-col items-center gap-2', className)}>
       <div className="flex items-center gap-4">
         <UserLanguage align="start" />
         <div className="mr-1 font-light text-muted">|</div>

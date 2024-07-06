@@ -28,9 +28,7 @@ const organizationsRoutes = app
 
     const slugAvailable = await checkSlugAvailable(slug);
 
-    if (!slugAvailable) {
-      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
-    }
+    if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
 
     const [createdOrganization] = await db
       .insert(organizationsTable)

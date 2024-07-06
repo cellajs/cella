@@ -1,44 +1,67 @@
 import { Link } from '@tanstack/react-router';
 
 import { useTranslation } from 'react-i18next';
-
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
-import { useElectric, type Task } from '~/modules/common/electric/electrify';
+import type { Task } from '~/modules/common/electric/electrify';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import SelectStatus, { statusVariants, type TaskStatus } from '../task/task-selectors/select-status';
-import { toast } from 'sonner';
-import { cn } from '~/lib/utils.ts';
-import { Button } from '~/modules/ui/button';
-import type { Project } from '~/types';
+import type { TaskStatus } from '../task/task-selectors/select-status';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { useQuery } from '@tanstack/react-query';
-import { getProject } from '~/api/projects';
 import { taskStatuses } from './status';
-import { dropDown } from '~/modules/common/dropdowner/state.ts';
+import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
+import { impacts } from '../task/task-selectors/select-impact.tsx';
+import { sheet } from '~/modules/common/sheeter/state.ts';
+import { TaskCard } from '../task/task-card.tsx';
+import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
+import { Button } from '~/modules/ui/button.tsx';
+import { useWorkspaceStore } from '~/store/workspace.ts';
+import { openUserPreviewSheet } from '~/modules/users/users-table/columns.tsx';
 
-export const useColumns = () => {
+const statusTextColors = {
+  0: 'text-sky-500',
+  1: 'text-slate-300',
+  2: 'text-slate-500',
+  3: 'text-lime-500',
+  4: 'text-yellow-500',
+  5: 'text-orange-500',
+  6: 'text-green-500',
+};
+
+const openTaskCardSheet = async (
+  row: Task,
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
+  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
+) => {
+  sheet(
+    <TaskCard
+      task={row}
+      isExpanded={true}
+      isSelected={false}
+      isFocused={true}
+      handleTaskChange={handleTaskChange}
+      handleTaskActionClick={handleTaskActionClick}
+    />,
+    {
+      className: 'max-w-full lg:max-w-4xl p-0',
+      title: <span className="pl-4">Task card preview</span>,
+      text: <span className="pl-4">Here you can modify or delete your task</span>,
+      id: `task-card-preview-${row.id}`,
+    },
+  );
+};
+
+export const useColumns = (
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
+  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
+) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
-  const Electric = useElectric();
-  const updateStatus = (value: TaskStatus, taskId: string) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    const db = Electric.db;
-
-    db.tasks.update({
-      data: {
-        status: value,
-      },
-      where: {
-        id: taskId,
-      },
-    });
-    toast.success(t('common:success.new_status', { status: t(taskStatuses[value].status).toLowerCase() }));
-  };
+  const { projects } = useWorkspaceStore();
 
   const mobileColumns: ColumnOrColumnGroup<Task>[] = [
     CheckboxColumn,
@@ -46,18 +69,20 @@ export const useColumns = () => {
       key: 'summary',
       name: t('common:summary'),
       visible: true,
-      minWidth: 180,
-      sortable: true,
+      minWidth: 280,
+      sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
-        <Link
+        <Button
+          variant="none"
           tabIndex={tabIndex}
-          to="/user/$idOrSlug"
-          params={{ idOrSlug: row.slug }}
-          className="inline-flex flex-wrap w-auto outline-0 ring-0 group"
+          className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 group px-0"
+          onClick={() => {
+            openTaskCardSheet(row, handleTaskChange, handleTaskActionClick);
+          }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>
-        </Link>
+        </Button>
       ),
     },
   ];
@@ -68,91 +93,121 @@ export const useColumns = () => {
       : [
           ...mobileColumns,
           {
+            key: 'type',
+            name: t('common:type'),
+            sortable: true,
+            visible: true,
+            cellClass: 'start',
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => (
+              <>
+                {taskTypes[taskTypes.findIndex((t) => t.value === row.type)]?.icon()} <span className="ml-2">{t(`common:${row.type}`)}</span>
+              </>
+            ),
+            width: 140,
+          },
+          {
+            key: 'impact',
+            name: t('common:impact'),
+            sortable: false,
+            visible: true,
+            width: 120,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => {
+              if (row.type === 'bug') return '-';
+
+              const impact = row.impact === null ? null : impacts[row.impact];
+
+              return (
+                <>
+                  {impact === null ? (
+                    <NotSelected className="size-4 mr-2" aria-hidden="true" title="Set impact" />
+                  ) : (
+                    <impact.icon className="size-4 mr-2" aria-hidden="true" title="Set impact" />
+                  )}
+
+                  <span>{impact === null ? '-' : impact.label}</span>
+                </>
+              );
+            },
+          },
+          {
             key: 'status',
             name: t('common:status'),
             sortable: true,
             visible: true,
+            width: 140,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => (
-              <div className="flex gap-2">
-                <Button
-                  variant="outlineGhost"
-                  size="xs"
-                  className={cn(
-                    'border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100',
-                    statusVariants({ status: row.status as TaskStatus }),
-                  )}
-                  onClick={() => updateStatus((row.status + 1) as TaskStatus, row.id)}
-                  disabled={(row.status as TaskStatus) === 6}
-                >
-                  {t(taskStatuses[row.status as TaskStatus].action)}
-                </Button>
-                <Button
-                  aria-label="Set status"
-                  variant="outlineGhost"
-                  size="xs"
-                  className={cn(
-                    statusVariants({ status: row.status as TaskStatus }),
-                    'rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
-                  )}
-                  onClick={(event) => {
-                    const button = event.currentTarget;
-                    const buttonRect = button.getBoundingClientRect();
-                    dropDown(
-                      <SelectStatus
-                        taskStatus={row.status as TaskStatus}
-                        changeTaskStatus={(newStatus) => updateStatus(newStatus as TaskStatus, row.id)}
-                        inputPlaceholder={t('common:placeholder.set_status')}
-                      />,
-                      {
-                        id: `select-status-${row.id}`,
-                        trigger: event.currentTarget,
-                        position: {
-                          top: buttonRect.top + buttonRect.height,
-                          left: buttonRect.right - 240,
-                        },
-                      },
-                    );
+              <span className={statusTextColors[row.status as TaskStatus]}>{t(taskStatuses[row.status as TaskStatus].status)}</span>
+            ),
+          },
+          {
+            key: 'subTasks',
+            name: t('common:todos'),
+            sortable: false,
+            visible: false,
+            width: 80,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) =>
+              row.subTasks.length > 0 ? (
+                <div className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
+                  <span className="text-success">{row.subTasks.filter((t) => t.status === 6).length}</span>
+                  <span className="font-light">/</span>
+                  <span className="font-light">{row.subTasks.length}</span>
+                </div>
+              ) : (
+                row.subTasks.length
+              ),
+          },
+          {
+            key: 'created_by',
+            name: t('common:created_by'),
+            sortable: true,
+            visible: true,
+            width: 180,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row, tabIndex }) => {
+              const user = row.virtualCreatedBy;
+              if (!user) return row.created_by;
+              return (
+                <Link
+                  to="/user/$idOrSlug"
+                  tabIndex={tabIndex}
+                  params={{ idOrSlug: user.id }}
+                  className="flex space-x-2 items-center outline-0 ring-0 group truncate"
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey) return;
+                    e.preventDefault();
+                    openUserPreviewSheet(user);
                   }}
                 >
-                  <ChevronDown size={12} />
-                </Button>
-              </div>
-            ),
-            minWidth: 120,
+                  <AvatarWrap type="USER" className="h-6 w-6" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                  <span className="group-hover:underline underline-offset-4 truncate">{user.name || '-'}</span>
+                </Link>
+              );
+            },
           },
           {
             key: 'project_id',
             name: t('common:project'),
             sortable: true,
             visible: true,
+            width: 180,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row, tabIndex }) => {
-              const { data: project } = useQuery<Project>({
-                queryKey: ['projects', row.project_id],
-                queryFn: () => getProject(row.project_id),
-                staleTime: Number.POSITIVE_INFINITY,
-              });
-
+              const project = projects.find((p) => p.id === row.project_id);
               if (!project) return row.project_id;
 
-              if (!project.workspaceId)
-                return (
-                  <div className="flex space-x-2 cursor-default items-center outline-0 ring-0 group">
-                    <AvatarWrap type="PROJECT" className="h-8 w-8" id={project.id} name={project.name} />
-                    <span className="truncate font-medium">{project.name || '-'}</span>
-                  </div>
-                );
               return (
                 <Link
                   to="/workspaces/$idOrSlug"
                   tabIndex={tabIndex}
-                  // TODO: Fix this
                   params={{ idOrSlug: project.workspaceId || project.id }}
-                  className="flex space-x-2 items-center outline-0 ring-0 group"
+                  className="flex space-x-2 items-center outline-0 ring-0 group truncate"
                 >
-                  <AvatarWrap type="PROJECT" className="h-8 w-8" id={project.id} name={project.name} />
-                  <span className="group-hover:underline underline-offset-4 truncate font-medium">{project.name || '-'}</span>
+                  <AvatarWrap type="PROJECT" className="h-6 w-6 text-xs" id={project.id} name={project.name} />
+                  <span className="group-hover:underline underline-offset-4 truncate">{project.name || '-'}</span>
                 </Link>
               );
             },
@@ -162,9 +217,18 @@ export const useColumns = () => {
             name: t('common:created_at'),
             sortable: true,
             visible: true,
+            width: 180,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => dateShort(row.created_at),
-            minWidth: 180,
+          },
+          {
+            key: 'modified_at',
+            name: t('common:updated_at'),
+            sortable: true,
+            visible: false,
+            width: 180,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }) => dateShort(row.modified_at),
           },
         ],
   );
