@@ -4,7 +4,7 @@ import { InviteSystemEmail } from '../../../../email/emails/system-invite';
 
 import { render } from '@react-email/render';
 import { config } from 'config';
-import { env } from 'env';
+import { env } from '../../../env';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';

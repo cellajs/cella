@@ -6,16 +6,16 @@
     "node": ">=20.14.0"
   },
   "scripts": {
-    "prepare:electric": "pnpm proxy & (NODE_ENV=production pnpm generate:electric && tsx prepare-files.ts)",
-    "prepare:electric:dev": "electric-sql generate && tsx prepare-files.ts",
     "start": "pnpm run preview",
-    "dev": "NODE_ENV=development vite --mode development",
-    "build": "pnpm run prepare:electric && tsc && vite build",
     "check:types": "tsc",
-    "build:dev": "tsc && NODE_ENV=development vite build --mode development",
-    "preview": "vite preview --port 3000",
-    "generate:electric": "electric-sql generate --service https://electric-sync.cellajs.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres",
-    "proxy": "electric-sql proxy-tunnel --service https://electric-sync.cellajs.com --local-port 65432"
+    "electric:generate": "electric-sql generate --service https://electric-sync.cellajs.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres",
+    "electric:proxy": "electric-sql proxy-tunnel --service https://electric-sync.cellajs.com --local-port 65432",
+    "electric:prepare": "pnpm electric:proxy & (pnpm electric:generate && tsx prepare-files.ts)",
+    "electric:prepare:dev": "electric-sql generate && tsx prepare-files.ts",
+    "dev": "pnpm run electric:prepare:dev && NODE_ENV=development vite --mode development",
+    "build": "pnpm run electric:prepare && tsc && vite build",
+    "build:dev": "electric:prepare:dev && tsc && NODE_ENV=development vite build --mode development",
+    "preview": "vite preview --port 3000"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.1.12",

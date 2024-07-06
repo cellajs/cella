@@ -7,27 +7,29 @@
   },
   "scripts": {
     "start": "tsx dist/index.cjs",
-    "build": "NODE_ENV=production tsup",
-    "build:sourcemaps": "NODE_ENV=production tsup && pnpm run sentry:sourcemaps",
-    "build:dev": "tsup",
+    "dev": "pnpm run studio & tsup --watch --onSuccess \"tsx dist/index.cjs\"",
     "check:types": "tsc",
-    "dev": "tsup --watch --onSuccess \"tsx dist/index.cjs\"",
+    "build": "NODE_ENV=production tsup",
+    "build:dev": "tsup",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend ./dist && sentry-cli sourcemaps upload --org cella --project backend ./dist",
+    "build:sourcemaps": "NODE_ENV=production tsup && pnpm run sentry:sourcemaps",
     "seed:pivotal": "tsx seed/pivotal.ts",
     "seed:user": "tsx seed/user/index.ts",
     "seed:organizations": "tsx seed/organizations/index.ts",
     "seed:data": "tsx seed/data/index.ts",
+    "seed": "pnpm run seed:user && pnpm run seed:organizations && pnpm run seed:data",
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
-    "generate:electric": "drizzle-kit generate --config drizzle.config.electric.ts",
-    "generate:electric:custom": "drizzle-kit generate --config drizzle.config.electric.ts --custom",
+    "electric:generate": "drizzle-kit generate --config drizzle.config.electric.ts",
+    "electric:generate:custom": "drizzle-kit generate --config drizzle.config.electric.ts --custom",
+    "generate": "pnpm run generate:pg && pnpm run electric:generate",
     "push": "drizzle-kit push",
     "migrate:pg": "tsx src/db/migrate.ts",
-    "migrate:electric": "tsx src/db/migrate.electric.ts",
-    "migrate:script": "tsx dist/src/db/migrate.cjs",
-    "seeds:script": "tsx dist/seed/user.cjs && tsx dist/seed/data.cjs",
+    "electric:migrate": "tsx src/db/migrate.electric.ts",
+    "migrate": "pnpm run migrate:pg && pnpm run electric:migrate",
     "studio": "drizzle-kit studio --config drizzle.config.ts",
-    "studio:electric": "drizzle-kit studio --config drizzle.config.electric.ts",
-    "proxy": "electric-sql proxy-tunnel --service https://electric-sync.cellajs.com --local-port 65432",
-    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org cella --project backend ./dist && sentry-cli sourcemaps upload --org cella --project backend ./dist"
+    "electric:studio": "drizzle-kit studio --config drizzle.config.electric.ts",
+    "electric:proxy": "electric-sql proxy-tunnel --service https://electric-sync.cellajs.com --local-port 65432",
+    "predeploy": "pnpm run electric:proxy & pnpm run electric:migrate"
   },
   "dependencies": {
     "@cellajs/imado": "^0.1.2",
@@ -43,15 +45,16 @@
     "@react-email/render": "^0.0.1",
     "@scalar/hono-api-reference": "^0.5.61",
     "@sentry/cli": "^2.31.2",
+    "@t3-oss/env-core": "^0.10.1",
     "@types/jsonwebtoken": "^9.0.6",
     "arctic": "^1.9.0",
     "config": "workspace:*",
+    "dotenv": "^16.4.5",
     "drizzle-orm": "^0.31.2",
     "drizzle-zod": "^0.5.1",
     "electric-sql": "^0.12.0",
     "email": "workspace:*",
     "enforce-unique": "^1.3.0",
-    "env": "workspace:*",
     "hono": "^4.4.11",
     "i18next": "^23.11.3",
     "isbot": "^5.1.8",
@@ -83,7 +86,9 @@
     "tsx": "^4.11.2"
   },
   "babel": {
-    "presets": ["@babel/preset-typescript"]
+    "presets": [
+      "@babel/preset-typescript"
+    ]
   },
   "exports": {
     "./*": "./src/*.ts"
