@@ -1,7 +1,7 @@
 <div align="center">
 
-  <img src="./.github/banner-dark.png#gh-dark-mode-only" />
-  <img src="./.github/banner.png#gh-light-mode-only" />
+  <img src="./info/screenshot-dark.png#gh-dark-mode-only" />
+  <img src="./info/screenshot.png#gh-light-mode-only" />
 
 <br />
 
@@ -23,17 +23,14 @@
     <br />
     <a href="https://cellajs.com">Website</a>
     ·
-    prerelease version
+    Prerelease
     ·
     MIT license
   </p>
   <br />
-  <br />
 </p>
 
 </div>
-
-#### Prerelease
 
 > [!CAUTION]
 > Please be aware this is a prerelease. It does not meet production requirements yet and large breaking changes still occur regularly. Want to contribute? Let's connect! ✉️ <info@cellajs.com>
