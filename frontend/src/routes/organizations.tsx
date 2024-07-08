@@ -43,9 +43,7 @@ export const OrganizationMembersRoute = createRoute({
     const entityType = 'organization';
     const infiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role, limit: 40 });
     const cachedMembers = queryClient.getQueryData(infiniteQueryOptions.queryKey);
-    if (!cachedMembers) {
-      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
-    }
+    if (!cachedMembers) queryClient.fetchInfiniteQuery(infiniteQueryOptions);
   },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });

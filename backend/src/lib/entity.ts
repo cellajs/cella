@@ -19,7 +19,7 @@ export const entityTables = new Map<string, typeof organizationsTable | typeof w
  * @param idOrSlug - The unique identifier (ID or Slug) of the entity.
  */
 export const resolveEntity = async (entityType: string, idOrSlug: string) => {
-  const table = entityTables.get(entityType.toUpperCase());
+  const table = entityTables.get(entityType);
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);
