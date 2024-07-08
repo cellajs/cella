@@ -48,6 +48,7 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
           if ([0, 1, 2, 3].includes(Number.parseInt(searchValue))) {
             setSelectedImpact(impacts[Number.parseInt(searchValue)]);
             changeTaskImpact(Number.parseInt(searchValue) as TaskImpact);
+            dropdowner.remove();
             setSearchValue('');
             return;
           }

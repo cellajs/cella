@@ -47,6 +47,7 @@ export const WorkspaceRoute = createRoute({
 export const WorkspaceBoardRoute = createRoute({
   path: '/board',
   staticData: { pageTitle: 'Board', isAuth: true },
+  validateSearch: z.object({ project: z.string().optional() }),
   getParentRoute: () => WorkspaceRoute,
   component: () => (
     <Suspense>

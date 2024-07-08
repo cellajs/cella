@@ -1,6 +1,10 @@
 import type { Label, Task } from '~/modules/common/electric/electrify';
 import { sortTaskOrder } from '~/modules/projects/task/helpers';
 import type { Member } from '~/types';
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+
+dayjs.extend(isBetween);
 
 export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced: boolean) => {
   let acceptedCount = 0;
@@ -10,10 +14,10 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
     .filter((task) => !task.parent_id)
     .filter((task) => {
       // Count accepted and iced tasks
-      if (task.status === 6) acceptedCount += 1;
+      if (task.status === 6 && showAcceptedByTime(task)) acceptedCount += 1;
       if (task.status === 0) icedCount += 1;
       // Filter based on showAccepted and showIced
-      if (showAccepted && task.status === 6) return true;
+      if (showAccepted && showAcceptedByTime(task) && task.status === 6) return true;
       if (showIced && task.status === 0) return true;
       return task.status !== 0 && task.status !== 6;
     })
@@ -42,4 +46,10 @@ export const enhanceTasks = (tasks: Task[], labels: Label[], members: Member[]) 
       virtualCreatedBy,
     };
   });
+};
+
+const showAcceptedByTime = (task: Task) => {
+  const thirtyDaysAgo = dayjs().subtract(30, 'day');
+  const today = dayjs();
+  return dayjs(task.modified_at).isBetween(thirtyDaysAgo, today, null, '[]');
 };

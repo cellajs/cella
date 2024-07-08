@@ -333,7 +333,11 @@ export function TaskCard({
                   task.virtualLabels.map(({ name, id }) => {
                     return (
                       <div key={id} className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full border px-0 bg-border">
-                        <Badge variant="outline" key={id} className="inline-block border-0 max-w-32 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4">
+                        <Badge
+                          variant="outline"
+                          key={id}
+                          className="inline-block border-0 max-w-32 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
+                        >
                           {name}
                         </Badge>
                       </div>

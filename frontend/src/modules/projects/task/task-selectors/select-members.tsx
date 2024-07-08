@@ -5,6 +5,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import type { Member } from '~/types/index.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 
 interface AssignMembersProps {
   users: Member[];
@@ -44,6 +45,7 @@ const AssignMembers = ({ users, value, changeAssignedTo, triggerWidth = 240 }: A
     if (!indexArray.includes(Number.parseInt(searchValue))) return;
     handleSelectClick(users[Number.parseInt(searchValue)]?.id);
     setSearchValue('');
+    dropdowner.remove();
     return;
   }, [searchValue]);
 
@@ -72,6 +74,7 @@ const AssignMembers = ({ users, value, changeAssignedTo, triggerWidth = 240 }: A
                 value={user.id}
                 onSelect={(id) => {
                   handleSelectClick(id);
+                  dropdowner.remove();
                   setSearchValue('');
                 }}
                 className="group rounded-md flex justify-between items-center w-full leading-normal"

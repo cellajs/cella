@@ -32,6 +32,7 @@ import { getMembers } from '~/api/general';
 import { sheet } from '~/modules/common/sheeter/state.ts';
 import { TaskCard } from '../task/task-card.tsx';
 import { enhanceTasks } from '~/hooks/use-filtered-task-helpers.ts';
+import { useUserStore } from '~/store/user.ts';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -39,6 +40,7 @@ export default function TasksTable() {
   const search = useSearch({ from: WorkspaceTableRoute.id });
 
   const { t } = useTranslation();
+  const user = useUserStore((state) => state.user);
   const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery } = useWorkspaceStore(
     ({ searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery }) => ({
       searchQuery,
@@ -133,6 +135,8 @@ export default function TasksTable() {
           },
           where: {
             id: taskId,
+            modified_at: new Date(),
+            modified_by: user.id,
           },
         })
         .then((resp) => {
@@ -160,6 +164,8 @@ export default function TasksTable() {
         .update({
           data: {
             labels,
+            modified_at: new Date(),
+            modified_by: user.id,
           },
           where: {
             id: taskId,
@@ -190,6 +196,8 @@ export default function TasksTable() {
           data: {
             status: value,
             ...(newOrder && { sort_order: newOrder }),
+            modified_at: new Date(),
+            modified_by: user.id,
           },
           where: {
             id: taskId,
@@ -218,6 +226,8 @@ export default function TasksTable() {
       .update({
         data: {
           [field]: value,
+          modified_at: new Date(),
+          modified_by: user.id,
         },
         where: {
           id: taskId,

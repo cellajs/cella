@@ -34,6 +34,7 @@ import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
 import AssignMembers from '../task/task-selectors/select-members';
 import { useWorkspaceStore } from '~/store/workspace';
+import { useUserStore } from '~/store/user';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -66,6 +67,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
+  const user = useUserStore((state) => state.user);
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
@@ -123,6 +125,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       db.tasks.update({
         data: {
           assigned_to: assignedTo,
+          modified_at: new Date(),
+          modified_by: user.id,
         },
         where: {
           id: taskId,
@@ -137,6 +141,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       db.tasks.update({
         data: {
           labels,
+          modified_at: new Date(),
+          modified_by: user.id,
         },
         where: {
           id: taskId,
@@ -150,6 +156,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
         data: {
           status: value,
           ...(newOrder && { sort_order: newOrder }),
+          modified_at: new Date(),
+          modified_by: user.id,
         },
         where: {
           id: taskId,
@@ -161,6 +169,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     db.tasks.update({
       data: {
         [field]: value,
+        modified_at: new Date(),
+        modified_by: user.id,
       },
       where: {
         id: taskId,

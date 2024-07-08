@@ -48,8 +48,8 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
             const searchNumber = Number.parseInt(searchValue);
             if (changeTaskType) changeTaskType(taskTypes[searchNumber].value);
             setSelectedType(taskTypes[searchNumber]);
-            setSearchValue('');
             dropdowner.remove();
+            setSearchValue('');
             return;
           }
           setSearchValue(searchValue);
