@@ -4,7 +4,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { useQuery } from '@tanstack/react-query';
 import { useLiveQuery } from 'electric-sql/react';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { type CSSProperties, lazy, memo, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -34,7 +34,7 @@ import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-sta
 import AssignMembers from '../task/task-selectors/select-members';
 import { useWorkspaceStore } from '~/store/workspace';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { FixedSizeList as List, areEqual } from 'react-window';
+import { VariableSizeList as List, type VariableSizeList } from 'react-window';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -61,6 +61,7 @@ interface BoardColumnProps {
 export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
+  const itemHeights = useRef<number[]>([]);
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
@@ -269,6 +270,40 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     }
     toggleCreateForm(project.id);
   };
+  const getItemSize = (index: number) => itemHeights.current[index] || 100;
+
+  const handleItemHeightChange = (index: number, size: number) => {
+    const updatedHeights = [...itemHeights.current];
+    updatedHeights[index] = size;
+    itemHeights.current = updatedHeights;
+
+    // Reset the list after the index to reflect the new size
+    if (containerRef.current) (containerRef.current as VariableSizeList).resetAfterIndex(index);
+  };
+
+  const Task = ({
+    index,
+    style,
+    data,
+  }: {
+    data: Task[];
+    index: number;
+    style: CSSProperties;
+  }) => (
+    <TaskCard
+      style={style}
+      key={data[index].id}
+      task={data[index]}
+      isExpanded={expandedTasks[data[index].id] || false}
+      isSelected={selectedTasks.includes(data[index].id)}
+      isFocused={data[index].id === focusedTaskId}
+      handleTaskChange={handleChange}
+      handleTaskActionClick={handleTaskActionClick}
+      handleTaskSelect={handleTaskSelect}
+      setIsExpanded={(isExpanded) => setTaskExpanded(data[index].id, isExpanded)}
+      setItemHeight={(size) => handleItemHeightChange(index, size)}
+    />
+  );
 
   useHotkeys([
     ['Escape', handleEscKeyPress],
@@ -355,35 +390,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   // 4rem refers to the header height
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
-  const VirtualTask = memo(
-    ({
-      data: tasks,
-      index,
-      style,
-    }: {
-      data: Task[];
-      index: number;
-      style: CSSProperties;
-    }) => {
-      const task = tasks[index];
-      return (
-        <TaskCard
-          style={style}
-          key={task.id}
-          task={task}
-          isExpanded={expandedTasks[task.id] || false}
-          isSelected={selectedTasks.includes(task.id)}
-          isFocused={task.id === focusedTaskId}
-          handleTaskChange={handleChange}
-          handleTaskActionClick={handleTaskActionClick}
-          handleTaskSelect={handleTaskSelect}
-          setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
-        />
-      );
-    },
-    areEqual,
-  );
-
   return (
     <div ref={columnRef} className="flex flex-col h-full">
       <BoardColumnHeader
@@ -440,9 +446,9 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                       </Button>
                       <div className="grow">
                         <AutoSizer>
-                          {({ height, width }) => (
-                            <List height={height} itemCount={showingTasks.length} itemSize={100} itemData={showingTasks} width={width}>
-                              {VirtualTask}
+                          {({ height, width }: { height: number; width: number }) => (
+                            <List height={height} itemCount={showingTasks.length} itemSize={getItemSize} itemData={showingTasks} width={width}>
+                              {Task}
                             </List>
                           )}
                         </AutoSizer>

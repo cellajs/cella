@@ -50,6 +50,7 @@ interface TaskProps {
   handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
   setIsExpanded?: (exp: boolean) => void;
   handleTaskSelect?: (selected: boolean, taskId: string) => void;
+  setItemHeight?: (size: number) => void;
 }
 
 export function TaskCard({
@@ -62,6 +63,7 @@ export function TaskCard({
   handleTaskSelect,
   handleTaskActionClick,
   setIsExpanded,
+  setItemHeight,
 }: TaskProps) {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
@@ -178,6 +180,13 @@ export function TaskCard({
     );
   }, [task]);
 
+  useEffect(() => {
+    if (!setItemHeight) return;
+    if (taskRef.current) {
+      const height = taskRef.current.children[0].getBoundingClientRect().height;
+      setItemHeight(height);
+    }
+  }, [isExpanded, isEditing, createSubTask]);
   return (
     <Card
       style={style}
