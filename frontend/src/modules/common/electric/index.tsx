@@ -38,7 +38,7 @@ const ElectricProvider = ({ children }: Props) => {
   useEffect(() => {
     let isMounted = true;
 
-    const debug = config.mode === 'development';
+    const debug = config.debug;
     const { tabId } = uniqueTabId();
     const scopedDbName = `basic-${LIB_VERSION}-${tabId}.db`;
 

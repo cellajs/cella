@@ -12,7 +12,7 @@ import { TooltipButton } from '../tooltip-button';
 interface Props<R> {
   filename: string;
   columns: { key: string; name: ReactElement | string }[];
-  selectedRows: R[];
+  selectedRows?: R[];
   fetchRows: (limit: number) => Promise<R[]>;
   className?: string;
 }
@@ -21,7 +21,7 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows, 
   const { t } = useTranslation();
 
   const onExport = async (type: 'csv' | 'pdf', selected: boolean) => {
-    const rows = selected ? selectedRows : await fetchRows(1000);
+    const rows = selected && selectedRows ? selectedRows : (await fetchRows(1000));
     const filenameWithExtension = `${filename}.${type}`;
     const themeState = useThemeStore.getState();
     const theme: Theme = themeState.mode;
@@ -56,18 +56,22 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows, 
           <span>PDF</span>
           <span className="ml-2 font-light text-xs opacity-75">{t('common:max_1k_rows')}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onExport('csv', true)} disabled={selectedRows.length === 0}>
-          <span>CSV</span>
-          <span className="ml-2 font-light text-xs opacity-75">
-            {selectedRows.length ? `${selectedRows.length} ${t('common:selected').toLowerCase()}` : t('common:no_selection').toLowerCase()}
-          </span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onExport('pdf', true)} disabled={selectedRows.length === 0}>
-          <span>PDF</span>
-          <span className="ml-2 font-light text-xs opacity-75">
-            {selectedRows.length ? `${selectedRows.length} ${t('common:selected').toLowerCase()}` : t('common:no_selection').toLowerCase()}
-          </span>
-        </DropdownMenuItem>
+        {selectedRows && (
+          <>
+            <DropdownMenuItem onClick={() => onExport('csv', true)} disabled={selectedRows.length === 0}>
+              <span>CSV</span>
+              <span className="ml-2 font-light text-xs opacity-75">
+                {selectedRows.length ? `${selectedRows.length} ${t('common:selected').toLowerCase()}` : t('common:no_selection').toLowerCase()}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onExport('pdf', true)} disabled={selectedRows.length === 0}>
+              <span>PDF</span>
+              <span className="ml-2 font-light text-xs opacity-75">
+                {selectedRows.length ? `${selectedRows.length} ${t('common:selected').toLowerCase()}` : t('common:no_selection').toLowerCase()}
+              </span>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

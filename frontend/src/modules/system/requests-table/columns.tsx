@@ -15,19 +15,6 @@ export const useColumns = () => {
   const mobileColumns: ColumnOrColumnGroup<Request>[] = [
     CheckboxColumn,
     {
-      key: 'email',
-      name: t('common:email'),
-      minWidth: 120,
-      sortable: true,
-      visible: true,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => (
-        <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate hover:underline underline-offset-4 font-light outline-0 ring-0">
-          {row.email || '-'}
-        </a>
-      ),
-    },
-    {
       key: 'requestType',
       name: t('common:request_type'),
       sortable: true,

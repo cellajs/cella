@@ -47,8 +47,8 @@ const openTaskCardSheet = async (
     />,
     {
       className: 'max-w-full lg:max-w-4xl p-0',
-      title: <span className="pl-4">Task card preview</span>,
-      text: <span className="pl-4">Here you can modify or delete your task</span>,
+      title: <span className="pl-4">Task</span>,
+      text: <span className="pl-4">View and manage a specific task</span>,
       id: `task-card-preview-${row.id}`,
     },
   );
@@ -76,7 +76,7 @@ export const useColumns = (
         <Button
           variant="none"
           tabIndex={tabIndex}
-          className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 group px-0"
+          className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
           onClick={() => {
             openTaskCardSheet(row, handleTaskChange, handleTaskActionClick);
           }}
@@ -121,9 +121,9 @@ export const useColumns = (
               return (
                 <>
                   {impact === null ? (
-                    <NotSelected className="size-4 mr-2" aria-hidden="true" title="Set impact" />
+                    <NotSelected className="size-4 mr-2 fill-current" aria-hidden="true" title="Set impact" />
                   ) : (
-                    <impact.icon className="size-4 mr-2" aria-hidden="true" title="Set impact" />
+                    <impact.icon className="size-4 mr-2 fill-current" aria-hidden="true" title="Set impact" />
                   )}
 
                   <span>{impact === null ? '-' : impact.label}</span>

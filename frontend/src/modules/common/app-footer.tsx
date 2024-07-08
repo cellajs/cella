@@ -58,7 +58,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
   // }, []);
 
   return (
-    <ul className={cn('text-foreground/60 mb-8 flex flex-wrap justify-center gap-2 text-center text-sm', className)}>
+    <ul className={cn('text-foreground/60 flex flex-wrap justify-center gap-2 text-center text-sm', className)}>
       {links.map((link) => (
         <FooterLink key={link.id} id={link.id} href={link.href} />
       ))}

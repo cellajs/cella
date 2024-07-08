@@ -1,11 +1,10 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
-import { Fragment } from 'react';
+import { Fragment, lazy } from 'react';
 import { useThemeStore } from '~/store/theme';
 import { config } from 'config';
 import { Suspense } from 'react';
 
-import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -32,6 +31,9 @@ export const navItems: NavItem[] = [
   { id: 'search', icon: Search },
   { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
 ];
+
+ const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
+
 
 const AppNav = () => {
   const navigate = useNavigate();
@@ -60,7 +62,6 @@ const AppNav = () => {
     const isNew = !activeSheet || activeSheet.id !== navItem.id;
     setSheet(isNew ? navItem : null);
   };
-  const DebugToolbars = config.mode === 'development' ? useLazyComponent(() => import('~/modules/common/debug-toolbars'), 1000) : () => null;
 
   return (
     <>
@@ -92,7 +93,7 @@ const AppNav = () => {
             );
           })}
         </ul>
-        <Suspense fallback={null}>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
+        <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
       </nav>
       <NavSheet />
     </>

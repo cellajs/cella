@@ -19,7 +19,7 @@ import { type Label, type Task, useElectric } from '~/modules/common/electric/el
 import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
 import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
 import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
-import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
+import SetLabels from './task-selectors/select-labels.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 import { useMeasure } from '~/hooks/use-measure';
@@ -119,7 +119,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
 
   const createLabel = (newLabel: Label) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // TODO: Implement the following
     // Save the new label to the database
     Electric.db.labels.create({ data: newLabel });
   };
@@ -364,11 +363,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                   >
                     <div className="flex truncate flex-wrap gap-[.07rem]">
                       {value.length > 0 ? (
-                        value.map(({ name, id, color }) => {
+                        value.map(({ name, id }) => {
                           return (
                             <div
                               key={id}
-                              style={badgeStyle(color)}
                               className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
                             >
                               <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] text-sm h-6 last:mr-0">

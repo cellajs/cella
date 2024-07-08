@@ -310,9 +310,9 @@ export function TaskCard({
                 className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
               >
                 {selectedImpact === null ? (
-                  <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
+                  <NotSelected className="size-4 fill-current" aria-hidden="true" title="Set impact" />
                 ) : (
-                  <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                  <selectedImpact.icon className="size-4 fill-current" aria-hidden="true" title="Set impact" />
                 )}
               </Button>
             )}

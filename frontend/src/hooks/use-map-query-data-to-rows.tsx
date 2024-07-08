@@ -10,8 +10,8 @@ interface QueryResult<T> {
 
 interface UseQueryResultEffectProps<T> {
   queryResult: QueryResult<T>;
-  selectedRows: Set<string>;
-  setSelectedRows: (selectedRows: Set<string>) => void;
+  selectedRows?: Set<string>;
+  setSelectedRows?: (selectedRows: Set<string>) => void;
   setRows: Dispatch<SetStateAction<T[]>>;
 }
 
@@ -25,7 +25,7 @@ const useMapQueryDataToRows = <T extends { id: string } & object>({
     const data = queryResult.data?.pages?.flatMap((page) => page.items);
 
     if (data) {
-      setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
+      if (setSelectedRows && selectedRows) setSelectedRows(new Set<string>([...selectedRows].filter((id) => data.some((row) => row.id === id))));
       // Reverse the data to remove duplicates from the end because created data is added to the start
       const reversedData = [...data].reverse();
       const newRows = data.filter((row, index) => reversedData.findIndex((r) => r.id === row.id) === reversedData.length - 1 - index);

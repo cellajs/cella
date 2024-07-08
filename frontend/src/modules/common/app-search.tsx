@@ -112,7 +112,7 @@ export const AppSearch = () => {
           setSearchValue(searchValue);
         }}
       />
-      <ScrollArea id={'suggestion-search'} ref={scrollAreaRef} className="h-[50vh] sm:h-[40vh] overflow-y-auto">
+      <ScrollArea id={'suggestion-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
         {isFetching && (
           <CommandLoading>
             <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />

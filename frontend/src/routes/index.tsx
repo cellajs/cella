@@ -25,6 +25,7 @@ import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
 import Spinner from '~/modules/common/spinner';
 
+// Lazy load main App component, which is behind authentication
 const App = lazy(() => import('~/modules/common/app'));
 
 export const getAndSetMe = async () => {

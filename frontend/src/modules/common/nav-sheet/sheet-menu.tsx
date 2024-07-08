@@ -76,7 +76,6 @@ export const SheetMenu = memo(() => {
       .filter((el) => !el.isSubmenu)
       .map((section) => {
         const menuSection = menu[section.storageType as keyof UserMenu];
-        console.log('menuSection:', menuSection);
 
         return (
           <MenuSection
