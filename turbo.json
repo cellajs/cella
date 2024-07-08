@@ -48,7 +48,9 @@
     "electric:generate:custom": {},
     "studio": {},
     "electric:studio": {},
-    "seed": {},
+    "seed": {
+      "cache": false
+    },
     "seed:pivotal": {},
     "seed:user": {},
     "seed:organizations": {},
