@@ -5,7 +5,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { env } from '../env';
 import { resetDb } from './cron/reset-db';
 import { db } from './db/db';
-// import { db as dbElectric } from './db/db.electric';
+import { db as dbElectric } from './db/db.electric';
 import ascii from './lib/ascii';
 import app from './server';
 
@@ -18,7 +18,7 @@ const main = async () => {
 
   // Migrate db
   await migrate(db, { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' });
-  // await migrate(dbElectric, { migrationsFolder: 'drizzle-electric', migrationsSchema: 'drizzle-electric' });
+  await migrate(dbElectric, { migrationsFolder: 'drizzle-electric', migrationsSchema: 'drizzle-electric' });
 
   // Start server
   serve(

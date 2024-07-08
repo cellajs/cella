@@ -59,33 +59,32 @@ First step is to clone
 git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
-Use the `.env.example` files to create `.env` files in folder `/backend`, `/email` and `/tus`. Then install:
+Use the `.env.example` files to create `.env` files in folder `/backend`, `/email` and `/tus`. Then install and run docker.
 
 ```bash
 pnpm install
+pnpm docker
 ```
 
-Page-related resources are handled by a conventional API. Content-related resources use a *local-first* strategy with [ElectricSQL](https://github.com/electric-sql/electric).
-Therefore, `generate` and `migrate` commands will execute for normal schemas and for *electric schemas*.
-
-```bash
-pnpm backend generate
-pnpm backend migrate 
-```
-
-Check it out at [localhost:3000](http://localhost:3000) after
+Start all servers
 
 ```bash
 pnpm dev
 ```
 
+Page-related resources are handled by a conventional API. Content-related resources use a *local-first* strategy with [ElectricSQL](https://github.com/electric-sql/electric). Generate migrations for both resources and also - based on *electrified schemas* - the client-side schemas.
+
+```bash
+pnpm generate
+```
+
 Lastly, [seed](/backend/seed/README.md) your db (with `dev` running) to sign in as [admin user](/backend/seed/README.md).
 
 ```bash
-pnpm backend seed
+pnpm seed
 ```
 
-That's it! Generated API docs can be found at [localhost:4000/docs](http://localhost:4000/docs). Manage your local db with [local.drizzle.studio](http:local.drizzle.studio).
+Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can be found at [localhost:4000/docs](http://localhost:4000/docs). Manage your local db with [local.drizzle.studio](http:local.drizzle.studio).
 
 
 ### More info

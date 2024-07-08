@@ -180,8 +180,6 @@ importers:
 
   config: {}
 
-  docker: {}
-
   email:
     dependencies:
       '@react-email/components':
@@ -1378,7 +1376,6 @@ packages:
       semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@babel/generator@7.24.7:
     resolution: {integrity: sha512-oipXieGC3i45Y1A41t4tAqpnEZWgB/lC6Ehh6+rOviR5XWpTtMmLN+fGjz9vOiNRt0p6RtO6DtD0pdU3vpqdSA==}
@@ -1531,7 +1528,6 @@ packages:
       '@babel/helper-validator-identifier': 7.24.7
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@babel/helper-optimise-call-expression@7.24.7:
     resolution: {integrity: sha512-jKiTsW2xmWwxT1ixIdfXUZp+P5yURx2suzLZr5Hi64rURpDYdMW0pv+Uf17EYk2Rd428Lx4tLsnjGJzYKDM/6A==}
@@ -5348,8 +5344,8 @@ packages:
     dependencies:
       '@antfu/ni': 0.21.12
       '@axiomhq/js': 1.0.0-rc.3
-      '@babel/core': 7.24.6
-      '@babel/types': 7.24.6
+      '@babel/core': 7.24.7
+      '@babel/types': 7.24.7
       '@clack/prompts': 0.7.0
       cli-high: 0.4.2
       diff: 5.2.0

@@ -1,7 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": ["NODE_ENV"],
-  "globalDependencies": ["config", ".env"],
+  "globalDependencies": ["config", "backend/.env"],
   "ui": "tui",
   "tasks": {
     "build": {
@@ -16,11 +16,6 @@
       "dependsOn": ["^build"]
     },
     "dev": {
-      "dependsOn": ["docker"],
-      "cache": false,
-      "persistent": true
-    },
-    "docker": {
       "cache": false,
       "persistent": true
     },
@@ -29,12 +24,6 @@
     "push": {
       "persistent": true
     },
-    "migrate": {
-      "cache": false,
-      "persistent": true
-    },
-    "migrate:pg": {},
-    "electric:migrate": {},
     "generate": {
       "cache": false,
       "persistent": true
@@ -46,14 +35,6 @@
       "persistent": true
     },
     "electric:generate:custom": {},
-    "studio": {},
-    "electric:studio": {},
-    "seed": {
-      "cache": false
-    },
-    "seed:pivotal": {},
-    "seed:user": {},
-    "seed:organizations": {},
-    "seed:data": {}
+    "studio": {}
   }
 }
