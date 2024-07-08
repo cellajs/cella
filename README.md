@@ -59,7 +59,7 @@ First step is to clone
 git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
-Create a `.env` in `/env` folder. Recommended defaults are in `.env.example`. Then install:
+Use the `.env.example` files to create `.env` files in folder `/backend`, `/email` and `/tus`. Then install:
 
 ```bash
 pnpm install
@@ -79,7 +79,7 @@ Check it out at [localhost:3000](http://localhost:3000) after
 pnpm dev
 ```
 
-[Seed](/backend/seed/README.md) your database (make sure `dev` is running)
+Lastly, [seed](/backend/seed/README.md) your db (with `dev` running) to sign in as [admin user](/backend/seed/README.md).
 
 ```bash
 pnpm backend seed
