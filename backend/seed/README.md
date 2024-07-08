@@ -2,9 +2,10 @@
 # Seed Scripts Overview
 
 1. User seed (required)
-This script seeds the database with an admin user.
+This script seeds the database with an admin user:
 
-Admin User: Creates an admin user with a verified email(admin-test@cellajs.com) and password 12345678.
+* email: admin-test@cellajs.com
+* password: 12345678
 
 2. Organizations seed
 This script seeds the database with organizations, users and memberships.

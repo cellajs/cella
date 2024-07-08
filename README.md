@@ -70,7 +70,7 @@ pnpm run docker
 
 ### Step 2
 Page-related resources are handled by a conventional API. Content-related resources are use a local-first strategy with [ElectricSQL](https://github.com/electric-sql/electric).
-Therefore, `generate` and `migrate` commands will execute both for normal schemas and for electric schemas in `/backend`.
+Therefore, `generate` and `migrate` commands will execute both for normal schemas and for *electric schemas* in `/backend`.
 
 ```bash
 pnpm run generate
@@ -85,7 +85,7 @@ pnpm run dev
 
 ### Step 3
 
-The user [seed](/backend/seed/README.md) is required to add an ADMIN user
+At least the user [seed](/backend/seed/README.md) is required (to create an admin user)
 
 ```bash
 pnpm run seed
