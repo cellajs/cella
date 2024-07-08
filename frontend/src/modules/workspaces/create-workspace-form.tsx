@@ -38,7 +38,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { menu } = useNavigationStore();
-  const type = 'WORKSPACE';
+  const type = 'workspace';
 
   const organizations = menu.organizations;
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -126,7 +126,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="WORKSPACE"
+          type="workspace"
           label={t('common:workspace_handle')}
           description={t('common:workspace_handle.text')}
           nameValue={name}
@@ -134,7 +134,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
 
         <SelectParentFormField
           collection="organizations"
-          type="ORGANIZATION"
+          type="organization"
           control={form.control}
           label={t('common:organization')}
           name="organizationId"

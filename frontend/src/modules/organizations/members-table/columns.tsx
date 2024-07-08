@@ -31,7 +31,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
             openUserPreviewSheet(row);
           }}
         >
-          <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+          <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
         </Link>
       ),
@@ -59,7 +59,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => t(row.membership.role.toLowerCase()),
+      renderCell: ({ row }) => t(row.membership.role),
       width: 100,
       ...(isAdmin && {
         renderEditCell: ({ row, onRowChange }) =>

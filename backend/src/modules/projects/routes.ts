@@ -9,7 +9,7 @@ class ProjectRoutesConfig {
   public createProject = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: [isAuthenticated, isAllowedTo('create', 'PROJECT')],
+    guard: [isAuthenticated, isAllowedTo('create', 'project')],
     tags: ['projects'],
     summary: 'Create new project',
     description: 'Create a new project in an organization. Creator will become admin and can invite other members.',
@@ -41,7 +41,7 @@ class ProjectRoutesConfig {
   public getProject = createRouteConfig({
     method: 'get',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('read', 'PROJECT')],
+    guard: [isAuthenticated, isAllowedTo('read', 'project')],
     tags: ['projects'],
     summary: 'Get project',
     description: 'Get project by id or slug.',
@@ -87,7 +87,7 @@ class ProjectRoutesConfig {
   public updateProject = createRouteConfig({
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('update', 'PROJECT')],
+    guard: [isAuthenticated, isAllowedTo('update', 'project')],
     tags: ['projects'],
     summary: 'Update project',
     description: 'Update project by id or slug.',

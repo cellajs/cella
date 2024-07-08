@@ -21,9 +21,7 @@ const SelectRole = ({ entityType, onChange, value, className }: SelectRoleProps)
       {roles.map((role) => (
         <label key={role} className="inline-flex gap-2 items-center cursor-pointer ">
           <RadioGroupItem key={role} value={role} />
-          <span className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            {t(`common:${role.toLowerCase()}`)}
-          </span>
+          <span className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{t(role)}</span>
         </label>
       ))}
     </RadioGroup>

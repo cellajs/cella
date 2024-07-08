@@ -182,7 +182,7 @@ export const useColumns = (
                     openUserPreviewSheet(user);
                   }}
                 >
-                  <AvatarWrap type="USER" className="h-6 w-6" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                  <AvatarWrap type="user" className="h-6 w-6" id={user.id} name={user.name} url={user.thumbnailUrl} />
                   <span className="group-hover:underline underline-offset-4 truncate">{user.name || '-'}</span>
                 </Link>
               );
@@ -206,7 +206,7 @@ export const useColumns = (
                   params={{ idOrSlug: project.workspaceId || project.id }}
                   className="flex space-x-2 items-center outline-0 ring-0 group truncate"
                 >
-                  <AvatarWrap type="PROJECT" className="h-6 w-6 text-xs" id={project.id} name={project.name} />
+                  <AvatarWrap type="project" className="h-6 w-6 text-xs" id={project.id} name={project.name} />
                   <span className="group-hover:underline underline-offset-4 truncate">{project.name || '-'}</span>
                 </Link>
               );

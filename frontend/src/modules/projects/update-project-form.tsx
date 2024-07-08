@@ -99,7 +99,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="PROJECT"
+          type="project"
           label={t('common:project_handle')}
           description={t('common:project_handle.text')}
           previousSlug={project.slug}
@@ -107,7 +107,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
         <InputFormField control={form.control} name="color" label={t('common:color')} required />
         <SelectParentFormField
           collection="workspaces"
-          type="WORKSPACE"
+          type="workspace"
           control={form.control}
           label={t('common:workspace')}
           name="workspaceId"

@@ -61,7 +61,7 @@ class OrganizationRoutesConfig {
   public updateOrganization = createRouteConfig({
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('update', 'ORGANIZATION')],
+    guard: [isAuthenticated, isAllowedTo('update', 'organization')],
     tags: ['organizations'],
     summary: 'Update organization',
     description: 'Update organization by id or slug.',
@@ -91,7 +91,7 @@ class OrganizationRoutesConfig {
   public getOrganization = createRouteConfig({
     method: 'get',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('read', 'ORGANIZATION')],
+    guard: [isAuthenticated, isAllowedTo('read', 'organization')],
     tags: ['organizations'],
     summary: 'Get organization',
     description: 'Get an organization by id or slug.',

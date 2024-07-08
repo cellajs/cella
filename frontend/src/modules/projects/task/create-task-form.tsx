@@ -299,7 +299,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                           <AvatarGroupList>
                             {value.map((user) => (
                               <AvatarWrap
-                                type="USER"
+                                type="user"
                                 key={user.id}
                                 id={user.id}
                                 name={user.name}
@@ -365,10 +365,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                       {value.length > 0 ? (
                         value.map(({ name, id }) => {
                           return (
-                            <div
-                              key={id}
-                              className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
-                            >
+                            <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
                               <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] text-sm h-6 last:mr-0">
                                 {name}
                               </Badge>

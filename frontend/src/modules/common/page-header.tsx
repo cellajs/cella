@@ -33,7 +33,7 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizat
 
       <div className="absolute flex bottom-0 w-full h-16 bg-background/50 backdrop-blur-sm px-1 py-1" ref={scrollToRef}>
         <AvatarWrap
-          className={type === 'USER' ? 'h-24 w-24 -mt-12 text-2xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2 mr-3'}
+          className={type === 'user' ? 'h-24 w-24 -mt-12 text-2xl ml-2 mr-3 border-bg border-opacity-50 border-2 rounded-full' : 'm-2 mr-3'}
           type={type}
           id={id}
           name={title}
@@ -72,7 +72,7 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizat
                 </>
               )}
               <BreadcrumbItem className="flex items-center">
-                <span>{t(type.toLowerCase()).toLowerCase()}</span>
+                <span>{type}</span>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>

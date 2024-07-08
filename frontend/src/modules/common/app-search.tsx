@@ -25,10 +25,10 @@ interface SuggestionSection {
 }
 
 const suggestionSections: SuggestionSection[] = [
-  { id: 'users', label: 'common:users', type: 'USER' },
-  { id: 'organizations', label: 'common:organizations', type: 'ORGANIZATION' },
-  { id: 'workspaces', label: 'common:workspaces', type: 'WORKSPACE' },
-  { id: 'projects', label: 'common:projects', type: 'PROJECT' },
+  { id: 'users', label: 'common:users', type: 'user' },
+  { id: 'organizations', label: 'common:organizations', type: 'organization' },
+  { id: 'workspaces', label: 'common:workspaces', type: 'workspace' },
+  { id: 'projects', label: 'common:projects', type: 'project' },
 ];
 
 export const AppSearch = () => {
@@ -81,7 +81,7 @@ export const AppSearch = () => {
     updateRecentSearches(searchValue);
 
     navigate({
-      to: suggestion.entity === 'ORGANIZATION' ? '/$idOrSlug' : `/${suggestion.entity.toLowerCase()}/$idOrSlug`,
+      to: suggestion.entity === 'organization' ? '/$idOrSlug' : `/${suggestion.entity}/$idOrSlug`,
       resetScroll: false,
       params: {
         idOrSlug: suggestion.slug,

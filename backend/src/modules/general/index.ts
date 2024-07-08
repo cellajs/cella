@@ -157,7 +157,7 @@ const generalRoutes = app
         type: 'SYSTEM_INVITATION',
         userId: targetUser?.id,
         email: email.toLowerCase(),
-        role: (role as TokenModel['role']) || 'USER',
+        role: (role as TokenModel['role']) || 'user',
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 
@@ -198,13 +198,13 @@ const generalRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, token.email));
 
     if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { email: token.email });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
     }
 
     // If it is a system invitation, update user role
     if (token.type === 'SYSTEM_INVITATION') {
-      if (token.role === 'ADMIN') {
-        await db.update(usersTable).set({ role: 'ADMIN' }).where(eq(usersTable.id, user.id));
+      if (token.role === 'admin') {
+        await db.update(usersTable).set({ role: 'admin' }).where(eq(usersTable.id, user.id));
       }
 
       return ctx.json({ success: true }, 200);
@@ -221,7 +221,7 @@ const generalRoutes = app
         .where(and(eq(organizationsTable.id, token.organizationId)));
 
       if (!organization) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: token.organizationId });
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
       }
 
       const [existingMembership] = await db
@@ -282,14 +282,14 @@ const generalRoutes = app
     const { q, type } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    // Retrieve user memberships to filter suggestions by relevant organization,  ADMIN users see everything
+    // Retrieve user memberships to filter suggestions by relevant organization,  admin users see everything
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     // Retrieve organizationIds for non-admin users and check if the user has at least one organization membership
     let organizationIds: string[] = [];
 
-    if (user.role !== 'ADMIN') {
-      organizationIds = memberships.filter((el) => el.type === 'ORGANIZATION').map((el) => String(el.organizationId));
+    if (user.role !== 'admin') {
+      organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
       if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
     }
 
@@ -325,14 +325,14 @@ const generalRoutes = app
       if (organizationIds.length) {
         if ('organizationId' in table) {
           $and.push(inArray(table.organizationId, organizationIds));
-        } else if (entityType === 'ORGANIZATION') {
+        } else if (entityType === 'organization') {
           $and.push(inArray(table.id, organizationIds));
-        } else if (entityType === 'USER') {
+        } else if (entityType === 'user') {
           // Filter users based on their memberships in specified organizations
           const userMemberships = await db
             .select({ userId: membershipsTable.userId })
             .from(membershipsTable)
-            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')));
+            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'organization')));
 
           if (!userMemberships.length) continue;
           $and.push(
@@ -373,7 +373,7 @@ const generalRoutes = app
 
     // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
     const membersFilters = [
-      eq(entityType === 'ORGANIZATION' ? membershipsTable.organizationId : membershipsTable.projectId, entity.id),
+      eq(entityType === 'organization' ? membershipsTable.organizationId : membershipsTable.projectId, entity.id),
       eq(membershipsTable.type, entityType),
     ];
 

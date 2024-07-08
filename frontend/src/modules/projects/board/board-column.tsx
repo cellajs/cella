@@ -78,7 +78,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
 
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
-    queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'PROJECT' }).then((data) => data.items),
+    queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'project' }).then((data) => data.items),
     initialData: [],
   });
   // biome-ignore lint/style/noNonNullAssertion: <explanation>

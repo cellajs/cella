@@ -43,7 +43,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   };
 
   const setUrl = (url: string) => {
-    if (type === 'ORGANIZATION') mutateOrganization({ bannerUrl: url }, mutateOptions);
+    if (type === 'organization') mutateOrganization({ bannerUrl: url }, mutateOptions);
     else mutateUser({ bannerUrl: url }, mutateOptions);
   };
 
@@ -80,7 +80,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   };
   return (
     <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={url ? { backgroundImage: `url(${url})` } : {}}>
-      {(type !== 'USER' || isSelf) && (
+      {(type !== 'user' || isSelf) && (
         <Button
           variant="secondary"
           size="sm"

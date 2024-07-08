@@ -54,7 +54,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
           <CardHeader className="text-center">
             <CardTitle className="text-2xl mb-2">
               {error?.entityType
-                ? t(`common:error.resource_${error.type}`, { resource: t(error.entityType.toLowerCase()) })
+                ? t(`common:error.resource_${error.type}`, { resource: t(error.entityType) })
                 : error?.type
                   ? t(`common:error.${error.type}`)
                   : error?.message || t('common:error.error')}
@@ -62,7 +62,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
             <CardDescription>
               <span>
                 {error?.entityType
-                  ? t(`common:error.resource_${error.type}.text`, { resource: t(error.entityType.toLowerCase()).toLowerCase() })
+                  ? t(`common:error.resource_${error.type}.text`, { resource: error.entityType })
                   : error?.type
                     ? t(`common:error.${error.type}.text`)
                     : error?.message || t('common:error.reported_try_or_contact')}

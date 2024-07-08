@@ -47,7 +47,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
 
   const { data, isLoading: isLoadingOrig } = useQuery({
     queryKey: ['search', debouncedSearchQuery],
-    queryFn: () => getSuggestions(debouncedSearchQuery, 'USER'),
+    queryFn: () => getSuggestions(debouncedSearchQuery, 'user'),
     enabled: !!debouncedSearchQuery,
   });
   // To get around this https://github.com/TanStack/query/issues/3584
@@ -94,7 +94,12 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
 
       <PopoverContent align="start" style={{ width: `${bounds.left + bounds.right + 2}px` }} className={'p-0'}>
         <Command shouldFilter={false}>
-          <CommandInput value={searchQuery} onValueChange={setSearchQuery} clearValue={setSearchQuery} placeholder={t('common:placeholder.type_name')} />
+          <CommandInput
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            clearValue={setSearchQuery}
+            placeholder={t('common:placeholder.type_name')}
+          />
           <ScrollArea className="max-h-[30vh] overflow-y-auto">
             {isLoading && (
               <CommandLoading>

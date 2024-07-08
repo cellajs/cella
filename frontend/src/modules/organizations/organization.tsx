@@ -22,7 +22,7 @@ const OrganizationPage = () => {
   const { idOrSlug } = useParams({ from: OrganizationRoute.id });
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
-  const isAdmin = organization.membership?.role === 'ADMIN';
+  const isAdmin = organization.membership?.role === 'admin';
   const tabs = isAdmin ? organizationTabs : [organizationTabs[0]];
 
   return (
@@ -30,7 +30,7 @@ const OrganizationPage = () => {
       <PageHeader
         id={organization.id}
         title={organization.name}
-        type="ORGANIZATION"
+        type="organization"
         thumbnailUrl={organization.thumbnailUrl}
         bannerUrl={organization.bannerUrl}
         panel={

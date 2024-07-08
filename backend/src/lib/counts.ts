@@ -7,10 +7,10 @@ const getQuery = (entity: Entity) => {
   let columnName: keyof typeof membershipsTable;
 
   switch (entity) {
-    case 'ORGANIZATION':
+    case 'organization':
       columnName = 'organizationId';
       break;
-    case 'PROJECT':
+    case 'project':
       columnName = 'projectId';
       break;
     default:
@@ -20,7 +20,7 @@ const getQuery = (entity: Entity) => {
   return db
     .select({
       id: membershipsTable[columnName],
-      admins: count(sql`CASE WHEN ${membershipsTable.role} = 'ADMIN' THEN 1 ELSE NULL END`).as('admins'),
+      admins: count(sql`CASE WHEN ${membershipsTable.role} = 'admin' THEN 1 ELSE NULL END`).as('admins'),
       members: count().as('members'),
     })
     .from(membershipsTable)

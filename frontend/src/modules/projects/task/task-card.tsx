@@ -135,7 +135,7 @@ export function TaskCard({
   useEffect(() => {
     const element = taskRef.current;
     const dragElement = taskDragRef.current;
-    const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'PROJECT');
+    const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'project');
     if (!element || !dragElement) return;
 
     return combine(
@@ -362,7 +362,7 @@ export function TaskCard({
                   <AvatarGroup limit={3}>
                     <AvatarGroupList>
                       {task.virtualAssignedTo.map((user) => (
-                        <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                        <AvatarWrap type="user" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
                       ))}
                     </AvatarGroupList>
                     <AvatarOverflowIndicator className="h-6 w-6 text-xs" />

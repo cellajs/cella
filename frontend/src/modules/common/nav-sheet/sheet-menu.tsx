@@ -29,18 +29,18 @@ export const menuSections: SectionItem[] = [
     storageType: 'organizations',
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
-    type: 'ORGANIZATION',
+    type: 'organization',
   },
   {
     storageType: 'workspaces',
     isSubmenu: false,
     createForm: <CreateWorkspaceForm dialog />,
-    type: 'WORKSPACE',
+    type: 'workspace',
   },
   {
     storageType: 'workspaces',
     isSubmenu: true,
-    type: 'PROJECT',
+    type: 'project',
   },
 ];
 

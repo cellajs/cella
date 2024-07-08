@@ -85,7 +85,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
         ${isSlugAvailable === 'notAvailable' ? 'ring-2 focus-visible:ring-2 ring-red-500 focus-visible:ring-red-500' : ''}`}
       onFocus={() => setDeviating(true)}
       label={label}
-      prefix={`${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'ORGANIZATION' ? '' : `${type.toLowerCase()}/`}`}
+      prefix={`${config.frontendUrl.replace(/^https?:\/\//, '')}/${type === 'organization' ? '' : `${type.toLowerCase()}/`}`}
       description={description}
       required
       subComponent={

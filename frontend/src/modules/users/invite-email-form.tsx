@@ -40,15 +40,15 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
     role: z.enum(config.rolesByType.allRoles),
     idOrSlug: idOrSlugSchema.optional(),
   });
-  
-  type FormValues = z.infer<typeof formSchema>;  
+
+  type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         emails: [],
-        role: entity ? 'MEMBER' : 'USER',
+        role: entity ? 'member' : 'user',
       },
     }),
     [],

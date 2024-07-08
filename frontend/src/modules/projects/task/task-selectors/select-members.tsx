@@ -80,7 +80,7 @@ const AssignMembers = ({ users, value, changeAssignedTo, triggerWidth = 240 }: A
                 className="group rounded-md flex justify-between items-center w-full leading-normal"
               >
                 <div className="flex items-center gap-3">
-                  <AvatarWrap type="USER" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                  <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
                   <span>{user.name}</span>
                 </div>
 

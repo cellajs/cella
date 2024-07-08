@@ -32,11 +32,7 @@ export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuIte
   const parentItemId = data[0].parentId;
 
   if (data.length === 0) {
-    return (
-      <li className="py-2 text-muted-foreground text-sm text-light text-center">
-        {t('common:no_resource_yet', { resource: t(entityType.toLowerCase()).toLowerCase() })}
-      </li>
-    );
+    return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_resource_yet', { resource: entityType })}</li>;
   }
 
   const filteredItems = data

@@ -97,7 +97,7 @@ const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: R
               {showPageHeader ? (
                 <PanelTopClose size={16} />
               ) : (
-                <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+                <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
               )}
             </Button>
           </TooltipButton>

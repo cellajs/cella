@@ -66,11 +66,11 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
       const workspaceMemberships: InsertMembershipModel[] = membersGroup.map((user) => {
         return {
           id: nanoid(),
-          type: 'WORKSPACE',
+          type: 'workspace',
           userId: user.id,
           organizationId: organization.id,
           workspaceId: workspace.id,
-          role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
+          role: faker.helpers.arrayElement(['admin', 'member']),
           createdAt: faker.date.past(),
           order: workspacesCount + 1,
         };
@@ -83,11 +83,11 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
       if (workspacesCount % 2 === 0) {
         workspaceMemberships.push({
           id: nanoid(),
-          type: 'WORKSPACE',
+          type: 'workspace',
           userId: adminUser.id,
           organizationId: organization.id,
           workspaceId: workspace.id,
-          role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
+          role: faker.helpers.arrayElement(['admin', 'member']),
           createdAt: faker.date.past(),
           order: adminWorkspacesMembershipsOrder,
         });
@@ -126,10 +126,10 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
           return {
             id: nanoid(),
             userId: user.id,
-            type: 'PROJECT',
+            type: 'project',
             organizationId: organization.id,
             projectId: project.id,
-            role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
+            role: faker.helpers.arrayElement(['admin', 'member']),
             createdAt: faker.date.past(),
             order: projectsCount + 1,
           };
@@ -140,10 +140,10 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
           projectMemberships.push({
             id: nanoid(),
             userId: adminUser.id,
-            type: 'PROJECT',
+            type: 'project',
             organizationId: organization.id,
             projectId: project.id,
-            role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
+            role: faker.helpers.arrayElement(['admin', 'member']),
             createdAt: faker.date.past(),
             order: adminProjectsMembershipsOrder > 2 ? 1 : adminProjectsMembershipsOrder,
           });

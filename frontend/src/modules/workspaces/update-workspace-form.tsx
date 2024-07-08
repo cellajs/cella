@@ -104,7 +104,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
         <AvatarFormField
           control={form.control}
           label={t('common:workspace_logo')}
-          type="WORKSPACE"
+          type="workspace"
           name="thumbnailUrl"
           entity={workspace}
           url={form.getValues('thumbnailUrl')}
@@ -113,14 +113,14 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="WORKSPACE"
+          type="workspace"
           label={t('common:workspace_handle')}
           description={t('common:workspace_handle.text')}
           previousSlug={workspace.slug}
         />
         <SelectParentFormField
           collection="organizations"
-          type="ORGANIZATION"
+          type="organization"
           control={form.control}
           label={t('common:organization')}
           name="organizationId"

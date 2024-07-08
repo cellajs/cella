@@ -8,9 +8,9 @@ import { usersTable } from './users';
 
 export const projectsTable = pgTable('projects', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
-  entity: varchar('entity', { enum: ['PROJECT'] })
+  entity: varchar('entity', { enum: ['project'] })
     .notNull()
-    .default('PROJECT'),
+    .default('project'),
   slug: varchar('slug').notNull(),
   name: varchar('name').notNull(),
   color: varchar('color').notNull(),

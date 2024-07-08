@@ -28,7 +28,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
         className,
       )}
       aria-label={item.name}
-      to={type === 'ORGANIZATION' ? '/$idOrSlug' : '/workspaces/$idOrSlug'}
+      to={type === 'organization' ? '/$idOrSlug' : '/workspaces/$idOrSlug'}
       params={{ idOrSlug: mainItemId ? mainItemId : item.slug }}
       activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
     >
@@ -44,13 +44,13 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
           {item.name}
         </div>
         <div className={`max-sm:hidden text-muted-foreground ${mainItemId ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
-          {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type.toLowerCase())}</span>}
+          {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type)}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {/* On new creation cant access role REDO */}
             {item.submenu
               ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}`
               : item.membership.role
-                ? t(item.membership.role.toLowerCase())
+                ? t(item.membership.role)
                 : ''}
           </span>
         </div>
@@ -78,13 +78,13 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
         <Button className="w-full" variant="ghost" onClick={createDialog}>
           <Plus size={14} />
           <span className="ml-1 text-sm text-light">
-            {t('common:create_your_first')} {t(type.toLowerCase()).toLowerCase()}
+            {t('common:create_your_first')} {t(type).toLowerCase()}
           </span>
         </Button>
       </div>
     ) : (
       <li className="py-2 text-muted-foreground text-sm text-light text-center">
-        {t('common:no_resource_yet', { resource: t(type.toLowerCase()).toLowerCase() })}
+        {t('common:no_resource_yet', { resource: t(type).toLowerCase() })}
       </li>
     );
 

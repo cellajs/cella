@@ -125,7 +125,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         <AvatarFormField
           control={form.control}
           label={t('common:organization_logo')}
-          type="ORGANIZATION"
+          type="organization"
           name="thumbnailUrl"
           entity={organization}
           url={form.getValues('thumbnailUrl')}
@@ -134,7 +134,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="ORGANIZATION"
+          type="organization"
           label={t('common:organization_handle')}
           description={t('common:organization_handle.text')}
           previousSlug={organization.slug}

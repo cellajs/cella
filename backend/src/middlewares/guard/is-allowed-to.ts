@@ -13,7 +13,7 @@ export type PermissionAction = 'create' | 'update' | 'read' | 'write';
 /**
  * Middleware to protect routes by checking user permissions.
  * @param action - The action to be performed (e.g., 'read', 'write').
- * @param entityType - The type of the entity (e.g., 'USER', 'ORGANIZATION').
+ * @param entityType - The type of the entity (e.g., 'user', 'organization').
  * @returns MiddlewareHandler to protect routes based on user permissions.
  */
 const isAllowedTo =
@@ -41,7 +41,7 @@ const isAllowedTo =
       const isAllowed = permissionManager.isPermissionAllowed(memberships, action, contextEntity);
 
       // If not allowed and not admin, return forbidden
-      if (!isAllowed && user.role !== 'ADMIN') {
+      if (!isAllowed && user.role !== 'admin') {
         return errorResponse(ctx, 403, 'forbidden', 'warn', entityType, { user: user.id, id: contextEntity.id });
       }
 
@@ -59,7 +59,7 @@ const isAllowedTo =
  * Get the context based on the entity type.
  * Handles resolve for both direct entity operations (retrieval, update, deletion) and contextual operations (fetching child entities).
  * @param ctx - The context object containing request and response details.
- * @param entityType - The type of the entity (e.g., 'ORGANIZATION', 'WORKSPACE').
+ * @param entityType - The type of the entity (e.g., 'organization', 'workspace').
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors

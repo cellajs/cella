@@ -44,7 +44,7 @@ const WorkspacePage = () => {
     <FocusViewContainer>
       {showPageHeader && (
         <PageHeader
-          type="WORKSPACE"
+          type="workspace"
           id={workspace.id}
           title={workspace.name}
           thumbnailUrl={workspace.thumbnailUrl}

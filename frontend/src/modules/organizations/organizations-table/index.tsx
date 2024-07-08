@@ -143,7 +143,7 @@ const OrganizationsTable = () => {
           idOrSlug: organization.id,
           emails: [user.email],
           role: organization.membership?.role,
-          entityType: 'ORGANIZATION',
+          entityType: 'organization',
           organizationId: organization.id,
         })
           .then(() => {
@@ -210,7 +210,7 @@ const OrganizationsTable = () => {
               </>
             ) : (
               !isFiltered &&
-              user.role === 'ADMIN' && (
+              user.role === 'admin' && (
                 <Button
                   onClick={() => {
                     dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {

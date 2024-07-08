@@ -311,7 +311,7 @@ export default function TasksTable() {
         },
       });
       setLabels(fetchedLabels as Label[]);
-      const fetchedMembers = await Promise.all(projects.map((p) => getMembers({ idOrSlug: p.id, entityType: 'PROJECT' }).then(({ items }) => items)));
+      const fetchedMembers = await Promise.all(projects.map((p) => getMembers({ idOrSlug: p.id, entityType: 'project' }).then(({ items }) => items)));
 
       setMembers(fetchedMembers.flat() as Member[]);
     };

@@ -93,7 +93,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
   const containerRef = useRef(null);
 
   const entityType = entity.entity;
-  const isAdmin = entity.membership?.role === 'ADMIN';
+  const isAdmin = entity.membership?.role === 'admin';
 
   const isMobile = useBreakpoints('max', 'sm');
 

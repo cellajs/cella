@@ -103,7 +103,7 @@ const authRoutes = app
     const { email } = ctx.req.valid('json');
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // creating email verification token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
@@ -243,7 +243,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     // If the user is not found or the email is different from the token email
-    if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { userId: token.userId });
+    if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
 
     await auth.invalidateUserSessions(user.id);
 
@@ -275,7 +275,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     // If the user is not found or signed up with oauth
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);

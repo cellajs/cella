@@ -11,7 +11,7 @@ import { logEvent } from '../logger/log-event';
 /**
  * Middleware that splits a list of IDs into allowed and disallowed by checking user permissions.
  * @param {string} action - The action to be performed (e.g., 'update', 'delete').
- * @param {string} entityType - The type of the entity (e.g., 'ORGANIZATION', 'WORKSPACE').
+ * @param {string} entityType - The type of the entity (e.g., 'organization', 'workspace').
  * @returns {MiddlewareHandler<Env, any>} MiddlewareHandler to protect routes based on user permissions.
  */
 const splitByAllowance =
@@ -43,7 +43,7 @@ const splitByAllowance =
       for (const entity of entities) {
         const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
 
-        if (!isAllowed && user.role !== 'ADMIN') {
+        if (!isAllowed && user.role !== 'admin') {
           disallowedIds.push(entity.id);
         } else {
           allowedIds.push(entity.id);

@@ -27,7 +27,7 @@ const workspacesRoutes = app
     const slugAvailable = await checkSlugAvailable(slug);
 
     if (!slugAvailable) {
-      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
+      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'workspace', { slug });
     }
 
     const [workspace] = await db
@@ -42,7 +42,7 @@ const workspacesRoutes = app
     logEvent('Workspace created', { workspace: workspace.id });
 
     // Insert membership
-    const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: workspace, memberships });
+    const [createdMembership] = await insertMembership({ user, role: 'admin', entity: workspace, memberships });
 
     return ctx.json(
       {
@@ -61,7 +61,7 @@ const workspacesRoutes = app
   .openapi(workspaceRoutesConfig.getWorkspace, async (ctx) => {
     const workspace = ctx.get('workspace');
     const memberships = ctx.get('memberships');
-    const membership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'WORKSPACE');
+    const membership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'workspace');
 
     return ctx.json(
       {
@@ -87,7 +87,7 @@ const workspacesRoutes = app
       const slugAvailable = await checkSlugAvailable(slug);
 
       if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'WORKSPACE', { slug });
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'workspace', { slug });
       }
     }
 
@@ -107,7 +107,7 @@ const workspacesRoutes = app
     const memberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'WORKSPACE'), eq(membershipsTable.workspaceId, workspace.id)));
+      .where(and(eq(membershipsTable.type, 'workspace'), eq(membershipsTable.workspaceId, workspace.id)));
 
     if (memberships.length > 0) {
       memberships.map((member) =>
@@ -140,13 +140,13 @@ const workspacesRoutes = app
     const disallowedIds = ctx.get('disallowedIds');
 
     // Map errors of workspaces user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'WORKSPACE', { workspace: id }));
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'workspace', { workspace: id }));
 
     // Get members
     const workspaceMembers = await db
       .select({ id: membershipsTable.userId, workspaceId: membershipsTable.workspaceId })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'WORKSPACE'), inArray(membershipsTable.workspaceId, allowedIds)));
+      .where(and(eq(membershipsTable.type, 'workspace'), inArray(membershipsTable.workspaceId, allowedIds)));
 
     // Delete the workspaces
     await db.delete(workspacesTable).where(inArray(workspacesTable.id, allowedIds));
@@ -159,7 +159,7 @@ const workspacesRoutes = app
           .filter(({ workspaceId }) => workspaceId === id)
           .map((member) => member.id)
           .filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'WORKSPACE' });
+        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'workspace' });
       }
 
       logEvent('Workspace deleted', { workspace: id });

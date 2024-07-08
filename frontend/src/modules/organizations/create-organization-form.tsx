@@ -39,7 +39,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { nextStep } = useStepper();
-  const type = 'ORGANIZATION';
+  const type = 'organization';
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -105,7 +105,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="ORGANIZATION"
+          type="organization"
           label={t('common:organization_handle')}
           description={t('common:organization_handle.text')}
           nameValue={name}

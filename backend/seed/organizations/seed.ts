@@ -101,8 +101,8 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         id: nanoid(),
         userId: user.id,
         organizationId: organization.id,
-        type: 'ORGANIZATION',
-        role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
+        type: 'organization',
+        role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: faker.date.past(),
         order: organizationsCount + 1,
       };
@@ -114,8 +114,8 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         id: nanoid(),
         userId: adminUser.id,
         organizationId: organization.id,
-        type: 'ORGANIZATION',
-        role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
+        type: 'organization',
+        role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: faker.date.past(),
         order: adminMembershipsOrder,
       });

@@ -47,7 +47,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             openUserPreviewSheet(row);
           }}
         >
-          <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+          <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
         </Link>
       ),
@@ -82,7 +82,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => t(row.role.toLowerCase()),
+      renderCell: ({ row }) => t(row.role),
       width: 100,
       renderEditCell: ({ row, onRowChange }) =>
         renderSelect({

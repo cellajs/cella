@@ -28,7 +28,7 @@ const organizationsRoutes = app
 
     const slugAvailable = await checkSlugAvailable(slug);
 
-    if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
+    if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
 
     const [createdOrganization] = await db
       .insert(organizationsTable)
@@ -45,7 +45,7 @@ const organizationsRoutes = app
     logEvent('Organization created', { organization: createdOrganization.id });
 
     // Insert membership
-    const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: createdOrganization });
+    const [createdMembership] = await insertMembership({ user, role: 'admin', entity: createdOrganization });
 
     return ctx.json(
       {
@@ -81,7 +81,7 @@ const organizationsRoutes = app
     const memberships = db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'ORGANIZATION')))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'organization')))
       .as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -96,7 +96,7 @@ const organizationsRoutes = app
       order,
     );
 
-    const countsQuery = await counts('ORGANIZATION');
+    const countsQuery = await counts('organization');
 
     const organizations = await db
       .select({
@@ -164,7 +164,7 @@ const organizationsRoutes = app
       const slugAvailable = await checkSlugAvailable(slug);
 
       if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'ORGANIZATION', { slug });
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
       }
     }
 
@@ -197,7 +197,7 @@ const organizationsRoutes = app
     const memberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'ORGANIZATION'), eq(membershipsTable.organizationId, organization.id)));
+      .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
     if (memberships.length > 0) {
       memberships.map((member) =>
@@ -216,7 +216,7 @@ const organizationsRoutes = app
         data: {
           ...updatedOrganization,
           membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
-          counts: await counts('ORGANIZATION', organization.id),
+          counts: await counts('organization', organization.id),
         },
       },
       200,
@@ -233,7 +233,7 @@ const organizationsRoutes = app
       .select()
       .from(membershipsTable)
       .where(
-        and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'ORGANIZATION')),
+        and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
       );
 
     return ctx.json(
@@ -242,7 +242,7 @@ const organizationsRoutes = app
         data: {
           ...organization,
           membership: toMembershipInfo(membership),
-          counts: await counts('ORGANIZATION', organization.id),
+          counts: await counts('organization', organization.id),
         },
       },
       200,
@@ -258,13 +258,13 @@ const organizationsRoutes = app
     const disallowedIds = ctx.get('disallowedIds');
 
     // Map errors of workspaces user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: id }));
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
 
     // Get members
     const organizationsMembers = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'ORGANIZATION'), inArray(membershipsTable.organizationId, allowedIds)));
+      .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
 
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
@@ -274,7 +274,7 @@ const organizationsRoutes = app
       // Send the event to the user if they are a member of the organization
       if (organizationsMembers.length > 0) {
         const membersId = organizationsMembers.map((member) => member.id).filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'ORGANIZATION' });
+        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'organization' });
       }
 
       logEvent('Organization deleted', { organization: id });

@@ -89,10 +89,10 @@ export const config = {
   ],
 
   // App specific entity types
-  entityTypes: ['USER', 'ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const,
-  contextEntityTypes: ['ORGANIZATION', 'WORKSPACE', 'PROJECT'] as const,
+  entityTypes: ['user', 'organization', 'workspace', 'project'] as const,
+  contextEntityTypes: ['organization', 'workspace', 'project'] as const,
 
-  rolesByType: { systemRoles: ['USER', 'ADMIN'] as const, entityRoles: ['MEMBER', 'ADMIN'] as const, allRoles: ['USER', 'MEMBER', 'ADMIN'] as const },
+  rolesByType: { systemRoles: ['user', 'admin'] as const, entityRoles: ['member', 'admin'] as const, allRoles: ['user', 'member', 'admin'] as const },
 
   // Company details
   company: {

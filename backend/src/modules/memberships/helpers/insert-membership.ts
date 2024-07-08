@@ -19,7 +19,7 @@ interface Props {
 
 // Helper function to insert a membership and give it proper order number
 export const insertMembership = async ({ user, role, entity, createdBy = user.id, memberships }: Props) => {
-  const organizationId = entity.entity === 'ORGANIZATION' ? entity.id : entity.organizationId;
+  const organizationId = entity.entity === 'organization' ? entity.id : entity.organizationId;
 
   const newMembership = {
     organizationId,
@@ -33,14 +33,12 @@ export const insertMembership = async ({ user, role, entity, createdBy = user.id
   };
 
   // Set workspaceId or projectId if entity is workspace or project
-  if (entity.entity === 'WORKSPACE')  newMembership.workspaceId = entity.id;
-  
-  else if (entity.entity === 'PROJECT') newMembership.projectId = entity.id;
-
+  if (entity.entity === 'workspace') newMembership.workspaceId = entity.id;
+  else if (entity.entity === 'project') newMembership.projectId = entity.id;
 
   // Get user memberships
   let userMemberships = memberships;
-  
+
   if (!memberships) {
     userMemberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
   }
@@ -59,7 +57,7 @@ export const insertMembership = async ({ user, role, entity, createdBy = user.id
   const results = await db.insert(membershipsTable).values(newMembership).returning();
 
   // Log
-  logEvent(`User added to ${entity.entity.toLowerCase()}`, { user: user.id, id: entity.id });
+  logEvent(`User added to ${entity.entity}`, { user: user.id, id: entity.id });
 
   return results;
 };

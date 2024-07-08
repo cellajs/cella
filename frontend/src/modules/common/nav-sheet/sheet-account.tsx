@@ -33,7 +33,7 @@ const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, 
 export const SheetAccount = () => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const isSystemAdmin = user.role === 'ADMIN';
+  const isSystemAdmin = user.role === 'admin';
 
   const bgClass = user.bannerUrl ? 'bg-background' : getColorClass(user.id);
   const bannerClass = `relative group transition-all duration-300 hover:-mx-8 -mx-4 bg-cover bg-center h-24 ${bgClass}`;
@@ -49,12 +49,12 @@ export const SheetAccount = () => {
           </div>
         </div>
         <AvatarWrap
-            className="h-16 w-16 absolute top-4 text-2xl transition duration-300 ml-4 border-bg border-2 rounded-full"
-            type="USER"
-            id={user.id}
-            name={user.name}
-            url={user.thumbnailUrl}
-          />
+          className="h-16 w-16 absolute top-4 text-2xl transition duration-300 ml-4 border-bg border-2 rounded-full"
+          type="user"
+          id={user.id}
+          name={user.name}
+          url={user.thumbnailUrl}
+        />
       </Link>
 
       <div className="flex flex-col gap-1 max-sm:mt-4">

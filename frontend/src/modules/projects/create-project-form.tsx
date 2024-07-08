@@ -34,7 +34,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
-  const type = 'PROJECT';
+  const type = 'project';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -95,7 +95,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="PROJECT"
+          type="project"
           label={t('common:project_handle')}
           description={t('common:project_handle.text')}
           nameValue={name}

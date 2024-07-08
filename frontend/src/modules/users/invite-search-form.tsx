@@ -45,7 +45,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
       resolver: zodResolver(formSchema),
       defaultValues: {
         emails: [],
-        role: 'MEMBER',
+        role: 'member',
       },
     }),
     [],
@@ -58,7 +58,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
       return inviteMembers({
         ...values,
         idOrSlug: entity.id,
-        entityType: entity.entity || 'ORGANIZATION',
+        entityType: entity.entity || 'organization',
         organizationId: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },

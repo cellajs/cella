@@ -29,7 +29,7 @@ export const renderSelect = <TRow extends User | Member>({
       <SelectContent sideOffset={-41} alignOffset={-5} className="!duration-0">
         {options.map((option) => (
           <SelectItem key={option} value={option}>
-            {t(option.toLowerCase())}
+            {t(option)}
           </SelectItem>
         ))}
       </SelectContent>
