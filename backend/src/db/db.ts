@@ -7,6 +7,7 @@ import { sql } from 'drizzle-orm';
 
 export const queryClient = new pg.Pool({
   connectionString: env.DATABASE_URL,
+  connectionTimeoutMillis: 10000,
 });
 
 export const db = drizzle(queryClient, {

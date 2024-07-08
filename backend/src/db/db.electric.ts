@@ -6,6 +6,7 @@ import { config } from 'config';
 
 const queryClient = new pg.Pool({
   connectionString: env.ELECTRIC_SYNC_URL,
+  connectionTimeoutMillis: 10000,
 });
 
 export const db = drizzle(queryClient, {

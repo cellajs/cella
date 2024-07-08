@@ -1,36 +1,26 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": [
-    "NODE_ENV"
-  ],
-  "globalDependencies": [
-    "config",
-    ".env"
-  ],
+  "globalEnv": ["NODE_ENV"],
+  "globalDependencies": ["config", ".env"],
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
     },
     "build:dev": {
-      "dependsOn": [
-        "^build:dev"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
+      "dependsOn": ["^build:dev"],
+      "outputs": ["dist/**"]
     },
     "start": {
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": ["^build"]
     },
     "dev": {
+      "dependsOn": ["docker"],
+      "cache": false,
+      "persistent": true
+    },
+    "docker": {
       "cache": false,
       "persistent": true
     },
@@ -39,10 +29,14 @@
     "push": {
       "persistent": true
     },
-    "migrate": {},
+    "migrate": {
+      "cache": false,
+      "persistent": true
+    },
     "migrate:pg": {},
     "electric:migrate": {},
     "generate": {
+      "cache": false,
       "persistent": true
     },
     "generate:pg": {
