@@ -56,20 +56,20 @@ First step is to clone
 git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
-Use the `.env.example` files to create `.env` files in folder `/backend`, `/email` and `/tus`. Then install and run docker.
+Use `.env.example` to create `.env` files in `/backend`, `/email` and `/tus`. Install and run docker.
 
 ```bash
 pnpm install
 pnpm docker
 ```
 
-Start all servers
+Start all servers:
 
 ```bash
 pnpm dev
 ```
 
-Page-related resources are handled by a conventional API. Content-related resources use a *local-first* strategy with [ElectricSQL](https://github.com/electric-sql/electric). Generate migrations for both resources and also - based on *electrified schemas* - the client-side schemas.
+Page-related resources are handled by fetching from an[API](https://api.cellajs.com/docs). Content-related resources use a *local-first* strategy with [ElectricSQL](https://github.com/electric-sql/electric). Generate backend migrations for both and client-side schemas for *electrified schemas*.
 
 ```bash
 pnpm generate
