@@ -1,12 +1,12 @@
 import { cva } from 'class-variance-authority';
+import { CommandEmpty } from 'cmdk';
 import { Check, type LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
-import { Kbd } from '~/modules/common/kbd';
 import { dropdowner } from '~/modules/common/dropdowner/state';
+import { Kbd } from '~/modules/common/kbd';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { taskStatuses } from '../../tasks-table/status';
-import { CommandEmpty } from 'cmdk';
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];

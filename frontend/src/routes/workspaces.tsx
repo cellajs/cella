@@ -3,15 +3,15 @@ import type { ErrorType } from 'backend/lib/errors';
 import { config } from 'config';
 import { Construction } from 'lucide-react';
 import { Suspense, lazy } from 'react';
+import { z } from 'zod';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { workspaceQueryOptions } from '~/modules/workspaces';
+import { useWorkspaceStore } from '~/store/workspace';
 import { AppRoute } from '.';
 import { membersSearchSchema } from './organizations';
-import { z } from 'zod';
-import { useWorkspaceStore } from '~/store/workspace';
 
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));

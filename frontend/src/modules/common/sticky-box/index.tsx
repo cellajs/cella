@@ -350,7 +350,7 @@ export type UseStickyBoxOptions = StickyBoxConfig;
 
 export const useStickyBox = ({ offsetTop = 0, offsetBottom = 0, bottom = false, enabled = true }: StickyBoxConfig = {}) => {
   if (!enabled) return;
-  
+
   const [node, setNode] = useState<HTMLElement | null>(null);
   useEffect(() => {
     if (!node || !stickyProp) return;
@@ -370,11 +370,7 @@ export type StickyBoxCompProps = StickyBoxConfig & Pick<ComponentProps<'div'>, '
 const StickyBox = (props: StickyBoxCompProps) => {
   const { enabled = true, offsetTop, offsetBottom, bottom, children, className, style } = props;
 
-  if (!enabled) return (
-    <div className={className} >
-      {children}
-    </div>
-  );
+  if (!enabled) return <div className={className}>{children}</div>;
 
   const ref = useStickyBox({ offsetTop, offsetBottom, bottom });
 

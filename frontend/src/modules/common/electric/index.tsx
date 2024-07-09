@@ -5,10 +5,10 @@ import { LIB_VERSION } from 'electric-sql/version';
 import { Loader2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
+import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
-import { Button } from '~/modules/ui/button';
 interface Props {
   children: React.ReactNode;
 }

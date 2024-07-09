@@ -19,9 +19,9 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { membershipsTableId, supportedEntityTypes, type supportedModelTypes } from './helpers/create-membership-config';
-import membershipRouteConfig from './routes';
 import { insertMembership } from './helpers/insert-membership';
 import { toMembershipInfo } from './helpers/to-membership-info';
+import membershipRouteConfig from './routes';
 
 const app = new CustomHono();
 

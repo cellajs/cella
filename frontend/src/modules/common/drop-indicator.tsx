@@ -9,7 +9,6 @@ interface DropIndicatorProps {
 }
 
 export const DropIndicator: React.FC<DropIndicatorProps> = ({ edge, className = '', gap = 0 }) => {
-
   const dropIndicatorEdgeStyles = {
     top: {
       top: `${-gap / 2}rem`,

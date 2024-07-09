@@ -8,8 +8,8 @@ import { cn } from '~/lib/utils';
 import { buttonVariants } from '~/modules/ui/button';
 import { SheetTitle } from '~/modules/ui/sheet';
 import { useUserStore } from '~/store/user';
-import { AvatarWrap } from '../avatar-wrap';
 import { AppFooter } from '../app-footer';
+import { AvatarWrap } from '../avatar-wrap';
 
 type AccountButtonProps = {
   lucide: React.ElementType<LucideProps>;

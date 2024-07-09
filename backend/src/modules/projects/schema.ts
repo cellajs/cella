@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { projectsTable } from '../../db/schema/projects';
-import { colorSchema, membershipsCountSchema, idSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
+import { colorSchema, idSchema, membershipsCountSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const projectSchema = z.object({

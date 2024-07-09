@@ -1,8 +1,8 @@
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '../../lib/common-responses';
-import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
-import { organizationSchema, createOrganizationBodySchema, getOrganizationsQuerySchema, updateOrganizationBodySchema } from './schema';
+import { createOrganizationBodySchema, getOrganizationsQuerySchema, organizationSchema, updateOrganizationBodySchema } from './schema';
 
 class OrganizationRoutesConfig {
   public createOrganization = createRouteConfig({

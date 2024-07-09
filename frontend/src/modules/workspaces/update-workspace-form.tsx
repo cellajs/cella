@@ -12,7 +12,9 @@ import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
+import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
+import AvatarFormField from '~/modules/common/form-fields/avatar';
 import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -20,8 +22,6 @@ import InputFormField from '../common/form-fields/input';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { SlugFormField } from '../common/form-fields/slug';
 import UnsavedBadge from '../common/unsaved-badge';
-import { cleanUrl } from '~/lib/utils';
-import AvatarFormField from '~/modules/common/form-fields/avatar';
 
 interface Props {
   workspace: Workspace;

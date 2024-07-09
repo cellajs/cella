@@ -1,12 +1,12 @@
 import { Check, ChevronDown } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Kbd } from '~/modules/common/kbd.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
-import { Button } from '~/modules/ui/button';
-import type { Project } from '~/types';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { Kbd } from '~/modules/common/kbd.tsx';
+import { Button } from '~/modules/ui/button';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import type { Project } from '~/types';
 
 interface Props {
   projects: Project[];

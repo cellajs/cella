@@ -13,6 +13,8 @@ import type { Project } from '~/types';
 import { useColumns } from './columns';
 
 import { Trash, XSquare } from 'lucide-react';
+import { toast } from 'sonner';
+import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
@@ -21,8 +23,6 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import DeleteProjects from '../delete-projects';
-import { toast } from 'sonner';
-import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 
 export type ProjectsSearch = z.infer<typeof getProjectsQuerySchema>;
 

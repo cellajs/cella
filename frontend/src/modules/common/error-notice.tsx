@@ -7,8 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { AppFooter } from '~/modules/common/app-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import { dialog } from './dialoger/state';
 import ContactForm from './contact-form/contact-form';
+import { dialog } from './dialoger/state';
 
 interface ErrorNoticeProps {
   error?: ErrorType;

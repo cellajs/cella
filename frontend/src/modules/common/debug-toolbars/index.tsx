@@ -1,8 +1,8 @@
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { Button } from '../../ui/button';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import useMounted from '~/hooks/use-mounted';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { Button } from '../../ui/button';
 import './style.css';
 import { queryClient } from '~/lib/router';
 
@@ -27,7 +27,7 @@ const DebugToolbars = () => {
   const debugToggle = (item: DebugItem) => {
     if (item.url) return window.open(item.url);
     if (!item.parent || !item.element) return;
-    
+
     const parent = document.querySelector<HTMLElement>(item.parent);
     if (!parent) return;
     let htmlElement: HTMLButtonElement | null | undefined = parent.querySelector<HTMLButtonElement>(item.element);

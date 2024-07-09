@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { cn, nanoid } from '~/lib/utils';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 
 export type PageNavTab = {
   id: string;

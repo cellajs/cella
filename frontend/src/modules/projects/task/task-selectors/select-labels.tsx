@@ -1,6 +1,6 @@
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from '~/lib/utils.ts';
 import type { Label } from '../../../common/electric/electrify.ts';

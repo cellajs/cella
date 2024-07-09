@@ -1,9 +1,9 @@
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '../../lib/common-responses';
-import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import { projectSchema, createProjectBodySchema, createProjectQuerySchema, getProjectsQuerySchema, updateProjectBodySchema } from './schema';
+import { createProjectBodySchema, createProjectQuerySchema, getProjectsQuerySchema, projectSchema, updateProjectBodySchema } from './schema';
 
 class ProjectRoutesConfig {
   public createProject = createRouteConfig({

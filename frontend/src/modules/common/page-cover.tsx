@@ -2,15 +2,15 @@ import type { Entity } from 'backend/types/common';
 import { Upload } from 'lucide-react';
 import { Suspense, memo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { lazyWithPreload } from 'react-lazy-with-preload';
 import { toast } from 'sonner';
 import { getColorClass } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { useUpdateUserMutation } from '~/modules/users/update-user-form';
-import { UploadType } from '~/types';
-import { lazyWithPreload } from 'react-lazy-with-preload';
 import { useUserStore } from '~/store/user';
+import { UploadType } from '~/types';
 
 // Lazy load the upload component
 const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));

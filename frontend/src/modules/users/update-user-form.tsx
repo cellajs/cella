@@ -24,10 +24,10 @@ import { cleanUrl } from '~/lib/utils';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../common/form-fields/input';
+import { SelectLanguage } from '../common/form-fields/language-selector';
 import { SlugFormField } from '../common/form-fields/slug';
 import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
 import { useStepper } from '../common/stepper/use-stepper';
-import { SelectLanguage } from '../common/form-fields/language-selector';
 
 interface UpdateUserFormProps {
   user: User;

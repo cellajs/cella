@@ -14,9 +14,15 @@ export const tasksTable = pgTable('tasks', {
   order: doublePrecision('sort_order').notNull(),
   status: integer('status').notNull(),
   parentId: varchar('parent_id').references((): AnyPgColumn => tasksTable.id),
-  labels: jsonb('labels').$type<string[]>().notNull().$defaultFn(() => []),
+  labels: jsonb('labels')
+    .$type<string[]>()
+    .notNull()
+    .$defaultFn(() => []),
   // labels: jsonb('labels').$type<string[]>().notNull().default([]),
-  assignedTo: jsonb('assigned_to').$type<string[]>().notNull().$defaultFn(() => []),
+  assignedTo: jsonb('assigned_to')
+    .$type<string[]>()
+    .notNull()
+    .$defaultFn(() => []),
   // assignedTo: jsonb('assigned_to').$type<string[]>().notNull().default([]),
   organizationId: varchar('organization_id').notNull(),
   projectId: varchar('project_id').notNull(),

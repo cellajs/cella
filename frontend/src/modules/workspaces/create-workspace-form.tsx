@@ -12,10 +12,11 @@ import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
+import { addMenuItem } from '~/lib/utils';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { Organization, Workspace, UserMenuItem } from '~/types';
+import type { Organization, UserMenuItem, Workspace } from '~/types';
 import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
 import InputFormField from '../common/form-fields/input';
 import SelectParentFormField from '../common/form-fields/select-parent';
@@ -23,7 +24,6 @@ import { SlugFormField } from '../common/form-fields/slug';
 import CreateOrganizationForm from '../organizations/create-organization-form';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Form } from '../ui/form';
-import { addMenuItem } from '~/lib/utils';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;

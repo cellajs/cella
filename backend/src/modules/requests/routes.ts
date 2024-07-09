@@ -2,7 +2,7 @@ import { errorResponses, successWithDataSchema, successWithPaginationSchema } fr
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
-import { requestsInfoSchema, createRequestSchema, getRequestsQuerySchema, requestsSchema } from './schema';
+import { createRequestSchema, getRequestsQuerySchema, requestsInfoSchema, requestsSchema } from './schema';
 
 class RequestsRoutesConfig {
   public createRequest = createRouteConfig({

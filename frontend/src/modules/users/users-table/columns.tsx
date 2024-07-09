@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { User } from '~/types';
 
+import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import { UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
@@ -14,7 +15,6 @@ import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import { UserProfile } from '../user-profile';
 import UpdateRow from './update-row';
-import { Link } from '@tanstack/react-router';
 
 export const openUserPreviewSheet = (user: User) => {
   sheet(<UserProfile sheet user={user} />, {

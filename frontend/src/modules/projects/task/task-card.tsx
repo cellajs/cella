@@ -1,28 +1,28 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { UserX, Tag, ChevronDown } from 'lucide-react';
+import { ChevronDown, Tag, UserX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn } from '~/lib/utils.ts';
+import type { Task } from '~/modules/common/electric/electrify.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import type { Task } from '~/modules/common/electric/electrify.ts';
 import { Checkbox } from '../../ui/checkbox.tsx';
 import { impacts } from './task-selectors/select-impact.tsx';
-import { statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
+import { type TaskStatus, statusVariants } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
 import './style.css';
-import { TaskEditor } from './task-selectors/task-editor.tsx';
 import { taskStatuses } from '../tasks-table/status.tsx';
+import { TaskEditor } from './task-selectors/task-editor.tsx';
 
-import SubTask from './sub-task-card.tsx';
-import CreateSubTaskForm from './create-sub-task-form.tsx';
-import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
-import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
+import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Badge } from '../../ui/badge.tsx';
+import CreateSubTaskForm from './create-sub-task-form.tsx';
+import SubTask from './sub-task-card.tsx';
+import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -30,8 +30,8 @@ import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-d
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { getDraggableItemData } from '~/lib/utils';
-import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import type { DraggableItemData } from '~/types';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 

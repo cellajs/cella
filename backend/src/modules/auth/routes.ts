@@ -7,7 +7,7 @@ import { isPublicAccess } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { userSchema } from '../users/schema';
-import { emailBodySchema, authBodySchema } from './schema';
+import { authBodySchema, emailBodySchema } from './schema';
 
 class AuthRoutesConfig {
   public checkEmail = createRouteConfig({

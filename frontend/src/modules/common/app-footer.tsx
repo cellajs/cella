@@ -4,9 +4,9 @@ import { cn } from '~/lib/utils';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import Logo from '~/modules/common/logo';
 import UserTheme from '~/modules/common/user-theme';
+import { Button } from '../ui/button';
 import { dialog } from './dialoger/state';
 import UserLanguage from './user-language';
-import { Button } from '../ui/button';
 
 export interface FooterLinkProps {
   id: string;
@@ -63,11 +63,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
         <FooterLink key={link.id} id={link.id} href={link.href} />
       ))}
       <li>
-        <Button
-          variant="ghost"
-          aria-label="Open contact form"
-          onClick={handleOpenContactForm}
-        >
+        <Button variant="ghost" aria-label="Open contact form" onClick={handleOpenContactForm}>
           {t('common:contact')}
         </Button>
       </li>
@@ -76,7 +72,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
 };
 
 // App Footer component
-export const AppFooter = ({className = '' }) => {
+export const AppFooter = ({ className = '' }) => {
   return (
     <footer className={cn('flex flex-col items-center gap-2', className)}>
       <div className="flex items-center gap-4">

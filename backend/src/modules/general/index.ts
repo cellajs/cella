@@ -4,11 +4,11 @@ import { InviteSystemEmail } from '../../../../email/emails/system-invite';
 
 import { render } from '@react-email/render';
 import { config } from 'config';
-import { env } from '../../../env';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
+import { env } from '../../../env';
 
 import { db } from '../../db/db';
 
@@ -27,11 +27,11 @@ import { getOrderColumn } from '../../lib/order-column';
 import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
-import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

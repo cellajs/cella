@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
+import { db } from '../../../db/db';
 import { type MembershipModel, membershipsTable } from '../../../db/schema/memberships';
 import type { OrganizationModel } from '../../../db/schema/organizations';
 import type { ProjectModel } from '../../../db/schema/projects';
-import { db } from '../../../db/db';
-import { logEvent } from '../../../middlewares/logger/log-event';
 import type { UserModel } from '../../../db/schema/users';
 import type { WorkspaceModel } from '../../../db/schema/workspaces';
+import { logEvent } from '../../../middlewares/logger/log-event';
 
 type UserWithoutPassword = Omit<UserModel, 'hashedPassword'>;
 

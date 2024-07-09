@@ -1,28 +1,28 @@
 import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { membersQuerySchema } from 'backend/modules/general/schema';
+import { motion } from 'framer-motion';
+import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
-import { useTranslation, Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { type GetMembersParams, getMembers } from '~/api/general';
 import { updateMembership } from '~/api/memberships';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
+import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import { DataTable } from '~/modules/common/data-table';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import type { EntityPage, Member, Organization, Project } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useColumns } from './columns';
-import { motion } from 'framer-motion';
-import { Mail, Trash, XSquare } from 'lucide-react';
+import { DataTable } from '~/modules/common/data-table';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -32,8 +32,8 @@ import RemoveMembersForm from '~/modules/organizations/members-table/remove-memb
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
-import ColumnsView from '~/modules/common/data-table/columns-view';
-import TableCount from '~/modules/common/data-table/table-count';
+import type { EntityPage, Member, Organization, Project } from '~/types';
+import { useColumns } from './columns';
 
 const LIMIT = 40;
 

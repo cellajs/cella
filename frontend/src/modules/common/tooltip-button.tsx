@@ -11,7 +11,17 @@ interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof Toolt
   portal?: boolean;
 }
 
-export const TooltipButton = ({ children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, className, hideWhenDetached, portal = false, ...props }: TooltipButtonProps) => {
+export const TooltipButton = ({
+  children,
+  toolTipContent,
+  disabled,
+  side = 'bottom',
+  sideOffset = 8,
+  className,
+  hideWhenDetached,
+  portal = false,
+  ...props
+}: TooltipButtonProps) => {
   if (disabled) {
     return children;
   }

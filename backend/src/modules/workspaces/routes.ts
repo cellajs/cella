@@ -1,9 +1,9 @@
 import { errorResponses, successWithDataSchema, successWithErrorsSchema } from '../../lib/common-responses';
-import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import { workspaceSchema, createWorkspaceBodySchema, updateWorkspaceBodySchema } from './schema';
+import { createWorkspaceBodySchema, updateWorkspaceBodySchema, workspaceSchema } from './schema';
 
 class WorkspaceRoutesConfig {
   public createWorkspace = createRouteConfig({

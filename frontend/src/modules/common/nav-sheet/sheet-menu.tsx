@@ -6,13 +6,13 @@ import { useNavigationStore } from '~/store/navigation';
 
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { UserMenuItem } from '~/types';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
 import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import ContentPlaceholder from '../content-placeholder';
 import { SheetMenuItem } from './sheet-menu-items';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
-import type { UserMenuItem } from '~/types';
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';

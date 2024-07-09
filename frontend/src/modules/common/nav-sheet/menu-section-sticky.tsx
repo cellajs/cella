@@ -15,13 +15,7 @@ interface MenuSectionStickyProp {
   createDialog?: () => void;
 }
 
-export const MenuSectionSticky = ({
-  data,
-  sectionType,
-  isSectionVisible,
-  createDialog,
-  toggleOptionsView,
-}: MenuSectionStickyProp) => {
+export const MenuSectionSticky = ({ data, sectionType, isSectionVisible, createDialog, toggleOptionsView }: MenuSectionStickyProp) => {
   const { t } = useTranslation();
   const { toggleSection } = useNavigationStore();
 

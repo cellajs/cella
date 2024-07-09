@@ -1,18 +1,18 @@
 import { Check, ChevronsUpDown, Loader2, Search, X } from 'lucide-react';
 
-import { useTranslation } from 'react-i18next';
-import { useCallback, useEffect, useState } from 'react';
-import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { useQuery } from '@tanstack/react-query';
-import { useDebounce } from '~/hooks/use-debounce';
-import { Command, CommandInput, CommandLoading, CommandEmpty, CommandItem, CommandList, CommandGroup } from '../ui/command';
+import { config } from 'config';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getSuggestions } from '~/api/general';
+import { useDebounce } from '~/hooks/use-debounce';
+import { useMeasure } from '~/hooks/use-measure';
+import { Badge } from '../ui/badge';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '../ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { ScrollArea } from '../ui/scroll-area';
 import { AvatarWrap } from './avatar-wrap';
 import ContentPlaceholder from './content-placeholder';
-import { config } from 'config';
-import { useMeasure } from '~/hooks/use-measure';
-import { Badge } from '../ui/badge';
 
 export function QueryCombobox({ onChange, value }: { value: string[]; onChange: (items: string[]) => void }) {
   const { t } = useTranslation();

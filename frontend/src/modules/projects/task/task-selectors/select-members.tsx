@@ -1,11 +1,11 @@
 import { Check } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import type { Member } from '~/types/index.ts';
-import { Kbd } from '~/modules/common/kbd.tsx';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { dropdowner } from '~/modules/common/dropdowner/state';
+import { Kbd } from '~/modules/common/kbd.tsx';
+import type { Member } from '~/types/index.ts';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 
 interface AssignMembersProps {
   users: Member[];

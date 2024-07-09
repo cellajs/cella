@@ -4,13 +4,13 @@ import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
 
 import { UniqueEnforcer } from 'enforce-unique';
-import { labelsTable, type InsertLabelModel } from '../../src/db/schema-electric/labels';
-import { tasksTable, type InsertTaskModel } from '../../src/db/schema-electric/tasks';
-import { membershipsTable, type InsertMembershipModel } from '../../src/db/schema/memberships';
+import { type InsertLabelModel, labelsTable } from '../../src/db/schema-electric/labels';
+import { type InsertTaskModel, tasksTable } from '../../src/db/schema-electric/tasks';
+import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
 import { organizationsTable } from '../../src/db/schema/organizations';
-import { projectsTable, type InsertProjectModel } from '../../src/db/schema/projects';
+import { type InsertProjectModel, projectsTable } from '../../src/db/schema/projects';
 import { projectsToWorkspacesTable } from '../../src/db/schema/projects-to-workspaces';
-import { workspacesTable, type InsertWorkspaceModel } from '../../src/db/schema/workspaces';
+import { type InsertWorkspaceModel, workspacesTable } from '../../src/db/schema/workspaces';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 

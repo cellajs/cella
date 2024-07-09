@@ -1,14 +1,14 @@
-import type { Task } from '~/modules/common/electric/electrify';
-import { TaskEditor } from './task-selectors/task-editor';
-import { useRef, useState } from 'react';
-import { useThemeStore } from '~/store/theme';
 import MDEditor from '@uiw/react-md-editor';
-import { Button } from '~/modules/ui/button';
-import { Checkbox } from '~/modules/ui/checkbox';
-import { cn } from '~/lib/utils';
 import { Trash } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
+import { cn } from '~/lib/utils';
+import type { Task } from '~/modules/common/electric/electrify';
+import { Button } from '~/modules/ui/button';
+import { Checkbox } from '~/modules/ui/checkbox';
+import { useThemeStore } from '~/store/theme';
+import { TaskEditor } from './task-selectors/task-editor';
 
 const SubTask = ({
   task,

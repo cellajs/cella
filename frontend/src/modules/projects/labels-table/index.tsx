@@ -1,19 +1,19 @@
 import { Bird } from 'lucide-react';
+import { Trash, XSquare } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import type { Label } from '~/modules/common/electric/electrify';
-import { useColumns } from './columns';
-import { Trash, XSquare } from 'lucide-react';
-import { toast } from 'sonner';
 import { FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
+import type { Label } from '~/modules/common/electric/electrify';
 import { useElectric } from '~/modules/common/electric/electrify';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import { useColumns } from './columns';
 
 interface LabelsParam {
   role?: 'secondary' | 'primary' | undefined;

@@ -1,11 +1,11 @@
 import { Bolt, Bug, Check, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Kbd } from '~/modules/common/kbd';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from '~/modules/ui/command';
-import type { TaskType } from '../create-task-form';
-import { dropdowner } from '~/modules/common/dropdowner/state';
 import { cn } from '~/lib/utils';
+import { dropdowner } from '~/modules/common/dropdowner/state';
+import { Kbd } from '~/modules/common/kbd';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import type { TaskType } from '../create-task-form';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];

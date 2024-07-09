@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { env } from '../../env';
 import pg from 'pg';
+import { env } from '../../env';
 
 import { config } from 'config';
 import { sql } from 'drizzle-orm';

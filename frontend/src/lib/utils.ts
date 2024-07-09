@@ -9,8 +9,8 @@ import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
-import type { DraggableItemData, UserMenuItem } from '~/types';
 import { useNavigationStore } from '~/store/navigation';
+import type { DraggableItemData, UserMenuItem } from '~/types';
 
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);

@@ -1,12 +1,12 @@
-import { Plus, Minimize2, Settings, ArrowRight, ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams } from '@tanstack/react-router';
+import { ArrowLeft, ArrowRight, Minimize2, Plus, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { Button } from '~/modules/ui/button';
-import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
 interface BoardColumnHeaderProps {
   id: string;

@@ -1,8 +1,8 @@
+import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
 import type { Label, Task } from '~/modules/common/electric/electrify';
 import { sortTaskOrder } from '~/modules/projects/task/helpers';
 import type { Member } from '~/types';
-import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
 
 dayjs.extend(isBetween);
 

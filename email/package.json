@@ -3,9 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "private": true,
-  "workspaces": [
-    ".react-email"
-  ],
+  "workspaces": [".react-email"],
   "scripts": {
     "dev": "NODE_ENV=development email dev",
     "export": "email export"

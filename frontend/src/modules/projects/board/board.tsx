@@ -1,18 +1,18 @@
-import { Fragment, type LegacyRef, useEffect, useState, useMemo } from 'react';
+import { useSearch } from '@tanstack/react-router';
+import { Bird, Redo } from 'lucide-react';
+import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useMeasure } from '~/hooks/use-measure';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { WorkspaceBoardRoute } from '~/routes/workspaces';
+import { useWorkspaceStore } from '~/store/workspace';
 import type { Project, TaskCardFocusEvent } from '~/types';
+import { useElectric } from '../../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
-import { Bird, Redo } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { useElectric } from '../../common/electric/electrify';
-import { useHotkeys } from '~/hooks/use-hot-keys';
 import BoardHeader from './header/board-header';
-import { useWorkspaceStore } from '~/store/workspace';
-import { useSearch } from '@tanstack/react-router';
-import { WorkspaceBoardRoute } from '~/routes/workspaces';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels

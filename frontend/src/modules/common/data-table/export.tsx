@@ -21,7 +21,7 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows, 
   const { t } = useTranslation();
 
   const onExport = async (type: 'csv' | 'pdf', selected: boolean) => {
-    const rows = selected && selectedRows ? selectedRows : (await fetchRows(1000));
+    const rows = selected && selectedRows ? selectedRows : await fetchRows(1000);
     const filenameWithExtension = `${filename}.${type}`;
     const themeState = useThemeStore.getState();
     const theme: Theme = themeState.mode;

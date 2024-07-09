@@ -1,16 +1,16 @@
 import { type Paddle, initializePaddle } from '@paddle/paddle-js';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
-import { Button } from '../ui/button';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types';
+import { Button } from '../ui/button';
 
-  const Subscription = ({ organization }: { organization: Organization }) => {
-    const { t } = useTranslation();
+const Subscription = ({ organization }: { organization: Organization }) => {
+  const { t } = useTranslation();
 
-    console.log('org billing', organization)
-  
-    // Create a local state to store Paddle instance
+  console.log('org billing', organization);
+
+  // Create a local state to store Paddle instance
   const [paddle, setPaddle] = useState<Paddle>();
 
   // Callback to open a checkout
@@ -33,14 +33,13 @@ import type { Organization } from '~/types';
     });
   }, []);
 
-    return (
-      <>
-          <Button variant="gradient" className="w-40" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
-            {t('common:checkout')}
-          </Button>
+  return (
+    <>
+      <Button variant="gradient" className="w-40" onClick={() => openCheckout(config.paddlePriceIds.donate)}>
+        {t('common:checkout')}
+      </Button>
+    </>
+  );
+};
 
-      </>
-    );
-  };
-  
-  export default Subscription;
+export default Subscription;

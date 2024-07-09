@@ -11,16 +11,16 @@ import { createProject } from '~/api/projects';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import SelectParentFormField from '~/modules/common/form-fields/select-parent';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { Button } from '~/modules/ui/button';
-import type { Workspace, UserMenuItem } from '~/types';
+import { addMenuItem } from '~/lib/utils';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
+import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { Form } from '../ui/form';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { addMenuItem } from '~/lib/utils';
+import type { UserMenuItem, Workspace } from '~/types';
+import { Form } from '../ui/form';
 
 interface CreateProjectFormProps {
   workspace: Workspace;

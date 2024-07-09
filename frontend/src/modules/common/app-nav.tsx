@@ -1,9 +1,9 @@
 import { useNavigate } from '@tanstack/react-router';
+import { config } from 'config';
 import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
 import { Fragment, lazy } from 'react';
-import { useThemeStore } from '~/store/theme';
-import { config } from 'config';
 import { Suspense } from 'react';
+import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { cn } from '~/lib/utils';
@@ -32,8 +32,7 @@ export const navItems: NavItem[] = [
   { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
 ];
 
- const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
-
+const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
 const AppNav = () => {
   const navigate = useNavigate();

@@ -11,9 +11,9 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import projectRoutesConfig from './routes';
-import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const app = new CustomHono();
 

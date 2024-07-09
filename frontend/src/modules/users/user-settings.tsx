@@ -12,11 +12,11 @@ import { useUserStore } from '~/store/user';
 import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import StickyBox from '~/modules/common/sticky-box';
 import { toast } from 'sonner';
 import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { AsideNav } from '~/modules/common/aside-nav';
+import StickyBox from '~/modules/common/sticky-box';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
 import { oauthProviders } from '../auth/oauth-options';
@@ -155,7 +155,7 @@ const UserSettings = () => {
             <CardContent>
               {sessionsWithoutCurrent.length > 0 && (
                 <Button
-                className="max-xs:w-full"
+                  className="max-xs:w-full"
                   variant="plain"
                   size="sm"
                   disabled={isPending}
