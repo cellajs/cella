@@ -7,6 +7,7 @@ import type { Label } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { inNumbersArray } from './helpers.ts';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -21,9 +22,10 @@ interface SetLabelsProps {
   changeLabels: (labels: Label[]) => void;
   createLabel: (label: Label) => void;
   triggerWidth?: number;
+  updateLabel?: (labelId: string, useCount: number) => void;
 }
 
-const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId, labels, triggerWidth = 280 }: SetLabelsProps) => {
+const SetLabels = ({ value, changeLabels, createLabel, updateLabel, projectId, organizationId, labels, triggerWidth = 280 }: SetLabelsProps) => {
   const { t } = useTranslation();
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
@@ -36,6 +38,7 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
 
   const handleSelectClick = (value?: string) => {
     if (!value) return;
+    setSearchValue('');
     const existingLabel = selectedLabels.find((label) => label.name === value);
     if (existingLabel) {
       const updatedLabels = selectedLabels.filter((label) => label.name !== value);
@@ -48,6 +51,7 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
       const updatedLabels = [...selectedLabels, newLabel];
       setSelectedLabels(updatedLabels);
       changeLabels(updatedLabels);
+      updateLabel?.(newLabel.id, newLabel.use_count + 1);
       return;
     }
   };
@@ -62,6 +66,8 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
       color: '#FFA9BA',
       organization_id: organizationId,
       project_id: projectId,
+      last_used: new Date(),
+      use_count: 0,
     };
 
     createLabel(newLabel);
@@ -73,13 +79,12 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
   const renderLabels = (labels: Label[]) => {
     return (
       <>
-        {labels.map((label, index) => (
+        {labels.slice(0, 8).map((label, index) => (
           <CommandItem
             key={label.id}
             value={label.name}
             onSelect={(value) => {
               handleSelectClick(value);
-              setSearchValue('');
             }}
             className="group rounded-md flex justify-between items-center w-full leading-normal"
           >
@@ -89,7 +94,7 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
             </div>
             <div className="flex items-center">
               {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
-              {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
+              {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
             </div>
           </CommandItem>
         ))}
@@ -108,14 +113,12 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
         value={searchValue}
         onValueChange={(searchValue) => {
           // If the label types a number, select the label like useHotkeys
-          if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(Number.parseInt(searchValue))) {
-            handleSelectClick(labels[Number.parseInt(searchValue)]?.name);
-            setSearchValue('');
-            return;
-          }
+          if (inNumbersArray(8, searchValue)) return handleSelectClick(labels[Number.parseInt(searchValue) - 1]?.name);
+
           setSearchValue(searchValue.toLowerCase());
         }}
         clearValue={setSearchValue}
+        wrapClassName="max-sm:hidden"
         className="leading-normal"
         placeholder={t('common:placeholder.search_labels')}
       />

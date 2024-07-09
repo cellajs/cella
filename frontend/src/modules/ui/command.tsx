@@ -36,31 +36,34 @@ interface CommandInputProps extends React.ComponentPropsWithoutRef<typeof Comman
 }
 interface ZeroValSet {
   clearValue?: (newVal: string) => void;
+  wrapClassName?: string;
 }
 
-const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & ZeroValSet>(({ className, value, clearValue, ...props }, ref) => (
-  <div className="flex items-center border-b px-3 relative" cmdk-input-wrapper="">
-    <Search className="mr-2 h-4 w-4 shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
-    <CommandPrimitive.Input
-      value={value}
-      ref={ref}
-      className={cn(
-        'flex h-10 w-full border-0 rounded-md bg-transparent pr-1 py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
-        className,
-      )}
-      {...props}
-    />
-    {value.length > 0 && (
-      <XCircle
-        size={16}
-        className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
-        onClick={() => {
-          if (clearValue) clearValue('');
-        }}
+const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & ZeroValSet>(
+  ({ className, wrapClassName, value, clearValue, ...props }, ref) => (
+    <div className={cn('flex items-center border-b px-3 relative', wrapClassName)} cmdk-input-wrapper="">
+      <Search className="mr-2 h-4 w-4 shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
+      <CommandPrimitive.Input
+        value={value}
+        ref={ref}
+        className={cn(
+          'flex h-10 w-full border-0 rounded-md bg-transparent pr-1 py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+          className,
+        )}
+        {...props}
       />
-    )}
-  </div>
-));
+      {value.length > 0 && (
+        <XCircle
+          size={16}
+          className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+          onClick={() => {
+            if (clearValue) clearValue('');
+          }}
+        />
+      )}
+    </div>
+  ),
+);
 
 CommandInput.displayName = CommandPrimitive.Input.displayName;
 

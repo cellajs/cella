@@ -1,19 +1,26 @@
-import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, CircleDotDashed, Dot, Snowflake } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import { IcedIcon } from '../task/task-selectors/status-icons/iced';
+import { StartedIcon } from '../task/task-selectors/status-icons/started';
+import { UnstartedIcon } from '../task/task-selectors/status-icons/unstarted';
+import { FinishedIcon } from '../task/task-selectors/status-icons/finished';
+import { DeliveredIcon } from '../task/task-selectors/status-icons/delivered';
+import { ReviewedIcon } from '../task/task-selectors/status-icons/reviewed';
+import { AcceptedIcon } from '../task/task-selectors/status-icons/accepted';
 
 export const taskStatuses = [
-  { value: 0, action: 'iced', status: 'iced', icon: Snowflake },
-  { value: 1, action: 'start', status: 'unstarted', icon: Dot },
-  { value: 2, action: 'finish', status: 'started', icon: CircleDashed },
-  { value: 3, action: 'deliver', status: 'finished', icon: Circle },
-  { value: 4, action: 'review', status: 'delivered', icon: CircleDotDashed },
-  { value: 5, action: 'accept', status: 'reviewed', icon: CircleDot },
-  { value: 6, action: 'accepted', status: 'accepted', icon: CircleCheck },
+  { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
+  { value: 1, action: 'start', status: 'unstarted', icon: UnstartedIcon },
+  { value: 2, action: 'finish', status: 'started', icon: StartedIcon },
+  { value: 3, action: 'deliver', status: 'finished', icon: FinishedIcon },
+  { value: 4, action: 'review', status: 'delivered', icon: DeliveredIcon },
+  { value: 5, action: 'accept', status: 'reviewed', icon: ReviewedIcon },
+  { value: 6, action: 'accepted', status: 'accepted', icon: AcceptedIcon },
 ] as const;
 
 interface Props {
@@ -69,7 +76,7 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
                 if (!currentStatus) return null;
                 return (
                   <div key={currentStatus.value} className="flex items-center gap-1">
-                    <currentStatus.icon size={16} />
+                    <currentStatus.icon title={currentStatus.status} />
                     <span>{t(currentStatus.status)}</span>
                   </div>
                 );
@@ -107,7 +114,7 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
                     <div className="flex items-center">
-                      <status.icon size={16} className="mr-2 size-4 " />
+                      <status.icon title={status.status} className="mr-2 size-4" />
                       <span>{t(status.status)}</span>
                     </div>
                     <div className="flex items-center">

@@ -121,9 +121,9 @@ export const useColumns = (
               return (
                 <>
                   {impact === null ? (
-                    <NotSelected className="size-4 mr-2 fill-current" aria-hidden="true" title="Set impact" />
+                    <NotSelected className="size-4 mr-2 fill-current" aria-hidden="true" title="Not selected" />
                   ) : (
-                    <impact.icon className="size-4 mr-2 fill-current" aria-hidden="true" title="Set impact" />
+                    <impact.icon className="size-4 mr-2 fill-current" aria-hidden="true" title={impact.label} />
                   )}
 
                   <span>{impact === null ? '-' : impact.label}</span>
@@ -138,9 +138,15 @@ export const useColumns = (
             visible: true,
             width: 140,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (
-              <span className={statusTextColors[row.status as TaskStatus]}>{t(taskStatuses[row.status as TaskStatus].status)}</span>
-            ),
+            renderCell: ({ row }) => {
+              const status = taskStatuses[row.status as TaskStatus];
+              return (
+                <>
+                  <status.icon className="size-4 mr-2" aria-hidden="true" title={status.status} />
+                  <span className={statusTextColors[row.status as TaskStatus]}>{t(status.status)}</span>
+                </>
+              );
+            },
           },
           {
             key: 'subTasks',

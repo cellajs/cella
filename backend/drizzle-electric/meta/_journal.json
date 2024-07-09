@@ -15,6 +15,13 @@
       "when": 1719305786171,
       "tag": "0001_aromatic_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1720519656733,
+      "tag": "0002_outgoing_dakota_north",
+      "breakpoints": true
     }
   ]
 }
