@@ -14,8 +14,8 @@
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "postinstall": "lefthook install && cd backend && pnpm docker:build",
-    "docker": "pnpm --filter backend run docker:start",
+    "postinstall": "lefthook install && cd backend",
+    "docker": "pnpm --filter backend run docker:up --detach",
     "generate": "pnpm --filter backend run generate && pnpm --filter frontend run electric:prepare:dev",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
     "dev": "pnpm run clean && turbo dev  --filter backend --filter frontend --filter tus",
