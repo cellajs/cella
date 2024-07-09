@@ -8,6 +8,7 @@ import { db } from './db/db';
 import { db as dbElectric } from './db/db.electric';
 import ascii from './lib/ascii';
 import app from './server';
+import { config } from 'config';
 
 // Set i18n instance before starting server
 import './lib/i18n';
@@ -18,7 +19,7 @@ const main = async () => {
 
   // Migrate db
   await migrate(db, { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' });
-  await migrate(dbElectric, { migrationsFolder: 'drizzle-electric', migrationsSchema: 'drizzle-electric' });
+  if (config.mode === 'development') await migrate(dbElectric, { migrationsFolder: 'drizzle-electric', migrationsSchema: 'drizzle-electric' });
 
   // Start server
   serve(
