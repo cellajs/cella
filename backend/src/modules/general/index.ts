@@ -115,13 +115,13 @@ const generalRoutes = app
     // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // For reset token: check if token has valid user
-    // if (tokenRecord.type === 'PASSWORD_RESET') {
+    // if (tokenRecord.type === 'password_reset') {
     //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
     //   if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     // }
 
     // For system invitation token: check if user email is not already in the system
-    // if (tokenRecord.type === 'SYSTEM_INVITATION') {
+    // if (tokenRecord.type === 'system_invitation') {
     //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
     //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
     // }
@@ -133,7 +133,7 @@ const generalRoutes = app
       organizationSlug: '',
     };
 
-    if (tokenRecord.type === 'ORGANIZATION_INVITATION' && tokenRecord.organizationId) {
+    if (tokenRecord.type === 'organization_invitation' && tokenRecord.organizationId) {
       const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
       data.organizationName = organization.name;
       data.organizationSlug = organization.slug;
@@ -154,7 +154,7 @@ const generalRoutes = app
       const token = generateId(40);
       await db.insert(tokensTable).values({
         id: token,
-        type: 'SYSTEM_INVITATION',
+        type: 'system_invitation',
         userId: targetUser?.id,
         email: email.toLowerCase(),
         role: (role as TokenModel['role']) || 'user',
@@ -202,7 +202,7 @@ const generalRoutes = app
     }
 
     // If it is a system invitation, update user role
-    if (token.type === 'SYSTEM_INVITATION') {
+    if (token.type === 'system_invitation') {
       if (token.role === 'admin') {
         await db.update(usersTable).set({ role: 'admin' }).where(eq(usersTable.id, user.id));
       }
@@ -210,7 +210,7 @@ const generalRoutes = app
       return ctx.json({ success: true }, 200);
     }
 
-    if (token.type === 'ORGANIZATION_INVITATION') {
+    if (token.type === 'organization_invitation') {
       if (!token.organizationId) {
         return errorResponse(ctx, 400, 'invalid_token', 'warn');
       }

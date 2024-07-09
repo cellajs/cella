@@ -70,8 +70,8 @@ export const config = {
   },
 
   // OAuth providers
-  oauthProviderOptions: ['GITHUB', 'GOOGLE', 'MICROSOFT'] as const,
-  enabledOauthProviders: ['GITHUB'] as const,
+  oauthProviderOptions: ['github', 'google', 'microsoft'] as const,
+  enabledOauthProviders: ['github'] as const,
 
   // Optional settings
   has: {
@@ -118,7 +118,7 @@ export const config = {
 
   // Common countries
   common: {
-    countries: ['FR', 'DE', 'NL', 'UA', 'US', 'GB'],
+    countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
     timezones: [],
   },
 };

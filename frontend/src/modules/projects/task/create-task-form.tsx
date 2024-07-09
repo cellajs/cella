@@ -310,7 +310,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                           </AvatarGroupList>
                           <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
                         </AvatarGroup>
-                        <span className="ml-2 truncate">
+                        <span className="runcate">
                           {value.length === 0 && 'Assign to'}
                           {value.length === 1 && value[0].name}
                           {value.length === 2 && value.map(({ name }) => name).join(', ')}

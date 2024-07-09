@@ -146,7 +146,6 @@ export function TaskCard({
         onDragStart: () => {
           setDragging(true);
           setIsEditing(false);
-          setIsExpanded?.(false);
         },
         onDrop: () => setDragging(false),
       }),
@@ -195,7 +194,7 @@ export function TaskCard({
         }),
       )}
     >
-      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-1 pb-2 pr-1.5 space-between flex flex-col relative">
+      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 pr-2 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
             <div className="flex flex-col justify-between gap-0.5 relative">
@@ -274,7 +273,7 @@ export function TaskCard({
                     </div>
                   )}
 
-                  <div className="-ml-10 -mr-1">
+                  <div className="-ml-10 -mr-1 relative z-10">
                     <div className="flex flex-col">
                       {task.subTasks.map((task) => (
                         <SubTask key={task.id} task={task} handleChange={handleTaskChange} />

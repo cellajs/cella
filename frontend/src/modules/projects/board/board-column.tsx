@@ -272,10 +272,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   };
 
   const handleTaskFormClick = () => {
-    if (!createForm) {
-      const container = document.getElementById(`${project.id}-viewport`);
-      container?.scrollTo({ top: 0, behavior: 'smooth' });
-    }
     toggleCreateForm(project.id);
   };
 

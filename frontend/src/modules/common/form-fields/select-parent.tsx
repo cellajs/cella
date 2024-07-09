@@ -38,7 +38,7 @@ const SelectParentFormField = ({ collection, control, name, label, type, placeho
               name={name}
               onChange={onChange}
               disabled={disabled}
-              placeholder={t('common:select_resource', { resource: t(`common:${type.toLowerCase()}`).toLowerCase() })}
+              placeholder={t('common:select_resource', { resource: t(`common:${type}`).toLowerCase() })}
               searchPlaceholder={placeholder ? placeholder : t('common:search')}
             />
           </FormControl>

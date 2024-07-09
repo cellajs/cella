@@ -39,7 +39,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { nextStep } = useStepper();
-  const type = 'organization';
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -61,7 +60,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     mutationFn: createOrganization,
     onSuccess: (createdOrganization) => {
       form.reset();
-      toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
+      toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
       callback?.(createdOrganization);
       nextStep?.();
 

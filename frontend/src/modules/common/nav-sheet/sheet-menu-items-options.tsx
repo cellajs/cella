@@ -88,7 +88,7 @@ const ItemOptions = ({
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { menu } = useNavigationStore();
-  const callback = parentItemId ? useMutateQueryData(['projects', parentItemId]) : useMutateQueryData([`${itemType.toLowerCase()}s`, item.id]);
+  const callback = parentItemId ? useMutateQueryData(['projects', parentItemId]) : useMutateQueryData([`${itemType}s`, item.id]);
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
       return baseUpdateMembership(values);
@@ -100,8 +100,8 @@ const ItemOptions = ({
         archiveStateToggle(item.id, archived, parentItemId ? parentItemId : null);
         toast.success(
           archived
-            ? t('common:success.archived_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
-            : t('common:success.restore_resource', { resource: t(`common:${itemType.toLowerCase()}`) }),
+            ? t('common:success.archived_resource', { resource: t(`common:${itemType}`) })
+            : t('common:success.restore_resource', { resource: t(`common:${itemType}`) }),
         );
         setItemArchived(archived);
       }
@@ -109,8 +109,8 @@ const ItemOptions = ({
         const muted = updatedMembership.muted || !isItemMuted;
         toast.success(
           muted
-            ? t('common:success.mute_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
-            : t('common:success.unmute_resource', { resource: t(`common:${itemType.toLowerCase()}`) }),
+            ? t('common:success.mute_resource', { resource: t(`common:${itemType}`) })
+            : t('common:success.unmute_resource', { resource: t(`common:${itemType}`) }),
         );
         setItemMuted(muted);
       }

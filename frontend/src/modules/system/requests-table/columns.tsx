@@ -20,7 +20,7 @@ export const useColumns = () => {
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => t(`common:${row.type.toLowerCase()}`),
+      renderCell: ({ row }) => t(`common:${row.type}`),
       minWidth: 160,
     },
   ];

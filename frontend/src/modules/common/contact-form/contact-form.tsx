@@ -58,7 +58,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     const { name, email, message } = data;
-    createRequest({ email, type: 'CONTACT_REQUEST', message: `${name} with the message: ${message}` });
+    createRequest({ email, type: 'contact', message: `${name} with the message: ${message}` });
   };
 
   // Update dialog title with unsaved changes

@@ -28,7 +28,7 @@ const NewsletterForm = () => {
     let email = formRef.current?.email.value;
     if (!email) return;
     email = email.trim().toLowerCase();
-    createRequest({ email, type: 'NEWSLETTER_REQUEST', message: null });
+    createRequest({ email, type: 'newsletter', message: null });
   };
 
   return (

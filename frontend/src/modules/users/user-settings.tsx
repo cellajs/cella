@@ -205,7 +205,7 @@ const UserSettings = () => {
                       <img
                         src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
                         alt={option.name}
-                        className={`w-4 h-4 mr-2 ${option.id === 'GITHUB' ? invertClass : ''}`}
+                        className={`w-4 h-4 mr-2 ${option.id === 'github' ? invertClass : ''}`}
                         loading="lazy"
                       />
                       {`${t('common:add')} ${option.name} ${t('common:account').toLowerCase()}`}

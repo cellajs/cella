@@ -114,9 +114,9 @@ export const CreateSubTaskForm = ({
   };
   if (!formOpen)
     return (
-      <Button className="w-full mb-1 rounded-none bg-secondary" onClick={() => setFormState(true)}>
+      <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none opacity-50 hover:opacity-100" onClick={() => setFormState(true)}>
         <Plus size={16} />
-        <span className="ml-1">{firstSubTask ? t('common:create_new_sub_task') : t('common:create_another_sub_task')}</span>
+        <span className="ml-1 font-normal">{firstSubTask ? t('common:create_subtask') : t('common:add_subtask')}</span>
       </Button>
     );
   // Fix types

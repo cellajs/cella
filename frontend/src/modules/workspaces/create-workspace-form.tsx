@@ -38,7 +38,6 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { menu } = useNavigationStore();
-  const type = 'workspace';
 
   const organizations = menu.organizations;
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -63,7 +62,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     mutationFn: createWorkspace,
     onSuccess: (createdWorkspace) => {
       form.reset();
-      toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
+      toast.success(t('common:success.create_resource', { resource: t('common:workspace') }));
       callback?.(createdWorkspace);
       if (isDialog) dialog.remove();
 

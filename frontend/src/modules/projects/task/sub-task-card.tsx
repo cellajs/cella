@@ -35,12 +35,12 @@ const SubTask = ({
   });
 
   return (
-    <div ref={subTaskRef} id="sub-item" className="flex gap-1 p-1 bg-secondary border-b-2 border-background">
+    <div ref={subTaskRef} id="sub-item" className="flex items-center gap-1 p-1 bg-secondary border-b-2 border-background">
       <div className="flex flex-col justify-between items-center gap-2 relative">
         <Checkbox
           className={cn(
             'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
-            'transition-all bg-background w-5 h-5 m-1',
+            'transition-all bg-background w-5 h-5 m-1 ml-1.5',
           )}
           checked={task.status === 6}
           onCheckedChange={(checkStatus) => {
@@ -49,7 +49,7 @@ const SubTask = ({
           }}
         />
       </div>
-      <div className="flex flex-col grow gap-2 mt-1 mx-1">
+      <div className="flex flex-col grow gap-2 mx-1">
         {isEditing && (
           <TaskEditor
             mode={mode}
@@ -76,7 +76,7 @@ const SubTask = ({
         //   ref={subTaskDragButtonRef}
         variant={'ghost'}
         size="xs"
-        className="max-sm:hidden text-secondary-foreground cursor-pointer opacity-15 transition-all group-hover/task:opacity-35 group-[.is-focused]/task:opacity-35 group-[.is-selected]/column:opacity-0 group-[.is-selected]/column:-mt-8 group-[.is-selected]/column:pointer-events-none"
+        className="text-secondary-foreground cursor-pointer opacity-30"
       >
         <span className="sr-only"> {t('common:move_task')}</span>
         <Trash size={16} />

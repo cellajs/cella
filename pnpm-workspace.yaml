@@ -1,5 +1,4 @@
 packages:
-  - 'docker'
   - 'backend'
   - 'frontend'
   - 'locales'

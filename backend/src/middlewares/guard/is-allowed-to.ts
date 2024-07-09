@@ -47,7 +47,7 @@ const isAllowedTo =
 
       // Store user memberships and authorized context entity in hono ctx
       ctx.set('memberships', memberships);
-      ctx.set(entityType.toLowerCase(), contextEntity);
+      ctx.set(entityType, contextEntity);
 
       // Log user allowance in the context
       logEvent(`User is allowed to ${action} ${contextEntity.entity}`, { user: user.id, id: contextEntity.id });
@@ -65,11 +65,11 @@ const isAllowedTo =
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
 async function getEntityContext(ctx: any, entityType: ContextEntity) {
   // Check if entity is configured; if not, return early
-  if (!HierarchicalEntity.instanceMap.has(entityType.toLowerCase())) {
+  if (!HierarchicalEntity.instanceMap.has(entityType)) {
     return;
   }
 
-  const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(`${entityType.toLowerCase()}Id`);
+  const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(`${entityType}Id`);
 
   if (idOrSlug) {
     // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
@@ -88,7 +88,7 @@ async function getEntityContext(ctx: any, entityType: ContextEntity) {
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
 async function createEntityContext(entityType: ContextEntity, ctx: any) {
-  const entity = HierarchicalEntity.instanceMap.get(entityType.toLowerCase());
+  const entity = HierarchicalEntity.instanceMap.get(entityType);
 
   // Return early if entity is not available
   if (!entity) return;

@@ -1,17 +1,18 @@
 CREATE TABLE IF NOT EXISTS "memberships" (
 	"id" varchar PRIMARY KEY NOT NULL,
-	"type" varchar DEFAULT 'ORGANIZATION' NOT NULL,
+	"type" varchar NOT NULL,
 	"organization_id" varchar,
 	"workspace_id" varchar,
 	"project_id" varchar,
 	"user_id" varchar,
-	"role" varchar DEFAULT 'MEMBER' NOT NULL,
+	"role" varchar DEFAULT 'member' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
 	"modified_at" timestamp,
 	"modified_by" varchar,
-	"inactive" boolean DEFAULT false,
-	"muted" boolean DEFAULT false
+	"inactive" boolean DEFAULT false NOT NULL,
+	"muted" boolean DEFAULT false NOT NULL,
+	"sort_order" double precision NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "oauth_accounts" (
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS "oauth_accounts" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "organizations" (
 	"id" varchar PRIMARY KEY NOT NULL,
-	"entity" varchar DEFAULT 'ORGANIZATION' NOT NULL,
+	"entity" varchar DEFAULT 'organization' NOT NULL,
 	"name" varchar NOT NULL,
 	"short_name" varchar,
 	"slug" varchar NOT NULL,
@@ -33,15 +34,15 @@ CREATE TABLE IF NOT EXISTS "organizations" (
 	"default_language" varchar DEFAULT 'en' NOT NULL,
 	"languages" json DEFAULT '["en"]'::json NOT NULL,
 	"notification_email" varchar,
-	"email_domains" json,
-	"brand_color" varchar,
+	"email_domains" json DEFAULT '[]'::json NOT NULL,
+	"color" varchar,
 	"thumbnail_url" varchar,
-	"logo_url" varchar,
 	"banner_url" varchar,
+	"logo_url" varchar,
 	"website_url" varchar,
 	"welcome_text" varchar,
 	"is_production" boolean DEFAULT false NOT NULL,
-	"auth_strategies" json,
+	"auth_strategies" json DEFAULT '[]'::json NOT NULL,
 	"chat_support" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
@@ -59,10 +60,12 @@ CREATE TABLE IF NOT EXISTS "projects_to_workspaces" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "projects" (
 	"id" varchar PRIMARY KEY NOT NULL,
-	"entity" varchar DEFAULT 'PROJECT' NOT NULL,
+	"entity" varchar DEFAULT 'project' NOT NULL,
 	"slug" varchar NOT NULL,
 	"name" varchar NOT NULL,
 	"color" varchar NOT NULL,
+	"thumbnail_url" varchar,
+	"banner_url" varchar,
 	"organization_id" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
@@ -72,8 +75,6 @@ CREATE TABLE IF NOT EXISTS "projects" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "requests" (
 	"id" varchar PRIMARY KEY NOT NULL,
-	"user_id" varchar,
-	"organization_id" varchar,
 	"message" varchar,
 	"email" varchar NOT NULL,
 	"type" varchar NOT NULL,
@@ -100,7 +101,7 @@ CREATE TABLE IF NOT EXISTS "tokens" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
 	"id" varchar PRIMARY KEY NOT NULL,
-	"entity" varchar DEFAULT 'USER' NOT NULL,
+	"entity" varchar DEFAULT 'user' NOT NULL,
 	"hashed_password" varchar,
 	"slug" varchar NOT NULL,
 	"name" varchar NOT NULL,
@@ -119,14 +120,14 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp,
 	"modified_by" varchar,
-	"role" varchar DEFAULT 'USER' NOT NULL,
+	"role" varchar DEFAULT 'user' NOT NULL,
 	CONSTRAINT "users_slug_unique" UNIQUE("slug"),
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "workspaces" (
 	"id" varchar PRIMARY KEY NOT NULL,
-	"entity" varchar DEFAULT 'WORKSPACE' NOT NULL,
+	"entity" varchar DEFAULT 'workspace' NOT NULL,
 	"name" varchar NOT NULL,
 	"slug" varchar NOT NULL,
 	"organization_id" varchar NOT NULL,
@@ -219,18 +220,6 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "projects" ADD CONSTRAINT "projects_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "requests" ADD CONSTRAINT "requests_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "requests" ADD CONSTRAINT "requests_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
