@@ -28,20 +28,20 @@ export const IcedIcon = ({ title, titleId, desc, descId, ...props }: SVGProps<SV
       d="M2.52342 13.1787L12.6607 3.04147L13.4629 3.84369L3.32565 13.9809L2.52342 13.1787Z"
       fill="#1398E9"
     />
-    <path d="M9.63965 6.81982H13.8833" stroke="#1398E9" stroke-width="1.13451" />
-    <path d="M9.64014 1.83221L9.64014 6.61372" stroke="#1398E9" stroke-width="1.13451" />
-    <path d="M6.49512 6.81995H1.31515" stroke="#1398E9" stroke-width="1.13451" />
-    <path d="M6.75146 1.83228L6.75147 7.01224" stroke="#1398E9" stroke-width="1.13451" />
-    <line x1="6.93945" y1="9.70129" x2="2.11112" y2="9.70129" stroke="#1398E9" stroke-width="1.13451" />
-    <line x1="6.76673" y1="14.1844" x2="6.76673" y2="9.80134" stroke="#1398E9" stroke-width="1.13451" />
-    <path d="M9.64014 9.80127L14.6209 9.80127" stroke="#1398E9" stroke-width="1.13451" />
+    <path d="M9.63965 6.81982H13.8833" stroke="#1398E9" strokeWidth="1.13451" />
+    <path d="M9.64014 1.83221L9.64014 6.61372" stroke="#1398E9" strokeWidth="1.13451" />
+    <path d="M6.49512 6.81995H1.31515" stroke="#1398E9" strokeWidth="1.13451" />
+    <path d="M6.75146 1.83228L6.75147 7.01224" stroke="#1398E9" strokeWidth="1.13451" />
+    <line x1="6.93945" y1="9.70129" x2="2.11112" y2="9.70129" stroke="#1398E9" strokeWidth="1.13451" />
+    <line x1="6.76673" y1="14.1844" x2="6.76673" y2="9.80134" stroke="#1398E9" strokeWidth="1.13451" />
+    <path d="M9.64014 9.80127L14.6209 9.80127" stroke="#1398E9" strokeWidth="1.13451" />
     <line
       y1="-0.567257"
       x2="4.38305"
       y2="-0.567257"
       transform="matrix(-4.35937e-08 -1 -1 4.38294e-08 8.91846 14.1844)"
       stroke="#1398E9"
-      stroke-width="1.13451"
+      strokeWidth="1.13451"
     />
   </svg>
 );

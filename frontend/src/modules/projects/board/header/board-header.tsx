@@ -125,7 +125,7 @@ const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: R
         <div className="inline-flex align-center items-center gap-2">
           <TooltipButton toolTipContent={t('common:remove_task')}>
             <Button variant="destructive" className="relative" onClick={onRemove}>
-              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedTasks.length}</Badge>
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 shadow-sm">{selectedTasks.length}</Badge>
               <Trash size={16} />
               <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
             </Button>

@@ -139,7 +139,7 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
             {selectedProjects.length > 0 && (
               <>
                 <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{selectedProjects.length}</Badge>
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedProjects.length}</Badge>
                   <Trash size={16} />
                   <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
                 </Button>

@@ -250,7 +250,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
               <>
                 <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
                   <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
-                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2 animate-in zoom-in">
+                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">
                       {selectedMembers.length}
                     </Badge>
                     <motion.span layoutId="members-filter-bar-icon">
