@@ -25,6 +25,16 @@ interface SelectStatusProps {
   inputPlaceholder: string;
 }
 
+export const statusTextColors = {
+  0: 'text-sky-500',
+  1: 'text-slate-300',
+  2: 'text-slate-500',
+  3: 'text-lime-500',
+  4: 'text-yellow-500',
+  5: 'text-orange-500',
+  6: 'text-green-500',
+};
+
 export const statusVariants = cva('', {
   variants: {
     status: {
@@ -98,7 +108,7 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: Select
               >
                 <div className="flex items-center">
                   <status.icon title={status.status} className="mr-2 size-4 " />
-                  <span>{t(status.status)}</span>
+                  <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''} `}>{t(status.status)}</span>
                 </div>
                 <div className="flex items-center">
                   {selectedStatus.value === status.value && <Check size={16} className="text-success" />}

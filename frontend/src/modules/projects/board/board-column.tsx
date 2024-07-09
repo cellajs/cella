@@ -35,6 +35,7 @@ import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-sta
 import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
+import { useThemeStore } from '~/store/theme';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -67,6 +68,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
+  const { mode } = useThemeStore();
   const user = useUserStore((state) => state.user);
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
@@ -448,6 +450,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                         <TaskCard
                           key={task.id}
                           task={task}
+                          mode={mode}
                           isExpanded={expandedTasks[task.id] || false}
                           isSelected={selectedTasks.includes(task.id)}
                           isFocused={task.id === focusedTaskId}

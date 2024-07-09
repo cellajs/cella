@@ -10,11 +10,10 @@ interface TaskEditorProps {
   markdown: string;
   setMarkdown: (newValue: string) => void;
   setSummary: (newValue: string) => void;
-  toggleEditorState: () => void;
   className?: string;
 }
 
-export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, toggleEditorState, className }: TaskEditorProps) => {
+export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, className }: TaskEditorProps) => {
   const { t } = useTranslation();
   const [markdownValue, setMarkdownValue] = useState(markdown);
 
@@ -22,7 +21,6 @@ export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, toggle
     const summaryFromMarkDown = markdownValue.split('\n')[0];
     setMarkdown(markdownValue);
     setSummary(summaryFromMarkDown);
-    toggleEditorState();
   };
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(

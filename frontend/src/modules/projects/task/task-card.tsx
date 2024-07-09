@@ -3,25 +3,21 @@ import { cva } from 'class-variance-authority';
 import { ChevronDown, Tag, UserX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import useDoubleClick from '~/hooks/use-double-click.tsx';
+
 import { cn } from '~/lib/utils.ts';
 import type { Task } from '~/modules/common/electric/electrify.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import { useThemeStore } from '~/store/theme';
 import { Checkbox } from '../../ui/checkbox.tsx';
 import { impacts } from './task-selectors/select-impact.tsx';
 import { type TaskStatus, statusVariants } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
 import './style.css';
 import { taskStatuses } from '../tasks-table/status.tsx';
-import { TaskEditor } from './task-selectors/task-editor.tsx';
 
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Badge } from '../../ui/badge.tsx';
-import CreateSubTaskForm from './create-sub-task-form.tsx';
-import SubTask from './sub-task-card.tsx';
 import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
@@ -32,6 +28,8 @@ import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/externa
 import { getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { DraggableItemData } from '~/types';
+import ExpandedTask from './task-expanded.tsx';
+import type { Mode } from '~/store/theme.ts';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
@@ -41,6 +39,7 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
 
 interface TaskProps {
   task: Task;
+  mode: Mode;
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
@@ -53,6 +52,7 @@ interface TaskProps {
 
 export function TaskCard({
   task,
+  mode,
   isSelected,
   isFocused,
   isExpanded,
@@ -62,7 +62,6 @@ export function TaskCard({
   setIsExpanded,
 }: TaskProps) {
   const { t } = useTranslation();
-  const { mode } = useThemeStore();
 
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
@@ -72,10 +71,6 @@ export function TaskCard({
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
-
-  // TODO move this state to task-expanded component
-  const [isEditing, setIsEditing] = useState(false);
-  const [createSubTask, setCreateSubTask] = useState(false);
 
   const variants = cva('task-card', {
     variants: {
@@ -93,21 +88,6 @@ export function TaskCard({
         6: 'to-green-500/10 border-b-green-500/20',
       },
     },
-  });
-
-  const toggleEditorState = () => {
-    setIsEditing(!isEditing);
-  };
-
-  useDoubleClick({
-    onDoubleClick: () => {
-      toggleEditorState();
-      setIsExpanded?.(true);
-    },
-    allowedTargets: ['p', 'div'],
-    excludeIds: ['sub-item'],
-    ref: taskRef,
-    latency: 250,
   });
 
   const dispatchCustomFocusEvent = (taskId: string, projectId: string) => {
@@ -143,10 +123,7 @@ export function TaskCard({
         element,
         dragHandle: dragElement,
         getInitialData: () => data,
-        onDragStart: () => {
-          setDragging(true);
-          setIsEditing(false);
-        },
+        onDragStart: () => setDragging(true),
         onDrop: () => setDragging(false),
       }),
       dropTargetForExternal({
@@ -177,10 +154,13 @@ export function TaskCard({
   return (
     <Card
       onMouseDown={() => {
-        if (isEditing) return;
+        if (document.activeElement === taskRef.current) return;
         taskRef.current?.focus();
       }}
-      onFocus={() => dispatchCustomFocusEvent(task.id, task.project_id)}
+      onFocus={() => {
+        if (isFocused) return;
+        dispatchCustomFocusEvent(task.id, task.project_id);
+      }}
       tabIndex={0}
       ref={taskRef}
       className={cn(
@@ -236,59 +216,14 @@ export function TaskCard({
                   </div>
                 </div>
               )}
-
-              {/* //TODO: put this in a separate task-expanded component */}
-              {isExpanded && (
-                <>
-                  {isEditing ? (
-                    <TaskEditor
-                      mode={mode}
-                      markdown={task.markdown || ''}
-                      setMarkdown={(newMarkdown) => handleTaskChange('markdown', newMarkdown, task.id)}
-                      setSummary={(newSummary) => handleTaskChange('summary', newSummary, task.id)}
-                      toggleEditorState={toggleEditorState}
-                      id={task.id}
-                    />
-                  ) : (
-                    <MDEditor.Markdown
-                      source={task.markdown || ''}
-                      style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-                      className="markdown inline before:!content-none after:!content-none prose font-light text-start max-w-none"
-                    />
-                  )}
-                  {setIsExpanded && (
-                    <div>
-                      <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
-                        {t('common:less').toLowerCase()}
-                      </Button>
-                    </div>
-                  )}
-
-                  {task.subTasks.length > 0 && (
-                    <div className="inline-flex py-0 h-4 items-center mt-4 gap-1 text-sm">
-                      <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
-                      <span>/</span>
-                      <span>{task.subTasks.length}</span>
-                      <span>{t('common:todos')}</span>
-                    </div>
-                  )}
-
-                  <div className="-ml-10 -mr-1 relative z-10">
-                    <div className="flex flex-col">
-                      {task.subTasks.map((task) => (
-                        <SubTask key={task.id} task={task} handleChange={handleTaskChange} />
-                      ))}
-                    </div>
-
-                    <CreateSubTaskForm
-                      firstSubTask={task.subTasks.length < 1}
-                      formOpen={createSubTask}
-                      setFormState={(value) => setCreateSubTask(value)}
-                      parentTask={task}
-                    />
-                  </div>
-                </>
-              )}
+              <ExpandedTask
+                mode={mode}
+                task={task}
+                taskRef={taskRef}
+                isExpanded={isExpanded}
+                setIsExpanded={setIsExpanded}
+                handleTaskChange={handleTaskChange}
+              />
             </div>
           </div>
           <div className="flex items-end justify-between gap-1">
