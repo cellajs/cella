@@ -9,14 +9,7 @@ import useDoubleClick from '~/hooks/use-double-click.tsx';
 import type { Task } from '~/modules/common/electric/electrify';
 import type { Mode } from '~/store/theme';
 
-const ExpandedTask = ({
-  task,
-  taskRef,
-  mode,
-  isExpanded,
-  setIsExpanded,
-  handleTaskChange,
-}: {
+interface Props {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
@@ -24,7 +17,9 @@ const ExpandedTask = ({
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
   setIsExpanded?: (exp: boolean) => void;
-}) => {
+}
+
+const ExpandedTask = ({ task, taskRef, mode, isExpanded, setIsExpanded, handleTaskChange }: Props) => {
   const { t } = useTranslation();
 
   const [isEditing, setIsEditing] = useState(false);
