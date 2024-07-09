@@ -41,9 +41,9 @@ const JoinLeaveButton = ({ organization }: Props) => {
   const onJoin = () => {
     inviteMembers({
       emails: [user.email],
-      role: 'MEMBER',
+      role: 'member',
       idOrSlug: organization.slug,
-      entityType: 'ORGANIZATION',
+      entityType: 'organization',
       organizationId: organization.id,
     });
   };
@@ -51,7 +51,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
   const onLeave = () => {
     leave({
       idOrSlug: organization.id,
-      entityType: 'ORGANIZATION',
+      entityType: 'organization',
       ids: [user.id],
     });
   };

@@ -28,7 +28,7 @@ export const userSeed = async () => {
       name: 'Admin User',
       language: config.defaultLanguage,
       slug: 'admin-user',
-      role: 'ADMIN',
+      role: 'admin',
       hashedPassword: await new Argon2id().hash(adminUser.password),
     })
     .onConflictDoNothing();

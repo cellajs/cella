@@ -5,31 +5,31 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
 import MDEditor from '@uiw/react-md-editor';
-import { UserX, Tag, X, ChevronDown } from 'lucide-react';
+import { ChevronDown, Tag, UserX, X } from 'lucide-react';
 import { type LegacyRef, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import { useMeasure } from '~/hooks/use-measure';
 import { cn, nanoid } from '~/lib/utils.ts';
+import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
+import { dialog } from '~/modules/common/dialoger/state.ts';
+import { dropdowner } from '~/modules/common/dropdowner/state.ts';
+import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify.ts';
+import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import { dialog } from '~/modules/common/dialoger/state.ts';
-import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify.ts';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
-import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
-import { impacts, SelectImpact } from './task-selectors/select-impact.tsx';
-import SetLabels, { badgeStyle } from './task-selectors/select-labels.tsx';
-import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
-import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
-import { useMeasure } from '~/hooks/use-measure';
-import AssignMembers from './task-selectors/select-members.tsx';
-import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
-import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import type { Member } from '~/types/index.ts';
 import { Badge } from '../../ui/badge.tsx';
-import { getTaskOrder } from './helpers.ts';
-import { dropdowner } from '~/modules/common/dropdowner/state.ts';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '../../ui/form.tsx';
+import { ToggleGroup, ToggleGroupItem } from '../../ui/toggle-group.tsx';
+import { getNewTaskOrder } from './helpers.ts';
+import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
+import { SelectImpact, impacts } from './task-selectors/select-impact.tsx';
+import SetLabels from './task-selectors/select-labels.tsx';
+import AssignMembers from './task-selectors/select-members.tsx';
+import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
@@ -119,7 +119,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
 
   const createLabel = (newLabel: Label) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // TODO: Implement the following
     // Save the new label to the database
     Electric.db.labels.create({ data: newLabel });
   };
@@ -149,7 +148,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
           created_at: new Date(),
           created_by: user.id,
           slug: slug,
-          sort_order: getTaskOrder(values.status, values.status, projectTasks),
+          sort_order: getNewTaskOrder(values.status, projectTasks),
         },
       })
       .then(() => {
@@ -300,7 +299,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                           <AvatarGroupList>
                             {value.map((user) => (
                               <AvatarWrap
-                                type="USER"
+                                type="user"
                                 key={user.id}
                                 id={user.id}
                                 name={user.name}
@@ -311,7 +310,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                           </AvatarGroupList>
                           <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
                         </AvatarGroup>
-                        <span className="ml-2 truncate">
+                        <span className="runcate">
                           {value.length === 0 && 'Assign to'}
                           {value.length === 1 && value[0].name}
                           {value.length === 2 && value.map(({ name }) => name).join(', ')}
@@ -364,13 +363,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                   >
                     <div className="flex truncate flex-wrap gap-[.07rem]">
                       {value.length > 0 ? (
-                        value.map(({ name, id, color }) => {
+                        value.map(({ name, id }) => {
                           return (
-                            <div
-                              key={id}
-                              style={badgeStyle(color)}
-                              className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border"
-                            >
+                            <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
                               <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] text-sm h-6 last:mr-0">
                                 {name}
                               </Badge>

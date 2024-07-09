@@ -1,5 +1,5 @@
 {
-  "id": "648bd85d-e400-4466-8610-425b002f663a",
+  "id": "292c9877-fac6-42cc-9d28-63d5ce331c35",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -18,8 +18,7 @@
           "name": "type",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'ORGANIZATION'"
+          "notNull": true
         },
         "organization_id": {
           "name": "organization_id",
@@ -50,7 +49,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'MEMBER'"
+          "default": "'member'"
         },
         "created_at": {
           "name": "created_at",
@@ -81,15 +80,21 @@
           "name": "inactive",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
         },
         "muted": {
           "name": "muted",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -248,7 +253,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'ORGANIZATION'"
+          "default": "'organization'"
         },
         "name": {
           "name": "name",
@@ -304,10 +309,11 @@
           "name": "email_domains",
           "type": "json",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'[]'::json"
         },
-        "brand_color": {
-          "name": "brand_color",
+        "color": {
+          "name": "color",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -318,14 +324,14 @@
           "primaryKey": false,
           "notNull": false
         },
-        "logo_url": {
-          "name": "logo_url",
+        "banner_url": {
+          "name": "banner_url",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
         },
-        "banner_url": {
-          "name": "banner_url",
+        "logo_url": {
+          "name": "logo_url",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -353,7 +359,8 @@
           "name": "auth_strategies",
           "type": "json",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'[]'::json"
         },
         "chat_support": {
           "name": "chat_support",
@@ -554,7 +561,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'PROJECT'"
+          "default": "'project'"
         },
         "slug": {
           "name": "slug",
@@ -573,6 +580,18 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "thumbnail_url": {
+          "name": "thumbnail_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "banner_url": {
+          "name": "banner_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         },
         "organization_id": {
           "name": "organization_id",
@@ -661,18 +680,6 @@
           "primaryKey": true,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "message": {
           "name": "message",
           "type": "varchar",
@@ -731,34 +738,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "requests_user_id_users_id_fk": {
-          "name": "requests_user_id_users_id_fk",
-          "tableFrom": "requests",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "requests_organization_id_organizations_id_fk": {
-          "name": "requests_organization_id_organizations_id_fk",
-          "tableFrom": "requests",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -912,7 +892,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'USER'"
+          "default": "'user'"
         },
         "hashed_password": {
           "name": "hashed_password",
@@ -1031,7 +1011,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'USER'"
+          "default": "'user'"
         }
       },
       "indexes": {
@@ -1129,7 +1109,7 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true,
-          "default": "'WORKSPACE'"
+          "default": "'workspace'"
         },
         "name": {
           "name": "name",

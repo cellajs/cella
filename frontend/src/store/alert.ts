@@ -16,7 +16,7 @@ interface AlertState {
 }
 
 const initStore = {
-  downAlert: config.maintenance ? 'maintenance' : null as downLevels,
+  downAlert: config.maintenance ? 'maintenance' : (null as downLevels),
   alertsSeen: [],
 };
 

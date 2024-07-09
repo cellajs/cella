@@ -102,7 +102,7 @@ const usersRoutes = app
     for (const id of userIds) {
       if (!targets.some((target) => target.id === id)) {
         errors.push(
-          createError(ctx, 404, 'not_found', 'warn', 'USER', {
+          createError(ctx, 404, 'not_found', 'warn', 'user', {
             user: id,
           }),
         );
@@ -113,9 +113,9 @@ const usersRoutes = app
     const allowedTargets = targets.filter((target) => {
       const userId = target.id;
 
-      if (user.role !== 'ADMIN' && user.id !== userId) {
+      if (user.role !== 'admin' && user.id !== userId) {
         errors.push(
-          createError(ctx, 403, 'delete_forbidden', 'warn', 'USER', {
+          createError(ctx, 403, 'delete_forbidden', 'warn', 'user', {
             user: userId,
           }),
         );
@@ -164,11 +164,11 @@ const usersRoutes = app
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: idOrSlug });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
     }
 
-    if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'USER', { user: targetUser.id });
+    if (user.role !== 'admin' && user.id !== targetUser.id) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
     }
 
     const [{ memberships }] = await db
@@ -199,11 +199,11 @@ const usersRoutes = app
       .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)));
 
     if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: idOrSlug });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
     }
 
-    if (user.role !== 'ADMIN' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'USER', { user: idOrSlug });
+    if (user.role !== 'admin' && user.id !== targetUser.id) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: idOrSlug });
     }
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
@@ -212,7 +212,7 @@ const usersRoutes = app
       const slugAvailable = await checkSlugAvailable(slug);
 
       if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
       }
     }
 

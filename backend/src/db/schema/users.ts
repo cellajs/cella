@@ -9,9 +9,9 @@ export const usersTable = pgTable(
   'users',
   {
     id: varchar('id').primaryKey(),
-    entity: varchar('entity', { enum: ['USER'] })
+    entity: varchar('entity', { enum: ['user'] })
       .notNull()
-      .default('USER'),
+      .default('user'),
     hashedPassword: varchar('hashed_password'),
     slug: varchar('slug').unique().notNull(),
     name: varchar('name').notNull(),
@@ -34,7 +34,7 @@ export const usersTable = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     modifiedAt: timestamp('modified_at'),
     modifiedBy: varchar('modified_by'),
-    role: varchar('role', { enum: roleEnum }).notNull().default('USER'),
+    role: varchar('role', { enum: roleEnum }).notNull().default('user'),
   },
   (table) => {
     return {

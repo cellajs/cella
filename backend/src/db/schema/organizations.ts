@@ -9,9 +9,9 @@ export const organizationsTable = pgTable(
   'organizations',
   {
     id: varchar('id').primaryKey().$defaultFn(nanoid),
-    entity: varchar('entity', { enum: ['ORGANIZATION'] })
+    entity: varchar('entity', { enum: ['organization'] })
       .notNull()
-      .default('ORGANIZATION'),
+      .default('organization'),
     name: varchar('name').notNull(),
     shortName: varchar('short_name'),
     slug: varchar('slug').unique().notNull(),

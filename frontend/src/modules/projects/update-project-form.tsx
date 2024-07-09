@@ -3,23 +3,23 @@ import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
+import { updateProjectBodySchema } from 'backend/modules/projects/schema';
 import { useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
+import { type UpdateProjectParams, updateProject } from '~/api/projects';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
 import { dialog } from '~/modules/common/dialoger/state';
-import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
-import { Button } from '~/modules/ui/button';
-import { Form } from '~/modules/ui/form';
-import type { Project } from '~/types';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { updateProjectBodySchema } from 'backend/modules/projects/schema';
-import { type UpdateProjectParams, updateProject } from '~/api/projects';
+import { Button } from '~/modules/ui/button';
+import { Form } from '~/modules/ui/form';
+import type { Project } from '~/types';
 
 interface Props {
   project: Project;
@@ -99,7 +99,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="PROJECT"
+          type="project"
           label={t('common:project_handle')}
           description={t('common:project_handle.text')}
           previousSlug={project.slug}
@@ -107,7 +107,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
         <InputFormField control={form.control} name="color" label={t('common:color')} required />
         <SelectParentFormField
           collection="workspaces"
-          type="WORKSPACE"
+          type="workspace"
           control={form.control}
           label={t('common:workspace')}
           name="workspaceId"

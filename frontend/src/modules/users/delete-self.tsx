@@ -5,8 +5,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { useAlertStore } from '~/store/alert';
-import { useUserStore } from '~/store/user';
 import { useNavigationStore } from '~/store/navigation';
+import { useUserStore } from '~/store/user';
 import { DeleteForm } from '../common/delete-form';
 import { dialog } from '../common/dialoger/state';
 

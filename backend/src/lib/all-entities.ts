@@ -9,7 +9,7 @@
 // import { organizationsTable } from '../db/schema/organizations';
 
 // export const getAllEntities = async (
-//   entity: Exclude<Entity, 'USER'>,
+//   entity: Exclude<Entity, 'user'>,
 //   {
 //     q,
 //     sort,
@@ -37,10 +37,10 @@
 //   }>;
 
 //   switch (entity) {
-//     case 'ORGANIZATION':
+//     case 'organization':
 //       table = organizationsTable;
 //       break;
-//     case 'PROJECT':
+//     case 'project':
 //       table = projectsTable;
 //       break;
 //     default:

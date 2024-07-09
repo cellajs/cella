@@ -1,6 +1,6 @@
 # Deployment
 
-Cella makes it easy to deploy on [Render](https://www.render.com) (server & tus & frontend). Probably more options will become available over time.
+Cella makes it easy to deploy on [Render](https://www.render.com) (backend, frontend and tus). Probably more options will become available over time.
 
 ## Deploy services to render.com
 

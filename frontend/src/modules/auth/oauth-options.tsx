@@ -17,9 +17,9 @@ type OauthProvider = {
 };
 
 export const oauthProviders: OauthProvider[] = [
-  { id: 'GITHUB', name: 'Github', url: githubSignInUrl },
-  { id: 'GOOGLE', name: 'Google', url: googleSignInUrl },
-  { id: 'MICROSOFT', name: 'Microsoft', url: microsoftSignInUrl },
+  { id: 'github', name: 'Github', url: githubSignInUrl },
+  { id: 'google', name: 'Google', url: googleSignInUrl },
+  { id: 'microsoft', name: 'Microsoft', url: microsoftSignInUrl },
 ];
 
 interface OauthOptionsProps {
@@ -74,7 +74,7 @@ const OauthOptions = ({ actionType = 'signIn' }: OauthOptionsProps) => {
               <img
                 src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
                 alt={option.name}
-                className={`w-4 h-4 mr-2 ${option.id === 'GITHUB' ? invertClass : ''}`}
+                className={`w-4 h-4 mr-2 ${option.id === 'github' ? invertClass : ''}`}
                 loading="lazy"
               />
               {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with {option.name}

@@ -35,14 +35,14 @@ export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: email,
-      type: 'WAITLIST_REQUEST',
+      type: 'waitlist',
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     createRequest({
       email: values.email,
-      type: 'WAITLIST_REQUEST',
+      type: 'waitlist',
       message: null,
     });
   };

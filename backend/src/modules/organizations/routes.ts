@@ -1,8 +1,8 @@
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '../../lib/common-responses';
-import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
-import { organizationSchema, createOrganizationBodySchema, getOrganizationsQuerySchema, updateOrganizationBodySchema } from './schema';
+import { createOrganizationBodySchema, getOrganizationsQuerySchema, organizationSchema, updateOrganizationBodySchema } from './schema';
 
 class OrganizationRoutesConfig {
   public createOrganization = createRouteConfig({
@@ -61,7 +61,7 @@ class OrganizationRoutesConfig {
   public updateOrganization = createRouteConfig({
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('update', 'ORGANIZATION')],
+    guard: [isAuthenticated, isAllowedTo('update', 'organization')],
     tags: ['organizations'],
     summary: 'Update organization',
     description: 'Update organization by id or slug.',
@@ -91,7 +91,7 @@ class OrganizationRoutesConfig {
   public getOrganization = createRouteConfig({
     method: 'get',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('read', 'ORGANIZATION')],
+    guard: [isAuthenticated, isAllowedTo('read', 'organization')],
     tags: ['organizations'],
     summary: 'Get organization',
     description: 'Get an organization by id or slug.',

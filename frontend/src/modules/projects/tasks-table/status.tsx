@@ -1,10 +1,10 @@
 import { Check, ChevronDown, Circle, CircleCheck, CircleDashed, CircleDot, CircleDotDashed, Dot, Snowflake } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Kbd } from '~/modules/common/kbd.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Button } from '~/modules/ui/button';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: Snowflake },

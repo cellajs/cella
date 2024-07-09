@@ -1,5 +1,5 @@
-import { apiClient, handleResponse } from '.';
 import type { RequestProp } from '~/types';
+import { apiClient, handleResponse } from '.';
 
 const client = apiClient.requests;
 
@@ -20,10 +20,7 @@ export type GetRequestsParams = Partial<
   }
 >;
 
-export const getRequests = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetRequestsParams = {},
-  signal?: AbortSignal,
-) => {
+export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetRequestsParams = {}, signal?: AbortSignal) => {
   const response = await client.$get(
     {
       query: {

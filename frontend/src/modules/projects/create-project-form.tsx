@@ -11,16 +11,16 @@ import { createProject } from '~/api/projects';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import SelectParentFormField from '~/modules/common/form-fields/select-parent';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { Button } from '~/modules/ui/button';
-import type { Workspace, UserMenuItem } from '~/types';
+import { addMenuItem } from '~/lib/utils';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
+import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { Form } from '../ui/form';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { addMenuItem } from '~/lib/utils';
+import type { UserMenuItem, Workspace } from '~/types';
+import { Form } from '../ui/form';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -34,7 +34,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
-  const type = 'PROJECT';
+  const type = 'project';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -62,7 +62,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
     },
     onSuccess: (createdProject) => {
       form.reset();
-      toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
+      toast.success(t('common:success.create_resource', { resource: t(`common:${type}`) }));
       callback([createdProject], 'create');
       useNavigationStore.setState({
         menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
@@ -95,7 +95,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="PROJECT"
+          type="project"
           label={t('common:project_handle')}
           description={t('common:project_handle.text')}
           nameValue={name}

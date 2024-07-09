@@ -1,16 +1,12 @@
 # Roadmap
 We maintain a very rough roadmap here. Its a work in progress and things will get added, removed and changed. We will eventually manage a roadmap elsewhere.
-Last update: May 26,2024
+Last update: July 8,2024
 
 ## 📅 &nbsp; Current projects
-* Electric SQL for local-first content
+* Electric SQL: local-first file attachments
 * [imado.eu](imado.eu) for file handling
 * A customizable, extendable permission system
-* Having SSR for a blog
-
-## 🧩 &nbsp; Modularity
-* A scaffolding solution is necessary to keep the template useful while the project is growing. Perhaps we can collaborate with a dev which is already maintaining a scaffolding tool?
-* Notifications module (with Novu?)
+* Blog section
 
 ## 🧪 &nbsp; Testing
 * Vitest + Playwright + Storybook [https://github.com/shadcn-ui/ui/pull/1561](https://github.com/shadcn-ui/ui/pull/1561)

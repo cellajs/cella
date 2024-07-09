@@ -3,13 +3,13 @@ import { Column, Img, Row, Section, Text } from '@react-email/components';
 import { config } from 'config';
 import { i18n } from '../../backend/src/lib/i18n';
 
+import type { OrganizationModel } from '../../backend/src/db/schema/organizations';
+import type { UserModel } from '../../backend/src/db/schema/users';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
-import { Footer } from './components/footer';
-import type { UserModel } from '../../backend/src/db/schema/users';
-import type { OrganizationModel } from '../../backend/src/db/schema/organizations';
 import { EmailHeader } from './components/email-header';
 import { EmailReplyTo } from './components/email-reply-to';
+import { Footer } from './components/footer';
 
 interface Props {
   organization: OrganizationModel;

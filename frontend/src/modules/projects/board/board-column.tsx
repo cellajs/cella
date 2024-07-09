@@ -6,34 +6,35 @@ import { useLiveQuery } from 'electric-sql/react';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { getMembers } from '~/api/general';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { cn, getReorderDestinationOrder } from '~/lib/utils';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
+import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import { cn } from '~/lib/utils';
+import { dropdowner } from '~/modules/common/dropdowner/state';
+import { SheetNav } from '~/modules/common/sheet-nav';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
+import { useUserStore } from '~/store/user';
+import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/index.ts';
 import ContentPlaceholder from '../../common/content-placeholder';
 import { type Label, type Task, useElectric } from '../../common/electric/electrify';
 import { sheet } from '../../common/sheeter/state';
-import CreateTaskForm, { type TaskImpact, type TaskType } from '../task/create-task-form';
-import { TaskCard, isTaskData } from '../task/task-card';
-import { BoardColumnHeader } from './board-column-header';
-import { ColumnSkeleton } from './column-skeleton';
 import { ProjectSettings } from '../project-settings';
-import { SheetNav } from '~/modules/common/sheet-nav';
-import { WorkspaceRoute } from '~/routes/workspaces';
+import CreateTaskForm, { type TaskImpact, type TaskType } from '../task/create-task-form';
 import { getTaskOrder } from '../task/helpers';
-import { toast } from 'sonner';
-import { dropdowner } from '~/modules/common/dropdowner/state';
+import { TaskCard, isTaskData } from '../task/task-card';
 import { SelectImpact } from '../task/task-selectors/select-impact';
 import SetLabels from '../task/task-selectors/select-labels';
-import { SelectTaskType } from '../task/task-selectors/select-task-type';
-import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
 import AssignMembers from '../task/task-selectors/select-members';
-import { useWorkspaceStore } from '~/store/workspace';
+import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
+import { SelectTaskType } from '../task/task-selectors/select-task-type';
+import { BoardColumnHeader } from './board-column-header';
+import { ColumnSkeleton } from './column-skeleton';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -66,6 +67,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
+  const user = useUserStore((state) => state.user);
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
@@ -76,10 +78,9 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
 
   const { data: members } = useQuery({
     queryKey: ['projects', 'members', project.id],
-    queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'PROJECT' }).then((data) => data.items),
+    queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'project' }).then((data) => data.items),
     initialData: [],
   });
-
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
@@ -88,11 +89,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       where: {
         project_id: project.id,
         OR: [
-          {
-            summary: {
-              contains: searchQuery,
-            },
-          },
           {
             markdown: {
               contains: searchQuery,
@@ -129,6 +125,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       db.tasks.update({
         data: {
           assigned_to: assignedTo,
+          modified_at: new Date(),
+          modified_by: user.id,
         },
         where: {
           id: taskId,
@@ -143,6 +141,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       db.tasks.update({
         data: {
           labels,
+          modified_at: new Date(),
+          modified_by: user.id,
         },
         where: {
           id: taskId,
@@ -151,11 +151,13 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       return;
     }
     if (field === 'status') {
-      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
+      const newOrder = getTaskOrder(taskId, value, tasks);
       db.tasks.update({
         data: {
           status: value,
           ...(newOrder && { sort_order: newOrder }),
+          modified_at: new Date(),
+          modified_by: user.id,
         },
         where: {
           id: taskId,
@@ -167,6 +169,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     db.tasks.update({
       data: {
         [field]: value,
+        modified_at: new Date(),
+        modified_by: user.id,
       },
       where: {
         id: taskId,
@@ -268,12 +272,25 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   };
 
   const handleTaskFormClick = () => {
-    if (!createForm) {
-      const container = document.getElementById(`${project.id}-viewport`);
-      container?.scrollTo({ top: 0, behavior: 'smooth' });
-    }
     toggleCreateForm(project.id);
   };
+
+  // Open on key press
+  const hotKeyPress = (event: KeyboardEvent, field: string) => {
+    const focusedTask = showingTasks.find((t) => t.id === focusedTaskId);
+    if (!focusedTask || !event.target) return;
+    const trigger = (event.target as HTMLElement).querySelector(`#${field}`);
+    if (!trigger) return dropdowner.remove();
+    handleTaskActionClick(focusedTask, field, trigger as HTMLElement);
+  };
+
+  useHotkeys([
+    ['a', (e) => hotKeyPress(e, 'assigned_to')],
+    ['i', (e) => hotKeyPress(e, 'impact')],
+    ['l', (e) => hotKeyPress(e, 'labels')],
+    ['s', (e) => hotKeyPress(e, 'status')],
+    ['t', (e) => hotKeyPress(e, 'type')],
+  ]);
 
   useHotkeys([
     ['Escape', handleEscKeyPress],
@@ -290,10 +307,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     };
 
     document.addEventListener('task-change', handleChange);
-
-    return () => {
-      document.removeEventListener('task-change', handleChange);
-    };
+    return () => document.removeEventListener('task-change', handleChange);
   });
 
   useEffect(() => {
@@ -303,9 +317,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       setFocusedTaskId(showingTasks[0].id);
     };
     document.addEventListener('project-change', handleChange);
-    return () => {
-      document.removeEventListener('project-change', handleChange);
-    };
+    return () => document.removeEventListener('project-change', handleChange);
   });
 
   useEffect(() => {
@@ -314,42 +326,42 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
         canMonitor({ source }) {
           return source.data.type === 'task';
         },
-        onDrop({ location, source }) {
+        async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
           const sourceData = source.data;
           if (!target) return;
           const targetData = target.data;
           // Drag a task
           if (isTaskData(sourceData) && isTaskData(targetData)) {
-            // Drag a task in different column
-            if (sourceData.item.project_id !== targetData.item.project_id) {
-              const edge: Edge | null = extractClosestEdge(targetData);
-              const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
-              // Update order of dragged task
-              Electric?.db.tasks.update({
-                data: {
-                  sort_order: newOrder,
-                  project_id: targetData.item.project_id,
-                },
-                where: {
-                  id: sourceData.item.id,
-                },
-              });
+            const edge: Edge | null = extractClosestEdge(targetData);
+            const relativeTask = await Electric?.db.tasks.findFirst({
+              where: {
+                sort_order: { [edge === 'top' ? 'gt' : 'lt']: targetData.order },
+                project_id: targetData.item.project_id,
+              },
+              orderBy: {
+                sort_order: edge === 'top' ? 'asc' : 'desc',
+              },
+            });
+            let newOrder: number;
+            if (!relativeTask || relativeTask.sort_order === targetData.order) {
+              newOrder = edge === 'top' ? targetData.order + 1 : targetData.order / 2;
+            } else if (relativeTask.id === sourceData.item.id) {
+              newOrder = sourceData.item.sort_order;
+            } else {
+              newOrder = (relativeTask.sort_order + targetData.order) / 2;
             }
-            // Drag a task in same column
-            if (sourceData.item.project_id === targetData.item.project_id) {
-              const edge: Edge | null = extractClosestEdge(targetData);
-              const newOrder = getReorderDestinationOrder(targetData.order, edge, 'vertical', sourceData.order);
-              // Update order of dragged task
-              Electric?.db.tasks.update({
-                data: {
-                  sort_order: newOrder,
-                },
-                where: {
-                  id: sourceData.item.id,
-                },
-              });
-            }
+            // Update order of dragged task
+            Electric?.db.tasks.update({
+              data: {
+                sort_order: newOrder,
+                // Define drag a task in same or different column
+                ...(sourceData.item.project_id !== targetData.item.project_id && { project_id: targetData.item.project_id }),
+              },
+              where: {
+                id: sourceData.item.id,
+              },
+            });
           }
         },
       }),

@@ -85,9 +85,7 @@ export function Dialoger() {
               </DialogHeader>
             )}
             {/* For accessibility */}
-             {!dialog.text && !dialog.title && (
-                <DialogTitle className="hidden" />
-            )}
+            {!dialog.text && !dialog.title && <DialogTitle className="hidden" />}
             {existingDialog?.content ? existingDialog.content : dialog.content}
           </DialogContent>
         </Dialog>

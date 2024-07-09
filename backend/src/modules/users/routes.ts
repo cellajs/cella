@@ -1,8 +1,8 @@
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '../../lib/common-responses';
-import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated, isSystemAdmin } from '../../middlewares/guard';
-import { userSchema, usersQuerySchema, updateUserBodySchema } from './schema';
+import { updateUserBodySchema, userSchema, usersQuerySchema } from './schema';
 
 class UsersRoutesConfig {
   public getUsers = createRouteConfig({

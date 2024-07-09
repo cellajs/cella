@@ -12,7 +12,7 @@ interface Props {
   dialog?: boolean;
 }
 
-const RemoveMembersForm = ({ members, entityId, entityType = 'ORGANIZATION', callback, dialog: isDialog }: Props) => {
+const RemoveMembersForm = ({ members, entityId, entityType = 'organization', callback, dialog: isDialog }: Props) => {
   const { mutate: removeMembers, isPending } = useMutation({
     mutationFn: baseRemoveMembers,
     onSuccess: () => {

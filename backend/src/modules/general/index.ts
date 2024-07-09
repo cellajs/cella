@@ -4,11 +4,11 @@ import { InviteSystemEmail } from '../../../../email/emails/system-invite';
 
 import { render } from '@react-email/render';
 import { config } from 'config';
-import { env } from 'env';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
+import { env } from '../../../env';
 
 import { db } from '../../db/db';
 
@@ -27,11 +27,11 @@ import { getOrderColumn } from '../../lib/order-column';
 import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
-import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -115,13 +115,13 @@ const generalRoutes = app
     // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // For reset token: check if token has valid user
-    // if (tokenRecord.type === 'PASSWORD_RESET') {
+    // if (tokenRecord.type === 'password_reset') {
     //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
     //   if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     // }
 
     // For system invitation token: check if user email is not already in the system
-    // if (tokenRecord.type === 'SYSTEM_INVITATION') {
+    // if (tokenRecord.type === 'system_invitation') {
     //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
     //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
     // }
@@ -133,7 +133,7 @@ const generalRoutes = app
       organizationSlug: '',
     };
 
-    if (tokenRecord.type === 'ORGANIZATION_INVITATION' && tokenRecord.organizationId) {
+    if (tokenRecord.type === 'organization_invitation' && tokenRecord.organizationId) {
       const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
       data.organizationName = organization.name;
       data.organizationSlug = organization.slug;
@@ -154,10 +154,10 @@ const generalRoutes = app
       const token = generateId(40);
       await db.insert(tokensTable).values({
         id: token,
-        type: 'SYSTEM_INVITATION',
+        type: 'system_invitation',
         userId: targetUser?.id,
         email: email.toLowerCase(),
-        role: (role as TokenModel['role']) || 'USER',
+        role: (role as TokenModel['role']) || 'user',
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 
@@ -198,19 +198,19 @@ const generalRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, token.email));
 
     if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { email: token.email });
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
     }
 
     // If it is a system invitation, update user role
-    if (token.type === 'SYSTEM_INVITATION') {
-      if (token.role === 'ADMIN') {
-        await db.update(usersTable).set({ role: 'ADMIN' }).where(eq(usersTable.id, user.id));
+    if (token.type === 'system_invitation') {
+      if (token.role === 'admin') {
+        await db.update(usersTable).set({ role: 'admin' }).where(eq(usersTable.id, user.id));
       }
 
       return ctx.json({ success: true }, 200);
     }
 
-    if (token.type === 'ORGANIZATION_INVITATION') {
+    if (token.type === 'organization_invitation') {
       if (!token.organizationId) {
         return errorResponse(ctx, 400, 'invalid_token', 'warn');
       }
@@ -221,7 +221,7 @@ const generalRoutes = app
         .where(and(eq(organizationsTable.id, token.organizationId)));
 
       if (!organization) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'ORGANIZATION', { organization: token.organizationId });
+        return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
       }
 
       const [existingMembership] = await db
@@ -282,14 +282,14 @@ const generalRoutes = app
     const { q, type } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    // Retrieve user memberships to filter suggestions by relevant organization,  ADMIN users see everything
+    // Retrieve user memberships to filter suggestions by relevant organization,  admin users see everything
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     // Retrieve organizationIds for non-admin users and check if the user has at least one organization membership
     let organizationIds: string[] = [];
 
-    if (user.role !== 'ADMIN') {
-      organizationIds = memberships.filter((el) => el.type === 'ORGANIZATION').map((el) => String(el.organizationId));
+    if (user.role !== 'admin') {
+      organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
       if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
     }
 
@@ -325,14 +325,14 @@ const generalRoutes = app
       if (organizationIds.length) {
         if ('organizationId' in table) {
           $and.push(inArray(table.organizationId, organizationIds));
-        } else if (entityType === 'ORGANIZATION') {
+        } else if (entityType === 'organization') {
           $and.push(inArray(table.id, organizationIds));
-        } else if (entityType === 'USER') {
+        } else if (entityType === 'user') {
           // Filter users based on their memberships in specified organizations
           const userMemberships = await db
             .select({ userId: membershipsTable.userId })
             .from(membershipsTable)
-            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'ORGANIZATION')));
+            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'organization')));
 
           if (!userMemberships.length) continue;
           $and.push(
@@ -373,7 +373,7 @@ const generalRoutes = app
 
     // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
     const membersFilters = [
-      eq(entityType === 'ORGANIZATION' ? membershipsTable.organizationId : membershipsTable.projectId, entity.id),
+      eq(entityType === 'organization' ? membershipsTable.organizationId : membershipsTable.projectId, entity.id),
       eq(membershipsTable.type, entityType),
     ];
 

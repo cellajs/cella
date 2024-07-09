@@ -7,10 +7,10 @@ import { workspacesTable } from '../db/schema/workspaces';
 
 // Create a map to store tables for different resource types
 export const entityTables = new Map<string, typeof organizationsTable | typeof workspacesTable | typeof projectsTable | typeof usersTable>([
-  ['ORGANIZATION', organizationsTable],
-  ['WORKSPACE', workspacesTable],
-  ['PROJECT', projectsTable],
-  ['USER', usersTable],
+  ['organization', organizationsTable],
+  ['workspace', workspacesTable],
+  ['project', projectsTable],
+  ['user', usersTable],
 ]);
 
 /**
@@ -19,7 +19,7 @@ export const entityTables = new Map<string, typeof organizationsTable | typeof w
  * @param idOrSlug - The unique identifier (ID or Slug) of the entity.
  */
 export const resolveEntity = async (entityType: string, idOrSlug: string) => {
-  const table = entityTables.get(entityType.toUpperCase());
+  const table = entityTables.get(entityType);
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);

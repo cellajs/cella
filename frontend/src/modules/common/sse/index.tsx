@@ -1,6 +1,6 @@
-import { useSSE } from './use-sse';
 import { useNavigationStore } from '~/store/navigation';
-import { updateMenuItem, deleteMenuItem } from './helpers';
+import { deleteMenuItem, updateMenuItem } from './helpers';
+import { useSSE } from './use-sse';
 
 const SSE = () => {
   const updateEntity = (e: MessageEvent<string>) => {

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { User } from '~/types';
 
+import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import { UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
@@ -14,7 +15,6 @@ import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import { UserProfile } from '../user-profile';
 import UpdateRow from './update-row';
-import { Link } from '@tanstack/react-router';
 
 export const openUserPreviewSheet = (user: User) => {
   sheet(<UserProfile sheet user={user} />, {
@@ -47,7 +47,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             openUserPreviewSheet(row);
           }}
         >
-          <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+          <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
         </Link>
       ),
@@ -82,7 +82,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => t(row.role.toLowerCase()),
+      renderCell: ({ row }) => t(row.role),
       width: 100,
       renderEditCell: ({ row, onRowChange }) =>
         renderSelect({

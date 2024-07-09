@@ -67,7 +67,7 @@ const meRoutes = app
         membership: membershipsTable,
       })
       .from(organizationsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'ORGANIZATION')))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'organization')))
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
@@ -77,7 +77,7 @@ const meRoutes = app
         membership: membershipsTable,
       })
       .from(workspacesTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'WORKSPACE')))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'workspace')))
       .orderBy(desc(workspacesTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.workspaceId, workspacesTable.id));
 
@@ -88,7 +88,7 @@ const meRoutes = app
         workspace: projectsToWorkspacesTable,
       })
       .from(projectsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'PROJECT')))
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'project')))
       .orderBy(desc(projectsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id))
       .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id));
@@ -181,13 +181,13 @@ const meRoutes = app
   .openapi(meRoutesConfig.updateSelf, async (ctx) => {
     const user = ctx.get('user');
 
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'USER', { slug });
+      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
     }
 
     const [updatedUser] = await db
@@ -232,7 +232,7 @@ const meRoutes = app
   .openapi(meRoutesConfig.deleteSelf, async (ctx) => {
     const user = ctx.get('user');
     // Check if user exists
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { user: 'self' });
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
     // Delete user
     await db.delete(usersTable).where(eq(usersTable.id, user.id));

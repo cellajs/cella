@@ -1,5 +1,5 @@
-import { env } from 'env';
 import { sign } from 'hono/jwt';
+import { env } from '../../env';
 
 interface GenerateTokenOptions {
   userId: string;

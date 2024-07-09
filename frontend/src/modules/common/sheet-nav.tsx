@@ -1,8 +1,8 @@
+import { motion } from 'framer-motion';
 import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../ui/button';
-import { motion } from 'framer-motion';
 import { nanoid } from '~/lib/utils';
+import { Button } from '../ui/button';
 
 interface Props {
   tabs: { id: string; label: string; element: React.ReactNode }[];

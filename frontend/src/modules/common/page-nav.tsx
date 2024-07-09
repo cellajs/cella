@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { cn, nanoid } from '~/lib/utils';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 
 export type PageNavTab = {
   id: string;
@@ -63,7 +63,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
       <div className={cn('flex justify-center border-b sticky top-0 bg-background/75 backdrop-blur-sm z-[80]', className)} ref={tabsRef}>
         <div className="hidden" ref={nameRef}>
           <div className="absolute left-0 h-full flex items-center">
-            {avatar && <AvatarWrap className="m-3 h-6 w-6 text-xs" type="ORGANIZATION" id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
+            {avatar && <AvatarWrap className="m-3 h-6 w-6 text-xs" type="organization" id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
             <div className="truncate hidden leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>
           </div>
         </div>

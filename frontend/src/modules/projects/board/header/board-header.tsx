@@ -1,24 +1,24 @@
 import { useLiveQuery } from 'electric-sql/react';
 import { FilterX, PanelTopClose, Plus, Settings, Tag, Trash, XSquare } from 'lucide-react';
+import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
+import StickyBox from '~/modules/common/sticky-box';
 import BoardSearch from '~/modules/projects/board/header/board-search';
 import DisplayOptions from '~/modules/projects/board/header/display-options';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
+import { useNavigationStore } from '~/store/navigation';
+import { useWorkspaceStore } from '~/store/workspace';
 import { AvatarWrap } from '../../../common/avatar-wrap';
 import { type Label, useElectric } from '../../../common/electric/electrify';
 import { TooltipButton } from '../../../common/tooltip-button';
 import { Badge } from '../../../ui/badge';
 import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
-import StickyBox from '~/modules/common/sticky-box';
-import type React from 'react';
-import { useWorkspaceStore } from '~/store/workspace';
-import { useNavigationStore } from '~/store/navigation';
 
 const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: React.ReactNode }) => {
   const { t } = useTranslation();
@@ -97,7 +97,7 @@ const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: R
               {showPageHeader ? (
                 <PanelTopClose size={16} />
               ) : (
-                <AvatarWrap className="cursor-pointer" type="WORKSPACE" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+                <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
               )}
             </Button>
           </TooltipButton>

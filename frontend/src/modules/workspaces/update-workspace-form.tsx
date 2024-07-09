@@ -12,7 +12,9 @@ import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
+import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
+import AvatarFormField from '~/modules/common/form-fields/avatar';
 import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -20,8 +22,6 @@ import InputFormField from '../common/form-fields/input';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { SlugFormField } from '../common/form-fields/slug';
 import UnsavedBadge from '../common/unsaved-badge';
-import { cleanUrl } from '~/lib/utils';
-import AvatarFormField from '~/modules/common/form-fields/avatar';
 
 interface Props {
   workspace: Workspace;
@@ -104,7 +104,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
         <AvatarFormField
           control={form.control}
           label={t('common:workspace_logo')}
-          type="WORKSPACE"
+          type="workspace"
           name="thumbnailUrl"
           entity={workspace}
           url={form.getValues('thumbnailUrl')}
@@ -113,14 +113,14 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="WORKSPACE"
+          type="workspace"
           label={t('common:workspace_handle')}
           description={t('common:workspace_handle.text')}
           previousSlug={workspace.slug}
         />
         <SelectParentFormField
           collection="organizations"
-          type="ORGANIZATION"
+          type="organization"
           control={form.control}
           label={t('common:organization')}
           name="organizationId"

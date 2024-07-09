@@ -6,11 +6,11 @@ import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middleware
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteBodySchema,
+  checkTokenSchema,
+  inviteBodySchema,
+  membersQuerySchema,
   membersSchema,
   publicCountsSchema,
-  checkTokenSchema,
-  membersQuerySchema,
-  inviteBodySchema,
   suggestionsSchema,
 } from './schema';
 

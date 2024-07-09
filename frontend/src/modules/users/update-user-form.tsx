@@ -24,10 +24,10 @@ import { cleanUrl } from '~/lib/utils';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useUserStore } from '~/store/user';
 import InputFormField from '../common/form-fields/input';
+import { SelectLanguage } from '../common/form-fields/language-selector';
 import { SlugFormField } from '../common/form-fields/slug';
 import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
 import { useStepper } from '../common/stepper/use-stepper';
-import { SelectLanguage } from '../common/form-fields/language-selector';
 
 interface UpdateUserFormProps {
   user: User;
@@ -137,7 +137,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         <AvatarFormField
           control={form.control}
           label={children ? '' : t('common:profile_picture')}
-          type="USER"
+          type="user"
           name="thumbnailUrl"
           entity={user}
           url={form.getValues('thumbnailUrl')}
@@ -150,7 +150,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         {(!hiddenFields || !hiddenFields.includes('slug')) && (
           <SlugFormField
             control={form.control}
-            type="USER"
+            type="user"
             label={t('common:user_handle')}
             description={t('common:user_handle.text')}
             previousSlug={user.slug}

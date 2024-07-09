@@ -1,14 +1,14 @@
 import type { Member } from '~/types';
 
+import { Link } from '@tanstack/react-router';
 import { config } from 'config';
+import type { TFunction } from 'i18next';
 import { dateShort } from '~/lib/utils';
-import { renderSelect } from '~/modules/common/data-table/select-column';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import type { TFunction } from 'i18next';
-import { Link } from '@tanstack/react-router';
+import { renderSelect } from '~/modules/common/data-table/select-column';
 import { openUserPreviewSheet } from '~/modules/users/users-table/columns';
 
 export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean, isSheet: boolean) => {
@@ -31,7 +31,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
             openUserPreviewSheet(row);
           }}
         >
-          <AvatarWrap type="USER" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+          <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
         </Link>
       ),
@@ -59,7 +59,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => t(row.membership.role.toLowerCase()),
+      renderCell: ({ row }) => t(row.membership.role),
       width: 100,
       ...(isAdmin && {
         renderEditCell: ({ row, onRowChange }) =>

@@ -1,11 +1,12 @@
-import { Plus, Minimize2, Settings } from 'lucide-react';
+import { useNavigate, useParams } from '@tanstack/react-router';
+import { ArrowLeft, ArrowRight, Minimize2, Plus, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { Button } from '~/modules/ui/button';
-import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
+import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
 interface BoardColumnHeaderProps {
   id: string;
@@ -17,11 +18,29 @@ interface BoardColumnHeaderProps {
 }
 
 export function BoardColumnHeader({ id, name, color, createFormOpen, openSettings, createFormClick }: BoardColumnHeaderProps) {
-  const { workspace } = useWorkspaceStore();
-  
-  const { changeColumn } = useWorkspaceUIStore();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { changeColumn } = useWorkspaceUIStore();
+  const { workspace, projects } = useWorkspaceStore();
   const [minimize, setMinimize] = useState(false);
+  const currentIndex = projects.findIndex((p) => p.id === id);
+
+  const params = useParams({
+    strict: false,
+  });
+
+  const ArrowClick = (side: 'left' | 'right') => {
+    const targetIndex = currentIndex + (side === 'left' ? -1 : 1);
+    const slug = projects[targetIndex].slug;
+    navigate({
+      params,
+      replace: true,
+      search: (prev) => ({
+        ...prev,
+        ...{ project: slug },
+      }),
+    });
+  };
 
   const MinimizeClick = () => {
     setMinimize(!minimize);
@@ -48,6 +67,18 @@ export function BoardColumnHeader({ id, name, color, createFormOpen, openSetting
           <Minimize2 size={16} />
         </Button>
       </TooltipButton>
+      <Button disabled={currentIndex === 0} variant="plain" size="xs" className="rounded sm:hidden" onClick={() => ArrowClick('left')}>
+        <ArrowLeft size={14} />
+      </Button>
+      <Button
+        disabled={currentIndex === projects.length - 1}
+        variant="plain"
+        size="xs"
+        className="rounded sm:hidden"
+        onClick={() => ArrowClick('right')}
+      >
+        <ArrowRight size={14} />
+      </Button>
       <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>
         <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />
         <span className="ml-1">{t('common:task')}</span>

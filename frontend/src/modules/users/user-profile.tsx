@@ -33,7 +33,8 @@ export const UserProfile = ({ user, sheet }: { user: User; sheet?: boolean }) =>
         <PageHeader
           id={user.id}
           title={user.name}
-          type="USER"
+          type="user"
+          disableScroll={true}
           thumbnailUrl={user.thumbnailUrl}
           bannerUrl={user.bannerUrl}
           panel={
@@ -49,7 +50,7 @@ export const UserProfile = ({ user, sheet }: { user: User; sheet?: boolean }) =>
             </>
           }
         />
-        <div className="container mt-4 mb-12">
+        <div className="container mb-12">
           <ProjectsTable sheet={sheet} userId={user.id} />
         </div>
       </UserContext.Provider>

@@ -26,7 +26,7 @@ export const userSchema = createSelectSchema(usersTable, {
 export const usersQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),
-    role: z.enum(config.rolesByType.systemRoles).default('USER').optional(),
+    role: z.enum(config.rolesByType.systemRoles).default('user').optional(),
   }),
 );
 

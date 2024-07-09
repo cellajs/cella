@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1717592551334,
-      "tag": "0000_petite_meggan",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1717689916822,
-      "tag": "0001_absurd_black_panther",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1717786035152,
-      "tag": "0002_broad_randall",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1718199865429,
-      "tag": "0003_reflective_korvac",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1718521780408,
-      "tag": "0004_eager_katie_power",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1719304887623,
-      "tag": "0005_even_morlocks",
+      "when": 1720506361589,
+      "tag": "0000_lazy_jamie_braddock",
       "breakpoints": true
     }
   ]

@@ -30,7 +30,7 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
       <Button variant="ghost" className={cn('hover:bg-accent/10 group h-14 w-14', navIconColor, activeClass)} onClick={() => onClick(navItem.id)}>
         {navItem.id === 'account' && user ? (
           <AvatarWrap
-            type="USER"
+            type="user"
             className="border-[0.1rem] rounded-full border-primary group-hover:scale-110 transition-transform text-primary-foreground"
             id={user.id}
             name={user.name}

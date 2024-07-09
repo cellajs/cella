@@ -13,11 +13,11 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import SelectRole from '~/modules/common/form-fields/select-role-radio';
+import { QueryCombobox } from '~/modules/common/query-combobox';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types';
-import { QueryCombobox } from '~/modules/common/query-combobox';
 
 interface Props {
   entity?: EntityPage;
@@ -45,7 +45,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
       resolver: zodResolver(formSchema),
       defaultValues: {
         emails: [],
-        role: 'MEMBER',
+        role: 'member',
       },
     }),
     [],
@@ -58,7 +58,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
       return inviteMembers({
         ...values,
         idOrSlug: entity.id,
-        entityType: entity.entity || 'ORGANIZATION',
+        entityType: entity.entity || 'organization',
         organizationId: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },

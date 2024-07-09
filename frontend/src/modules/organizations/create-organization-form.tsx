@@ -13,16 +13,16 @@ import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { Button } from '~/modules/ui/button';
-import type { Organization, UserMenuItem } from '~/types';
-import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
+import { addMenuItem } from '~/lib/utils';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import { Form, type LabelDirectionType } from '../ui/form';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { addMenuItem } from '~/lib/utils';
+import type { Organization, UserMenuItem } from '~/types';
+import { isDialog as checkDialog, dialog } from '../common/dialoger/state';
+import { Form, type LabelDirectionType } from '../ui/form';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -39,7 +39,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { nextStep } = useStepper();
-  const type = 'ORGANIZATION';
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -61,7 +60,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     mutationFn: createOrganization,
     onSuccess: (createdOrganization) => {
       form.reset();
-      toast.success(t('common:success.create_resource', { resource: t(`common:${type.toLowerCase()}`) }));
+      toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
       callback?.(createdOrganization);
       nextStep?.();
 
@@ -105,7 +104,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
-          type="ORGANIZATION"
+          type="organization"
           label={t('common:organization_handle')}
           description={t('common:organization_handle.text')}
           nameValue={name}

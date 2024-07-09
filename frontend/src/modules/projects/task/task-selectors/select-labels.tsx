@@ -1,6 +1,6 @@
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from '~/lib/utils.ts';
 import type { Label } from '../../../common/electric/electrify.ts';
@@ -97,16 +97,6 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
     );
   };
 
-  // Open on key press
-  // useHotkeys([
-  //   [
-  //     'l',
-  //     () => {
-  //       if (focusedTaskId === task.id) setOpenPopover(true);
-  //     },
-  //   ],
-  // ]);
-
   useEffect(() => {
     setSelectedLabels(value);
   }, [value]);
@@ -114,6 +104,7 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
   return (
     <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
+        autoFocus={true}
         value={searchValue}
         onValueChange={(searchValue) => {
           // If the label types a number, select the label like useHotkeys

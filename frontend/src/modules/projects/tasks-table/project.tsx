@@ -1,12 +1,12 @@
 import { Check, ChevronDown } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Kbd } from '~/modules/common/kbd.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
-import { Button } from '~/modules/ui/button';
-import type { Project } from '~/types';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { Kbd } from '~/modules/common/kbd.tsx';
+import { Button } from '~/modules/ui/button';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import type { Project } from '~/types';
 
 interface Props {
   projects: Project[];
@@ -63,7 +63,7 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
                 return (
                   <div key={currentProject.id} className="flex items-center gap-3">
                     <AvatarWrap
-                      type="USER"
+                      type="user"
                       id={currentProject.id}
                       name={currentProject.name}
                       url={currentProject.thumbnailUrl}
@@ -106,7 +106,7 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
                     <div className="flex items-center gap-3">
-                      <AvatarWrap type="USER" id={project.id} name={project.name} url={project.thumbnailUrl} className="h-6 w-6 text-xs" />
+                      <AvatarWrap type="user" id={project.id} name={project.name} url={project.thumbnailUrl} className="h-6 w-6 text-xs" />
                       <span>{project.name}</span>
                     </div>
                     <div className="flex items-center">

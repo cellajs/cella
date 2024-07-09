@@ -8,15 +8,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import { getDraggableItemData, getReorderDestinationOrder } from '~/lib/utils';
+import { getDraggableItemData } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { DraggableItemData, UserMenuItem } from '~/types';
 import { DropIndicator } from '../drop-indicator';
 import { MenuArchiveToggle } from './menu-archive-toggle';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 
 type PageDraggableItemData = DraggableItemData<UserMenuItem>;
 
@@ -32,11 +32,7 @@ export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuIte
   const parentItemId = data[0].parentId;
 
   if (data.length === 0) {
-    return (
-      <li className="py-2 text-muted-foreground text-sm text-light text-center">
-        {t('common:no_resource_yet', { resource: t(entityType.toLowerCase()).toLowerCase() })}
-      </li>
-    );
+    return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_resource_yet', { resource: entityType })}</li>;
   }
 
   const filteredItems = data
@@ -55,7 +51,12 @@ export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuIte
 
     return (
       <div key={item.id}>
-        <ItemOptions item={item} itemType={entityType} parentItemId={parentItemId} />
+        <ItemOptions
+          data={[...data].sort((a, b) => b.membership.order - a.membership.order)}
+          item={item}
+          itemType={entityType}
+          parentItemId={parentItemId}
+        />
         {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
           <>
             <SheetMenuItemsOptions data={item.submenu} shownOption={shownOption} />
@@ -73,7 +74,12 @@ export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuIte
   });
 };
 
-const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; item: UserMenuItem; itemType: ContextEntity }) => {
+const ItemOptions = ({
+  data,
+  item,
+  itemType,
+  parentItemId,
+}: { data: UserMenuItem[]; parentItemId?: string; item: UserMenuItem; itemType: ContextEntity }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -82,8 +88,7 @@ const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; 
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { menu } = useNavigationStore();
-
-  const callback = parentItemId ? useMutateQueryData(['projects', parentItemId]) : useMutateQueryData([`${itemType.toLowerCase()}s`, item.id]);
+  const callback = parentItemId ? useMutateQueryData(['projects', parentItemId]) : useMutateQueryData([`${itemType}s`, item.id]);
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
       return baseUpdateMembership(values);
@@ -95,8 +100,8 @@ const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; 
         archiveStateToggle(item.id, archived, parentItemId ? parentItemId : null);
         toast.success(
           archived
-            ? t('common:success.archived_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
-            : t('common:success.restore_resource', { resource: t(`common:${itemType.toLowerCase()}`) }),
+            ? t('common:success.archived_resource', { resource: t(`common:${itemType}`) })
+            : t('common:success.restore_resource', { resource: t(`common:${itemType}`) }),
         );
         setItemArchived(archived);
       }
@@ -104,8 +109,8 @@ const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; 
         const muted = updatedMembership.muted || !isItemMuted;
         toast.success(
           muted
-            ? t('common:success.mute_resource', { resource: t(`common:${itemType.toLowerCase()}`) })
-            : t('common:success.unmute_resource', { resource: t(`common:${itemType.toLowerCase()}`) }),
+            ? t('common:success.mute_resource', { resource: t(`common:${itemType}`) })
+            : t('common:success.unmute_resource', { resource: t(`common:${itemType}`) }),
         );
         setItemMuted(muted);
       }
@@ -172,10 +177,26 @@ const ItemOptions = ({ item, itemType, parentItemId }: { parentItemId?: string; 
       },
       onDrop({ location }) {
         const target = location.current.dropTargets[0];
-        if (!target || !isPageData(target.data)) return;
-        const closestEdgeOfTarget: Edge | null = extractClosestEdge(target.data);
-        const newOrder = getReorderDestinationOrder(target.data.order, closestEdgeOfTarget, 'vertical');
-        baseUpdateMembership({ membershipId: item.membership.id, order: newOrder });
+        if (!target) return;
+        const targetData = target.data;
+        if (isPageData(targetData)) {
+          const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
+          const targetTaskIndex = data.findIndex((i) => i.id === targetData.item.id);
+          const relativeTaskIndex = closestEdgeOfTarget === 'top' ? targetTaskIndex + 1 : targetTaskIndex - 1;
+
+          const relativeTask = data[relativeTaskIndex];
+          let newOrder: number;
+
+          if (relativeTask === undefined || relativeTask.membership.order === targetData.order) {
+            newOrder = closestEdgeOfTarget === 'top' ? targetData.order / 2 : targetData.order + 1;
+          } else if (relativeTask.id === item.id) {
+            newOrder = item.membership.order;
+          } else {
+            newOrder = (relativeTask.membership.order + targetData.order) / 2;
+          }
+
+          updateMembership({ membershipId: item.membership.id, order: newOrder });
+        }
       },
     });
   }, [item]);

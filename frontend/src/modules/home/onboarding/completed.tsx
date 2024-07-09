@@ -1,13 +1,13 @@
 import { Menu, Undo } from 'lucide-react';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
 import { useTranslation } from 'react-i18next';
 import { createProject } from '~/api/projects';
 import { createWorkspace } from '~/api/workspaces';
+import { addMenuItem } from '~/lib/utils';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { useNavigationStore } from '~/store/navigation';
 import type { UserMenuItem } from '~/types';
-import { addMenuItem } from '~/lib/utils';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();

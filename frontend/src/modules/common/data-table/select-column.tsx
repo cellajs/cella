@@ -3,7 +3,7 @@ import type { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
 
-import type { User, Member } from '~/types';
+import type { Member, User } from '~/types';
 
 export const renderSelect = <TRow extends User | Member>({
   row,
@@ -29,7 +29,7 @@ export const renderSelect = <TRow extends User | Member>({
       <SelectContent sideOffset={-41} alignOffset={-5} className="!duration-0">
         {options.map((option) => (
           <SelectItem key={option} value={option}>
-            {t(`common:${option.toLowerCase()}`)}
+            {t(option)}
           </SelectItem>
         ))}
       </SelectContent>

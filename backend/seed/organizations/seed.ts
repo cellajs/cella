@@ -6,9 +6,9 @@ import { config } from 'config';
 import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
 
-import { membershipsTable, type InsertMembershipModel } from '../../src/db/schema/memberships';
-import { organizationsTable, type InsertOrganizationModel } from '../../src/db/schema/organizations';
-import { usersTable, type InsertUserModel } from '../../src/db/schema/users';
+import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
+import { type InsertOrganizationModel, organizationsTable } from '../../src/db/schema/organizations';
+import { type InsertUserModel, usersTable } from '../../src/db/schema/users';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 
@@ -54,6 +54,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
   let usersCount = 0;
   let organizationsCount = 0;
   let membershipsCount = 0;
+  let adminMembershipsOrder = 1;
 
   // Create 100 users for each organization
   for (const organization of organizations) {
@@ -100,8 +101,8 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         id: nanoid(),
         userId: user.id,
         organizationId: organization.id,
-        type: 'ORGANIZATION',
-        role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
+        type: 'organization',
+        role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: faker.date.past(),
         order: organizationsCount + 1,
       };
@@ -113,11 +114,12 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         id: nanoid(),
         userId: adminUser.id,
         organizationId: organization.id,
-        type: 'ORGANIZATION',
-        role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
+        type: 'organization',
+        role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: faker.date.past(),
-        order: organizationsCount + 1,
+        order: adminMembershipsOrder,
       });
+      adminMembershipsOrder++;
     }
     membershipsCount += memberships.length;
     if (progressCallback) progressCallback('memberships', membershipsCount, 'inserting');

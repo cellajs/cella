@@ -1,28 +1,28 @@
 import MDEditor from '@uiw/react-md-editor';
 import { cva } from 'class-variance-authority';
-import { UserX, Tag, ChevronDown, Trash } from 'lucide-react';
+import { ChevronDown, Tag, UserX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn } from '~/lib/utils.ts';
+import type { Task } from '~/modules/common/electric/electrify.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useThemeStore } from '~/store/theme';
-import type { Task } from '~/modules/common/electric/electrify.ts';
 import { Checkbox } from '../../ui/checkbox.tsx';
 import { impacts } from './task-selectors/select-impact.tsx';
-import { statusVariants, type TaskStatus } from './task-selectors/select-status.tsx';
+import { type TaskStatus, statusVariants } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
 import './style.css';
-import { TaskEditor } from './task-selectors/task-editor.tsx';
 import { taskStatuses } from '../tasks-table/status.tsx';
+import { TaskEditor } from './task-selectors/task-editor.tsx';
 
-import SubTask from './sub-task-card.tsx';
-import CreateSubTaskForm from './create-sub-task-form.tsx';
-import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
-import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
+import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Badge } from '../../ui/badge.tsx';
+import CreateSubTaskForm from './create-sub-task-form.tsx';
+import SubTask from './sub-task-card.tsx';
+import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -30,8 +30,8 @@ import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-d
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { getDraggableItemData } from '~/lib/utils';
-import type { DraggableItemData } from '~/types';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import type { DraggableItemData } from '~/types';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
@@ -44,11 +44,11 @@ interface TaskProps {
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
-  setIsExpanded?: (exp: boolean) => void;
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
-  handleTaskSelect?: (selected: boolean, taskId: string) => void;
   handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
+  setIsExpanded?: (exp: boolean) => void;
+  handleTaskSelect?: (selected: boolean, taskId: string) => void;
 }
 
 export function TaskCard({
@@ -71,7 +71,6 @@ export function TaskCard({
   const [dragOver, setDragOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  // TODO Move to impact-value component
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   // TODO move this state to task-expanded component
@@ -136,7 +135,7 @@ export function TaskCard({
   useEffect(() => {
     const element = taskRef.current;
     const dragElement = taskDragRef.current;
-    const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'PROJECT');
+    const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'project');
     if (!element || !dragElement) return;
 
     return combine(
@@ -147,7 +146,6 @@ export function TaskCard({
         onDragStart: () => {
           setDragging(true);
           setIsEditing(false);
-          setIsExpanded?.(false);
         },
         onDrop: () => setDragging(false),
       }),
@@ -196,11 +194,12 @@ export function TaskCard({
         }),
       )}
     >
-      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-1 pb-2 pr-1.5 space-between flex flex-col relative">
+      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 pr-2 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
             <div className="flex flex-col justify-between gap-0.5 relative">
               <Button
+                id="type"
                 onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
                 aria-label="Set type"
                 variant="ghost"
@@ -274,7 +273,7 @@ export function TaskCard({
                     </div>
                   )}
 
-                  <div className="-ml-10 -mr-1">
+                  <div className="-ml-10 -mr-1 relative z-10">
                     <div className="flex flex-col">
                       {task.subTasks.map((task) => (
                         <SubTask key={task.id} task={task} handleChange={handleTaskChange} />
@@ -293,25 +292,16 @@ export function TaskCard({
             </div>
           </div>
           <div className="flex items-end justify-between gap-1">
-            {handleTaskSelect ? (
+            {handleTaskSelect && (
               <Checkbox
                 className="group-hover/task:opacity-100 mb-1.5 border-foreground/25 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-70"
                 checked={isSelected}
                 onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
               />
-            ) : (
-              <Button
-                onClick={() => console.log('delete Task')}
-                aria-label="Delete Task"
-                variant="ghost"
-                size="xs"
-                className={'group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70'}
-              >
-                <Trash size={14} />
-              </Button>
             )}
             {task.type !== 'bug' && (
               <Button
+                id="impact"
                 onClick={(event) => handleTaskActionClick(task, 'impact', event.currentTarget)}
                 aria-label="Set impact"
                 variant="ghost"
@@ -319,9 +309,9 @@ export function TaskCard({
                 className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
               >
                 {selectedImpact === null ? (
-                  <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
+                  <NotSelected className="size-4 fill-current" aria-hidden="true" title="Set impact" />
                 ) : (
-                  <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                  <selectedImpact.icon className="size-4 fill-current" aria-hidden="true" title="Set impact" />
                 )}
               </Button>
             )}
@@ -330,6 +320,7 @@ export function TaskCard({
               // TODO: Bind the entire task object instead of individual IDs
             }
             <Button
+              id="labels"
               onClick={(event) => handleTaskActionClick(task, 'labels', event.currentTarget)}
               aria-label="Set labels"
               variant="ghost"
@@ -340,8 +331,12 @@ export function TaskCard({
                 {task.virtualLabels.length > 0 ? (
                   task.virtualLabels.map(({ name, id }) => {
                     return (
-                      <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
-                        <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] h-5 bg-transparent last:mr-0">
+                      <div key={id} className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full border px-0 bg-border">
+                        <Badge
+                          variant="outline"
+                          key={id}
+                          className="inline-block border-0 max-w-32 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
+                        >
                           {name}
                         </Badge>
                       </div>
@@ -355,6 +350,7 @@ export function TaskCard({
 
             <div className="flex gap-1 ml-auto mr-1">
               <Button
+                id="assigned_to"
                 onClick={(event) => handleTaskActionClick(task, 'assigned_to', event.currentTarget)}
                 aria-label="Assign"
                 variant="ghost"
@@ -365,7 +361,7 @@ export function TaskCard({
                   <AvatarGroup limit={3}>
                     <AvatarGroupList>
                       {task.virtualAssignedTo.map((user) => (
-                        <AvatarWrap type="USER" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                        <AvatarWrap type="user" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
                       ))}
                     </AvatarGroupList>
                     <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
@@ -376,6 +372,7 @@ export function TaskCard({
               </Button>
               <>
                 <Button
+                  id="status"
                   onClick={() => handleTaskChange('status', task.status + 1, task.id)}
                   disabled={(task.status as TaskStatus) === 6}
                   variant="outlineGhost"

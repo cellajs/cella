@@ -2,7 +2,7 @@ import { errorResponses, successWithDataSchema, successWithErrorsSchema, success
 import { idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import { userSchema, updateUserBodySchema } from '../users/schema';
+import { updateUserBodySchema, userSchema } from '../users/schema';
 import { meUserSchema, userMenuSchema } from './schema';
 
 class MeRoutesConfig {

@@ -11,9 +11,9 @@ import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
+import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import projectRoutesConfig from './routes';
-import { insertMembership } from '../memberships/helpers/insert-membership';
 
 const app = new CustomHono();
 
@@ -32,7 +32,7 @@ const projectsRoutes = app
     const slugAvailable = await checkSlugAvailable(slug);
 
     if (!slugAvailable) {
-      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'PROJECT', { slug });
+      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'project', { slug });
     }
 
     const [project] = await db
@@ -49,7 +49,7 @@ const projectsRoutes = app
     logEvent('Project created', { project: project.id });
 
     // Insert membership
-    const [createdMembership] = await insertMembership({ user, role: 'ADMIN', entity: project, memberships });
+    const [createdMembership] = await insertMembership({ user, role: 'admin', entity: project, memberships });
 
     // If project created in workspace, add project to it
     if (workspaceId) {
@@ -78,7 +78,7 @@ const projectsRoutes = app
   .openapi(projectRoutesConfig.getProject, async (ctx) => {
     const project = ctx.get('project');
     const memberships = ctx.get('memberships');
-    const membership = memberships.find((m) => m.projectId === project.id && m.type === 'PROJECT');
+    const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project');
     const [projectToWorkspace] = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.projectId, project.id));
     return ctx.json(
       {
@@ -87,7 +87,7 @@ const projectsRoutes = app
           ...project,
           workspaceId: projectToWorkspace.workspaceId,
           membership: toMembershipInfo(membership),
-          counts: await counts('PROJECT', project.id),
+          counts: await counts('project', project.id),
         },
       },
       200,
@@ -109,7 +109,7 @@ const projectsRoutes = app
       .from(projectsTable)
       .where(and(...projectsFilters));
 
-    const countsQuery = await counts('PROJECT');
+    const countsQuery = await counts('project');
 
     // @TODO: Permission check which projects a user is allowed to see? (this will skip when requestedUserId is used in query!)
     // It should check organization permissions, project permissions and system admin permission
@@ -203,7 +203,7 @@ const projectsRoutes = app
       const slugAvailable = await checkSlugAvailable(slug);
 
       if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'PROJECT', { slug });
+        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'project', { slug });
       }
     }
 
@@ -230,7 +230,7 @@ const projectsRoutes = app
     const memberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'PROJECT'), eq(membershipsTable.projectId, project.id)));
+      .where(and(eq(membershipsTable.type, 'project'), eq(membershipsTable.projectId, project.id)));
 
     if (memberships.length > 0) {
       memberships.map((member) =>
@@ -250,7 +250,7 @@ const projectsRoutes = app
           ...updatedProject,
           parentId: workspaceId,
           membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
-          counts: await counts('PROJECT', project.id),
+          counts: await counts('project', project.id),
         },
       },
       200,
@@ -266,13 +266,13 @@ const projectsRoutes = app
     const disallowedIds = ctx.get('disallowedIds');
 
     // Map errors of workspaces user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'PROJECT', { project: id }));
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'project', { project: id }));
 
     // Get members
     const projectsMembers = await db
       .select({ id: membershipsTable.userId, projectId: membershipsTable.projectId })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, 'PROJECT'), inArray(membershipsTable.projectId, allowedIds)));
+      .where(and(eq(membershipsTable.type, 'project'), inArray(membershipsTable.projectId, allowedIds)));
 
     // Delete the projectId
     await db.delete(projectsTable).where(inArray(projectsTable.id, allowedIds));
@@ -285,7 +285,7 @@ const projectsRoutes = app
           .filter(({ projectId }) => projectId === id)
           .map((member) => member.id)
           .filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'PROJECT' });
+        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'project' });
       }
 
       logEvent('Project deleted', { project: id });

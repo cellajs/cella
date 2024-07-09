@@ -1,15 +1,15 @@
 import { errorResponses, successWithDataSchema, successWithErrorsSchema } from '../../lib/common-responses';
-import { idsQuerySchema, entityParamSchema } from '../../lib/common-schemas';
+import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import { workspaceSchema, createWorkspaceBodySchema, updateWorkspaceBodySchema } from './schema';
+import { createWorkspaceBodySchema, updateWorkspaceBodySchema, workspaceSchema } from './schema';
 
 class WorkspaceRoutesConfig {
   public createWorkspace = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: [isAuthenticated, isAllowedTo('create', 'WORKSPACE')],
+    guard: [isAuthenticated, isAllowedTo('create', 'workspace')],
     tags: ['workspaces'],
     summary: 'Create new workspace',
     description: 'Create personal workspace to organize projects and tasks.',
@@ -39,7 +39,7 @@ class WorkspaceRoutesConfig {
   public getWorkspace = createRouteConfig({
     method: 'get',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('read', 'WORKSPACE')],
+    guard: [isAuthenticated, isAllowedTo('read', 'workspace')],
     tags: ['workspaces'],
     summary: 'Get workspace',
     description: 'Get workspace by id or slug.',
@@ -62,7 +62,7 @@ class WorkspaceRoutesConfig {
   public updateWorkspace = createRouteConfig({
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('update', 'WORKSPACE')],
+    guard: [isAuthenticated, isAllowedTo('update', 'workspace')],
     tags: ['workspaces'],
     summary: 'Update workspace',
     description: 'Update workspace by id or slug.',

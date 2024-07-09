@@ -31,8 +31,8 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
   const createDialog = () => {
     dialog(createForm, {
       className: 'md:max-w-2xl',
-      id: `create-${entityType.toLowerCase()}`,
-      title: t('common:create_resource', { resource: t(`common:${entityType.toLowerCase()}`).toLowerCase() }),
+      id: `create-${entityType}`,
+      title: t('common:create_resource', { resource: t(`common:${entityType}`).toLowerCase() }),
     });
   };
 

@@ -17,7 +17,7 @@ export type supportedModelTypes = OrganizationModel | ProjectModel;
 /**
  * Array of supported entity types.
  */
-export const supportedEntityTypes = ['PROJECT', 'ORGANIZATION'];
+export const supportedEntityTypes = ['project', 'organization'];
 
 /**
  * Get the memberships table ID based on the context.
@@ -25,6 +25,6 @@ export const supportedEntityTypes = ['PROJECT', 'ORGANIZATION'];
  * @returns The ID of the memberships table column corresponding to the context.
  */
 export const membershipsTableId = (context: supportedModelTypes) => {
-  if (context.entity === 'PROJECT') return membershipsTable.projectId;
+  if (context.entity === 'project') return membershipsTable.projectId;
   return membershipsTable.organizationId;
 };

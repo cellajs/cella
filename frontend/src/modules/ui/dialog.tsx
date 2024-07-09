@@ -32,9 +32,8 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null; hideClose?: boolean}
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null; hideClose?: boolean }
 >(({ className, children, container, hideClose, ...props }, ref) => {
-
   const renderContent = () => (
     <DialogPrimitive.Content
       ref={ref}
@@ -44,13 +43,13 @@ const DialogContent = React.forwardRef<
       )}
       {...props}
     >
-          {children}
-          {!hideClose && (
-            <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none">
-              <X className="h-6 w-6" strokeWidth={1.25} />
-              <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
-          )}
+      {children}
+      {!hideClose && (
+        <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none">
+          <X className="h-6 w-6" strokeWidth={1.25} />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      )}
     </DialogPrimitive.Content>
   );
   // EDIT: only wrap in Overlay if container is not provided

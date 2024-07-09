@@ -26,7 +26,7 @@ export const useColumns = (sheet?: boolean) => {
         if (!row.workspaceId)
           return (
             <div className="flex space-x-2 cursor-default items-center outline-0 ring-0 group">
-              <AvatarWrap type="PROJECT" className="h-8 w-8" id={row.id} name={row.name} />
+              <AvatarWrap type="project" className="h-8 w-8" id={row.id} name={row.name} />
               <span className="truncate font-medium">{row.name || '-'}</span>
             </div>
           );
@@ -38,7 +38,7 @@ export const useColumns = (sheet?: boolean) => {
             params={{ idOrSlug: row.workspaceId || row.id }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
-            <AvatarWrap type="PROJECT" className="h-8 w-8" id={row.id} name={row.name} />
+            <AvatarWrap type="project" className="h-8 w-8" id={row.id} name={row.name} />
             <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
           </Link>
         );
@@ -57,7 +57,7 @@ export const useColumns = (sheet?: boolean) => {
             sortable: false,
             visible: true,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role.toLowerCase()) : '-'),
+            renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role) : '-'),
             width: 120,
           },
           ...(!sheet

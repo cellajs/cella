@@ -1,5 +1,5 @@
-import { useElectric } from './electrify';
 import Spinner from '../spinner';
+import { useElectric } from './electrify';
 
 const ElectricSuspense = ({ children }: { children: React.ReactNode }) => {
   const Electric = useElectric();

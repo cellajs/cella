@@ -1,10 +1,10 @@
 import { Check } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-// import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import type { Member } from '~/types/index.ts';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd.tsx';
+import type { Member } from '~/types/index.ts';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 
 interface AssignMembersProps {
@@ -45,22 +45,14 @@ const AssignMembers = ({ users, value, changeAssignedTo, triggerWidth = 240 }: A
     if (!indexArray.includes(Number.parseInt(searchValue))) return;
     handleSelectClick(users[Number.parseInt(searchValue)]?.id);
     setSearchValue('');
+    dropdowner.remove();
     return;
   }, [searchValue]);
-
-  // Open on key press
-  // useHotkeys([
-  //   [
-  //     'a',
-  //     () => {
-  //       if (focusedTaskId === task.id) setOpenPopover(true);
-  //     },
-  //   ],
-  // ]);
 
   return (
     <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
+        autoFocus={true}
         value={searchValue}
         onValueChange={setSearchValue}
         clearValue={setSearchValue}
@@ -82,12 +74,13 @@ const AssignMembers = ({ users, value, changeAssignedTo, triggerWidth = 240 }: A
                 value={user.id}
                 onSelect={(id) => {
                   handleSelectClick(id);
+                  dropdowner.remove();
                   setSearchValue('');
                 }}
                 className="group rounded-md flex justify-between items-center w-full leading-normal"
               >
                 <div className="flex items-center gap-3">
-                  <AvatarWrap type="USER" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                  <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
                   <span>{user.name}</span>
                 </div>
 

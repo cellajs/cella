@@ -1,4 +1,4 @@
-# VSCode
+# VSCode (old, needs refactoring)
 
 ## Workspace settings
 

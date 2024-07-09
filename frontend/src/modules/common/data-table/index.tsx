@@ -10,10 +10,10 @@ import { useInView } from 'react-intersection-observer';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { ColumnOrColumnGroup } from './columns-view';
 import './style.css';
-import ContentPlaceholder from '../content-placeholder';
-import { DataTableSkeleton } from './table-skeleton';
-import Spinner from '../spinner';
 import { Button } from '~/modules/ui/button';
+import ContentPlaceholder from '../content-placeholder';
+import Spinner from '../spinner';
+import { DataTableSkeleton } from './table-skeleton';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];

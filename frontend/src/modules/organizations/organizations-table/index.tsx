@@ -4,38 +4,38 @@ import { useMemo, useState } from 'react';
 import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
+import { config } from 'config';
 import { Bird } from 'lucide-react';
+import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { inviteMembers } from '~/api/memberships';
 import { useDebounce } from '~/hooks/use-debounce';
-import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import { OrganizationsTableRoute } from '~/routes/system';
-import { useUserStore } from '~/store/user';
-import type { Organization } from '~/types';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import { useColumns } from './columns';
-import { config } from 'config';
-import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
-import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
 import { sheet } from '~/modules/common/sheeter/state';
+import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import NewsletterForm from '~/modules/system/newsletter-form';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
+import { OrganizationsTableRoute } from '~/routes/system';
+import { useUserStore } from '~/store/user';
+import type { Organization } from '~/types';
+import { useColumns } from './columns';
 
 type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -143,7 +143,7 @@ const OrganizationsTable = () => {
           idOrSlug: organization.id,
           emails: [user.email],
           role: organization.membership?.role,
-          entityType: 'ORGANIZATION',
+          entityType: 'organization',
           organizationId: organization.id,
         })
           .then(() => {
@@ -210,7 +210,7 @@ const OrganizationsTable = () => {
               </>
             ) : (
               !isFiltered &&
-              user.role === 'ADMIN' && (
+              user.role === 'admin' && (
                 <Button
                   onClick={() => {
                     dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {

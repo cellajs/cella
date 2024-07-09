@@ -1,37 +1,37 @@
 import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { type GetUsersParams, getUsers, updateUser } from '~/api/users';
 
 import type { usersQuerySchema } from 'backend/modules/users/schema';
 import type { config } from 'config';
+import { motion } from 'framer-motion';
+import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
+import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import { DataTable } from '~/modules/common/data-table';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import { UsersTableRoute } from '~/routes/system';
-import type { User } from '~/types';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import { useColumns } from './columns';
-import { motion } from 'framer-motion';
-import { Mail, Trash, XSquare } from 'lucide-react';
+import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
-import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
-import TableCount from '~/modules/common/data-table/table-count';
+import { UsersTableRoute } from '~/routes/system';
+import type { User } from '~/types';
 import DeleteUsers from '../delete-users';
+import { useColumns } from './columns';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 

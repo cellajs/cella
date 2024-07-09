@@ -1,33 +1,38 @@
+import { useSearch } from '@tanstack/react-router';
+import { useLiveQuery } from 'electric-sql/react';
 import { Bird } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import type { z } from 'zod';
+import { getMembers } from '~/api/general';
+import { enhanceTasks } from '~/hooks/use-filtered-task-helpers.ts';
+import useTaskFilters from '~/hooks/use-filtered-tasks';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import { type Task, type Label, useElectric } from '~/modules/common/electric/electrify';
-import { useColumns } from './columns';
-import HeaderSelectStatus from './status';
-import { useLiveQuery } from 'electric-sql/react';
 import ColumnsView from '~/modules/common/data-table/columns-view';
-import SelectProject from './project';
-import BoardHeader from '../board/header/board-header';
-import { useSearch } from '@tanstack/react-router';
-import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import { useDebounce } from '~/hooks/use-debounce';
-import type { z } from 'zod';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import { useWorkspaceStore } from '~/store/workspace';
-import { getTaskOrder } from '../task/helpers';
-import { toast } from 'sonner';
-import { SelectImpact } from '../task/task-selectors/select-impact';
 import { dropdowner } from '~/modules/common/dropdowner/state';
-import SetLabels from '../task/task-selectors/select-labels';
-import { SelectTaskType } from '../task/task-selectors/select-task-type';
-import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
-import AssignMembers from '../task/task-selectors/select-members';
+import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify';
+import { sheet } from '~/modules/common/sheeter/state.ts';
+import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
+import { useUserStore } from '~/store/user.ts';
+import { useWorkspaceStore } from '~/store/workspace';
 import type { Member } from '~/types';
+import BoardHeader from '../board/header/board-header';
 import type { TaskImpact, TaskType } from '../task/create-task-form';
+import { getTaskOrder } from '../task/helpers';
+import { TaskCard } from '../task/task-card.tsx';
+import { SelectImpact } from '../task/task-selectors/select-impact';
+import SetLabels from '../task/task-selectors/select-labels';
+import AssignMembers from '../task/task-selectors/select-members';
+import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-status';
+import { SelectTaskType } from '../task/task-selectors/select-task-type';
+import { useColumns } from './columns';
+import SelectProject from './project';
+import HeaderSelectStatus from './status';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -35,6 +40,7 @@ export default function TasksTable() {
   const search = useSearch({ from: WorkspaceTableRoute.id });
 
   const { t } = useTranslation();
+  const user = useUserStore((state) => state.user);
   const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery } = useWorkspaceStore(
     ({ searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery }) => ({
       searchQuery,
@@ -45,101 +51,13 @@ export default function TasksTable() {
     }),
   );
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
-  const [rows, setRows] = useState<Task[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  // Search query options
-  const q = useDebounce(searchQuery, 200);
-  const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
+  const [labels, setLabels] = useState<Label[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
 
-  const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
-
-  useEffect(() => {
-    if (search.q) {
-      setSearchQuery(search.q);
-    }
-  }, []);
-
-  // Save filters in search params
-  const filters = useMemo(
-    () => ({
-      q,
-      sort,
-      order,
-      project_id: selectedProjects,
-      status: selectedStatuses,
-    }),
-    [q, sort, order, selectedStatuses, selectedProjects],
-  );
-  useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
-
-  const createLabel = (newLabel: Label) => {
-    if (!electric) return toast.error(t('common:local_db_inoperable'));
-    // TODO: Implement the following
-    // Save the new label to the database
-    electric.db.labels.create({ data: newLabel });
-  };
-
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const handleChange = (field: keyof Task, value: any, taskId: string) => {
-    if (!electric) return toast.error(t('common:local_db_inoperable'));
-    const db = electric.db;
-    if (field === 'assigned_to' && Array.isArray(value)) {
-      const assignedTo = value.map((user) => user.id);
-      db.tasks.update({
-        data: {
-          assigned_to: assignedTo,
-        },
-        where: {
-          id: taskId,
-        },
-      });
-      return;
-    }
-
-    // TODO: Review this
-    if (field === 'labels' && Array.isArray(value)) {
-      const labels = value.map((label) => label.id);
-      db.tasks.update({
-        data: {
-          labels,
-        },
-        where: {
-          id: taskId,
-        },
-      });
-
-      return;
-    }
-    if (field === 'status') {
-      const newOrder = getTaskOrder(tasks.find((t) => t.id === taskId)?.status, value, tasks);
-      db.tasks.update({
-        data: {
-          status: value,
-          ...(newOrder && { sort_order: newOrder }),
-        },
-        where: {
-          id: taskId,
-        },
-      });
-
-      return;
-    }
-
-    db.tasks.update({
-      data: {
-        [field]: value,
-      },
-      where: {
-        id: taskId,
-      },
-    });
-  };
-  const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement, labels: Label[], members: Member[]) => {
+  const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
     if (field === 'impact')
@@ -175,7 +93,164 @@ export default function TasksTable() {
     return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
   };
 
-  const [columns, setColumns] = useColumns(electric, handleChange, handleTaskActionClick);
+  // Search query options
+  const q = searchQuery;
+  const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
+
+  const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const electric = useElectric()!;
+
+  // Save filters in search params
+  const filters = useMemo(
+    () => ({
+      q,
+      sort,
+      order,
+      project_id: selectedProjects,
+      status: selectedStatuses,
+    }),
+    [q, sort, order, selectedStatuses, selectedProjects],
+  );
+  useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
+
+  const createLabel = (newLabel: Label) => {
+    if (!electric) return toast.error(t('common:local_db_inoperable'));
+    // TODO: Implement the following
+    // Save the new label to the database
+    electric.db.labels.create({ data: newLabel });
+  };
+
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const handleChange = (field: keyof Task, value: any, taskId: string) => {
+    if (!electric) return toast.error(t('common:local_db_inoperable'));
+    const db = electric.db;
+    if (field === 'assigned_to' && Array.isArray(value)) {
+      const assignedTo = value.map((user) => user.id);
+      db.tasks
+        .update({
+          data: {
+            assigned_to: assignedTo,
+          },
+          where: {
+            id: taskId,
+            modified_at: new Date(),
+            modified_by: user.id,
+          },
+        })
+        .then((resp) => {
+          const [updatedTask] = enhanceTasks([resp as Task], labels, members);
+          sheet.update(`task-card-preview-${updatedTask.id}`, {
+            content: (
+              <TaskCard
+                task={updatedTask}
+                isExpanded={true}
+                isSelected={false}
+                isFocused={true}
+                handleTaskChange={handleChange}
+                handleTaskActionClick={handleTaskActionClick}
+              />
+            ),
+          });
+        });
+      return;
+    }
+
+    // TODO: Review this
+    if (field === 'labels' && Array.isArray(value)) {
+      const labels = value.map((label) => label.id);
+      db.tasks
+        .update({
+          data: {
+            labels,
+            modified_at: new Date(),
+            modified_by: user.id,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then((resp) => {
+          const [updatedTask] = enhanceTasks([resp as Task], labels, members);
+          sheet.update(`task-card-preview-${updatedTask.id}`, {
+            content: (
+              <TaskCard
+                task={updatedTask}
+                isExpanded={true}
+                isSelected={false}
+                isFocused={true}
+                handleTaskChange={handleChange}
+                handleTaskActionClick={handleTaskActionClick}
+              />
+            ),
+          });
+        });
+
+      return;
+    }
+    if (field === 'status') {
+      const newOrder = getTaskOrder(taskId, value, tasks);
+      db.tasks
+        .update({
+          data: {
+            status: value,
+            ...(newOrder && { sort_order: newOrder }),
+            modified_at: new Date(),
+            modified_by: user.id,
+          },
+          where: {
+            id: taskId,
+          },
+        })
+        .then((resp) => {
+          const [updatedTask] = enhanceTasks([resp as Task], labels, members);
+          sheet.update(`task-card-preview-${updatedTask.id}`, {
+            content: (
+              <TaskCard
+                task={updatedTask}
+                isExpanded={true}
+                isSelected={false}
+                isFocused={true}
+                handleTaskChange={handleChange}
+                handleTaskActionClick={handleTaskActionClick}
+              />
+            ),
+          });
+        });
+
+      return;
+    }
+
+    db.tasks
+      .update({
+        data: {
+          [field]: value,
+          modified_at: new Date(),
+          modified_by: user.id,
+        },
+        where: {
+          id: taskId,
+        },
+      })
+      .then((resp) => {
+        const [updatedTask] = enhanceTasks([resp as Task], labels, members);
+        sheet.update(`task-card-preview-${updatedTask.id}`, {
+          content: (
+            <TaskCard
+              task={updatedTask}
+              isExpanded={true}
+              isSelected={false}
+              isFocused={true}
+              handleTaskChange={handleChange}
+              handleTaskActionClick={handleTaskActionClick}
+            />
+          ),
+        });
+      });
+  };
+
+  const [columns, setColumns] = useColumns(handleChange, handleTaskActionClick);
 
   // TODO: Refactor this when Electric supports count
   const { results: tasks = [], updatedAt } = useLiveQuery(
@@ -191,11 +266,6 @@ export default function TasksTable() {
         }),
         parent_id: null,
         OR: [
-          {
-            summary: {
-              contains: q,
-            },
-          },
           {
             markdown: {
               contains: q,
@@ -219,24 +289,35 @@ export default function TasksTable() {
   //   setSelectedStatuses([]);
   // };
 
-  const onRowsChange = (changedRows: Task[]) => {
-    setRows(changedRows);
-  };
-
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
     setSelectedTasks(Array.from(selectedRows));
   };
 
+  const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members);
+
   useEffect(() => {
-    if (tasks) {
-      setRows(
-        tasks.map((task) => ({
-          ...task,
-          subTasks: tasks.filter((t) => t.parent_id === task.id),
-        })),
-      );
+    if (search.q) {
+      setSearchQuery(search.q);
     }
-  }, [tasks]);
+  }, []);
+
+  useEffect(() => {
+    const fetchLabelsAndMembers = async () => {
+      const fetchedLabels = await electric.db.labels.findMany({
+        where: {
+          project_id: {
+            in: projects.map((p) => p.id),
+          },
+        },
+      });
+      setLabels(fetchedLabels as Label[]);
+      const fetchedMembers = await Promise.all(projects.map((p) => getMembers({ idOrSlug: p.id, entityType: 'project' }).then(({ items }) => items)));
+
+      setMembers(fetchedMembers.flat() as Member[]);
+    };
+
+    fetchLabelsAndMembers();
+  }, []);
 
   return (
     <>
@@ -250,7 +331,6 @@ export default function TasksTable() {
           columns: columns.filter((column) => column.visible),
           rows,
           rowHeight: 42,
-          onRowsChange,
           totalCount: tasks.length,
           isLoading,
           isFiltered,

@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import useMounted from '~/hooks/use-mounted';
 
-const Spinner = ({inline = false, noDelay = false}) => {
+const Spinner = ({ inline = false, noDelay = false }) => {
   const { hasStarted } = useMounted();
 
   return (

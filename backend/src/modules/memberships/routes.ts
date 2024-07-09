@@ -5,10 +5,10 @@ import { idSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
 import {
-  membershipSchema,
   createMembershipBodySchema,
   createMembershipQuerySchema,
   deleteMembersQuerySchema,
+  membershipSchema,
   updateMembershipBodySchema,
 } from './schema';
 

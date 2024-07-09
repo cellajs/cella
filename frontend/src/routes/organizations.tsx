@@ -7,8 +7,8 @@ import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
-import { AppRoute } from '.';
 import type { Organization as OrganizationType } from '~/types';
+import { AppRoute } from '.';
 
 //Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
@@ -40,12 +40,10 @@ export const OrganizationMembersRoute = createRoute({
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
-    const entityType = 'ORGANIZATION';
+    const entityType = 'organization';
     const infiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role, limit: 40 });
     const cachedMembers = queryClient.getQueryData(infiniteQueryOptions.queryKey);
-    if (!cachedMembers) {
-      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
-    }
+    if (!cachedMembers) queryClient.fetchInfiniteQuery(infiniteQueryOptions);
   },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });

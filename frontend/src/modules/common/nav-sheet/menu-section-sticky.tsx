@@ -15,13 +15,7 @@ interface MenuSectionStickyProp {
   createDialog?: () => void;
 }
 
-export const MenuSectionSticky = ({
-  data,
-  sectionType,
-  isSectionVisible,
-  createDialog,
-  toggleOptionsView,
-}: MenuSectionStickyProp) => {
+export const MenuSectionSticky = ({ data, sectionType, isSectionVisible, createDialog, toggleOptionsView }: MenuSectionStickyProp) => {
   const { t } = useTranslation();
   const { toggleSection } = useNavigationStore();
 
@@ -64,7 +58,7 @@ export const MenuSectionSticky = ({
           </AnimatePresence>
           <AnimatePresence mode="popLayout">
             {isSectionVisible && createDialog && (
-              <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right" portal>
+              <TooltipButton toolTipContent={t('common:create')} sideOffset={22} side="right">
                 <Button className="w-12 px-3" variant="secondary" size="icon" onClick={createDialog} asChild>
                   <motion.button
                     key={`sheet-menu-plus-${sectionType}`}

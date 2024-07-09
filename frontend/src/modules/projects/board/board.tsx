@@ -1,16 +1,18 @@
-import { Fragment, type LegacyRef, useEffect, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
+import { Bird, Redo } from 'lucide-react';
+import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useMeasure } from '~/hooks/use-measure';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { WorkspaceBoardRoute } from '~/routes/workspaces';
+import { useWorkspaceStore } from '~/store/workspace';
 import type { Project, TaskCardFocusEvent } from '~/types';
+import { useElectric } from '../../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
-import { Bird, Redo } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { useElectric } from '../../common/electric/electrify';
-import { useHotkeys } from '~/hooks/use-hot-keys';
 import BoardHeader from './header/board-header';
-import { useWorkspaceStore } from '~/store/workspace';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -66,6 +68,15 @@ export default function Board() {
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
+  const { project } = useSearch({
+    from: WorkspaceBoardRoute.id,
+  });
+
+  // Finding the project based on the query parameter or defaulting to the first project
+  const mobileDeviceProject = useMemo(() => {
+    if (project) return projects.find((p) => p.slug === project) || projects[0];
+    return projects[0];
+  }, [project, projects]);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
@@ -163,18 +174,14 @@ export default function Board() {
       const { taskId } = (event as TaskCardFocusEvent).detail;
       setFocusedTaskId(taskId);
     };
-
     document.addEventListener('task-card-focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('task-card-focus', handleFocus);
-    };
+    return () => document.removeEventListener('task-card-focus', handleFocus);
   }, []);
 
   return (
     <>
       <BoardHeader mode="board" />
-      {!projects.length && (
+      {!projects.length ? (
         <ContentPlaceholder
           className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"
           Icon={Bird}
@@ -194,17 +201,23 @@ export default function Board() {
             </>
           }
         />
-      )}
-      {projects.length && isDesktopLayout && (
-        <BoardDesktop columnTaskCreate={columnTaskCreate} toggleCreateForm={toggleCreateTaskForm} projects={projects} workspaceId={workspace.id} />
-      )}
-      {projects.length && !isDesktopLayout && (
-        <div className="flex flex-col gap-4">
-          {projects.map((project) => {
-            const isFormOpen = columnTaskCreate[project.id] || false;
-            return <BoardColumn createForm={isFormOpen} toggleCreateForm={toggleCreateTaskForm} key={project.id} project={project} />;
-          })}
-        </div>
+      ) : (
+        <>
+          {isDesktopLayout ? (
+            <BoardDesktop
+              columnTaskCreate={columnTaskCreate}
+              toggleCreateForm={toggleCreateTaskForm}
+              projects={projects}
+              workspaceId={workspace.id}
+            />
+          ) : (
+            <BoardColumn
+              createForm={columnTaskCreate[mobileDeviceProject.id] || false}
+              toggleCreateForm={toggleCreateTaskForm}
+              project={mobileDeviceProject}
+            />
+          )}
+        </>
       )}
     </>
   );

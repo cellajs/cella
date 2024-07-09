@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '../../db/schema/organizations';
 import {
-  membershipsCountSchema,
   imageUrlSchema,
+  membershipsCountSchema,
   nameSchema,
   paginationQuerySchema,
   validDomainsSchema,

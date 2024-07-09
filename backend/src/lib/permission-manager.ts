@@ -13,9 +13,9 @@ import {
 /**
  * Define hierarchical structure for contexts with roles.
  */
-const organization = new Context('organization', ['ADMIN', 'MEMBER']);
-new Context('workspace', ['ADMIN', 'MEMBER'], new Set([organization]));
-new Context('project', ['ADMIN', 'MEMBER'], new Set([organization]));
+const organization = new Context('organization', ['admin', 'member']);
+new Context('workspace', ['admin', 'member'], new Set([organization]));
+new Context('project', ['admin', 'member'], new Set([organization]));
 
 /**
  * Initialize the PermissionManager and configure access policies.
@@ -26,18 +26,18 @@ permissionManager.accessPolicies.configureAccessPolicies(({ subject, contexts }:
   // Configure actions based on the subject (organization or workspace)
   switch (subject.name) {
     case 'organization':
-      contexts.organization.ADMIN({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.organization.MEMBER({ create: 0, read: 1, update: 0, delete: 0 });
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
       break;
     case 'workspace':
-      contexts.organization.ADMIN({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.workspace.ADMIN({ create: 0, read: 1, update: 1, delete: 1 });
-      contexts.workspace.MEMBER({ create: 0, read: 1, update: 0, delete: 0 });
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.workspace.admin({ create: 0, read: 1, update: 1, delete: 1 });
+      contexts.workspace.member({ create: 0, read: 1, update: 0, delete: 0 });
       break;
     case 'project':
-      contexts.organization.ADMIN({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.project.ADMIN({ create: 0, read: 1, update: 1, delete: 1 });
-      contexts.project.MEMBER({ create: 0, read: 1, update: 0, delete: 0 });
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.project.admin({ create: 0, read: 1, update: 1, delete: 1 });
+      contexts.project.member({ create: 0, read: 1, update: 0, delete: 0 });
       break;
   }
 });
@@ -80,7 +80,7 @@ class AdaptedSubjectAdapter extends SubjectAdapter {
   adapt(s: any): Subject {
     return {
       // TODO: Temporarily retain parent checks... Remove logic once migration is complete and 'entity' property is added to subjects.
-      name: 'entity' in s ? s.entity.toLowerCase() : 'workspaceId' in s ? 'project' : 'organizationId' in s ? 'workspace' : 'organization',
+      name: 'entity' in s ? s.entity : 'workspaceId' in s ? 'project' : 'organizationId' in s ? 'workspace' : 'organization',
       key: s.id,
       ancestors: {
         organization: s.organizationId,

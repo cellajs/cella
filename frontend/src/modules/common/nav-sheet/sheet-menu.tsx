@@ -6,13 +6,13 @@ import { useNavigationStore } from '~/store/navigation';
 
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { UserMenuItem } from '~/types';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
 import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import ContentPlaceholder from '../content-placeholder';
 import { SheetMenuItem } from './sheet-menu-items';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
-import type { UserMenuItem } from '~/types';
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
@@ -29,18 +29,18 @@ export const menuSections: SectionItem[] = [
     storageType: 'organizations',
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
-    type: 'ORGANIZATION',
+    type: 'organization',
   },
   {
     storageType: 'workspaces',
     isSubmenu: false,
     createForm: <CreateWorkspaceForm dialog />,
-    type: 'WORKSPACE',
+    type: 'workspace',
   },
   {
     storageType: 'workspaces',
     isSubmenu: true,
-    type: 'PROJECT',
+    type: 'project',
   },
 ];
 
@@ -76,13 +76,14 @@ export const SheetMenu = memo(() => {
       .filter((el) => !el.isSubmenu)
       .map((section) => {
         const menuSection = menu[section.storageType as keyof UserMenu];
+
         return (
           <MenuSection
             entityType={section.type}
             key={section.type}
             sectionType={section.storageType}
-            data={menuSection}
             createForm={section.createForm}
+            data={menuSection}
           />
         );
       });

@@ -2,15 +2,14 @@
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-// import { useHotkeys } from '~/hooks/use-hot-keys';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from '~/modules/ui/command';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import type { TaskImpact } from '../create-task-form';
 import { HighIcon } from './impact-icons/high';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
 import { NoneIcon } from './impact-icons/none';
-import { dropdowner } from '~/modules/common/dropdowner/state';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -38,19 +37,10 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
-  // Open on key press
-  // useHotkeys([
-  //   [
-  //     'i',
-  //     () => {
-  //       if (focusedTaskId === task.id) setOpenPopover(true);
-  //     },
-  //   ],
-  // ]);
-
   return (
     <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
+        autoFocus={true}
         clearValue={setSearchValue}
         value={searchValue}
         onValueChange={(searchValue) => {
@@ -58,6 +48,7 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
           if ([0, 1, 2, 3].includes(Number.parseInt(searchValue))) {
             setSelectedImpact(impacts[Number.parseInt(searchValue)]);
             changeTaskImpact(Number.parseInt(searchValue) as TaskImpact);
+            dropdowner.remove();
             setSearchValue('');
             return;
           }
@@ -88,7 +79,7 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
               className="group rounded-md flex justify-between items-center w-full leading-normal"
             >
               <div className="flex items-center">
-                <Impact.icon title={Impact.label} className="mr-2 size-4 fill-muted-foreground group-hover:fill-primary" />
+                <Impact.icon title={Impact.label} className="mr-2 size-4 fill-current group-hover:fill-primary" />
                 <span>{Impact.label}</span>
               </div>
               <div className="flex items-center">

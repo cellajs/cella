@@ -103,14 +103,14 @@ const authRoutes = app
     const { email } = ctx.req.valid('json');
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // creating email verification token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
     const token = generateId(40);
     await db.insert(tokensTable).values({
       id: token,
-      type: 'EMAIL_VERIFICATION',
+      type: 'email_verification',
       userId: user.id,
       email,
       expiresAt: createDate(new TimeSpan(2, 'h')),
@@ -201,7 +201,7 @@ const authRoutes = app
     const token = generateId(40);
     await db.insert(tokensTable).values({
       id: token,
-      type: 'PASSWORD_RESET',
+      type: 'password_reset',
       userId: user.id,
       email,
       expiresAt: createDate(new TimeSpan(2, 'h')),
@@ -243,7 +243,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     // If the user is not found or the email is different from the token email
-    if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER', { userId: token.userId });
+    if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
 
     await auth.invalidateUserSessions(user.id);
 
@@ -275,7 +275,7 @@ const authRoutes = app
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     // If the user is not found or signed up with oauth
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'USER');
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
 
     const validPassword = await new Argon2id().verify(user.hashedPassword, password);
@@ -421,7 +421,7 @@ const authRoutes = app
       } = await githubUserResponse.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount('GITHUB', String(githubUser.id));
+      const [existingOauthAccount] = await findOauthAccount('github', String(githubUser.id));
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
 
@@ -475,7 +475,7 @@ const authRoutes = app
       // Check if user already exists
       const [existingUser] = await findUserByEmail(userEmail);
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, 'GITHUB', {
+        return await handleExistingUser(ctx, existingUser, 'github', {
           providerUser: {
             id: String(githubUser.id),
             email: githubUserEmail,
@@ -508,7 +508,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: 'GITHUB',
+            id: 'github',
             userId: String(githubUser.id),
           },
           isEmailVerified: primaryEmail.verified,
@@ -562,7 +562,7 @@ const authRoutes = app
       } = await response.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount('GOOGLE', user.sub);
+      const [existingOauthAccount] = await findOauthAccount('google', user.sub);
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
 
@@ -572,7 +572,7 @@ const authRoutes = app
       // Check if user already exists
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, 'GOOGLE', {
+        return await handleExistingUser(ctx, existingUser, 'google', {
           providerUser: {
             id: user.sub,
             email: user.email,
@@ -603,7 +603,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: 'GOOGLE',
+            id: 'google',
             userId: user.sub,
           },
           isEmailVerified: user.email_verified,
@@ -655,7 +655,7 @@ const authRoutes = app
       } = await response.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount('MICROSOFT', user.sub);
+      const [existingOauthAccount] = await findOauthAccount('microsoft', user.sub);
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
 
@@ -669,7 +669,7 @@ const authRoutes = app
       // Check if user already exists
       const [existingUser] = await findUserByEmail(user.email.toLowerCase());
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, 'MICROSOFT', {
+        return await handleExistingUser(ctx, existingUser, 'microsoft', {
           providerUser: {
             id: user.sub,
             email: user.email,
@@ -700,7 +700,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: 'MICROSOFT',
+            id: 'microsoft',
             userId: user.sub,
           },
           isEmailVerified: false,

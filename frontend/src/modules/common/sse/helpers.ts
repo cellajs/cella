@@ -1,5 +1,5 @@
-import type { UserMenuItem } from '~/types';
 import { useNavigationStore } from '~/store/navigation';
+import type { UserMenuItem } from '~/types';
 
 export const updateMenuItem = (updatedEntity: UserMenuItem) => {
   const menu = useNavigationStore.getState().menu;

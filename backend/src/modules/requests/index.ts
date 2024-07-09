@@ -27,9 +27,9 @@ const requestsRoutes = app
       .returning();
 
     // slack notifications
-    if (type === 'WAITLIST_REQUEST') await sendSlackNotification('to join the waitlist.', email);
-    if (type === 'NEWSLETTER_REQUEST') await sendSlackNotification('to become a donate or build member.', email);
-    if (type === 'CONTACT_REQUEST') await sendSlackNotification(`for contact from ${message}.`, email);
+    if (type === 'waitlist') await sendSlackNotification('to join the waitlist.', email);
+    if (type === 'newsletter') await sendSlackNotification('to become a donate or build member.', email);
+    if (type === 'contact') await sendSlackNotification(`for contact from ${message}.`, email);
 
     return ctx.json(
       {
