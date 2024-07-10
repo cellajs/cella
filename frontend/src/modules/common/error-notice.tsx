@@ -72,9 +72,9 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
             </CardDescription>
           </CardHeader>
           {error && (
-            <CardContent className="text-center whitespace-pre-wrap text-red-600 font-mono">
+            <CardContent className="whitespace-pre-wrap text-red-600 font-mono">
               {error.type && !showError && (
-                <Button variant="link" size="sm" onClick={() => setShowError(true)} className="whitespace-pre-wrap text-red-600">
+                <Button variant="link" size="sm" onClick={() => setShowError(true)} className="whitespace-pre-wrap w-full text-red-600">
                   <span>{t('common:error.show_details')}</span>
                   <ChevronDown size={12} className="ml-1" />
                 </Button>

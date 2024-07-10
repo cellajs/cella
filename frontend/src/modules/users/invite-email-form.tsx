@@ -113,7 +113,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
           {children}
           <Button type="submit" loading={isPending} className="relative">
             {!!form.getValues('emails')?.length && (
-              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-2">{form.getValues('emails')?.length}</Badge>
+              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{form.getValues('emails')?.length}</Badge>
             )}{' '}
             <Send size={16} className="mr-2" />
             {t('common:invite')}

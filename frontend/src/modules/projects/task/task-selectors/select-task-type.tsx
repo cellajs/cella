@@ -6,6 +6,7 @@ import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import type { TaskType } from '../create-task-form';
+import { inNumbersArray } from './helpers';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];
@@ -44,8 +45,8 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
         value={searchValue}
         onValueChange={(searchValue) => {
           // If the user taskTypes a number, select the Impact like useHotkeys
-          if ([0, 1, 2].includes(Number.parseInt(searchValue))) {
-            const searchNumber = Number.parseInt(searchValue);
+          if (inNumbersArray(3, searchValue)) {
+            const searchNumber = Number.parseInt(searchValue) - 1;
             if (changeTaskType) changeTaskType(taskTypes[searchNumber].value);
             setSelectedType(taskTypes[searchNumber]);
             dropdowner.remove();
@@ -54,6 +55,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
           }
           setSearchValue(searchValue);
         }}
+        wrapClassName="max-sm:hidden"
         className="leading-normal"
         placeholder={t('common:placeholder.type')}
       />
@@ -84,7 +86,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
               </div>
               <div className="flex items-center">
                 {selectedType?.value === Type.value && <Check size={16} className="text-success" />}
-                {!isSearching && <span className="max-xs:hidden text-xs ml-3 opacity-50 mr-1">{index}</span>}
+                {!isSearching && <span className="max-xs:hidden text-xs ml-3 opacity-50 mr-1">{index + 1}</span>}
               </div>
             </CommandItem>
           ))}

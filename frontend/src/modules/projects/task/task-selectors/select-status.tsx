@@ -1,18 +1,20 @@
 import { cva } from 'class-variance-authority';
 import { CommandEmpty } from 'cmdk';
-import { Check, type LucideIcon } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { taskStatuses } from '../../tasks-table/status';
+import { inNumbersArray } from './helpers';
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];
   status: string;
   action: string;
-  icon: LucideIcon;
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  icon: React.ElementType<any>;
 };
 
 export type TaskStatus = (typeof taskStatuses)[number]['value'];
@@ -20,8 +22,17 @@ export type TaskStatus = (typeof taskStatuses)[number]['value'];
 interface SelectStatusProps {
   taskStatus: TaskStatus;
   changeTaskStatus: (newStatus: number) => void;
-  inputPlaceholder: string;
 }
+
+export const statusTextColors = {
+  0: 'text-sky-500',
+  1: 'text-slate-300',
+  2: 'text-slate-500',
+  3: 'text-lime-500',
+  4: 'text-yellow-500',
+  5: 'text-orange-500',
+  6: 'text-green-500',
+};
 
 export const statusVariants = cva('', {
   variants: {
@@ -37,7 +48,7 @@ export const statusVariants = cva('', {
   },
 });
 
-const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: SelectStatusProps) => {
+const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
@@ -66,15 +77,14 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: Select
         autoFocus={true}
         value={searchValue}
         clearValue={setSearchValue}
+        wrapClassName="max-sm:hidden"
         onValueChange={(searchValue) => {
           // If the user types a number, select status like useHotkeys
-          if ([0, 1, 2, 3, 4, 5, 6].includes(Number.parseInt(searchValue))) {
-            handleStatusChangeClick(Number.parseInt(searchValue));
-            return;
-          }
+          if (inNumbersArray(7, searchValue)) return handleStatusChangeClick(Number.parseInt(searchValue) - 1);
+
           setSearchValue(searchValue);
         }}
-        placeholder={inputPlaceholder}
+        placeholder={t('common:placeholder.set_status')}
       />
       {!isSearching && <Kbd value="S" className="absolute top-3 right-2.5" />}
 
@@ -96,12 +106,12 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: Select
                 className="group rounded-md flex justify-between items-center w-full leading-normal"
               >
                 <div className="flex items-center">
-                  <status.icon size={16} className="mr-2 size-4 " />
-                  <span>{t(status.status)}</span>
+                  <status.icon title={status.status} className="mr-2 size-4 " />
+                  <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''} `}>{t(status.status)}</span>
                 </div>
                 <div className="flex items-center">
                   {selectedStatus.value === status.value && <Check size={16} className="text-success" />}
-                  {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
+                  {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
                 </div>
               </CommandItem>
             );

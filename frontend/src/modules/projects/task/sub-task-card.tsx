@@ -7,27 +7,23 @@ import { cn } from '~/lib/utils';
 import type { Task } from '~/modules/common/electric/electrify';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { useThemeStore } from '~/store/theme';
+import type { Mode } from '~/store/theme';
 import { TaskEditor } from './task-selectors/task-editor';
 
 const SubTask = ({
   task,
+  mode,
   handleChange,
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-}: { task: Task; handleChange: (field: keyof Task, value: any, taskId: string) => void }) => {
+}: { task: Task; mode: Mode; handleChange: (field: keyof Task, value: any, taskId: string) => void }) => {
   const { t } = useTranslation();
-  const { mode } = useThemeStore();
   const subTaskRef = useRef<HTMLDivElement>(null);
   const subContentRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const toggleEditorState = () => {
-    setIsEditing(!isEditing);
-  };
-
   useDoubleClick({
     onDoubleClick: () => {
-      toggleEditorState();
+      setIsEditing(!isEditing);
     },
     allowedTargets: ['p', 'div'],
     ref: subTaskRef,
@@ -56,7 +52,6 @@ const SubTask = ({
             markdown={task.markdown || ''}
             setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown, task.id)}
             setSummary={(newSummary) => handleChange('summary', newSummary, task.id)}
-            toggleEditorState={toggleEditorState}
             id={task.id}
           />
         )}

@@ -6,7 +6,7 @@ import type { Member } from '~/types';
 
 dayjs.extend(isBetween);
 
-export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced: boolean) => {
+export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced: boolean, table?: boolean) => {
   let acceptedCount = 0;
   let icedCount = 0;
 
@@ -20,10 +20,9 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
       if (showAccepted && showAcceptedByTime(task) && task.status === 6) return true;
       if (showIced && task.status === 0) return true;
       return task.status !== 0 && task.status !== 6;
-    })
-    .sort((a, b) => sortTaskOrder(a, b)); // Sort tasks
+    });
 
-  return { sortedTasks: filteredTasks, acceptedCount, icedCount };
+  return { sortedTasks: table ? filteredTasks : filteredTasks.sort((a, b) => sortTaskOrder(a, b)), acceptedCount, icedCount };
 };
 
 export const enhanceTasks = (tasks: Task[], labels: Label[], members: Member[]) => {

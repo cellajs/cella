@@ -16,28 +16,20 @@ import { useWorkspaceStore } from '~/store/workspace.ts';
 import { TaskCard } from '../task/task-card.tsx';
 import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
 import { impacts } from '../task/task-selectors/select-impact.tsx';
-import type { TaskStatus } from '../task/task-selectors/select-status';
+import { statusTextColors, type TaskStatus } from '../task/task-selectors/select-status';
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
 import { taskStatuses } from './status';
 
-const statusTextColors = {
-  0: 'text-sky-500',
-  1: 'text-slate-300',
-  2: 'text-slate-500',
-  3: 'text-lime-500',
-  4: 'text-yellow-500',
-  5: 'text-orange-500',
-  6: 'text-green-500',
-};
-
 const openTaskCardSheet = async (
   row: Task,
+  mode: 'dark' | 'light',
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
   handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
 ) => {
   sheet(
     <TaskCard
+      mode={mode}
       task={row}
       isExpanded={true}
       isSelected={false}
@@ -55,6 +47,7 @@ const openTaskCardSheet = async (
 };
 
 export const useColumns = (
+  mode: 'dark' | 'light',
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
   handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
@@ -78,7 +71,7 @@ export const useColumns = (
           tabIndex={tabIndex}
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
           onClick={() => {
-            openTaskCardSheet(row, handleTaskChange, handleTaskActionClick);
+            openTaskCardSheet(row, mode, handleTaskChange, handleTaskActionClick);
           }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>
@@ -121,9 +114,9 @@ export const useColumns = (
               return (
                 <>
                   {impact === null ? (
-                    <NotSelected className="size-4 mr-2 fill-current" aria-hidden="true" title="Set impact" />
+                    <NotSelected className="size-4 mr-2 fill-current" aria-hidden="true" title="Not selected" />
                   ) : (
-                    <impact.icon className="size-4 mr-2 fill-current" aria-hidden="true" title="Set impact" />
+                    <impact.icon className="size-4 mr-2 fill-current" aria-hidden="true" title={impact.label} />
                   )}
 
                   <span>{impact === null ? '-' : impact.label}</span>
@@ -138,9 +131,15 @@ export const useColumns = (
             visible: true,
             width: 140,
             renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (
-              <span className={statusTextColors[row.status as TaskStatus]}>{t(taskStatuses[row.status as TaskStatus].status)}</span>
-            ),
+            renderCell: ({ row }) => {
+              const status = taskStatuses[row.status as TaskStatus];
+              return (
+                <>
+                  <status.icon className="size-4 mr-2" aria-hidden="true" title={status.status} />
+                  <span className={statusTextColors[row.status as TaskStatus]}>{t(status.status)}</span>
+                </>
+              );
+            },
           },
           {
             key: 'subTasks',

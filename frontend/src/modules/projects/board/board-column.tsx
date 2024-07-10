@@ -35,6 +35,7 @@ import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-sta
 import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
+import { useThemeStore } from '~/store/theme';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -67,6 +68,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const containerRef = useRef(null);
 
   const { menu } = useNavigationStore();
+  const { mode } = useThemeStore();
   const user = useUserStore((state) => state.user);
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
@@ -108,6 +110,9 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     Electric.db.labels.liveMany({
       where: {
         project_id: project.id,
+      },
+      orderBy: {
+        last_used: 'desc',
       },
     }),
   ) as {
@@ -235,6 +240,19 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     Electric.db.labels.create({ data: newLabel });
   };
 
+  const updateLabel = (labelId: string, useCount: number) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    Electric.db.labels.update({
+      data: {
+        last_used: new Date(),
+        use_count: useCount,
+      },
+      where: {
+        id: labelId,
+      },
+    });
+  };
+
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
@@ -249,6 +267,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
           projectId={task.project_id}
           changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
           createLabel={createLabel}
+          updateLabel={updateLabel}
         />
       );
     else if (field === 'assigned_to')
@@ -264,7 +283,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
         <SelectStatus
           taskStatus={task.status as TaskStatus}
           changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)}
-          inputPlaceholder={t('common:placeholder.set_status')}
         />
       );
 
@@ -431,6 +449,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                         <TaskCard
                           key={task.id}
                           task={task}
+                          mode={mode}
                           isExpanded={expandedTasks[task.id] || false}
                           isSelected={selectedTasks.includes(task.id)}
                           isFocused={task.id === focusedTaskId}

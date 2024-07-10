@@ -33,12 +33,15 @@ import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import { useColumns } from './columns';
 import SelectProject from './project';
 import HeaderSelectStatus from './status';
+import { useThemeStore } from '~/store/theme';
+import Export from '~/modules/common/data-table/export.tsx';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
 export default function TasksTable() {
   const search = useSearch({ from: WorkspaceTableRoute.id });
 
+  const { mode } = useThemeStore();
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery } = useWorkspaceStore(
@@ -83,11 +86,7 @@ export default function TasksTable() {
       );
     else if (field === 'status')
       component = (
-        <SelectStatus
-          taskStatus={task.status as TaskStatus}
-          changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)}
-          inputPlaceholder={t('common:placeholder.set_status')}
-        />
+        <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
       );
 
     return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
@@ -95,7 +94,7 @@ export default function TasksTable() {
 
   // Search query options
   const q = searchQuery;
-  const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
+  const tableSort = sortColumns[0]?.columnKey as TasksSearch['tableSort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
   const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
@@ -106,14 +105,14 @@ export default function TasksTable() {
   const filters = useMemo(
     () => ({
       q,
-      sort,
+      tableSort,
       order,
       project_id: selectedProjects,
       status: selectedStatuses,
     }),
-    [q, sort, order, selectedStatuses, selectedProjects],
+    [q, tableSort, order, selectedStatuses, selectedProjects],
   );
-  useSaveInSearchParams(filters, { sort: 'created_at', order: 'desc' });
+  useSaveInSearchParams(filters, { tableSort: 'created_at', order: 'desc' });
 
   const createLabel = (newLabel: Label) => {
     if (!electric) return toast.error(t('common:local_db_inoperable'));
@@ -144,6 +143,7 @@ export default function TasksTable() {
           sheet.update(`task-card-preview-${updatedTask.id}`, {
             content: (
               <TaskCard
+                mode={mode}
                 task={updatedTask}
                 isExpanded={true}
                 isSelected={false}
@@ -176,6 +176,7 @@ export default function TasksTable() {
           sheet.update(`task-card-preview-${updatedTask.id}`, {
             content: (
               <TaskCard
+                mode={mode}
                 task={updatedTask}
                 isExpanded={true}
                 isSelected={false}
@@ -208,6 +209,7 @@ export default function TasksTable() {
           sheet.update(`task-card-preview-${updatedTask.id}`, {
             content: (
               <TaskCard
+                mode={mode}
                 task={updatedTask}
                 isExpanded={true}
                 isSelected={false}
@@ -238,6 +240,7 @@ export default function TasksTable() {
         sheet.update(`task-card-preview-${updatedTask.id}`, {
           content: (
             <TaskCard
+              mode={mode}
               task={updatedTask}
               isExpanded={true}
               isSelected={false}
@@ -250,7 +253,7 @@ export default function TasksTable() {
       });
   };
 
-  const [columns, setColumns] = useColumns(handleChange, handleTaskActionClick);
+  const [columns, setColumns] = useColumns(mode, handleChange, handleTaskActionClick);
 
   // TODO: Refactor this when Electric supports count
   const { results: tasks = [], updatedAt } = useLiveQuery(
@@ -274,14 +277,13 @@ export default function TasksTable() {
         ],
       },
       orderBy: {
-        [sort || 'created_at']: order,
+        [tableSort || 'created_at']: order || 'desc',
       },
     }),
   ) as {
     results: Task[] | undefined;
     updatedAt: Date | undefined;
   };
-
   const isLoading = !updatedAt;
   // const onResetFilters = () => {
   //   setSearchQuery('');
@@ -293,12 +295,10 @@ export default function TasksTable() {
     setSelectedTasks(Array.from(selectedRows));
   };
 
-  const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members);
+  const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members, true);
 
   useEffect(() => {
-    if (search.q) {
-      setSearchQuery(search.q);
-    }
+    if (search.q) setSearchQuery(search.q);
   }, []);
 
   useEffect(() => {
@@ -325,13 +325,20 @@ export default function TasksTable() {
         <HeaderSelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
         <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+        <Export
+          className="max-lg:hidden"
+          filename={`Tasks from ${projects.map((p) => p.name).join(' and ')}`}
+          columns={columns}
+          selectedRows={rows.filter((t) => selectedTasks.includes(t.id))}
+          fetchRows={async (limit) => rows.slice(0, limit)}
+        />
       </BoardHeader>
       <DataTable<Task>
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
           rowHeight: 42,
-          totalCount: tasks.length,
+          totalCount: rows.length,
           isLoading,
           isFiltered,
           selectedRows: new Set<string>(selectedTasks),

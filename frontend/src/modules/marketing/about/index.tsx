@@ -64,7 +64,7 @@ const About = () => {
       <div className="container max-w-none px-0">
         {/* Hero landing */}
         <Hero key={'hero'} title="about:title_1" subtitle="about:subtitle" text="about:text_1">
-          <div className="mb-8">
+          <div className="max-sm:hidden mb-8">
             <a href={config.company.githubUrl} className={cn(buttonVariants({ variant: 'glow', size: 'xl' }))} aria-label="Get started">
               {t('about:start_github.text')}
             </a>

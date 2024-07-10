@@ -220,6 +220,8 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             id: nanoid(),
             organizationId: organization.id,
             projectId: project.id,
+            lastUsed: faker.date.past(),
+            useCount: Math.floor(Math.random() * 20) + 1,
             name,
             color: faker.internet.color(),
           };
