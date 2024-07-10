@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'electric-sql/react';
-import { FilterX, PanelTopClose, Plus, Settings, Tag, Trash, XSquare } from 'lucide-react';
+import { FilterX, PanelTopClose, Plus, Trash, XSquare } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -19,6 +19,7 @@ import { TooltipButton } from '../../../common/tooltip-button';
 import { Badge } from '../../../ui/badge';
 import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
+import WorkspaceActions from './header-actions';
 
 const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: React.ReactNode }) => {
   const { t } = useTranslation();
@@ -101,10 +102,10 @@ const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: R
               )}
             </Button>
           </TooltipButton>
-          <TooltipButton toolTipContent={t('common:add_project')}>
+          <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
             <Button variant="plain" onClick={handleAddProjects}>
               <Plus size={16} />
-              <span className="max-sm:hidden ml-1">{t('common:add')}</span>
+              <span className="max-lg:hidden ml-1">{t('common:add')}</span>
             </Button>
           </TooltipButton>
         </div>
@@ -141,17 +142,7 @@ const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: R
 
       <BoardSearch />
       {children}
-      <TooltipButton className="max-xs:hidden" toolTipContent={t('common:manage_labels')}>
-        <Button variant="outline" onClick={openLabelsSheet}>
-          <Tag size={16} />
-          <span className="ml-1 max-lg:hidden">{t('common:labels')}</span>
-        </Button>
-      </TooltipButton>
-      <TooltipButton toolTipContent={t('common:workspace_settings')}>
-        <Button variant="outline" onClick={openSettingsSheet}>
-          <Settings size={16} />
-        </Button>
-      </TooltipButton>
+      <WorkspaceActions createNewProject={handleAddProjects} openSettingsSheet={openSettingsSheet} openLabelsSheet={openLabelsSheet} />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />
     </StickyBox>
