@@ -34,6 +34,7 @@ import { useColumns } from './columns';
 import SelectProject from './project';
 import HeaderSelectStatus from './status';
 import { useThemeStore } from '~/store/theme';
+import Export from '~/modules/common/data-table/export.tsx';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -85,10 +86,7 @@ export default function TasksTable() {
       );
     else if (field === 'status')
       component = (
-        <SelectStatus
-          taskStatus={task.status as TaskStatus}
-          changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)}
-        />
+        <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
       );
 
     return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
@@ -327,6 +325,13 @@ export default function TasksTable() {
         <HeaderSelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
         <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+        <Export
+          className="max-lg:hidden"
+          filename={`Tasks from ${projects.map((p) => p.name).join(' and ')}`}
+          columns={columns}
+          selectedRows={rows.filter((t) => selectedTasks.includes(t.id))}
+          fetchRows={async (limit) => rows.slice(0, limit)}
+        />
       </BoardHeader>
       <DataTable<Task>
         {...{
