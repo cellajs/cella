@@ -53,7 +53,7 @@ export default function TasksTable() {
     }),
   );
 
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_by'));
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
@@ -115,7 +115,7 @@ export default function TasksTable() {
     }),
     [q, tableSort, order, selectedStatuses, selectedProjects],
   );
-  useSaveInSearchParams(filters, { tableSort: 'created_by', order: 'desc' });
+  useSaveInSearchParams(filters, { tableSort: 'created_at', order: 'desc' });
 
   const createLabel = (newLabel: Label) => {
     if (!electric) return toast.error(t('common:local_db_inoperable'));
@@ -334,7 +334,7 @@ export default function TasksTable() {
           columns: columns.filter((column) => column.visible),
           rows,
           rowHeight: 42,
-          totalCount: tasks.length,
+          totalCount: rows.length,
           isLoading,
           isFiltered,
           selectedRows: new Set<string>(selectedTasks),
