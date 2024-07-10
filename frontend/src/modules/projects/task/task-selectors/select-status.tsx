@@ -22,7 +22,6 @@ export type TaskStatus = (typeof taskStatuses)[number]['value'];
 interface SelectStatusProps {
   taskStatus: TaskStatus;
   changeTaskStatus: (newStatus: number) => void;
-  inputPlaceholder: string;
 }
 
 export const statusTextColors = {
@@ -49,7 +48,7 @@ export const statusVariants = cva('', {
   },
 });
 
-const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: SelectStatusProps) => {
+const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
@@ -85,7 +84,7 @@ const SelectStatus = ({ taskStatus, inputPlaceholder, changeTaskStatus }: Select
 
           setSearchValue(searchValue);
         }}
-        placeholder={inputPlaceholder}
+        placeholder={t('common:placeholder.set_status')}
       />
       {!isSearching && <Kbd value="S" className="absolute top-3 right-2.5" />}
 
