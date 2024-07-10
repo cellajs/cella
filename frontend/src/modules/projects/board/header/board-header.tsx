@@ -19,7 +19,7 @@ import { TooltipButton } from '../../../common/tooltip-button';
 import { Badge } from '../../../ui/badge';
 import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
-import WorkspaceActions from './header-actions';
+import WorkspaceActions from './board-header-actions';
 
 const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: React.ReactNode }) => {
   const { t } = useTranslation();
