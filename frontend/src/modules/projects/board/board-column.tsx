@@ -283,7 +283,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
         <SelectStatus
           taskStatus={task.status as TaskStatus}
           changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)}
-          inputPlaceholder={t('common:placeholder.set_status')}
         />
       );
 

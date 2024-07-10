@@ -286,10 +286,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                     onClick={(event) => {
                       dropdowner(
                         <AssignMembers users={members} value={value as Member[]} triggerWidth={bounds.width - 3} changeAssignedTo={onChange} />,
-                        {
-                          id: `assign_to-${defaultId}`,
-                          trigger: event.currentTarget,
-                        },
+                        { id: `assign_to-${defaultId}`, trigger: event.currentTarget },
                       );
                     }}
                   >
@@ -433,12 +430,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                                   onChange(newStatus);
                                   onSubmit(form.getValues());
                                 }}
-                                inputPlaceholder={t('common:placeholder.create_with_status')}
                               />,
-                              {
-                                id: `status-${defaultId}`,
-                                trigger: event.currentTarget,
-                              },
+                              { id: `status-${defaultId}`, trigger: event.currentTarget },
                             );
                           }}
                         >
