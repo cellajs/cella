@@ -31,6 +31,7 @@ import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
+import { taskStatuses } from '../tasks-table/status.tsx';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
@@ -99,7 +100,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
   }, [handleCloseForm]);
 
   useHotkeys([['Escape', handleHotKeysKeyPress]]);
-
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -406,7 +406,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
               disabled={!form.formState.isDirty}
               className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'} [&:not(.absolute)]:active:translate-y-0`}
             >
-              <span>{t('common:create')}</span>
+              <span>
+                {t('common:create')} {form.getValues('status') === 1 ? '' : ` & ${taskStatuses[form.getValues('status')].status}`}
+              </span>
             </Button>
             {form.formState.isDirty && (
               <FormField
@@ -425,13 +427,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                           onClick={(event) => {
                             dropdowner(
                               <SelectStatus
-                                taskStatus={1}
-                                changeTaskStatus={(newStatus) => {
-                                  onChange(newStatus);
-                                  onSubmit(form.getValues());
-                                }}
+                                taskStatus={form.getValues('status') as TaskStatus}
+                                changeTaskStatus={(newStatus) => onChange(newStatus)}
                               />,
-                              { id: `status-${defaultId}`, trigger: event.currentTarget },
+                              {
+                                id: `status-${defaultId}`,
+                                trigger: event.currentTarget,
+                              },
                             );
                           }}
                         >
