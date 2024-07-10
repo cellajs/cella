@@ -36,6 +36,7 @@ import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
 import { useThemeStore } from '~/store/theme';
+import { isSubTaskData } from '../task/sub-task-card';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -280,10 +281,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       );
     else if (field === 'status')
       component = (
-        <SelectStatus
-          taskStatus={task.status as TaskStatus}
-          changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)}
-        />
+        <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
       );
 
     return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
@@ -342,16 +340,16 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     return combine(
       monitorForElements({
         canMonitor({ source }) {
-          return source.data.type === 'task';
+          return source.data.type === 'task' || source.data.type === 'subTask';
         },
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
           const sourceData = source.data;
           if (!target) return;
           const targetData = target.data;
+          const edge: Edge | null = extractClosestEdge(targetData);
           // Drag a task
           if (isTaskData(sourceData) && isTaskData(targetData)) {
-            const edge: Edge | null = extractClosestEdge(targetData);
             const relativeTask = await Electric?.db.tasks.findFirst({
               where: {
                 sort_order: { [edge === 'top' ? 'gt' : 'lt']: targetData.order },
@@ -375,6 +373,34 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                 sort_order: newOrder,
                 // Define drag a task in same or different column
                 ...(sourceData.item.project_id !== targetData.item.project_id && { project_id: targetData.item.project_id }),
+              },
+              where: {
+                id: sourceData.item.id,
+              },
+            });
+          }
+          if (isSubTaskData(sourceData) && isSubTaskData(targetData)) {
+            const relativeTask = await Electric?.db.tasks.findFirst({
+              where: {
+                sort_order: { [edge === 'top' ? 'lt' : 'gt']: targetData.order },
+                project_id: targetData.item.project_id,
+              },
+              orderBy: {
+                sort_order: edge === 'top' ? 'desc' : 'asc',
+              },
+            });
+            let newOrder: number;
+            if (!relativeTask || relativeTask.sort_order === targetData.order) {
+              newOrder = edge === 'top' ? targetData.order / 2 : targetData.order + 1;
+            } else if (relativeTask.id === sourceData.item.id) {
+              newOrder = sourceData.item.sort_order;
+            } else {
+              newOrder = (relativeTask.sort_order + targetData.order) / 2;
+            }
+            // Update order of dragged task
+            Electric?.db.tasks.update({
+              data: {
+                sort_order: newOrder,
               },
               where: {
                 id: sourceData.item.id,
