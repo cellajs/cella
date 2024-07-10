@@ -22,6 +22,7 @@
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
     "electric:generate": "drizzle-kit generate --config drizzle.config.electric.ts",
     "electric:generate:custom": "drizzle-kit generate --config drizzle.config.electric.ts --custom",
+    "electric:migrate": "drizzle-kit migrate --config drizzle.config.electric.ts",
     "generate": "pnpm run generate:pg && pnpm run electric:generate",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio --config drizzle.config.ts",
