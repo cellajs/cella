@@ -21,8 +21,8 @@ const App = () => {
             <AppNav />
             <SSE />
             <AppContent />
-            <Sheeter />
             <Dialoger />
+            <Sheeter />
             <DropDowner />
           </SSEProvider>
         </ElectricProvider>

@@ -35,27 +35,25 @@ const DialogContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { container?: HTMLElement | null; hideClose?: boolean }
 >(({ className, children, container, hideClose, ...props }, ref) => {
   const renderContent = () => (
-    <DialogOverlay>
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(
-          'overflow-x-clip overflow-y-clip bg-background mt-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 relative z-[160] grid w-[95vw] gap-4 border p-6 shadow-lg duration-200 rounded-lg mx-auto',
-          className,
-        )}
-        {...props}
-      >
-        {children}
-        {!hideClose && (
-          <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none">
-            <X className="h-6 w-6" strokeWidth={1.25} />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
-      </DialogPrimitive.Content>
-    </DialogOverlay>
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        'overflow-x-clip overflow-y-clip bg-background mt-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 relative z-[160] grid w-[95vw] gap-4 border p-6 shadow-lg duration-200 rounded-lg mx-auto',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      {!hideClose && (
+        <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none">
+          <X className="h-6 w-6" strokeWidth={1.25} />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      )}
+    </DialogPrimitive.Content>
   );
   // EDIT: only wrap in Overlay if container is not provided
-  return <DialogPortal container={container}>{renderContent()}</DialogPortal>;
+  return <DialogPortal container={container}>{container ? renderContent() : <DialogOverlay> {renderContent()}</DialogOverlay>}</DialogPortal>;
 });
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
