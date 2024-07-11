@@ -70,7 +70,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
 
   const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
-  const user = useUserStore((state) => state.user);
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
@@ -120,69 +119,23 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     results: Label[] | undefined;
   };
 
-  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, labels, members);
+  const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
+    let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const handleChange = (field: keyof Task, value: any, taskId: string) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    const db = Electric.db;
-    if (field === 'assigned_to' && Array.isArray(value)) {
-      const assignedTo = value.map((user) => user.id);
-      db.tasks.update({
-        data: {
-          assigned_to: assignedTo,
-          modified_at: new Date(),
-          modified_by: user.id,
-        },
-        where: {
-          id: taskId,
-        },
-      });
-      return;
-    }
+    if (field === 'impact')
+      component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
+    else if (field === 'labels')
+      component = <SetLabels value={task.virtualLabels} organizationId={task.organization_id} projectId={task.project_id} />;
+    else if (field === 'assigned_to') component = <AssignMembers projectId={task.project_id} value={task.virtualAssignedTo} />;
+    else if (field === 'status')
+      component = (
+        <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
+      );
 
-    // TODO: Review this
-    if (field === 'labels' && Array.isArray(value)) {
-      const labels = value.map((label) => label.id);
-      db.tasks.update({
-        data: {
-          labels,
-          modified_at: new Date(),
-          modified_by: user.id,
-        },
-        where: {
-          id: taskId,
-        },
-      });
-      return;
-    }
-    if (field === 'status') {
-      const newOrder = getTaskOrder(taskId, value, tasks);
-      db.tasks.update({
-        data: {
-          status: value,
-          ...(newOrder && { sort_order: newOrder }),
-          modified_at: new Date(),
-          modified_by: user.id,
-        },
-        where: {
-          id: taskId,
-        },
-      });
-      return;
-    }
-
-    db.tasks.update({
-      data: {
-        [field]: value,
-        modified_at: new Date(),
-        modified_by: user.id,
-      },
-      where: {
-        id: taskId,
-      },
-    });
+    return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
   };
+
+  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, labels, members);
 
   const setTaskExpanded = (taskId: string, isExpanded: boolean) => {
     setExpandedTasks((prevState) => ({
@@ -233,58 +186,37 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     if (selected) return setSelectedTasks([...selectedTasks, taskId]);
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
+  const handleChange = (field: keyof Task, value: string | number | null, taskId: string) => {
+    const Electric = useElectric();
+    const user = useUserStore((state) => state.user);
+    if (!Electric) return toast.error('common:local_db_inoperable');
+    const db = Electric.db;
+    if (field === 'status' && typeof value === 'number') {
+      const newOrder = getTaskOrder(taskId, value, tasks);
+      db.tasks.update({
+        data: {
+          status: value,
+          ...(newOrder && { sort_order: newOrder }),
+          modified_at: new Date(),
+          modified_by: user.id,
+        },
+        where: {
+          id: taskId,
+        },
+      });
+      return;
+    }
 
-  const createLabel = (newLabel: Label) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // TODO: Implement the following
-    // Save the new label to the database
-    Electric.db.labels.create({ data: newLabel });
-  };
-
-  const updateLabel = (labelId: string, useCount: number) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    Electric.db.labels.update({
+    db.tasks.update({
       data: {
-        last_used: new Date(),
-        use_count: useCount,
+        [field]: value,
+        modified_at: new Date(),
+        modified_by: user.id,
       },
       where: {
-        id: labelId,
+        id: taskId,
       },
     });
-  };
-
-  const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
-    let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
-
-    if (field === 'impact')
-      component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
-    else if (field === 'labels')
-      component = (
-        <SetLabels
-          labels={labels}
-          value={task.virtualLabels}
-          organizationId={task.organization_id}
-          projectId={task.project_id}
-          changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
-          createLabel={createLabel}
-          updateLabel={updateLabel}
-        />
-      );
-    else if (field === 'assigned_to')
-      component = (
-        <AssignMembers
-          users={members}
-          value={task.virtualAssignedTo}
-          changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
-        />
-      );
-    else if (field === 'status')
-      component = (
-        <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
-      );
-
-    return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
   };
 
   const handleTaskFormClick = () => {

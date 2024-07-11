@@ -43,8 +43,7 @@ interface TaskProps {
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
+  handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void;
   handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
   setIsExpanded?: (exp: boolean) => void;
   handleTaskSelect?: (selected: boolean, taskId: string) => void;

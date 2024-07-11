@@ -23,8 +23,7 @@ import { taskStatuses } from './status';
 const openTaskCardSheet = async (
   row: Task,
   mode: 'dark' | 'light',
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
+  handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void,
   handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
 ) => {
   sheet(
@@ -48,14 +47,13 @@ const openTaskCardSheet = async (
 
 export const useColumns = (
   mode: 'dark' | 'light',
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  handleTaskChange: (field: keyof Task, value: any, taskId: string) => void,
+  handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void,
   handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
 ) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { projects } = useWorkspaceStore();
-
+  const { setFocusedTaskId } = useWorkspaceStore();
   const mobileColumns: ColumnOrColumnGroup<Task>[] = [
     CheckboxColumn,
     {
@@ -71,6 +69,7 @@ export const useColumns = (
           tabIndex={tabIndex}
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
           onClick={() => {
+            setFocusedTaskId(row.id);
             openTaskCardSheet(row, mode, handleTaskChange, handleTaskActionClick);
           }}
         >

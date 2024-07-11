@@ -3,11 +3,15 @@ import { Check, Dot, History } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from '~/lib/utils.ts';
-import type { Label } from '../../../common/electric/electrify.ts';
+import { type Task, useElectric, type Label } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
+import { toast } from 'sonner';
+import { useUserStore } from '~/store/user.ts';
+import { useWorkspaceStore } from '~/store/workspace.ts';
+import { useLiveQuery } from 'electric-sql/react';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -15,26 +19,84 @@ export const badgeStyle = (color?: string | null) => {
 };
 
 interface SetLabelsProps {
-  labels: Label[];
   value: Label[];
   organizationId: string;
   projectId: string;
-  changeLabels: (labels: Label[]) => void;
-  createLabel: (label: Label) => void;
   triggerWidth?: number;
-  updateLabel?: (labelId: string, useCount: number) => void;
+  creationValueChange?: (labels: Label[]) => void;
+  taskUpdateCallback?: (task: Task) => void;
 }
 
-const SetLabels = ({ value, changeLabels, createLabel, updateLabel, projectId, organizationId, labels, triggerWidth = 280 }: SetLabelsProps) => {
+const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creationValueChange, triggerWidth = 280 }: SetLabelsProps) => {
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const Electric = useElectric()!;
   const { t } = useTranslation();
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
 
+  const user = useUserStore((state) => state.user);
+  const { focusedTaskId } = useWorkspaceStore();
   const isSearching = searchValue.length > 0;
+
+  const { results: labels = [] } = useLiveQuery(
+    Electric.db.labels.liveMany({
+      where: {
+        project_id: projectId,
+      },
+      orderBy: {
+        last_used: 'desc',
+      },
+    }),
+  ) as {
+    results: Label[] | undefined;
+  };
+
   const searchedLabels: Label[] = useMemo(() => {
     if (isSearching) return labels.filter((l) => l.name.includes(searchValue));
     return [];
   }, [searchValue, labels]);
+
+  const createLabel = (newLabel: Label) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    // TODO: Implement the following
+    // Save the new label to the database
+    Electric.db.labels.create({ data: newLabel });
+  };
+
+  const updateTaskLabels = (labels: Label[]) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    if (!focusedTaskId) return;
+    const db = Electric.db;
+    const labelsIds = labels.map((l) => l.id);
+    db.tasks
+      .update({
+        data: {
+          labels: labelsIds,
+          modified_at: new Date(),
+          modified_by: user.id,
+        },
+        where: {
+          id: focusedTaskId,
+        },
+      })
+      .then((updatedTask) => {
+        if (taskUpdateCallback) taskUpdateCallback(updatedTask as Task);
+      });
+    return;
+  };
+
+  const updateLabel = (labelId: string, useCount: number) => {
+    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    Electric.db.labels.update({
+      data: {
+        last_used: new Date(),
+        use_count: useCount,
+      },
+      where: {
+        id: labelId,
+      },
+    });
+  };
 
   const handleSelectClick = (value?: string) => {
     if (!value) return;
@@ -43,15 +105,17 @@ const SetLabels = ({ value, changeLabels, createLabel, updateLabel, projectId, o
     if (existingLabel) {
       const updatedLabels = selectedLabels.filter((label) => label.name !== value);
       setSelectedLabels(updatedLabels);
-      changeLabels(updatedLabels);
+      if (creationValueChange) return creationValueChange(updatedLabels);
+      updateTaskLabels(updatedLabels);
+      updateLabel(existingLabel.id, existingLabel.use_count + 1);
       return;
     }
     const newLabel = labels.find((label) => label.name === value);
     if (newLabel) {
       const updatedLabels = [...selectedLabels, newLabel];
       setSelectedLabels(updatedLabels);
-      changeLabels(updatedLabels);
-      updateLabel?.(newLabel.id, newLabel.use_count + 1);
+      if (creationValueChange) return creationValueChange(updatedLabels);
+      updateTaskLabels(updatedLabels);
       return;
     }
   };
@@ -67,13 +131,13 @@ const SetLabels = ({ value, changeLabels, createLabel, updateLabel, projectId, o
       organization_id: organizationId,
       project_id: projectId,
       last_used: new Date(),
-      use_count: 0,
+      use_count: 1,
     };
 
     createLabel(newLabel);
     const updatedLabels = [...selectedLabels, newLabel];
     setSelectedLabels(updatedLabels);
-    changeLabels(updatedLabels);
+    updateTaskLabels(updatedLabels);
   };
 
   const renderLabels = (labels: Label[]) => {
@@ -114,7 +178,6 @@ const SetLabels = ({ value, changeLabels, createLabel, updateLabel, projectId, o
         onValueChange={(searchValue) => {
           // If the label types a number, select the label like useHotkeys
           if (inNumbersArray(8, searchValue)) return handleSelectClick(labels[Number.parseInt(searchValue) - 1]?.name);
-
           setSearchValue(searchValue.toLowerCase());
         }}
         clearValue={setSearchValue}

@@ -81,7 +81,6 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
         onValueChange={(searchValue) => {
           // If the user types a number, select status like useHotkeys
           if (inNumbersArray(7, searchValue)) return handleStatusChangeClick(Number.parseInt(searchValue) - 1);
-
           setSearchValue(searchValue);
         }}
         placeholder={t('common:placeholder.set_status')}

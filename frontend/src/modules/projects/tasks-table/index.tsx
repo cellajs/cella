@@ -60,6 +60,23 @@ export default function TasksTable() {
   const [labels, setLabels] = useState<Label[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
 
+  const taskUpdateCallback = (updatedTask: Task) => {
+    const [task] = enhanceTasks([updatedTask], labels, members);
+    sheet.update(`task-card-preview-${task.id}`, {
+      content: (
+        <TaskCard
+          mode={mode}
+          task={task}
+          isExpanded={true}
+          isSelected={false}
+          isFocused={true}
+          handleTaskChange={handleChange}
+          handleTaskActionClick={handleTaskActionClick}
+        />
+      ),
+    });
+  };
+
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
@@ -68,22 +85,14 @@ export default function TasksTable() {
     else if (field === 'labels')
       component = (
         <SetLabels
-          labels={labels}
           value={task.virtualLabels}
           organizationId={task.organization_id}
           projectId={task.project_id}
-          changeLabels={(newLabels) => handleChange('labels', newLabels, task.id)}
-          createLabel={createLabel}
+          taskUpdateCallback={taskUpdateCallback}
         />
       );
     else if (field === 'assigned_to')
-      component = (
-        <AssignMembers
-          users={members}
-          value={task.virtualAssignedTo}
-          changeAssignedTo={(newMembers) => handleChange('assigned_to', newMembers, task.id)}
-        />
-      );
+      component = <AssignMembers projectId={task.project_id} value={task.virtualAssignedTo} taskUpdateCallback={taskUpdateCallback} />;
     else if (field === 'status')
       component = (
         <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
@@ -113,84 +122,10 @@ export default function TasksTable() {
     [q, tableSort, order, selectedStatuses, selectedProjects],
   );
   useSaveInSearchParams(filters, { tableSort: 'created_at', order: 'desc' });
-
-  const createLabel = (newLabel: Label) => {
-    if (!electric) return toast.error(t('common:local_db_inoperable'));
-    // TODO: Implement the following
-    // Save the new label to the database
-    electric.db.labels.create({ data: newLabel });
-  };
-
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const handleChange = (field: keyof Task, value: any, taskId: string) => {
+  const handleChange = (field: keyof Task, value: string | number | null, taskId: string) => {
     if (!electric) return toast.error(t('common:local_db_inoperable'));
     const db = electric.db;
-    if (field === 'assigned_to' && Array.isArray(value)) {
-      const assignedTo = value.map((user) => user.id);
-      db.tasks
-        .update({
-          data: {
-            assigned_to: assignedTo,
-          },
-          where: {
-            id: taskId,
-            modified_at: new Date(),
-            modified_by: user.id,
-          },
-        })
-        .then((resp) => {
-          const [updatedTask] = enhanceTasks([resp as Task], labels, members);
-          sheet.update(`task-card-preview-${updatedTask.id}`, {
-            content: (
-              <TaskCard
-                mode={mode}
-                task={updatedTask}
-                isExpanded={true}
-                isSelected={false}
-                isFocused={true}
-                handleTaskChange={handleChange}
-                handleTaskActionClick={handleTaskActionClick}
-              />
-            ),
-          });
-        });
-      return;
-    }
-
-    // TODO: Review this
-    if (field === 'labels' && Array.isArray(value)) {
-      const labels = value.map((label) => label.id);
-      db.tasks
-        .update({
-          data: {
-            labels,
-            modified_at: new Date(),
-            modified_by: user.id,
-          },
-          where: {
-            id: taskId,
-          },
-        })
-        .then((resp) => {
-          const [updatedTask] = enhanceTasks([resp as Task], labels, members);
-          sheet.update(`task-card-preview-${updatedTask.id}`, {
-            content: (
-              <TaskCard
-                mode={mode}
-                task={updatedTask}
-                isExpanded={true}
-                isSelected={false}
-                isFocused={true}
-                handleTaskChange={handleChange}
-                handleTaskActionClick={handleTaskActionClick}
-              />
-            ),
-          });
-        });
-
-      return;
-    }
-    if (field === 'status') {
+    if (field === 'status' && typeof value === 'number') {
       const newOrder = getTaskOrder(taskId, value, tasks);
       db.tasks
         .update({
@@ -204,22 +139,7 @@ export default function TasksTable() {
             id: taskId,
           },
         })
-        .then((resp) => {
-          const [updatedTask] = enhanceTasks([resp as Task], labels, members);
-          sheet.update(`task-card-preview-${updatedTask.id}`, {
-            content: (
-              <TaskCard
-                mode={mode}
-                task={updatedTask}
-                isExpanded={true}
-                isSelected={false}
-                isFocused={true}
-                handleTaskChange={handleChange}
-                handleTaskActionClick={handleTaskActionClick}
-              />
-            ),
-          });
-        });
+        .then((updatedTask) => taskUpdateCallback(updatedTask as Task));
 
       return;
     }
@@ -235,22 +155,7 @@ export default function TasksTable() {
           id: taskId,
         },
       })
-      .then((resp) => {
-        const [updatedTask] = enhanceTasks([resp as Task], labels, members);
-        sheet.update(`task-card-preview-${updatedTask.id}`, {
-          content: (
-            <TaskCard
-              mode={mode}
-              task={updatedTask}
-              isExpanded={true}
-              isSelected={false}
-              isFocused={true}
-              handleTaskChange={handleChange}
-              handleTaskActionClick={handleTaskActionClick}
-            />
-          ),
-        });
-      });
+      .then((updatedTask) => taskUpdateCallback(updatedTask as Task));
   };
 
   const [columns, setColumns] = useColumns(mode, handleChange, handleTaskActionClick);
