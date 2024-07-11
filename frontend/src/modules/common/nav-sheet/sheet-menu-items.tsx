@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useParams, useSearch } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
@@ -17,6 +17,14 @@ interface SheetMenuItemProps {
 
 export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults }: SheetMenuItemProps) => {
   const { t } = useTranslation();
+  const idOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
+  const project = useSearch({ strict: false, select: (search) => search.project });
+  let path = '';
+  if (type === 'organization') path = `/${item.slug}`;
+  if (type === 'workspace') path = `/workspaces/${item.slug}`;
+  if (type === 'project') path = `/workspaces/${mainItemId}/board?project=${item.slug}`;
+
+  const isActive = project ? project === item.slug : idOrSlug === item.slug;
 
   return (
     <Link
@@ -26,11 +34,10 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
           mainItemId ? 'h-12 relative menu-item-sub' : 'h-14'
         } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
         className,
+        isActive && 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary',
       )}
       aria-label={item.name}
-      to={type === 'organization' ? '/$idOrSlug' : '/workspaces/$idOrSlug'}
-      params={{ idOrSlug: mainItemId ? mainItemId : item.slug }}
-      activeProps={{ className: 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary' }}
+      to={path}
     >
       <AvatarWrap
         className={`${mainItemId ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} z-[1] items-center`}
@@ -46,7 +53,6 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
         <div className={`max-sm:hidden text-muted-foreground ${mainItemId ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type)}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
-            {/* On new creation cant access role REDO */}
             {item.submenu
               ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}`
               : item.membership.role
