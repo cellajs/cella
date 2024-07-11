@@ -58,7 +58,7 @@ const ElectricProvider = ({ children }: Props) => {
         // Connect to the server with the user's JWT token.
         await electric.connect(user.electricJWTToken);
 
-        if (debug) {
+        if (config.mode === 'development') {
           const { addToolbar } = await import('@electric-sql/debug-toolbar');
           addToolbar(electric);
 
