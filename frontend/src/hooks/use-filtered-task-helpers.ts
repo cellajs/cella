@@ -30,7 +30,7 @@ export const enhanceTasks = (tasks: Task[], labels: Label[], members: Member[]) 
     .filter((task) => !task.parent_id)
     .map((task) => ({
       ...task,
-      subTasks: tasks.filter((t) => t.parent_id === task.id),
+      subTasks: tasks.filter((t) => t.parent_id === task.id).sort((a, b) => sortTaskOrder(a, b, true)),
     }));
   return withSubtask.map((task) => {
     // TODO: This is a temporary solution to get the labels and assignedTo for the tasks

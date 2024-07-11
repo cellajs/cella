@@ -100,12 +100,12 @@ export function TaskCard({
     document.dispatchEvent(event);
   };
 
-  const dragIsOn = () => {
+  const dragEnd = () => {
     setClosestEdge(null);
     setDragOver(false);
   };
 
-  const dragIsOver = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
+  const isDragOver = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
     setDragOver(true);
     if (!isTaskData(source.data) || !isTaskData(self.data)) return;
     setClosestEdge(extractClosestEdge(self.data));
@@ -127,7 +127,7 @@ export function TaskCard({
         onDrop: () => setDragging(false),
       }),
       dropTargetForExternal({
-        element: element,
+        element,
       }),
       dropTargetForElements({
         element,
@@ -143,10 +143,10 @@ export function TaskCard({
             allowedEdges: ['top', 'bottom'],
           });
         },
-        onDragEnter: ({ self, source }) => dragIsOver({ self, source }),
-        onDrag: ({ self, source }) => dragIsOver({ self, source }),
-        onDragLeave: () => dragIsOn(),
-        onDrop: () => dragIsOn(),
+        onDragEnter: ({ self, source }) => isDragOver({ self, source }),
+        onDrag: ({ self, source }) => isDragOver({ self, source }),
+        onDragLeave: () => dragEnd(),
+        onDrop: () => dragEnd(),
       }),
     );
   }, [task]);
@@ -165,10 +165,10 @@ export function TaskCard({
       ref={taskRef}
       className={cn(
         `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
-        focus-visible:none border-l-2 ${isFocused ? 'border-l-primary is-focused' : 'border-l-transparent'}
-        via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} ${dragOver ? 'bg-card/20' : ''} ${
-          isExpanded ? 'is-expanded' : 'is-collapsed'
-        }`,
+        focus-visible:none border-l-2 via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} 
+        ${dragOver ? 'bg-card/20' : ''} 
+        ${isFocused ? 'border-l-primary is-focused' : 'border-l-transparent'}
+        ${isExpanded ? 'is-expanded' : 'is-collapsed'}`,
         variants({
           status: task.status as TaskStatus,
         }),
