@@ -10,10 +10,9 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { Checkbox } from '../../ui/checkbox.tsx';
 import { impacts } from './task-selectors/select-impact.tsx';
-import { type TaskStatus, statusVariants } from './task-selectors/select-status.tsx';
+import { type TaskStatus, statusVariants, taskStatuses } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
 import './style.css';
-import { taskStatuses } from '../tasks-table/status.tsx';
 
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';

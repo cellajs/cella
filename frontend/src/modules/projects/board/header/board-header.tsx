@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'electric-sql/react';
-import { FilterX, PanelTopClose, Plus, Trash, XSquare } from 'lucide-react';
+import { PanelTopClose, Plus, Trash, XSquare } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -20,8 +20,9 @@ import { Badge } from '../../../ui/badge';
 import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
 import WorkspaceActions from './board-header-actions';
+import TableCount from '~/modules/common/data-table/table-count';
 
-const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: React.ReactNode }) => {
+const BoardHeader = ({ mode, children, totalCount }: { mode: 'table' | 'board'; children?: React.ReactNode; totalCount?: number }) => {
   const { t } = useTranslation();
 
   const { setFocusView } = useNavigationStore();
@@ -91,35 +92,29 @@ const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: R
 
   return (
     <StickyBox enabled={mode === 'table'} className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
-      {!selectedTasks.length && !searchQuery.length && (
+      {!selectedTasks.length && (
         <div className="flex gap-2">
-          <TooltipButton toolTipContent={t('common:page_view')}>
-            <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
-              {showPageHeader ? (
-                <PanelTopClose size={16} />
-              ) : (
-                <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
-              )}
-            </Button>
-          </TooltipButton>
-          <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
-            <Button variant="plain" onClick={handleAddProjects}>
-              <Plus size={16} />
-              <span className="max-lg:hidden ml-1">{t('common:add')}</span>
-            </Button>
-          </TooltipButton>
-        </div>
-      )}
-      {!!searchQuery.length && (
-        <div className="inline-flex align-center text-muted-foreground text-sm  items-center gap-2 max-sm:hidden">
-          <TooltipButton toolTipContent={t('common:clear_filter')}>
-            <Button variant="ghost" onClick={() => setSearchQuery('')}>
-              <FilterX size={16} />
-              <span className="ml-1">{t('common:clear')}</span>
-            </Button>
-          </TooltipButton>
-          {/* TODO: Add this after creating new store */}
-          {/* <div className="w-max mx-2">{`${tasksCount} ${tasksCount > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}</div> */}
+          {!searchQuery.length && (
+            <TooltipButton toolTipContent={t('common:page_view')}>
+              <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
+                {showPageHeader ? (
+                  <PanelTopClose size={16} />
+                ) : (
+                  <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+                )}
+              </Button>
+            </TooltipButton>
+          )}
+          {mode === 'table' ? (
+            <TableCount count={totalCount} type="task" isFiltered={!!searchQuery} onResetFilters={() => setSearchQuery('')} />
+          ) : (
+            <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
+              <Button variant="plain" onClick={handleAddProjects}>
+                <Plus size={16} />
+                <span className="max-lg:hidden ml-1">{t('common:add')}</span>
+              </Button>
+            </TooltipButton>
+          )}
         </div>
       )}
       {!!selectedTasks.length && (

@@ -29,10 +29,8 @@ import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 import { SelectImpact, impacts } from './task-selectors/select-impact.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
-import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
+import SelectStatus, { type TaskStatus, taskStatuses } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
-import { taskStatuses } from '../tasks-table/status.tsx';
-
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
 

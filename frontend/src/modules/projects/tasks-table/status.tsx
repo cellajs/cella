@@ -1,27 +1,12 @@
 import { Check, ChevronDown } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { Button } from '~/modules/ui/button';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { IcedIcon } from '../task/task-selectors/status-icons/iced';
-import { StartedIcon } from '../task/task-selectors/status-icons/started';
-import { UnstartedIcon } from '../task/task-selectors/status-icons/unstarted';
-import { FinishedIcon } from '../task/task-selectors/status-icons/finished';
-import { DeliveredIcon } from '../task/task-selectors/status-icons/delivered';
-import { ReviewedIcon } from '../task/task-selectors/status-icons/reviewed';
-import { AcceptedIcon } from '../task/task-selectors/status-icons/accepted';
-
-export const taskStatuses = [
-  { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
-  { value: 1, action: 'start', status: 'unstarted', icon: UnstartedIcon },
-  { value: 2, action: 'finish', status: 'started', icon: StartedIcon },
-  { value: 3, action: 'deliver', status: 'finished', icon: FinishedIcon },
-  { value: 4, action: 'review', status: 'delivered', icon: DeliveredIcon },
-  { value: 5, action: 'accept', status: 'reviewed', icon: ReviewedIcon },
-  { value: 6, action: 'accepted', status: 'accepted', icon: AcceptedIcon },
-] as const;
+import { taskStatuses } from '../task/task-selectors/select-status';
+import { inNumbersArray } from '../task/task-selectors/helpers';
 
 interface Props {
   selectedStatuses: number[];
@@ -33,9 +18,6 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
 
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-
-  const isSearching = searchValue.length > 0;
-  const indexArray = [...Array(taskStatuses.length).keys()];
 
   const handleSelectClick = (value: number) => {
     const existingStatus = selectedStatuses.find((status) => status === value);
@@ -52,14 +34,6 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
     }
   };
 
-  // TODO prevent search results from blick
-  useMemo(() => {
-    if (!indexArray.includes(Number.parseInt(searchValue))) return;
-    handleSelectClick(taskStatuses[Number.parseInt(searchValue)].value);
-    setSearchValue('');
-    return;
-  }, [searchValue]);
-
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
@@ -71,11 +45,12 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
         >
           {selectedStatuses.length ? (
             <div className="flex items-center gap-1">
-              {selectedStatuses.map((status) => {
+              {selectedStatuses.sort().map((status) => {
                 const currentStatus = taskStatuses.find((s) => s.value === status);
                 if (!currentStatus) return null;
+                if (selectedStatuses.length > 3) return <currentStatus.icon title={currentStatus.status} />;
                 return (
-                  <div key={currentStatus.value} className="flex items-center gap-1">
+                  <div className="flex items-center gap-1" key={status}>
                     <currentStatus.icon title={currentStatus.status} />
                     <span>{t(currentStatus.status)}</span>
                   </div>
@@ -95,13 +70,22 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
-            onValueChange={setSearchValue}
+            onValueChange={(searchValue) => {
+              // If the user types a number, select status like useHotkeys
+              if (inNumbersArray(7, searchValue)) return handleSelectClick(Number.parseInt(searchValue) - 1);
+              setSearchValue(searchValue);
+            }}
             clearValue={setSearchValue}
             className="leading-normal"
             placeholder={t('common:placeholder.select_status')}
           />
-          {!isSearching && <Kbd value="A" className="absolute top-3 right-2.5" />}
+          {!searchValue.length && <Kbd value="S" className="absolute top-3 right-2.5" />}
           <CommandList>
+            {!!searchValue.length && (
+              <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+                {t('common:no_resource_found', { resource: t('common:status').toLowerCase() })}
+              </CommandEmpty>
+            )}
             {taskStatuses && (
               <CommandGroup>
                 {taskStatuses.map((status, index) => (
@@ -119,7 +103,7 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
                     </div>
                     <div className="flex items-center">
                       {selectedStatuses.some((s) => s === status.value) && <Check size={16} className="text-success" />}
-                      {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
+                      {!searchValue.length && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
                     </div>
                   </CommandItem>
                 ))}

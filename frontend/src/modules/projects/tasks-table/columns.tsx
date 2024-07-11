@@ -16,9 +16,8 @@ import { useWorkspaceStore } from '~/store/workspace.ts';
 import { TaskCard } from '../task/task-card.tsx';
 import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
 import { impacts } from '../task/task-selectors/select-impact.tsx';
-import { statusTextColors, type TaskStatus } from '../task/task-selectors/select-status';
+import { statusTextColors, type TaskStatus, taskStatuses } from '../task/task-selectors/select-status';
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
-import { taskStatuses } from './status';
 
 const openTaskCardSheet = async (
   row: Task,

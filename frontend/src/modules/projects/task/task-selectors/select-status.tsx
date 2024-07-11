@@ -6,8 +6,24 @@ import { useTranslation } from 'react-i18next';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
-import { taskStatuses } from '../../tasks-table/status';
+import { IcedIcon } from './status-icons/iced';
+import { StartedIcon } from './status-icons/started';
+import { UnstartedIcon } from './status-icons/unstarted';
+import { FinishedIcon } from './status-icons/finished';
+import { DeliveredIcon } from './status-icons/delivered';
+import { ReviewedIcon } from './status-icons/reviewed';
+import { AcceptedIcon } from './status-icons/accepted';
 import { inNumbersArray } from './helpers';
+
+export const taskStatuses = [
+  { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
+  { value: 1, action: 'start', status: 'unstarted', icon: UnstartedIcon },
+  { value: 2, action: 'finish', status: 'started', icon: StartedIcon },
+  { value: 3, action: 'deliver', status: 'finished', icon: FinishedIcon },
+  { value: 4, action: 'review', status: 'delivered', icon: DeliveredIcon },
+  { value: 5, action: 'accept', status: 'reviewed', icon: ReviewedIcon },
+  { value: 6, action: 'accepted', status: 'accepted', icon: AcceptedIcon },
+] as const;
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];

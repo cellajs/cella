@@ -226,7 +226,7 @@ export default function TasksTable() {
 
   return (
     <>
-      <BoardHeader mode="table">
+      <BoardHeader mode="table" totalCount={rows.length}>
         <HeaderSelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
         <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
