@@ -7,6 +7,8 @@ import ReloadPrompt from '~/modules/common/reload-prompt';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { DownAlert } from './down-alert';
+import { Dialoger } from '~/modules/common/dialoger';
+import { Sheeter } from '~/modules/common/sheeter';
 
 function Root() {
   // Lazy load
@@ -17,7 +19,8 @@ function Root() {
       <ScrollRestoration />
       <Outlet />
       <ReloadPrompt />
-
+      <Dialoger />
+      <Sheeter />
       <Toaster richColors toastOptions={{ className: 'max-sm:mb-16' }} />
       <DownAlert />
 

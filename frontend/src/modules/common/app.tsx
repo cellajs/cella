@@ -6,10 +6,10 @@ import SSE from '~/modules/common/sse';
 import ElectricProvider from './electric';
 import ErrorNotice from './error-notice';
 import { SSEProvider } from './sse/provider';
-
 import { Dialoger } from '~/modules/common/dialoger';
 import { Sheeter } from '~/modules/common/sheeter';
 import { DropDowner } from '~/modules/common/dropdowner';
+
 const App = () => {
   return (
     <div id="app-root">
@@ -21,8 +21,8 @@ const App = () => {
             <AppNav />
             <SSE />
             <AppContent />
-            <Dialoger />
             <Sheeter />
+            <Dialoger />
             <DropDowner />
           </SSEProvider>
         </ElectricProvider>

@@ -24,6 +24,9 @@ import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute 
 import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
+import { Dialoger } from '~/modules/common/dialoger';
+import { Sheeter } from '~/modules/common/sheeter';
+import { DropDowner } from '~/modules/common/dropdowner';
 
 // Lazy load main App component, which is behind authentication
 const App = lazy(() => import('~/modules/common/app'));
@@ -43,6 +46,19 @@ export const getAndSetMenu = async () => {
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
+});
+
+const publicRoute = createRoute({
+  id: 'public',
+  staticData: { pageTitle: '', isAuth: false },
+  component: () => (
+    <>
+      <Dialoger />
+      <Sheeter />
+      <DropDowner />
+    </>
+  ),
+  getParentRoute: () => rootRoute,
 });
 
 const ErrorNoticeRoute = createRoute({
@@ -113,6 +129,7 @@ export const acceptInviteRoute = createRoute({
 });
 
 export const routeTree = rootRoute.addChildren([
+  publicRoute,
   AboutRoute,
   ContactRoute,
   LegalRoute,
