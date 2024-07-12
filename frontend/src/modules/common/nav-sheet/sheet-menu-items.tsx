@@ -16,7 +16,6 @@ interface SheetMenuItemProps {
 }
 
 export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchResults }: SheetMenuItemProps) => {
-  console.log('mainItemIdOrSlugOrSlug:', mainItemIdOrSlug);
   const { t } = useTranslation();
   const idOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
   const project = useSearch({ strict: false, select: (search) => search.project });

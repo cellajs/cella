@@ -39,7 +39,7 @@ export type Organization = Extract<InferResponseType<(typeof apiClient.organizat
 
 export type Request = Extract<InferResponseType<(typeof apiClient.requests)['$get']>, { data: unknown }>['data']['items'][number];
 
-export type Workspace = Extract<InferResponseType<(typeof apiClient.workspaces)[':idOrSlug']['$get']>, { data: unknown }>['data'];
+export type Workspace = Extract<InferResponseType<(typeof apiClient.workspaces)[':idOrSlug']['$get']>, { data: unknown }>['data']['workspace'];
 
 type EntityPageProps = 'id' | 'slug' | 'entity' | 'name' | 'createdAt' | 'thumbnailUrl' | 'bannerUrl' | 'organizationId';
 type BaseEntityPage = Pick<Omit<Project, 'entity'> & { entity: ContextEntity }, EntityPageProps>;
@@ -59,3 +59,5 @@ export type UserMenu = Extract<InferResponseType<(typeof apiClient.me.menu)['$ge
 export type UserMenuItem = NonNullable<
   Extract<InferResponseType<(typeof apiClient.me.menu)['$get']>, { data: unknown }>['data']['workspaces'][number]
 >;
+
+export type WorkspaceStoreMember = Member & { projectId: string | null };

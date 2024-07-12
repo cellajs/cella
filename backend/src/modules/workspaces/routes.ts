@@ -3,7 +3,7 @@ import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
-import { createWorkspaceBodySchema, updateWorkspaceBodySchema, workspaceSchema } from './schema';
+import { createWorkspaceBodySchema, updateWorkspaceBodySchema, workspaceSchema, workspaceWithProjectSchema } from './schema';
 
 class WorkspaceRoutesConfig {
   public createWorkspace = createRouteConfig({
@@ -51,7 +51,7 @@ class WorkspaceRoutesConfig {
         description: 'Workspace',
         content: {
           'application/json': {
-            schema: successWithDataSchema(workspaceSchema),
+            schema: successWithDataSchema(workspaceWithProjectSchema),
           },
         },
       },

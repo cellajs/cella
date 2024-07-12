@@ -1,7 +1,5 @@
 import { Check } from 'lucide-react';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getMembers } from '~/api/general';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -25,22 +23,18 @@ interface AssignMembersProps {
 const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChange, triggerWidth = 240 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const { focusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId, members } = useWorkspaceStore();
   const [selectedMembers, setSelectedMembers] = useState<Member[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  const { data: members } = useQuery({
-    queryKey: ['projects', 'members', projectId],
-    queryFn: () => getMembers({ idOrSlug: projectId, entityType: 'project' }).then((data) => data.items),
-    initialData: [],
-  });
-
-  const sortedMembers = members.sort((a, b) => {
-    const aSelected = selectedMembers.some((user) => user.id === a.id) ? 1 : 0;
-    const bSelected = selectedMembers.some((user) => user.id === b.id) ? 1 : 0;
-    return bSelected - aSelected;
-  });
+  const sortedMembers = members
+    .filter((m) => m.projectId === projectId)
+    .sort((a, b) => {
+      const aSelected = selectedMembers.some((user) => user.id === a.id) ? 1 : 0;
+      const bSelected = selectedMembers.some((user) => user.id === b.id) ? 1 : 0;
+      return bSelected - aSelected;
+    });
 
   const showedMembers = showAll ? sortedMembers : sortedMembers.slice(0, 8);
   const isSearching = searchValue.length > 0;

@@ -29,8 +29,8 @@ export const WorkspaceRoute = createRoute({
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
-    const workspace = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
-    useWorkspaceStore.getState().setWorkspace(workspace);
+    const workspaceData = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    useWorkspaceStore.getState().setWorkspace(workspaceData.workspace);
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {

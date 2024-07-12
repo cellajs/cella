@@ -1,11 +1,11 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
-import { getProjects } from '~/api/projects';
 import { getWorkspace } from '~/api/workspaces';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
+import type { Project } from '~/types';
 
 export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -13,32 +13,17 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
     queryFn: () => getWorkspace(idOrSlug),
   });
 
-export const workspaceProjectsQueryOptions = (workspaceId: string, organizationId: string) =>
-  queryOptions({
-    queryKey: ['projects', workspaceId],
-    queryFn: () =>
-      getProjects({
-        workspaceId,
-        organizationId,
-      }),
-    select: (data) =>
-      data.items
-        .filter((p) => p.membership && !p.membership.archived)
-        .sort((a, b) => {
-          if (a.membership === null || b.membership === null) return 0;
-          return a.membership.order - b.membership.order;
-        }),
-  });
-
 const WorkspacePage = () => {
-  const { showPageHeader, setProjects } = useWorkspaceStore();
+  const { showPageHeader, setProjects, setMembers } = useWorkspaceStore();
 
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
-  const workspace = workspaceQuery.data;
-
-  const projectsQuery = useSuspenseQuery(workspaceProjectsQueryOptions(workspace.id, workspace.organizationId));
-  setProjects(projectsQuery.data);
+  const workspace = workspaceQuery.data.workspace;
+  const projects = workspaceQuery.data.relatedProjects;
+  const workspaceMembers = workspaceQuery.data.workspaceMembers;
+  //TODO David fix this and project board update
+  setProjects(projects as Project[]);
+  setMembers(workspaceMembers);
 
   return (
     <FocusViewContainer>
