@@ -11,7 +11,9 @@ import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import { useNavigationStore } from '~/store/navigation';
 import type { DraggableItemData, UserMenuItem } from '~/types';
+import isBetween from 'dayjs/plugin/isBetween';
 
+dayjs.extend(isBetween);
 dayjs.extend(calendar);
 dayjs.extend(relativeTime);
 
@@ -149,4 +151,11 @@ export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 
     ...menu,
     [storage]: updatedStorage,
   };
+};
+
+export const recentlyUsed = (date: Date | null, days: number) => {
+  if (!date) return false;
+  const daysAgo = dayjs().subtract(days, 'day');
+  const today = dayjs();
+  return dayjs(date).isBetween(daysAgo, today, null, '[]');
 };

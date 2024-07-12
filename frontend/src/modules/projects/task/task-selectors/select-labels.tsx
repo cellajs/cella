@@ -1,17 +1,18 @@
 import { CommandEmpty } from 'cmdk';
-import { Check, Dot, History } from 'lucide-react';
+import { Check, Dot, History, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { nanoid } from '~/lib/utils.ts';
+import { nanoid, recentlyUsed } from '~/lib/utils.ts';
 import { type Task, useElectric, type Label } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '../../../ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
 import { toast } from 'sonner';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import { useLiveQuery } from 'electric-sql/react';
+import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -34,11 +35,12 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
 
+  const { changeColumn } = useWorkspaceUIStore();
   const user = useUserStore((state) => state.user);
-  const { focusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId, workspace } = useWorkspaceStore();
   const isSearching = searchValue.length > 0;
 
-  const { results: labels = [] } = useLiveQuery(
+  const { results: labels = [], updatedAt } = useLiveQuery(
     Electric.db.labels.liveMany({
       where: {
         project_id: projectId,
@@ -49,7 +51,18 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
     }),
   ) as {
     results: Label[] | undefined;
+    updatedAt: Date | undefined;
   };
+
+  const showedLabels = useMemo(() => {
+    if (selectedLabels.length > 8) return selectedLabels;
+    const nonSelectedLabels = labels.filter((label) => !selectedLabels.some((selected) => selected.id === label.id));
+    // save to recent labels all labels that used in past 3 days
+    changeColumn(workspace.id, projectId, {
+      recentLabels: labels.filter((l) => recentlyUsed(l.last_used, 3)),
+    });
+    return [...selectedLabels, ...nonSelectedLabels].slice(0, 8);
+  }, [selectedLabels, labels]);
 
   const searchedLabels: Label[] = useMemo(() => {
     if (isSearching) return labels.filter((l) => l.name.includes(searchValue));
@@ -140,32 +153,6 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
     updateTaskLabels(updatedLabels);
   };
 
-  const renderLabels = (labels: Label[]) => {
-    return (
-      <>
-        {labels.slice(0, 8).map((label, index) => (
-          <CommandItem
-            key={label.id}
-            value={label.name}
-            onSelect={(value) => {
-              handleSelectClick(value);
-            }}
-            className="group rounded-md flex justify-between items-center w-full leading-normal"
-          >
-            <div className="flex items-center gap-2">
-              {isSearching ? <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
-              <span>{label.name}</span>
-            </div>
-            <div className="flex items-center">
-              {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
-              {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
-            </div>
-          </CommandItem>
-        ))}
-      </>
-    );
-  };
-
   useEffect(() => {
     setSelectedLabels(value);
   }, [value]);
@@ -188,6 +175,11 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
       {!isSearching && <Kbd value="L" className="absolute top-3 right-2.5" />}
       <CommandList>
         <CommandGroup>
+          {!updatedAt && (
+            <CommandLoading>
+              <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
+            </CommandLoading>
+          )}
           {!isSearching ? (
             <>
               {labels.length === 0 && (
@@ -195,10 +187,48 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
                   {t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })}
                 </CommandEmpty>
               )}
-              {renderLabels(labels)}
+              {showedLabels.map((label, index) => (
+                <CommandItem
+                  key={label.id}
+                  value={label.name}
+                  onSelect={(value) => {
+                    handleSelectClick(value);
+                  }}
+                  className="group rounded-md flex justify-between items-center w-full leading-normal"
+                >
+                  <div className="flex items-center gap-2">
+                    {isSearching ? <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
+                    <span>{label.name}</span>
+                  </div>
+                  <div className="flex items-center">
+                    {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
+                    {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
+                  </div>
+                </CommandItem>
+              ))}
             </>
           ) : searchedLabels.length > 0 ? (
-            renderLabels(searchedLabels)
+            <>
+              {searchedLabels.map((label, index) => (
+                <CommandItem
+                  key={label.id}
+                  value={label.name}
+                  onSelect={(value) => {
+                    handleSelectClick(value);
+                  }}
+                  className="group rounded-md flex justify-between items-center w-full leading-normal"
+                >
+                  <div className="flex items-center gap-2">
+                    {isSearching ? <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
+                    <span>{label.name}</span>
+                  </div>
+                  <div className="flex items-center">
+                    {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
+                    {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
+                  </div>
+                </CommandItem>
+              ))}
+            </>
           ) : (
             <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} {...{ searchValue, labels }} />
           )}

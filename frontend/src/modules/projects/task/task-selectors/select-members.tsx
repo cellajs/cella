@@ -49,7 +49,6 @@ const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChan
 
   const changeAssignedTo = (members: Member[]) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    console.log(focusedTaskId);
     if (!focusedTaskId) return;
     const db = Electric.db;
     const assignedTo = members.map((user) => user.id);
