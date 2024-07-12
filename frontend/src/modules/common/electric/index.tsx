@@ -110,16 +110,20 @@ const ElectricProvider = ({ children }: Props) => {
     };
   }, [user]);
 
+  const closeAlert = () => {
+    setShowAlert(false);
+  };
+
   return (
     <>
       <BaseElectricProvider db={electric}>{children}</BaseElectricProvider>
-      {(electric === undefined || showAlert) && (
+      {showAlert && (
         <div className="fixed z-[300] max-sm:bottom-[4rem] bottom-0 border-0 p-4 flex w-full justify-center">
           <Alert variant="plain" className="border-0 w-auto">
-            <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={() => setShowAlert(false)}>
+            <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={closeAlert}>
               <X size={14} />
             </Button>
-            <AlertDescription className="pr-8 font-light flex items-center justify-center">
+            <AlertDescription className="pr-10 font-light flex items-center justify-center">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="ml-2">Initializing local database</span>
             </AlertDescription>

@@ -67,7 +67,7 @@ export function Sheeter() {
         <SheetPortal>
           <SheetContent className={`${existingSheet?.className ? existingSheet.className : sheet.className} items-start`}>
             <StickyBox
-              className={`${existingSheet?.title || sheet.title ? '' : 'hidden'} z-10 flex items-center justify-between bg-background py-4"`}
+              className={`${existingSheet?.title || sheet.title ? '' : 'hidden'} z-10 flex items-center justify-between bg-background py-4`}
             >
               <SheetTitle>
                 {existingSheet?.title ? existingSheet.title : typeof sheet.title === 'string' ? <span>{sheet.title}</span> : sheet.title}
