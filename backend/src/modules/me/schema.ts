@@ -20,6 +20,7 @@ const menuItemSchema = z.object({
   entity: z.enum(config.contextEntityTypes),
   membership: membershipInfoSchema,
   parentId: z.string().optional(),
+  parentSlug: z.string().optional(),
   organizationId: z.string().optional(),
 });
 

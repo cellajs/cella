@@ -10,19 +10,20 @@ import type { ContextEntity, UserMenuItem } from '~/types';
 interface SheetMenuItemProps {
   item: UserMenuItem;
   type: ContextEntity;
-  mainItemId?: string;
+  mainItemIdOrSlug?: string;
   className?: string;
   searchResults?: boolean;
 }
 
-export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults }: SheetMenuItemProps) => {
+export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchResults }: SheetMenuItemProps) => {
+  console.log('mainItemIdOrSlugOrSlug:', mainItemIdOrSlug);
   const { t } = useTranslation();
   const idOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
   const project = useSearch({ strict: false, select: (search) => search.project });
   let path = '';
   if (type === 'organization') path = `/${item.slug}`;
   if (type === 'workspace') path = `/workspaces/${item.slug}`;
-  if (type === 'project') path = `/workspaces/${mainItemId}/board?project=${item.slug}`;
+  if (type === 'project') path = `/workspaces/${mainItemIdOrSlug}/board?project=${item.slug}`;
 
   const isActive = project ? project === item.slug : idOrSlug === item.slug;
 
@@ -31,26 +32,26 @@ export const SheetMenuItem = ({ item, type, className, mainItemId, searchResults
       resetScroll={false}
       className={cn(
         `group ${
-          mainItemId ? 'h-12 relative menu-item-sub' : 'h-14'
+          mainItemIdOrSlug ? 'h-12 relative menu-item-sub' : 'h-14'
         } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
         className,
-        isActive && 'bg-accent/50 text-accent-foreground ring-primary/50 text-primary focus:ring-primary',
+        isActive && 'text-accent-foreground ring-primary/50 text-primary focus:ring-primary',
       )}
       aria-label={item.name}
       to={path}
     >
       <AvatarWrap
-        className={`${mainItemId ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} z-[1] items-center`}
+        className={`${mainItemIdOrSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} z-[1] items-center`}
         type={type}
         id={item.id}
         name={item.name}
         url={item.thumbnailUrl}
       />
       <div className="truncate py-2 flex flex-col justify-center text-left">
-        <div className={`truncate ${mainItemId ? 'max-sm:pt-1.5 text-sm sm:-mb-1 sm:-mt-0.5' : 'max-sm:pt-2.5 text-base'} leading-5`}>
+        <div className={`truncate ${mainItemIdOrSlug ? 'max-sm:pt-1.5 text-sm sm:-mb-1 sm:-mt-0.5' : 'max-sm:pt-2.5 text-base'} leading-5`}>
           {item.name}
         </div>
-        <div className={`max-sm:hidden text-muted-foreground ${mainItemId ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
+        <div className={`max-sm:hidden text-muted-foreground ${mainItemIdOrSlug ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type)}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {item.submenu
@@ -102,7 +103,13 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
       <>
         {filteredItems.map((item) => (
           <div key={item.id}>
-            <SheetMenuItem item={item} type={type} mainItemId={item.parentId} className={className} searchResults={searchResults} />
+            <SheetMenuItem
+              item={item}
+              type={type}
+              mainItemIdOrSlug={item.parentSlug || item.parentId}
+              className={className}
+              searchResults={searchResults}
+            />
             {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
               <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
             )}

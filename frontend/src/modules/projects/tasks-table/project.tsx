@@ -108,7 +108,15 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
                     <div className="flex items-center gap-3">
-                      <AvatarWrap type="project" id={project.id} name={project.name} url={project.thumbnailUrl} className="h-6 w-6 text-xs" />
+                      {/* Omit style background if projects will be without a color preference. */}
+                      <AvatarWrap
+                        type="project"
+                        id={project.id}
+                        name={project.name}
+                        url={project.thumbnailUrl}
+                        backgroundColor={project.color}
+                        className="h-6 w-6 text-xs"
+                      />
                       <span>{project.name}</span>
                     </div>
                     <div className="flex items-center">
