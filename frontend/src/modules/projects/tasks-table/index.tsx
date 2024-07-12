@@ -121,33 +121,18 @@ export default function TasksTable() {
     }),
     [q, tableSort, order, selectedStatuses, selectedProjects],
   );
+
   useSaveInSearchParams(filters, { tableSort: 'created_at', order: 'desc' });
+
   const handleChange = (field: keyof Task, value: string | number | null, taskId: string) => {
     if (!electric) return toast.error(t('common:local_db_inoperable'));
     const db = electric.db;
-    if (field === 'status' && typeof value === 'number') {
-      const newOrder = getTaskOrder(taskId, value, tasks);
-      db.tasks
-        .update({
-          data: {
-            status: value,
-            ...(newOrder && { sort_order: newOrder }),
-            modified_at: new Date(),
-            modified_by: user.id,
-          },
-          where: {
-            id: taskId,
-          },
-        })
-        .then((updatedTask) => taskUpdateCallback(updatedTask as Task));
-
-      return;
-    }
-
+    const newOrder = field === 'status' ? getTaskOrder(taskId, value, tasks) : null;
     db.tasks
       .update({
         data: {
           [field]: value,
+          ...(newOrder && { sort_order: newOrder }),
           modified_at: new Date(),
           modified_by: user.id,
         },
@@ -207,22 +192,25 @@ export default function TasksTable() {
   }, []);
 
   useEffect(() => {
-    const fetchLabelsAndMembers = async () => {
-      const fetchedLabels = await electric.db.labels.findMany({
+    const projectsFetchFrom = selectedProjects.length ? projects.filter((p) => selectedProjects.includes(p.id)) : projects;
+    electric.db.labels
+      .findMany({
         where: {
           project_id: {
-            in: projects.map((p) => p.id),
+            in: projectsFetchFrom.map((p) => p.id),
           },
         },
-      });
-      setLabels(fetchedLabels as Label[]);
-      const fetchedMembers = await Promise.all(projects.map((p) => getMembers({ idOrSlug: p.id, entityType: 'project' }).then(({ items }) => items)));
+      })
+      .then((labels) => setLabels(labels as Label[]));
 
-      setMembers(fetchedMembers.flat() as Member[]);
-    };
-
-    fetchLabelsAndMembers();
-  }, []);
+    Promise.all(projectsFetchFrom.map((p) => getMembers({ idOrSlug: p.id, entityType: 'project' }).then(({ items }) => items))).then(
+      (fetchedMembers) => {
+        const flattenedMembers = fetchedMembers.flat();
+        const uniqueMembers = flattenedMembers.filter((member, index) => flattenedMembers.findIndex((m) => m.id === member.id) === index);
+        setMembers(uniqueMembers as Member[]);
+      },
+    );
+  }, [projects, selectedProjects]);
 
   return (
     <>

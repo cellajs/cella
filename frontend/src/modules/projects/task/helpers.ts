@@ -10,7 +10,8 @@ export const sortTaskOrder = (task1: Pick<Task, 'status' | 'sort_order'>, task2:
   return 0;
 };
 
-export const getTaskOrder = (taskId: string, newStatus: number, tasks: Task[]) => {
+export const getTaskOrder = (taskId: string, newStatus: string | number | null, tasks: Task[]) => {
+  if (typeof newStatus !== 'number') return;
   const currentTask = tasks.find((t) => t.id === taskId);
   if (!currentTask) return;
   // Get list of tasks with new status

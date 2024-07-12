@@ -21,9 +21,9 @@ import { useUserStore } from '~/store/user';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/index.ts';
-import ContentPlaceholder from '../../common/content-placeholder';
-import { type Label, type Task, useElectric } from '../../common/electric/electrify';
-import { sheet } from '../../common/sheeter/state';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify';
+import { sheet } from '~/modules/common/sheeter/state';
 import { ProjectSettings } from '../project-settings';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '../task/create-task-form';
 import { getTaskOrder } from '../task/helpers';
@@ -191,25 +191,11 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     const user = useUserStore((state) => state.user);
     if (!Electric) return toast.error('common:local_db_inoperable');
     const db = Electric.db;
-    if (field === 'status' && typeof value === 'number') {
-      const newOrder = getTaskOrder(taskId, value, tasks);
-      db.tasks.update({
-        data: {
-          status: value,
-          ...(newOrder && { sort_order: newOrder }),
-          modified_at: new Date(),
-          modified_by: user.id,
-        },
-        where: {
-          id: taskId,
-        },
-      });
-      return;
-    }
-
+    const newOrder = field === 'status' ? getTaskOrder(taskId, value, tasks) : null;
     db.tasks.update({
       data: {
         [field]: value,
+        ...(newOrder && { sort_order: newOrder }),
         modified_at: new Date(),
         modified_by: user.id,
       },
