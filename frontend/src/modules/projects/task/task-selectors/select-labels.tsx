@@ -7,8 +7,8 @@ import { nanoid, recentlyUsed } from '~/lib/utils.ts';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import { type Label, type Task, useElectric } from '../../../common/electric/electrify.ts';
-import { Kbd } from '../../../common/kbd.tsx';
+import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify.ts';
+import { Kbd } from '~/modules/common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '../../../ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
@@ -31,29 +31,30 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
   const { t } = useTranslation();
+  const { changeColumn } = useWorkspaceUIStore();
+  const user = useUserStore((state) => state.user);
+  const { focusedTaskId, workspace, labels } = useWorkspaceStore();
+
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [isRemoving, setIsRemoving] = useState(false);
 
-  const { changeColumn } = useWorkspaceUIStore();
-  const user = useUserStore((state) => state.user);
-  const { focusedTaskId, workspace, labels } = useWorkspaceStore();
-  const projectLabels = labels.filter((l) => l.project_id === projectId);
+  const [orderedLabels] = useState(labels.filter((l) => l.project_id === projectId).sort((a, b) => b.last_used.getTime() - a.last_used.getTime()));
+
   const isSearching = searchValue.length > 0;
 
   const showedLabels = useMemo(() => {
-    if (searchValue.length) return projectLabels.filter((l) => l.name.toLowerCase().includes(searchValue));
+    if (searchValue.length) return orderedLabels.filter((l) => l.name.toLowerCase().includes(searchValue));
     if (isRemoving) return selectedLabels;
     // save to recent labels all labels that used in past 3 days
     changeColumn(workspace.id, projectId, {
-      recentLabels: projectLabels.filter((l) => recentlyUsed(l.last_used, 3)),
+      recentLabels: orderedLabels.filter((l) => recentlyUsed(l.last_used, 3)),
     });
-    return projectLabels.slice(0, 8);
-  }, [projectLabels, isRemoving, searchValue]);
+    return orderedLabels.slice(0, 8);
+  }, [isRemoving, searchValue]);
 
   const createLabel = (newLabel: Label) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // TODO: Implement the following
     // Save the new label to the database
     Electric.db.labels.create({ data: newLabel });
   };
@@ -110,6 +111,7 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
       const updatedLabels = [...selectedLabels, newLabel];
       setSelectedLabels(updatedLabels);
       if (creationValueChange) return creationValueChange(updatedLabels);
+      updateLabel(newLabel.id, newLabel.use_count + 1);
       updateTaskLabels(updatedLabels);
       return;
     }
@@ -134,9 +136,6 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
     setSelectedLabels(updatedLabels);
     updateTaskLabels(updatedLabels);
   };
-  useEffect(() => {
-    showedLabels;
-  }, [value]);
 
   useEffect(() => {
     setSelectedLabels(value);
