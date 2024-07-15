@@ -442,5 +442,6 @@
   "status": "Status",
   "manage": "Manage",
   "placeholder.type_name": "Type name ...",
-  "checkout": "Checkout"
+  "checkout": "Checkout",
+  "show_all": "Show all"
 }

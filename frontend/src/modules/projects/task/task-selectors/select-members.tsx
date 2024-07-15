@@ -99,14 +99,14 @@ const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChan
         className="leading-normal"
         placeholder={t('common:placeholder.assign')}
       />
-      {!isSearching && <Kbd value="A" className="absolute top-3 right-2.5" />}
+      {!isSearching && <Kbd value="A" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
         {!!searchValue.length && (
           <CommandEmpty className="flex justify-center items-center p-2 text-sm">
             {t('common:no_resource_found', { resource: t('common:members').toLowerCase() })}
           </CommandEmpty>
         )}
-        {members && (
+        {sortedMembers && (
           <CommandGroup>
             {showedMembers.map((user, index) => (
               <CommandItem
@@ -126,13 +126,13 @@ const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChan
 
                 <div className="flex items-center">
                   {selectedMembers.some((u) => u.id === user.id) && <Check size={16} className="text-success" />}
-                  {!isSearching && !showAll && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
+                  {!isSearching && !showAll && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
                 </div>
               </CommandItem>
             ))}
-            {members.length > 7 && (
-              <CommandItem className="flex items-center justify-center " onSelect={() => setShowAll(!showAll)}>
-                <span className="text-xs opacity-30">{`${showAll ? 'Hide' : 'Show all'}`}</span>
+            {sortedMembers.length > 7 && (
+              <CommandItem className="flex items-center justify-center opacity-80 hover:opacity-100" onSelect={() => setShowAll(!showAll)}>
+                <span className="text-xs">{showAll ? t('common:hide') : t('common:show_all')}</span>
               </CommandItem>
             )}
           </CommandGroup>

@@ -101,7 +101,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
         }}
         placeholder={t('common:placeholder.set_status')}
       />
-      {!isSearching && <Kbd value="S" className="absolute top-3 right-2.5" />}
+      {!isSearching && <Kbd value="S" className="max-sm:hidden absolute top-3 right-2.5" />}
 
       <CommandList>
         {!!searchValue.length && (
@@ -126,7 +126,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
                 </div>
                 <div className="flex items-center">
                   {selectedStatus.value === status.value && <Check size={16} className="text-success" />}
-                  {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
+                  {!isSearching && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
                 </div>
               </CommandItem>
             );

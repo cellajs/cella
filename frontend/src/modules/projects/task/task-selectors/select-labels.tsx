@@ -164,11 +164,10 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
           setSearchValue(searchValue.toLowerCase());
         }}
         clearValue={setSearchValue}
-        wrapClassName="max-sm:hidden"
         className="leading-normal"
         placeholder={t('common:placeholder.search_labels')}
       />
-      {!isSearching && <Kbd value="L" className="absolute top-3 right-2.5" />}
+      {!isSearching && <Kbd value="L" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
         <CommandGroup>
           {!updatedAt && (
@@ -197,7 +196,7 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
               </div>
               <div className="flex items-center">
                 {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
-                {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
+                {!isSearching && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
               </div>
             </CommandItem>
           ))}
@@ -225,7 +224,7 @@ const CommandItemCreate = ({ searchValue, labels, onSelect }: CommandItemCreateP
 
   // BUG: whenever a space is appended, the Create-Button will not be shown.
   return (
-    <CommandItem key={`${searchValue}`} value={`${searchValue}`} className="text-sm m-1 flex justify-center items-center" onSelect={onSelect}>
+    <CommandItem key={`${searchValue}`} value={`${searchValue}`} className="text-sm flex justify-center items-center" onSelect={onSelect}>
       {t('common:create_resource', { resource: t('common:label').toLowerCase() })}
       <Badge className="ml-2 px-2 py-0 font-light" variant="plain">
         {searchValue}

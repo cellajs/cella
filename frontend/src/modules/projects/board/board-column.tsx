@@ -68,6 +68,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const scrollableRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
 
+  const { user } = useUserStore();
   const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceStore();
@@ -187,11 +188,11 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
   const handleChange = (field: keyof Task, value: string | number | null, taskId: string) => {
-    const Electric = useElectric();
-    const user = useUserStore((state) => state.user);
     if (!Electric) return toast.error('common:local_db_inoperable');
+
     const db = Electric.db;
     const newOrder = field === 'status' ? getTaskOrder(taskId, value, tasks) : null;
+    
     db.tasks.update({
       data: {
         [field]: value,

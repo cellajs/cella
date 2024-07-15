@@ -58,7 +58,7 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
         className="leading-normal"
         placeholder={t('common:placeholder.impact')}
       />
-      {!isSearching && <Kbd value="I" className="absolute top-3 right-2.5" />}
+      {!isSearching && <Kbd value="I" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
         {!!searchValue.length && (
           <CommandEmpty className="flex justify-center items-center p-2 text-sm">
@@ -88,7 +88,7 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
               </div>
               <div className="flex items-center">
                 {selectedImpact?.value === Impact.value && <Check size={16} className="text-success" />}
-                {!isSearching && <span className="max-xs:hidden text-xs ml-3 opacity-50 mr-1">{index + 1}</span>}
+                {!isSearching && <span className="max-sm:hidden text-xs ml-3 opacity-50 mr-1">{index + 1}</span>}
               </div>
             </CommandItem>
           ))}

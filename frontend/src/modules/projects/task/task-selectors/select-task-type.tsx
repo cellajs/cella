@@ -59,7 +59,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
         className="leading-normal"
         placeholder={t('common:placeholder.type')}
       />
-      {!isSearching && <Kbd value="T" className="absolute top-3 right-2.5" />}
+      {!isSearching && <Kbd value="T" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
         {!!searchValue.length && (
           <CommandEmpty className="flex justify-center items-center p-2 text-sm">
@@ -86,7 +86,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
               </div>
               <div className="flex items-center">
                 {selectedType?.value === Type.value && <Check size={16} className="text-success" />}
-                {!isSearching && <span className="max-xs:hidden text-xs ml-3 opacity-50 mr-1">{index + 1}</span>}
+                {!isSearching && <span className="max-sm:hidden text-xs ml-3 opacity-50 mr-1">{index + 1}</span>}
               </div>
             </CommandItem>
           ))}

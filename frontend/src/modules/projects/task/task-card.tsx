@@ -182,7 +182,7 @@ export function TaskCard({
                 aria-label="Set type"
                 variant="ghost"
                 size="xs"
-                className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+                className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
               >
                 {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
               </Button>
@@ -196,7 +196,7 @@ export function TaskCard({
                     className="inline summary before:!content-none after:!content-none prose font-light text-start max-w-none"
                   />
 
-                  <div className="opacity-50 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 text-xs inline ml-1 font-light gap-1">
+                  <div className="opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 text-xs inline ml-1 font-light gap-1">
                     <Button variant="link" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1">
                       {t('common:more').toLowerCase()}
                     </Button>
@@ -227,7 +227,7 @@ export function TaskCard({
           <div className="flex items-end justify-between gap-1">
             {handleTaskSelect && (
               <Checkbox
-                className="group-hover/task:opacity-100 mb-1.5 border-foreground/25 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-70"
+                className="group-hover/task:opacity-100 mb-1.5 border-foreground/40 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-80"
                 checked={isSelected}
                 onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
               />
@@ -239,7 +239,7 @@ export function TaskCard({
                 aria-label="Set impact"
                 variant="ghost"
                 size="xs"
-                className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+                className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
               >
                 {selectedImpact === null ? (
                   <NotSelected className="size-4 fill-current" aria-hidden="true" title="Set impact" />
@@ -258,7 +258,7 @@ export function TaskCard({
               aria-label="Set labels"
               variant="ghost"
               size="xs"
-              className="relative flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-70 group-[.is-focused]/task:opacity-70 opacity-50"
+              className="relative flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
             >
               <div className="flex truncate flex-wrap gap-[.07rem]">
                 {task.virtualLabels.length > 0 ? (
@@ -276,7 +276,7 @@ export function TaskCard({
                     );
                   })
                 ) : (
-                  <Tag size={16} className="opacity-50" />
+                  <Tag size={16} className="opacity-60" />
                 )}
               </div>
             </Button>
@@ -288,7 +288,7 @@ export function TaskCard({
                 aria-label="Assign"
                 variant="ghost"
                 size="xs"
-                className="relative flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-70"
+                className="relative flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
               >
                 {task.virtualAssignedTo.length > 0 ? (
                   <AvatarGroup limit={3}>
@@ -300,7 +300,7 @@ export function TaskCard({
                     <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
                   </AvatarGroup>
                 ) : (
-                  <UserX className="h-4 w-4 opacity-50" />
+                  <UserX className="h-4 w-4 opacity-60" />
                 )}
               </Button>
               <>
