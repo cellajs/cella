@@ -25,21 +25,29 @@ import TaskSheet from './task-sheet';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
+interface OpenPreviewEvent extends Event {
+  detail: {
+    taskId: string;
+  };
+}
+
 export default function TasksTable() {
   const { t } = useTranslation();
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels } = useWorkspaceStore(
-    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels }) => ({
-      focusedTaskId,
-      searchQuery,
-      selectedTasks,
-      setSelectedTasks,
-      projects,
-      setSearchQuery,
-      members,
-      labels,
-    }),
-  );
+  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels, setFocusedTaskId } =
+    useWorkspaceStore(
+      ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels, setFocusedTaskId }) => ({
+        focusedTaskId,
+        searchQuery,
+        selectedTasks,
+        setSelectedTasks,
+        projects,
+        setSearchQuery,
+        members,
+        labels,
+        setFocusedTaskId,
+      }),
+    );
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
@@ -110,22 +118,31 @@ export default function TasksTable() {
   };
 
   useEffect(() => {
-    if (!tasks.length || !focusedTaskId) return;
+    if (!tasks.length || !focusedTaskId || !sheet.get(`task-card-preview-${focusedTaskId}`)) return;
     const relativeTasks = tasks.filter((t) => t.id === focusedTaskId || t.parent_id === focusedTaskId);
     const [task] = enhanceTasks(relativeTasks, labels, members);
-    if (!sheet.get(`task-card-preview-${focusedTaskId}`)) {
-      sheet(<TaskSheet task={task} />, {
-        className: 'max-w-full lg:max-w-4xl p-0',
-        title: <span className="pl-4">Task</span>,
-        text: <span className="pl-4">View and manage a specific task</span>,
-        id: `task-card-preview-${task.id}`,
-      });
-      return;
-    }
     sheet.update(`task-card-preview-${task.id}`, {
       content: <TaskSheet task={task} />,
     });
   }, [tasks, focusedTaskId]);
+
+  useEffect(() => {
+    const handleChange = (event: Event) => {
+      const { taskId } = (event as OpenPreviewEvent).detail;
+      const relativeTasks = tasks.filter((t) => t.id === taskId || t.parent_id === taskId);
+      const [task] = enhanceTasks(relativeTasks, labels, members);
+      sheet(<TaskSheet task={task} />, {
+        className: 'max-w-full lg:max-w-4xl p-0',
+        title: <span className="pl-4">Task</span>,
+        text: <span className="pl-4">View and manage a specific task</span>,
+        id: `task-card-preview-${taskId}`,
+      });
+      setFocusedTaskId(taskId);
+    };
+
+    document.addEventListener('open-task-card-preview', handleChange);
+    return () => document.removeEventListener('open-task-card-preview', handleChange);
+  });
 
   useEffect(() => {
     if (search.q) setSearchQuery(search.q);
