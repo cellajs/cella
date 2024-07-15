@@ -59,7 +59,7 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
     changeColumn(workspace.id, projectId, {
       recentLabels: labels.filter((l) => recentlyUsed(l.last_used, 3)),
     });
-    return labels.sort((a, b) => b.last_used.getTime() - a.last_used.getTime()).slice(0, 8);
+    return labels.slice(0, 8);
   }, [labels, isRemoving, searchValue]);
 
   const createLabel = (newLabel: Label) => {
@@ -145,6 +145,9 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
     setSelectedLabels(updatedLabels);
     updateTaskLabels(updatedLabels);
   };
+  useEffect(() => {
+    showedLabels;
+  }, [value]);
 
   useEffect(() => {
     setSelectedLabels(value);

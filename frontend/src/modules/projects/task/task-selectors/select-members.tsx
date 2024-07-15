@@ -29,7 +29,7 @@ const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChan
   const [showAll, setShowAll] = useState(false);
 
   const sortedMembers = members
-    .filter((m) => m.projectId === projectId)
+    .filter((m) => m.projectIds.includes(projectId))
     .sort((a, b) => {
       const aSelected = selectedMembers.some((user) => user.id === a.id) ? 1 : 0;
       const bSelected = selectedMembers.some((user) => user.id === b.id) ? 1 : 0;

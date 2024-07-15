@@ -60,4 +60,4 @@ export type UserMenuItem = NonNullable<
   Extract<InferResponseType<(typeof apiClient.me.menu)['$get']>, { data: unknown }>['data']['workspaces'][number]
 >;
 
-export type WorkspaceStoreMember = Member & { projectId: string | null };
+export type WorkspaceStoreMember = Member & { projectIds: string[] };

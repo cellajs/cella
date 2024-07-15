@@ -141,7 +141,17 @@ const workspacesRoutes = app
       projectId,
       counts,
     }));
-    const uniqueMembers = Array.from(new Map(members.map((member) => [member.id, member])).values());
+    const uniqueMembersMap = members.reduce((acc, member) => {
+      const existingMember = acc.get(member.id);
+      if (existingMember) {
+        existingMember.projectIds.push(member.projectId);
+      } else {
+        acc.set(member.id, { ...member, projectIds: [member.projectId] });
+      }
+      return acc;
+    }, new Map());
+
+    const uniqueMembers = Array.from(uniqueMembersMap.values());
 
     return ctx.json(
       {

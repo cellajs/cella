@@ -34,7 +34,7 @@ export const workspaceWithProjectSchema = z.object({
     z.object({
       ...userSchema.shape,
       membership: membershipInfoSchema,
-      projectId: z.string().nullable(),
+      projectIds: z.array(z.string()),
     }),
   ),
 });
