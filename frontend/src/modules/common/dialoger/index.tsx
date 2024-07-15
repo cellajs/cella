@@ -6,6 +6,7 @@ import { DialogState, type DialogT, type DialogToRemove, type DialogToReset } fr
 
 export function Dialoger() {
   const [dialogs, setDialogs] = useState<DialogT[]>([]);
+  console.log('dialogs:', dialogs);
   const [updatedDialogs, setUpdatedDialogs] = useState<DialogT[]>([]);
   const isMobile = useBreakpoints('max', 'sm');
   const prevFocusedElement = useRef<HTMLElement | null>(null);
