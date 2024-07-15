@@ -8,7 +8,6 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { Task } from '~/modules/common/electric/electrify';
-import { sheet } from '~/modules/common/sheeter/state.ts';
 import { Button } from '~/modules/ui/button.tsx';
 import { openUserPreviewSheet } from '~/modules/users/users-table/columns.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
@@ -16,16 +15,6 @@ import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.ts
 import { impacts } from '../task/task-selectors/select-impact.tsx';
 import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } from '../task/task-selectors/select-status';
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
-import TaskSheet from './task-sheet.tsx';
-
-const openTaskCardSheet = (row: Task) => {
-  sheet(<TaskSheet task={row} />, {
-    className: 'max-w-full lg:max-w-4xl p-0',
-    title: <span className="pl-4">Task</span>,
-    text: <span className="pl-4">View and manage a specific task</span>,
-    id: `task-card-preview-${row.id}`,
-  });
-};
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -46,10 +35,7 @@ export const useColumns = () => {
           variant="none"
           tabIndex={tabIndex}
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
-          onClick={() => {
-            setFocusedTaskId(row.id);
-            openTaskCardSheet(row);
-          }}
+          onClick={() => setFocusedTaskId(row.id)}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>
         </Button>

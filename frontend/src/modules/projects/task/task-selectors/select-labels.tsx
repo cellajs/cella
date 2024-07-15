@@ -7,7 +7,7 @@ import { nanoid, recentlyUsed } from '~/lib/utils.ts';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify.ts';
+import { type Label, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '../../../ui/command.tsx';
@@ -24,10 +24,9 @@ interface SetLabelsProps {
   projectId: string;
   triggerWidth?: number;
   creationValueChange?: (labels: Label[]) => void;
-  taskUpdateCallback?: (task: Task) => void;
 }
 
-const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creationValueChange, triggerWidth = 280 }: SetLabelsProps) => {
+const SetLabels = ({ value, projectId, organizationId, creationValueChange, triggerWidth = 280 }: SetLabelsProps) => {
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
   const { t } = useTranslation();
@@ -64,20 +63,16 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
     if (!focusedTaskId) return;
     const db = Electric.db;
     const labelsIds = labels.map((l) => l.id);
-    db.tasks
-      .update({
-        data: {
-          labels: labelsIds,
-          modified_at: new Date(),
-          modified_by: user.id,
-        },
-        where: {
-          id: focusedTaskId,
-        },
-      })
-      .then((updatedTask) => {
-        if (taskUpdateCallback) taskUpdateCallback(updatedTask as Task);
-      });
+    db.tasks.update({
+      data: {
+        labels: labelsIds,
+        modified_at: new Date(),
+        modified_by: user.id,
+      },
+      where: {
+        id: focusedTaskId,
+      },
+    });
     return;
   };
 

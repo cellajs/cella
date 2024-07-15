@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
-import { type Task, useElectric } from '~/modules/common/electric/electrify.ts';
+import { useElectric } from '~/modules/common/electric/electrify.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
@@ -17,10 +17,9 @@ interface AssignMembersProps {
   projectId: string;
   triggerWidth?: number;
   creationValueChange?: (users: Member[]) => void;
-  taskUpdateCallback?: (task: Task) => void;
 }
 
-const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChange, triggerWidth = 240 }: AssignMembersProps) => {
+const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 240 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const { focusedTaskId, members } = useWorkspaceStore();
@@ -46,20 +45,16 @@ const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChan
     if (!focusedTaskId) return;
     const db = Electric.db;
     const assignedTo = members.map((user) => user.id);
-    db.tasks
-      .update({
-        data: {
-          assigned_to: assignedTo,
-          modified_at: new Date(),
-          modified_by: user.id,
-        },
-        where: {
-          id: focusedTaskId,
-        },
-      })
-      .then((updatedTask) => {
-        if (taskUpdateCallback) taskUpdateCallback(updatedTask as Task);
-      });
+    db.tasks.update({
+      data: {
+        assigned_to: assignedTo,
+        modified_at: new Date(),
+        modified_by: user.id,
+      },
+      where: {
+        id: focusedTaskId,
+      },
+    });
     return;
   };
 

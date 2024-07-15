@@ -19,14 +19,18 @@ import BoardHeader from '../board/header/board-header';
 import { useColumns } from './columns';
 import SelectProject from './project';
 import HeaderSelectStatus from './status';
+import { sheet } from '~/modules/common/sheeter/state';
+import { enhanceTasks } from '~/hooks/use-filtered-task-helpers';
+import TaskSheet from './task-sheet';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
 export default function TasksTable() {
   const { t } = useTranslation();
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels } = useWorkspaceStore(
-    ({ searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels }) => ({
+  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels } = useWorkspaceStore(
+    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels }) => ({
+      focusedTaskId,
       searchQuery,
       selectedTasks,
       setSelectedTasks,
@@ -104,6 +108,24 @@ export default function TasksTable() {
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
     setSelectedTasks(Array.from(selectedRows));
   };
+
+  useEffect(() => {
+    if (!tasks.length || !focusedTaskId) return;
+    const relativeTasks = tasks.filter((t) => t.id === focusedTaskId || t.parent_id === focusedTaskId);
+    const [task] = enhanceTasks(relativeTasks, labels, members);
+    if (!sheet.get(`task-card-preview-${focusedTaskId}`)) {
+      sheet(<TaskSheet task={task} />, {
+        className: 'max-w-full lg:max-w-4xl p-0',
+        title: <span className="pl-4">Task</span>,
+        text: <span className="pl-4">View and manage a specific task</span>,
+        id: `task-card-preview-${task.id}`,
+      });
+      return;
+    }
+    sheet.update(`task-card-preview-${task.id}`, {
+      content: <TaskSheet task={task} />,
+    });
+  }, [tasks, focusedTaskId]);
 
   useEffect(() => {
     if (search.q) setSearchQuery(search.q);
