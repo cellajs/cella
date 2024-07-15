@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { Button } from '~/modules/ui/button';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import type { Project } from '~/types';
 import { inNumbersArray } from '../task/task-selectors/helpers';

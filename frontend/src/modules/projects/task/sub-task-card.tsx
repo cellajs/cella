@@ -1,22 +1,22 @@
-import MDEditor from '@uiw/react-md-editor';
-import { Trash } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import useDoubleClick from '~/hooks/use-double-click.tsx';
-import { cn, getDraggableItemData } from '~/lib/utils';
-import { useElectric, type Task } from '~/modules/common/electric/electrify';
-import { Button } from '~/modules/ui/button';
-import { Checkbox } from '~/modules/ui/checkbox';
-import type { Mode } from '~/store/theme';
-import { TaskEditor } from './task-selectors/task-editor';
-import { toast } from 'sonner';
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
+import MDEditor from '@uiw/react-md-editor';
+import { Trash } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import useDoubleClick from '~/hooks/use-double-click.tsx';
+import { cn, getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { type Task, useElectric } from '~/modules/common/electric/electrify';
+import { Button } from '~/modules/ui/button';
+import { Checkbox } from '~/modules/ui/checkbox';
+import type { Mode } from '~/store/theme';
 import type { DraggableItemData } from '~/types';
+import { TaskEditor } from './task-selectors/task-editor';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {

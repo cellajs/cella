@@ -17,7 +17,7 @@ const router = createRouter({
   // notFoundRoute,
   defaultPreload: false,
   context: { queryClient },
-  defaultPendingMinMs: 0
+  defaultPendingMinMs: 0,
 });
 
 // Register the router

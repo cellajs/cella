@@ -6,11 +6,11 @@ import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import type { TaskImpact } from '../create-task-form';
+import { inNumbersArray } from './helpers';
 import { HighIcon } from './impact-icons/high';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
 import { NoneIcon } from './impact-icons/none';
-import { inNumbersArray } from './helpers';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -80,10 +80,7 @@ export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: Se
               className="group rounded-md flex justify-between items-center w-full leading-normal"
             >
               <div className="flex items-center">
-                <Impact.icon
-                  title={Impact.label}
-                  className={`mr-2 size-4 fill-current ${selectedImpact?.value === Impact.value ? 'fill-primary' : ''} `}
-                />
+                <Impact.icon className={`mr-2 size-4 fill-current ${selectedImpact?.value === Impact.value ? 'fill-primary' : ''} `} />
                 <span>{Impact.label}</span>
               </div>
               <div className="flex items-center">

@@ -13,11 +13,13 @@ import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
+import Export from '~/modules/common/data-table/export.tsx';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify';
 import { sheet } from '~/modules/common/sheeter/state.ts';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
+import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Member } from '~/types';
@@ -33,8 +35,6 @@ import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import { useColumns } from './columns';
 import SelectProject from './project';
 import HeaderSelectStatus from './status';
-import { useThemeStore } from '~/store/theme';
-import Export from '~/modules/common/data-table/export.tsx';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 

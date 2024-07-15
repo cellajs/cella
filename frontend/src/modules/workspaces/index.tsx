@@ -3,9 +3,9 @@ import { Outlet, useParams } from '@tanstack/react-router';
 import { getWorkspace } from '~/api/workspaces';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
+import type { Project } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
-import type { Project } from '~/types';
 
 export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({

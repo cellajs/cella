@@ -16,7 +16,7 @@ import { useWorkspaceStore } from '~/store/workspace.ts';
 import { TaskCard } from '../task/task-card.tsx';
 import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
 import { impacts } from '../task/task-selectors/select-impact.tsx';
-import { statusTextColors, type TaskStatus, taskStatuses } from '../task/task-selectors/select-status';
+import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } from '../task/task-selectors/select-status';
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
 
 const openTaskCardSheet = async (
@@ -112,9 +112,9 @@ export const useColumns = (
               return (
                 <>
                   {impact === null ? (
-                    <NotSelected className="size-4 mr-2 fill-current" aria-hidden="true" title="Not selected" />
+                    <NotSelected className="size-4 mr-2 fill-current" aria-hidden="true" />
                   ) : (
-                    <impact.icon className="size-4 mr-2 fill-current" aria-hidden="true" title={impact.label} />
+                    <impact.icon className="size-4 mr-2 fill-current" aria-hidden="true" />
                   )}
 
                   <span>{impact === null ? '-' : impact.label}</span>
@@ -133,7 +133,7 @@ export const useColumns = (
               const status = taskStatuses[row.status as TaskStatus];
               return (
                 <>
-                  <status.icon className="size-4 mr-2" aria-hidden="true" title={status.status} />
+                  <status.icon className={`size-4 mr-2 fill-current ${statusFillColors[row.status as TaskStatus]}`} aria-hidden="true" />
                   <span className={statusTextColors[row.status as TaskStatus]}>{t(status.status)}</span>
                 </>
               );

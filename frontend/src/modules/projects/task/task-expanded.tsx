@@ -1,13 +1,13 @@
-import { useTranslation } from 'react-i18next';
-import { TaskEditor } from './task-selectors/task-editor';
 import MDEditor from '@uiw/react-md-editor';
-import { Button } from '~/modules/ui/button';
-import SubTask from './sub-task-card';
-import CreateSubTaskForm from './create-sub-task-form';
 import { type RefObject, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import type { Task } from '~/modules/common/electric/electrify';
+import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
+import CreateSubTaskForm from './create-sub-task-form';
+import SubTask from './sub-task-card';
+import { TaskEditor } from './task-selectors/task-editor';
 
 interface Props {
   task: Task;

@@ -1,18 +1,18 @@
 import { CommandEmpty } from 'cmdk';
+import { useLiveQuery } from 'electric-sql/react';
 import { Check, Dot, History, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { nanoid, recentlyUsed } from '~/lib/utils.ts';
-import { type Task, useElectric, type Label } from '../../../common/electric/electrify.ts';
+import { useUserStore } from '~/store/user.ts';
+import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
+import { useWorkspaceStore } from '~/store/workspace.ts';
+import { type Label, type Task, useElectric } from '../../../common/electric/electrify.ts';
 import { Kbd } from '../../../common/kbd.tsx';
 import { Badge } from '../../../ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '../../../ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
-import { toast } from 'sonner';
-import { useUserStore } from '~/store/user.ts';
-import { useWorkspaceStore } from '~/store/workspace.ts';
-import { useLiveQuery } from 'electric-sql/react';
-import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -151,13 +151,13 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
   }, [value]);
 
   return (
-    <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
+    <Command className="relative rounded-lg max-h-[40vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
         autoFocus={true}
         value={searchValue}
         onValueChange={(searchValue) => {
           // If the label types a number, select the label like useHotkeys
-          if (inNumbersArray(8, searchValue)) return handleSelectClick(labels[Number.parseInt(searchValue) - 1]?.name);
+          if (inNumbersArray(6, searchValue)) return handleSelectClick(labels[Number.parseInt(searchValue) - 1]?.name);
           setSearchValue(searchValue.toLowerCase());
         }}
         clearValue={setSearchValue}

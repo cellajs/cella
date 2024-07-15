@@ -244,12 +244,12 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                     >
                       {selectedImpact !== null ? (
                         <>
-                          <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                          <selectedImpact.icon className="size-4" aria-hidden="true" />
                           {selectedImpact.label}
                         </>
                       ) : (
                         <>
-                          <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
+                          <NotSelected className="size-4" aria-hidden="true" />
                           {t('common:set_impact')}
                         </>
                       )}

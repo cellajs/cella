@@ -3,6 +3,7 @@ import type { Entity } from 'backend/types/common';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
+import isBetween from 'dayjs/plugin/isBetween';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import i18next from 'i18next';
 import { customAlphabet } from 'nanoid';
@@ -11,7 +12,6 @@ import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import { useNavigationStore } from '~/store/navigation';
 import type { DraggableItemData, UserMenuItem } from '~/types';
-import isBetween from 'dayjs/plugin/isBetween';
 
 dayjs.extend(isBetween);
 dayjs.extend(calendar);

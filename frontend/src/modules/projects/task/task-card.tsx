@@ -26,9 +26,9 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import type { Mode } from '~/store/theme.ts';
 import type { DraggableItemData } from '~/types';
 import ExpandedTask from './task-expanded.tsx';
-import type { Mode } from '~/store/theme.ts';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
@@ -242,9 +242,9 @@ export function TaskCard({
                 className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
               >
                 {selectedImpact === null ? (
-                  <NotSelected className="size-4 fill-current" aria-hidden="true" title="Set impact" />
+                  <NotSelected className="size-4 fill-current" aria-hidden="true" />
                 ) : (
-                  <selectedImpact.icon className="size-4 fill-current" aria-hidden="true" title="Set impact" />
+                  <selectedImpact.icon className="size-4 fill-current" aria-hidden="true" />
                 )}
               </Button>
             )}

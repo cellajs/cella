@@ -11,22 +11,24 @@ import { getMembers } from '~/api/general';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { cn } from '~/lib/utils';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dropdowner } from '~/modules/common/dropdowner/state';
+import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify';
 import { SheetNav } from '~/modules/common/sheet-nav';
+import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
+import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/index.ts';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify';
-import { sheet } from '~/modules/common/sheeter/state';
 import { ProjectSettings } from '../project-settings';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '../task/create-task-form';
 import { getTaskOrder } from '../task/helpers';
+import { isSubTaskData } from '../task/sub-task-card';
 import { TaskCard, isTaskData } from '../task/task-card';
 import { SelectImpact } from '../task/task-selectors/select-impact';
 import SetLabels from '../task/task-selectors/select-labels';
@@ -35,8 +37,6 @@ import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-sta
 import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
-import { useThemeStore } from '~/store/theme';
-import { isSubTaskData } from '../task/sub-task-card';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -192,7 +192,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
 
     const db = Electric.db;
     const newOrder = field === 'status' ? getTaskOrder(taskId, value, tasks) : null;
-    
+
     db.tasks.update({
       data: {
         [field]: value,

@@ -1,16 +1,16 @@
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
+import { type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
+import { useUserStore } from '~/store/user.ts';
+import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Member } from '~/types/index.ts';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
-import { toast } from 'sonner';
-import { useUserStore } from '~/store/user.ts';
-import { useWorkspaceStore } from '~/store/workspace.ts';
-import { type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 
 interface AssignMembersProps {
   value: Member[];
@@ -36,7 +36,7 @@ const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChan
       return bSelected - aSelected;
     });
 
-  const showedMembers = showAll ? sortedMembers : sortedMembers.slice(0, 8);
+  const showedMembers = showAll ? sortedMembers : sortedMembers.slice(0, 6);
   const isSearching = searchValue.length > 0;
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
@@ -85,13 +85,13 @@ const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChan
   };
 
   return (
-    <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
+    <Command className="relative rounded-lg max-h-[40vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
         autoFocus={true}
         value={searchValue}
         onValueChange={(searchValue) => {
           // If the user types a number, select status like useHotkeys
-          if (!showAll && inNumbersArray(8, searchValue)) return handleSelectClick(members[Number.parseInt(searchValue) - 1]?.id);
+          if (!showAll && inNumbersArray(6, searchValue)) return handleSelectClick(members[Number.parseInt(searchValue) - 1]?.id);
           setSearchValue(searchValue);
         }}
         clearValue={setSearchValue}
@@ -130,7 +130,7 @@ const AssignMembers = ({ projectId, value, taskUpdateCallback, creationValueChan
                 </div>
               </CommandItem>
             ))}
-            {sortedMembers.length > 7 && (
+            {sortedMembers.length > 5 && (
               <CommandItem className="flex items-center justify-center opacity-80 hover:opacity-100" onSelect={() => setShowAll(!showAll)}>
                 <span className="text-xs">{showAll ? t('common:hide') : t('common:show_all')}</span>
               </CommandItem>

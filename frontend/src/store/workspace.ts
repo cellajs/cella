@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { WorkspaceStoreMember, Project, Workspace } from '~/types';
+import type { Project, Workspace, WorkspaceStoreMember } from '~/types';
 
 interface WorkspaceState {
   workspace: Workspace;

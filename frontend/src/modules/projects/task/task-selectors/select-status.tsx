@@ -6,14 +6,14 @@ import { useTranslation } from 'react-i18next';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { inNumbersArray } from './helpers';
+import { AcceptedIcon } from './status-icons/accepted';
+import { DeliveredIcon } from './status-icons/delivered';
+import { FinishedIcon } from './status-icons/finished';
 import { IcedIcon } from './status-icons/iced';
+import { ReviewedIcon } from './status-icons/reviewed';
 import { StartedIcon } from './status-icons/started';
 import { UnstartedIcon } from './status-icons/unstarted';
-import { FinishedIcon } from './status-icons/finished';
-import { DeliveredIcon } from './status-icons/delivered';
-import { ReviewedIcon } from './status-icons/reviewed';
-import { AcceptedIcon } from './status-icons/accepted';
-import { inNumbersArray } from './helpers';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
@@ -42,19 +42,29 @@ interface SelectStatusProps {
 
 export const statusTextColors = {
   0: 'text-sky-500',
-  1: 'text-slate-300',
-  2: 'text-slate-500',
+  1: 'text-slate-500',
+  2: 'text-regular',
   3: 'text-lime-500',
   4: 'text-yellow-500',
   5: 'text-orange-500',
   6: 'text-green-500',
 };
 
+export const statusFillColors = {
+  0: 'fill-sky-500',
+  1: 'fill-slate-500',
+  2: 'fill-regular',
+  3: 'fill-lime-500',
+  4: 'fill-yellow-500',
+  5: 'fill-orange-500',
+  6: 'fill-green-500',
+};
+
 export const statusVariants = cva('', {
   variants: {
     status: {
       0: 'bg-background/50 border-sky-500/40 hover:bg-sky-500/10 hover:border-sky-500/60 text-sky-600',
-      1: 'border-slate-300/40 hover:bg-slate-300/10 hover:border-slate-300/60',
+      1: '',
       2: 'bg-background/50 border-slate-500/40 hover:bg-slate-500/10 hover:border-slate-500/60',
       3: 'bg-background/50 border-lime-500/40 hover:bg-lime-500/10 hover:border-lime-500/60',
       4: 'bg-background/50 border-yellow-500/40 hover:bg-yellow-500/10 hover:border-yellow-500/60',
@@ -121,7 +131,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
                 className="group rounded-md flex justify-between items-center w-full leading-normal"
               >
                 <div className="flex items-center">
-                  <status.icon title={status.status} className="mr-2 size-4 " />
+                  <status.icon className="mr-2 size-4 " />
                   <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''} `}>{t(status.status)}</span>
                 </div>
                 <div className="flex items-center">

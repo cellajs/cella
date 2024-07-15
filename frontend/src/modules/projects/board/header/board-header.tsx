@@ -3,6 +3,7 @@ import { PanelTopClose, Plus, Trash, XSquare } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import TableCount from '~/modules/common/data-table/table-count';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -20,7 +21,6 @@ import { Badge } from '../../../ui/badge';
 import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
 import WorkspaceActions from './board-header-actions';
-import TableCount from '~/modules/common/data-table/table-count';
 
 const BoardHeader = ({ mode, children, totalCount }: { mode: 'table' | 'board'; children?: React.ReactNode; totalCount?: number }) => {
   const { t } = useTranslation();

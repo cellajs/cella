@@ -5,8 +5,8 @@ import { Kbd } from '~/modules/common/kbd.tsx';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { taskStatuses } from '../task/task-selectors/select-status';
 import { inNumbersArray } from '../task/task-selectors/helpers';
+import { taskStatuses } from '../task/task-selectors/select-status';
 
 interface Props {
   selectedStatuses: number[];
@@ -48,10 +48,10 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
               {selectedStatuses.sort().map((status) => {
                 const currentStatus = taskStatuses.find((s) => s.value === status);
                 if (!currentStatus) return null;
-                if (selectedStatuses.length > 3) return <currentStatus.icon title={currentStatus.status} />;
+                if (selectedStatuses.length > 3) return <currentStatus.icon />;
                 return (
                   <div className="flex items-center gap-1" key={status}>
-                    <currentStatus.icon title={currentStatus.status} />
+                    <currentStatus.icon />
                     <span>{t(currentStatus.status)}</span>
                   </div>
                 );
@@ -98,7 +98,7 @@ const SelectStatus = ({ selectedStatuses, setSelectedStatuses }: Props) => {
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
                     <div className="flex items-center">
-                      <status.icon title={status.status} className="mr-2 size-4" />
+                      <status.icon className="mr-2 size-4" />
                       <span>{t(status.status)}</span>
                     </div>
                     <div className="flex items-center">
