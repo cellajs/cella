@@ -29,7 +29,7 @@ export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuIte
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
   const { hideSubmenu } = useNavigationStore();
   const entityType = data[0].entity;
-  const parentItemId = data[0].parentId;
+  const parentItemSlug = data[0].parentSlug;
 
   if (data.length === 0) {
     return <li className="py-2 text-muted-foreground text-sm text-light text-center">{t('common:no_resource_yet', { resource: entityType })}</li>;
@@ -55,7 +55,7 @@ export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuIte
           data={[...data].sort((a, b) => b.membership.order - a.membership.order)}
           item={item}
           itemType={entityType}
-          parentItemId={parentItemId}
+          parentItemSlug={parentItemSlug}
         />
         {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
           <>
@@ -78,8 +78,8 @@ const ItemOptions = ({
   data,
   item,
   itemType,
-  parentItemId,
-}: { data: UserMenuItem[]; parentItemId?: string; item: UserMenuItem; itemType: ContextEntity }) => {
+  parentItemSlug,
+}: { data: UserMenuItem[]; parentItemSlug?: string; item: UserMenuItem; itemType: ContextEntity }) => {
   const { t } = useTranslation();
   const dragRef = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -88,16 +88,16 @@ const ItemOptions = ({
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { menu } = useNavigationStore();
-  const callback = parentItemId ? useMutateQueryData(['projects', parentItemId]) : useMutateQueryData([`${itemType}s`, item.id]);
+  const callback = parentItemSlug ? useMutateQueryData(['workspaces', parentItemSlug]) : useMutateQueryData([`${itemType}s`, item.id]);
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
       return baseUpdateMembership(values);
     },
     onSuccess: (updatedMembership) => {
-      callback([updatedMembership], 'updateMembership');
+      callback([updatedMembership], 'create');
       if (updatedMembership.inactive !== isItemArchived) {
         const archived = updatedMembership.inactive || !isItemArchived;
-        archiveStateToggle(item.id, archived, parentItemId ? parentItemId : null);
+        archiveStateToggle(item.id, archived, parentItemSlug ? parentItemSlug : null);
         toast.success(
           archived
             ? t('common:success.archived_resource', { resource: t(`common:${itemType}`) })
@@ -207,19 +207,19 @@ const ItemOptions = ({
         layoutId={`sheet-menu-item-${item.id}`}
         ref={isItemArchived ? undefined : dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
-        className={`group flex relative items-center sm:max-w-[18rem] ${parentItemId ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 justify-start rounded  focus:outline-none
+        className={`group flex relative items-center sm:max-w-[18rem] ${parentItemSlug ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 justify-start rounded  focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
       ${!isItemArchived && 'ring-1 cursor-grab'} `}
       >
         <AvatarWrap
-          className={`${parentItemId ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${isItemArchived && 'opacity-70'}`}
+          className={`${parentItemSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${isItemArchived && 'opacity-70'}`}
           type={itemType}
           id={item.id}
           name={item.name}
           url={item.thumbnailUrl}
         />
         <div className="truncate grow py-2 px-1 text-left">
-          <div className={`truncate ${parentItemId ? 'text-sm' : 'text-base mb-1'} leading-5 ${isItemArchived && 'opacity-70'}`}>{item.name}</div>
+          <div className={`truncate ${parentItemSlug ? 'text-sm' : 'text-base mb-1'} leading-5 ${isItemArchived && 'opacity-70'}`}>{item.name}</div>
           <div className="flex items-center gap-4 transition-opacity delay-500">
             <Button
               variant="link"
@@ -230,11 +230,11 @@ const ItemOptions = ({
             >
               {isItemArchived ? (
                 <>
-                  <ArchiveRestore size={parentItemId ? 12 : 14} className="mr-1" /> {t('common:restore')}
+                  <ArchiveRestore size={parentItemSlug ? 12 : 14} className="mr-1" /> {t('common:restore')}
                 </>
               ) : (
                 <>
-                  <Archive size={parentItemId ? 12 : 14} className="mr-1" />
+                  <Archive size={parentItemSlug ? 12 : 14} className="mr-1" />
                   {t('common:archive')}
                 </>
               )}
@@ -248,12 +248,12 @@ const ItemOptions = ({
             >
               {isItemMuted ? (
                 <>
-                  <Bell size={parentItemId ? 12 : 14} className="mr-1" />
+                  <Bell size={parentItemSlug ? 12 : 14} className="mr-1" />
                   {t('common:unmute')}
                 </>
               ) : (
                 <>
-                  <BellOff size={parentItemId ? 12 : 14} className="mr-1" />
+                  <BellOff size={parentItemSlug ? 12 : 14} className="mr-1" />
                   {t('common:mute')}
                 </>
               )}

@@ -1,13 +1,11 @@
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { useQuery } from '@tanstack/react-query';
 import { useLiveQuery } from 'electric-sql/react';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { getMembers } from '~/api/general';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { cn } from '~/lib/utils';
@@ -71,7 +69,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const { user } = useUserStore();
   const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
-  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId } = useWorkspaceStore();
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId, members } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
@@ -79,11 +77,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
 
-  const { data: members } = useQuery({
-    queryKey: ['projects', 'members', project.id],
-    queryFn: () => getMembers({ idOrSlug: project.id, entityType: 'project' }).then((data) => data.items),
-    initialData: [],
-  });
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
@@ -136,7 +129,13 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
   };
 
-  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, labels, members);
+  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(
+    tasks,
+    showAccepted,
+    showIced,
+    labels,
+    members.filter((m) => m.projectIds.includes(project.id)),
+  );
 
   const setTaskExpanded = (taskId: string, isExpanded: boolean) => {
     setExpandedTasks((prevState) => ({
@@ -360,7 +359,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
               organizationId={project.organizationId}
               tasks={tasks}
               labels={labels}
-              members={members}
               onCloseForm={() => toggleCreateForm(project.id)}
             />
           )}

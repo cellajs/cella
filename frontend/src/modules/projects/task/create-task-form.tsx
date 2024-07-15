@@ -37,7 +37,6 @@ export type TaskImpact = 0 | 1 | 2 | 3 | null;
 interface CreateTaskFormProps {
   tasks: Task[];
   labels: Label[];
-  members: Member[];
   projectId: string;
   organizationId: string;
   dialog?: boolean;

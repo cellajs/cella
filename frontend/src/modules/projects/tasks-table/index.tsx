@@ -6,7 +6,6 @@ import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
-import { getMembers } from '~/api/general';
 import { enhanceTasks } from '~/hooks/use-filtered-task-helpers.ts';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
@@ -22,7 +21,6 @@ import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces
 import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Member } from '~/types';
 import BoardHeader from '../board/header/board-header';
 import type { TaskImpact, TaskType } from '../task/create-task-form';
 import { getTaskOrder } from '../task/helpers';
@@ -44,13 +42,14 @@ export default function TasksTable() {
   const { mode } = useThemeStore();
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery } = useWorkspaceStore(
-    ({ searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery }) => ({
+  const { searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members } = useWorkspaceStore(
+    ({ searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members }) => ({
       searchQuery,
       selectedTasks,
       setSelectedTasks,
       projects,
       setSearchQuery,
+      members,
     }),
   );
 
@@ -58,7 +57,6 @@ export default function TasksTable() {
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
 
   const taskUpdateCallback = (updatedTask: Task) => {
     const [task] = enhanceTasks([updatedTask], labels, members);
@@ -202,14 +200,6 @@ export default function TasksTable() {
         },
       })
       .then((labels) => setLabels(labels as Label[]));
-
-    Promise.all(projectsFetchFrom.map((p) => getMembers({ idOrSlug: p.id, entityType: 'project' }).then(({ items }) => items))).then(
-      (fetchedMembers) => {
-        const flattenedMembers = fetchedMembers.flat();
-        const uniqueMembers = flattenedMembers.filter((member, index) => flattenedMembers.findIndex((m) => m.id === member.id) === index);
-        setMembers(uniqueMembers as Member[]);
-      },
-    );
   }, [projects, selectedProjects]);
 
   return (
