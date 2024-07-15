@@ -34,6 +34,7 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
   const { t } = useTranslation();
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const { changeColumn } = useWorkspaceUIStore();
   const user = useUserStore((state) => state.user);
@@ -45,9 +46,6 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
       where: {
         project_id: projectId,
       },
-      orderBy: {
-        last_used: 'desc',
-      },
     }),
   ) as {
     results: Label[] | undefined;
@@ -55,15 +53,14 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
   };
 
   const showedLabels = useMemo(() => {
-    if (isSearching) return labels.filter((l) => l.name.includes(searchValue));
-    if (selectedLabels.length > 8) return selectedLabels;
-    const nonSelectedLabels = labels.filter((label) => !selectedLabels.some((selected) => selected.id === label.id));
+    if (searchValue.length) return labels.filter((l) => l.name.toLowerCase().includes(searchValue));
+    if (isRemoving) return selectedLabels;
     // save to recent labels all labels that used in past 3 days
     changeColumn(workspace.id, projectId, {
       recentLabels: labels.filter((l) => recentlyUsed(l.last_used, 3)),
     });
-    return [...selectedLabels, ...nonSelectedLabels].slice(0, 8);
-  }, [selectedLabels, labels]);
+    return labels.sort((a, b) => b.last_used.getTime() - a.last_used.getTime()).slice(0, 8);
+  }, [labels, isRemoving, searchValue]);
 
   const createLabel = (newLabel: Label) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
@@ -175,7 +172,6 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
               <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
             </CommandLoading>
           )}
-          {isSearching && !!showedLabels.length && <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} {...{ searchValue, labels }} />}
           {labels.length === 0 && (
             <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
               {t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })}
@@ -191,7 +187,11 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
               className="group rounded-md flex justify-between items-center w-full leading-normal"
             >
               <div className="flex items-center gap-2">
-                {isSearching ? <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={8} /> : <History size={16} />}
+                {isSearching || isRemoving ? (
+                  <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={8} />
+                ) : (
+                  <History size={16} />
+                )}
                 <span>{label.name}</span>
               </div>
               <div className="flex items-center">
@@ -201,6 +201,13 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
             </CommandItem>
           ))}
         </CommandGroup>
+        {!isSearching ? (
+          <CommandItem className="flex justify-center text-sm m-1" onSelect={() => setIsRemoving(!isRemoving)}>
+            {isRemoving ? 'Show recent labels' : 'Show selected labels'}
+          </CommandItem>
+        ) : (
+          <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} searchValue={searchValue} labels={labels} />
+        )}
       </CommandList>
     </Command>
   );
@@ -216,17 +223,16 @@ interface CommandItemCreateProps {
 
 const CommandItemCreate = ({ searchValue, labels, onSelect }: CommandItemCreateProps) => {
   const { t } = useTranslation();
-  const hasNoLabel = !labels.map(({ id }) => id).includes(`${searchValue}`);
-
-  const render = searchValue !== '' && hasNoLabel;
+  const hasNoLabel = !labels.map(({ name }) => name.toLowerCase()).includes(searchValue.trim());
+  const render = searchValue.trim() !== '' && hasNoLabel;
 
   if (!render) return null;
 
   // BUG: whenever a space is appended, the Create-Button will not be shown.
   return (
-    <CommandItem key={`${searchValue}`} value={`${searchValue}`} className="text-sm flex justify-center items-center" onSelect={onSelect}>
+    <CommandItem className="text-sm m-1 flex justify-center items-center" onSelect={onSelect}>
       {t('common:create_resource', { resource: t('common:label').toLowerCase() })}
-      <Badge className="ml-2 px-2 py-0 font-light" variant="plain">
+      <Badge className="ml-2 px-2 py-0 font-light flex  items-center" variant="plain">
         {searchValue}
       </Badge>
     </CommandItem>
