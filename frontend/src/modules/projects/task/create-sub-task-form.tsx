@@ -108,7 +108,7 @@ export const CreateSubTaskForm = ({
       })
       .then(() => {
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:task') }));
+        toast.success(t('common:success.create_resource', { resource: t('common:todo') }));
         setFormState(false);
       });
   };
