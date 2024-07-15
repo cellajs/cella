@@ -92,7 +92,7 @@ export default function TasksTable() {
     updatedAt: Date | undefined;
   };
 
-  const [columns, setColumns] = useColumns(tasks);
+  const [columns, setColumns] = useColumns();
   const isLoading = !updatedAt;
   const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members, true);
   // const onResetFilters = () => {

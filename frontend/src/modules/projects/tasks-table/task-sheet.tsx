@@ -16,7 +16,7 @@ import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user.ts';
 import { useTranslation } from 'react-i18next';
 
-const TaskSheet = ({ task, tasks }: { task: Task; tasks: Task[] }) => {
+const TaskSheet = ({ task }: { task: Task }) => {
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const electric = useElectric()!;
   const { t } = useTranslation();
@@ -31,7 +31,7 @@ const TaskSheet = ({ task, tasks }: { task: Task; tasks: Task[] }) => {
   const handleChange = (field: keyof Task, value: string | number | null, taskId: string) => {
     if (!electric) return toast.error(t('common:local_db_inoperable'));
     const db = electric.db;
-    const newOrder = field === 'status' ? getTaskOrder(taskId, value, tasks) : null;
+    const newOrder = field === 'status' ? getTaskOrder(taskId, value, []) : null;
     db.tasks
       .update({
         data: {
@@ -44,10 +44,7 @@ const TaskSheet = ({ task, tasks }: { task: Task; tasks: Task[] }) => {
           id: taskId,
         },
       })
-      .then((updatedTask) => taskUpdateCallback(updatedTask as Task))
-      .catch((error) => {
-        console.error('Error:', error);
-      });
+      .then((updatedTask) => taskUpdateCallback(updatedTask as Task));
   };
 
   const taskUpdateCallback = (updatedTask: Task) => {

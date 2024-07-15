@@ -18,8 +18,8 @@ import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } fro
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
 import TaskSheet from './task-sheet.tsx';
 
-const openTaskCardSheet = (row: Task, tasks: Task[]) => {
-  sheet(<TaskSheet task={row} tasks={tasks} />, {
+const openTaskCardSheet = (row: Task) => {
+  sheet(<TaskSheet task={row} />, {
     className: 'max-w-full lg:max-w-4xl p-0',
     title: <span className="pl-4">Task</span>,
     text: <span className="pl-4">View and manage a specific task</span>,
@@ -27,7 +27,7 @@ const openTaskCardSheet = (row: Task, tasks: Task[]) => {
   });
 };
 
-export const useColumns = (tasks: Task[]) => {
+export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { projects } = useWorkspaceStore();
@@ -48,7 +48,7 @@ export const useColumns = (tasks: Task[]) => {
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
           onClick={() => {
             setFocusedTaskId(row.id);
-            openTaskCardSheet(row, tasks);
+            openTaskCardSheet(row);
           }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>
