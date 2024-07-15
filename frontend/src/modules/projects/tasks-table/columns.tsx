@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -13,42 +12,22 @@ import { sheet } from '~/modules/common/sheeter/state.ts';
 import { Button } from '~/modules/ui/button.tsx';
 import { openUserPreviewSheet } from '~/modules/users/users-table/columns.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import { TaskCard } from '../task/task-card.tsx';
 import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
 import { impacts } from '../task/task-selectors/select-impact.tsx';
 import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } from '../task/task-selectors/select-status';
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
+import TaskSheet from './task-sheet.tsx';
 
-const openTaskCardSheet = async (
-  row: Task,
-  mode: 'dark' | 'light',
-  handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void,
-  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
-) => {
-  sheet(
-    <TaskCard
-      mode={mode}
-      task={row}
-      isExpanded={true}
-      isSelected={false}
-      isFocused={true}
-      handleTaskChange={handleTaskChange}
-      handleTaskActionClick={handleTaskActionClick}
-    />,
-    {
-      className: 'max-w-full lg:max-w-4xl p-0',
-      title: <span className="pl-4">Task</span>,
-      text: <span className="pl-4">View and manage a specific task</span>,
-      id: `task-card-preview-${row.id}`,
-    },
-  );
+const openTaskCardSheet = (row: Task, tasks: Task[]) => {
+  sheet(<TaskSheet task={row} tasks={tasks} />, {
+    className: 'max-w-full lg:max-w-4xl p-0',
+    title: <span className="pl-4">Task</span>,
+    text: <span className="pl-4">View and manage a specific task</span>,
+    id: `task-card-preview-${row.id}`,
+  });
 };
 
-export const useColumns = (
-  mode: 'dark' | 'light',
-  handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void,
-  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void,
-) => {
+export const useColumns = (tasks: Task[]) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { projects } = useWorkspaceStore();
@@ -69,7 +48,7 @@ export const useColumns = (
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
           onClick={() => {
             setFocusedTaskId(row.id);
-            openTaskCardSheet(row, mode, handleTaskChange, handleTaskActionClick);
+            openTaskCardSheet(row, tasks);
           }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>

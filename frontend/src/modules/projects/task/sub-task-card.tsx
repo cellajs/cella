@@ -46,7 +46,7 @@ const SubTask = ({
           id: subTaskId,
         },
       })
-      .then(() => toast.success(t('common:success.delete_resources', { resources: t('common:tasks') })));
+      .then(() => toast.success(t('common:success.delete_resources', { resources: t('common:todo') })));
   };
 
   const setEdge = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {

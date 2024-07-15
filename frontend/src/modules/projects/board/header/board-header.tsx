@@ -1,4 +1,3 @@
-import { useLiveQuery } from 'electric-sql/react';
 import { PanelTopClose, Plus, Trash, XSquare } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +14,7 @@ import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import { AvatarWrap } from '../../../common/avatar-wrap';
-import { type Label, useElectric } from '../../../common/electric/electrify';
+import { useElectric } from '../../../common/electric/electrify';
 import { TooltipButton } from '../../../common/tooltip-button';
 import { Badge } from '../../../ui/badge';
 import AddProjects from '../../add-project';
@@ -26,20 +25,8 @@ const BoardHeader = ({ mode, children, totalCount }: { mode: 'table' | 'board'; 
   const { t } = useTranslation();
 
   const { setFocusView } = useNavigationStore();
-  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, showPageHeader, togglePageHeader } = useWorkspaceStore();
-
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
-
-  const { results: labels = [] } = useLiveQuery(
-    electric.db.labels.liveMany({
-      where: {
-        organization_id: workspace.organizationId,
-      },
-    }),
-  ) as {
-    results: Label[];
-  };
+  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, showPageHeader, togglePageHeader, labels } = useWorkspaceStore();
+  const electric = useElectric();
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet workspace={workspace} />, {

@@ -11,7 +11,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dropdowner } from '~/modules/common/dropdowner/state';
-import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify';
+import { type Task, useElectric } from '~/modules/common/electric/electrify';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
@@ -69,9 +69,10 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const { user } = useUserStore();
   const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
-  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId, members } = useWorkspaceStore();
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId, members, labels } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
+  const projectLabels = labels.filter((l) => l.project_id === project.id);
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
@@ -100,19 +101,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
 
   const isLoading = !updatedAt;
 
-  const { results: labels = [] } = useLiveQuery(
-    Electric.db.labels.liveMany({
-      where: {
-        project_id: project.id,
-      },
-      orderBy: {
-        last_used: 'desc',
-      },
-    }),
-  ) as {
-    results: Label[] | undefined;
-  };
-
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
@@ -133,7 +121,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     tasks,
     showAccepted,
     showIced,
-    labels,
+    projectLabels,
     members.filter((m) => m.projectIds.includes(project.id)),
   );
 
@@ -358,7 +346,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
               projectId={project.id}
               organizationId={project.organizationId}
               tasks={tasks}
-              labels={labels}
+              labels={projectLabels}
               onCloseForm={() => toggleCreateForm(project.id)}
             />
           )}

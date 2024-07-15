@@ -1,5 +1,4 @@
 import { CommandEmpty } from 'cmdk';
-import { useLiveQuery } from 'electric-sql/react';
 import { Check, Dot, History, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -38,29 +37,19 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
 
   const { changeColumn } = useWorkspaceUIStore();
   const user = useUserStore((state) => state.user);
-  const { focusedTaskId, workspace } = useWorkspaceStore();
+  const { focusedTaskId, workspace, labels } = useWorkspaceStore();
+  const projectLabels = labels.filter((l) => l.project_id === projectId);
   const isSearching = searchValue.length > 0;
 
-  const { results: labels = [], updatedAt } = useLiveQuery(
-    Electric.db.labels.liveMany({
-      where: {
-        project_id: projectId,
-      },
-    }),
-  ) as {
-    results: Label[] | undefined;
-    updatedAt: Date | undefined;
-  };
-
   const showedLabels = useMemo(() => {
-    if (searchValue.length) return labels.filter((l) => l.name.toLowerCase().includes(searchValue));
+    if (searchValue.length) return projectLabels.filter((l) => l.name.toLowerCase().includes(searchValue));
     if (isRemoving) return selectedLabels;
     // save to recent labels all labels that used in past 3 days
     changeColumn(workspace.id, projectId, {
-      recentLabels: labels.filter((l) => recentlyUsed(l.last_used, 3)),
+      recentLabels: projectLabels.filter((l) => recentlyUsed(l.last_used, 3)),
     });
-    return labels.slice(0, 8);
-  }, [labels, isRemoving, searchValue]);
+    return projectLabels.slice(0, 8);
+  }, [projectLabels, isRemoving, searchValue]);
 
   const createLabel = (newLabel: Label) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
@@ -170,7 +159,7 @@ const SetLabels = ({ value, projectId, organizationId, taskUpdateCallback, creat
       {!isSearching && <Kbd value="L" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
         <CommandGroup>
-          {!updatedAt && (
+          {!labels && (
             <CommandLoading>
               <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
             </CommandLoading>

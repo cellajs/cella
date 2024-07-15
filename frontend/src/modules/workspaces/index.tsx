@@ -6,6 +6,9 @@ import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
+import { type Label, useElectric } from '../common/electric/electrify.ts';
+import { useEffect } from 'react';
+import { useLiveQuery } from 'electric-sql/react';
 
 export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -14,16 +17,32 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
   });
 
 const WorkspacePage = () => {
-  const { showPageHeader, setProjects, setMembers } = useWorkspaceStore();
+  const { showPageHeader, setProjects, setMembers, setLabels } = useWorkspaceStore();
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  const Electric = useElectric()!;
 
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data.workspace;
   const projects = workspaceQuery.data.relatedProjects;
   const workspaceMembers = workspaceQuery.data.workspaceMembers;
-  //TODO David fix this and project board update
+  //TODO create new useMutateWorkspaceQueryData hook or find other solution
   setProjects(projects as Project[]);
   setMembers(workspaceMembers);
+
+  const { results } = useLiveQuery(
+    Electric.db.labels.liveMany({
+      where: {
+        project_id: { in: projects.map((p) => p.id) },
+      },
+    }),
+  ) as {
+    results: Label[] | undefined;
+  };
+
+  useEffect(() => {
+    if (results) setLabels(results);
+  }, [results]);
 
   return (
     <FocusViewContainer>
