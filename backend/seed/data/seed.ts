@@ -13,6 +13,7 @@ import { projectsToWorkspacesTable } from '../../src/db/schema/projects-to-works
 import { type InsertWorkspaceModel, workspacesTable } from '../../src/db/schema/workspaces';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
+import slugify from 'slugify';
 
 export const dataSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
@@ -214,7 +215,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         await db.insert(tasksTable).values(insertTasks).onConflictDoNothing();
 
         const insertLabels: InsertLabelModel[] = Array.from({ length: 5 }).map(() => {
-          const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+          const name = organizationsUniqueEnforcer.enforce(() => slugify(faker.company.name(), { lower: true }));
 
           return {
             id: nanoid(),
