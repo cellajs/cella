@@ -24,6 +24,7 @@ import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute 
 import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
+import { Public } from '~/modules/common/public';
 
 // Lazy load main App component, which is behind authentication
 const App = lazy(() => import('~/modules/common/app'));
@@ -43,6 +44,13 @@ export const getAndSetMenu = async () => {
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
+});
+
+export const PublicRoute = createRoute({
+  id: 'public-layout',
+  staticData: { pageTitle: '', isAuth: false },
+  getParentRoute: () => rootRoute,
+  component: () => <Public />,
 });
 
 const ErrorNoticeRoute = createRoute({
@@ -113,13 +121,15 @@ export const acceptInviteRoute = createRoute({
 });
 
 export const routeTree = rootRoute.addChildren([
-  AboutRoute,
-  ContactRoute,
-  LegalRoute,
-  AccessibilityRoute,
-  ErrorNoticeRoute,
-  SignOutRoute,
-  AuthRoute.addChildren([SignInRoute, ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken]), acceptInviteRoute]),
+  PublicRoute.addChildren([
+    AboutRoute,
+    ContactRoute,
+    LegalRoute,
+    AccessibilityRoute,
+    ErrorNoticeRoute,
+    SignOutRoute,
+    AuthRoute.addChildren([SignInRoute, ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailRouteWithToken]), acceptInviteRoute]),
+  ]),
   AppRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,

@@ -66,24 +66,18 @@ export function Sheeter() {
       <Sheet key={sheet.id} open={open} onOpenChange={onOpenChange(sheet)} modal={true}>
         <SheetPortal>
           <SheetContent className={`${existingSheet?.className ? existingSheet.className : sheet.className} items-start`}>
-            {sheet.title && (
-              <StickyBox className="z-10 flex items-center justify-between bg-background py-4">
-                <SheetTitle>
-                  {existingSheet?.title ? existingSheet.title : typeof sheet.title === 'string' ? <span>{sheet.title}</span> : sheet.title}
-                </SheetTitle>
-                <SheetClose className="mr-1 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-                  <X size={24} strokeWidth={1.25} />
-                  <span className="sr-only">{t('common:close')}</span>
-                </SheetClose>
-              </StickyBox>
-            )}
-            {/* For accessibility */}
-            {!sheet.title && <SheetTitle className="hidden" />}
-            {sheet.text && (
-              <SheetHeader>
-                <SheetDescription>{sheet.text}</SheetDescription>
-              </SheetHeader>
-            )}
+            <StickyBox className={`${existingSheet?.title || sheet.title ? '' : 'hidden'} z-10 flex items-center justify-between bg-background py-4`}>
+              <SheetTitle>
+                {existingSheet?.title ? existingSheet.title : typeof sheet.title === 'string' ? <span>{sheet.title}</span> : sheet.title}
+              </SheetTitle>
+              <SheetClose className="mr-1 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                <X size={24} strokeWidth={1.25} />
+                <span className="sr-only">{t('common:close')}</span>
+              </SheetClose>
+            </StickyBox>
+            <SheetHeader className={`${sheet.text || sheet.title ? '' : 'hidden'}`}>
+              <SheetDescription className={`${sheet.text ? '' : 'hidden'}`}>{sheet.text}</SheetDescription>
+            </SheetHeader>
             {existingSheet?.content ? existingSheet.content : sheet.content}
           </SheetContent>
         </SheetPortal>

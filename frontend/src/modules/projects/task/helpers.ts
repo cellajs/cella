@@ -10,17 +10,16 @@ export const sortTaskOrder = (task1: Pick<Task, 'status' | 'sort_order'>, task2:
   return 0;
 };
 
-export const getTaskOrder = (taskId: string, newStatus: number, tasks: Task[]) => {
+export const getTaskOrder = (taskId: string, newStatus: string | number | null, tasks: Task[]) => {
+  if (typeof newStatus !== 'number') return;
   const currentTask = tasks.find((t) => t.id === taskId);
   if (!currentTask) return;
   // Get list of tasks with new status
   const filteredTasks = tasks.filter((t) => t.status === newStatus).sort((a, b) => b.sort_order - a.sort_order);
-
-  // Handle case where there are no tasks
-  if (filteredTasks.length === 0) return 1;
-
-  // If new status is higher set order to bottom of a list
-  if (currentTask.status < newStatus) return filteredTasks.slice(-1)[0].sort_order / 2;
+  if (!filteredTasks.length) return;
+  if (currentTask.status < newStatus)
+    // If new status is higher set order to bottom of a list
+    return filteredTasks.slice(-1)[0].sort_order / 2;
   // If new status is lower or the same set order to top of the list
   return filteredTasks[0].sort_order + 1;
 };

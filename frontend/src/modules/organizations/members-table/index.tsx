@@ -148,7 +148,6 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     );
     useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   }
-
   // Table selection
   const selectedMembers = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
@@ -228,7 +227,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
       {
         drawerOnMobile: false,
         className: 'max-w-xl',
-        title: t('common:remove_member'),
+        title: t('common:remove_resource', { resource: t('member').toLowerCase() }),
         text: (
           <Trans
             i18nKey="common:confirm.remove_members"

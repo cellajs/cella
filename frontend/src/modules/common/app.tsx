@@ -2,6 +2,9 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { AppContent } from '~/modules/common/app-content';
 
 import AppNav from '~/modules/common/app-nav';
+import { Dialoger } from '~/modules/common/dialoger';
+import { DropDowner } from '~/modules/common/dropdowner';
+import { Sheeter } from '~/modules/common/sheeter';
 import SSE from '~/modules/common/sse';
 import ElectricProvider from './electric';
 import ErrorNotice from './error-notice';
@@ -18,6 +21,9 @@ const App = () => {
             <AppNav />
             <SSE />
             <AppContent />
+            <Dialoger />
+            <Sheeter />
+            <DropDowner />
           </SSEProvider>
         </ElectricProvider>
       </ErrorBoundary>

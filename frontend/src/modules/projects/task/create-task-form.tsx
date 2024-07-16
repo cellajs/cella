@@ -29,17 +29,14 @@ import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 import { SelectImpact, impacts } from './task-selectors/select-impact.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
-import SelectStatus, { type TaskStatus } from './task-selectors/select-status.tsx';
+import SelectStatus, { type TaskStatus, taskStatuses } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
-import { taskStatuses } from '../tasks-table/status.tsx';
-
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
 
 interface CreateTaskFormProps {
   tasks: Task[];
   labels: Label[];
-  members: Member[];
   projectId: string;
   organizationId: string;
   dialog?: boolean;
@@ -74,7 +71,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members, projectId, organizationId, dialog: isDialog, onCloseForm }) => {
+const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organizationId, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore(({ user }) => ({ user }));
@@ -116,12 +113,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
     }),
     [],
   );
-
-  const createLabel = (newLabel: Label) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // Save the new label to the database
-    Electric.db.labels.create({ data: newLabel });
-  };
 
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
@@ -252,12 +243,12 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                     >
                       {selectedImpact !== null ? (
                         <>
-                          <selectedImpact.icon className="size-4" aria-hidden="true" title="Set impact" />
+                          <selectedImpact.icon className="size-4" aria-hidden="true" />
                           {selectedImpact.label}
                         </>
                       ) : (
                         <>
-                          <NotSelected className="size-4" aria-hidden="true" title="Set impact" />
+                          <NotSelected className="size-4" aria-hidden="true" />
                           {t('common:set_impact')}
                         </>
                       )}
@@ -285,8 +276,16 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                     type="button"
                     onClick={(event) => {
                       dropdowner(
-                        <AssignMembers users={members} value={value as Member[]} triggerWidth={bounds.width - 3} changeAssignedTo={onChange} />,
-                        { id: `assign_to-${defaultId}`, trigger: event.currentTarget },
+                        <AssignMembers
+                          value={value as Member[]}
+                          triggerWidth={bounds.width - 3}
+                          projectId={projectId}
+                          creationValueChange={onChange}
+                        />,
+                        {
+                          id: `assign_to-${defaultId}`,
+                          trigger: event.currentTarget,
+                        },
                       );
                     }}
                   >
@@ -346,13 +345,11 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                     onClick={(event) => {
                       dropdowner(
                         <SetLabels
-                          labels={labels}
                           value={value as Label[]}
                           triggerWidth={bounds.width - 3}
                           projectId={projectId}
                           organizationId={organizationId}
-                          changeLabels={onChange}
-                          createLabel={createLabel}
+                          creationValueChange={onChange}
                         />,
                         { id: `labels-${defaultId}`, trigger: event.currentTarget },
                       );
@@ -360,7 +357,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, labels, members,
                   >
                     <div className="flex truncate flex-wrap gap-[.07rem]">
                       {value.length > 0 ? (
-                        value.map(({ name, id }) => {
+                        (value as Label[]).map(({ name, id }) => {
                           return (
                             <div key={id} className="flex flex-wrap align-center justify-center items-center rounded-full border pl-2 pr-1 bg-border">
                               <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] text-sm h-6 last:mr-0">

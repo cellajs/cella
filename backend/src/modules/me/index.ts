@@ -118,6 +118,7 @@ const meRoutes = app
         organizationId: project.organizationId,
         membership: toMembershipInfo.required(membership),
         parentId: workspace.workspaceId,
+        parentSlug: workspacesWithMemberships.find((item) => item.workspace.id === workspace.workspaceId)?.workspace.slug,
       };
     });
 

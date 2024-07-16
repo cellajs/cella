@@ -1,10 +1,7 @@
-import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
+import { recentlyUsed } from '~/lib/utils.ts';
 import type { Label, Task } from '~/modules/common/electric/electrify';
 import { sortTaskOrder } from '~/modules/projects/task/helpers';
 import type { Member } from '~/types';
-
-dayjs.extend(isBetween);
 
 export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced: boolean, table?: boolean) => {
   let acceptedCount = 0;
@@ -13,11 +10,11 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
   const filteredTasks = tasks
     .filter((task) => !task.parent_id)
     .filter((task) => {
-      // Count accepted and iced tasks
-      if (task.status === 6 && showAcceptedByTime(task)) acceptedCount += 1;
+      // Count accepted in past 30 days and iced tasks
+      if (task.status === 6 && recentlyUsed(task.modified_at, 30)) acceptedCount += 1;
       if (task.status === 0) icedCount += 1;
-      // Filter based on showAccepted and showIced
-      if (showAccepted && showAcceptedByTime(task) && task.status === 6) return true;
+      // Filter based on showAccepted in past 30 days and showIced
+      if (showAccepted && recentlyUsed(task.modified_at, 30) && task.status === 6) return true;
       if (showIced && task.status === 0) return true;
       return task.status !== 0 && task.status !== 6;
     });
@@ -38,17 +35,13 @@ export const enhanceTasks = (tasks: Task[], labels: Label[], members: Member[]) 
     const virtualAssignedTo = task.assigned_to?.length ? members.filter((m) => task.assigned_to?.includes(m.id)) : [];
     const virtualLabels = task.labels?.length ? labels.filter((l) => task.labels?.includes(l.id)) : [];
     const virtualCreatedBy = members.find((m) => m.id === task.created_by);
+    const virtualUpdatedBy = members.find((m) => m.id === task.modified_by);
     return {
       ...task,
       virtualAssignedTo,
       virtualLabels,
       virtualCreatedBy,
+      virtualUpdatedBy,
     };
   });
-};
-
-const showAcceptedByTime = (task: Task) => {
-  const thirtyDaysAgo = dayjs().subtract(30, 'day');
-  const today = dayjs();
-  return dayjs(task.modified_at).isBetween(thirtyDaysAgo, today, null, '[]');
 };

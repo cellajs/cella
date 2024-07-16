@@ -4,7 +4,7 @@ import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from './use-hot-ke
 
 export function useHotkeys(
   hotkeys: HotkeyItem[],
-  tagsToIgnore: string[] = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'],
+  tagsToIgnore: string[] = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'],
   triggerOnContentEditable = false,
 ) {
   React.useEffect(() => {

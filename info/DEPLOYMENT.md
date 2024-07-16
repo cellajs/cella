@@ -6,7 +6,7 @@ Cella makes it easy to deploy on [Render](https://www.render.com) (backend, fron
 
 Go to [blueprints](https://dashboard.render.com/select-repo?type=blueprint) and select the repo by clicking `Connect`.
 
-Speed up the process by using the existing `render.yaml` file in the root. All deployed PRs will use the onrender.com domain.
+Speed up the process by using the existing `render.yaml` file in the root.
 
 ## Enable Novu Slack notification
 

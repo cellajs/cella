@@ -1,8 +1,8 @@
-import { useLiveQuery } from 'electric-sql/react';
-import { FilterX, PanelTopClose, Plus, Trash, XSquare } from 'lucide-react';
+import { PanelTopClose, Plus, Trash, XSquare } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import TableCount from '~/modules/common/data-table/table-count';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -14,31 +14,19 @@ import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import { AvatarWrap } from '../../../common/avatar-wrap';
-import { type Label, useElectric } from '../../../common/electric/electrify';
+import { useElectric } from '../../../common/electric/electrify';
 import { TooltipButton } from '../../../common/tooltip-button';
 import { Badge } from '../../../ui/badge';
 import AddProjects from '../../add-project';
 import LabelsTable from '../../labels-table';
 import WorkspaceActions from './board-header-actions';
 
-const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: React.ReactNode }) => {
+const BoardHeader = ({ mode, children, totalCount }: { mode: 'table' | 'board'; children?: React.ReactNode; totalCount?: number }) => {
   const { t } = useTranslation();
 
   const { setFocusView } = useNavigationStore();
-  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, showPageHeader, togglePageHeader } = useWorkspaceStore();
-
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
-
-  const { results: labels = [] } = useLiveQuery(
-    electric.db.labels.liveMany({
-      where: {
-        organization_id: workspace.organizationId,
-      },
-    }),
-  ) as {
-    results: Label[];
-  };
+  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, showPageHeader, togglePageHeader, labels } = useWorkspaceStore();
+  const electric = useElectric();
 
   const openSettingsSheet = () => {
     sheet(<WorkspaceSettings sheet workspace={workspace} />, {
@@ -61,17 +49,29 @@ const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: R
   const onRemove = () => {
     if (!electric) return toast.error(t('common:local_db_inoperable'));
 
+    // Delete child tasks first
     electric.db.tasks
       .deleteMany({
         where: {
-          id: {
+          parent_id: {
             in: selectedTasks,
           },
         },
       })
       .then(() => {
-        toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
-        setSelectedTasks([]);
+        // Then delete parent tasks
+        electric.db.tasks
+          .deleteMany({
+            where: {
+              id: {
+                in: selectedTasks,
+              },
+            },
+          })
+          .then(() => {
+            toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
+            setSelectedTasks([]);
+          });
       });
   };
 
@@ -91,35 +91,29 @@ const BoardHeader = ({ mode, children }: { mode: 'table' | 'board'; children?: R
 
   return (
     <StickyBox enabled={mode === 'table'} className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
-      {!selectedTasks.length && !searchQuery.length && (
+      {!selectedTasks.length && (
         <div className="flex gap-2">
-          <TooltipButton toolTipContent={t('common:page_view')}>
-            <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
-              {showPageHeader ? (
-                <PanelTopClose size={16} />
-              ) : (
-                <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
-              )}
-            </Button>
-          </TooltipButton>
-          <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
-            <Button variant="plain" onClick={handleAddProjects}>
-              <Plus size={16} />
-              <span className="max-lg:hidden ml-1">{t('common:add')}</span>
-            </Button>
-          </TooltipButton>
-        </div>
-      )}
-      {!!searchQuery.length && (
-        <div className="inline-flex align-center text-muted-foreground text-sm  items-center gap-2 max-sm:hidden">
-          <TooltipButton toolTipContent={t('common:clear_filter')}>
-            <Button variant="ghost" onClick={() => setSearchQuery('')}>
-              <FilterX size={16} />
-              <span className="ml-1">{t('common:clear')}</span>
-            </Button>
-          </TooltipButton>
-          {/* TODO: Add this after creating new store */}
-          {/* <div className="w-max mx-2">{`${tasksCount} ${tasksCount > 0 && searchQuery ? `task ${t('common:found')}` : 'tasks'}`}</div> */}
+          {!searchQuery.length && (
+            <TooltipButton toolTipContent={t('common:page_view')}>
+              <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
+                {showPageHeader ? (
+                  <PanelTopClose size={16} />
+                ) : (
+                  <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+                )}
+              </Button>
+            </TooltipButton>
+          )}
+          {mode === 'table' ? (
+            <TableCount count={totalCount} type="task" isFiltered={!!searchQuery} onResetFilters={() => setSearchQuery('')} />
+          ) : (
+            <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
+              <Button variant="plain" onClick={handleAddProjects}>
+                <Plus size={16} />
+                <span className="max-lg:hidden ml-1">{t('common:add')}</span>
+              </Button>
+            </TooltipButton>
+          )}
         </div>
       )}
       {!!selectedTasks.length && (

@@ -1,12 +1,13 @@
 import { Check, ChevronDown } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { Button } from '~/modules/ui/button';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import type { Project } from '~/types';
+import { inNumbersArray } from '../task/task-selectors/helpers';
 
 interface Props {
   projects: Project[];
@@ -20,31 +21,13 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
   const [openPopover, setOpenPopover] = useState(false);
   const [searchValue, setSearchValue] = useState('');
 
-  const isSearching = searchValue.length > 0;
-
   const handleSelectClick = (value: string) => {
     const existingProject = selectedProjects.find((p) => p === value);
-    if (typeof existingProject !== 'undefined') {
-      const updatedList = selectedProjects.filter((p) => p !== value);
-      setSelectedProjects(updatedList);
-      return;
-    }
-    const newProject = projects.find((p) => p.id === value);
-    if (newProject) {
-      const updatedList = [...selectedProjects, newProject.id];
-      setSelectedProjects(updatedList);
-      return;
-    }
-  };
+    if (typeof existingProject !== 'undefined') return setSelectedProjects(selectedProjects.filter((p) => p !== value));
 
-  // TODO prevent search results from blick
-  useMemo(() => {
-    const project = projects.find((p) => p.name === searchValue);
-    if (!project) return;
-    handleSelectClick(project.id);
-    setSearchValue('');
-    return;
-  }, [searchValue]);
+    const newProject = projects.find((p) => p.id === value);
+    if (newProject) return setSelectedProjects([...selectedProjects, newProject.id]);
+  };
 
   return (
     <Popover open={openPopover} onOpenChange={setOpenPopover}>
@@ -60,16 +43,18 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
               {selectedProjects.map((projectId) => {
                 const currentProject = projects.find((p) => p.id === projectId);
                 if (!currentProject) return null;
+                //Omit style background if projects will be without a color preference.
                 return (
                   <div key={currentProject.id} className="flex items-center gap-3">
                     <AvatarWrap
-                      type="user"
+                      type="project"
                       id={currentProject.id}
                       name={currentProject.name}
                       url={currentProject.thumbnailUrl}
+                      backgroundColor={currentProject.color}
                       className="h-6 w-6 text-xs"
                     />
-                    <span>{currentProject.name}</span>
+                    {selectedProjects.length < 2 && <span>{currentProject.name}</span>}
                   </div>
                 );
               })}
@@ -87,13 +72,22 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
         <Command className="relative rounded-lg">
           <CommandInput
             value={searchValue}
-            onValueChange={setSearchValue}
+            onValueChange={(searchValue) => {
+              // If the user types a number, select status like useHotkeys
+              if (inNumbersArray(projects.length, searchValue)) return handleSelectClick(projects[Number.parseInt(searchValue) - 1].id);
+              setSearchValue(searchValue);
+            }}
             clearValue={setSearchValue}
             className="leading-normal"
             placeholder={t('common:placeholder.select_project')}
           />
-          {!isSearching && <Kbd value="A" className="absolute top-3 right-2.5" />}
+          {!searchValue.length && <Kbd value="P" className="absolute top-3 right-2.5" />}
           <CommandList>
+            {!!searchValue.length && (
+              <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+                {t('common:no_resource_found', { resource: t('common:status').toLowerCase() })}
+              </CommandEmpty>
+            )}
             {projects && (
               <CommandGroup>
                 {projects.map((project, index) => (
@@ -106,12 +100,20 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
                     className="group rounded-md flex justify-between items-center w-full leading-normal"
                   >
                     <div className="flex items-center gap-3">
-                      <AvatarWrap type="user" id={project.id} name={project.name} url={project.thumbnailUrl} className="h-6 w-6 text-xs" />
+                      {/* Omit style background if projects will be without a color preference. */}
+                      <AvatarWrap
+                        type="project"
+                        id={project.id}
+                        name={project.name}
+                        url={project.thumbnailUrl}
+                        backgroundColor={project.color}
+                        className="h-6 w-6 text-xs"
+                      />
                       <span>{project.name}</span>
                     </div>
                     <div className="flex items-center">
                       {selectedProjects.some((p) => p === project.id) && <Check size={16} className="text-success" />}
-                      {!isSearching && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>}
+                      {!searchValue.length && <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
                     </div>
                   </CommandItem>
                 ))}

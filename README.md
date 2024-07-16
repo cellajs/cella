@@ -42,6 +42,8 @@
 - [Roadmap](/info/ROADMAP.md)
 - [Deployment](/info/DEPLOYMENT.md)
 
+<br>
+
 ## Installation
 
 #### Prerequisites
@@ -69,7 +71,7 @@ Start all servers:
 pnpm dev
 ```
 
-Page-related resources are handled by fetching from an[API](https://api.cellajs.com/docs). Content-related resources use a *local-first* strategy with [ElectricSQL](https://github.com/electric-sql/electric). Generate backend migrations for both and client-side schemas for *electrified schemas*.
+Page-related resources are handled by fetching from an [API](https://api.cellajs.com/docs). Content-related resources use a *local-first* strategy with [ElectricSQL](https://github.com/electric-sql/electric). Generate backend migrations for both and client-side schemas for *electrified schemas*.
 
 ```bash
 pnpm generate

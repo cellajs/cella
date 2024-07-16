@@ -1,8 +1,8 @@
-import { Button } from '~/modules/ui/button';
-import { EllipsisVertical, Tag, Settings, Plus } from 'lucide-react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '~/modules/ui/dropdown-menu';
+import { EllipsisVertical, Plus, Settings, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { Button } from '~/modules/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 interface WorkspaceActionsProps {
   createNewProject: () => void;
@@ -32,18 +32,18 @@ const WorkspaceActions = ({ createNewProject, openLabelsSheet, openSettingsSheet
             <EllipsisVertical size={16} />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => createNewProject()} className="flex items-center justify-between">
-            <span>{t('common:new_project')}</span>
+        <DropdownMenuContent className="min-w-48" align="end">
+          <DropdownMenuItem onClick={() => createNewProject()} className="flex items-center gap-2">
             <Plus size={14} />
+            <span>{t('common:new_project')}</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => openLabelsSheet()} className="flex items-center justify-between">
-            <span>{t('common:labels')}</span>
+          <DropdownMenuItem onClick={() => openLabelsSheet()} className="flex items-center gap-2">
             <Tag size={14} />
+            <span>{t('common:labels')}</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => openSettingsSheet()} className="flex items-center justify-between">
-            <span>{t('common:settings')}</span>
+          <DropdownMenuItem onClick={() => openSettingsSheet()} className="flex items-center gap-2">
             <Settings size={14} />
+            <span>{t('common:settings')}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

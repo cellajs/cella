@@ -61,6 +61,7 @@
   "create_your_first": "Create your first",
   "created_at": "Created",
   "created_by": "Created by",
+  "updated_by": "Updated by",
   "updated_at": "Updated",
   "dark": "Dark",
   "default_language": "Default language",
@@ -305,8 +306,8 @@
   "requests": "Requests",
   "request_type": "Request type",
   "remove": "Remove",
+  "remove_resource": "Remove {{resource}}",
   "results": "Results",
-  "remove_member": "Remove member",
   "remove_task": "Remove selected task",
   "request_access": "Request access",
   "request_info": "Request info",
@@ -442,5 +443,7 @@
   "status": "Status",
   "manage": "Manage",
   "placeholder.type_name": "Type name ...",
-  "checkout": "Checkout"
+  "checkout": "Checkout",
+  "show_all": "Show all",
+  "todo": "Todo"
 }

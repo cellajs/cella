@@ -12,6 +12,7 @@ export type Task = Omit<BaseTask, 'labels' | 'assigned_to'> & {
   assigned_to: string[] | null;
   virtualAssignedTo: Member[];
   virtualCreatedBy?: Member;
+  virtualUpdatedBy?: Member;
   subTasks: Task[];
 };
 

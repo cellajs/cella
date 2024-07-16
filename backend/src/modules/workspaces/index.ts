@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, count, eq, inArray, asc } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
@@ -11,6 +11,9 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import workspaceRoutesConfig from './routes';
+import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
+import { projectsTable } from '../../db/schema/projects';
+import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 
@@ -56,19 +59,93 @@ const workspacesRoutes = app
     );
   })
   /*
-   * Get workspace by id or slug
+   * Get workspace by id or slug with related projects & members
    */
   .openapi(workspaceRoutesConfig.getWorkspace, async (ctx) => {
     const workspace = ctx.get('workspace');
     const memberships = ctx.get('memberships');
+    const user = ctx.get('user');
     const membership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'workspace');
+    const projectsWithMembership = await db
+      .select({
+        project: projectsTable,
+        membership: membershipsTable,
+      })
+      .from(projectsTable)
+      .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.workspaceId, workspace.id))
+      .innerJoin(
+        membershipsTable,
+        and(
+          eq(membershipsTable.projectId, projectsToWorkspacesTable.projectId),
+          eq(membershipsTable.userId, user.id),
+          eq(membershipsTable.inactive, false),
+        ),
+      )
+      .where(eq(projectsTable.id, projectsToWorkspacesTable.projectId))
+      .orderBy(asc(membershipsTable.order));
+
+    const projects = projectsWithMembership.map(({ project, membership }) => {
+      return {
+        ...project,
+        membership: toMembershipInfo(membership),
+        workspaceId: workspace.id,
+      };
+    });
+
+    const membershipCount = db
+      .select({
+        userId: membershipsTable.userId,
+        memberships: count().as('memberships'),
+      })
+      .from(membershipsTable)
+      .groupBy(membershipsTable.userId)
+      .as('membership_count');
+
+    const membersFilters = [eq(usersTable.id, membershipsTable.userId), eq(membershipsTable.type, 'project')];
+    if (projects.length)
+      membersFilters.push(
+        inArray(
+          membershipsTable.projectId,
+          projects.map((p) => p.id),
+        ),
+      );
+    const membersQuery = db
+      .select({
+        user: usersTable,
+        membership: membershipsTable,
+        counts: {
+          memberships: membershipCount.memberships,
+        },
+        projectId: membershipsTable.projectId,
+      })
+      .from(usersTable)
+      .innerJoin(membershipsTable, and(...membersFilters));
+
+    const members = (await membersQuery).map(({ user, membership, projectId, counts }) => ({
+      ...user,
+      membership: toMembershipInfo.required(membership),
+      projectId,
+      counts,
+    }));
+    const uniqueMembersMap = members.reduce((acc, member) => {
+      const existingMember = acc.get(member.id);
+      if (existingMember) {
+        existingMember.projectIds.push(member.projectId);
+      } else {
+        acc.set(member.id, { ...member, projectIds: [member.projectId] });
+      }
+      return acc;
+    }, new Map());
+
+    const uniqueMembers = Array.from(uniqueMembersMap.values());
 
     return ctx.json(
       {
         success: true,
         data: {
-          ...workspace,
-          membership: toMembershipInfo(membership),
+          workspace: { ...workspace, membership: toMembershipInfo(membership) },
+          relatedProjects: projects,
+          workspaceMembers: uniqueMembers,
         },
       },
       200,

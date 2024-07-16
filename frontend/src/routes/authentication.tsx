@@ -6,12 +6,12 @@ import ResetPassword from '~/modules/auth/reset-password';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { useUserStore } from '~/store/user';
-import { getAndSetMe, rootRoute } from '.';
+import { getAndSetMe, PublicRoute } from '.';
 
 export const AuthRoute = createRoute({
   id: 'auth-layout',
   staticData: { pageTitle: null, isAuth: false },
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => PublicRoute,
   component: () => <Outlet />,
 });
 
@@ -62,7 +62,7 @@ export const VerifyEmailRouteWithToken = createRoute({
 
 export const SignOutRoute = createRoute({
   path: '/sign-out',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => PublicRoute,
   staticData: { pageTitle: 'Sign out', isAuth: false },
   component: SignOut,
 });

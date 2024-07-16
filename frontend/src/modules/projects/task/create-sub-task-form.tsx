@@ -82,7 +82,6 @@ export const CreateSubTaskForm = ({
 
   const onSubmit = (values: FormValues) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // create(values);
     const summary = values.markdown.split('\n')[0];
     const slug = summary.toLowerCase().replace(/ /g, '-');
 
@@ -108,7 +107,7 @@ export const CreateSubTaskForm = ({
       })
       .then(() => {
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:task') }));
+        toast.success(t('common:success.create_resource', { resource: t('common:todo') }));
         setFormState(false);
       });
   };
@@ -119,7 +118,6 @@ export const CreateSubTaskForm = ({
         <span className="ml-1 font-normal">{firstSubTask ? t('common:create_subtask') : t('common:add_subtask')}</span>
       </Button>
     );
-  // Fix types
   return (
     <Form {...form}>
       <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary">

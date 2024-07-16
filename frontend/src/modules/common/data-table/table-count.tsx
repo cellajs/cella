@@ -13,7 +13,7 @@ const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps
   const { t } = useTranslation();
 
   return (
-    <div className="text-muted-foreground text-sm flex items-center gap-2">
+    <div className="max-sm:hidden text-muted-foreground text-sm pr-4 flex items-center gap-2">
       {count !== undefined && (
         <>
           {isFiltered && (
