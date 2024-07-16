@@ -443,5 +443,6 @@
   "manage": "Manage",
   "placeholder.type_name": "Type name ...",
   "checkout": "Checkout",
-  "show_all": "Show all"
+  "show_all": "Show all",
+  "todo": "Todo"
 }
