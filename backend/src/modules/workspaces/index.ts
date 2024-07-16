@@ -59,25 +59,6 @@ const workspacesRoutes = app
     );
   })
   /*
-   * Get workspace by id or slug
-   */
-  // .openapi(workspaceRoutesConfig.getWorkspace, async (ctx) => {
-  //   const workspace = ctx.get('workspace');
-  //   const memberships = ctx.get('memberships');
-  //   const membership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'workspace');
-
-  //   return ctx.json(
-  //     {
-  //       success: true,
-  //       data: {
-  //         ...workspace,
-  //         membership: toMembershipInfo(membership),
-  //       },
-  //     },
-  //     200,
-  //   );
-  // })
-  /*
    * Get workspace by id or slug with related projects & members
    */
   .openapi(workspaceRoutesConfig.getWorkspace, async (ctx) => {
@@ -113,6 +94,14 @@ const workspacesRoutes = app
       .groupBy(membershipsTable.userId)
       .as('membership_count');
 
+    const membersFilters = [eq(usersTable.id, membershipsTable.userId), eq(membershipsTable.type, 'project')];
+    if (projects.length)
+      membersFilters.push(
+        inArray(
+          membershipsTable.projectId,
+          projects.map((p) => p.id),
+        ),
+      );
     const membersQuery = db
       .select({
         user: usersTable,
@@ -123,17 +112,7 @@ const workspacesRoutes = app
         projectId: membershipsTable.projectId,
       })
       .from(usersTable)
-      .innerJoin(
-        membershipsTable,
-        and(
-          inArray(
-            membershipsTable.projectId,
-            projects.map((p) => p.id),
-          ),
-          eq(usersTable.id, membershipsTable.userId),
-          eq(membershipsTable.type, 'project'),
-        ),
-      );
+      .innerJoin(membershipsTable, and(...membersFilters));
 
     const members = (await membersQuery).map(({ user, membership, projectId, counts }) => ({
       ...user,
