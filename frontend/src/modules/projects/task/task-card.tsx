@@ -185,15 +185,18 @@ export function TaskCard({
       const height = taskRef.current.children[0].getBoundingClientRect().height;
       setItemHeight(height);
     }
-  }, [isExpanded, isEditing, createSubTask]);
+  }, [isExpanded, createSubTask]);
   return (
     <Card
       style={style}
       onMouseDown={() => {
-        if (isEditing) return;
+        if (document.activeElement === taskRef.current) return;
         taskRef.current?.focus();
       }}
-      onFocus={() => dispatchCustomFocusEvent(task.id, task.project_id)}
+      onFocus={() => {
+        if (isFocused) return;
+        dispatchCustomFocusEvent(task.id, task.project_id);
+      }}
       tabIndex={0}
       ref={taskRef}
       className={cn(

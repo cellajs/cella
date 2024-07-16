@@ -66,6 +66,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
+  const variableSizedListRef = useRef(null);
 
   const { menu } = useNavigationStore();
   const user = useUserStore((state) => state.user);
@@ -286,10 +287,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     updatedHeights[index] = size;
     itemHeights.current = updatedHeights;
 
-    console.log('Item heights:', itemHeights.current, containerRef.current);
-
     // Reset the list after the index to reflect the new size
-    if (containerRef.current) (containerRef.current as VariableSizeList).resetAfterIndex?.(index);
+    if (variableSizedListRef.current) (variableSizedListRef.current as VariableSizeList).resetAfterIndex?.(index);
   };
 
   const Task = ({
@@ -469,11 +468,20 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                       </Button>
                       <div className="grow">
                         <AutoSizer>
-                          {({ height, width }: { height: number; width: number }) => (
-                            <List height={height} itemCount={showingTasks.length} itemSize={getItemSize} itemData={showingTasks} width={width}>
-                              {Task}
-                            </List>
-                          )}
+                          {({ height, width }: { height: number; width: number }) => {
+                            return (
+                              <List
+                                ref={variableSizedListRef}
+                                height={height}
+                                itemCount={showingTasks.length}
+                                itemSize={getItemSize}
+                                itemData={showingTasks}
+                                width={width}
+                              >
+                                {Task}
+                              </List>
+                            );
+                          }}
                         </AutoSizer>
                       </div>
                     </div>
