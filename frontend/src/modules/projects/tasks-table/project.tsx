@@ -43,16 +43,7 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
               {selectedProjects.map((projectId) => {
                 const currentProject = projects.find((p) => p.id === projectId);
                 if (!currentProject) return null;
-                if (selectedProjects.length > 1)
-                  return (
-                    <AvatarWrap
-                      type="project"
-                      id={currentProject.id}
-                      name={currentProject.name}
-                      url={currentProject.thumbnailUrl}
-                      className="h-6 w-6"
-                    />
-                  );
+                //Omit style background if projects will be without a color preference.
                 return (
                   <div key={currentProject.id} className="flex items-center gap-3">
                     <AvatarWrap
@@ -60,9 +51,10 @@ const SelectProject = ({ projects, selectedProjects, setSelectedProjects }: Prop
                       id={currentProject.id}
                       name={currentProject.name}
                       url={currentProject.thumbnailUrl}
+                      backgroundColor={currentProject.color}
                       className="h-6 w-6 text-xs"
                     />
-                    <span>{currentProject.name}</span>
+                    {selectedProjects.length < 2 && <span>{currentProject.name}</span>}
                   </div>
                 );
               })}

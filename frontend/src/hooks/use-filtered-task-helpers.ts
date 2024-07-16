@@ -35,11 +35,13 @@ export const enhanceTasks = (tasks: Task[], labels: Label[], members: Member[]) 
     const virtualAssignedTo = task.assigned_to?.length ? members.filter((m) => task.assigned_to?.includes(m.id)) : [];
     const virtualLabels = task.labels?.length ? labels.filter((l) => task.labels?.includes(l.id)) : [];
     const virtualCreatedBy = members.find((m) => m.id === task.created_by);
+    const virtualUpdatedBy = members.find((m) => m.id === task.modified_by);
     return {
       ...task,
       virtualAssignedTo,
       virtualLabels,
       virtualCreatedBy,
+      virtualUpdatedBy,
     };
   });
 };

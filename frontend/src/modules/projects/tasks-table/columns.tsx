@@ -124,8 +124,10 @@ export const useColumns = () => {
                   <span className="font-light">/</span>
                   <span className="font-light">{row.subTasks.length}</span>
                 </div>
+              ) : row.subTasks.length ? (
+                row.subTasks.length
               ) : (
-                row.subTasks.length ? row.subTasks.length : '-'
+                '-'
               ),
           },
           {
@@ -198,6 +200,34 @@ export const useColumns = () => {
             width: 180,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => dateShort(row.modified_at),
+          },
+          {
+            key: 'modified_by',
+            name: t('common:updated_by'),
+            sortable: false,
+            visible: false,
+            width: 180,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row, tabIndex }) => {
+              const user = row.virtualUpdatedBy;
+              if (!user) return row.modified_by;
+              return (
+                <Link
+                  to="/user/$idOrSlug"
+                  tabIndex={tabIndex}
+                  params={{ idOrSlug: user.id }}
+                  className="flex space-x-2 items-center outline-0 ring-0 group truncate"
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey) return;
+                    e.preventDefault();
+                    openUserPreviewSheet(user);
+                  }}
+                >
+                  <AvatarWrap type="user" className="h-6 w-6" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                  <span className="group-hover:underline underline-offset-4 truncate">{user.name || '-'}</span>
+                </Link>
+              );
+            },
           },
         ],
   );
