@@ -31,6 +31,8 @@ export const WorkspaceRoute = createRoute({
   loader: async ({ params: { idOrSlug } }) => {
     const workspaceData = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
     useWorkspaceStore.getState().setWorkspace(workspaceData.workspace);
+    useWorkspaceStore.getState().setSelectedTasks([]);
+    useWorkspaceStore.getState().setSearchQuery('');
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
