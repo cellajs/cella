@@ -56,7 +56,7 @@ const ExpandedTask = ({ task, taskRef, mode, isExpanded, setIsExpanded, handleTa
       )}
       {setIsExpanded && (
         <div>
-          <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 opacity-70">
+          <Button variant="link" size="micro" onClick={() => setIsExpanded(false)} className="py-0 -ml-1">
             {t('common:less').toLowerCase()}
           </Button>
         </div>

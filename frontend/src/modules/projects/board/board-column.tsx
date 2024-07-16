@@ -367,13 +367,12 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                         variant="ghost"
                         disabled={!acceptedCount}
                         size="sm"
-                        className="flex justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-sm -mt-[.07rem]"
+                        className="flex relative justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-xs -mt-[.07rem]"
                       >
-                        <span className="text-xs">
-                          {acceptedCount} {t('common:accepted').toLowerCase()}
-                        </span>
+                        <span className="w-6 mr-1 text-center">{acceptedCount}</span>
+                        <span>{t('common:accepted').toLowerCase()}</span>
                         {!!acceptedCount && (
-                          <ChevronDown size={16} className={`transition-transform opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+                          <ChevronDown size={16} className={`transition-transform absolute right-5 opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
                         )}
                       </Button>
                       {showingTasks.map((task) => (
@@ -396,12 +395,11 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                       variant="ghost"
                       disabled={!icedCount}
                       size="sm"
-                      className="flex justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-sm -mt-[.07rem]"
+                      className="flex relative justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-xs -mt-[.07rem]"
                     >
-                      <span className="text-xs">
-                        {icedCount} {t('common:iced').toLowerCase()}
-                      </span>
-                      {!!icedCount && <ChevronDown size={16} className={`transition-transform opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
+                        <span className="w-6 mr-1 text-center">{icedCount}</span>
+                        <span> {t('common:iced').toLowerCase()}</span>
+                      {!!icedCount && <ChevronDown size={16} className={`transition-transform absolute right-5 opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
                     </Button>
                   </ScrollArea>
                 )}
