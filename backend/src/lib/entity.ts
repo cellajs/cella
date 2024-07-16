@@ -39,7 +39,7 @@ export const resolveEntity = async (entityType: string, idOrSlug: string) => {
  */
 export const resolveEntities = async (entityType: string, ids: Array<string>) => {
   // Get the corresponding table for the entity type
-  const table = entityTables.get(entityType.toUpperCase());
+  const table = entityTables.get(entityType);
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);

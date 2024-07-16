@@ -59,9 +59,7 @@ const usersRoutes = app
     if (q) {
       filters.push(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)));
     }
-    if (role) {
-      filters.push(eq(usersTable.role, role.toUpperCase() as User['role']));
-    }
+    if (role) filters.push(eq(usersTable.role, role as User['role']));
 
     const usersQuery = db
       .select({

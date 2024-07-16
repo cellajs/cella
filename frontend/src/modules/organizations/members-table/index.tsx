@@ -148,7 +148,6 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     );
     useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   }
-
   // Table selection
   const selectedMembers = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));

@@ -377,9 +377,7 @@ const generalRoutes = app
       eq(membershipsTable.type, entityType),
     ];
 
-    if (role) {
-      membersFilters.push(eq(membershipsTable.role, role.toUpperCase() as MembershipModel['role']));
-    }
+    if (role) membersFilters.push(eq(membershipsTable.role, role as MembershipModel['role']));
 
     const memberships = db
       .select()
