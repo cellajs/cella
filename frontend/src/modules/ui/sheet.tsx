@@ -63,7 +63,7 @@ const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Con
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-col space-y-2 pb-4 text-left', className)} {...props} />
+  <div className={cn('flex flex-col gap-2 text-left', className)} {...props} />
 );
 SheetHeader.displayName = 'SheetHeader';
 
@@ -81,7 +81,7 @@ const SheetDescription = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <SheetPrimitive.Description ref={ref} className={cn('text-muted-foreground font-light', className)} {...props} />
+  <SheetPrimitive.Description ref={ref} className={cn('text-muted-foreground font-light pb-4', className)} {...props} />
 ));
 SheetDescription.displayName = SheetPrimitive.Description.displayName;
 

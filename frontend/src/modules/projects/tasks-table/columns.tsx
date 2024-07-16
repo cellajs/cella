@@ -119,42 +119,14 @@ export const useColumns = () => {
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) =>
               row.subTasks.length > 0 ? (
-                <div className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
+                <div className="flex gap-[.07rem]">
                   <span className="text-success">{row.subTasks.filter((t) => t.status === 6).length}</span>
                   <span className="font-light">/</span>
                   <span className="font-light">{row.subTasks.length}</span>
                 </div>
               ) : (
-                row.subTasks.length
+                row.subTasks.length ? row.subTasks.length : '-'
               ),
-          },
-          {
-            key: 'created_by',
-            name: t('common:created_by'),
-            sortable: true,
-            visible: true,
-            width: 180,
-            renderHeaderCell: HeaderCell,
-            renderCell: ({ row, tabIndex }) => {
-              const user = row.virtualCreatedBy;
-              if (!user) return row.created_by;
-              return (
-                <Link
-                  to="/user/$idOrSlug"
-                  tabIndex={tabIndex}
-                  params={{ idOrSlug: user.id }}
-                  className="flex space-x-2 items-center outline-0 ring-0 group truncate"
-                  onClick={(e) => {
-                    if (e.metaKey || e.ctrlKey) return;
-                    e.preventDefault();
-                    openUserPreviewSheet(user);
-                  }}
-                >
-                  <AvatarWrap type="user" className="h-6 w-6" id={user.id} name={user.name} url={user.thumbnailUrl} />
-                  <span className="group-hover:underline underline-offset-4 truncate">{user.name || '-'}</span>
-                </Link>
-              );
-            },
           },
           {
             key: 'project_id',
@@ -189,6 +161,34 @@ export const useColumns = () => {
             width: 180,
             renderHeaderCell: HeaderCell,
             renderCell: ({ row }) => dateShort(row.created_at),
+          },
+          {
+            key: 'created_by',
+            name: t('common:created_by'),
+            sortable: true,
+            visible: true,
+            width: 180,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row, tabIndex }) => {
+              const user = row.virtualCreatedBy;
+              if (!user) return row.created_by;
+              return (
+                <Link
+                  to="/user/$idOrSlug"
+                  tabIndex={tabIndex}
+                  params={{ idOrSlug: user.id }}
+                  className="flex space-x-2 items-center outline-0 ring-0 group truncate"
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey) return;
+                    e.preventDefault();
+                    openUserPreviewSheet(user);
+                  }}
+                >
+                  <AvatarWrap type="user" className="h-6 w-6" id={user.id} name={user.name} url={user.thumbnailUrl} />
+                  <span className="group-hover:underline underline-offset-4 truncate">{user.name || '-'}</span>
+                </Link>
+              );
+            },
           },
           {
             key: 'modified_at',

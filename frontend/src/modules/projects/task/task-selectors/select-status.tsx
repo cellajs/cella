@@ -131,7 +131,7 @@ const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
                 className="group rounded-md flex justify-between items-center w-full leading-normal"
               >
                 <div className="flex items-center">
-                  <status.icon className="mr-2 size-4 " />
+                  <status.icon className={`mr-2 size-4 fill-current ${statusFillColors[status.value] || ''} `} />
                   <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''} `}>{t(status.status)}</span>
                 </div>
                 <div className="flex items-center">
