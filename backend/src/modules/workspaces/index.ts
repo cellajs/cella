@@ -1,4 +1,4 @@
-import { and, count, eq, inArray } from 'drizzle-orm';
+import { and, count, eq, inArray, asc } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
@@ -73,9 +73,16 @@ const workspacesRoutes = app
       })
       .from(projectsTable)
       .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.workspaceId, workspace.id))
-      .innerJoin(membershipsTable, and(eq(membershipsTable.projectId, projectsToWorkspacesTable.projectId), eq(membershipsTable.userId, user.id)))
+      .innerJoin(
+        membershipsTable,
+        and(
+          eq(membershipsTable.projectId, projectsToWorkspacesTable.projectId),
+          eq(membershipsTable.userId, user.id),
+          eq(membershipsTable.inactive, false),
+        ),
+      )
       .where(eq(projectsTable.id, projectsToWorkspacesTable.projectId))
-      .orderBy(membershipsTable.order);
+      .orderBy(asc(membershipsTable.order));
 
     const projects = projectsWithMembership.map(({ project, membership }) => {
       return {
