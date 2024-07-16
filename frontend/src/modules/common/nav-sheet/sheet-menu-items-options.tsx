@@ -115,9 +115,6 @@ const ItemOptions = ({
         setItemMuted(muted);
       }
     },
-    onError: () => {
-      toast.error(t('common:error.error'));
-    },
   });
 
   const itemOptionStatesHandle = (state: 'archive' | 'mute') => {
