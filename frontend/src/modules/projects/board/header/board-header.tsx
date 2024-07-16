@@ -49,17 +49,29 @@ const BoardHeader = ({ mode, children, totalCount }: { mode: 'table' | 'board'; 
   const onRemove = () => {
     if (!electric) return toast.error(t('common:local_db_inoperable'));
 
+    // Delete child tasks first
     electric.db.tasks
       .deleteMany({
         where: {
-          id: {
+          parent_id: {
             in: selectedTasks,
           },
         },
       })
       .then(() => {
-        toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
-        setSelectedTasks([]);
+        // Then delete parent tasks
+        electric.db.tasks
+          .deleteMany({
+            where: {
+              id: {
+                in: selectedTasks,
+              },
+            },
+          })
+          .then(() => {
+            toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
+            setSelectedTasks([]);
+          });
       });
   };
 
