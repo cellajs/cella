@@ -16,9 +16,10 @@ export const getTaskOrder = (taskId: string, newStatus: string | number | null, 
   if (!currentTask) return;
   // Get list of tasks with new status
   const filteredTasks = tasks.filter((t) => t.status === newStatus).sort((a, b) => b.sort_order - a.sort_order);
-
-  // If new status is higher set order to bottom of a list
-  if (currentTask.status < newStatus) return filteredTasks.slice(-1)[0].sort_order / 2;
+  if (!filteredTasks.length) return;
+  if (currentTask.status < newStatus)
+    // If new status is higher set order to bottom of a list
+    return filteredTasks.slice(-1)[0].sort_order / 2;
   // If new status is lower or the same set order to top of the list
   return filteredTasks[0].sort_order + 1;
 };
