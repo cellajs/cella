@@ -94,7 +94,6 @@ const ItemOptions = ({
       return baseUpdateMembership(values);
     },
     onSuccess: (updatedMembership) => {
-      callback([updatedMembership], parentItemSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
       if (updatedMembership.inactive !== isItemArchived) {
         const archived = updatedMembership.inactive || !isItemArchived;
         archiveStateToggle(item.id, archived, parentItemSlug ? parentItemSlug : null);
@@ -114,6 +113,7 @@ const ItemOptions = ({
         );
         setItemMuted(muted);
       }
+      callback([updatedMembership], parentItemSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
     },
   });
 
