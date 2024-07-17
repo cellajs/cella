@@ -1,5 +1,5 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { Outlet, useParams } from '@tanstack/react-router';
+import { Outlet, useParams, useLocation } from '@tanstack/react-router';
 import { getWorkspace } from '~/api/workspaces';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -17,11 +17,12 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
   });
 
 const WorkspacePage = () => {
-  const { showPageHeader, setProjects, setMembers, setLabels } = useWorkspaceStore();
+  const { showPageHeader, setProjects, setMembers, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
+  const { pathname } = useLocation();
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data.workspace;
   const projects = workspaceQuery.data.relatedProjects;
@@ -39,6 +40,9 @@ const WorkspacePage = () => {
   ) as {
     results: Label[] | undefined;
   };
+
+  useEffect(() => setSearchQuery(''), [idOrSlug]);
+  useEffect(() => setSelectedTasks([]), [pathname]);
 
   useEffect(() => {
     if (results) setLabels(results);

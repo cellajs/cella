@@ -26,13 +26,11 @@ export const WorkspaceRoute = createRoute({
     projectSettings: z.enum(['general', 'members']).default('general').optional(),
   }),
   staticData: { pageTitle: 'Workspace', isAuth: true },
-  beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
+  beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/table'),
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
     const workspaceData = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
     useWorkspaceStore.getState().setWorkspace(workspaceData.workspace);
-    useWorkspaceStore.getState().setSelectedTasks([]);
-    useWorkspaceStore.getState().setSearchQuery('');
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {

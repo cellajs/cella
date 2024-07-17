@@ -1,4 +1,4 @@
-import { Link, useParams } from '@tanstack/react-router';
+import { useParams, useNavigate, useLocation } from '@tanstack/react-router';
 import { Grid2X2, Rows4, SquareKanban } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
@@ -11,22 +11,25 @@ interface Props {
 
 const DisplayOptions = ({ className = '' }: Props) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
+
+  const handleItemChange = (value: string) => {
+    navigate({
+      to: `/workspaces/$idOrSlug/${value}`,
+      params: { idOrSlug },
+    });
+  };
+
   return (
-    <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)}>
+    <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)} onValueChange={handleItemChange}>
       {['board', 'table', 'overview'].map((value) => (
         <TooltipButton key={value} portal={true} toolTipContent={t(`common:${value}_view`)}>
-          <ToggleGroupItem key={value} value={value} asChild>
-            <Link
-              to={`/workspaces/${idOrSlug}/${value}`}
-              params={{ idOrSlug }}
-              activeOptions={{ exact: true, includeSearch: false }}
-              activeProps={{ className: '!bg-accent' }}
-            >
-              {value === 'board' && <SquareKanban size={16} />}
-              {value === 'table' && <Rows4 size={16} />}
-              {value === 'overview' && <Grid2X2 size={16} />}
-            </Link>
+          <ToggleGroupItem key={value} value={value} className={`${pathname.includes(value) ? 'bg-accent' : ''}`}>
+            {value === 'board' && <SquareKanban size={16} />}
+            {value === 'table' && <Rows4 size={16} />}
+            {value === 'overview' && <Grid2X2 size={16} />}
           </ToggleGroupItem>
         </TooltipButton>
       ))}
