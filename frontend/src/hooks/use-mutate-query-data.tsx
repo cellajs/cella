@@ -1,5 +1,6 @@
-import type { InfiniteData, QueryKey } from '@tanstack/react-query';
+import { useQueryClient, type InfiniteData, type QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/lib/router';
+import type { Workspace, WorkspaceStoreMember, Project, Membership } from '~/types';
 
 interface Item {
   id: string;
@@ -145,5 +146,97 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
         });
       }
     }
+  };
+};
+
+export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
+  const queryClient = useQueryClient();
+
+  return (
+    items: Workspace[] | Project[] | WorkspaceStoreMember[] | Membership[],
+    action:
+      | 'createProject'
+      | 'updateProject'
+      | 'deleteProject'
+      | 'updateWorkspace'
+      | 'updateProjectMembership'
+      | 'updateWorkspaceMembership'
+      | 'updateMembers',
+  ) => {
+    queryClient.setQueryData<{
+      workspace: Workspace;
+      relatedProjects: Project[];
+      workspaceMembers: WorkspaceStoreMember[];
+    }>(queryKey, (data) => {
+      if (!data) return data;
+      switch (action) {
+        case 'createProject':
+          return {
+            ...data,
+            relatedProjects: [...(items as Project[]), ...data.relatedProjects],
+          };
+
+        case 'updateProject':
+          return {
+            ...data,
+            relatedProjects: data.relatedProjects.map((existingProject) => {
+              const updatedItem = (items as Project[]).find((newProject) => existingProject.id === newProject.id);
+              return updatedItem ? updatedItem : existingProject;
+            }),
+          };
+
+        case 'deleteProject':
+          return {
+            ...data,
+            relatedProjects: data.relatedProjects.filter((existingProject) => !items.find((item) => item.id === existingProject.id)),
+          };
+
+        case 'updateWorkspace':
+          return {
+            ...data,
+            workspace: items[0] as Workspace,
+          };
+
+        case 'updateWorkspaceMembership':
+          return {
+            ...data,
+            workspace: {
+              ...data.workspace,
+              membership: {
+                ...data.workspace.membership,
+                ...(items[0] as Membership),
+                archived: (items[0] as Membership).inactive ?? false,
+              },
+            },
+          };
+
+        case 'updateProjectMembership': {
+          const updatedMembership = items[0] as Membership;
+          const newProjects = data.relatedProjects.map((existing) => ({
+            ...existing,
+            membership:
+              existing.membership?.id === updatedMembership.id
+                ? { ...existing.membership, ...updatedMembership, archived: updatedMembership.inactive ?? false }
+                : existing.membership,
+          }));
+
+          return {
+            ...data,
+            relatedProjects: newProjects
+              .filter((p) => !p.membership?.archived)
+              .sort((a, b) => (a.membership?.order ?? 0) - (b.membership?.order ?? 0)),
+          };
+        }
+
+        case 'updateMembers':
+          return {
+            ...data,
+            workspaceMembers: items as WorkspaceStoreMember[],
+          };
+
+        default:
+          return data;
+      }
+    });
   };
 };

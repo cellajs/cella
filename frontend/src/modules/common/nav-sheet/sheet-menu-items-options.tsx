@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import { getDraggableItemData } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -88,13 +88,13 @@ const ItemOptions = ({
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const { menu } = useNavigationStore();
-  const callback = parentItemSlug ? useMutateQueryData(['workspaces', parentItemSlug]) : useMutateQueryData([`${itemType}s`, item.id]);
+  const callback = useMutateWorkSpaceQueryData(['workspaces', parentItemSlug ? parentItemSlug : item.slug]);
   const { mutate: updateMembership } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
       return baseUpdateMembership(values);
     },
     onSuccess: (updatedMembership) => {
-      callback([updatedMembership], 'create');
+      callback([updatedMembership], parentItemSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
       if (updatedMembership.inactive !== isItemArchived) {
         const archived = updatedMembership.inactive || !isItemArchived;
         archiveStateToggle(item.id, archived, parentItemSlug ? parentItemSlug : null);

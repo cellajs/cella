@@ -22,6 +22,7 @@ import InputFormField from '../common/form-fields/input';
 import SelectParentFormField from '../common/form-fields/select-parent';
 import { SlugFormField } from '../common/form-fields/slug';
 import UnsavedBadge from '../common/unsaved-badge';
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 
 interface Props {
   workspace: Workspace;
@@ -39,7 +40,9 @@ export const useUpdateWorkspaceMutation = (idOrSlug: string) => {
     mutationKey: ['workspaces', 'update', idOrSlug],
     mutationFn: (params) => updateWorkspace(idOrSlug, params),
     onSuccess: (updatedWorkspace) => {
-      queryClient.setQueryData(['workspaces', idOrSlug], updatedWorkspace);
+      const callback = useMutateWorkSpaceQueryData(['workspaces', updatedWorkspace.slug]);
+      callback([updatedWorkspace], 'updateWorkspace');
+      // queryClient.setQueryData(['workspaces', idOrSlug], updatedWorkspace);
       queryClient.invalidateQueries({
         queryKey: ['workspaces'],
       });

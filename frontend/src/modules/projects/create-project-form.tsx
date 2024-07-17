@@ -9,7 +9,7 @@ import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { createProject } from '~/api/projects';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import { addMenuItem } from '~/lib/utils';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
@@ -54,8 +54,8 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
-  const callback = useMutateQueryData(['projects', workspace.id]);
-
+  // const callback = useMutateQueryData(['projects', workspace.id]);
+  const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
   const { mutate: create, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
       return createProject(workspace.id, values);
@@ -63,7 +63,8 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
     onSuccess: (createdProject) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type}`) }));
-      callback([createdProject], 'create');
+      // callback([createdProject], 'create');
+      callback([createdProject], 'createProject');
       useNavigationStore.setState({
         menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
       });
