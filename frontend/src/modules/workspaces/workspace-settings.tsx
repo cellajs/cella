@@ -9,12 +9,14 @@ import { dialog } from '../common/dialoger/state';
 import { Button } from '../ui/button';
 import DeleteWorkspaces from './delete-workspace';
 import UpdateWorkspaceForm from './update-workspace-form';
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 
 export const WorkspaceSettings = ({ workspace, sheet: isSheet }: { workspace: Workspace; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
+  const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
 
   const openDeleteDialog = () => {
     dialog(
@@ -44,11 +46,12 @@ export const WorkspaceSettings = ({ workspace, sheet: isSheet }: { workspace: Wo
         <CardContent>
           <UpdateWorkspaceForm
             workspace={workspace}
-            callback={(workspace) => {
-              if (idOrSlug !== workspace.slug) {
+            callback={(updatedWorkspace) => {
+              callback([updatedWorkspace], 'updateWorkspace');
+              if (idOrSlug !== updatedWorkspace.slug) {
                 navigate({
                   to: '/workspaces/$idOrSlug/board',
-                  params: { idOrSlug: workspace.slug },
+                  params: { idOrSlug: updatedWorkspace.slug },
                   replace: true,
                 });
               }

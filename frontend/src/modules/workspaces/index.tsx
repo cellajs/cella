@@ -17,7 +17,7 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
   });
 
 const WorkspacePage = () => {
-  const { showPageHeader, setProjects, setMembers, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
+  const { showPageHeader, setWorkspace, setProjects, setMembers, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
@@ -27,9 +27,10 @@ const WorkspacePage = () => {
   const workspace = workspaceQuery.data.workspace;
   const projects = workspaceQuery.data.relatedProjects;
   const workspaceMembers = workspaceQuery.data.workspaceMembers;
-  //TODO create new useMutateWorkspaceQueryData hook or find other solution
-  setProjects(projects as Project[]);
+  //TODO find other solution tan useMutateWorkspaceQueryData hook
+  setWorkspace(workspace);
   setMembers(workspaceMembers);
+  setProjects(projects as Project[]);
 
   const { results } = useLiveQuery(
     Electric.db.labels.liveMany({
