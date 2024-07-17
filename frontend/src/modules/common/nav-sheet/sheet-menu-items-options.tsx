@@ -204,7 +204,7 @@ const ItemOptions = ({
         layoutId={`sheet-menu-item-${item.id}`}
         ref={isItemArchived ? undefined : dragRef}
         style={{ opacity: `${dragging ? 0.3 : 1}` }}
-        className={`group flex relative items-center sm:max-w-[18rem] ${parentItemSlug ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 justify-start rounded  focus:outline-none
+        className={`group flex relative items-center ${parentItemSlug ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 pr-2 justify-start rounded  focus:outline-none
       ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
       ${!isItemArchived && 'ring-1 cursor-grab'} `}
       >
@@ -215,7 +215,7 @@ const ItemOptions = ({
           name={item.name}
           url={item.thumbnailUrl}
         />
-        <div className="truncate grow py-2 px-1 text-left">
+        <div className="truncate grow py-2 pl-1 text-left">
           <div className={`truncate ${parentItemSlug ? 'text-sm' : 'text-base mb-1'} leading-5 ${isItemArchived && 'opacity-70'}`}>{item.name}</div>
           <div className="flex items-center gap-4 transition-opacity delay-500">
             <Button

@@ -32,9 +32,9 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
       className={cn(
         `group ${
           mainItemIdOrSlug ? 'h-12 relative menu-item-sub' : 'h-14'
-        } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
+        } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 pr-2 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
         className,
-        isActive && 'text-accent-foreground ring-primary/50 text-primary focus:ring-primary',
+        isActive && 'ring-primary/50 text-primary focus:ring-primary',
       )}
       aria-label={item.name}
       to={path}
