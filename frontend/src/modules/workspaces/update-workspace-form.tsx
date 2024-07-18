@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
@@ -38,12 +37,12 @@ export const useUpdateWorkspaceMutation = (idOrSlug: string) => {
   return useMutation<Workspace, DefaultError, UpdateWorkspaceParams>({
     mutationKey: ['workspaces', 'update', idOrSlug],
     mutationFn: (params) => updateWorkspace(idOrSlug, params),
-    onSuccess: (updatedWorkspace) => {
-      queryClient.setQueryData(['workspaces', idOrSlug], updatedWorkspace);
-      queryClient.invalidateQueries({
-        queryKey: ['workspaces'],
-      });
-    },
+    // onSuccess: (updatedWorkspace) => {
+    //   queryClient.setQueryData(['workspaces', idOrSlug], updatedWorkspace);
+    //   queryClient.invalidateQueries({
+    //     queryKey: ['workspaces'],
+    //   });
+    // },
     gcTime: 1000 * 10,
   });
 };

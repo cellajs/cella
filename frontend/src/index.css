@@ -229,31 +229,6 @@
   background: hsla(var(--background));
 }
 
-.gradient-button:after,
-.gradient-button:before {
-  display: block;
-  left: 0;
-  top: 0;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-
-.gradient-button:before {
-  z-index: -2;
-  filter: saturate(5);
-}
-
-.gradient-button:after {
-  background: linear-gradient(to right,
-      rgb(100, 100, 100),
-      rgba(204, 204, 204, 0.8) 40%,
-      rgba(204, 204, 204, 0.8) 55%,
-      rgb(34, 34, 34));
-  opacity: .3;
-  z-index: -1;
-}
-
 .fill-grid {
   block-size: 100%;
 }

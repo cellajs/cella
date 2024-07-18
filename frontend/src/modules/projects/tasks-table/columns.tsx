@@ -9,17 +9,17 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-vi
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { Task } from '~/modules/common/electric/electrify';
 import { Button } from '~/modules/ui/button.tsx';
-import { openUserPreviewSheet } from '~/modules/users/users-table/columns.tsx';
 import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
 import { impacts } from '../task/task-selectors/select-impact.tsx';
 import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } from '../task/task-selectors/select-status';
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
-  const { projects } = useWorkspaceStore();
+  const { projects, workspace } = useWorkspaceStore();
   const mobileColumns: ColumnOrColumnGroup<Task>[] = [
     CheckboxColumn,
     {
@@ -142,7 +142,7 @@ export const useColumns = () => {
               if (!project) return row.project_id;
               return (
                 <Link
-                  to={`/workspaces/${project.workspaceId}/board?project=${project.slug}`}
+                  to={`/workspaces/${workspace.slug}/board?project=${project.slug}`}
                   tabIndex={tabIndex}
                   disabled={!project.workspaceId}
                   className="flex space-x-2 items-center outline-0 ring-0 group truncate"

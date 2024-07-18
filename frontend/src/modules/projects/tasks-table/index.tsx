@@ -9,19 +9,18 @@ import useTaskFilters from '~/hooks/use-filtered-tasks';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export.tsx';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { type Task, useElectric } from '~/modules/common/electric/electrify';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import BoardHeader from '../board/header/board-header';
 import { useColumns } from './columns';
-import SelectProject from './project';
-import HeaderSelectStatus from './status';
 import { sheet } from '~/modules/common/sheeter/state';
 import { enhanceTasks } from '~/hooks/use-filtered-task-helpers';
 import TaskSheet from './task-sheet';
+import TableHeader from './header/table-header';
+import { TableSearch } from './header/table-search';
+import { SearchDropDown } from './header/search-drop-down';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -150,10 +149,18 @@ export default function TasksTable() {
 
   return (
     <>
-      <BoardHeader mode="table" totalCount={rows.length}>
-        <HeaderSelectStatus selectedStatuses={selectedStatuses} setSelectedStatuses={setSelectedStatuses} />
-        <SelectProject projects={projects} selectedProjects={selectedProjects} setSelectedProjects={setSelectedProjects} />
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+      <TableHeader totalCount={rows.length}>
+        <TableSearch>
+          <SearchDropDown
+            columns={columns}
+            setColumns={setColumns}
+            selectedStatuses={selectedStatuses}
+            setSelectedStatuses={setSelectedStatuses}
+            selectedProjects={selectedProjects}
+            setSelectedProjects={setSelectedProjects}
+            className="absolute right-2 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+          />
+        </TableSearch>
         <Export
           className="max-lg:hidden"
           filename={`Tasks from ${projects.map((p) => p.name).join(' and ')}`}
@@ -161,7 +168,7 @@ export default function TasksTable() {
           selectedRows={rows.filter((t) => selectedTasks.includes(t.id))}
           fetchRows={async (limit) => rows.slice(0, limit)}
         />
-      </BoardHeader>
+      </TableHeader>
       <DataTable<Task>
         {...{
           columns: columns.filter((column) => column.visible),

@@ -1,5 +1,5 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { Outlet, useParams } from '@tanstack/react-router';
+import { Outlet, useParams, useLocation } from '@tanstack/react-router';
 import { getWorkspace } from '~/api/workspaces';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -17,18 +17,20 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
   });
 
 const WorkspacePage = () => {
-  const { showPageHeader, setProjects, setMembers, setLabels } = useWorkspaceStore();
+  const { showPageHeader, setWorkspace, setProjects, setMembers, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
+  const { pathname } = useLocation();
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data.workspace;
   const projects = workspaceQuery.data.relatedProjects;
   const workspaceMembers = workspaceQuery.data.workspaceMembers;
-  //TODO create new useMutateWorkspaceQueryData hook or find other solution
-  setProjects(projects as Project[]);
+  //TODO find other solution tan useMutateWorkspaceQueryData hook
+  setWorkspace(workspace);
   setMembers(workspaceMembers);
+  setProjects(projects as Project[]);
 
   const { results } = useLiveQuery(
     Electric.db.labels.liveMany({
@@ -39,6 +41,11 @@ const WorkspacePage = () => {
   ) as {
     results: Label[] | undefined;
   };
+
+  useEffect(() => {
+    setSearchQuery('');
+    setSelectedTasks([]);
+  }, [pathname]);
 
   useEffect(() => {
     if (results) setLabels(results);

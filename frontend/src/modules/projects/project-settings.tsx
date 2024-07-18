@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { Project } from '~/types';
@@ -9,11 +9,13 @@ import { dialog } from '../common/dialoger/state';
 import { Button } from '../ui/button';
 import DeleteProjects from './delete-projects';
 import UpdateProjectForm from './update-project-form';
+import { useWorkspaceStore } from '~/store/workspace';
 
 export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();
-
-  const callback = useMutateQueryData(['projects', project.workspaceId]);
+  const { workspace } = useWorkspaceStore();
+  // const callback = useMutateQueryData(['projects', project.workspaceId]);
+  const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
 
   const openDeleteDialog = () => {
     dialog(
@@ -21,7 +23,8 @@ export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; 
         dialog
         projects={[project]}
         callback={(projects) => {
-          callback(projects, 'delete');
+          // callback(projects, 'delete');
+          callback(projects, 'deleteProject');
           toast.success(t('common:success.delete_resource', { resource: t('common:project') }));
           sheet.remove('edit-project');
         }}
@@ -29,7 +32,7 @@ export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; 
       {
         className: 'md:max-w-xl',
         title: t('common:delete_resource', { resource: t('common:project').toLowerCase() }),
-        text: t('common:confirm.delete_resource', { name: 'SETPROJECTNAME', resource: t('common:project').toLowerCase() }),
+        text: t('common:confirm.delete_resource', { name: project.name, resource: t('common:project').toLowerCase() }),
       },
     );
   };
@@ -40,14 +43,14 @@ export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; 
           <CardTitle>{t('common:general')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <UpdateProjectForm project={project} callback={(project) => callback([project], 'update')} sheet={isSheet} />
+          <UpdateProjectForm project={project} callback={(project) => callback([project], 'updateProject')} sheet={isSheet} />
         </CardContent>
       </Card>
       <Card>
         <CardHeader>
           <CardTitle>{t('common:delete_resource', { resource: t('common:project').toLowerCase() })}</CardTitle>
           <CardDescription>
-            <Trans i18nKey="common:delete_resource_notice.text" values={{ name: 'SETPROJECTNAME', resource: t('common:project').toLowerCase() }} />
+            <Trans i18nKey="common:delete_resource_notice.text" values={{ name: project.name, resource: t('common:project').toLowerCase() }} />
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -28,7 +28,7 @@ const ScrollArea = React.forwardRef<
   VariantProps<typeof scrollbarVariants> & React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
 >(({ className, children, id, size, ...props }, ref) => (
   <ScrollAreaPrimitive.Root ref={ref} className={cn('relative overflow-auto', className)} {...props}>
-    <ScrollAreaPrimitive.Viewport id={`${id}-viewport`} className="h-full w-full rounded-[inherit]">
+    <ScrollAreaPrimitive.Viewport id={`${id}-viewport`} className="h-full w-full [&>div]:!block rounded-[inherit]">
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar size={size} />

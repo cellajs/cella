@@ -22,7 +22,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
   const { activeSections } = useNavigationStore();
-  const isSectionVisible = activeSections[sectionType];
+  const isSectionVisible = activeSections ? activeSections[sectionType] : true;
   const parentItemId = data.length > 0 ? data[0].parentId : '';
 
   const sectionRef = useRef<HTMLDivElement>(null);

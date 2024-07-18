@@ -20,7 +20,7 @@ interface NavigationState {
   toggleKeepMenu: (status: boolean) => void;
   hideSubmenu: boolean;
   toggleHideSubmenu: (status: boolean) => void;
-  activeSections: Record<string, boolean>;
+  activeSections: Record<string, boolean> | null;
   toggleSection: (section: string) => void;
   setSection: (section: string, sectionState: boolean) => void;
   navLoading: boolean;
@@ -48,7 +48,7 @@ const initStore = {
   navLoading: false,
   focusView: false,
   menu: initialMenuState,
-  activeSections: {},
+  activeSections: null,
   finishedOnboarding: false,
 };
 
@@ -98,12 +98,15 @@ export const useNavigationStore = create<NavigationState>()(
           },
           toggleSection: (section) => {
             set((state) => {
-              state.activeSections[section] = !state.activeSections[section];
+              if (state.activeSections) state.activeSections[section] = !state.activeSections[section];
             });
           },
           setSection: (section, sectionState) => {
             set((state) => {
-              state.activeSections[section] = sectionState;
+              if (!state.activeSections) {
+                state.activeSections = {};
+                state.activeSections[section] = sectionState;
+              }
             });
           },
           archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => {
@@ -131,9 +134,10 @@ export const useNavigationStore = create<NavigationState>()(
           clearNavigationStore: () => set(initStore, true),
         }),
         {
-          version: 2,
+          version: 3,
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
+            menu: state.menu,
             keepMenuOpen: state.keepMenuOpen,
             hideSubmenu: state.hideSubmenu,
             activeSections: state.activeSections,
