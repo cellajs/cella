@@ -78,7 +78,7 @@ const Pricing = () => {
               </ul>
             </div>
 
-            <Button variant={popular ? 'gradient' : 'plain'} className="w-full mt-6" aria-label="Open contact form" onClick={openContactForm}>
+            <Button variant={popular ? 'default' : 'plain'} className="w-full mt-6" aria-label="Open contact form" onClick={openContactForm}>
               {t('common:contact_us')}
             </Button>
           </div>

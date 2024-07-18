@@ -24,8 +24,6 @@ const buttonVariants = cva(
         cell: 'text-regular underline-offset-4 hover:underline !ring-offset-transparent !ring-transparent opacity-75 hover:opacity-100',
         plain: 'text-primary bg-primary/5 border border-primary/30 hover:bg-primary/10 hover:border-primary/50',
         glow: 'outline-glow-button bg-background !rounded-full relative active:bk-background',
-        gradient:
-          'before:bg-primary before:rounded-md after:rounded-md z-0 bg-transparent relative text-primary-foreground gradient-button hover:before:bg-primary/80',
         input: 'border border-input bg-background active:!translate-y-0 hover:transparent',
         none: 'bg-transparent border-none',
       },
