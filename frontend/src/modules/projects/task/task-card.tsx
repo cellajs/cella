@@ -114,14 +114,15 @@ export function TaskCard({
     latency: 250,
   });
 
-  const dispatchCustomFocusEvent = (taskId: string, projectId: string) => {
+  const dispatchCustomFocusEvent = (taskId: string, target: EventTarget | null) => {
     const event = new CustomEvent('task-card-focus', {
       detail: {
         taskId,
-        projectId,
       },
+      bubbles: true,
+      cancelable: true,
     });
-    document.dispatchEvent(event);
+    if (target) target.dispatchEvent(event);
   };
 
   const dragIsOn = () => {
@@ -186,17 +187,11 @@ export function TaskCard({
       setItemHeight(height);
     }
   }, [isExpanded, createSubTask]);
+
   return (
     <Card
       style={style}
-      onMouseDown={() => {
-        if (document.activeElement === taskRef.current) return;
-        taskRef.current?.focus();
-      }}
-      onFocus={() => {
-        if (isFocused) return;
-        dispatchCustomFocusEvent(task.id, task.project_id);
-      }}
+      onClick={(event) => dispatchCustomFocusEvent(task.id, event.target)}
       tabIndex={0}
       ref={taskRef}
       className={cn(

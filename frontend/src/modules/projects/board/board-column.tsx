@@ -269,7 +269,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
           inputPlaceholder={t('common:placeholder.set_status')}
         />
       );
-
     return dropdowner(component, { id: `${field}-${task.id}`, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
   };
 
