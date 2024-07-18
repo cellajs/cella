@@ -8,20 +8,12 @@ import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { renderSelect } from '~/modules/common/data-table/select-column';
-import { sheet } from '~/modules/common/sheeter/state';
 import { AvatarWrap } from '../../common/avatar-wrap';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
-import { UserProfile } from '../user-profile';
 import UpdateRow from './update-row';
-
-export const openUserPreviewSheet = (user: User) => {
-  sheet(<UserProfile sheet user={user} />, {
-    className: 'max-w-full lg:max-w-4xl p-0',
-    id: 'user-preview',
-  });
-};
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();

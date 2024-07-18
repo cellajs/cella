@@ -9,12 +9,12 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-vi
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { Task } from '~/modules/common/electric/electrify';
 import { Button } from '~/modules/ui/button.tsx';
-import { openUserPreviewSheet } from '~/modules/users/users-table/columns.tsx';
 import { NotSelected } from '../task/task-selectors/impact-icons/not-selected.tsx';
 import { impacts } from '../task/task-selectors/select-impact.tsx';
 import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } from '../task/task-selectors/select-status';
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 export const useColumns = () => {
   const { t } = useTranslation();

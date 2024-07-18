@@ -9,7 +9,7 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
-import { openUserPreviewSheet } from '~/modules/users/users-table/columns';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean, isSheet: boolean) => {
   const mobileColumns: ColumnOrColumnGroup<Member>[] = [
