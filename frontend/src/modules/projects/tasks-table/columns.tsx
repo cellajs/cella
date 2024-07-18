@@ -19,7 +19,7 @@ import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 export const useColumns = () => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
-  const { projects } = useWorkspaceStore();
+  const { projects, workspace } = useWorkspaceStore();
   const mobileColumns: ColumnOrColumnGroup<Task>[] = [
     CheckboxColumn,
     {
@@ -142,7 +142,7 @@ export const useColumns = () => {
               if (!project) return row.project_id;
               return (
                 <Link
-                  to={`/workspaces/${project.workspaceId}/board?project=${project.slug}`}
+                  to={`/workspaces/${workspace.slug}/board?project=${project.slug}`}
                   tabIndex={tabIndex}
                   disabled={!project.workspaceId}
                   className="flex space-x-2 items-center outline-0 ring-0 group truncate"
