@@ -372,7 +372,10 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                         <span className="w-6 mr-1 text-center">{acceptedCount}</span>
                         <span>{t('common:accepted').toLowerCase()}</span>
                         {!!acceptedCount && (
-                          <ChevronDown size={16} className={`transition-transform absolute right-5 opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`} />
+                          <ChevronDown
+                            size={16}
+                            className={`transition-transform absolute right-5 opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`}
+                          />
                         )}
                       </Button>
                       {showingTasks.map((task) => (
@@ -397,9 +400,14 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                       size="sm"
                       className="flex relative justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-xs -mt-[.07rem]"
                     >
-                        <span className="w-6 mr-1 text-center">{icedCount}</span>
-                        <span> {t('common:iced').toLowerCase()}</span>
-                      {!!icedCount && <ChevronDown size={16} className={`transition-transform absolute right-5 opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`} />}
+                      <span className="w-6 mr-1 text-center">{icedCount}</span>
+                      <span> {t('common:iced').toLowerCase()}</span>
+                      {!!icedCount && (
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform absolute right-5 opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`}
+                        />
+                      )}
                     </Button>
                   </ScrollArea>
                 )}
