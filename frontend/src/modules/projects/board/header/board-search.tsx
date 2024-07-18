@@ -1,18 +1,18 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Search, XCircle } from 'lucide-react';
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import router from '~/lib/router';
+import { useDebounce } from '~/hooks/use-debounce';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
-import { TableFilterBarContext } from '../../../common/data-table/table-filter-bar';
+import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 
 const BoardSearch = () => {
   const { t } = useTranslation();
-  const { searchQuery, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
-  const { isFilterActive } = useContext(TableFilterBarContext);
   const navigate = useNavigate();
-
+  const { searchQuery, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+  const { isFilterActive } = useContext(TableFilterBarContext);
   // Reference with `useRef` to persist the same ref object during re-renders
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -20,13 +20,11 @@ const BoardSearch = () => {
     inputRef.current?.focus();
   };
 
-  useEffect(() => {
-    const currentPath = router.state.location.pathname;
-    const boardOnTableView = currentPath.endsWith('/table');
-    const q = searchQuery.length > 0 && boardOnTableView ? searchQuery : undefined;
-
-    navigate({ to: currentPath, search: (prev) => ({ ...prev, q }) });
-  }, [searchQuery]);
+  useMemo(() => {
+    if (!debouncedSearchQuery.length) return;
+    const q = debouncedSearchQuery;
+    navigate({ search: (prev) => ({ ...prev, q }) });
+  }, [debouncedSearchQuery]);
 
   // Focus input when filter button clicked(mobile)
   useEffect(() => {

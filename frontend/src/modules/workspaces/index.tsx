@@ -42,8 +42,10 @@ const WorkspacePage = () => {
     results: Label[] | undefined;
   };
 
-  useEffect(() => setSearchQuery(''), [idOrSlug]);
-  useEffect(() => setSelectedTasks([]), [pathname]);
+  useEffect(() => {
+    setSearchQuery('');
+    setSelectedTasks([]);
+  }, [pathname]);
 
   useEffect(() => {
     if (results) setLabels(results);

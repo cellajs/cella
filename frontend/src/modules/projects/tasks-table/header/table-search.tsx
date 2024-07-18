@@ -1,8 +1,10 @@
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
-import { useRef, useEffect, useContext } from 'react';
+import { useRef, useEffect, useContext, useMemo } from 'react';
 import { Search, XCircle } from 'lucide-react';
 import { Input } from '~/modules/ui/input';
+import { useDebounce } from '~/hooks/use-debounce';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 
 export function TableSearch({
@@ -11,14 +13,22 @@ export function TableSearch({
   children?: React.ReactNode;
 }) {
   const { t } = useTranslation();
-  const { isFilterActive } = useContext(TableFilterBarContext);
-  const { setSelectedTasks, searchQuery, setSearchQuery } = useWorkspaceStore();
+  const navigate = useNavigate();
   // Reference with `useRef` to persist the same ref object during re-renders
   const inputRef = useRef<HTMLInputElement>(null);
+  const { isFilterActive } = useContext(TableFilterBarContext);
+  const { setSelectedTasks, searchQuery, setSearchQuery } = useWorkspaceStore();
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   const handleClick = () => {
     inputRef.current?.focus();
   };
+
+  useMemo(() => {
+    if (!debouncedSearchQuery.length) return;
+    const q = debouncedSearchQuery;
+    navigate({ search: (prev) => ({ ...prev, q }) });
+  }, [debouncedSearchQuery]);
 
   // Focus input when filter button clicked(mobile)
   useEffect(() => {
