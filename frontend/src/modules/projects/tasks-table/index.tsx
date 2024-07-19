@@ -1,5 +1,4 @@
 import { useSearch } from '@tanstack/react-router';
-import { useLiveQuery } from 'electric-sql/react';
 import { Bird } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
@@ -21,6 +20,7 @@ import TableHeader from './header/table-header';
 import { SearchDropDown } from './header/search-drop-down';
 import { TableSearch } from './header/table-search';
 import TaskSheet from './task-sheet';
+import { filterBy, sortBy } from './helpers';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -33,29 +33,32 @@ interface OpenPreviewEvent extends Event {
 export default function TasksTable() {
   const { t } = useTranslation();
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels, setFocusedTaskId } =
-    useWorkspaceStore(
-      ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, setSearchQuery, members, labels, setFocusedTaskId }) => ({
-        focusedTaskId,
-        searchQuery,
-        selectedTasks,
-        setSelectedTasks,
-        projects,
-        setSearchQuery,
-        members,
-        labels,
-        setFocusedTaskId,
-      }),
-    );
+  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, members, labels, setFocusedTaskId } = useWorkspaceStore(
+    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, members, labels, setFocusedTaskId }) => ({
+      focusedTaskId,
+      searchQuery,
+      selectedTasks,
+      setSelectedTasks,
+      projects,
+      members,
+      labels,
+      setFocusedTaskId,
+    }),
+  );
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [fetchedTasks, setFetchedTasks] = useState<Task[]>();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [columns, setColumns] = useColumns();
 
+  const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members, true);
   // Search query options
   const tableSort = sortColumns[0]?.columnKey as TasksSearch['tableSort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
   const isFiltered = !!searchQuery || selectedStatuses.length > 0 || selectedProjects.length > 0;
+  const isLoading = !fetchedTasks;
 
   // Save filters in search params
   const filters = useMemo(
@@ -72,44 +75,7 @@ export default function TasksTable() {
   useSaveInSearchParams(filters, { tableSort: 'created_at', order: 'desc' });
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
-  // TODO: Refactor this when Electric supports count
-  const { results: tasks = [], updatedAt } = useLiveQuery(
-    electric.db.tasks.liveMany({
-      where: {
-        project_id: {
-          in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
-        },
-        ...(selectedStatuses.length > 0 && {
-          status: {
-            in: selectedStatuses,
-          },
-        }),
-        AND: [
-          {
-            markdown: {
-              contains: searchQuery,
-            },
-          },
-        ],
-      },
-      orderBy: {
-        [tableSort || 'created_at']: order || 'desc',
-      },
-    }),
-  ) as {
-    results: Task[] | undefined;
-    updatedAt: Date | undefined;
-  };
-
-  const [columns, setColumns] = useColumns();
-  const isLoading = !updatedAt;
-  const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members, true);
-  // const onResetFilters = () => {
-  //   setSearchQuery('');
-  //   setSelectedTasks([]);
-  //   setSelectedStatuses([]);
-  // };
+  const Electric = useElectric()!;
 
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
     setSelectedTasks(Array.from(selectedRows));
@@ -123,6 +89,33 @@ export default function TasksTable() {
       content: <TaskSheet task={task} />,
     });
   }, [tasks, focusedTaskId]);
+
+  useEffect(() => {
+    if (fetchedTasks) {
+      let filteredTasks = filterBy(fetchedTasks, selectedProjects, selectedStatuses);
+      filteredTasks = filteredTasks.filter((t) => t.summary?.includes(searchQuery));
+      setTasks(sortBy(filteredTasks, tableSort, order));
+    }
+  }, [fetchedTasks, selectedProjects, selectedStatuses, searchQuery, tableSort, order]);
+
+  useEffect(() => {
+    let isMounted = true; // Track whether the component is mounted
+    (async () => {
+      if (isMounted) {
+        const result = await Electric.db.tasks.findMany({
+          where: {
+            project_id: {
+              in: projects.map((project) => project.id),
+            },
+          },
+        });
+        setFetchedTasks(result as Task[]);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const handleChange = (event: Event) => {
@@ -141,10 +134,6 @@ export default function TasksTable() {
     document.addEventListener('open-task-card-preview', handleChange);
     return () => document.removeEventListener('open-task-card-preview', handleChange);
   });
-
-  useEffect(() => {
-    if (search.q) setSearchQuery(search.q);
-  }, []);
 
   return (
     <>

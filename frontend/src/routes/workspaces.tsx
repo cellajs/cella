@@ -9,11 +9,13 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { AppRoute } from '.';
 import { membersSearchSchema } from './organizations';
+import TasksTable from '~/modules/projects/tasks-table';
+import Board from '~/modules/projects/board/board';
 
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));
-const Board = lazy(() => import('~/modules/projects/board/board'));
-const TasksTable = lazy(() => import('~/modules/projects/tasks-table'));
+// const Board = lazy(() => import('~/modules/projects/board/board'));
+// const TasksTable = lazy(() => import('~/modules/projects/tasks-table'));
 const ElectricSuspense = lazy(() => import('~/modules/common/electric/suspense'));
 
 export const WorkspaceRoute = createRoute({
@@ -42,11 +44,7 @@ export const WorkspaceBoardRoute = createRoute({
   staticData: { pageTitle: 'Board', isAuth: true },
   validateSearch: z.object({ project: z.string().optional() }),
   getParentRoute: () => WorkspaceRoute,
-  component: () => (
-    <Suspense>
-      <Board />
-    </Suspense>
-  ),
+  component: () => <Board />,
 });
 
 export const tasksSearchSchema = z.object({
@@ -62,11 +60,7 @@ export const WorkspaceTableRoute = createRoute({
   validateSearch: tasksSearchSchema,
   staticData: { pageTitle: 'Table', isAuth: true },
   getParentRoute: () => WorkspaceRoute,
-  component: () => (
-    <Suspense>
-      <TasksTable />
-    </Suspense>
-  ),
+  component: () => <TasksTable />,
 });
 
 export const WorkspaceOverviewRoute = createRoute({

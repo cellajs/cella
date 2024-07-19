@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Search, XCircle } from 'lucide-react';
-import { useContext, useEffect, useMemo, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
 import { Input } from '~/modules/ui/input';
@@ -20,9 +20,20 @@ const BoardSearch = () => {
     inputRef.current?.focus();
   };
 
-  useMemo(() => {
-    const q = debouncedSearchQuery;
-    navigate({ search: (prev) => ({ ...prev, q }) });
+  useEffect(() => {
+    const q = debouncedSearchQuery.trim();
+    if (!q.length) {
+      setSearchQuery('');
+      navigate({
+        search: (prev) => {
+          const { q, ...rest } = prev;
+          return rest;
+        },
+      });
+    } else {
+      setSearchQuery(q);
+      navigate({ search: (prev) => ({ ...prev, q }) });
+    }
   }, [debouncedSearchQuery]);
 
   // Focus input when filter button clicked(mobile)

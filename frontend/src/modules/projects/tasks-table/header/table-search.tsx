@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
-import { useRef, useEffect, useContext, useMemo, useState } from 'react';
+import { useRef, useEffect, useContext, useState } from 'react';
 import { Search, XCircle, SlidersHorizontal } from 'lucide-react';
 import { Input } from '~/modules/ui/input';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -28,20 +28,26 @@ export function TableSearch({
     inputRef.current?.focus();
   };
 
-  useMemo(() => {
-    const q = debouncedSearchQuery;
-    setSearchQuery(q);
-    navigate({ search: (prev) => ({ ...prev, q }) });
-  }, [debouncedSearchQuery]);
-
   // Focus input when filter button clicked(mobile)
   useEffect(() => {
     if (isFilterActive) inputRef.current?.focus();
   }, [isFilterActive]);
 
   useEffect(() => {
-    if (innerSearchQuery !== searchQuery) setInnerSearchQuery(searchQuery);
-  }, [searchQuery]);
+    const q = debouncedSearchQuery.trim();
+    if (!q.length) {
+      setSearchQuery('');
+      navigate({
+        search: (prev) => {
+          const { q, ...rest } = prev;
+          return rest;
+        },
+      });
+    } else {
+      setSearchQuery(q);
+      navigate({ search: (prev) => ({ ...prev, q }) });
+    }
+  }, [debouncedSearchQuery]);
 
   useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
@@ -82,7 +88,7 @@ export function TableSearch({
           onClick={() => setInnerSearchQuery('')}
         />
       )}
-      {isFocused && <SlidersHorizontal className="absolute right-2 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer h-4 w-4" />}
+      {isFocused && <SlidersHorizontal className="absolute right-2 top-1/2 opacity-100 -translate-y-1/2 h-4 w-4" />}
       {isFocused && (
         <div className="top-12  absolute w-full" ref={dropdownRef}>
           {children}

@@ -1,7 +1,6 @@
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { useLiveQuery } from 'electric-sql/react';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -78,27 +77,13 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
 
+  const [fetchedTasks, setFetchedTasks] = useState<Task[]>();
+  const [tasks, setTasks] = useState<Task[]>([]);
+
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
-  const { results: tasks = [], updatedAt } = useLiveQuery(
-    Electric.db.tasks.liveMany({
-      where: {
-        project_id: project.id,
-        AND: [
-          {
-            markdown: {
-              contains: searchQuery,
-            },
-          },
-        ],
-      },
-    }),
-  ) as {
-    results: Task[] | undefined;
-    updatedAt: Date | undefined;
-  };
-  const isLoading = !updatedAt;
+  const isLoading = !fetchedTasks;
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
@@ -230,6 +215,29 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     document.addEventListener('task-change', handleChange);
     return () => document.removeEventListener('task-change', handleChange);
   });
+
+  useEffect(() => {
+    if (searchQuery.length && fetchedTasks) return setTasks(fetchedTasks.filter((t) => t.summary?.includes(searchQuery)));
+    if (fetchedTasks) return setTasks(fetchedTasks);
+  }, [searchQuery, fetchedTasks]);
+
+  useEffect(() => {
+    let isMounted = true; // Track whether the component is mounted
+    (async () => {
+      if (isMounted) {
+        const result = await Electric.db.tasks.findMany({
+          where: {
+            project_id: project.id,
+          },
+        });
+        setFetchedTasks(result as Task[]);
+      }
+    })();
+
+    return () => {
+      isMounted = false; // Cleanup to avoid setting state if unmounted
+    };
+  }, []);
 
   useEffect(() => {
     const handleChange = (event: Event) => {
