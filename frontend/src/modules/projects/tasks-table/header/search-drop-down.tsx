@@ -1,7 +1,5 @@
-import '~/modules/common/data-table/style.css';
 import DataGrid from 'react-data-grid';
-import { Check, SlidersHorizontal } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { Check } from 'lucide-react';
 import { taskStatuses } from '../../task/task-selectors/select-status';
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -17,7 +15,6 @@ export function SearchDropDown({
   setSelectedProjects,
   selectedStatuses,
   setSelectedStatuses,
-  className = '',
 }: {
   columns: ColumnOrColumnGroup<Task>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Task>[]>>;
@@ -25,7 +22,6 @@ export function SearchDropDown({
   setSelectedProjects: (projects: string[]) => void;
   selectedStatuses: number[];
   setSelectedStatuses: (statuses: number[]) => void;
-  className?: string;
 }) {
   const { t } = useTranslation();
   const { projects } = useWorkspaceStore();
@@ -60,11 +56,11 @@ export function SearchDropDown({
   };
 
   const innerColumns = [
-    { key: 'column', name: 'Shoved columns', width: 120 },
-    { key: 'status', name: 'Filter by status', width: 130 },
-    { key: 'project', name: 'Filter by projects', width: 200 },
+    { key: 'column', name: 'Shoved columns' },
+    { key: 'status', name: 'Filter by status' },
+    { key: 'project', name: 'Filter by projects' },
   ];
-  const maxLength = Math.max(projects.length, columns.length, taskStatuses.length);
+  const maxLength = Math.max(projects.length, columns.length, taskStatuses.length) - 1;
 
   const rows = Array.from({ length: maxLength }, (_, index) => {
     const status = taskStatuses[index];
@@ -106,35 +102,28 @@ export function SearchDropDown({
   });
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className={className}>
-        <SlidersHorizontal className="h-4 w-4" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="p-0" sideOffset={12} side="bottom" align={'end'}>
-        <DataGrid
-          className="fill-grid"
-          columns={innerColumns}
-          rows={rows}
-          rowHeight={42}
-          rowKeyGetter={(row) => row.id}
-          onCellKeyDown={(args, event) => {
-            if (event.key !== 'Enter') return;
-            const index = args.rowIdx;
-            const type = args.column.key;
-            if (type === 'project') handleProjectClick(projects[index].id);
-            if (type === 'status') handleStatusClick(taskStatuses[index].value);
-            if (type === 'column') handleColumnClick(filteredColumns[index].name as string);
-          }}
-          onCellClick={(args) => {
-            const index = +args.row.id - 1;
-            const type = args.column.key;
-            if (type === 'project') handleProjectClick(projects[index].id);
-            if (type === 'status') handleStatusClick(taskStatuses[index].value);
-            if (type === 'column') handleColumnClick(filteredColumns[index].name as string);
-          }}
-          enableVirtualization
-        />
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <DataGrid
+      className="grow w-full"
+      columns={innerColumns}
+      rows={rows}
+      rowHeight={42}
+      rowKeyGetter={(row) => row.id}
+      onCellKeyDown={(args, event) => {
+        if (event.key !== 'Enter') return;
+        const index = args.rowIdx;
+        const type = args.column.key;
+        if (type === 'project') handleProjectClick(projects[index].id);
+        if (type === 'status') handleStatusClick(taskStatuses[index].value);
+        if (type === 'column') handleColumnClick(filteredColumns[index].name as string);
+      }}
+      onCellClick={(args) => {
+        const index = +args.row.id - 1;
+        const type = args.column.key;
+        if (type === 'project') handleProjectClick(projects[index].id);
+        if (type === 'status') handleStatusClick(taskStatuses[index].value);
+        if (type === 'column') handleColumnClick(filteredColumns[index].name as string);
+      }}
+      enableVirtualization
+    />
   );
 }

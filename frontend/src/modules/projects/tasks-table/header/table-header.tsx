@@ -6,7 +6,7 @@ import DisplayOptions from '~/modules/projects/board/header/display-options';
 import { useWorkspaceStore } from '~/store/workspace';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import TaskSelectedTableButtons from './selected-buttons';
+import TaskSelectedTableButtons from '~/modules/projects/board/header/selected-buttons';
 
 const TableHeader = ({
   totalCount,

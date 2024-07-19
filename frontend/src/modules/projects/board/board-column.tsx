@@ -85,7 +85,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     Electric.db.tasks.liveMany({
       where: {
         project_id: project.id,
-        OR: [
+        AND: [
           {
             markdown: {
               contains: searchQuery,
@@ -98,7 +98,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     results: Task[] | undefined;
     updatedAt: Date | undefined;
   };
-
   const isLoading = !updatedAt;
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
@@ -358,7 +357,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
           ) : (
             <>
               <div className="h-full" ref={cardListRef}>
-                {!!tasks.length && (
+                {!!showingTasks.length && (
                   <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
                     <ScrollBar size="indicatorVertical" />
                     <div className="px-0 relative">
@@ -412,7 +411,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                   </ScrollArea>
                 )}
 
-                {!tasks.length && !searchQuery && (
+                {!showingTasks.length && !searchQuery && (
                   <ContentPlaceholder
                     Icon={Palmtree}
                     title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
@@ -434,7 +433,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                     }
                   />
                 )}
-                {!tasks.length && searchQuery && (
+                {!showingTasks.length && searchQuery && (
                   <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
                 )}
               </div>

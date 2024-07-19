@@ -17,10 +17,10 @@ import { useWorkspaceStore } from '~/store/workspace';
 import { useColumns } from './columns';
 import { sheet } from '~/modules/common/sheeter/state';
 import { enhanceTasks } from '~/hooks/use-filtered-task-helpers';
-import TaskSheet from './task-sheet';
 import TableHeader from './header/table-header';
-import { TableSearch } from './header/table-search';
 import { SearchDropDown } from './header/search-drop-down';
+import { TableSearch } from './header/table-search';
+import TaskSheet from './task-sheet';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -52,22 +52,21 @@ export default function TasksTable() {
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
 
   // Search query options
-  const q = searchQuery;
   const tableSort = sortColumns[0]?.columnKey as TasksSearch['tableSort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
-  const isFiltered = !!q || selectedStatuses.length > 0 || selectedProjects.length > 0;
+  const isFiltered = !!searchQuery || selectedStatuses.length > 0 || selectedProjects.length > 0;
 
   // Save filters in search params
   const filters = useMemo(
     () => ({
-      q,
+      q: searchQuery,
       tableSort,
       order,
       project_id: selectedProjects,
       status: selectedStatuses,
     }),
-    [q, tableSort, order, selectedStatuses, selectedProjects],
+    [searchQuery, tableSort, order, selectedStatuses, selectedProjects],
   );
 
   useSaveInSearchParams(filters, { tableSort: 'created_at', order: 'desc' });
@@ -86,10 +85,10 @@ export default function TasksTable() {
             in: selectedStatuses,
           },
         }),
-        OR: [
+        AND: [
           {
             markdown: {
-              contains: q,
+              contains: searchQuery,
             },
           },
         ],
@@ -158,7 +157,6 @@ export default function TasksTable() {
             setSelectedStatuses={setSelectedStatuses}
             selectedProjects={selectedProjects}
             setSelectedProjects={setSelectedProjects}
-            className="absolute right-2 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
           />
         </TableSearch>
         <Export
