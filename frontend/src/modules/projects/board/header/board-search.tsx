@@ -21,9 +21,8 @@ const BoardSearch = () => {
   };
 
   useEffect(() => {
-    const q = debouncedSearchQuery.trim();
+    const q = debouncedSearchQuery;
     if (!q.length) {
-      setSearchQuery('');
       navigate({
         search: (prev) => {
           const { q, ...rest } = prev;
@@ -31,7 +30,6 @@ const BoardSearch = () => {
         },
       });
     } else {
-      setSearchQuery(q);
       navigate({ search: (prev) => ({ ...prev, q }) });
     }
   }, [debouncedSearchQuery]);

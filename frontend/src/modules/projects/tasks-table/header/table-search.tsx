@@ -7,7 +7,7 @@ import { Input } from '~/modules/ui/input';
 import { useDebounce } from '~/hooks/use-debounce';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 
-export function TableSearch({
+export function TaskTableSearch({
   children,
 }: {
   children?: React.ReactNode;
@@ -34,7 +34,7 @@ export function TableSearch({
   }, [isFilterActive]);
 
   useEffect(() => {
-    const q = debouncedSearchQuery.trim();
+    const q = debouncedSearchQuery;
     if (!q.length) {
       setSearchQuery('');
       navigate({
@@ -51,15 +51,15 @@ export function TableSearch({
 
   useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
+      const wrapper = document.getElementById('input-wrap');
       const target = event.target as Node;
-      if (!inputRef.current?.contains(target) && !dropdownRef.current?.contains(target)) setIsFocused(false);
+      if (!wrapper?.contains(target) && !dropdownRef.current?.contains(target)) setIsFocused(false);
     };
     const handleFocus = () => {
       if (document.activeElement === inputRef.current) setIsFocused(true);
     };
     const inputElement = inputRef.current;
     if (inputElement) inputElement.addEventListener('focus', handleFocus);
-
     document.addEventListener('mousedown', handleDocumentClick);
     return () => {
       if (inputElement) inputElement.removeEventListener('focus', handleFocus);
@@ -68,13 +68,13 @@ export function TableSearch({
   }, []);
 
   return (
-    <div className="relative flex w-full sm:min-w-44 items-center" onClick={handleClick} onKeyDown={undefined}>
+    <div id="input-wrap" className="relative flex w-full sm:min-w-44 items-center" onClick={handleClick} onKeyDown={undefined}>
       <Search size={16} className="absolute left-3" style={{ opacity: `${innerSearchQuery.length ? 1 : 0.5}` }} />
       <Input
         placeholder={t('common:placeholder.search')}
+        ref={inputRef}
         style={{ paddingLeft: '2rem' }}
         className="h-10 w-full border-0"
-        ref={inputRef}
         value={innerSearchQuery}
         onChange={(e) => {
           if (e.target.value.length && selectedTasks.length) setSelectedTasks([]);

@@ -18,7 +18,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { enhanceTasks } from '~/hooks/use-filtered-task-helpers';
 import TableHeader from './header/table-header';
 import { SearchDropDown } from './header/search-drop-down';
-import { TableSearch } from './header/table-search';
+import { TaskTableSearch } from './header/table-search';
 import TaskSheet from './task-sheet';
 import { filterBy, sortBy } from './helpers';
 
@@ -138,7 +138,7 @@ export default function TasksTable() {
   return (
     <>
       <TableHeader totalCount={rows.length}>
-        <TableSearch>
+        <TaskTableSearch>
           <SearchDropDown
             columns={columns}
             setColumns={setColumns}
@@ -147,7 +147,7 @@ export default function TasksTable() {
             selectedProjects={selectedProjects}
             setSelectedProjects={setSelectedProjects}
           />
-        </TableSearch>
+        </TaskTableSearch>
         <Export
           className="max-lg:hidden"
           filename={`Tasks from ${projects.map((p) => p.name).join(' and ')}`}
