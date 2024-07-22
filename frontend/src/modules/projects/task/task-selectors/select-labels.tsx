@@ -62,9 +62,6 @@ const SetLabels = ({ value, changeLabels, createLabel, projectId, organizationId
       color: '#FFA9BA',
       organization_id: organizationId,
       project_id: projectId,
-
-      last_used: new Date(),
-      use_count: 1,
     };
 
     createLabel(newLabel);

@@ -118,11 +118,11 @@ export function TaskCard({
     const event = new CustomEvent('task-card-focus', {
       detail: {
         taskId,
+        target,
       },
-      bubbles: true,
-      cancelable: true,
     });
-    if (target) target.dispatchEvent(event);
+
+    document.dispatchEvent(event);
   };
 
   const dragIsOn = () => {
