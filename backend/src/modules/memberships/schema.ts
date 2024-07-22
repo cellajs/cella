@@ -8,7 +8,7 @@ import { userSchema } from '../users/schema';
 const membershipTableSchema = createSelectSchema(membershipsTable);
 
 export const membershipSchema = membershipTableSchema.extend({
-  inactive: z.boolean(),
+  archived: z.boolean(),
   muted: z.boolean(),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
@@ -22,7 +22,7 @@ export const createMembershipBodySchema = z.object({
 export const updateMembershipBodySchema = z.object({
   role: membershipTableSchema.shape.role.optional(),
   muted: z.boolean().optional(),
-  inactive: z.boolean().optional(),
+  archived: z.boolean().optional(),
   order: z.number().optional(),
 });
 
@@ -38,7 +38,7 @@ export const deleteMembersQuerySchema = baseMembersQuerySchema.extend(idsQuerySc
 export const membershipInfoSchema = z.object({
   id: membershipTableSchema.shape.id,
   role: membershipTableSchema.shape.role,
-  archived: membershipTableSchema.shape.inactive,
+  archived: membershipTableSchema.shape.archived,
   muted: membershipTableSchema.shape.muted,
   order: membershipTableSchema.shape.order,
 });

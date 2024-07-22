@@ -10,7 +10,7 @@ import type { membershipInfoType } from '../schema';
 const convertMembershipToInfo = (membership: MembershipModel): membershipInfoType => ({
   id: membership.id,
   role: membership.role,
-  archived: membership.inactive || false,
+  archived: membership.archived || false,
   muted: membership.muted || false,
   order: membership.order,
 });

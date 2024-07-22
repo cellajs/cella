@@ -205,7 +205,6 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
               membership: {
                 ...data.workspace.membership,
                 ...(items[0] as Membership),
-                archived: (items[0] as Membership).inactive ?? false,
               },
             },
           };
@@ -214,10 +213,7 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
           const updatedMembership = items[0] as Membership;
           const newProjects = data.relatedProjects.map((existing) => ({
             ...existing,
-            membership:
-              existing.membership?.id === updatedMembership.id
-                ? { ...existing.membership, ...updatedMembership, archived: updatedMembership.inactive ?? false }
-                : existing.membership,
+            membership: existing.membership?.id === updatedMembership.id ? { ...existing.membership, ...updatedMembership } : existing.membership,
           }));
 
           return {

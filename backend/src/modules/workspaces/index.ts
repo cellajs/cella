@@ -78,7 +78,7 @@ const workspacesRoutes = app
         and(
           eq(membershipsTable.projectId, projectsToWorkspacesTable.projectId),
           eq(membershipsTable.userId, user.id),
-          eq(membershipsTable.inactive, false),
+          eq(membershipsTable.archived, false),
         ),
       )
       .where(eq(projectsTable.id, projectsToWorkspacesTable.projectId))
