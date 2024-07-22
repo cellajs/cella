@@ -16,6 +16,7 @@ import { SheetMenu } from './nav-sheet/sheet-menu';
 import useMounted from '~/hooks/use-mounted';
 import { NavButton } from './app-nav-button';
 import { AppSearch } from './app-search';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 
 export type NavItem = {
   id: string;
@@ -61,6 +62,13 @@ const AppNav = () => {
     const isNew = !activeSheet || activeSheet.id !== navItem.id;
     setSheet(isNew ? navItem : null);
   };
+
+  useHotkeys([
+    ['A', () => navButtonClick(navItems[3])],
+    ['F', () => navButtonClick(navItems[2])],
+    ['H', () => navButtonClick(navItems[1])],
+    ['M', () => navButtonClick(navItems[0])],
+  ]);
 
   return (
     <>
