@@ -1,6 +1,6 @@
 import { useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
-import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
+import { Fragment, type LegacyRef, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -13,6 +13,8 @@ import { useElectric } from '../../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
 import BoardHeader from './header/board-header';
+import { useEventListener } from '~/hooks/use-event-listener';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -106,14 +108,12 @@ export default function Board() {
     if (!focusedTask) return;
 
     const direction = event.key === 'ArrowDown' ? 1 : -1;
-    const triggeredEvent = new CustomEvent('task-change', {
-      detail: {
-        taskId: focusedTask.id,
-        projectId: focusedTask.project_id,
-        direction,
-      },
+
+    dispatchCustomEvent('taskChange', {
+      taskId: focusedTask.id,
+      projectId: focusedTask.project_id,
+      direction,
     });
-    document.dispatchEvent(triggeredEvent);
   };
 
   const handleHorizontalArrowKeyDown = async (event: KeyboardEvent) => {
@@ -128,20 +128,13 @@ export default function Board() {
     });
 
     if (!focusedTask) return;
-
     const currentProjectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
 
     const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;
     const nextProject = projects[nextProjectIndex];
 
     if (!nextProject) return;
-
-    const triggeredEvent = new CustomEvent('project-change', {
-      detail: {
-        projectId: nextProject.id,
-      },
-    });
-    document.dispatchEvent(triggeredEvent);
+    dispatchCustomEvent('projectChange', nextProject.id);
   };
 
   const handleNKeyDown = async () => {
@@ -169,14 +162,12 @@ export default function Board() {
     ['N', handleNKeyDown],
   ]);
 
-  useEffect(() => {
-    const handleFocus = (event: Event) => {
-      const { taskId } = (event as TaskCardFocusEvent).detail;
-      setFocusedTaskId(taskId);
-    };
-    document.addEventListener('task-card-focus', handleFocus);
-    return () => document.removeEventListener('task-card-focus', handleFocus);
-  }, []);
+  const handleFocus = (event: TaskCardFocusEvent) => {
+    const { taskId } = event.detail;
+    setFocusedTaskId(taskId);
+  };
+
+  useEventListener('taskCardFocus', handleFocus);
 
   return (
     <>

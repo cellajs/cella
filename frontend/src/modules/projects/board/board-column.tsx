@@ -21,7 +21,7 @@ import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import type { Project } from '~/types/index.ts';
+import type { CustomEventEventById, Project, TaskChangeEvent } from '~/types/index.ts';
 import { ProjectSettings } from '../project-settings';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '../task/create-task-form';
 import { getTaskOrder } from '../task/helpers';
@@ -35,22 +35,9 @@ import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
 import { useLiveQuery } from 'electric-sql/react';
+import { useEventListener } from '~/hooks/use-event-listener';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
-
-interface TaskChangeEvent extends Event {
-  detail: {
-    taskId: string;
-    projectId: string;
-    direction: number;
-  };
-}
-
-interface ProjectChangeEvent extends Event {
-  detail: {
-    projectId: string;
-  };
-}
 
 interface BoardColumnProps {
   project: Project;
@@ -222,18 +209,21 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     ['Enter', handleEnterKeyPress],
   ]);
 
-  useEffect(() => {
-    const handleChange = (event: Event) => {
-      const { taskId, direction, projectId } = (event as TaskChangeEvent).detail;
-      if (projectId !== project.id) return;
-      const currentFocusedIndex = showingTasks.findIndex((t) => t.id === taskId);
-      const newFocusedTask = showingTasks[currentFocusedIndex + direction];
-      setFocusedTaskId(newFocusedTask.id);
-    };
+  const handleTaskChangeEventListener = (event: TaskChangeEvent) => {
+    const { taskId, direction, projectId } = event.detail;
+    if (projectId !== project.id) return;
+    const currentFocusedIndex = showingTasks.findIndex((t) => t.id === taskId);
+    const newFocusedTask = showingTasks[currentFocusedIndex + direction];
+    setFocusedTaskId(newFocusedTask.id);
+  };
 
-    document.addEventListener('task-change', handleChange);
-    return () => document.removeEventListener('task-change', handleChange);
-  });
+  const handleProjectChangeEventListener = (event: CustomEventEventById) => {
+    if (event.detail !== project.id) return;
+    setFocusedTaskId(showingTasks[0].id);
+  };
+
+  useEventListener('taskChange', handleTaskChangeEventListener);
+  useEventListener('projectChange', handleProjectChangeEventListener);
 
   // useEffect(() => {
   //   if (searchQuery.length && fetchedTasks) return setTasks(fetchedTasks.filter((t) => t.summary?.includes(searchQuery)));
@@ -257,16 +247,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   //     isMounted = false; // Cleanup to avoid setting state if unmounted
   //   };
   // }, []);
-
-  useEffect(() => {
-    const handleChange = (event: Event) => {
-      const { projectId } = (event as ProjectChangeEvent).detail;
-      if (projectId !== project.id) return;
-      setFocusedTaskId(showingTasks[0].id);
-    };
-    document.addEventListener('project-change', handleChange);
-    return () => document.removeEventListener('project-change', handleChange);
-  });
 
   useEffect(() => {
     return combine(

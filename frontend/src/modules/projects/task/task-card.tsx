@@ -29,6 +29,7 @@ import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { Mode } from '~/store/theme.ts';
 import type { DraggableItemData } from '~/types';
 import ExpandedTask from './task-expanded.tsx';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 
@@ -87,16 +88,6 @@ export function TaskCard({
       },
     },
   });
-
-  const dispatchCustomFocusEvent = (taskId: string, projectId: string) => {
-    const event = new CustomEvent('task-card-focus', {
-      detail: {
-        taskId,
-        projectId,
-      },
-    });
-    document.dispatchEvent(event);
-  };
 
   const dragEnd = () => {
     setClosestEdge(null);
@@ -157,7 +148,7 @@ export function TaskCard({
       }}
       onFocus={() => {
         if (isFocused) return;
-        dispatchCustomFocusEvent(task.id, task.project_id);
+        dispatchCustomEvent('taskCardFocus', { taskId: task.id });
       }}
       tabIndex={0}
       ref={taskRef}

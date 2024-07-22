@@ -21,14 +21,10 @@ import { SearchDropDown } from './header/search-drop-down';
 import { TaskTableSearch } from './header/table-search';
 import TaskSheet from './task-sheet';
 import { useLiveQuery } from 'electric-sql/react';
+import type { CustomEventEventById } from '~/types';
+import { useEventListener } from '~/hooks/use-event-listener';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
-
-interface OpenPreviewEvent extends Event {
-  detail: {
-    taskId: string;
-  };
-}
 
 export default function TasksTable() {
   const { t } = useTranslation();
@@ -145,23 +141,20 @@ export default function TasksTable() {
   //   };
   // }, []);
 
-  useEffect(() => {
-    const handleChange = (event: Event) => {
-      const { taskId } = (event as OpenPreviewEvent).detail;
-      const relativeTasks = tasks.filter((t) => t.id === taskId || t.parent_id === taskId);
-      const [task] = enhanceTasks(relativeTasks, labels, members);
-      sheet(<TaskSheet task={task} />, {
-        className: 'max-w-full lg:max-w-4xl p-0',
-        title: <span className="pl-4">Task</span>,
-        text: <span className="pl-4">View and manage a specific task</span>,
-        id: `task-card-preview-${taskId}`,
-      });
-      setFocusedTaskId(taskId);
-    };
+  const handleOpenPreview = (event: CustomEventEventById) => {
+    const taskId = event.detail;
+    const relativeTasks = tasks.filter((t) => t.id === taskId || t.parent_id === taskId);
+    const [task] = enhanceTasks(relativeTasks, labels, members);
+    sheet(<TaskSheet task={task} />, {
+      className: 'max-w-full lg:max-w-4xl p-0',
+      title: <span className="pl-4">Task</span>,
+      text: <span className="pl-4">View and manage a specific task</span>,
+      id: `task-card-preview-${taskId}`,
+    });
+    setFocusedTaskId(taskId);
+  };
 
-    document.addEventListener('open-task-card-preview', handleChange);
-    return () => document.removeEventListener('open-task-card-preview', handleChange);
-  });
+  useEventListener('openTaskCardPreview', handleOpenPreview);
 
   return (
     <>

@@ -15,6 +15,7 @@ import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } fro
 import { taskTypes } from '../task/task-selectors/select-task-type.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -34,14 +35,7 @@ export const useColumns = () => {
           variant="none"
           tabIndex={tabIndex}
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
-          onClick={() => {
-            const triggeredEvent = new CustomEvent('open-task-card-preview', {
-              detail: {
-                taskId: row.id,
-              },
-            });
-            document.dispatchEvent(triggeredEvent);
-          }}
+          onClick={() => dispatchCustomEvent('openTaskCardPreview', row.id)}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">{row.summary || '-'}</span>
         </Button>
