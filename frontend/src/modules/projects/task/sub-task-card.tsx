@@ -82,7 +82,7 @@ const SubTask = ({
         element,
         canDrop({ source }) {
           const data = source.data;
-          return isSubTaskData(data) && data.item.id !== task.id && data.item.status === task.status && data.type === 'subTask';
+          return isSubTaskData(data) && data.item.id !== task.id && data.type === 'subTask';
         },
         getIsSticky: () => true,
 

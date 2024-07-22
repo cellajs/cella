@@ -34,6 +34,7 @@ import SelectStatus, { type TaskStatus } from '../task/task-selectors/select-sta
 import { SelectTaskType } from '../task/task-selectors/select-task-type';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
+import { useLiveQuery } from 'electric-sql/react';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -77,13 +78,30 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
 
-  const [fetchedTasks, setFetchedTasks] = useState<Task[]>();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  // const [fetchedTasks, setFetchedTasks] = useState<Task[]>();
+  // const [tasks, setTasks] = useState<Task[]>([]);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
-  const isLoading = !fetchedTasks;
+  const { results: tasks = [], updatedAt } = useLiveQuery(
+    Electric.db.tasks.liveMany({
+      where: {
+        project_id: project.id,
+        AND: [
+          {
+            markdown: {
+              contains: searchQuery,
+            },
+          },
+        ],
+      },
+    }),
+  ) as {
+    results: Task[] | undefined;
+    updatedAt: Date | undefined;
+  };
+  const isLoading = !updatedAt;
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
@@ -158,13 +176,14 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     if (selected) return setSelectedTasks([...selectedTasks, taskId]);
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
-  const handleChange = (field: keyof Task, value: string | number | null, taskId: string) => {
+  const handleChange = async (field: keyof Task, value: string | number | null, taskId: string) => {
     if (!Electric) return toast.error('common:local_db_inoperable');
 
     const db = Electric.db;
-    const newOrder = field === 'status' ? getTaskOrder(taskId, value, tasks) : null;
+    const isMainTask = tasks.find((t) => t.id === taskId)?.parent_id === null;
+    const newOrder = field === 'status' && isMainTask ? getTaskOrder(taskId, value, tasks) : null;
 
-    db.tasks.update({
+    await db.tasks.update({
       data: {
         [field]: value,
         ...(newOrder && { sort_order: newOrder }),
@@ -216,28 +235,28 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     return () => document.removeEventListener('task-change', handleChange);
   });
 
-  useEffect(() => {
-    if (searchQuery.length && fetchedTasks) return setTasks(fetchedTasks.filter((t) => t.summary?.includes(searchQuery)));
-    if (fetchedTasks) return setTasks(fetchedTasks);
-  }, [searchQuery, fetchedTasks]);
+  // useEffect(() => {
+  //   if (searchQuery.length && fetchedTasks) return setTasks(fetchedTasks.filter((t) => t.summary?.includes(searchQuery)));
+  //   if (fetchedTasks) return setTasks(fetchedTasks);
+  // }, [searchQuery, fetchedTasks]);
 
-  useEffect(() => {
-    let isMounted = true; // Track whether the component is mounted
-    (async () => {
-      if (isMounted) {
-        const result = await Electric.db.tasks.findMany({
-          where: {
-            project_id: project.id,
-          },
-        });
-        setFetchedTasks(result as Task[]);
-      }
-    })();
+  // useEffect(() => {
+  //   let isMounted = true; // Track whether the component is mounted
+  //   (async () => {
+  //     if (isMounted) {
+  //       const result = await Electric.db.tasks.findMany({
+  //         where: {
+  //           project_id: project.id,
+  //         },
+  //       });
+  //       setFetchedTasks(result as Task[]);
+  //     }
+  //   })();
 
-    return () => {
-      isMounted = false; // Cleanup to avoid setting state if unmounted
-    };
-  }, []);
+  //   return () => {
+  //     isMounted = false; // Cleanup to avoid setting state if unmounted
+  //   };
+  // }, []);
 
   useEffect(() => {
     const handleChange = (event: Event) => {

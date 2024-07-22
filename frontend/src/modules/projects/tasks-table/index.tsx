@@ -20,7 +20,7 @@ import TableHeader from './header/table-header';
 import { SearchDropDown } from './header/search-drop-down';
 import { TaskTableSearch } from './header/table-search';
 import TaskSheet from './task-sheet';
-import { filterBy, sortBy } from './helpers';
+import { useLiveQuery } from 'electric-sql/react';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -48,17 +48,14 @@ export default function TasksTable() {
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [fetchedTasks, setFetchedTasks] = useState<Task[]>();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  // const [fetchedTasks, setFetchedTasks] = useState<Task[]>();
+  // const [tasks, setTasks] = useState<Task[]>([]);
   const [columns, setColumns] = useColumns();
-
-  const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members, true);
   // Search query options
   const tableSort = sortColumns[0]?.columnKey as TasksSearch['tableSort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
   const isFiltered = !!searchQuery || selectedStatuses.length > 0 || selectedProjects.length > 0;
-  const isLoading = !fetchedTasks;
 
   // Save filters in search params
   const filters = useMemo(
@@ -77,6 +74,37 @@ export default function TasksTable() {
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
+  const { results: tasks = [], updatedAt } = useLiveQuery(
+    Electric.db.tasks.liveMany({
+      where: {
+        project_id: {
+          in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
+        },
+        ...(selectedStatuses.length > 0 && {
+          status: {
+            in: selectedStatuses,
+          },
+        }),
+        AND: [
+          {
+            markdown: {
+              contains: searchQuery,
+            },
+          },
+        ],
+      },
+      orderBy: {
+        [tableSort || 'created_at']: order || 'desc',
+      },
+    }),
+  ) as {
+    results: Task[] | undefined;
+    updatedAt: Date | undefined;
+  };
+
+  const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members, true);
+  const isLoading = !updatedAt;
+
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
     setSelectedTasks(Array.from(selectedRows));
   };
@@ -90,32 +118,32 @@ export default function TasksTable() {
     });
   }, [tasks, focusedTaskId]);
 
-  useEffect(() => {
-    if (fetchedTasks) {
-      let filteredTasks = filterBy(fetchedTasks, selectedProjects, selectedStatuses);
-      filteredTasks = filteredTasks.filter((t) => t.summary?.includes(searchQuery));
-      setTasks(sortBy(filteredTasks, tableSort, order));
-    }
-  }, [fetchedTasks, selectedProjects, selectedStatuses, searchQuery, tableSort, order]);
+  // useEffect(() => {
+  //   if (fetchedTasks) {
+  //     let filteredTasks = filterBy(fetchedTasks, selectedProjects, selectedStatuses);
+  //     filteredTasks = filteredTasks.filter((t) => t.summary?.includes(searchQuery));
+  //     setTasks(sortBy(filteredTasks, tableSort, order));
+  //   }
+  // }, [fetchedTasks, selectedProjects, selectedStatuses, searchQuery, tableSort, order]);
 
-  useEffect(() => {
-    let isMounted = true; // Track whether the component is mounted
-    (async () => {
-      if (isMounted) {
-        const result = await Electric.db.tasks.findMany({
-          where: {
-            project_id: {
-              in: projects.map((project) => project.id),
-            },
-          },
-        });
-        setFetchedTasks(result as Task[]);
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  // useEffect(() => {
+  //   let isMounted = true; // Track whether the component is mounted
+  //   (async () => {
+  //     if (isMounted) {
+  //       const result = await Electric.db.tasks.findMany({
+  //         where: {
+  //           project_id: {
+  //             in: projects.map((project) => project.id),
+  //           },
+  //         },
+  //       });
+  //       setFetchedTasks(result as Task[]);
+  //     }
+  //   })();
+  //   return () => {
+  //     isMounted = false;
+  //   };
+  // }, []);
 
   useEffect(() => {
     const handleChange = (event: Event) => {
