@@ -13,7 +13,6 @@ export const projectsTable = pgTable('projects', {
     .default('project'),
   slug: varchar('slug').notNull(),
   name: varchar('name').notNull(),
-  color: varchar('color').notNull(),
   thumbnailUrl: varchar('thumbnail_url'),
   bannerUrl: varchar('banner_url'),
   organizationId: varchar('organization_id')

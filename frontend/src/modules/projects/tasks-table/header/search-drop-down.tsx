@@ -71,7 +71,7 @@ export function SearchDropDown({
       project: project ? (
         <div className="p-0 flex justify-between items-center w-full leading-normal">
           <div className="flex gap-2">
-            <AvatarWrap type="project" backgroundColor={project.color} className="h-6 w-6 text-xs" id={project.id} name={project.name} />
+            <AvatarWrap type="project" className="h-6 w-6 text-xs" id={project.id} name={project.name} url={project.thumbnailUrl} />
             <span>{project.name}</span>
           </div>
           <div className="flex items-center">{selectedProjects.some((s) => s === project.id) && <Check size={16} className="text-success" />}</div>

@@ -333,8 +333,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     <div ref={columnRef} className="flex flex-col h-full">
       <BoardColumnHeader
         id={project.id}
+        thumbnailUrl={project.thumbnailUrl}
         name={project.name}
-        color={project.color}
         createFormClick={handleTaskFormClick}
         openSettings={openSettingsSheet}
         createFormOpen={createForm}

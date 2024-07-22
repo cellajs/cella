@@ -23,7 +23,7 @@ const projectsRoutes = app
    * Create project
    */
   .openapi(projectRoutesConfig.createProject, async (ctx) => {
-    const { name, slug, color, organizationId } = ctx.req.valid('json');
+    const { name, slug, organizationId } = ctx.req.valid('json');
     const workspaceId = ctx.req.query('workspaceId');
 
     const user = ctx.get('user');
@@ -41,7 +41,6 @@ const projectsRoutes = app
         organizationId,
         name,
         slug,
-        color,
         createdBy: user.id,
       })
       .returning();
@@ -197,14 +196,11 @@ const projectsRoutes = app
     const user = ctx.get('user');
     const project = ctx.get('project');
 
-    const { name, slug, color, workspaceId } = ctx.req.valid('json');
+    const { name, thumbnailUrl, slug, workspaceId } = ctx.req.valid('json');
 
     if (slug && slug !== project.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-
-      if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'project', { slug });
-      }
+      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'project', { slug });
     }
 
     const [updatedProject] = await db
@@ -212,7 +208,7 @@ const projectsRoutes = app
       .set({
         name,
         slug,
-        color,
+        thumbnailUrl,
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })

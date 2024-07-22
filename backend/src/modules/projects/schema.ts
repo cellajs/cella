@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { projectsTable } from '../../db/schema/projects';
-import { colorSchema, idSchema, membershipsCountSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, membershipsCountSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const projectSchema = z.object({
@@ -17,7 +17,6 @@ export const projectSchema = z.object({
 export const createProjectBodySchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
-  color: colorSchema,
   organizationId: idSchema,
 });
 
@@ -37,12 +36,12 @@ export const getProjectsQuerySchema = paginationQuerySchema.merge(
 export const updateProjectBodySchema = createInsertSchema(projectsTable, {
   slug: validSlugSchema,
   name: nameSchema,
-  color: colorSchema,
+  thumbnailUrl: imageUrlSchema,
 })
   .pick({
     slug: true,
     name: true,
-    color: true,
+    thumbnailUrl: true,
   })
   .merge(
     z.object({

@@ -35,7 +35,6 @@ export const OnboardingCompleted = () => {
           name: `Demo project ${namingArr[i - 1]}`,
           slug: `${lastCreatedOrganization.slug}-project-${i}`,
           organizationId: lastCreatedOrganization.id,
-          color: '#000000',
         }).then((createdProject) => {
           useNavigationStore.setState({
             menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),

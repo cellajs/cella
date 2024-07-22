@@ -113,7 +113,6 @@ const meRoutes = app
         createdAt: project.createdAt,
         modifiedAt: project.modifiedAt,
         name: project.name,
-        color: project.color,
         entity: project.entity,
         organizationId: project.organizationId,
         membership: toMembershipInfo.required(membership),

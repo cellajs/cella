@@ -147,8 +147,7 @@ export const useColumns = () => {
                   disabled={!project.workspaceId}
                   className="flex space-x-2 items-center outline-0 ring-0 group truncate"
                 >
-                  {/* Omit style background if projects will be without a color preference. */}
-                  <AvatarWrap type="project" backgroundColor={project.color} className="h-6 w-6 text-xs" id={project.id} name={project.name} />
+                  <AvatarWrap type="project" className="h-6 w-6 text-xs" id={project.id} name={project.name} url={project.thumbnailUrl} />
                   <span className={`${!project.workspaceId ? '' : 'group-hover:underline underline-offset-4 truncate'}`}>{project.name}</span>
                 </Link>
               );

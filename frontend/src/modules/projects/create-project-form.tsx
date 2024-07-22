@@ -41,7 +41,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       defaultValues: {
         name: '',
         slug: '',
-        color: '#000000',
         workspaceId: workspace.id,
         organizationId: workspace.organizationId,
       },

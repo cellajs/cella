@@ -3,7 +3,8 @@ import { FormControl, FormField, FormItem, FormLabel } from '~/modules/ui/form';
 import { UploadAvatar } from '../upload/upload-avatar';
 
 interface Props {
-  control: Control;
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  control: Control<any>;
   name: string;
   label: string;
   entity: {

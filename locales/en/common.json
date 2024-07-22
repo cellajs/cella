@@ -293,6 +293,7 @@
   "profile": "Profile",
   "profile_picture": "Profile picture",
   "project": "Project",
+  "project_logo": "Project logo",
   "project_handle": "Project handle",
   "project_handle.text": "A unique handle for project URL",
   "project_settings": "Project settings",

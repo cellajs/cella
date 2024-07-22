@@ -1,0 +1,1 @@
+ALTER TABLE "memberships" RENAME COLUMN "inactive" TO "archived";
