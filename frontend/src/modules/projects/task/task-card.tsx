@@ -38,6 +38,7 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
 };
 
 interface TaskProps {
+  style?: React.CSSProperties;
   task: Task;
   mode: Mode;
   isExpanded: boolean;
@@ -47,9 +48,11 @@ interface TaskProps {
   handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
   setIsExpanded?: (exp: boolean) => void;
   handleTaskSelect?: (selected: boolean, taskId: string) => void;
+  setItemHeight?: (size: number) => void;
 }
 
 export function TaskCard({
+  style,
   task,
   mode,
   isSelected,
@@ -59,6 +62,7 @@ export function TaskCard({
   handleTaskSelect,
   handleTaskActionClick,
   setIsExpanded,
+  setItemHeight,
 }: TaskProps) {
   const { t } = useTranslation();
 
@@ -140,8 +144,17 @@ export function TaskCard({
     );
   }, [task]);
 
+  useEffect(() => {
+    if (!setItemHeight) return;
+    if (taskRef.current) {
+      const height = taskRef.current.children[0].getBoundingClientRect().height;
+      setItemHeight(height);
+    }
+  }, [isExpanded]);
+
   return (
     <Card
+      style={style}
       onMouseDown={() => {
         if (document.activeElement === taskRef.current) return;
         taskRef.current?.focus();

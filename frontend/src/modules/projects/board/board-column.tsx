@@ -2,7 +2,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { lazy, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
@@ -14,7 +14,6 @@ import { type Task, useElectric } from '~/modules/common/electric/electrify';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
-import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
@@ -36,6 +35,8 @@ import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
 import { useLiveQuery } from 'electric-sql/react';
 import { useEventListener } from '~/hooks/use-event-listener';
+import AutoSizer from 'react-virtualized-auto-sizer';
+import { VariableSizeList as List, type VariableSizeList } from 'react-window';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -48,10 +49,11 @@ interface BoardColumnProps {
 export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
+  const itemHeights = useRef<number[]>([]);
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
-  const scrollableRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
+  const variableSizedListRef = useRef(null);
 
   const { user } = useUserStore();
   const { menu } = useNavigationStore();
@@ -186,6 +188,41 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const handleTaskFormClick = () => {
     toggleCreateForm(project.id);
   };
+  const getItemSize = (index: number) => itemHeights.current[index] || 100;
+
+  const handleItemHeightChange = (index: number, size: number) => {
+    const updatedHeights = [...itemHeights.current];
+    updatedHeights[index] = size;
+    itemHeights.current = updatedHeights;
+
+    // Reset the list after the index to reflect the new size
+    if (variableSizedListRef.current) (variableSizedListRef.current as VariableSizeList).resetAfterIndex?.(index);
+  };
+
+  const Task = ({
+    index,
+    style,
+    data,
+  }: {
+    data: Task[];
+    index: number;
+    style: CSSProperties;
+  }) => (
+    <TaskCard
+      style={style}
+      key={data[index].id}
+      task={data[index]}
+      isExpanded={expandedTasks[data[index].id] || false}
+      isSelected={selectedTasks.includes(data[index].id)}
+      isFocused={data[index].id === focusedTaskId}
+      handleTaskChange={handleChange}
+      handleTaskActionClick={handleTaskActionClick}
+      handleTaskSelect={handleTaskSelect}
+      setIsExpanded={(isExpanded) => setTaskExpanded(data[index].id, isExpanded)}
+      setItemHeight={(size) => handleItemHeightChange(index, size)}
+      mode={mode}
+    />
+  );
 
   // Open on key press
   const hotKeyPress = (event: KeyboardEvent, field: string) => {
@@ -363,11 +400,10 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
             <ColumnSkeleton />
           ) : (
             <>
-              <div className="h-full" ref={cardListRef}>
-                {!!showingTasks.length && (
-                  <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
-                    <ScrollBar size="indicatorVertical" />
-                    <div className="px-0 relative">
+              <div className="h-full flex flex-col" ref={cardListRef}>
+                {!!tasks.length && (
+                  <>
+                    <div className="px-0 relative flex flex-col flex-grow">
                       <Button
                         onClick={handleAcceptedClick}
                         variant="ghost"
@@ -384,20 +420,24 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                           />
                         )}
                       </Button>
-                      {showingTasks.map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          mode={mode}
-                          isExpanded={expandedTasks[task.id] || false}
-                          isSelected={selectedTasks.includes(task.id)}
-                          isFocused={task.id === focusedTaskId}
-                          handleTaskChange={handleChange}
-                          handleTaskActionClick={handleTaskActionClick}
-                          handleTaskSelect={handleTaskSelect}
-                          setIsExpanded={(isExpanded) => setTaskExpanded(task.id, isExpanded)}
-                        />
-                      ))}
+                      <div className="grow">
+                        <AutoSizer>
+                          {({ height, width }: { height: number; width: number }) => {
+                            return (
+                              <List
+                                ref={variableSizedListRef}
+                                height={height}
+                                itemCount={showingTasks.length}
+                                itemSize={getItemSize}
+                                itemData={showingTasks}
+                                width={width}
+                              >
+                                {Task}
+                              </List>
+                            );
+                          }}
+                        </AutoSizer>
+                      </div>
                     </div>
                     <Button
                       onClick={handleIcedClick}
@@ -415,7 +455,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                         />
                       )}
                     </Button>
-                  </ScrollArea>
+                  </>
                 )}
 
                 {!showingTasks.length && !searchQuery && (
