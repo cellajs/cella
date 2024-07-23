@@ -133,7 +133,7 @@ export const useNavigationStore = create<NavigationState>()(
           clearNavigationStore: () => set(initStore, true),
         }),
         {
-          version: 3,
+          version: 4,
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
             menu: state.menu,
