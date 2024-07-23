@@ -2,7 +2,7 @@ import { Trash2, Zap, ZapOff } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { Send } from 'lucide-react';
+import { Send, KeyRound } from 'lucide-react';
 import { deleteMySessions as baseTerminateMySessions } from '~/api/me';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
@@ -13,7 +13,7 @@ import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail } from '~/api/auth';
+import { sendResetPasswordEmail, setPasskey, getChallenge } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { AsideNav } from '~/modules/common/aside-nav';
 import StickyBox from '~/modules/common/sticky-box';
@@ -23,6 +23,7 @@ import { oauthProviders } from '../auth/oauth-options';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
 import DeleteSelf from './delete-self';
+import { base64UrlEncode, base64UrlDecode } from '~/lib/utils';
 
 export type Session = {
   id: string;
@@ -121,6 +122,54 @@ const UserSettings = () => {
     );
   };
 
+  async function registerPasskey() {
+    const { challengeBase64 } = await getChallenge(user.id);
+    const challenge = base64UrlDecode(challengeBase64);
+
+    const publicKeyCredentialCreationOptions = {
+      attestation: 'none' as const,
+      challenge: new Uint8Array(challenge),
+      rp: {
+        id: config.mode === 'development' ? 'localhost' : config.domain,
+        name: config.name,
+      },
+      user: {
+        id: new Uint8Array(user.id.split('').map((char) => char.charCodeAt(0))),
+        name: user.email,
+        displayName: user.name,
+      },
+      pubKeyCredParams: [
+        { type: 'public-key' as const, alg: -257 },
+        { type: 'public-key' as const, alg: -7 },
+      ],
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform' as const,
+        userVerification: 'required' as const,
+      },
+    };
+
+    const credential = await navigator.credentials.create({
+      publicKey: publicKeyCredentialCreationOptions,
+    });
+    if (!credential || !(credential instanceof PublicKeyCredential)) throw new Error('Failed to create PublicKeyCredential');
+    const attestationResponse = credential.response as AuthenticatorAttestationResponse;
+    // Convert ArrayBuffer to Uint8Array before encoding
+    const clientDataJSONUint8 = new Uint8Array(attestationResponse.clientDataJSON);
+    const attestationObjectUint8 = new Uint8Array(attestationResponse.attestationObject);
+    const credentialResponse = {
+      id: user.id,
+      clientDataJSON: base64UrlEncode(clientDataJSONUint8),
+      attestationObject: base64UrlEncode(attestationObjectUint8),
+    };
+
+    const result = await setPasskey(credentialResponse);
+    if (result) {
+      console.log('Registration successful');
+    } else {
+      console.error('Registration failed');
+    }
+  }
+
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';
 
@@ -176,6 +225,24 @@ const UserSettings = () => {
                   initialDisplayCount={3}
                   expandText="common:more_sessions"
                 />
+              </div>
+            </CardContent>
+          </Card>
+        </AsideAnchor>
+
+        <AsideAnchor id="passkey">
+          <Card className="mx-auto sm:w-full">
+            <CardHeader>
+              <CardTitle>Register a passkey</CardTitle>
+
+              <CardDescription>Secure and simple! Register a passkey for next-level login security without passwords.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col justify-center gap-2">
+                <Button key="passkey" type="button" variant="outline" onClick={() => registerPasskey()}>
+                  <KeyRound className="w-4 h-4 mr-2" />
+                  {`${t('common:add')} a passkey`}
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -46,6 +46,8 @@
     "@t3-oss/env-core": "^0.10.1",
     "@types/jsonwebtoken": "^9.0.6",
     "arctic": "^1.9.0",
+    "base64url": "^3.0.1",
+    "cbor": "^9.0.2",
     "config": "workspace:*",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.32.0",

@@ -5,6 +5,7 @@ import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { VerificationEmail } from '../../../../email/emails/email-verification';
 import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
 
+import crypto from 'node:crypto';
 import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
 
@@ -33,6 +34,9 @@ import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
+import { base64UrlEncode, extractCredentialData } from '../../lib/utils';
+import { challengeTable } from '../../db/schema/challanges';
+import { passkeyTable } from '../../db/schema/passkey';
 
 // Scopes for OAuth providers
 const githubScopes = { scopes: ['user:email'] };
@@ -718,6 +722,46 @@ const authRoutes = app
 
       throw error;
     }
-  });
+  })
+  /*
+   * Passkey challenge
+   */
+  .openapi(authRoutesConfig.getPasskeyChallenge, async (ctx) => {
+    const { userId } = ctx.req.valid('query');
+    // Generate a registration challenge
+    const challenge = crypto.randomBytes(32);
+    const challengeBase64 = base64UrlEncode(challenge);
 
+    // Store the challenge in the database
+    await db.insert(challengeTable).values({
+      userId,
+      challenge: challengeBase64,
+    });
+
+    return ctx.json({ challengeBase64 }, 200);
+  })
+  /*
+   * Passkey registration
+   */
+  .openapi(authRoutesConfig.setPasskey, async (ctx) => {
+    const { id, attestationObject } = await ctx.req.json();
+
+    // Fetch the challenge from the database
+    const [challengeRecord] = await db.select().from(challengeTable).where(eq(challengeTable.userId, id));
+
+    if (!challengeRecord) errorResponse(ctx, 404, 'Challenge not found', 'warn', undefined);
+    // Verify the client data and extract credential data
+    const { credentialId, publicKey } = await extractCredentialData(attestationObject);
+    // Store the credential in the database
+    await db.insert(passkeyTable).values({
+      userId: id,
+      credentialId: credentialId,
+      publicKey: publicKey,
+    });
+
+    // Remove the challenge from db once used
+    await db.delete(challengeTable).where(eq(challengeTable.userId, id));
+
+    return ctx.json({ success: true }, 200);
+  });
 export default authRoutes;

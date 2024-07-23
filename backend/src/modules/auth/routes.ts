@@ -289,6 +289,65 @@ class AuthRoutesConfig {
     },
   });
 
+  public getPasskeyChallenge = createRouteConfig({
+    method: 'get',
+    path: '/passkey-challenge',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Get challenge for passkey',
+    description: 'Challenge for passkey auth.',
+    security: [],
+    request: {
+      query: z.object({ userId: z.string() }),
+    },
+    responses: {
+      200: {
+        description: 'Challenge created',
+        content: {
+          'application/json': {
+            schema: z.object({ challengeBase64: z.string() }),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public setPasskey = createRouteConfig({
+    method: 'post',
+    path: '/passkey-registration',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Get challenge for passkey',
+    description: 'Challenge for passkey auth.',
+    security: [],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: z.object({
+              id: z.string(),
+              clientDataJSON: z.string(),
+              attestationObject: z.string(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Passkey created',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
   public googleSignIn = createRouteConfig({
     method: 'get',
     path: '/google',

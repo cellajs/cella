@@ -22,6 +22,13 @@
       "when": 1721634717381,
       "tag": "0002_damp_pepper_potts",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1721728213854,
+      "tag": "0003_freezing_felicia_hardy",
+      "breakpoints": true
     }
   ]
 }

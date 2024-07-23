@@ -74,3 +74,25 @@ export const resetPassword = async ({ token, password }: { token: string; passwo
 };
 
 export const signOut = () => apiClient.auth['sign-out'].$get();
+
+export const getChallenge = async (userId: string) => {
+  const response = await apiClient.auth['passkey-challenge'].$get({ query: { userId } });
+  const json = await handleResponse(response);
+  return json;
+};
+
+export const setPasskey = async ({
+  id,
+  clientDataJSON,
+  attestationObject,
+}: {
+  id: string;
+  clientDataJSON: string;
+  attestationObject: string;
+}) => {
+  const apiResponse = await apiClient.auth['passkey-registration'].$post({
+    json: { id, clientDataJSON, attestationObject },
+  });
+  const json = await handleResponse(apiResponse);
+  return json.success;
+};
