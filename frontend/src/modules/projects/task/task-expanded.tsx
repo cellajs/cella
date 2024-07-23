@@ -13,17 +13,18 @@ interface Props {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
+  createSubTask: boolean;
+  setCreateSubTask: (newState: boolean) => void;
   taskRef: RefObject<HTMLDivElement>;
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   handleTaskChange: (field: keyof Task, value: any, taskId: string) => void;
   setIsExpanded?: (exp: boolean) => void;
 }
 
-const ExpandedTask = ({ task, taskRef, mode, isExpanded, setIsExpanded, handleTaskChange }: Props) => {
+const ExpandedTask = ({ task, createSubTask, taskRef, mode, isExpanded, setIsExpanded, setCreateSubTask, handleTaskChange }: Props) => {
   const { t } = useTranslation();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [createSubTask, setCreateSubTask] = useState(false);
 
   useDoubleClick({
     onDoubleClick: () => {

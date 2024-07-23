@@ -72,6 +72,7 @@ export function TaskCard({
   const [dragging, setDragging] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+  const [createSubTask, setCreateSubTask] = useState(false);
 
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
@@ -150,19 +151,12 @@ export function TaskCard({
       const height = taskRef.current.children[0].getBoundingClientRect().height;
       setItemHeight(height);
     }
-  }, [isExpanded]);
+  }, [isExpanded, createSubTask]);
 
   return (
     <Card
       style={style}
-      onMouseDown={() => {
-        if (document.activeElement === taskRef.current) return;
-        taskRef.current?.focus();
-      }}
-      onFocus={() => {
-        if (isFocused) return;
-        dispatchCustomEvent('taskCardFocus', { taskId: task.id });
-      }}
+      onClick={() => dispatchCustomEvent('taskCardFocus', { taskId: task.id })}
       tabIndex={0}
       ref={taskRef}
       className={cn(
@@ -222,6 +216,8 @@ export function TaskCard({
                 mode={mode}
                 task={task}
                 taskRef={taskRef}
+                createSubTask={createSubTask}
+                setCreateSubTask={setCreateSubTask}
                 isExpanded={isExpanded}
                 setIsExpanded={setIsExpanded}
                 handleTaskChange={handleTaskChange}
