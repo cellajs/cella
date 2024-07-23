@@ -359,8 +359,8 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
             <>
               <div className="h-full" ref={cardListRef}>
                 {!!tasks.length && (
-                  <ScrollArea ref={scrollableRef} id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
-                    <ScrollBar size="indicatorVertical" />
+                  <ScrollArea ref={scrollableRef} id={project.id} className="h-full mx-[0px]">
+                    <ScrollBar />
                     <div className="px-0 relative">
                       <Button
                         onClick={handleAcceptedClick}

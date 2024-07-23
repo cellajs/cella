@@ -18,12 +18,10 @@ export const tasksTable = pgTable('tasks', {
     .$type<string[]>()
     .notNull()
     .$defaultFn(() => []),
-  // labels: jsonb('labels').$type<string[]>().notNull().default([]),
   assignedTo: jsonb('assigned_to')
     .$type<string[]>()
     .notNull()
     .$defaultFn(() => []),
-  // assignedTo: jsonb('assigned_to').$type<string[]>().notNull().default([]),
   organizationId: varchar('organization_id').notNull(),
   projectId: varchar('project_id').notNull(),
   createdAt: timestamp('created_at')

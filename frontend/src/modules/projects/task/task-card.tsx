@@ -175,14 +175,14 @@ export function TaskCard({
       <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 pr-2 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
-            <div className="flex flex-col justify-between gap-0.5 relative">
+            <div className="flex flex-col justify-between gap-0.5">
               <Button
                 id="type"
                 onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
                 aria-label="Set type"
                 variant="ghost"
                 size="xs"
-                className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+                className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
               >
                 {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
               </Button>
