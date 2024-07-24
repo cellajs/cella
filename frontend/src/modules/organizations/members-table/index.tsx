@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 
 import type { membersQuerySchema } from 'backend/modules/general/schema';
 import { motion } from 'framer-motion';
@@ -239,6 +239,11 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
       },
     );
   };
+
+  useEffect(() => {
+    setSelectedRows(new Set<string>());
+    setSortColumns(getInitialSortColumns(search));
+  }, [search, entity.id]);
 
   return (
     <div className="flex flex-col gap-4 h-full">

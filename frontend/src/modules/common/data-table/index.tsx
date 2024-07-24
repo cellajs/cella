@@ -103,11 +103,8 @@ export const DataTable = <TData,>({
 
   useEffect(() => {
     if (!rows.length || error) return;
-
     if (inView && !isFetching) {
-      if (typeof totalCount === 'number' && rows.length >= totalCount) {
-        return;
-      }
+      if (typeof totalCount === 'number' && rows.length >= totalCount) return;
       fetchMore?.();
     }
   }, [inView, error, fetchMore]);

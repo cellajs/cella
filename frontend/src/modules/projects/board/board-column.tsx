@@ -52,6 +52,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const itemHeights = useRef<number[]>([]);
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
+  // const scrollableRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
   const variableSizedListRef = useRef(null);
 
