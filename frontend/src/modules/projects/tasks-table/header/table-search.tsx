@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useRef, useEffect, useContext, useState } from 'react';
-import { Search, XCircle, SlidersHorizontal } from 'lucide-react';
+import { Search, XCircle, ListCollapse } from 'lucide-react';
 import { Input } from '~/modules/ui/input';
 import { useDebounce } from '~/hooks/use-debounce';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
@@ -88,7 +88,7 @@ export function TaskTableSearch({
           onClick={() => setInnerSearchQuery('')}
         />
       )}
-      {isFocused && <SlidersHorizontal className="absolute right-2 top-1/2 opacity-100 -translate-y-1/2 h-4 w-4" />}
+      {isFocused && <ListCollapse className="absolute right-2 top-1/2 opacity-100 -translate-y-1/2 h-4 w-4" />}
       {isFocused && (
         <div className="top-12  absolute w-full" ref={dropdownRef}>
           {children}

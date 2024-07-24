@@ -23,6 +23,7 @@ import TaskSheet from './task-sheet';
 import { useLiveQuery } from 'electric-sql/react';
 import type { CustomEventEventById } from '~/types';
 import { useEventListener } from '~/hooks/use-event-listener';
+import ColumnsView from '~/modules/common/data-table/columns-view';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -164,14 +165,13 @@ export default function TasksTable() {
       <TableHeader totalCount={rows.length}>
         <TaskTableSearch>
           <SearchDropDown
-            columns={columns}
-            setColumns={setColumns}
             selectedStatuses={selectedStatuses}
             setSelectedStatuses={setSelectedStatuses}
             selectedProjects={selectedProjects}
             setSelectedProjects={setSelectedProjects}
           />
         </TaskTableSearch>
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         <Export
           className="max-lg:hidden"
           filename={`Tasks from ${projects.map((p) => p.name).join(' and ')}`}
