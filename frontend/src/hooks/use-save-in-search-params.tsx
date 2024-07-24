@@ -21,20 +21,15 @@ const useSaveInSearchParams = (
       if (
         (typeof defaultValues?.[key] !== 'undefined' && searchParams[key] === defaultValues?.[key]) ||
         currentSearchParams[key as keyof typeof currentSearchParams] === searchParams[key]
-      ) {
+      )
         delete searchParams[key];
-      }
-      if (searchParams[key] === '') {
-        searchParams[key] = undefined;
-      }
-      if (Array.isArray(searchParams[key]) && searchParams[key]?.length === 0) {
-        searchParams[key] = undefined;
-      }
+
+      if (searchParams[key] === '') searchParams[key] = undefined;
+
+      if (Array.isArray(searchParams[key]) && searchParams[key]?.length === 0) searchParams[key] = undefined;
     }
 
-    if (Object.keys(searchParams).length === 0) {
-      return;
-    }
+    if (Object.keys(searchParams).length === 0) return;
 
     navigate({
       params,

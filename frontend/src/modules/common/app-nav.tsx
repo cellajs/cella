@@ -75,7 +75,7 @@ const AppNav = () => {
       <nav
         id="app-nav"
         className={cn(
-          'fixed z-[90] w-full max-sm:bottom-0 overflow-y-auto transition-transform ease-out sm:left-0 sm:top-0 sm:h-screen sm:w-16',
+          'fixed z-[90] w-full max-sm:bottom-0 transition-transform ease-out sm:left-0 sm:top-0 sm:h-screen sm:w-16',
           navBackground,
           !hasStarted && 'max-sm:translate-y-full sm:-translate-x-full',
           focusView && 'hidden',

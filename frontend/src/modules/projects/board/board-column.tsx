@@ -37,6 +37,7 @@ import { useLiveQuery } from 'electric-sql/react';
 import { useEventListener } from '~/hooks/use-event-listener';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { VariableSizeList as List, type VariableSizeList } from 'react-window';
+import './styles.css';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -401,42 +402,41 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
             <>
               <div className="h-full flex flex-col" ref={cardListRef}>
                 {!!showingTasks.length && (
-                  <>
-                    <div className="px-0 relative flex flex-col flex-grow">
-                      <Button
-                        onClick={handleAcceptedClick}
-                        variant="ghost"
-                        disabled={!acceptedCount}
-                        size="sm"
-                        className="flex relative justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-xs -mt-[.07rem]"
-                      >
-                        <span className="w-6 mr-1 text-center">{acceptedCount}</span>
-                        <span>{t('common:accepted').toLowerCase()}</span>
-                        {!!acceptedCount && (
-                          <ChevronDown
-                            size={16}
-                            className={`transition-transform absolute right-5 opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`}
-                          />
-                        )}
-                      </Button>
-                      <div className="grow  min-h-[calc(100vh-290px)]">
-                        <AutoSizer>
-                          {({ height, width }: { height: number; width: number }) => {
-                            return (
-                              <List
-                                ref={variableSizedListRef}
-                                height={height}
-                                itemCount={showingTasks.length}
-                                itemSize={getItemSize}
-                                itemData={showingTasks}
-                                width={width}
-                              >
-                                {Task}
-                              </List>
-                            );
-                          }}
-                        </AutoSizer>
-                      </div>
+                  <div className="flex flex-col flex-grow">
+                    <Button
+                      onClick={handleAcceptedClick}
+                      variant="ghost"
+                      disabled={!acceptedCount}
+                      size="sm"
+                      className="flex relative justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-xs -mt-[.07rem]"
+                    >
+                      <span className="w-6 mr-1 text-center">{acceptedCount}</span>
+                      <span>{t('common:accepted').toLowerCase()}</span>
+                      {!!acceptedCount && (
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform absolute right-5 opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`}
+                        />
+                      )}
+                    </Button>
+                    <div className="grow min-h-[calc(100vh-290px)]">
+                      <AutoSizer>
+                        {({ height, width }: { height: number; width: number }) => {
+                          return (
+                            <List
+                              className="custom-scrollbar"
+                              ref={variableSizedListRef}
+                              height={height}
+                              itemCount={showingTasks.length}
+                              itemSize={getItemSize}
+                              itemData={showingTasks}
+                              width={width}
+                            >
+                              {Task}
+                            </List>
+                          );
+                        }}
+                      </AutoSizer>
                     </div>
                     <Button
                       onClick={handleIcedClick}
@@ -454,7 +454,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                         />
                       )}
                     </Button>
-                  </>
+                  </div>
                 )}
 
                 {!showingTasks.length && !searchQuery && (
