@@ -52,7 +52,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const itemHeights = useRef<number[]>([]);
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
-  // const scrollableRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
   const variableSizedListRef = useRef(null);
 
@@ -195,7 +194,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     const updatedHeights = [...itemHeights.current];
     updatedHeights[index] = size;
     itemHeights.current = updatedHeights;
-
     // Reset the list after the index to reflect the new size
     if (variableSizedListRef.current) (variableSizedListRef.current as VariableSizeList).resetAfterIndex?.(index);
   };
@@ -402,7 +400,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
           ) : (
             <>
               <div className="h-full flex flex-col" ref={cardListRef}>
-                {!!tasks.length && (
+                {!!showingTasks.length && (
                   <>
                     <div className="px-0 relative flex flex-col flex-grow">
                       <Button
@@ -421,7 +419,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                           />
                         )}
                       </Button>
-                      <div className="grow">
+                      <div className="grow  min-h-[calc(100vh-290px)]">
                         <AutoSizer>
                           {({ height, width }: { height: number; width: number }) => {
                             return (
