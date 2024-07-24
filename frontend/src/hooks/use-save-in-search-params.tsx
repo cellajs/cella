@@ -16,17 +16,14 @@ const useSaveInSearchParams = (
 
   useEffect(() => {
     const searchParams = values;
-
     for (const key in searchParams) {
       if (
         (typeof defaultValues?.[key] !== 'undefined' && searchParams[key] === defaultValues?.[key]) ||
         currentSearchParams[key as keyof typeof currentSearchParams] === searchParams[key]
       )
         delete searchParams[key];
-
-      if (searchParams[key] === '') searchParams[key] = undefined;
-
-      if (Array.isArray(searchParams[key]) && searchParams[key]?.length === 0) searchParams[key] = undefined;
+      if (searchParams[key] === '' || (Array.isArray(searchParams[key]) && searchParams[key]?.length === 0)) searchParams[key] = undefined;
+      if (Array.isArray(searchParams[key]) && searchParams[key]?.length > 0) searchParams[key] = searchParams[key].join('_');
     }
 
     if (Object.keys(searchParams).length === 0) return;
