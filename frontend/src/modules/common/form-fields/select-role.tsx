@@ -27,12 +27,12 @@ const SelectRole = ({ entityType, onChange, value, className }: SelectRoleProps)
         <SelectValue placeholder={t('common:placeholder.select_role')} />
       </SelectTrigger>
       <SelectContent>
+        <SelectItem value={'all'}> {t('common:all')}</SelectItem>
         {roles.map((role) => (
           <SelectItem key={role} value={role}>
             {t(role)}
           </SelectItem>
         ))}
-        <SelectItem value={'all'}> {t('common:all')}</SelectItem>
       </SelectContent>
     </Select>
   );
