@@ -52,7 +52,6 @@ export default function TasksTable() {
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
   const isFiltered = !!searchQuery || selectedStatuses.length > 0 || selectedProjects.length > 0;
-
   // Save filters in search params
   const filters = useMemo(
     () => ({
@@ -113,6 +112,10 @@ export default function TasksTable() {
       content: <TaskSheet task={task} />,
     });
   }, [tasks, focusedTaskId]);
+
+  useEffect(() => {
+    setFocusedTaskId(null);
+  }, []);
 
   // useEffect(() => {
   //   if (fetchedTasks) {
