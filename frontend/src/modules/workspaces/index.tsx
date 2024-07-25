@@ -3,7 +3,6 @@ import { Outlet, useParams, useLocation } from '@tanstack/react-router';
 import { getWorkspace } from '~/api/workspaces';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Project } from '~/types';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
 import { type Label, useElectric } from '../common/electric/electrify.ts';
@@ -17,7 +16,7 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
   });
 
 const WorkspacePage = () => {
-  const { showPageHeader, setWorkspace, setProjects, setMembers, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
+  const { showPageHeader, setWorkspace, setProjects, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
@@ -25,12 +24,10 @@ const WorkspacePage = () => {
   const { pathname } = useLocation();
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data.workspace;
-  const projects = workspaceQuery.data.relatedProjects;
-  const workspaceMembers = workspaceQuery.data.workspaceMembers;
+  const projects = workspaceQuery.data.projects;
   //TODO find other solution tan useMutateWorkspaceQueryData hook
   setWorkspace(workspace);
-  setMembers(workspaceMembers);
-  setProjects(projects as Project[]);
+  setProjects(projects);
 
   const { results } = useLiveQuery(
     Electric.db.labels.liveMany({

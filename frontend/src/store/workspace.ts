@@ -2,15 +2,13 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { Label } from '~/modules/common/electric/electrify';
-import type { Project, Workspace, WorkspaceStoreMember } from '~/types';
+import type { Workspace, WorkspaceStoreProject } from '~/types';
 
 interface WorkspaceState {
   workspace: Workspace;
   setWorkspace: (workspace: Workspace) => void;
-  projects: Project[];
-  setProjects: (projects: Project[]) => void;
-  members: WorkspaceStoreMember[];
-  setMembers: (members: WorkspaceStoreMember[]) => void;
+  projects: WorkspaceStoreProject[];
+  setProjects: (projects: WorkspaceStoreProject[]) => void;
   labels: Label[];
   setLabels: (labels: Label[]) => void;
   selectedTasks: string[];
@@ -36,12 +34,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       setProjects: (projects) => {
         set((state) => {
           state.projects = projects;
-        });
-      },
-      members: [],
-      setMembers: (members) => {
-        set((state) => {
-          state.members = members;
         });
       },
       labels: [],

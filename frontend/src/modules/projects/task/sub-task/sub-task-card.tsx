@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { DraggableItemData } from '~/types';
-import { TaskEditor } from './task-selectors/task-editor';
+import { TaskEditor } from '../task-selectors/task-editor';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -26,16 +26,14 @@ export const isSubTaskData = (data: Record<string | symbol, unknown>): data is T
 const SubTask = ({
   task,
   mode,
-  handleChange,
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-}: { task: Task; mode: Mode; handleChange: (field: keyof Task, value: any, taskId: string) => void }) => {
+  handleTaskChange,
+}: { task: Task; mode: Mode; handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void }) => {
   const { t } = useTranslation();
   const electric = useElectric();
   const subTaskRef = useRef<HTMLDivElement>(null);
   const subContentRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [dragging, setDragging] = useState(false);
-
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const onRemove = (subTaskId: string) => {
@@ -54,11 +52,17 @@ const SubTask = ({
     setClosestEdge(extractClosestEdge(self.data));
   };
 
+  const handleUpdateMarkdown = (markdownValue: string) => {
+    const summaryFromMarkDown = markdownValue.split('\n')[0];
+    handleTaskChange('markdown', markdownValue, task.id);
+    handleTaskChange('summary', summaryFromMarkDown, task.id);
+    setIsEditing(false);
+  };
+
   useDoubleClick({
-    onDoubleClick: () => setIsEditing(!isEditing),
+    onSingleClick: () => setIsEditing(!isEditing),
     allowedTargets: ['p', 'div'],
     ref: subTaskRef,
-    latency: 250,
   });
 
   // create draggable & dropTarget elements and auto scroll
@@ -116,22 +120,15 @@ const SubTask = ({
           )}
           checked={task.status === 6}
           onCheckedChange={(checkStatus) => {
-            if (checkStatus) handleChange('status', 6, task.id);
-            if (!checkStatus) handleChange('status', 1, task.id);
+            if (checkStatus) handleTaskChange('status', 6, task.id);
+            if (!checkStatus) handleTaskChange('status', 1, task.id);
           }}
         />
       </div>
       <div className="flex flex-col grow gap-2 mx-1">
-        {isEditing && (
-          <TaskEditor
-            mode={mode}
-            markdown={task.markdown || ''}
-            setMarkdown={(newMarkdown) => handleChange('markdown', newMarkdown, task.id)}
-            setSummary={(newSummary) => handleChange('summary', newSummary, task.id)}
-            id={task.id}
-          />
-        )}
-        {!isEditing && (
+        {isEditing ? (
+          <TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
+        ) : (
           <div ref={subContentRef} className="inline">
             <MDEditor.Markdown
               source={isEditing ? task.markdown || '' : task.summary}

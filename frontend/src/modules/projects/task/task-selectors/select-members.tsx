@@ -22,18 +22,18 @@ interface AssignMembersProps {
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 240 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const { focusedTaskId, members } = useWorkspaceStore();
+  const { focusedTaskId, projects } = useWorkspaceStore();
   const [selectedMembers, setSelectedMembers] = useState<Member[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  const sortedMembers = members
-    .filter((m) => m.projectIds.includes(projectId))
-    .sort((a, b) => {
-      const aSelected = selectedMembers.some((user) => user.id === a.id) ? 1 : 0;
-      const bSelected = selectedMembers.some((user) => user.id === b.id) ? 1 : 0;
-      return bSelected - aSelected;
-    });
+  const currentProject = projects.find((p) => p.id === projectId);
+  const members = currentProject ? currentProject.members : [];
+  const sortedMembers = members.sort((a, b) => {
+    const aSelected = selectedMembers.some((user) => user.id === a.id) ? 1 : 0;
+    const bSelected = selectedMembers.some((user) => user.id === b.id) ? 1 : 0;
+    return bSelected - aSelected;
+  });
 
   const showedMembers = showAll ? sortedMembers : sortedMembers.slice(0, 6);
   const isSearching = searchValue.length > 0;

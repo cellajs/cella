@@ -1,49 +1,33 @@
 import MDEditor from '@uiw/react-md-editor';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useHotkeys } from '~/hooks/use-hot-keys';
 import type { Mode } from '~/store/theme';
 
 interface TaskEditorProps {
   id: string;
   mode: Mode;
   markdown: string;
-  setMarkdown: (newValue: string) => void;
-  setSummary: (newValue: string) => void;
+  handleUpdateMarkdown: (newValue: string) => void;
   className?: string;
 }
 
-export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, className }: TaskEditorProps) => {
+export const TaskEditor = ({ markdown, handleUpdateMarkdown, id, mode, className }: TaskEditorProps) => {
   const { t } = useTranslation();
   const [markdownValue, setMarkdownValue] = useState(markdown);
-
-  const handleUpdateMarkdown = () => {
-    const summaryFromMarkDown = markdownValue.split('\n')[0];
-    setMarkdown(markdownValue);
-    setSummary(summaryFromMarkDown);
-  };
 
   const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
     (event) => {
       if (event.key !== 'Escape' && !(event.key === 'Enter' && (event.ctrlKey || event.metaKey))) return;
-      handleUpdateMarkdown();
+      const editorTextAria = document.getElementById(`text-area-${id}`);
+      if (!editorTextAria) return;
+      editorTextAria.blur();
     },
     [handleUpdateMarkdown],
   );
 
-  const handleHotKeys = useCallback(() => {
-    handleUpdateMarkdown();
-  }, [handleUpdateMarkdown]);
-
-  useHotkeys([
-    ['Escape', handleHotKeys],
-    ['ctrl+enter', handleHotKeys],
-    ['meta+enter', handleHotKeys],
-  ]);
-
   // Textarea autofocus cursor on the end of the value
   useEffect(() => {
-    const editorTextAria = document.getElementById(id);
+    const editorTextAria = document.getElementById(`text-area-${id}`);
     if (!editorTextAria) return;
     const textAreaElement = editorTextAria as HTMLTextAreaElement;
     if (markdown) textAreaElement.value = markdown;
@@ -54,9 +38,9 @@ export const TaskEditor = ({ markdown, setMarkdown, setSummary, id, mode, classN
   return (
     <div className={className || ''}>
       <MDEditor
-        onBlur={handleUpdateMarkdown}
+        onBlur={() => handleUpdateMarkdown(markdownValue)}
         onKeyDown={handleMDEscKeyPress}
-        textareaProps={{ id: id, placeholder: t('common:placeholder.mdEditor') }}
+        textareaProps={{ id: `text-area-${id}`, placeholder: t('common:placeholder.mdEditor') }}
         value={markdownValue}
         preview={'edit'}
         onChange={(newValue) => {

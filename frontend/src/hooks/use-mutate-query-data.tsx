@@ -1,6 +1,6 @@
 import { useQueryClient, type InfiniteData, type QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/lib/router';
-import type { Workspace, WorkspaceStoreMember, Project, Membership } from '~/types';
+import type { Workspace, WorkspaceStoreProject, Membership, Project } from '~/types';
 
 interface Item {
   id: string;
@@ -151,9 +151,9 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
 
 export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   const queryClient = useQueryClient();
-
+  //TODO fix types
   return (
-    items: Workspace[] | Project[] | WorkspaceStoreMember[] | Membership[],
+    items: Workspace[] | Project[] | Membership[],
     action:
       | 'createProject'
       | 'updateProject'
@@ -165,22 +165,21 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   ) => {
     queryClient.setQueryData<{
       workspace: Workspace;
-      relatedProjects: Project[];
-      workspaceMembers: WorkspaceStoreMember[];
+      projects: WorkspaceStoreProject[];
     }>(queryKey, (data) => {
       if (!data) return data;
       switch (action) {
         case 'createProject':
           return {
             ...data,
-            relatedProjects: [...(items as Project[]), ...data.relatedProjects],
+            projects: [...(items as unknown as WorkspaceStoreProject[]), ...data.projects],
           };
 
         case 'updateProject':
           return {
             ...data,
-            relatedProjects: data.relatedProjects.map((existingProject) => {
-              const updatedItem = (items as Project[]).find((newProject) => existingProject.id === newProject.id);
+            projects: data.projects.map((existingProject) => {
+              const updatedItem = (items as unknown as WorkspaceStoreProject[]).find((newProject) => existingProject.id === newProject.id);
               return updatedItem ? updatedItem : existingProject;
             }),
           };
@@ -188,7 +187,7 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
         case 'deleteProject':
           return {
             ...data,
-            relatedProjects: data.relatedProjects.filter((existingProject) => !items.find((item) => item.id === existingProject.id)),
+            projects: data.projects.filter((existingProject) => !items.find((item) => item.id === existingProject.id)),
           };
 
         case 'updateWorkspace':
@@ -211,24 +210,26 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
 
         case 'updateProjectMembership': {
           const updatedMembership = items[0] as Membership;
-          const newProjects = data.relatedProjects.map((existing) => ({
+          const newProjects = data.projects.map((existing) => ({
             ...existing,
             membership: existing.membership?.id === updatedMembership.id ? { ...existing.membership, ...updatedMembership } : existing.membership,
           }));
 
           return {
             ...data,
-            relatedProjects: newProjects
-              .filter((p) => !p.membership?.archived)
-              .sort((a, b) => (a.membership?.order ?? 0) - (b.membership?.order ?? 0)),
+            projects: newProjects.filter((p) => !p.membership?.archived).sort((a, b) => (a.membership?.order ?? 0) - (b.membership?.order ?? 0)),
           };
         }
 
-        case 'updateMembers':
+        case 'updateMembers': {
           return {
             ...data,
-            workspaceMembers: items as WorkspaceStoreMember[],
+            projects: {
+              ...data.projects,
+              ...{ members: items },
+            },
           };
+        }
 
         default:
           return data;

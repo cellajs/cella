@@ -30,14 +30,13 @@ type TasksSearch = z.infer<typeof tasksSearchSchema>;
 export default function TasksTable() {
   const { t } = useTranslation();
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, members, labels, setFocusedTaskId } = useWorkspaceStore(
-    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, members, labels, setFocusedTaskId }) => ({
+  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, labels, setFocusedTaskId } = useWorkspaceStore(
+    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, labels, setFocusedTaskId }) => ({
       focusedTaskId,
       searchQuery,
       selectedTasks,
       setSelectedTasks,
       projects,
-      members,
       labels,
       setFocusedTaskId,
     }),
@@ -98,7 +97,14 @@ export default function TasksTable() {
     updatedAt: Date | undefined;
   };
 
-  const { showingTasks: rows } = useTaskFilters(tasks, true, true, labels, members, true);
+  const { showingTasks: rows } = useTaskFilters(
+    tasks,
+    true,
+    true,
+    labels,
+    projects.flatMap((p) => p.members),
+    true,
+  );
   const isLoading = !updatedAt;
 
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
@@ -108,6 +114,8 @@ export default function TasksTable() {
   useEffect(() => {
     if (!tasks.length || !focusedTaskId || !sheet.get(`task-card-preview-${focusedTaskId}`)) return;
     const relativeTasks = tasks.filter((t) => t.id === focusedTaskId || t.parent_id === focusedTaskId);
+    const [currentTask] = tasks.filter((t) => t.id === focusedTaskId);
+    const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
     const [task] = enhanceTasks(relativeTasks, labels, members);
     sheet.update(`task-card-preview-${task.id}`, {
       content: <TaskSheet task={task} />,
@@ -148,6 +156,8 @@ export default function TasksTable() {
   const handleOpenPreview = (event: CustomEventEventById) => {
     const taskId = event.detail;
     const relativeTasks = tasks.filter((t) => t.id === taskId || t.parent_id === taskId);
+    const [currentTask] = tasks.filter((t) => t.id === focusedTaskId);
+    const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
     const [task] = enhanceTasks(relativeTasks, labels, members);
     sheet(<TaskSheet task={task} />, {
       className: 'max-w-full lg:max-w-4xl p-0',

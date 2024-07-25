@@ -2,7 +2,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { type CSSProperties, lazy, useEffect, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
@@ -16,16 +16,15 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
-import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import type { CustomEventEventById, Project, TaskChangeEvent } from '~/types/index.ts';
+import type { CustomEventEventById, WorkspaceStoreProject, TaskChangeEvent, Project } from '~/types/index.ts';
 import { ProjectSettings } from '../project-settings';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '../task/create-task-form';
 import { getTaskOrder } from '../task/helpers';
-import { isSubTaskData } from '../task/sub-task-card';
-import { TaskCard, isTaskData } from '../task/task-card';
+import { isSubTaskData } from '../task/sub-task/sub-task-card';
+import { isTaskData, TaskCard } from '../task/task-card';
 import { SelectImpact } from '../task/task-selectors/select-impact';
 import SetLabels from '../task/task-selectors/select-labels';
 import AssignMembers from '../task/task-selectors/select-members';
@@ -35,41 +34,35 @@ import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
 import { useLiveQuery } from 'electric-sql/react';
 import { useEventListener } from '~/hooks/use-event-listener';
-import AutoSizer from 'react-virtualized-auto-sizer';
-import { VariableSizeList as List, type VariableSizeList } from 'react-window';
-import './styles.css';
+import { useThemeStore } from '~/store/theme';
+import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
 interface BoardColumnProps {
-  project: Project;
+  expandedTasks: Record<string, boolean>;
+  project: WorkspaceStoreProject;
   createForm: boolean;
   toggleCreateForm: (projectId: string) => void;
 }
 
-export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColumnProps) {
+export function BoardColumn({ project, expandedTasks, createForm, toggleCreateForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
-  const itemHeights = useRef<number[]>([]);
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
-  const variableSizedListRef = useRef(null);
 
   const { user } = useUserStore();
-  const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
-  const { workspace, searchQuery, selectedTasks, focusedTaskId, setSelectedTasks, setFocusedTaskId, members, labels } = useWorkspaceStore();
+  const { menu } = useNavigationStore();
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId, labels, setSelectedTasks } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
   const projectLabels = labels.filter((l) => l.project_id === project.id);
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
-  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
-
-  // const [fetchedTasks, setFetchedTasks] = useState<Task[]>();
-  // const [tasks, setTasks] = useState<Task[]>([]);
 
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
@@ -109,20 +102,7 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     return dropdowner(component, { id: field, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
   };
 
-  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(
-    tasks,
-    showAccepted,
-    showIced,
-    projectLabels,
-    members.filter((m) => m.projectIds.includes(project.id)),
-  );
-
-  const setTaskExpanded = (taskId: string, isExpanded: boolean) => {
-    setExpandedTasks((prevState) => ({
-      ...prevState,
-      [taskId]: isExpanded,
-    }));
-  };
+  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, projectLabels, project.members);
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
@@ -137,21 +117,13 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     });
   };
 
-  const handleEscKeyPress = () => {
-    if (focusedTaskId && expandedTasks[focusedTaskId]) setTaskExpanded(focusedTaskId, false);
-  };
-
-  const handleEnterKeyPress = () => {
-    if (focusedTaskId) setTaskExpanded(focusedTaskId, true);
-  };
-
   const openSettingsSheet = () => {
     const projectTabs = [
-      { id: 'general', label: 'common:general', element: <ProjectSettings project={project} sheet /> },
+      { id: 'general', label: 'common:general', element: <ProjectSettings project={project as unknown as Project} sheet /> },
       {
         id: 'members',
         label: 'common:members',
-        element: <MembersTable entity={project} isSheet={true} route={WorkspaceRoute.id} />,
+        element: <MembersTable entity={project as unknown as Project} route={WorkspaceRoute.id} isSheet />,
       },
     ];
 
@@ -162,10 +134,12 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
       id: 'edit-project',
     });
   };
+
   const handleTaskSelect = (selected: boolean, taskId: string) => {
     if (selected) return setSelectedTasks([...selectedTasks, taskId]);
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
+
   const handleChange = async (field: keyof Task, value: string | number | null, taskId: string) => {
     if (!Electric) return toast.error('common:local_db_inoperable');
 
@@ -189,40 +163,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
   const handleTaskFormClick = () => {
     toggleCreateForm(project.id);
   };
-  const getItemSize = (index: number) => itemHeights.current[index] || 100;
-
-  const handleItemHeightChange = (index: number, size: number) => {
-    const updatedHeights = [...itemHeights.current];
-    updatedHeights[index] = size;
-    itemHeights.current = updatedHeights;
-    // Reset the list after the index to reflect the new size
-    if (variableSizedListRef.current) (variableSizedListRef.current as VariableSizeList).resetAfterIndex?.(index);
-  };
-
-  const Task = ({
-    index,
-    style,
-    data,
-  }: {
-    data: Task[];
-    index: number;
-    style: CSSProperties;
-  }) => (
-    <TaskCard
-      style={style}
-      key={data[index].id}
-      task={data[index]}
-      isExpanded={expandedTasks[data[index].id] || false}
-      isSelected={selectedTasks.includes(data[index].id)}
-      isFocused={data[index].id === focusedTaskId}
-      handleTaskChange={handleChange}
-      handleTaskActionClick={handleTaskActionClick}
-      handleTaskSelect={handleTaskSelect}
-      setIsExpanded={(isExpanded) => setTaskExpanded(data[index].id, isExpanded)}
-      setItemHeight={(size) => handleItemHeightChange(index, size)}
-      mode={mode}
-    />
-  );
 
   // Open on key press
   const hotKeyPress = (event: KeyboardEvent, field: string) => {
@@ -241,11 +181,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
     ['t', (e) => hotKeyPress(e, 'type')],
   ]);
 
-  useHotkeys([
-    ['Escape', handleEscKeyPress],
-    ['Enter', handleEnterKeyPress],
-  ]);
-
   const handleTaskChangeEventListener = (event: TaskChangeEvent) => {
     const { taskId, direction, projectId } = event.detail;
     if (projectId !== project.id) return;
@@ -261,29 +196,6 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
 
   useEventListener('taskChange', handleTaskChangeEventListener);
   useEventListener('projectChange', handleProjectChangeEventListener);
-
-  // useEffect(() => {
-  //   if (searchQuery.length && fetchedTasks) return setTasks(fetchedTasks.filter((t) => t.summary?.includes(searchQuery)));
-  //   if (fetchedTasks) return setTasks(fetchedTasks);
-  // }, [searchQuery, fetchedTasks]);
-
-  // useEffect(() => {
-  //   let isMounted = true; // Track whether the component is mounted
-  //   (async () => {
-  //     if (isMounted) {
-  //       const result = await Electric.db.tasks.findMany({
-  //         where: {
-  //           project_id: project.id,
-  //         },
-  //       });
-  //       setFetchedTasks(result as Task[]);
-  //     }
-  //   })();
-
-  //   return () => {
-  //     isMounted = false; // Cleanup to avoid setting state if unmounted
-  //   };
-  // }, []);
 
   useEffect(() => {
     return combine(
@@ -399,9 +311,10 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
           {isLoading ? (
             <ColumnSkeleton />
           ) : (
-            <>
-              <div className="h-full flex flex-col" ref={cardListRef}>
-                {!!showingTasks.length && (
+            <div className="h-full flex flex-col" ref={cardListRef}>
+              {!!showingTasks.length && (
+                <ScrollArea id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
+                  <ScrollBar size="indicatorVertical" />
                   <div className="flex flex-col flex-grow">
                     <Button
                       onClick={handleAcceptedClick}
@@ -419,25 +332,19 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                         />
                       )}
                     </Button>
-                    <div className="grow min-h-[calc(100vh-290px)]">
-                      <AutoSizer>
-                        {({ height, width }: { height: number; width: number }) => {
-                          return (
-                            <List
-                              className="custom-scrollbar"
-                              ref={variableSizedListRef}
-                              height={height}
-                              itemCount={showingTasks.length}
-                              itemSize={getItemSize}
-                              itemData={showingTasks}
-                              width={width}
-                            >
-                              {Task}
-                            </List>
-                          );
-                        }}
-                      </AutoSizer>
-                    </div>
+                    {showingTasks.map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        isExpanded={expandedTasks[task.id] || false}
+                        isSelected={selectedTasks.includes(task.id)}
+                        isFocused={task.id === focusedTaskId}
+                        handleTaskChange={handleChange}
+                        handleTaskActionClick={handleTaskActionClick}
+                        handleTaskSelect={handleTaskSelect}
+                        mode={mode}
+                      />
+                    ))}
                     <Button
                       onClick={handleIcedClick}
                       variant="ghost"
@@ -455,35 +362,35 @@ export function BoardColumn({ project, createForm, toggleCreateForm }: BoardColu
                       )}
                     </Button>
                   </div>
-                )}
+                </ScrollArea>
+              )}
 
-                {!showingTasks.length && !searchQuery && (
-                  <ContentPlaceholder
-                    Icon={Palmtree}
-                    title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
-                    text={
-                      !createForm && (
-                        <>
-                          <Undo
-                            size={200}
-                            strokeWidth={0.2}
-                            className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
-                          />
-                          <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
-                            <span>{t('common:click')}</span>
-                            <span className="text-primary">{`+${t('common:task')}`}</span>
-                            <span>{t('common:no_tasks.text')}</span>
-                          </p>
-                        </>
-                      )
-                    }
-                  />
-                )}
-                {!showingTasks.length && searchQuery && (
-                  <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
-                )}
-              </div>
-            </>
+              {!showingTasks.length && !searchQuery && (
+                <ContentPlaceholder
+                  Icon={Palmtree}
+                  title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
+                  text={
+                    !createForm && (
+                      <>
+                        <Undo
+                          size={200}
+                          strokeWidth={0.2}
+                          className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
+                        />
+                        <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
+                          <span>{t('common:click')}</span>
+                          <span className="text-primary">{`+${t('common:task')}`}</span>
+                          <span>{t('common:no_tasks.text')}</span>
+                        </p>
+                      </>
+                    )
+                  }
+                />
+              )}
+              {!tasks.length && searchQuery && (
+                <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
+              )}
+            </div>
           )}
         </div>
       </div>

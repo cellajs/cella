@@ -101,8 +101,6 @@
     "react-intersection-observer": "^9.10.3",
     "react-lazy-with-preload": "^2.2.1",
     "react-resizable-panels": "^2.0.20",
-    "react-virtualized-auto-sizer": "^1.0.24",
-    "react-window": "^1.8.10",
     "slugify": "1.6.6",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.4.0",

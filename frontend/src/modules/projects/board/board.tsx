@@ -8,7 +8,7 @@ import { useMeasure } from '~/hooks/use-measure';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Project, TaskCardFocusEvent } from '~/types';
+import type { WorkspaceStoreProject, TaskCardFocusEvent } from '~/types';
 import { useElectric } from '../../common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
@@ -28,10 +28,12 @@ function getScrollerWidth(containerWidth: number, projectsLength: number) {
 function BoardDesktop({
   workspaceId,
   projects,
+  expandedTasks,
   columnTaskCreate,
   toggleCreateForm,
 }: {
-  projects: Project[];
+  expandedTasks: Record<string, boolean>;
+  projects: WorkspaceStoreProject[];
   workspaceId: string;
   columnTaskCreate: Record<string, boolean>;
   toggleCreateForm: (projectId: string) => void;
@@ -49,7 +51,13 @@ function BoardDesktop({
             return (
               <Fragment key={project.id}>
                 <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
-                  <BoardColumn createForm={isFormOpen} toggleCreateForm={toggleCreateForm} key={project.id} project={project} />
+                  <BoardColumn
+                    expandedTasks={expandedTasks}
+                    createForm={isFormOpen}
+                    toggleCreateForm={toggleCreateForm}
+                    key={project.id}
+                    project={project}
+                  />
                 </ResizablePanel>
                 {projects.length > index + 1 && (
                   <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
@@ -70,6 +78,7 @@ export default function Board() {
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
+  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
   const { project } = useSearch({
     from: WorkspaceBoardRoute.id,
   });
@@ -154,21 +163,42 @@ export default function Board() {
     toggleCreateTaskForm(projects[projectIndex].id);
   };
 
+  const setTaskExpanded = (taskId: string, isExpanded: boolean) => {
+    setExpandedTasks((prevState) => ({
+      ...prevState,
+      [taskId]: isExpanded,
+    }));
+  };
+
+  const handleEscKeyPress = () => {
+    if (focusedTaskId && expandedTasks[focusedTaskId]) setTaskExpanded(focusedTaskId, false);
+  };
+
+  const handleEnterKeyPress = () => {
+    if (focusedTaskId) setTaskExpanded(focusedTaskId, true);
+  };
+
   useHotkeys([
     ['ArrowRight', handleHorizontalArrowKeyDown],
     ['ArrowLeft', handleHorizontalArrowKeyDown],
     ['ArrowDown', handleVerticalArrowKeyDown],
     ['ArrowUp', handleVerticalArrowKeyDown],
     ['N', handleNKeyDown],
+    ['Escape', handleEscKeyPress],
+    ['Enter', handleEnterKeyPress],
   ]);
 
-  const handleFocus = (event: TaskCardFocusEvent) => {
+  const handleTaskClick = (event: TaskCardFocusEvent) => {
     const { taskId } = event.detail;
+    if (focusedTaskId === taskId) return setTaskExpanded(taskId, true);
+    const taskCard = document.getElementById(taskId);
+    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
     setFocusedTaskId(taskId);
+    setTaskExpanded(taskId, true);
   };
 
-  useEventListener('taskCardFocus', handleFocus);
-
+  useEventListener('taskCardClick', handleTaskClick);
+  useEventListener('collapseCard', (e) => setTaskExpanded(e.detail, false));
   return (
     <>
       <BoardHeader />
@@ -196,6 +226,7 @@ export default function Board() {
         <>
           {isDesktopLayout ? (
             <BoardDesktop
+              expandedTasks={expandedTasks}
               columnTaskCreate={columnTaskCreate}
               toggleCreateForm={toggleCreateTaskForm}
               projects={projects}
@@ -203,6 +234,7 @@ export default function Board() {
             />
           ) : (
             <BoardColumn
+              expandedTasks={expandedTasks}
               createForm={columnTaskCreate[mobileDeviceProject.id] || false}
               toggleCreateForm={toggleCreateTaskForm}
               project={mobileDeviceProject}
