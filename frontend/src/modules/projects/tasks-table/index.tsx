@@ -30,13 +30,14 @@ type TasksSearch = z.infer<typeof tasksSearchSchema>;
 export default function TasksTable() {
   const { t } = useTranslation();
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, labels, setFocusedTaskId } = useWorkspaceStore(
-    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, projects, labels, setFocusedTaskId }) => ({
+  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, labels, setFocusedTaskId } = useWorkspaceStore(
+    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, labels, setFocusedTaskId }) => ({
       focusedTaskId,
       searchQuery,
       selectedTasks,
       setSelectedTasks,
       projects,
+      setSearchQuery,
       labels,
       setFocusedTaskId,
     }),
@@ -123,6 +124,7 @@ export default function TasksTable() {
   }, [tasks, focusedTaskId]);
 
   useEffect(() => {
+    if (search.q?.length) setSearchQuery(search.q);
     setFocusedTaskId(null);
   }, []);
 

@@ -1,6 +1,6 @@
 import { useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
-import { Fragment, type LegacyRef, useMemo, useState } from 'react';
+import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -9,7 +9,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { WorkspaceStoreProject, TaskCardFocusEvent } from '~/types';
-import { useElectric } from '../../common/electric/electrify';
+import { useElectric } from '~/modules/common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
 import { BoardColumn } from './board-column';
 import BoardHeader from './header/board-header';
@@ -73,13 +73,13 @@ function BoardDesktop({
 
 export default function Board() {
   const { t } = useTranslation();
-  const { workspace, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
+  const { workspace, projects, focusedTaskId, setFocusedTaskId, setSearchQuery } = useWorkspaceStore();
 
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
-  const { project } = useSearch({
+  const { project, q } = useSearch({
     from: WorkspaceBoardRoute.id,
   });
 
@@ -204,6 +204,11 @@ export default function Board() {
 
   useEventListener('taskCardClick', handleTaskClick);
   useEventListener('toggleCard', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
+
+  useEffect(() => {
+    if (q?.length) setSearchQuery(q);
+  }, []);
+
   return (
     <>
       <BoardHeader />

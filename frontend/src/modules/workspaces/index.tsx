@@ -16,7 +16,7 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
   });
 
 const WorkspacePage = () => {
-  const { showPageHeader, setWorkspace, setProjects, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
+  const { showPageHeader, setWorkspace, setProjects, setLabels, setSelectedTasks } = useWorkspaceStore();
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
   const Electric = useElectric()!;
 
@@ -25,7 +25,7 @@ const WorkspacePage = () => {
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data.workspace;
   const projects = workspaceQuery.data.projects;
-  //TODO find other solution tan useMutateWorkspaceQueryData hook
+  //TODO find other solution other than useMutateWorkspaceQueryData hook
   setWorkspace(workspace);
   setProjects(projects);
 
@@ -40,7 +40,6 @@ const WorkspacePage = () => {
   };
 
   useEffect(() => {
-    setSearchQuery('');
     setSelectedTasks([]);
   }, [pathname]);
 

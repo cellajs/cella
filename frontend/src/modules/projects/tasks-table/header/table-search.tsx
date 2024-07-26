@@ -50,6 +50,11 @@ export function TaskTableSearch({
   }, [debouncedSearchQuery]);
 
   useEffect(() => {
+    if (innerSearchQuery.length || !searchQuery.length) return;
+    setInnerSearchQuery(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
       const wrapper = document.getElementById('input-wrap');
       const target = event.target as Node;
