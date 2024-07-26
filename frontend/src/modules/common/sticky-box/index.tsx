@@ -1,4 +1,4 @@
-import { type ComponentProps, useEffect, useState } from 'react';
+import { type ComponentProps, type LegacyRef, useEffect, useRef, useState } from 'react';
 
 const getScrollParent = (node: HTMLElement) => {
   let parent: HTMLElement | null = node;
@@ -349,20 +349,35 @@ export type StickyBoxConfig = {
 export type UseStickyBoxOptions = StickyBoxConfig;
 
 export const useStickyBox = ({ offsetTop = 0, offsetBottom = 0, bottom = false, enabled = true }: StickyBoxConfig = {}) => {
-  if (!enabled) return;
+  if (!enabled) return [() => {}, false] as const;
 
   const [node, setNode] = useState<HTMLElement | null>(null);
+  const [isSticky, setIsSticky] = useState<boolean>(false);
+
   useEffect(() => {
     if (!node || !stickyProp) return;
     const unsubs: UnsubList = [];
     setup(node, unsubs, { offsetBottom, offsetTop, bottom, enabled });
+    const handleScroll = () => {
+      const isStickyNow = calculateIsSticky(node, offsetTop, offsetBottom, bottom);
+      setIsSticky(isStickyNow);
+    };
+    const calculateIsSticky = (el: HTMLElement, offsetTop: number, offsetBottom: number, bottom: boolean) => {
+      const rect = el.getBoundingClientRect();
+      const isStickyNow = bottom ? rect.bottom <= window.innerHeight - offsetBottom : rect.top <= offsetTop;
+      return isStickyNow;
+    };
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
     return () => {
       // biome-ignore lint/complexity/noForEach: <explanation>
       unsubs.forEach((fn) => fn());
+      window.removeEventListener('scroll', handleScroll);
     };
-  }, [node, offsetBottom, offsetTop, bottom]);
+  }, [node, offsetBottom, offsetTop, bottom, enabled]);
 
-  return setNode;
+  return [setNode, isSticky] as const;
 };
 
 export type StickyBoxCompProps = StickyBoxConfig & Pick<ComponentProps<'div'>, 'children' | 'className' | 'style'>;
@@ -370,12 +385,17 @@ export type StickyBoxCompProps = StickyBoxConfig & Pick<ComponentProps<'div'>, '
 const StickyBox = (props: StickyBoxCompProps) => {
   const { enabled = true, offsetTop, offsetBottom, bottom, children, className, style } = props;
 
-  if (!enabled) return <div className={className}>{children}</div>;
+  const ref = useRef<HTMLElement | null>(null);
+  const [setRef, isSticky] = useStickyBox({ offsetTop, offsetBottom, bottom, enabled });
 
-  const ref = useStickyBox({ offsetTop, offsetBottom, bottom });
+  useEffect(() => {
+    if (ref.current) setRef(ref.current);
+  }, [setRef]);
+
+  const stickyClass = isSticky ? 'group is-sticky' : '';
 
   return (
-    <div className={className} style={style} ref={ref}>
+    <div className={`${className} ${stickyClass}`} style={style} ref={ref as LegacyRef<HTMLDivElement> | undefined}>
       {children}
     </div>
   );
