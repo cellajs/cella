@@ -1,6 +1,6 @@
 import DataGrid from 'react-data-grid';
 import { Check } from 'lucide-react';
-import { taskStatuses } from '../../task/task-selectors/select-status';
+import { statusFillColors, taskStatuses, type TaskStatus } from '../../task/task-selectors/select-status';
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -37,7 +37,7 @@ export function SearchDropDown({
     { key: 'status', name: 'Filter by status' },
     { key: 'project', name: 'Filter by projects' },
   ];
-  const maxLength = Math.max(projects.length, taskStatuses.length) - 1;
+  const maxLength = Math.max(projects.length, taskStatuses.length);
 
   const rows = Array.from({ length: maxLength }, (_, index) => {
     const status = taskStatuses[index];
@@ -58,7 +58,7 @@ export function SearchDropDown({
       status: status ? (
         <div className="p-0 flex justify-between items-center w-full leading-normal">
           <div className="flex items-center">
-            <status.icon className="mr-2 size-4" />
+            <status.icon className={`size-4 mr-2 fill-current ${statusFillColors[status.value as TaskStatus]}`} />
             <span>{t(status.status)}</span>
           </div>
           <div className="flex items-center">{selectedStatuses.some((s) => s === status.value) && <Check size={16} className="text-success" />}</div>
