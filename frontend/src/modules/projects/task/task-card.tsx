@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { ChevronDown, Tag, UserX } from 'lucide-react';
+import { ChevronDown, Tag, UserX, ChevronUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -97,6 +97,11 @@ export function TaskCard({
     setClosestEdge(extractClosestEdge(self.data));
   };
 
+  const handleCardClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (isExpanded && isFocused) return;
+    dispatchCustomEvent('taskCardClick', { taskId: task.id, clickTarget: event.target as HTMLElement });
+  };
+
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const element = taskRef.current;
@@ -140,10 +145,7 @@ export function TaskCard({
   return (
     <Card
       id={task.id}
-      onClick={() => {
-        if (isExpanded) return;
-        dispatchCustomEvent('taskCardClick', { taskId: task.id });
-      }}
+      onClick={handleCardClick}
       style={style}
       tabIndex={0}
       ref={taskRef}
@@ -161,7 +163,7 @@ export function TaskCard({
       <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 pr-2 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
-            <div className="flex flex-col justify-between gap-0.5 relative">
+            <div className="flex flex-col gap-1 relative">
               <Button
                 id="type"
                 onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
@@ -172,9 +174,20 @@ export function TaskCard({
               >
                 {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
               </Button>
+              {isExpanded && (
+                <Button
+                  onClick={() => dispatchCustomEvent('toggleCard', task.id)}
+                  aria-label="Collapse"
+                  variant="ghost"
+                  size="xs"
+                  className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+                >
+                  <ChevronUp size={16} />
+                </Button>
+              )}
             </div>
             <div className="flex flex-col grow gap-2 mt-1.5">
-              <TaskMarkdown mode={mode} task={task} isExpanded={isExpanded} handleTaskChange={handleTaskChange} />
+              <TaskMarkdown mode={mode} task={task} isExpanded={isExpanded} isFocused={isFocused} handleTaskChange={handleTaskChange} />
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -257,48 +270,34 @@ export function TaskCard({
                     <UserX className="h-4 w-4 opacity-60" />
                   )}
                 </Button>
-                <div className="inline-flex ">
-                  <Button
-                    id="status"
-                    onClick={() => handleTaskChange('status', task.status + 1, task.id)}
-                    disabled={(task.status as TaskStatus) === 6}
-                    variant="outlineGhost"
-                    size="xs"
-                    className={cn(
-                      'relative border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
-                      statusVariants({ status: task.status as TaskStatus }),
-                    )}
-                  >
-                    {t(taskStatuses[task.status as TaskStatus].action)}
-                  </Button>
-                  <Button
-                    onClick={(event) => handleTaskActionClick(task, 'status', event.currentTarget)}
-                    aria-label="Set status"
-                    variant="outlineGhost"
-                    size="xs"
-                    className={cn(
-                      'relative rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
-                      statusVariants({ status: task.status as TaskStatus }),
-                    )}
-                  >
-                    <ChevronDown size={12} />
-                  </Button>
-                </div>
-              </div>
-            </div>
-            {isExpanded && (
-              <div className="flex justify-end">
+
                 <Button
-                  onClick={() => dispatchCustomEvent('collapseCard', task.id)}
-                  aria-label="Collapse"
+                  id="status"
+                  onClick={() => handleTaskChange('status', task.status + 1, task.id)}
+                  disabled={(task.status as TaskStatus) === 6}
                   variant="outlineGhost"
-                  size="micro"
-                  className="w-[15%] text-xs"
+                  size="xs"
+                  className={cn(
+                    'relative border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
+                    statusVariants({ status: task.status as TaskStatus }),
+                  )}
                 >
-                  {t('common:collapse')}
+                  {t(taskStatuses[task.status as TaskStatus].action)}
+                </Button>
+                <Button
+                  onClick={(event) => handleTaskActionClick(task, 'status', event.currentTarget)}
+                  aria-label="Set status"
+                  variant="outlineGhost"
+                  size="xs"
+                  className={cn(
+                    'relative rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
+                    statusVariants({ status: task.status as TaskStatus }),
+                  )}
+                >
+                  <ChevronDown size={12} />
                 </Button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </CardContent>

@@ -23,6 +23,7 @@ export type DraggableItemData<T> = {
 export interface TaskCardFocusEvent extends Event {
   detail: {
     taskId: string;
+    clickTarget: HTMLElement;
   };
 }
 

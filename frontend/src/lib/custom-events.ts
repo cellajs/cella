@@ -1,8 +1,8 @@
 interface CustomEventMap {
   projectChange: CustomEvent<string>;
   taskChange: CustomEvent<{ taskId: string; direction: number; projectId: string }>;
-  taskCardClick: CustomEvent<{ taskId: string }>;
-  collapseCard: CustomEvent<string>;
+  taskCardClick: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
+  toggleCard: CustomEvent<string>;
   openTaskCardPreview: CustomEvent<string>;
 }
 

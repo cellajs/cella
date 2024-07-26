@@ -189,16 +189,21 @@ export default function Board() {
   ]);
 
   const handleTaskClick = (event: TaskCardFocusEvent) => {
-    const { taskId } = event.detail;
+    const { taskId, clickTarget } = event.detail;
+
     if (focusedTaskId === taskId) return setTaskExpanded(taskId, true);
+
     const taskCard = document.getElementById(taskId);
     if (taskCard && document.activeElement !== taskCard) taskCard.focus();
+
+    if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(taskId);
+
     setFocusedTaskId(taskId);
     setTaskExpanded(taskId, true);
   };
 
   useEventListener('taskCardClick', handleTaskClick);
-  useEventListener('collapseCard', (e) => setTaskExpanded(e.detail, false));
+  useEventListener('toggleCard', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
   return (
     <>
       <BoardHeader />

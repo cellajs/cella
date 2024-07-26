@@ -6,15 +6,18 @@ import CreateSubTaskForm from './sub-task/create-sub-task-form';
 import SubTask from './sub-task/sub-task-card';
 import { TaskEditor } from './task-selectors/task-editor';
 import { useState } from 'react';
+import { Button } from '~/modules/ui/button';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 
 interface Props {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
+  isFocused: boolean;
   handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void;
 }
 
-const ExpandedTask = ({ task, mode, isExpanded, handleTaskChange }: Props) => {
+const ExpandedTask = ({ task, mode, isExpanded, isFocused, handleTaskChange }: Props) => {
   const { t } = useTranslation();
 
   const [createSubTask, setCreateSubTask] = useState(false);
@@ -36,22 +39,39 @@ const ExpandedTask = ({ task, mode, isExpanded, handleTaskChange }: Props) => {
           />
 
           <div className="opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 text-xs inline ml-1 font-light gap-1">
+            <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5 ml-1">
+              {t('common:more').toLowerCase()}
+            </Button>
             {task.subTasks.length > 0 && (
-              <div className="inline-flex py-0 h-5 ml-1 gap-[.1rem] text-sm font-medium">
+              <div className="inline-flex py-0 h-5 ml-1 gap-[.1rem]">
                 <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
                 <span className="font-light">/</span>
                 <span className="font-light">{task.subTasks.length}</span>
               </div>
             )}
             {/* <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
-        <Paperclip size={10} className="transition-transform -rotate-45" />
-        <span>3</span>
-      </Button> */}
+               <Paperclip size={10} className="transition-transform -rotate-45" />
+               <span>3</span>
+             </Button> */}
           </div>
         </div>
       ) : (
         <>
-          <TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
+          {isFocused ? (
+            <TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
+          ) : (
+            <MDEditor.Markdown
+              source={task.markdown || ''}
+              style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+              className="markdown inline before:!content-none after:!content-none prose font-light text-start max-w-none"
+            />
+          )}
+
+          <div>
+            <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">
+              {t('common:less').toLowerCase()}
+            </Button>
+          </div>
           {task.subTasks.length > 0 && (
             <div className="inline-flex py-0 h-4 items-center mt-4 gap-1 text-sm">
               <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
@@ -60,6 +80,7 @@ const ExpandedTask = ({ task, mode, isExpanded, handleTaskChange }: Props) => {
               <span>{t('common:todos')}</span>
             </div>
           )}
+
           <div className="-ml-10 -mr-1 relative z-10">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (
