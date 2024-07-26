@@ -22,8 +22,6 @@ CREATE TABLE IF NOT EXISTS "tasks" (
 	"project_id" varchar NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"created_by" varchar NOT NULL,
-	"assigned_by" varchar,
-	"assigned_at" timestamp,
 	"modified_at" timestamp,
 	"modified_by" varchar,
 	CONSTRAINT "tasks_parent_id_tasks_id_fk" FOREIGN KEY ("parent_id") REFERENCES "tasks"("id") ON DELETE no action ON UPDATE no action

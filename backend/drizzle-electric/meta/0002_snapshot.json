@@ -1,5 +1,5 @@
 {
-  "id": "88c3552a-0ea5-42a6-a01a-8c9f01219b06",
+  "id": "267f5e82-d05f-41a3-92e5-5a10af64be60",
   "prevId": "f6229716-1bdd-459d-8b21-cfae96c9c98e",
   "version": "7",
   "dialect": "postgresql",
@@ -150,18 +150,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "assigned_by": {
-          "name": "assigned_by",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "assigned_at": {
-          "name": "assigned_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "modified_at": {
           "name": "modified_at",
           "type": "timestamp",
@@ -197,6 +185,7 @@
   },
   "enums": {},
   "schemas": {},
+  "sequences": {},
   "_meta": {
     "columns": {},
     "schemas": {},
