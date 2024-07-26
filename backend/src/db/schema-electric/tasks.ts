@@ -30,8 +30,6 @@ export const tasksTable = pgTable('tasks', {
     // .defaultNow()
     .notNull(),
   createdBy: varchar('created_by').notNull(),
-  assignedBy: varchar('assigned_by'),
-  assignedAt: timestamp('assigned_at'),
   modifiedAt: timestamp('modified_at'),
   modifiedBy: varchar('modified_by'),
 });

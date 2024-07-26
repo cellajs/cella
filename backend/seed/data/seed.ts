@@ -201,8 +201,6 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
             modifiedAt: faker.date.past(),
             modifiedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
-            assignedAt: faker.date.past(),
-            assignedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
           };
 
           // Combine main task with its subtasks
