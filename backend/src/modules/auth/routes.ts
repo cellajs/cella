@@ -205,6 +205,64 @@ class AuthRoutesConfig {
     },
   });
 
+  public getUserHavePasskey = createRouteConfig({
+    method: 'get',
+    path: '/passkey/{email}',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Get if user have an passkey sign in option',
+    description: 'Check if the user have an passkey sign in option',
+    request: {
+      params: z.object({ email: z.string() }),
+    },
+    responses: {
+      200: {
+        description: 'Passkey state of user',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  // public verifyPasskey = createRouteConfig({
+  //   method: 'post',
+  //   path: '/verify-passkey',
+  //   guard: isPublicAccess,
+  //   tags: ['auth'],
+  //   summary: 'Verify users passkey',
+  //   description: 'Verify users passkey',
+  //   request: {
+  //     body: {
+  //       content: {
+  //         'application/json': {
+  //           schema: z.object({
+  //             credentialId: z.string(),
+  //             clientDataJSON: z.string(),
+  //             authenticatorData: z.string(),
+  //             signature: z.string(),
+  //             email: z.string(),
+  //           }),
+  //         },
+  //       },
+  //     },
+  //   },
+  //   responses: {
+  //     200: {
+  //       description: 'Verify users passkey',
+  //       content: {
+  //         'application/json': {
+  //           schema: successWithDataSchema(userSchema),
+  //         },
+  //       },
+  //     },
+  //     ...errorResponses,
+  //   },
+  // });
+
   public signIn = createRouteConfig({
     method: 'post',
     path: '/sign-in',

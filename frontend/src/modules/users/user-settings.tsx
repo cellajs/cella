@@ -138,10 +138,7 @@ const UserSettings = () => {
         name: user.email,
         displayName: user.name,
       },
-      pubKeyCredParams: [
-        { type: 'public-key' as const, alg: -257 },
-        { type: 'public-key' as const, alg: -7 },
-      ],
+      pubKeyCredParams: [{ type: 'public-key' as const, alg: -257 }],
       authenticatorSelection: {
         authenticatorAttachment: 'platform' as const,
         userVerification: 'required' as const,

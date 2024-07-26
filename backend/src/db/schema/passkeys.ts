@@ -3,7 +3,7 @@ import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 import { usersTable } from './users';
 
-export const passkeyTable = pgTable('passkey', {
+export const passkeysTable = pgTable('passkeys', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   userId: varchar('user_id')
     .notNull()
@@ -13,12 +13,12 @@ export const passkeyTable = pgTable('passkey', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const passkeyTableRelations = relations(passkeyTable, ({ one }) => ({
+export const passkeyTableRelations = relations(passkeysTable, ({ one }) => ({
   user: one(usersTable, {
-    fields: [passkeyTable.userId],
+    fields: [passkeysTable.userId],
     references: [usersTable.id],
   }),
 }));
 
-export type PasskeyModel = typeof passkeyTable.$inferSelect;
-export type InsertPasskeyModel = typeof passkeyTable.$inferInsert;
+export type PasskeyModel = typeof passkeysTable.$inferSelect;
+export type InsertPasskeyModel = typeof passkeysTable.$inferInsert;

@@ -34,41 +34,35 @@ export const base64UrlEncode = (arrayBuffer: Uint8Array) => {
   return base64url.fromBase64(Buffer.from(binaryString, 'binary').toString('base64'));
 };
 export const base64UrlDecode = (base64urlStr: string) => {
-  const base64String = base64url.toBase64(base64urlStr);
-  const binaryString = Buffer.from(base64String, 'base64').toString('binary');
-  return Uint8Array.from(binaryString.split('').map((char) => char.charCodeAt(0)));
+  const base64Str = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
+  const binaryStr = Buffer.from(base64Str, 'base64').toString('binary');
+  return Uint8Array.from(binaryStr.split('').map((char) => char.charCodeAt(0)));
 };
 
 export async function extractCredentialData(attestationObjectBase64: string) {
   const attestationObject = base64UrlDecode(attestationObjectBase64);
 
   // CBOR decode
-  const decoded = cbor.decodeFirstSync(attestationObject);
+  const attestation = cbor.decodeFirstSync(Buffer.from(attestationObject));
+  const { fmt, authData } = attestation;
 
-  // Check attestation statement format
-  if (decoded.fmt !== 'none') throw new Error('Invalid attestation statement format');
+  if (fmt !== 'none') throw new Error('Invalid attestation statement format');
 
-  const authenticatorData = decoded.authData;
-  if (authenticatorData.length < 37) throw new Error('Invalid authenticator data length');
-
-  const rpIdHash = authenticatorData.slice(0, 32);
+  // Parse authenticator data
+  const authDataBuf = Buffer.from(authData);
+  const rpIdHash = authDataBuf.subarray(0, 32);
   const rpId = config.mode === 'development' ? 'localhost' : config.domain;
   const expectedRpIdHash = createHash('sha256').update(rpId).digest();
-
-  if (!expectedRpIdHash.equals(rpIdHash)) throw new Error('Invalid relying party ID');
-  // Check user presence
-  if ((authenticatorData[32] & 0x01) !== 0x01) throw new Error('User not present');
-  // Check user verification
-  if ((authenticatorData[32] & 0x04) !== 0x04) throw new Error('User not verified');
-  // Check if credential data is included
-  if ((authenticatorData[32] & 0x40) !== 0x40) throw new Error('Missing credentials');
+  const flags = authDataBuf[32];
+  // const counter = authDataBuf.subarray(33, 37);
+  if ((flags & 1) !== 1) throw new Error('User not present');
+  if (!rpIdHash.equals(expectedRpIdHash)) throw new Error('Invalid RP ID hash');
+  if (((flags >> 2) & 1) !== 1) throw new Error('User not verified');
 
   // Extract credential ID and public key
-  const credentialIdSize = (authenticatorData[53] << 8) | authenticatorData[54];
-  if (authenticatorData.length < 55 + credentialIdSize) throw new Error('Invalid authenticator data length for credential ID');
-
-  const credentialId = authenticatorData.slice(55, 55 + credentialIdSize);
-  const publicKey = authenticatorData.slice(55 + credentialIdSize);
+  const credentialIdLength = authDataBuf.readUInt16BE(53);
+  const credentialId = authDataBuf.subarray(55, 55 + credentialIdLength);
+  const publicKey = authDataBuf.subarray(55 + credentialIdLength);
 
   return { credentialId: base64UrlEncode(credentialId), publicKey: base64UrlEncode(publicKey) };
 }

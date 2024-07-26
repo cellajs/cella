@@ -10,10 +10,11 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 
 import { config } from 'config';
-import { ArrowRight, ChevronDown, Send } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { ArrowRight, ChevronDown, Send, KeySquare } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn } from '~/api/auth';
+import { checkUserPasskey } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/authentication';
@@ -27,6 +28,47 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { setUser, lastUser, clearLastUser } = useUserStore();
+
+  const [hasPasskey, setHasPasskey] = useState(false);
+
+  // async function passkeyAuth() {
+  //   const { challengeBase64 } = await getChallenge('admin12345678');
+  //   const challenge = base64UrlDecode(challengeBase64);
+
+  //   const publicKeyCredentialRequestOptions = {
+  //     challenge: new Uint8Array(challenge),
+  //     rpId: config.mode === 'development' ? 'localhost' : config.domain,
+  //     userVerification: 'required' as const,
+  //   };
+
+  //   const credential = await navigator.credentials.get({
+  //     publicKey: publicKeyCredentialRequestOptions,
+  //   });
+
+  //   if (!credential || !(credential instanceof PublicKeyCredential)) throw new Error('Failed to create PublicKeyCredential');
+  //   const assertionResponse = credential.response as AuthenticatorAssertionResponse;
+
+  //   // Convert ArrayBuffer to Uint8Array before encoding
+  //   const clientDataJSONUint8 = new Uint8Array(assertionResponse.clientDataJSON);
+  //   const authenticatorDataUint8 = new Uint8Array(assertionResponse.authenticatorData);
+  //   const signatureUint8 = new Uint8Array(assertionResponse.signature);
+
+  //   const credentialResponse = {
+  //     email: email,
+  //     credentialId: base64UrlEncode(new Uint8Array(credential.rawId)),
+  //     clientDataJSON: base64UrlEncode(clientDataJSONUint8),
+  //     authenticatorData: base64UrlEncode(authenticatorDataUint8),
+  //     signature: base64UrlEncode(signatureUint8),
+  //   };
+
+  //   const user = await authThroughPasskey(credentialResponse);
+
+  //   if (user) {
+  //     console.log(user);
+  //   } else {
+  //     console.error('Signin failed');
+  //   }
+  // }
 
   const { redirect } = useSearch({ from: SignInRoute.id });
 
@@ -65,6 +107,12 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   useEffect(() => {
     if (tokenData?.email) form.setValue('email', tokenData.email);
   }, [tokenData]);
+
+  useEffect(() => {
+    (async () => {
+      setHasPasskey(await checkUserPasskey(email));
+    })();
+  }, []);
 
   return (
     <Form {...form}>
@@ -108,6 +156,12 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
           {t('common:sign_in')}
           <ArrowRight size={16} className="ml-2" />
         </Button>
+        {hasPasskey && (
+          <Button type="button" variant="outline" className="w-full">
+            Use Passkey
+            <KeySquare size={16} className="ml-2" />
+          </Button>
+        )}
 
         <ResetPasswordRequest email={email} />
       </form>

@@ -96,3 +96,24 @@ export const setPasskey = async ({
   const json = await handleResponse(apiResponse);
   return json.success;
 };
+
+// export const authThroughPasskey = async ({
+//   credentialId,
+//   clientDataJSON,
+//   authenticatorData,
+//   signature,
+//   email,
+// }: { credentialId: string; clientDataJSON: string; authenticatorData: string; signature: string; email: string }) => {
+//   const response = await apiClient.auth['verify-passkey'].$post({ json: { credentialId, clientDataJSON, authenticatorData, signature, email } });
+
+//   const json = await handleResponse(response);
+//   return json.data;
+// };
+
+// Check if user have passkey
+export const checkUserPasskey = async (email: string) => {
+  const response = await apiClient.auth.passkey[':email'].$get({ param: { email } });
+
+  const json = await handleResponse(response);
+  return json.success;
+};
