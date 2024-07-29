@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
 
+import { Command } from 'commander';
 import { UniqueEnforcer } from 'enforce-unique';
 import { type InsertLabelModel, labelsTable } from '../../src/db/schema-electric/labels';
 import { type InsertTaskModel, tasksTable } from '../../src/db/schema-electric/tasks';
@@ -14,6 +15,9 @@ import { type InsertWorkspaceModel, workspacesTable } from '../../src/db/schema/
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 import slugify from 'slugify';
+
+const seedCommand = new Command().option('--addImages', 'Add images to members').parse(process.argv);
+const options = seedCommand.opts();
 
 export const dataSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
@@ -43,8 +47,8 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         organizationId: organization.id,
         name: faker.company.name(),
         slug: faker.helpers.slugify(name).toLowerCase(),
-        bannerUrl: faker.image.url(),
-        thumbnailUrl: faker.image.url(),
+        bannerUrl: options.addImages ? faker.image.url() : null,
+        thumbnailUrl: options.addImages ? faker.image.url() : null,
         createdAt: faker.date.past(),
         createdBy: orgMemberships[Math.floor(Math.random() * orgMemberships.length)].userId,
         modifiedAt: faker.date.past(),

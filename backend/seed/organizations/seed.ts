@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
 import { Argon2id } from 'oslo/password';
 
+import { Command } from 'commander';
 import { config } from 'config';
 import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
@@ -11,6 +12,9 @@ import { type InsertOrganizationModel, organizationsTable } from '../../src/db/s
 import { type InsertUserModel, usersTable } from '../../src/db/schema/users';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
+
+const seedCommand = new Command().option('--addImages', 'Add images to org').parse(process.argv);
+const options = seedCommand.opts();
 
 // Seed organizations with data
 export const organizationsSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
@@ -34,17 +38,17 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
       id: nanoid(),
       name,
       slug: faker.helpers.slugify(name).toLowerCase(),
-      bannerUrl: faker.image.url(),
+      bannerUrl: options.addImages ? faker.image.url() : null,
       color: faker.internet.color(),
       chatSupport: faker.datatype.boolean(),
       country: faker.location.country(),
       createdAt: faker.date.past(),
       logoUrl: faker.image.url(),
-      thumbnailUrl: faker.image.url(),
+      thumbnailUrl: options.addImages ? faker.image.url() : null,
     };
   });
 
-  await db.insert(organizationsTable).values(organizations).onConflictDoNothing();
+  // await db.insert(organizationsTable).values(organizations).onConflictDoNothing();
 
   const hashedPassword = await new Argon2id().hash('12345678');
 
@@ -79,13 +83,13 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         id: nanoid(),
         firstName,
         lastName,
-        thumbnailUrl: faker.image.avatar(),
+        thumbnailUrl: options.addImages ? faker.image.avatar() : null,
         language: config.defaultLanguage,
         name,
         email,
         hashedPassword,
         slug,
-        avatarUrl: faker.image.avatar(),
+        avatarUrl: options.addImages ? faker.image.avatar() : null,
         createdAt: faker.date.past(),
       };
     });
