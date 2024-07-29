@@ -39,7 +39,7 @@ const ExpandedTask = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCh
             className="inline summary before:!content-none after:!content-none prose font-light text-start max-w-none"
           />
 
-          <div className="opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 text-xs inline ml-1 font-light gap-1">
+          <div className="opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 inline ml-1 font-light gap-1">
             <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5 ml-1">
               {t('common:more').toLowerCase()}
             </Button>

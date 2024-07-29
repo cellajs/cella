@@ -29,11 +29,11 @@
     "email:dev": "turbo dev --filter email"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.2",
-    "@evilmartians/lefthook": "^1.6.18",
+    "@biomejs/biome": "^1.8.3",
+    "@evilmartians/lefthook": "^1.7.9",
     "rimraf": "^5.0.7",
-    "turbo": "^2.0.6",
-    "typescript": "^5.5.2"
+    "turbo": "^2.0.9",
+    "typescript": "^5.5.4"
   },
   "packageManager": "pnpm@9.1.2"
 }
