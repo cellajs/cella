@@ -4,6 +4,7 @@ import { createHash, createVerify } from 'node:crypto';
 import cbor from 'cbor';
 import { config } from 'config';
 import * as jose from 'jose';
+import type { KeyLike } from 'jose';
 
 interface GenerateTokenOptions {
   userId: string;
@@ -108,7 +109,7 @@ const coseToPem = async (coseKeyBuffer: ArrayBuffer) => {
 
   // Import JWK and export SPKI
   const key = await jose.importJWK(jwk, jwk.alg);
-  const pemKey = await jose.exportSPKI(key as jose.KeyObject);
+  const pemKey = await jose.exportSPKI(key as KeyLike);
 
   return pemKey;
 };
