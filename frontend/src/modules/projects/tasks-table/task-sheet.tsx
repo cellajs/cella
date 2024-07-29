@@ -62,6 +62,7 @@ const TaskSheet = ({ task }: { task: Task }) => {
       isFocused={true}
       handleTaskChange={handleChange}
       handleTaskActionClick={handleTaskActionClick}
+      isSheet
     />
   );
 };

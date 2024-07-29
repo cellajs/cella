@@ -191,12 +191,11 @@ export default function Board() {
   const handleTaskClick = (event: TaskCardFocusEvent) => {
     const { taskId, clickTarget } = event.detail;
 
+    if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(taskId);
     if (focusedTaskId === taskId) return setTaskExpanded(taskId, true);
 
     const taskCard = document.getElementById(taskId);
     if (taskCard && document.activeElement !== taskCard) taskCard.focus();
-
-    if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(taskId);
 
     setFocusedTaskId(taskId);
     setTaskExpanded(taskId, true);

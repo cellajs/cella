@@ -62,6 +62,7 @@ interface TaskProps {
   isFocused: boolean;
   handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void;
   handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
+  isSheet?: boolean;
   handleTaskSelect?: (selected: boolean, taskId: string) => void;
 }
 
@@ -72,6 +73,7 @@ export function TaskCard({
   isSelected,
   isFocused,
   isExpanded,
+  isSheet,
   handleTaskChange,
   handleTaskSelect,
   handleTaskActionClick,
@@ -174,7 +176,7 @@ export function TaskCard({
               >
                 {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
               </Button>
-              {isExpanded && (
+              {isExpanded && !isSheet && (
                 <Button
                   onClick={() => dispatchCustomEvent('toggleCard', task.id)}
                   aria-label="Collapse"
@@ -187,7 +189,14 @@ export function TaskCard({
               )}
             </div>
             <div className="flex flex-col grow gap-2 mt-1.5">
-              <TaskMarkdown mode={mode} task={task} isExpanded={isExpanded} isFocused={isFocused} handleTaskChange={handleTaskChange} />
+              <TaskMarkdown
+                mode={mode}
+                task={task}
+                isExpanded={isExpanded}
+                isFocused={isFocused}
+                handleTaskChange={handleTaskChange}
+                isSheet={isSheet}
+              />
             </div>
           </div>
           <div className="flex flex-col gap-2">

@@ -158,7 +158,7 @@ export default function TasksTable() {
   const handleOpenPreview = (event: CustomEventEventById) => {
     const taskId = event.detail;
     const relativeTasks = tasks.filter((t) => t.id === taskId || t.parent_id === taskId);
-    const [currentTask] = tasks.filter((t) => t.id === focusedTaskId);
+    const [currentTask] = tasks.filter((t) => t.id === taskId);
     const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
     const [task] = enhanceTasks(relativeTasks, labels, members);
     sheet(<TaskSheet task={task} />, {
