@@ -1,4 +1,4 @@
-import { Trash2, Zap, ZapOff } from 'lucide-react';
+import { Trash2, Zap, ZapOff, Check } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
@@ -10,10 +10,10 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
 import { config } from 'config';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail, setPasskey, getChallenge } from '~/api/auth';
+import { sendResetPasswordEmail, setPasskey, getChallenge, checkUserPasskey } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { AsideNav } from '~/modules/common/aside-nav';
 import StickyBox from '~/modules/common/sticky-box';
@@ -86,6 +86,7 @@ const UserSettings = () => {
 
   const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.current), [user.sessions]);
   const sessions = Array.from(user.sessions).sort((a) => (a.current ? -1 : 1));
+  const [hasPasskey, setHasPasskey] = useState(false);
 
   const { mutate: deleteMySessions, isPending } = useMutation({
     mutationFn: baseTerminateMySessions,
@@ -161,6 +162,12 @@ const UserSettings = () => {
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';
 
+  useEffect(() => {
+    (async () => {
+      setHasPasskey(await checkUserPasskey(user.email));
+    })();
+  }, []);
+
   return (
     <div className="container md:flex md:flex-row my-4 md:my-8 mx-auto gap-4">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-2">
@@ -220,16 +227,22 @@ const UserSettings = () => {
 
         <AsideAnchor id="passkey">
           <Card className="mx-auto sm:w-full">
-            <CardHeader>
-              <CardTitle>Register a passkey</CardTitle>
-
-              <CardDescription>Secure and simple! Register a passkey for next-level login security without passwords.</CardDescription>
-            </CardHeader>
+            <div className="flex justify-between items-center ">
+              <CardHeader>
+                <CardTitle>{hasPasskey ? t('common:already_have_passkey') : t('common:register_passkey')}</CardTitle>
+                <CardDescription>{t('common:register_passkey_text')}</CardDescription>
+              </CardHeader>
+              {hasPasskey && (
+                <div className="flex items-center p-6">
+                  <Check size={18} className="text-success" />
+                </div>
+              )}
+            </div>
             <CardContent>
               <div className="flex flex-col justify-center gap-2">
                 <Button key="passkey" type="button" variant="outline" onClick={() => registerPasskey()}>
                   <KeyRound className="w-4 h-4 mr-2" />
-                  {`${t('common:add')} a passkey`}
+                  {hasPasskey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>
               </div>
             </CardContent>
