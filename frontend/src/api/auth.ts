@@ -42,7 +42,7 @@ export const signIn = async ({ email, password, token }: { email: string; passwo
   });
 
   const json = await handleResponse(response);
-  return json.data;
+  return json.success;
 };
 
 // Send a verification email
@@ -107,7 +107,7 @@ export const authThroughPasskey = async ({
   const response = await apiClient.auth['verify-passkey'].$post({ json: { credentialId, clientDataJSON, authenticatorData, signature, email } });
 
   const json = await handleResponse(response);
-  return json.data;
+  return json.success;
 };
 
 // Check if user have passkey

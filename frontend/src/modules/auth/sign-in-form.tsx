@@ -10,65 +10,28 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 
 import { config } from 'config';
-import { ArrowRight, ChevronDown, Send, KeySquare } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, ChevronDown, Send } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn, authThroughPasskey, getChallenge } from '~/api/auth';
-import { checkUserPasskey } from '~/api/auth';
+import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
-import type { MeUser } from '~/types';
 import type { TokenData } from '.';
-import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 
 const formSchema = authBodySchema;
 
 export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: string) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setUser, lastUser, clearLastUser } = useUserStore();
-
-  const [hasPasskey, setHasPasskey] = useState(false);
-
-  async function passkeyAuth() {
-    const { challengeBase64 } = await getChallenge();
-
-    const credential = await navigator.credentials.get({
-      publicKey: {
-        challenge: base64UrlDecode(challengeBase64),
-        userVerification: 'required',
-      },
-    });
-
-    if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to get credential');
-    const response = credential.response;
-    if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error('Unexpected response type');
-
-    const credentialData = {
-      credentialId: credential.id,
-      authenticatorData: arrayBufferToBase64Url(response.authenticatorData),
-      clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
-      signature: arrayBufferToBase64Url(response.signature),
-      userHandle: response.userHandle ? arrayBufferToBase64Url(response.userHandle) : null,
-      email: 'admin-test@cellajs.com',
-    };
-
-    const authUser = await authThroughPasskey(credentialData);
-    if (authUser) {
-      setUser(authUser as MeUser);
-      navigate({ to: config.defaultRedirectPath, replace: true });
-    }
-  }
+  const { lastUser, clearLastUser } = useUserStore();
 
   const { redirect } = useSearch({ from: SignInRoute.id });
 
   const { mutate: signIn, isPending } = useMutation({
     mutationFn: baseSignIn,
-    onSuccess: (signedInUser) => {
-      setUser(signedInUser as MeUser);
-
+    onSuccess: () => {
       // Redirect to the invite page if token is present
       // Otherwise, redirect to a redirect URL or to home
       const to = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
@@ -99,12 +62,6 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   useEffect(() => {
     if (tokenData?.email) form.setValue('email', tokenData.email);
   }, [tokenData]);
-
-  useEffect(() => {
-    (async () => {
-      setHasPasskey(await checkUserPasskey(email));
-    })();
-  }, []);
 
   return (
     <Form {...form}>
@@ -148,13 +105,6 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
           {t('common:sign_in')}
           <ArrowRight size={16} className="ml-2" />
         </Button>
-        {hasPasskey && (
-          <Button type="button" onClick={passkeyAuth} variant="outline" className="w-full">
-            Use Passkey
-            <KeySquare size={16} className="ml-2" />
-          </Button>
-        )}
-
         <ResetPasswordRequest email={email} />
       </form>
     </Form>

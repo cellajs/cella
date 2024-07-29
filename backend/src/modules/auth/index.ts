@@ -29,14 +29,12 @@ import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import generalRouteConfig from '../general/routes';
-import { transformDatabaseUser, transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import { removeSessionCookie, setCookie, setSessionCookie } from './helpers/cookies';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
 import { base64UrlDecode, parseAndValidateAttestation, verifyKey } from '../../lib/utils';
 import { passkeysTable } from '../../db/schema/passkeys';
-import { membershipsTable } from '../../db/schema/memberships';
 
 // Scopes for OAuth providers
 const githubScopes = { scopes: ['user:email'] };
@@ -288,6 +286,29 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
+    // const oauthAccounts = await db
+    //   .select({
+    //     providerId: oauthAccountsTable.providerId,
+    //   })
+    //   .from(oauthAccountsTable)
+    //   .where(eq(oauthAccountsTable.userId, user.id));
+
+    // const [{ user, passkey }] = await db
+    //   .select({
+    //     user: usersTable,
+    //     passkey: passkeysTable.id,
+    //   })
+    //   .from(usersTable)
+    //   .leftJoin(passkeysTable, eq(passkeysTable.userEmail, email.toLowerCase()))
+    //   .where(eq(usersTable.email, email.toLowerCase()));
+
+    // const oauthAccounts = await db
+    //   .select({
+    //     providerId: oauthAccountsTable.providerId,
+    //   })
+    //   .from(oauthAccountsTable)
+    //   .where(eq(oauthAccountsTable.userId, user.id));
+
     // If the user is not found or signed up with oauth
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
@@ -309,8 +330,12 @@ const authRoutes = app
     } else {
       await setSessionCookie(ctx, user.id, 'password');
     }
+    return ctx.json({ success: true }, 200);
 
-    return ctx.json({ success: true, data: transformDatabaseUser(user) }, 200);
+    // return ctx.json(
+    //   { success: true, data: { ...transformDatabaseUser(user), oauth: oauthAccounts.map((el) => el.providerId), passkey: !!passkey } },
+    //   200,
+    // );
   })
   /*
    * Sign out
@@ -768,7 +793,8 @@ const authRoutes = app
 
     // Retrieve user and challenge record
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
-    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+    // const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+
     // Decode & parse clientDataJSON 4 verify challenge
     const clientData = JSON.parse(Buffer.from(base64UrlDecode(clientDataJSON)).toString());
     const challengeFromCookie = getCookie(ctx, 'challenge');
@@ -786,11 +812,25 @@ const authRoutes = app
     const isValid = verifyKey(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
     if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
 
+    // const oauthAccounts = await db
+    //   .select({
+    //     providerId: oauthAccountsTable.providerId,
+    //   })
+    //   .from(oauthAccountsTable)
+    //   .where(eq(oauthAccountsTable.userId, user.id));
+
     // Extract the counter
     // Optionally do we need update the counter in the database
     // const counter = authData.slice(33, 37).readUInt32BE(0);
 
     await setSessionCookie(ctx, user.id, 'passkey');
-    return ctx.json({ success: true, data: transformDatabaseUserWithCount(user, memberships.length) }, 200);
+    return ctx.json({ success: true }, 200);
+    // return ctx.json(
+    //   {
+    //     success: true,
+    //     data: { ...transformDatabaseUserWithCount(user, memberships.length), oauth: oauthAccounts.map((el) => el.providerId), passkey: true },
+    //   },
+    //   200,
+    // );
   });
 export default authRoutes;

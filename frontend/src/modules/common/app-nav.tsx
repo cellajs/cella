@@ -17,6 +17,7 @@ import useMounted from '~/hooks/use-mounted';
 import { NavButton } from './app-nav-button';
 import { AppSearch } from './app-search';
 import { useHotkeys } from '~/hooks/use-hot-keys';
+import { useWorkspaceStore } from '~/store/workspace';
 
 export type NavItem = {
   id: string;
@@ -40,6 +41,7 @@ const AppNav = () => {
   const { hasStarted } = useMounted();
   const isSmallScreen = useBreakpoints('max', 'xl');
   const { activeSheet, setSheet, focusView } = useNavigationStore();
+  const { focusedTaskId } = useWorkspaceStore();
   const { theme } = useThemeStore();
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
 
@@ -64,7 +66,13 @@ const AppNav = () => {
   };
 
   useHotkeys([
-    ['A', () => navButtonClick(navItems[3])],
+    [
+      'A',
+      () => {
+        if (focusedTaskId) return;
+        navButtonClick(navItems[3]);
+      },
+    ],
     ['F', () => navButtonClick(navItems[2])],
     ['H', () => navButtonClick(navItems[1])],
     ['M', () => navButtonClick(navItems[0])],

@@ -1,12 +1,11 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '../../lib/common-responses';
+import { errorResponses, successWithoutDataSchema } from '../../lib/common-responses';
 import { cookieSchema, passwordSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isPublicAccess } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
-import { userSchema } from '../users/schema';
 import { authBodySchema, emailBodySchema } from './schema';
 
 class AuthRoutesConfig {
@@ -258,7 +257,8 @@ class AuthRoutesConfig {
         }),
         content: {
           'application/json': {
-            schema: successWithDataSchema(userSchema),
+            // schema: successWithDataSchema(userSchema.extend(signUpInfo.shape)),
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -292,7 +292,8 @@ class AuthRoutesConfig {
         }),
         content: {
           'application/json': {
-            schema: successWithDataSchema(userSchema),
+            // schema: successWithDataSchema(userSchema.extend(signUpInfo.shape)),
+            schema: successWithoutDataSchema,
           },
         },
       },

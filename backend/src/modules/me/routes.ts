@@ -3,7 +3,7 @@ import { idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
 import { updateUserBodySchema, userSchema } from '../users/schema';
-import { meUserSchema, userMenuSchema } from './schema';
+import { meUserSchema, signUpInfo, userMenuSchema } from './schema';
 
 class MeRoutesConfig {
   public getSelf = createRouteConfig({
@@ -49,7 +49,7 @@ class MeRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successWithDataSchema(userSchema),
+            schema: successWithDataSchema(userSchema.extend(signUpInfo.shape)),
           },
         },
       },

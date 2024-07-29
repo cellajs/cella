@@ -76,7 +76,7 @@ const SignIn = () => {
               <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text', { appName: config.name })}</h2>
             </>
           )}
-          {step !== 'inviteOnly' && step !== 'waitList' && <OauthOptions actionType={step} />}
+          {step !== 'inviteOnly' && step !== 'waitList' && <OauthOptions email={email} actionType={step} />}
         </>
       ) : (
         <>

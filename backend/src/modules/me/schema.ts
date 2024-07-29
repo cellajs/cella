@@ -5,9 +5,11 @@ import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/comm
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
+export const signUpInfo = z.object({ oauth: z.array(z.enum(['github', 'google', 'microsoft'])), passkey: z.boolean() });
 export const meUserSchema = userSchema.extend({
   electricJWTToken: z.string(),
   sessions: z.array(z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string() })),
+  ...signUpInfo.shape,
 });
 
 const menuItemSchema = z.object({

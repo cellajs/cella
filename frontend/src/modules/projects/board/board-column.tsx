@@ -165,20 +165,23 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   };
 
   // Open on key press
-  const hotKeyPress = (event: KeyboardEvent, field: string) => {
+  const hotKeyPress = (field: string) => {
     const focusedTask = showingTasks.find((t) => t.id === focusedTaskId);
-    if (!focusedTask || !event.target) return;
-    const trigger = (event.target as HTMLElement).querySelector(`#${field}`);
+    if (!focusedTask) return;
+    const taskCard = document.getElementById(focusedTask.id);
+    if (!taskCard) return;
+    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
+    const trigger = taskCard.querySelector(`#${field}`);
     if (!trigger) return dropdowner.remove();
     handleTaskActionClick(focusedTask, field, trigger as HTMLElement);
   };
 
   useHotkeys([
-    ['a', (e) => hotKeyPress(e, 'assigned_to')],
-    ['i', (e) => hotKeyPress(e, 'impact')],
-    ['l', (e) => hotKeyPress(e, 'labels')],
-    ['s', (e) => hotKeyPress(e, 'status')],
-    ['t', (e) => hotKeyPress(e, 'type')],
+    ['a', () => hotKeyPress('assigned_to')],
+    ['i', () => hotKeyPress('impact')],
+    ['l', () => hotKeyPress('labels')],
+    ['s', () => hotKeyPress('status')],
+    ['t', () => hotKeyPress('type')],
   ]);
 
   const handleTaskChangeEventListener = (event: TaskChangeEvent) => {

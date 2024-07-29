@@ -19,6 +19,8 @@ import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspace
 import { generateElectricJWTToken } from '../../lib/utils';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { getPreparedSessions } from './helpers/get-sessions';
+import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
+import { passkeysTable } from '../../db/schema/passkeys';
 
 const app = new CustomHono();
 
@@ -30,12 +32,22 @@ const meRoutes = app
   .openapi(meRoutesConfig.getSelf, async (ctx) => {
     const user = ctx.get('user');
 
-    const [{ memberships }] = await db
+    const [{ memberships, passkey }] = await db
       .select({
         memberships: count(),
+        passkey: passkeysTable.id,
       })
       .from(membershipsTable)
-      .where(eq(membershipsTable.userId, user.id));
+      .leftJoin(passkeysTable, eq(passkeysTable.userEmail, user.email))
+      .where(eq(membershipsTable.userId, user.id))
+      .groupBy(passkeysTable.id);
+
+    const oauthAccounts = await db
+      .select({
+        providerId: oauthAccountsTable.providerId,
+      })
+      .from(oauthAccountsTable)
+      .where(eq(oauthAccountsTable.userId, user.id));
 
     // Update last visit date
     await db.update(usersTable).set({ lastVisitAt: new Date() }).where(eq(usersTable.id, user.id));
@@ -48,6 +60,8 @@ const meRoutes = app
         success: true,
         data: {
           ...transformDatabaseUserWithCount(user, memberships),
+          oauth: oauthAccounts.map((el) => el.providerId),
+          passkey: !!passkey,
           sessions: await getPreparedSessions(user.id, ctx),
           electricJWTToken,
         },
@@ -209,19 +223,33 @@ const meRoutes = app
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    const [{ memberships }] = await db
+    const [{ memberships, passkey }] = await db
       .select({
         memberships: count(),
+        passkey: passkeysTable.id,
       })
       .from(membershipsTable)
-      .where(eq(membershipsTable.userId, updatedUser.id));
+      .leftJoin(passkeysTable, eq(passkeysTable.userEmail, user.email))
+      .where(eq(membershipsTable.userId, user.id))
+      .groupBy(passkeysTable.id);
+
+    const oauthAccounts = await db
+      .select({
+        providerId: oauthAccountsTable.providerId,
+      })
+      .from(oauthAccountsTable)
+      .where(eq(oauthAccountsTable.userId, user.id));
 
     logEvent('User updated', { user: updatedUser.id });
 
     return ctx.json(
       {
         success: true,
-        data: transformDatabaseUserWithCount(updatedUser, memberships),
+        data: {
+          ...transformDatabaseUserWithCount(updatedUser, memberships),
+          oauth: oauthAccounts.map((el) => el.providerId),
+          passkey: !!passkey,
+        },
       },
       200,
     );

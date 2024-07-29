@@ -45,7 +45,7 @@ export type RequestProp = InferRequestType<typeof apiClient.requests.$post>['jso
 
 export type User = Extract<InferResponseType<(typeof apiClient.users)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 
-export type MeUser = User & { electricJWTToken: string; sessions: Session[] };
+export type MeUser = User & { electricJWTToken: string; sessions: Session[]; passkey: boolean; oauth: ('github' | 'google' | 'microsoft')[] };
 
 export type Organization = Extract<InferResponseType<(typeof apiClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
 
