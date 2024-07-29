@@ -5,9 +5,9 @@ import { usersTable } from './users';
 
 export const passkeysTable = pgTable('passkeys', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
-  userId: varchar('user_id')
+  userEmail: varchar('user_email')
     .notNull()
-    .references(() => usersTable.id, { onDelete: 'cascade' }),
+    .references(() => usersTable.email, { onDelete: 'cascade' }),
   credentialId: varchar('credential_id').notNull(),
   publicKey: varchar('public_key').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -15,7 +15,7 @@ export const passkeysTable = pgTable('passkeys', {
 
 export const passkeyTableRelations = relations(passkeysTable, ({ one }) => ({
   user: one(usersTable, {
-    fields: [passkeysTable.userId],
+    fields: [passkeysTable.userEmail],
     references: [usersTable.id],
   }),
 }));

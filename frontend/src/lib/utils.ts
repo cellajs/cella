@@ -167,11 +167,16 @@ export const base64UrlDecode = (base64urlStr: string) => {
     base64String += '=';
   }
   const binaryString = atob(base64String);
-  return Uint8Array.from(binaryString.split('').map((char) => char.charCodeAt(0)));
+  return Uint8Array.from(binaryString.split('').map((char) => char.charCodeAt(0))).buffer;
 };
 
 // Helper function to encode Uint8Array to base64 URL
-export const base64UrlEncode = (uint8Array: Uint8Array) => {
+const base64UrlEncode = (uint8Array: Uint8Array): string => {
   const binaryString = String.fromCharCode(...uint8Array);
   return btoa(binaryString).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+export const arrayBufferToBase64Url = (buffer: ArrayBuffer) => {
+  const uint8Array = new Uint8Array(buffer);
+  return base64UrlEncode(uint8Array);
 };

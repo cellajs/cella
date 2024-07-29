@@ -23,7 +23,7 @@ import { oauthProviders } from '../auth/oauth-options';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
 import DeleteSelf from './delete-self';
-import { base64UrlEncode, base64UrlDecode } from '~/lib/utils';
+import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 
 export type Session = {
   id: string;
@@ -123,48 +123,39 @@ const UserSettings = () => {
   };
 
   async function registerPasskey() {
-    const { challengeBase64 } = await getChallenge(user.id);
-    const challenge = base64UrlDecode(challengeBase64);
-
-    const publicKeyCredentialCreationOptions = {
-      attestation: 'none' as const,
-      challenge: new Uint8Array(challenge),
-      rp: {
-        id: config.mode === 'development' ? 'localhost' : config.domain,
-        name: config.name,
-      },
-      user: {
-        id: new Uint8Array(user.id.split('').map((char) => char.charCodeAt(0))),
-        name: user.email,
-        displayName: user.name,
-      },
-      pubKeyCredParams: [{ type: 'public-key' as const, alg: -257 }],
-      authenticatorSelection: {
-        authenticatorAttachment: 'platform' as const,
-        userVerification: 'required' as const,
-      },
-    };
+    const { challengeBase64 } = await getChallenge();
 
     const credential = await navigator.credentials.create({
-      publicKey: publicKeyCredentialCreationOptions,
+      publicKey: {
+        rp: {
+          id: config.mode === 'development' ? 'localhost' : config.domain,
+          name: config.name,
+        },
+        user: {
+          id: new TextEncoder().encode(user.id),
+          name: user.name,
+          displayName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'No name provided',
+        },
+        challenge: base64UrlDecode(challengeBase64),
+        pubKeyCredParams: [{ type: 'public-key', alg: -257 }],
+        authenticatorSelection: { userVerification: 'required' },
+        attestation: 'none',
+      },
     });
-    if (!credential || !(credential instanceof PublicKeyCredential)) throw new Error('Failed to create PublicKeyCredential');
-    const attestationResponse = credential.response as AuthenticatorAttestationResponse;
-    // Convert ArrayBuffer to Uint8Array before encoding
-    const clientDataJSONUint8 = new Uint8Array(attestationResponse.clientDataJSON);
-    const attestationObjectUint8 = new Uint8Array(attestationResponse.attestationObject);
-    const credentialResponse = {
-      id: user.id,
-      clientDataJSON: base64UrlEncode(clientDataJSONUint8),
-      attestationObject: base64UrlEncode(attestationObjectUint8),
+
+    if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create credential');
+    const response = credential.response;
+    if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error('Unexpected response type');
+
+    const credentialData = {
+      email: user.email,
+      attestationObject: arrayBufferToBase64Url(response.attestationObject),
+      clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
     };
 
-    const result = await setPasskey(credentialResponse);
-    if (result) {
-      console.log('Registration successful');
-    } else {
-      console.error('Registration failed');
-    }
+    const result = await setPasskey(credentialData);
+    if (result) toast.success('Passkey created successfully.');
+    else toast.error('Creation of passkey failed.');
   }
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);

@@ -228,40 +228,43 @@ class AuthRoutesConfig {
     },
   });
 
-  // public verifyPasskey = createRouteConfig({
-  //   method: 'post',
-  //   path: '/verify-passkey',
-  //   guard: isPublicAccess,
-  //   tags: ['auth'],
-  //   summary: 'Verify users passkey',
-  //   description: 'Verify users passkey',
-  //   request: {
-  //     body: {
-  //       content: {
-  //         'application/json': {
-  //           schema: z.object({
-  //             credentialId: z.string(),
-  //             clientDataJSON: z.string(),
-  //             authenticatorData: z.string(),
-  //             signature: z.string(),
-  //             email: z.string(),
-  //           }),
-  //         },
-  //       },
-  //     },
-  //   },
-  //   responses: {
-  //     200: {
-  //       description: 'Verify users passkey',
-  //       content: {
-  //         'application/json': {
-  //           schema: successWithDataSchema(userSchema),
-  //         },
-  //       },
-  //     },
-  //     ...errorResponses,
-  //   },
-  // });
+  public verifyPasskey = createRouteConfig({
+    method: 'post',
+    path: '/verify-passkey',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Verify users passkey',
+    description: 'Verify users passkey',
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: z.object({
+              credentialId: z.string(),
+              clientDataJSON: z.string(),
+              authenticatorData: z.string(),
+              signature: z.string(),
+              email: z.string(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Verify users passkey',
+        headers: z.object({
+          'Set-Cookie': cookieSchema,
+        }),
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(userSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
 
   public signIn = createRouteConfig({
     method: 'post',
@@ -355,9 +358,6 @@ class AuthRoutesConfig {
     summary: 'Get challenge for passkey',
     description: 'Challenge for passkey auth.',
     security: [],
-    request: {
-      query: z.object({ userId: z.string() }),
-    },
     responses: {
       200: {
         description: 'Challenge created',
@@ -385,9 +385,9 @@ class AuthRoutesConfig {
         content: {
           'application/json': {
             schema: z.object({
-              id: z.string(),
-              clientDataJSON: z.string(),
+              email: z.string(),
               attestationObject: z.string(),
+              clientDataJSON: z.string(),
             }),
           },
         },

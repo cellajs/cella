@@ -5,8 +5,6 @@ import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { VerificationEmail } from '../../../../email/emails/email-verification';
 import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
 
-import { randomBytes } from 'node:crypto';
-
 import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
 
@@ -18,6 +16,7 @@ import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 
 import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
 
+import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
 import type { z } from 'zod';
 import { emailSender } from '../../../../email';
@@ -30,14 +29,14 @@ import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import generalRouteConfig from '../general/routes';
-import { transformDatabaseUser } from '../users/helpers/transform-database-user';
-import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
+import { transformDatabaseUser, transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
+import { removeSessionCookie, setCookie, setSessionCookie } from './helpers/cookies';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
-import { base64UrlEncode, extractCredentialData } from '../../lib/utils';
-import { challengeTable } from '../../db/schema/challanges';
+import { base64UrlDecode, parseAndValidateAttestation, verifyKey } from '../../lib/utils';
 import { passkeysTable } from '../../db/schema/passkeys';
+import { membershipsTable } from '../../db/schema/memberships';
 
 // Scopes for OAuth providers
 const githubScopes = { scopes: ['user:email'] };
@@ -269,11 +268,7 @@ const authRoutes = app
   .openapi(authRoutesConfig.getUserHavePasskey, async (ctx) => {
     const email = ctx.req.valid('param').email;
 
-    const userWithPassKey = await db
-      .select()
-      .from(usersTable)
-      .innerJoin(passkeysTable, eq(passkeysTable.userId, usersTable.id))
-      .where(eq(usersTable.email, email));
+    const userWithPassKey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, email));
 
     return ctx.json({ success: !!userWithPassKey.length }, 200);
   })
@@ -742,161 +737,60 @@ const authRoutes = app
    * Passkey challenge
    */
   .openapi(authRoutesConfig.getPasskeyChallenge, async (ctx) => {
-    const { userId } = ctx.req.valid('query');
-    // Generate a registration challenge
-    const challenge = randomBytes(32);
-    const challengeBase64 = base64UrlEncode(challenge);
-
-    // Store the challenge in the database
-    await db.insert(challengeTable).values({
-      userId,
-      challenge: challengeBase64,
-    });
-
+    // Generate a random challenge
+    const challenge = getRandomValues(new Uint8Array(32));
+    const challengeBase64 = Buffer.from(challenge).toString('base64url');
+    setCookie(ctx, 'challenge', challengeBase64);
     return ctx.json({ challengeBase64 }, 200);
   })
   /*
    * Passkey registration
    */
   .openapi(authRoutesConfig.setPasskey, async (ctx) => {
-    const { id, attestationObject } = await ctx.req.json();
+    const { attestationObject, clientDataJSON, email } = await ctx.req.json();
 
-    // Fetch the challenge from the database
-    const [challengeRecord] = await db.select().from(challengeTable).where(eq(challengeTable.userId, id));
+    const challengeFromCookie = getCookie(ctx, 'challenge');
 
-    if (!challengeRecord) errorResponse(ctx, 404, 'Challenge not found', 'warn', undefined);
-    // Verify the client data and extract credential data
-    const { credentialId, publicKey } = await extractCredentialData(attestationObject);
-    // Store the credential in the database
+    const { credentialId, publicKey } = parseAndValidateAttestation(clientDataJSON, attestationObject, challengeFromCookie);
+    // Save public key in the database
     await db.insert(passkeysTable).values({
-      userId: id,
-      credentialId: credentialId,
-      publicKey: publicKey,
+      userEmail: email,
+      credentialId,
+      publicKey,
     });
-
-    // Remove the challenge from db once used
-    await db.delete(challengeTable).where(eq(challengeTable.userId, id));
-
     return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Verifies the passkey response
+   */
+  .openapi(authRoutesConfig.verifyPasskey, async (ctx) => {
+    const { clientDataJSON, authenticatorData, signature, email } = await ctx.req.json();
+
+    // Retrieve user and challenge record
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
+    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+    // Decode & parse clientDataJSON 4 verify challenge
+    const clientData = JSON.parse(Buffer.from(base64UrlDecode(clientDataJSON)).toString());
+    const challengeFromCookie = getCookie(ctx, 'challenge');
+    if (clientData.challenge !== challengeFromCookie) return errorResponse(ctx, 400, 'Invalid challenge', 'warn', undefined);
+
+    const [credential] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, email));
+    if (!credential) return errorResponse(ctx, 404, 'Credential not found', 'warn');
+    // Decode & parse authenticatorData 4 user verify
+    const authData = base64UrlDecode(authenticatorData);
+    const flags = authData[32];
+    const userPresent = (flags & 0x01) !== 0;
+    const userVerified = (flags & 0x04) !== 0;
+    if (!userPresent || !userVerified) return errorResponse(ctx, 400, 'User presence or verification failed', 'warn', undefined);
+
+    const isValid = verifyKey(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
+    if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
+
+    // Extract the counter
+    // Optionally do we need update the counter in the database
+    // const counter = authData.slice(33, 37).readUInt32BE(0);
+
+    await setSessionCookie(ctx, user.id, 'passkey');
+    return ctx.json({ success: true, data: transformDatabaseUserWithCount(user, memberships.length) }, 200);
   });
-/*
- * Verifies the passkey response
- */
-// .openapi(authRoutesConfig.verifyPasskey, async (ctx) => {
-//   const { credentialId, clientDataJSON, authenticatorData, signature, email } = await ctx.req.json();
-
-//   // Retrieve user and challenge record
-//   const [{ user, challengeRecord }] = await db
-//     .select({ user: usersTable, challengeRecord: challengeTable })
-//     .from(usersTable)
-//     .innerJoin(challengeTable, eq(challengeTable.userId, usersTable.id))
-//     .orderBy(desc(challengeTable.createdAt))
-//     .where(eq(usersTable.email, email));
-
-//   if (!challengeRecord) return errorResponse(ctx, 404, 'Challenge not found', 'warn');
-//   const challengeBase64 = challengeRecord.challenge;
-
-//   // Retrieve the credential
-//   const [credential] = await db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id));
-//   if (!credential) return errorResponse(ctx, 404, 'Credential not found', 'warn');
-
-//   const clientData = JSON.parse(new TextDecoder().decode(base64UrlDecode(clientDataJSON)));
-//   const authenticatorDataArray = base64UrlDecode(authenticatorData);
-//   const signatureArray = base64UrlDecode(signature);
-
-//   // Verify client data
-//   if (clientData.type !== 'webauthn.get') return errorResponse(ctx, 400, 'Invalid client data type', 'warn');
-//   if (clientData.challenge !== challengeBase64) return errorResponse(ctx, 400, 'Invalid challenge', 'warn');
-
-//   // Verify authenticator data
-//   if (authenticatorDataArray.length < 37) return errorResponse(ctx, 400, 'Invalid authenticator data length', 'warn');
-//   const rpIdHash = authenticatorDataArray.slice(0, 32);
-//   const expectedRpIdHash = createHash('sha256')
-//     .update(config.mode === 'development' ? 'localhost' : config.domain)
-//     .digest();
-//   if (!expectedRpIdHash.equals(rpIdHash)) return errorResponse(ctx, 400, 'Invalid relying party ID', 'warn');
-
-//   // Check flags
-//   const flags = authenticatorDataArray[32];
-//   if ((flags & 0x01) === 0) return errorResponse(ctx, 400, 'User not present', 'warn');
-//   if ((flags & 0x04) === 0) return errorResponse(ctx, 400, 'User not verified', 'warn');
-
-//   // Extract credential ID and public key
-//   const credentialIdSize = (authenticatorDataArray[53] << 8) | authenticatorDataArray[54];
-//   if (authenticatorDataArray.length < 55 + credentialIdSize)
-//     return errorResponse(ctx, 400, 'Invalid authenticator data length for credential ID', 'warn');
-
-//   const publicKeyCose = base64UrlDecode(credential.publicKey);
-
-//   // Ensure COSE key decoding
-//   let decodedPublicKey;
-//   try {
-//     decodedPublicKey = cbor.decodeFirstSync(publicKeyCose);
-//   } catch (err) {
-//     return errorResponse(ctx, 400, 'COSE key decoding error', 'warn');
-//   }
-
-//   // Ensure decodedPublicKey has 'x' and 'y' coordinates
-//   const x = decodedPublicKey.get(-1);
-//   const y = decodedPublicKey.get(-2);
-
-//   const publicKeyJwk = {
-//     kty: 'EC',
-//     crv: 'P-256',
-//     x: x.toString('base64'),
-//     y: y.toString('base64'),
-//   };
-
-//   let jwkKey;
-//   try {
-//     jwkKey = JWK.asKey(publicKeyJwk, 'jwk');
-//   } catch (err) {
-//     return errorResponse(ctx, 400, 'JWK conversion error', 'warn');
-//   }
-
-//   let publicKeyPem;
-//   try {
-//     publicKeyPem = jwkKey.toPEM();
-//   } catch (err) {
-//     return errorResponse(ctx, 400, 'PEM conversion error', 'warn');
-//   }
-
-//   // Create PublicKey object
-//   let key;
-//   try {
-//     key = createPublicKey({
-//       key: publicKeyPem,
-//       format: 'pem',
-//       type: 'spki',
-//     });
-//   } catch (err) {
-//     return errorResponse(ctx, 400, 'Public key creation error', 'warn');
-//   }
-
-//   // Verify the signature
-//   const clientDataJSONHash = createHash('sha256').update(new TextEncoder().encode(clientDataJSON)).digest();
-//   const dataToVerify = Buffer.concat([authenticatorDataArray, clientDataJSONHash]);
-
-//   let verify;
-//   try {
-//     verify = createVerify('sha256');
-//     verify.update(dataToVerify);
-//   } catch (err) {
-//     return errorResponse(ctx, 400, 'Signature verification setup error', 'warn');
-//   }
-
-//   let validSignature;
-//   try {
-//     validSignature = verify.verify(key, signatureArray);
-//   } catch (err) {
-//     return errorResponse(ctx, 400, 'Signature verification error', 'warn');
-//   }
-
-//   if (!validSignature) return errorResponse(ctx, 400, 'Invalid signature', 'warn');
-
-//   // Remove the challenge from DB once used
-//   await db.delete(challengeTable).where(eq(challengeTable.userId, user.id));
-
-//   return ctx.json({ success: true, data: transformDatabaseUser(user) }, 200);
-// });
 export default authRoutes;

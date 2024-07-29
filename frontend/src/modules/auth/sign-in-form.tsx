@@ -13,7 +13,7 @@ import { config } from 'config';
 import { ArrowRight, ChevronDown, Send, KeySquare } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn } from '~/api/auth';
+import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn, authThroughPasskey, getChallenge } from '~/api/auth';
 import { checkUserPasskey } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -21,6 +21,7 @@ import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types';
 import type { TokenData } from '.';
+import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 
 const formSchema = authBodySchema;
 
@@ -31,44 +32,35 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
 
   const [hasPasskey, setHasPasskey] = useState(false);
 
-  // async function passkeyAuth() {
-  //   const { challengeBase64 } = await getChallenge('admin12345678');
-  //   const challenge = base64UrlDecode(challengeBase64);
+  async function passkeyAuth() {
+    const { challengeBase64 } = await getChallenge();
 
-  //   const publicKeyCredentialRequestOptions = {
-  //     challenge: new Uint8Array(challenge),
-  //     rpId: config.mode === 'development' ? 'localhost' : config.domain,
-  //     userVerification: 'required' as const,
-  //   };
+    const credential = await navigator.credentials.get({
+      publicKey: {
+        challenge: base64UrlDecode(challengeBase64),
+        userVerification: 'required',
+      },
+    });
 
-  //   const credential = await navigator.credentials.get({
-  //     publicKey: publicKeyCredentialRequestOptions,
-  //   });
+    if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to get credential');
+    const response = credential.response;
+    if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error('Unexpected response type');
 
-  //   if (!credential || !(credential instanceof PublicKeyCredential)) throw new Error('Failed to create PublicKeyCredential');
-  //   const assertionResponse = credential.response as AuthenticatorAssertionResponse;
+    const credentialData = {
+      credentialId: credential.id,
+      authenticatorData: arrayBufferToBase64Url(response.authenticatorData),
+      clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
+      signature: arrayBufferToBase64Url(response.signature),
+      userHandle: response.userHandle ? arrayBufferToBase64Url(response.userHandle) : null,
+      email: 'admin-test@cellajs.com',
+    };
 
-  //   // Convert ArrayBuffer to Uint8Array before encoding
-  //   const clientDataJSONUint8 = new Uint8Array(assertionResponse.clientDataJSON);
-  //   const authenticatorDataUint8 = new Uint8Array(assertionResponse.authenticatorData);
-  //   const signatureUint8 = new Uint8Array(assertionResponse.signature);
-
-  //   const credentialResponse = {
-  //     email: email,
-  //     credentialId: base64UrlEncode(new Uint8Array(credential.rawId)),
-  //     clientDataJSON: base64UrlEncode(clientDataJSONUint8),
-  //     authenticatorData: base64UrlEncode(authenticatorDataUint8),
-  //     signature: base64UrlEncode(signatureUint8),
-  //   };
-
-  //   const user = await authThroughPasskey(credentialResponse);
-
-  //   if (user) {
-  //     console.log(user);
-  //   } else {
-  //     console.error('Signin failed');
-  //   }
-  // }
+    const authUser = await authThroughPasskey(credentialData);
+    if (authUser) {
+      setUser(authUser as MeUser);
+      navigate({ to: config.defaultRedirectPath, replace: true });
+    }
+  }
 
   const { redirect } = useSearch({ from: SignInRoute.id });
 
@@ -157,7 +149,7 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
           <ArrowRight size={16} className="ml-2" />
         </Button>
         {hasPasskey && (
-          <Button type="button" variant="outline" className="w-full">
+          <Button type="button" onClick={passkeyAuth} variant="outline" className="w-full">
             Use Passkey
             <KeySquare size={16} className="ml-2" />
           </Button>

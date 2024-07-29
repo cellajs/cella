@@ -75,40 +75,40 @@ export const resetPassword = async ({ token, password }: { token: string; passwo
 
 export const signOut = () => apiClient.auth['sign-out'].$get();
 
-export const getChallenge = async (userId: string) => {
-  const response = await apiClient.auth['passkey-challenge'].$get({ query: { userId } });
+export const getChallenge = async () => {
+  const response = await apiClient.auth['passkey-challenge'].$get();
   const json = await handleResponse(response);
   return json;
 };
 
 export const setPasskey = async ({
-  id,
   clientDataJSON,
   attestationObject,
+  email,
 }: {
-  id: string;
-  clientDataJSON: string;
   attestationObject: string;
+  clientDataJSON: string;
+  email: string;
 }) => {
   const apiResponse = await apiClient.auth['passkey-registration'].$post({
-    json: { id, clientDataJSON, attestationObject },
+    json: { attestationObject, clientDataJSON, email },
   });
   const json = await handleResponse(apiResponse);
   return json.success;
 };
 
-// export const authThroughPasskey = async ({
-//   credentialId,
-//   clientDataJSON,
-//   authenticatorData,
-//   signature,
-//   email,
-// }: { credentialId: string; clientDataJSON: string; authenticatorData: string; signature: string; email: string }) => {
-//   const response = await apiClient.auth['verify-passkey'].$post({ json: { credentialId, clientDataJSON, authenticatorData, signature, email } });
+export const authThroughPasskey = async ({
+  credentialId,
+  clientDataJSON,
+  authenticatorData,
+  signature,
+  email,
+}: { credentialId: string; clientDataJSON: string; authenticatorData: string; signature: string; email: string }) => {
+  const response = await apiClient.auth['verify-passkey'].$post({ json: { credentialId, clientDataJSON, authenticatorData, signature, email } });
 
-//   const json = await handleResponse(response);
-//   return json.data;
-// };
+  const json = await handleResponse(response);
+  return json.data;
+};
 
 // Check if user have passkey
 export const checkUserPasskey = async (email: string) => {

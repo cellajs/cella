@@ -1,9 +1,9 @@
 import { sign } from 'hono/jwt';
 import { env } from '../../env';
-import base64url from 'base64url';
-import { createHash } from 'node:crypto';
+import { createHash, createVerify } from 'node:crypto';
 import cbor from 'cbor';
 import { config } from 'config';
+import * as jose from 'jose';
 
 interface GenerateTokenOptions {
   userId: string;
@@ -29,40 +29,86 @@ export const generateElectricJWTToken = async ({ userId }: GenerateTokenOptions)
   );
 };
 
-export const base64UrlEncode = (arrayBuffer: Uint8Array) => {
-  const binaryString = String.fromCharCode.apply(null, Array.from(arrayBuffer));
-  return base64url.fromBase64(Buffer.from(binaryString, 'binary').toString('base64'));
-};
 export const base64UrlDecode = (base64urlStr: string) => {
-  const base64Str = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
-  const binaryStr = Buffer.from(base64Str, 'base64').toString('binary');
-  return Uint8Array.from(binaryStr.split('').map((char) => char.charCodeAt(0)));
+  let base64String = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64String.length % 4 !== 0) {
+    base64String += '=';
+  }
+  return Buffer.from(base64String, 'base64');
 };
 
-export async function extractCredentialData(attestationObjectBase64: string) {
-  const attestationObject = base64UrlDecode(attestationObjectBase64);
+export const parseAndValidateAttestation = (clientDataJSON: string, attestationObject: string, challengeFromCookie: string | undefined) => {
+  const clientData = JSON.parse(Buffer.from(base64UrlDecode(clientDataJSON)).toString());
 
-  // CBOR decode
-  const attestation = cbor.decodeFirstSync(Buffer.from(attestationObject));
-  const { fmt, authData } = attestation;
+  // Compare the challenge
+  if (clientData.challenge !== challengeFromCookie) throw new Error('Invalid challenge');
 
-  if (fmt !== 'none') throw new Error('Invalid attestation statement format');
+  const attestation = cbor.decode(base64UrlDecode(attestationObject));
+  // Validate the attestation statement format (should be 'none' in this example)
+  if (attestation.fmt !== 'none') throw new Error('Invalid attestation format');
 
-  // Parse authenticator data
-  const authDataBuf = Buffer.from(authData);
-  const rpIdHash = authDataBuf.subarray(0, 32);
+  const authData = attestation.authData;
+
+  // Parse the authenticator data
+  const rpIdHash = authData.slice(0, 32);
+  const flags = authData[32];
+  const userPresent = (flags & 0x01) !== 0;
+  const userVerified = (flags & 0x04) !== 0;
   const rpId = config.mode === 'development' ? 'localhost' : config.domain;
   const expectedRpIdHash = createHash('sha256').update(rpId).digest();
-  const flags = authDataBuf[32];
-  // const counter = authDataBuf.subarray(33, 37);
-  if ((flags & 1) !== 1) throw new Error('User not present');
+
+  if (!userPresent || !userVerified) throw new Error('User presence or verification failed');
   if (!rpIdHash.equals(expectedRpIdHash)) throw new Error('Invalid RP ID hash');
-  if (((flags >> 2) & 1) !== 1) throw new Error('User not verified');
+  const credentialIdLength = (authData[53] << 8) + authData[54];
+  const credentialIdBuffer = authData.slice(55, 55 + credentialIdLength);
+  const publicKeyBuffer = authData.slice(55 + credentialIdLength);
 
-  // Extract credential ID and public key
-  const credentialIdLength = authDataBuf.readUInt16BE(53);
-  const credentialId = authDataBuf.subarray(55, 55 + credentialIdLength);
-  const publicKey = authDataBuf.subarray(55 + credentialIdLength);
+  // Convert public key buffer to string for db
+  const publicKeyString = Buffer.from(publicKeyBuffer).toString('base64url');
+  const credentialIdString = Buffer.from(credentialIdBuffer).toString('base64url');
 
-  return { credentialId: base64UrlEncode(credentialId), publicKey: base64UrlEncode(publicKey) };
-}
+  return {
+    publicKey: publicKeyString,
+    credentialId: credentialIdString,
+  };
+};
+
+export const verifyKey = async (passedPublicKey: string, verifyData: Buffer, signature: string) => {
+  // Verify the signature
+  const publicKeyBuffer = base64UrlDecode(passedPublicKey);
+  const publicKey = await coseToPem(publicKeyBuffer);
+  const verify = createVerify('SHA256');
+  verify.update(verifyData);
+  verify.end();
+  const signatureBuffer = base64UrlDecode(signature);
+  return verify.verify(publicKey, signatureBuffer);
+};
+
+const coseToPem = async (coseKeyBuffer: ArrayBuffer) => {
+  // Decode COSE key
+  const coseKey = cbor.decode(coseKeyBuffer);
+
+  const kty = coseKey.get(1); // Key Type
+  const alg = coseKey.get(3); // Algorithm
+  const n = coseKey.get(-1); // Modulus
+  const e = coseKey.get(-2); // Exponent
+
+  // Check if kty is 3 (RSA)
+  if (kty !== 3) throw new Error('Unsupported key type');
+
+  if (!n || !e) throw new Error('Invalid RSA COSE key');
+
+  // Convert to JWK format
+  const jwk = {
+    kty: 'RSA',
+    alg: alg === -257 ? 'RS256' : '', // TODO adjust based of -7
+    n: n.toString('base64url'),
+    e: e.toString('base64url'),
+  };
+
+  // Import JWK and export SPKI
+  const key = await jose.importJWK(jwk, jwk.alg);
+  const pemKey = await jose.exportSPKI(key as jose.KeyObject);
+
+  return pemKey;
+};
