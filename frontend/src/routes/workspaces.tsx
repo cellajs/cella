@@ -13,7 +13,7 @@ import { membersSearchSchema } from './organizations';
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));
 const Board = lazy(() => import('~/modules/projects/board/board'));
-const TasksTable = lazy(() => import('~/modules/projects/tasks-table'));
+const TasksTable = lazy(() => import('~/modules/tasks/tasks-table'));
 const ElectricSuspense = lazy(() => import('~/modules/common/electric/suspense'));
 
 export const WorkspaceRoute = createRoute({

@@ -12,8 +12,8 @@ import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import AddProjects from '../../add-project';
-import LabelsTable from '../../labels-table';
+import AddProjects from '~/modules/projects/add-project';
+import LabelsTable from '~/modules/tasks/labels-table';
 import WorkspaceActions from './board-header-actions';
 import TaskSelectedTableButtons from './selected-buttons';
 

@@ -1,6 +1,6 @@
 import { recentlyUsed } from '~/lib/utils.ts';
 import type { Label, Task } from '~/modules/common/electric/electrify';
-import { sortTaskOrder } from '~/modules/projects/task/helpers';
+import { sortTaskOrder } from '~/modules/tasks/task/helpers';
 import type { Member } from '~/types';
 
 export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced: boolean, table?: boolean) => {
