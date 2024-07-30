@@ -74,9 +74,6 @@ importers:
       arctic:
         specifier: ^1.9.0
         version: 1.9.0
-      base64url:
-        specifier: ^3.0.1
-        version: 3.0.1
       cbor:
         specifier: ^9.0.2
         version: 9.0.2
@@ -110,6 +107,9 @@ importers:
       isbot:
         specifier: ^5.1.8
         version: 5.1.9
+      jose:
+        specifier: ^5.6.3
+        version: 5.6.3
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -328,11 +328,11 @@ importers:
         specifier: ^5.51.15
         version: 5.51.15(@tanstack/react-query@5.51.15)(react@18.3.1)
       '@tanstack/react-router':
-        specifier: 1.45.11
-        version: 1.45.11(react-dom@18.3.1)(react@18.3.1)
+        specifier: 1.45.14
+        version: 1.45.14(react-dom@18.3.1)(react@18.3.1)
       '@tanstack/router-devtools':
-        specifier: 1.45.11
-        version: 1.45.11(@tanstack/react-router@1.45.11)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1)
+        specifier: 1.45.14
+        version: 1.45.14(@tanstack/react-router@1.45.14)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1)
       '@uiw/react-md-editor':
         specifier: ^4.0.4
         version: 4.0.4(@types/react@18.3.3)(react-dom@18.3.1)(react@18.3.1)
@@ -9947,8 +9947,8 @@ packages:
       react: 18.3.1
     dev: false
 
-  /@tanstack/react-router@1.45.11(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-unVxPYsOwwMnyAW/ZeOCymWpstEV0tiUexUPqiCuYwb2rCwsrmjsgB4tIpVONHabPlFKrxoMbkUh5UCSpL0h+w==}
+  /@tanstack/react-router@1.45.14(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-eGSOaZI2urexpkoJb+SzOAnoZ61IuMzCzBziU6HD9b6lnySXQ2Z4LFGcHx2+BK5rzkGXtkfOoGLtQ2SE6lFTdA==}
     engines: {node: '>=12'}
     peerDependencies:
       react: '>=18'
@@ -9974,15 +9974,15 @@ packages:
       use-sync-external-store: 1.2.2(react@18.3.1)
     dev: false
 
-  /@tanstack/router-devtools@1.45.11(@tanstack/react-router@1.45.11)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-Na6L1lU00m18eqnWd4/Ex51LnCPGbsDpNNRu551tv3hlrtX9at4eJeI0ZOhv9IAKI2Ky3cW4OhvvHrtTalLCJg==}
+  /@tanstack/router-devtools@1.45.14(@tanstack/react-router@1.45.14)(csstype@3.1.3)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-BZ/TiN47uV9DFeULYvXSzKKgQU6ezmWmEfPaQsx35KWSLC4awOOo+A7AVDITURBxgZ+vB1vqGkGbLp7d34mGIQ==}
     engines: {node: '>=12'}
     peerDependencies:
-      '@tanstack/react-router': ^1.45.11
+      '@tanstack/react-router': ^1.45.14
       react: '>=18'
       react-dom: '>=18'
     dependencies:
-      '@tanstack/react-router': 1.45.11(react-dom@18.3.1)(react@18.3.1)
+      '@tanstack/react-router': 1.45.14(react-dom@18.3.1)(react@18.3.1)
       clsx: 2.1.1
       goober: 2.1.14(csstype@3.1.3)
       react: 18.3.1
@@ -11361,11 +11361,6 @@ packages:
   /base64id@2.0.0:
     resolution: {integrity: sha512-lGe34o6EHj9y3Kts9R4ZYs/Gr+6N7MCaMlIFA3F1R2O5/m7K06AxfSeO5530PEERE6/WyEg3lsuyw4GHlPZHog==}
     engines: {node: ^4.5.0 || >= 5.9}
-    dev: false
-
-  /base64url@3.0.1:
-    resolution: {integrity: sha512-ir1UPr3dkwexU7FdV8qBBbNDRUhMmIekYMFZfi+C/sLNnRESKPl23nB9b2pltqfOQNnGzsDdId90AEtG5tCx4A==}
-    engines: {node: '>=6.0.0'}
     dev: false
 
   /bcp-47-match@2.0.3:
@@ -14759,6 +14754,10 @@ packages:
 
   /jose@4.15.9:
     resolution: {integrity: sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==}
+
+  /jose@5.6.3:
+    resolution: {integrity: sha512-1Jh//hEEwMhNYPDDLwXHa2ePWgWiFNNUadVmguAAw2IJ6sj9mNxV5tGXJNqlMkJAybF6Lgw1mISDxTePP/187g==}
+    dev: false
 
   /joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
