@@ -9,7 +9,7 @@ import { Kbd } from '~/modules/common/kbd.tsx';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Member } from '~/types/index.ts';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../../../ui/command.tsx';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
 
 interface AssignMembersProps {

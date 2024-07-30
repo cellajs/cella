@@ -7,7 +7,6 @@ import { cn } from '~/lib/utils.ts';
 import type { Task } from '~/modules/common/electric/electrify.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import { Checkbox } from '../../ui/checkbox.tsx';
 import { impacts } from './task-selectors/select-impact.tsx';
 import { type TaskStatus, statusVariants, taskStatuses } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
@@ -15,7 +14,6 @@ import './style.css';
 
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
-import { Badge } from '../../ui/badge.tsx';
 import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
@@ -27,8 +25,10 @@ import { getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { Mode } from '~/store/theme.ts';
 import type { DraggableItemData } from '~/types';
-import TaskMarkdown from './task-card-content.tsx';
+import TaskMarkdown from './task-content.tsx';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { Checkbox } from '~/modules/ui/checkbox.tsx';
+import { Badge } from '~/modules/ui/badge.tsx';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {

@@ -15,8 +15,8 @@ import { type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '../../../ui/form.tsx';
-import { getNewTaskOrder } from '../helpers.ts';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import { getNewTaskOrder } from './helpers.ts';
 
 const formSchema = z.object({
   id: z.string(),

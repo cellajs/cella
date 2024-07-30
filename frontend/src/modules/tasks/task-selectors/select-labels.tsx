@@ -9,8 +9,8 @@ import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import { type Label, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
-import { Badge } from '../../../ui/badge.tsx';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '../../../ui/command.tsx';
+import { Badge } from '~/modules/ui/badge.tsx';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
 
 export const badgeStyle = (color?: string | null) => {

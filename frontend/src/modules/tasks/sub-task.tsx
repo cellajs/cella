@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { DraggableItemData } from '~/types';
-import { TaskEditor } from '../task-selectors/task-editor';
+import { TaskEditor } from './task-selectors/task-editor';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {

@@ -2,8 +2,8 @@ import MDEditor from '@uiw/react-md-editor';
 import { useTranslation } from 'react-i18next';
 import type { Task } from '~/modules/common/electric/electrify';
 import type { Mode } from '~/store/theme';
-import CreateSubTaskForm from './sub-task/create-sub-task-form';
-import SubTask from './sub-task/sub-task-card';
+import CreateSubTaskForm from './create-sub-task-form';
+import SubTask from './sub-task';
 import { TaskEditor } from './task-selectors/task-editor';
 import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
@@ -18,7 +18,7 @@ interface Props {
   isSheet?: boolean;
 }
 
-const ExpandedTask = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskChange }: Props) => {
+const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskChange }: Props) => {
   const { t } = useTranslation();
 
   const [createSubTask, setCreateSubTask] = useState(false);
@@ -104,4 +104,4 @@ const ExpandedTask = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCh
   );
 };
 
-export default ExpandedTask;
+export default TaskContent;

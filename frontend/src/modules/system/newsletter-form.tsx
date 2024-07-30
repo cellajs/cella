@@ -15,7 +15,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { sheet } from '../common/sheeter/state';
+import { sheet } from '~/modules/common/sheeter/state';
 
 interface NewsletterFormProps {
   sheet?: boolean;

@@ -151,7 +151,6 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
 
 export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   const queryClient = useQueryClient();
-  //TODO fix types
   return (
     items: Workspace[] | Project[] | Membership[],
     action:

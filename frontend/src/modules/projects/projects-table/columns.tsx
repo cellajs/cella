@@ -32,10 +32,8 @@ export const useColumns = (sheet?: boolean) => {
           );
         return (
           <Link
-            to="/workspaces/$idOrSlug"
+            to={`/workspaces/${row.workspaceId}/board?project=${row.slug}`}
             tabIndex={tabIndex}
-            // TODO: Fix this
-            params={{ idOrSlug: row.workspaceId || row.id }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >
             <AvatarWrap type="project" className="h-8 w-8" id={row.id} name={row.name} />

@@ -1,6 +1,6 @@
 import DataGrid from 'react-data-grid';
 import { Check } from 'lucide-react';
-import { statusFillColors, taskStatuses, type TaskStatus } from '../../task/task-selectors/select-status';
+import { statusFillColors, taskStatuses, type TaskStatus } from '~/modules/tasks/task-selectors/select-status';
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
