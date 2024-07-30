@@ -1,10 +1,11 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
-import { Fragment, lazy } from 'react';
+import { Fragment, lazy, useEffect } from 'react';
 import { Suspense } from 'react';
 import { useThemeStore } from '~/store/theme';
 
+import router from '~/lib/router';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -18,6 +19,7 @@ import { NavButton } from './app-nav-button';
 import { AppSearch } from './app-search';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useWorkspaceStore } from '~/store/workspace';
+import { sheet } from './sheeter/state';
 
 export type NavItem = {
   id: string;
@@ -40,7 +42,8 @@ const AppNav = () => {
   const navigate = useNavigate();
   const { hasStarted } = useMounted();
   const isSmallScreen = useBreakpoints('max', 'xl');
-  const { activeSheet, setSheet, focusView } = useNavigationStore();
+  const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
+
   const { focusedTaskId } = useWorkspaceStore();
   const { theme } = useThemeStore();
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
@@ -77,6 +80,23 @@ const AppNav = () => {
     ['H', () => navButtonClick(navItems[1])],
     ['M', () => navButtonClick(navItems[0])],
   ]);
+
+  useEffect(() => {
+    router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
+      if (toLocation.pathname !== fromLocation.pathname) {
+        // Disable focus view
+        setFocusView(false);
+        // Remove sheets in content
+        sheet.remove();
+        // Remove navigation sheet
+        setSheet(null, 'routeChange');
+      }
+      pathChanged && setLoading(true);
+    });
+    router.subscribe('onLoad', () => {
+      setLoading(false);
+    });
+  }, []);
 
   return (
     <>

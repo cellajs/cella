@@ -1,38 +1,17 @@
 import { useIsFetching } from '@tanstack/react-query';
 import { config } from 'config';
 import { Home } from 'lucide-react';
-import { useEffect } from 'react';
 import useMounted from '~/hooks/use-mounted';
-import router from '~/lib/router';
 import { useNavigationStore } from '~/store/navigation';
 import Logo from './logo';
-import { sheet } from './sheeter/state';
 
 const AppNavLoader = () => {
   const { hasWaited } = useMounted();
-  const { setSheet, navLoading, setLoading, setFocusView } = useNavigationStore();
+  const { navLoading } = useNavigationStore();
   const isFetching = useIsFetching();
 
   // Show loading spinner when fetching data or navigating
   const isLoading = isFetching > 0 || navLoading;
-
-  useEffect(() => {
-    // TODO: move this to a more general location?
-    router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
-      if (toLocation.pathname !== fromLocation.pathname) {
-        // Disable focus view
-        setFocusView(false);
-        // Remove sheets in content
-        sheet.remove();
-        // Remove navigation sheet
-        setSheet(null, 'routeChange');
-      }
-      pathChanged && setLoading(true);
-    });
-    router.subscribe('onLoad', () => {
-      setLoading(false);
-    });
-  }, []);
 
   return (
     <>

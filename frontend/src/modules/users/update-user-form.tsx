@@ -5,7 +5,7 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { User } from '~/types';
-import AvatarFormField from '../common/form-fields/avatar';
+import AvatarFormField from '~/modules/common/form-fields/avatar';
 
 import { updateSelf } from '~/api/me';
 import { type UpdateUserParams, updateUser } from '~/api/users';
@@ -23,11 +23,11 @@ import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useUserStore } from '~/store/user';
-import InputFormField from '../common/form-fields/input';
-import { SelectLanguage } from '../common/form-fields/language-selector';
-import { SlugFormField } from '../common/form-fields/slug';
-import { isSheet as checkSheet, sheet } from '../common/sheeter/state';
-import { useStepper } from '../common/stepper/use-stepper';
+import InputFormField from '~/modules/common/form-fields/input';
+import { SelectLanguage } from '~/modules/common/form-fields/language-selector';
+import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 
 interface UpdateUserFormProps {
   user: User;
@@ -99,15 +99,10 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         if (isSelf) {
           updateUser(updatedUser);
           toast.success(t('common:success.you_updated'));
-        } else {
-          toast.success(t('common:success.updated_user'));
-        }
-        //TODO: this function is executed every render when clicking upload image button, perhaps because of getValues("thumbnailUrl"), it should be executed only when the user is updated?
-        if (isSheet) sheet.remove('update-user');
-
+        } else toast.success(t('common:success.updated_user'));
         form.reset(updatedUser);
         callback?.(updatedUser);
-
+        if (isSheet) sheet.remove('update-user');
         nextStep?.();
       },
     });
