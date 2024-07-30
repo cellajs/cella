@@ -18,7 +18,7 @@
     "seed:user": "tsx seed/user/index.ts",
     "seed:organizations": "tsx seed/organizations/index.ts",
     "seed:data": "tsx seed/data/index.ts",
-    "seed": "pnpm run seed:user && pnpm run seed:organizations && pnpm run seed:data",
+    "seed": "tsx scripts/seed.ts",
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
     "electric:generate": "drizzle-kit generate --config drizzle.config.electric.ts",
     "electric:generate:custom": "drizzle-kit generate --config drizzle.config.electric.ts --custom",
