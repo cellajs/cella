@@ -48,7 +48,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
     };
   });
 
-  // await db.insert(organizationsTable).values(organizations).onConflictDoNothing();
+  await db.insert(organizationsTable).values(organizations).onConflictDoNothing();
 
   const hashedPassword = await new Argon2id().hash('12345678');
 
