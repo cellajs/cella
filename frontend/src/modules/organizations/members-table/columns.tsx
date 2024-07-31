@@ -12,7 +12,8 @@ import { renderSelect } from '~/modules/common/data-table/select-column';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean, isSheet: boolean) => {
-  const mobileColumns: ColumnOrColumnGroup<Member>[] = [
+  const columns: ColumnOrColumnGroup<Member>[] = [
+    ...(isAdmin ? [CheckboxColumn] : []),
     {
       key: 'name',
       name: t('common:name'),
@@ -36,13 +37,11 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
         </Link>
       ),
     },
-  ];
-  const columns: ColumnOrColumnGroup<Member>[] = [
     {
       key: 'email',
       name: t('common:email'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       minWidth: 140,
       renderCell: ({ row, tabIndex }) => {
@@ -57,7 +56,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       key: 'role',
       name: t('common:role'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => t(row.membership.role),
       width: 100,
@@ -74,7 +73,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       key: 'createdAt',
       name: t('common:created_at'),
       sortable: true,
-      visible: !isSheet,
+      visible: !isSheet && !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.createdAt),
       minWidth: 180,
@@ -83,14 +82,12 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       key: 'lastSeenAt',
       name: t('common:last_seen_at'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.lastSeenAt),
       minWidth: 180,
     },
   ];
 
-  if (isAdmin) mobileColumns.unshift(CheckboxColumn);
-
-  return isMobile ? mobileColumns : [...mobileColumns, ...columns];
+  return columns;
 };

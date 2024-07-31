@@ -14,7 +14,7 @@ export const useColumns = (sheet?: boolean) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const mobileColumns: ColumnOrColumnGroup<Project>[] = [
+  const columns: ColumnOrColumnGroup<Project>[] = [
     CheckboxColumn,
     {
       key: 'name',
@@ -42,60 +42,54 @@ export const useColumns = (sheet?: boolean) => {
         );
       },
     },
+    {
+      key: 'role',
+      name: t('common:role'),
+      sortable: false,
+      visible: !isMobile,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role) : '-'),
+      width: 120,
+    },
+    ...(!sheet
+      ? [
+          {
+            key: 'createdAt',
+            name: t('common:created_at'),
+            sortable: true,
+            visible: true,
+            renderHeaderCell: HeaderCell,
+            renderCell: ({ row }: { row: Project }) => dateShort(row.createdAt),
+          },
+        ]
+      : []),
+    {
+      key: 'memberCount',
+      name: t('common:members'),
+      sortable: false,
+      visible: !isMobile,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (
+        <>
+          <UserRound className="mr-2 opacity-50" size={16} />
+          {row.counts.memberships.members}
+        </>
+      ),
+    },
+    {
+      key: 'adminCount',
+      name: t('common:admins'),
+      sortable: false,
+      visible: !isMobile,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => (
+        <>
+          <Shield className="mr-2 opacity-50" size={16} />
+          {row.counts.memberships.admins}
+        </>
+      ),
+    },
   ];
 
-  return useState<ColumnOrColumnGroup<Project>[]>(
-    isMobile
-      ? mobileColumns
-      : [
-          ...mobileColumns,
-          {
-            key: 'role',
-            name: t('common:role'),
-            sortable: false,
-            visible: true,
-            renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role) : '-'),
-            width: 120,
-          },
-          ...(!sheet
-            ? [
-                {
-                  key: 'createdAt',
-                  name: t('common:created_at'),
-                  sortable: true,
-                  visible: true,
-                  renderHeaderCell: HeaderCell,
-                  renderCell: ({ row }: { row: Project }) => dateShort(row.createdAt),
-                },
-              ]
-            : []),
-          {
-            key: 'memberCount',
-            name: t('common:members'),
-            sortable: false,
-            visible: true,
-            renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (
-              <>
-                <UserRound className="mr-2 opacity-50" size={16} />
-                {row.counts.memberships.members}
-              </>
-            ),
-          },
-          {
-            key: 'adminCount',
-            name: t('common:admins'),
-            sortable: false,
-            visible: true,
-            renderHeaderCell: HeaderCell,
-            renderCell: ({ row }) => (
-              <>
-                <Shield className="mr-2 opacity-50" size={16} />
-                {row.counts.memberships.admins}
-              </>
-            ),
-          },
-        ],
-  );
+  return useState<ColumnOrColumnGroup<Project>[]>(columns);
 };

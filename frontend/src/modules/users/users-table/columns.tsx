@@ -19,7 +19,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const mobileColumns: ColumnOrColumnGroup<User>[] = [
+  const columns: ColumnOrColumnGroup<User>[] = [
     CheckboxColumn,
     {
       key: 'name',
@@ -51,13 +51,11 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       width: 32,
       renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} callback={callback} />,
     },
-  ];
-  const columns: ColumnOrColumnGroup<User>[] = [
     {
       key: 'email',
       name: t('common:email'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       minWidth: 140,
       renderCell: ({ row, tabIndex }) => {
@@ -72,7 +70,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       key: 'role',
       name: t('common:role'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => t(row.role),
       width: 100,
@@ -87,7 +85,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       key: 'createdAt',
       name: t('common:created_at'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.createdAt),
       minWidth: 180,
@@ -96,7 +94,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       key: 'lastSeenAt',
       name: t('common:last_seen_at'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.lastSeenAt),
       minWidth: 180,
@@ -105,7 +103,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       key: 'membershipCount',
       name: 'Memberships',
       sortable: false,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <>
@@ -116,6 +114,5 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       width: 140,
     },
   ];
-
-  return useState<ColumnOrColumnGroup<User>[]>(isMobile ? mobileColumns : [...mobileColumns, ...columns]);
+  return useState<ColumnOrColumnGroup<User>[]>(columns);
 };

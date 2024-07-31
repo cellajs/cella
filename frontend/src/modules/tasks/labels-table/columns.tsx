@@ -8,7 +8,7 @@ import type { Label } from '~/modules/common/electric/electrify';
 export const useColumns = () => {
   const { t } = useTranslation();
 
-  const mobileColumns: ColumnOrColumnGroup<Label>[] = [
+  const columns: ColumnOrColumnGroup<Label>[] = [
     CheckboxColumn,
     {
       key: 'name',
@@ -36,5 +36,5 @@ export const useColumns = () => {
     // },
   ];
 
-  return useState<ColumnOrColumnGroup<Label>[]>(mobileColumns);
+  return useState<ColumnOrColumnGroup<Label>[]>(columns);
 };
