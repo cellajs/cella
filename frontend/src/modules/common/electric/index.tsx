@@ -9,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { ElectricProvider as BaseElectricProvider, type Electric, schema } from './electrify';
+
 interface Props {
   children: React.ReactNode;
 }
@@ -27,14 +28,12 @@ function deleteDB(dbName: string) {
 
 const ElectricProvider = ({ children }: Props) => {
   const user = useUserStore((state) => state.user);
-  // TODO: Temporary fix to prevent loading all projects and labels. Only sync the projects and labels of organizations the user is a member of.
-  // TODO: Consider exposing organizationIds the user is part of on the user object, as the menu can be undefined.
+  // TODO: Consider exposing projectIds other way so we can  prevent loading all. Only sync the tasks and labels of projects the user is a member of and it's not archived.
   const { menu } = useNavigationStore();
 
   const [electric, setElectric] = useState<Electric>();
   const [showAlert, setShowAlert] = useState(true);
 
-  // TODO: can we move this out of a useEffect?
   useEffect(() => {
     let isMounted = true;
 
@@ -51,9 +50,7 @@ const ElectricProvider = ({ children }: Props) => {
         });
 
         // Wait until the user is loaded
-        if (!isMounted || !user || !user.electricJWTToken) {
-          return;
-        }
+        if (!isMounted || !user || !user.electricJWTToken) return;
 
         // Connect to the server with the user's JWT token.
         await electric.connect(user.electricJWTToken);
@@ -71,8 +68,9 @@ const ElectricProvider = ({ children }: Props) => {
 
         // Resolves when the shape subscription has been established.
         // TODO: Improve the following section by deriving project IDs differently.
-        // TODO: Update projectIds to sync whenever the user's menu changes.
-        const projectIds = menu.workspaces.flatMap((workspace) => workspace.submenu?.map((project) => project.id) || []);
+        const projectIds = menu.workspaces
+          .filter((w) => !w.membership.archived)
+          .flatMap((w) => w.submenu?.filter((p) => !p.membership.archived).map((p) => p.id) || []);
         const tasksShape = await electric.db.tasks.sync({
           where: {
             project_id: {
@@ -108,7 +106,7 @@ const ElectricProvider = ({ children }: Props) => {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [menu]);
 
   const closeAlert = () => {
     setShowAlert(false);
