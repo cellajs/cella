@@ -109,9 +109,9 @@ const SubTask = ({
     <div
       ref={subTaskRef}
       id="sub-item"
-      className={`relative flex items-center gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'}  bg-secondary`}
+      className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'}  bg-secondary`}
     >
-      <div className="flex flex-col justify-between items-center gap-2 relative">
+      <div className="flex flex-col gap-2 relative">
         <Checkbox
           className={cn(
             'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
@@ -125,7 +125,7 @@ const SubTask = ({
           }}
         />
       </div>
-      <div className="flex flex-col grow gap-2 mx-1">
+      <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
         {isEditing ? (
           <TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
         ) : (
