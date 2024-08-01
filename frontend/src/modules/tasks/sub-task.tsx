@@ -56,11 +56,10 @@ const SubTask = ({
     const summaryFromMarkDown = markdownValue.split('\n')[0];
     handleTaskChange('markdown', markdownValue, task.id);
     handleTaskChange('summary', summaryFromMarkDown, task.id);
-    setIsEditing(false);
   };
 
   useDoubleClick({
-    onSingleClick: () => setIsEditing(!isEditing),
+    onSingleClick: () => setIsEditing(true),
     allowedTargets: ['p', 'div'],
     ref: subTaskRef,
   });
@@ -126,17 +125,22 @@ const SubTask = ({
         />
       </div>
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
-        {isEditing ? (
-          <TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
-        ) : (
-          <div ref={subContentRef} className="inline">
+        <div ref={subContentRef} className="inline">
+          {isEditing ? (
+            <TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
+          ) : (
             <MDEditor.Markdown
               source={isEditing ? task.markdown || '' : task.summary}
               style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
               className={`${isEditing ? 'markdown' : 'summary'} inline before:!content-none after:!content-none prose font-light text-start max-w-none`}
             />
-          </div>
-        )}
+          )}
+          {task.summary !== task.markdown && (
+            <Button onClick={() => setIsEditing(!isEditing)} variant="link" size="micro" className="py-0 ml-1">
+              {t(`common:${isEditing ? 'less' : 'more'}`).toLowerCase()}
+            </Button>
+          )}
+        </div>
       </div>
       <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer opacity-30">
         <span className="sr-only">{t('common:move_task')}</span>

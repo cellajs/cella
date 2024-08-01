@@ -1,13 +1,13 @@
 import MDEditor from '@uiw/react-md-editor';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import type { Task } from '~/modules/common/electric/electrify';
+import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import CreateSubTaskForm from './create-sub-task-form';
 import SubTask from './sub-task';
 import { TaskEditor } from './task-selectors/task-editor';
-import { useState } from 'react';
-import { Button } from '~/modules/ui/button';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 
 interface Props {
   task: Task;
@@ -40,9 +40,12 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
           />
 
           <div className="opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 inline ml-1 font-light gap-1">
-            <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5 ml-1">
-              {t('common:more').toLowerCase()}
-            </Button>
+            {(task.summary !== task.markdown || task.subTasks.length > 0) && (
+              <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5 ml-1">
+                {t('common:more').toLowerCase()}
+              </Button>
+            )}
+
             {task.subTasks.length > 0 && (
               <div className="inline-flex py-0 h-5 ml-1 gap-[.1rem]">
                 <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
@@ -68,12 +71,15 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
             />
           )}
 
-          {!isSheet && (
-            <div>
+          {task.subTasks.length > 0 || task.summary !== task.markdown ? (
+            <div className={`${isSheet ? 'hidden' : ''}`}>
               <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">
                 {t('common:less').toLowerCase()}
               </Button>
             </div>
+          ) : (
+            // so ChevronUp can be clickable and add todo don't break UI
+            <div className="h-8" />
           )}
           {task.subTasks.length > 0 && (
             <div className="inline-flex py-0 h-4 items-center mt-4 gap-1 text-sm">
