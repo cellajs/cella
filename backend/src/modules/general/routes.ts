@@ -15,6 +15,24 @@ import {
 } from './schema';
 
 class GeneralRoutesConfig {
+  public getMetrics = createRouteConfig({
+    method: 'get',
+    path: '/metrics',
+    guard: isPublicAccess,
+    tags: ['general'],
+    summary: 'Get metrics',
+    responses: {
+      200: {
+        description: 'Metrics',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(z.any()),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
   public getPublicCounts = createRouteConfig({
     method: 'get',
     path: '/public/counts',

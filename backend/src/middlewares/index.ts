@@ -7,11 +7,14 @@ import { CustomHono } from '../types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
 import { rateLimiter } from './rate-limiter';
+import { observatoryMiddleware } from './observatoryMiddleware';
 
 const app = new CustomHono();
 
 // Secure headers
 app.use('*', secureHeaders());
+
+app.use('*', observatoryMiddleware);
 
 // Sentry
 app.use(
