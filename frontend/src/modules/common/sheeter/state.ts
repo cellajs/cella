@@ -12,9 +12,12 @@ export type SheetAction = {
 };
 
 class SheetsStateObserver {
+  // Array to store the current sheets
   private sheets: SheetT[] = [];
+  // Array to store subscribers that will be notified of changes
   private subscribers: Array<(action: SheetAction & SheetT) => void> = [];
 
+  // Method to subscribe to changes
   subscribe = (callback: (action: SheetAction & SheetT) => void) => {
     this.subscribers.push(callback);
     return () => {
@@ -22,27 +25,34 @@ class SheetsStateObserver {
     };
   };
 
+  // Notify all subscribers of a change
   private notifySubscribers = (action: SheetAction & SheetT) => {
     for (const sub of this.subscribers) sub(action);
   };
 
+  // Retrieve a sheet by its ID
   get = (id: number | string) => this.sheets.find((sheet) => sheet.id === id);
 
+  // Add or update a sheet and notify subscribers
   set = (sheet: SheetT) => {
     this.sheets = [...this.sheets.filter((s) => s.id !== sheet.id), sheet];
     this.notifySubscribers(sheet);
   };
 
+  // Remove a sheet by its ID or clear all sheets and notify subscribers
   remove = (id?: number | string) => {
     if (id) {
+      // Remove a specific sheet by ID
       this.sheets = this.sheets.filter((sheet) => sheet.id !== id);
       this.notifySubscribers({ id, remove: true });
     } else {
+      // Remove all sheets
       for (const sheet of this.sheets) this.notifySubscribers({ id: sheet.id, remove: true });
       this.sheets = [];
     }
   };
 
+  // Update an existing sheet or create a new one with the provided updates
   update = (id: number | string, updates: Partial<SheetT>, leavePrevData = true) => {
     const existingSheet = leavePrevData ? this.get(id) : undefined;
     this.set({
@@ -51,8 +61,9 @@ class SheetsStateObserver {
     });
   };
 
+  // Create a new sheet with the given content and optional additional data
   create = (content: React.ReactNode, data?: Omit<SheetT, 'content'>) => {
-    const id = data?.id || Date.now();
+    const id = data?.id || Date.now(); // Use existing ID or generate a new one
     this.set({ id, content, ...data });
     return id;
   };
