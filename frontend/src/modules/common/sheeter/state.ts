@@ -33,6 +33,9 @@ class SheetsStateObserver {
   // Retrieve a sheet by its ID
   get = (id: number | string) => this.sheets.find((sheet) => sheet.id === id);
 
+  // Retrieve a all sheets
+  getAll = () => this.sheets;
+
   // Add or update a sheet and notify subscribers
   set = (sheet: SheetT) => {
     this.sheets = [...this.sheets.filter((s) => s.id !== sheet.id), sheet];
@@ -76,4 +79,5 @@ export const sheet = Object.assign({
   remove: SheetObserver.remove,
   update: SheetObserver.update,
   get: SheetObserver.get,
+  getAll: SheetObserver.getAll,
 });

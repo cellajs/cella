@@ -68,17 +68,17 @@ const AppNav = () => {
     setSheet(isNew ? navItem : null);
   };
 
+  const buttonsClick = (index: number) => {
+    if (index === 3 && focusedTaskId) return;
+    if (sheet.getAll().length) return;
+    navButtonClick(navItems[index]);
+  };
+
   useHotkeys([
-    [
-      'A',
-      () => {
-        if (focusedTaskId) return;
-        navButtonClick(navItems[3]);
-      },
-    ],
-    ['F', () => navButtonClick(navItems[2])],
-    ['H', () => navButtonClick(navItems[1])],
-    ['M', () => navButtonClick(navItems[0])],
+    ['A', () => buttonsClick(3)],
+    ['F', () => buttonsClick(2)],
+    ['H', () => buttonsClick(1)],
+    ['M', () => buttonsClick(0)],
   ]);
 
   useEffect(() => {

@@ -36,6 +36,7 @@ import { useLiveQuery } from 'electric-sql/react';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useThemeStore } from '~/store/theme';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import FocusTrap from '~/modules/common/focus-trap';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -188,13 +189,19 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     const { taskId, direction, projectId } = event.detail;
     if (projectId !== project.id) return;
     const currentFocusedIndex = showingTasks.findIndex((t) => t.id === taskId);
-    const newFocusedTask = showingTasks[currentFocusedIndex + direction];
-    setFocusedTaskId(newFocusedTask.id);
+    const { id } = showingTasks[currentFocusedIndex + direction];
+    const taskCard = document.getElementById(id);
+    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
+
+    setFocusedTaskId(id);
   };
 
   const handleProjectChangeEventListener = (event: CustomEventEventById) => {
     if (event.detail !== project.id) return;
-    setFocusedTaskId(showingTasks[0].id);
+    const { id } = showingTasks[0];
+    const taskCard = document.getElementById(id);
+    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
+    setFocusedTaskId(id);
   };
 
   useEventListener('taskChange', handleTaskChangeEventListener);
@@ -336,17 +343,18 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                       )}
                     </Button>
                     {showingTasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        isExpanded={expandedTasks[task.id] || false}
-                        isSelected={selectedTasks.includes(task.id)}
-                        isFocused={task.id === focusedTaskId}
-                        handleTaskChange={handleChange}
-                        handleTaskActionClick={handleTaskActionClick}
-                        handleTaskSelect={handleTaskSelect}
-                        mode={mode}
-                      />
+                      <FocusTrap key={task.id} mainElementId={task.id} active={task.id === focusedTaskId}>
+                        <TaskCard
+                          task={task}
+                          isExpanded={expandedTasks[task.id] || false}
+                          isSelected={selectedTasks.includes(task.id)}
+                          isFocused={task.id === focusedTaskId}
+                          handleTaskChange={handleChange}
+                          handleTaskActionClick={handleTaskActionClick}
+                          handleTaskSelect={handleTaskSelect}
+                          mode={mode}
+                        />
+                      </FocusTrap>
                     ))}
                     <Button
                       onClick={handleIcedClick}
