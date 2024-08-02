@@ -26,6 +26,7 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
+
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
@@ -178,7 +179,7 @@ const OrganizationsTable = () => {
   };
 
   const openNewsletterSheet = () => {
-    sheet(<NewsletterForm sheet />, {
+    sheet.create(<NewsletterForm sheet />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:newsletter'),
       text: t('common:newsletter.text'),

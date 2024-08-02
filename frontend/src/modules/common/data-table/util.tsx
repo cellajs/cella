@@ -3,7 +3,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { UserProfile } from '~/modules/users/user-profile';
 
 export const openUserPreviewSheet = (user: User) => {
-  sheet(<UserProfile sheet user={user} />, {
+  sheet.create(<UserProfile sheet user={user} />, {
     className: 'max-w-full lg:max-w-4xl p-0',
     id: 'user-preview',
   });

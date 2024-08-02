@@ -179,7 +179,7 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
             ...data,
             projects: data.projects.map((existingProject) => {
               const updatedItem = (items as unknown as WorkspaceStoreProject[]).find((newProject) => existingProject.id === newProject.id);
-              return updatedItem ? updatedItem : existingProject;
+              return updatedItem ? { ...updatedItem, ...{ members: existingProject.members } } : existingProject;
             }),
           };
 

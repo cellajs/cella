@@ -127,7 +127,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
       },
     ];
 
-    sheet(<SheetNav tabs={projectTabs} />, {
+    sheet.create(<SheetNav tabs={projectTabs} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:project_settings'),
       text: t('common:project_settings.text'),

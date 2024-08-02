@@ -19,7 +19,7 @@ import { NavButton } from './app-nav-button';
 import { AppSearch } from './app-search';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useWorkspaceStore } from '~/store/workspace';
-import { sheet } from './sheeter/state';
+import { sheet } from '~/modules/common/sheeter/state';
 
 export type NavItem = {
   id: string;

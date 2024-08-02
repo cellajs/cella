@@ -14,7 +14,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
-import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
+import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import InputFormField from '../common/form-fields/input';
@@ -87,14 +87,13 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
     if (!isSheet) return;
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('edit-workspace');
-      if (targetSheet && checkSheet(targetSheet)) {
+      if (targetSheet) {
         sheet.update('edit-workspace', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
         return;
       }
     }
-    sheet.reset('edit-workspace');
   }, [form.unsavedChanges]);
 
   return (

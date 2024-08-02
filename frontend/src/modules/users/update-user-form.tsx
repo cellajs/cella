@@ -26,7 +26,7 @@ import { useUserStore } from '~/store/user';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/language-selector';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
+import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 
 interface UpdateUserFormProps {
@@ -112,14 +112,13 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-user');
-      if (targetSheet && checkSheet(targetSheet)) {
+      if (targetSheet) {
         sheet.update('update-user', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
       }
       return;
     }
-    sheet.reset('update-user');
   }, [form.unsavedChanges]);
 
   const setImageUrl = (url: string) => {

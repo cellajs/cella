@@ -28,7 +28,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
   const [showAll, setShowAll] = useState(false);
 
   const currentProject = projects.find((p) => p.id === projectId);
-  const members = currentProject ? currentProject.members : [];
+  const members = currentProject?.members || [];
   const sortedMembers = [...members].sort((a, b) => {
     const aSelected = selectedMembers.some((user) => user.id === a.id) ? 1 : 0;
     const bSelected = selectedMembers.some((user) => user.id === b.id) ? 1 : 0;

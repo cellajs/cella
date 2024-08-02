@@ -112,22 +112,6 @@ export default function TasksTable() {
     setSelectedTasks(Array.from(selectedRows));
   };
 
-  useEffect(() => {
-    if (!tasks.length || !focusedTaskId || !sheet.get(`task-card-preview-${focusedTaskId}`)) return;
-    const relativeTasks = tasks.filter((t) => t.id === focusedTaskId || t.parent_id === focusedTaskId);
-    const [currentTask] = tasks.filter((t) => t.id === focusedTaskId);
-    const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
-    const [task] = enhanceTasks(relativeTasks, labels, members);
-    sheet.update(`task-card-preview-${task.id}`, {
-      content: <TaskSheet task={task} />,
-    });
-  }, [tasks, focusedTaskId]);
-
-  useEffect(() => {
-    if (search.q?.length) setSearchQuery(search.q);
-    setFocusedTaskId(null);
-  }, []);
-
   // useEffect(() => {
   //   if (fetchedTasks) {
   //     let filteredTasks = filterBy(fetchedTasks, selectedProjects, selectedStatuses);
@@ -158,10 +142,10 @@ export default function TasksTable() {
   const handleOpenPreview = (event: CustomEventEventById) => {
     const taskId = event.detail;
     const relativeTasks = tasks.filter((t) => t.id === taskId || t.parent_id === taskId);
-    const [currentTask] = tasks.filter((t) => t.id === taskId);
+    const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
     const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
     const [task] = enhanceTasks(relativeTasks, labels, members);
-    sheet(<TaskSheet task={task} />, {
+    sheet.create(<TaskSheet task={task} />, {
       className: 'max-w-full lg:max-w-4xl p-0',
       title: <span className="pl-4">Task</span>,
       text: <span className="pl-4">View and manage a specific task</span>,
@@ -171,6 +155,22 @@ export default function TasksTable() {
   };
 
   useEventListener('openTaskCardPreview', handleOpenPreview);
+
+  useEffect(() => {
+    if (!tasks.length || !sheet.get(`task-card-preview-${focusedTaskId}`)) return;
+    const relativeTasks = tasks.filter((t) => t.id === focusedTaskId || t.parent_id === focusedTaskId);
+    const [currentTask] = relativeTasks.filter((t) => t.id === focusedTaskId);
+    const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
+    const [task] = enhanceTasks(relativeTasks, labels, members);
+    sheet.update(`task-card-preview-${task.id}`, {
+      content: <TaskSheet task={task} />,
+    });
+  }, [tasks, focusedTaskId]);
+
+  useEffect(() => {
+    if (search.q?.length) setSearchQuery(search.q);
+    setFocusedTaskId(null);
+  }, []);
 
   return (
     <>

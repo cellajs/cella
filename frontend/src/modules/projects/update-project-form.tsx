@@ -17,7 +17,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
+import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -89,14 +89,13 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
     if (!isSheet) return;
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('edit-project');
-      if (targetSheet && checkSheet(targetSheet)) {
+      if (targetSheet) {
         sheet.update('edit-project', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
         return;
       }
     }
-    sheet.reset('edit-project');
   }, [form.unsavedChanges]);
 
   return (

@@ -120,7 +120,6 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
         {...{
           columns: columns.filter((column) => column.visible),
           rows,
-          totalCount: 20,
           rowHeight: 42,
           rowKeyGetter: (row) => row.id,
           enableVirtualization: false,

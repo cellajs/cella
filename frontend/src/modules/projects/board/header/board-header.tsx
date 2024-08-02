@@ -24,7 +24,7 @@ const BoardHeader = () => {
   const { workspace, selectedTasks, searchQuery, showPageHeader, togglePageHeader, labels } = useWorkspaceStore();
 
   const openSettingsSheet = () => {
-    sheet(<WorkspaceSettings sheet workspace={workspace} />, {
+    sheet.create(<WorkspaceSettings sheet workspace={workspace} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),
@@ -33,7 +33,7 @@ const BoardHeader = () => {
   };
 
   const openLabelsSheet = () => {
-    sheet(<LabelsTable labels={labels} />, {
+    sheet.create(<LabelsTable labels={labels} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:manage_labels'),
       // text: '',
