@@ -112,6 +112,12 @@ export default function TasksTable() {
     setSelectedTasks(Array.from(selectedRows));
   };
 
+  const onResetFilters = () => {
+    setSearchQuery('');
+    setSelectedProjects([]);
+    setSelectedStatuses([]);
+  };
+
   // useEffect(() => {
   //   if (fetchedTasks) {
   //     let filteredTasks = filterBy(fetchedTasks, selectedProjects, selectedStatuses);
@@ -174,7 +180,7 @@ export default function TasksTable() {
 
   return (
     <>
-      <TableHeader totalCount={rows.length}>
+      <TableHeader totalCount={rows.length} isFiltered={isFiltered} onResetFilters={onResetFilters}>
         <TaskTableSearch>
           <SearchDropDown
             selectedStatuses={selectedStatuses}

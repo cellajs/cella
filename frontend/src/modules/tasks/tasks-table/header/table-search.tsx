@@ -50,7 +50,7 @@ export function TaskTableSearch({
   }, [debouncedSearchQuery]);
 
   useEffect(() => {
-    if (innerSearchQuery.length || !searchQuery.length) return;
+    if (innerSearchQuery === searchQuery) return;
     setInnerSearchQuery(searchQuery);
   }, [searchQuery]);
 
