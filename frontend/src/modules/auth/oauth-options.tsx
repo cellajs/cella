@@ -91,7 +91,7 @@ const OauthOptions = ({ email, actionType = 'signIn' }: OauthOptionsProps) => {
       </div>
 
       <div className="flex flex-col space-y-2">
-        {hasPasskey && (
+        {hasPasskey && actionType === 'signIn' && (
           <Button type="button" onClick={passkeyAuth} variant="outline" className="w-full gap-1.5">
             <KeySquare size={16} />
             {t('common:passkey_sign_in')}
