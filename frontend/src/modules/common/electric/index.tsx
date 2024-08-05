@@ -67,7 +67,6 @@ const ElectricProvider = ({ children }: Props) => {
         setShowAlert(false);
 
         // Resolves when the shape subscription has been established.
-        // TODO: Improve the following section by deriving project IDs differently.
         const projectIds = menu.workspaces
           .filter((w) => !w.membership.archived)
           .flatMap((w) => w.submenu?.filter((p) => !p.membership.archived).map((p) => p.id) || []);

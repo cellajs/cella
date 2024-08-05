@@ -32,15 +32,14 @@ const meRoutes = app
   .openapi(meRoutesConfig.getSelf, async (ctx) => {
     const user = ctx.get('user');
 
-    const [{ memberships, passkey }] = await db
+    const [{ memberships }] = await db
       .select({
         memberships: count(),
-        passkey: passkeysTable.id,
       })
       .from(membershipsTable)
-      .leftJoin(passkeysTable, eq(passkeysTable.userEmail, user.email))
-      .where(eq(membershipsTable.userId, user.id))
-      .groupBy(passkeysTable.id);
+      .where(eq(membershipsTable.userId, user.id));
+
+    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
     const oauthAccounts = await db
       .select({
@@ -61,7 +60,7 @@ const meRoutes = app
         data: {
           ...transformDatabaseUserWithCount(user, memberships),
           oauth: oauthAccounts.map((el) => el.providerId),
-          passkey: !!passkey,
+          passkey: !!passkey.length,
           sessions: await getPreparedSessions(user.id, ctx),
           electricJWTToken,
         },
@@ -223,15 +222,14 @@ const meRoutes = app
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    const [{ memberships, passkey }] = await db
+    const [{ memberships }] = await db
       .select({
         memberships: count(),
-        passkey: passkeysTable.id,
       })
       .from(membershipsTable)
-      .leftJoin(passkeysTable, eq(passkeysTable.userEmail, user.email))
-      .where(eq(membershipsTable.userId, user.id))
-      .groupBy(passkeysTable.id);
+      .where(eq(membershipsTable.userId, user.id));
+
+    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
     const oauthAccounts = await db
       .select({
@@ -248,7 +246,7 @@ const meRoutes = app
         data: {
           ...transformDatabaseUserWithCount(updatedUser, memberships),
           oauth: oauthAccounts.map((el) => el.providerId),
-          passkey: !!passkey,
+          passkey: !!passkey.length,
         },
       },
       200,
