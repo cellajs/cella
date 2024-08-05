@@ -1,13 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
-import { useState, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
 import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
 import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
-import { useCreateBlockNote, DragHandleButton, SideMenu, SideMenuController } from '@blocknote/react';
-import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,8 +14,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { sheet } from '~/modules/common/sheeter/state';
-
-import './styles.css';
+import BlockNote from './blocknote/blocknote-view';
 
 interface NewsletterFormProps {
   organizationIds: string[];
@@ -31,25 +27,16 @@ type FormValues = z.infer<typeof formSchema>;
 
 const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet: isSheet }) => {
   const { t } = useTranslation();
-  const editor = useCreateBlockNote();
-  const [markdownAsHTML, setMarkdownAsHTML] = useState<string>('');
 
   const form = useFormWithDraft<FormValues>('send-newsletter', {
     resolver: zodResolver(formSchema),
     defaultValues: {
       organizationIds: organizationIds,
       subject: '',
-      content: markdownAsHTML,
+      content: '',
     },
   });
-  const onBlockNoteChange = async () => {
-    // Converts the editor's contents from Block objects to HTML and store to state.
 
-    // TODO FIX HTML sending content and remove last row
-    const markdown = await editor.blocksToHTMLLossy(editor.document);
-    setMarkdownAsHTML(markdown);
-    return markdown;
-  };
   const { mutate: sendNewsletter, isPending } = useMutation({
     mutationFn: baseSendNewsletter,
     onSuccess: () => {
@@ -92,29 +79,11 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet:
         <FormField
           control={form.control}
           name="content"
-          render={({ field: { onChange } }) => (
+          render={({ field: { onChange, value } }) => (
             <FormItem>
               <FormLabel>{t('common:message')}</FormLabel>
               <FormControl>
-                <Suspense>
-                  <BlockNoteView
-                    editor={editor}
-                    defaultValue={markdownAsHTML}
-                    onChange={async () => {
-                      const markdown = await onBlockNoteChange();
-                      onChange(markdown);
-                    }}
-                    sideMenu={false}
-                  >
-                    <SideMenuController
-                      sideMenu={(props) => (
-                        <SideMenu {...props}>
-                          <DragHandleButton {...props} />
-                        </SideMenu>
-                      )}
-                    />
-                  </BlockNoteView>
-                </Suspense>
+                <BlockNote onChange={onChange} value={value} />
               </FormControl>
               <FormMessage />
             </FormItem>
