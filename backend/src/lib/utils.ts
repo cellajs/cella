@@ -38,7 +38,7 @@ export const base64UrlDecode = (base64urlStr: string) => {
   return Buffer.from(base64String, 'base64');
 };
 
-export const parseAndValidateAttestation = (clientDataJSON: string, attestationObject: string, challengeFromCookie: string | undefined) => {
+export const parseAndValidatePasskeyAttestation = (clientDataJSON: string, attestationObject: string, challengeFromCookie: string | undefined) => {
   const clientData = JSON.parse(Buffer.from(base64UrlDecode(clientDataJSON)).toString());
 
   // Compare the challenge
@@ -74,7 +74,7 @@ export const parseAndValidateAttestation = (clientDataJSON: string, attestationO
   };
 };
 
-export const verifyKey = async (passedPublicKey: string, verifyData: Buffer, signature: string) => {
+export const verifyPassKeyPublic = async (passedPublicKey: string, verifyData: Buffer, signature: string) => {
   // Verify the signature
   const publicKeyBuffer = base64UrlDecode(passedPublicKey);
   const publicKey = await coseToPem(publicKeyBuffer);
@@ -102,7 +102,7 @@ const coseToPem = async (coseKeyBuffer: ArrayBuffer) => {
   // Convert to JWK format
   const jwk = {
     kty: 'RSA',
-    alg: alg === -257 ? 'RS256' : '', // TODO adjust based of -7
+    alg: alg === -257 ? 'RS256' : 'ES256', // it's either -257 or -7
     n: n.toString('base64url'),
     e: e.toString('base64url'),
   };

@@ -33,7 +33,7 @@ import { removeSessionCookie, setCookie, setSessionCookie } from './helpers/cook
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
-import { base64UrlDecode, parseAndValidateAttestation, verifyKey } from '../../lib/utils';
+import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '../../lib/utils';
 import { passkeysTable } from '../../db/schema/passkeys';
 
 // Scopes for OAuth providers
@@ -776,7 +776,7 @@ const authRoutes = app
 
     const challengeFromCookie = getCookie(ctx, 'challenge');
 
-    const { credentialId, publicKey } = parseAndValidateAttestation(clientDataJSON, attestationObject, challengeFromCookie);
+    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
     // Save public key in the database
     await db.insert(passkeysTable).values({
       userEmail: email,
@@ -809,7 +809,7 @@ const authRoutes = app
     const userVerified = (flags & 0x04) !== 0;
     if (!userPresent || !userVerified) return errorResponse(ctx, 400, 'User presence or verification failed', 'warn', undefined);
 
-    const isValid = verifyKey(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
+    const isValid = verifyPassKeyPublic(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
     if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
 
     // const oauthAccounts = await db
