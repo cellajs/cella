@@ -7,13 +7,14 @@ import { CustomHono } from '../types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
 import { rateLimiter } from './rate-limiter';
-import { observatoryMiddleware } from './observatoryMiddleware';
+import { observatoryMiddleware } from './observatory-middleware';
 
 const app = new CustomHono();
 
 // Secure headers
 app.use('*', secureHeaders());
 
+// Get metrics and trace
 app.use('*', observatoryMiddleware);
 
 // Sentry
@@ -27,15 +28,11 @@ app.use(
 // Health check for render.com
 app.get('/ping', (c) => c.text('pong'));
 
-// TODO - Add a middleware to check if the user is a bot
-// Prevent crawlers from causing log spam
-// app.use(async (ctx, next) => {
-//   if (!isbot(ctx.req.header('user-agent'))) await next();
-//   return errorResponse(ctx, 403, 'user_maybe_bot', 'warn');
-// });
-
 // Logger
 app.use('*', logger(logEvent as unknown as Parameters<typeof logger>[0]));
+
+// Check if the user is a bot
+// app.use('*', checkIsBot);
 
 // CORS
 app.use(
