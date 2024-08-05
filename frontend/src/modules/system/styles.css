@@ -1,0 +1,54 @@
+.bn-shadcn.dark {
+  --background: 240 10% 9%;
+  --foreground: 0 0% 95%;
+  --card: 240 10% 14%;
+  --card-foreground: 0 0% 95%;
+  --popover: 240 10% 9%;
+  --popover-foreground: 0 0% 95%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 5.9% 16%;
+  --secondary: 240 3.7% 15%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 240 3.7% 25%;
+  --muted-foreground: 240 5% 84.9%;
+  --accent: 240 3.7% 25%;
+  --accent-foreground: 0 0% 95%;
+  --destructive: 0 62.8% 50%;
+  --destructive-foreground: 0 0% 95%;
+  --border: 240 3.7% 20%;
+  --input: 240 3.7% 25%;
+  --ring: 240 4.9% 83.9%;
+  --success: 120 100% 40%;
+}
+.bn-shadcn .bn-editor {
+  padding: 8px 12px 8px 36px;
+  border: 1px solid #3d3d42 !important
+}
+.bn-shadcn .bn-side-menu{
+  gap: 4px;
+}
+.bn-shadcn {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 0%;
+  --primary: 240 6% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 5% 95%;
+  --secondary-foreground: 240 6% 20%;
+  --muted: 240 5% 77.2%;
+  --muted-foreground: 240 4% 40%;
+  --accent: 240 5% 95%;
+  --accent-foreground: 240 6% 10%;
+  --destructive: 0 85% 40%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 6% 92%;
+  --input: 240 6% 92%;
+  --ring: 240 6% 10%;
+  --radius: 0.5rem;
+  --success: 120 100% 30%;
+
+  --radius: 0.5rem;
+}

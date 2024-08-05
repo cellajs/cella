@@ -14,6 +14,10 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import organizationRoutesConfig from './routes';
+import organizationsNewsletter from '../../../../email/emails/organization-newsletter';
+import { emailSender } from 'email';
+import { render } from '@react-email/render';
+import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 
@@ -281,6 +285,35 @@ const organizationsRoutes = app
     }
 
     return ctx.json({ success: true, errors: errors }, 200);
+  })
+  /*
+   * Send newsletter email
+   */
+  .openapi(organizationRoutesConfig.sendNewsletterEmail, async (ctx) => {
+    const user = ctx.get('user');
+    const { organizationIds, subject, content } = ctx.req.valid('json');
+
+    // Get members
+    const organizationsMembersEmails = await db
+      .select({ email: usersTable.email })
+      .from(membershipsTable)
+      .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
+      // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
+      .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, organizationIds)));
+
+    if (!organizationsMembersEmails.length) return errorResponse(ctx, 404, 'There is no members in organizations', 'warn', 'organization');
+
+    if (organizationsMembersEmails.length === 1 && user.email === organizationsMembersEmails[0].email)
+      return errorResponse(ctx, 400, 'Only receiver is sender', 'warn', 'organization');
+
+    // generating email html
+    const emailHtml = render(organizationsNewsletter({ subject, content }));
+
+    for (const user of organizationsMembersEmails) {
+      emailSender.send(user.email, 'Verify email for Cella', emailHtml);
+    }
+
+    return ctx.json({ success: true }, 200);
   });
 
 export default organizationsRoutes;

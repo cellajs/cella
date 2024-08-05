@@ -1,13 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
-import { Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 
-// Change this in the future on current schema
-// import { sendNewsletterJsonSchema } from 'backend/modules/organizations/schema';
+import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
 import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
-
+import { useCreateBlockNote, DragHandleButton, SideMenu, SideMenuController } from '@blocknote/react';
+import { BlockNoteView } from '@blocknote/shadcn';
+import '@blocknote/shadcn/style.css';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -17,33 +18,38 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '~/modules/ui/input';
 import { sheet } from '~/modules/common/sheeter/state';
 
+import './styles.css';
+
 interface NewsletterFormProps {
+  organizationIds: string[];
   sheet?: boolean;
 }
 
-// TODO: Remove this schema once the backend is ready
-const formSchema = z.object({
-  organizationIds: z.array(z.string()),
-  subject: z.string(),
-  content: z.string(),
-});
-
-// const formSchema = newsletterJsonSchema;
+const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
+const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet: isSheet }) => {
   const { t } = useTranslation();
+  const editor = useCreateBlockNote();
+  const [markdownAsHTML, setMarkdownAsHTML] = useState<string>('');
 
   const form = useFormWithDraft<FormValues>('send-newsletter', {
     resolver: zodResolver(formSchema),
     defaultValues: {
-      organizationIds: [],
+      organizationIds: organizationIds,
       subject: '',
-      content: '',
+      content: markdownAsHTML,
     },
   });
+  const onBlockNoteChange = async () => {
+    // Converts the editor's contents from Block objects to HTML and store to state.
 
+    // TODO FIX HTML sending content and remove last row
+    const markdown = await editor.blocksToHTMLLossy(editor.document);
+    setMarkdownAsHTML(markdown);
+    return markdown;
+  };
   const { mutate: sendNewsletter, isPending } = useMutation({
     mutationFn: baseSendNewsletter,
     onSuccess: () => {
@@ -54,10 +60,8 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
   });
 
   const onSubmit = (values: FormValues) => {
-    // TODO
-    const organizationIds = ['1', '2', '3'];
     sendNewsletter({
-      organizationIds,
+      organizationIds: values.organizationIds,
       subject: values.subject,
       content: values.content,
     });
@@ -70,7 +74,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 h-max">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 h-max pl-6">
         <FormField
           control={form.control}
           name="subject"
@@ -85,7 +89,37 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ sheet: isSheet }) => {
           )}
         />
 
-        <Suspense fallback={null}>Here should be blocknotejs editor</Suspense>
+        <FormField
+          control={form.control}
+          name="content"
+          render={({ field: { onChange } }) => (
+            <FormItem>
+              <FormLabel>{t('common:message')}</FormLabel>
+              <FormControl>
+                <Suspense>
+                  <BlockNoteView
+                    editor={editor}
+                    defaultValue={markdownAsHTML}
+                    onChange={async () => {
+                      const markdown = await onBlockNoteChange();
+                      onChange(markdown);
+                    }}
+                    sideMenu={false}
+                  >
+                    <SideMenuController
+                      sideMenu={(props) => (
+                        <SideMenu {...props}>
+                          <DragHandleButton {...props} />
+                        </SideMenu>
+                      )}
+                    />
+                  </BlockNoteView>
+                </Suspense>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>

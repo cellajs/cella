@@ -18,6 +18,8 @@
     "preview": "vite preview --port 3000"
   },
   "dependencies": {
+    "@blocknote/react": "^0.15.3",
+    "@blocknote/shadcn": "^0.15.3",
     "@atlaskit/pragmatic-drag-and-drop": "^1.2.1",
     "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^1.4.0",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.3",
