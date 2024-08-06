@@ -18,6 +18,7 @@ import BlockNote from './blocknote/blocknote-view';
 
 interface NewsletterFormProps {
   organizationIds: string[];
+  dropSelectedOrganization?: () => void;
   sheet?: boolean;
 }
 
@@ -25,7 +26,7 @@ const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet: isSheet }) => {
+const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet: isSheet, dropSelectedOrganization }) => {
   const { t } = useTranslation();
 
   const form = useFormWithDraft<FormValues>('send-newsletter', {
@@ -42,6 +43,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet:
     onSuccess: () => {
       form.reset();
       toast.success(t('common:success.create_newsletter'));
+      dropSelectedOrganization?.();
       if (isSheet) sheet.remove();
     },
   });
@@ -104,4 +106,4 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet:
   );
 };
 
-export default NewsletterForm;
+export default OrganizationsNewsletterForm;

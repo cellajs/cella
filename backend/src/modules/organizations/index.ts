@@ -310,7 +310,7 @@ const organizationsRoutes = app
     const emailHtml = render(organizationsNewsletter({ subject, content }));
 
     for (const user of organizationsMembersEmails) {
-      emailSender.send(user.email, 'Verify email for Cella', emailHtml);
+      emailSender.send(user.email, subject, emailHtml);
     }
 
     return ctx.json({ success: true }, 200);

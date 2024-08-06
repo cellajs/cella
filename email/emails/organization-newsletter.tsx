@@ -10,11 +10,12 @@ interface Props {
 
 export const organizationsNewsletter = ({ content, subject }: Props) => {
   return (
-    <EmailContainer previewText={subject} bodyClassName="py-2.5" containerClassName="border-[#f0f0f0] p-12 font-light text-[#404040] leading-6">
+    <EmailContainer previewText={subject} bodyClassName="py-2.5" containerClassName="border-[#f0f0f0] p-10 max-w-full text-[#404040] leading-6">
       <Logo />
       <Section>
         <Text>{subject}</Text>
-        {content}
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: we need send it cos blackNote return an html*/}
+        <div dangerouslySetInnerHTML={{ __html: content }} />
       </Section>
       <Footer />
     </EmailContainer>

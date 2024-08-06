@@ -30,7 +30,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import NewsletterForm from '~/modules/system/organizations-newsletter-form';
+import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { OrganizationsTableRoute } from '~/routes/system';
@@ -179,12 +179,19 @@ const OrganizationsTable = () => {
   };
 
   const openNewsletterSheet = () => {
-    sheet.create(<NewsletterForm sheet organizationIds={selectedOrganizations.map((o) => o.id)} />, {
-      className: 'max-w-full lg:max-w-4xl',
-      title: t('common:newsletter'),
-      text: t('common:newsletter.text'),
-      id: 'newsletter-form',
-    });
+    sheet.create(
+      <OrganizationsNewsletterForm
+        sheet
+        organizationIds={selectedOrganizations.map((o) => o.id)}
+        dropSelectedOrganization={() => setSelectedRows(new Set<string>())}
+      />,
+      {
+        className: 'max-w-full lg:max-w-4xl',
+        title: t('common:newsletter'),
+        text: t('common:newsletter.text'),
+        id: 'newsletter-form',
+      },
+    );
   };
 
   return (
