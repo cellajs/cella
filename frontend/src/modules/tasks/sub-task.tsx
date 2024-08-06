@@ -15,7 +15,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { DraggableItemData } from '~/types';
-import { TaskBlockNote } from './task-selectors/task-blocknote';
+import { TaskBlockNote } from '../common/blocknotes/task-blocknote';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -55,12 +55,6 @@ const SubTask = ({
     handleTaskChange('summary', summary, task.id);
     handleTaskChange('markdown', markdown, task.id);
   };
-
-  // const handleUpdateMarkdown = (markdownValue: string) => {
-  //   const summaryFromMarkDown = markdownValue.split('\n')[0];
-  //   handleTaskChange('markdown', markdownValue, task.id);
-  //   handleTaskChange('summary', summaryFromMarkDown, task.id);
-  // };
 
   useDoubleClick({
     onSingleClick: () => setIsEditing(true),
@@ -129,20 +123,10 @@ const SubTask = ({
         />
       </div>
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
-        <div ref={subContentRef} className="inline">
+        <div ref={subContentRef} className="inline-flex items-center">
           <TaskBlockNote editing={isEditing} html={task.markdown || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
-          {/* {isEditing ? ( 
-
-            //<TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
-          // ) : (
-            // <MDEditor.Markdown
-            //   source={isEditing ? task.markdown || '' : task.summary}
-            //   style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-            //   className={`${isEditing ? 'markdown' : 'summary'} inline before:!content-none after:!content-none prose font-light text-start max-w-none`}
-            // />
-          // )}*/}
           {task.summary !== task.markdown && (
-            <Button onClick={() => setIsEditing(!isEditing)} variant="link" size="micro" className="py-0 ml-1">
+            <Button onClick={() => setIsEditing(!isEditing)} variant="link" size="micro" className="py-0">
               {t(`common:${isEditing ? 'less' : 'more'}`).toLowerCase()}
             </Button>
           )}

@@ -1,10 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type React from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-import MDEditor from '@uiw/react-md-editor';
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -17,11 +15,12 @@ import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { getNewTaskOrder } from './helpers.ts';
+import { CreateTaskBlockNote } from '~/modules/common/blocknotes/create-task-blocknote.tsx';
 
 const formSchema = z.object({
   id: z.string(),
   summary: z.string(),
-  markdown: z.string(),
+  content: z.string(),
   type: z.string(),
   impact: z.number().nullable(),
   parent_id: z.string(),
@@ -47,14 +46,6 @@ export const CreateSubTaskForm = ({
 
   const Electric = useElectric();
 
-  const handleMDEscKeyPress: React.KeyboardEventHandler<HTMLDivElement> = useCallback(
-    (event) => {
-      if (event.key !== 'Escape') return;
-      setFormState(false);
-    },
-    [setFormState],
-  );
-
   const handleHotKeysKeyPress = useCallback(() => {
     setFormState(false);
   }, [setFormState]);
@@ -66,7 +57,7 @@ export const CreateSubTaskForm = ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         id: '',
-        markdown: '',
+        content: '',
         summary: '',
         parent_id: parentTask.id,
         type: 'chore',
@@ -82,15 +73,21 @@ export const CreateSubTaskForm = ({
 
   const onSubmit = (values: FormValues) => {
     if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    const summary = values.markdown.split('\n')[0];
-    const slug = summary.toLowerCase().replace(/ /g, '-');
+    const subTaskId = nanoid();
+    // Extract text from summary HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(values.summary, 'text/html');
+    const summaryText = doc.body.textContent || `subtask${subTaskId}`;
+
+    const slug = summaryText.toLowerCase().replace(/ /g, '-');
 
     Electric.db.tasks
       .create({
         data: {
-          id: nanoid(),
-          markdown: values.markdown,
-          summary: summary,
+          id: subTaskId,
+          // TODO rename markdown
+          markdown: values.content,
+          summary: values.summary,
           type: 'chore',
           impact: null,
           status: 1,
@@ -111,6 +108,7 @@ export const CreateSubTaskForm = ({
         setFormState(false);
       });
   };
+
   if (!formOpen)
     return (
       <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none opacity-50 hover:opacity-100" onClick={() => setFormState(true)}>
@@ -123,27 +121,18 @@ export const CreateSubTaskForm = ({
       <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary">
         <FormField
           control={form.control}
-          name="markdown"
+          name="content"
           render={({ field: { value, onChange } }) => {
             return (
               <FormItem>
                 <FormControl>
-                  <MDEditor
-                    onKeyDown={handleMDEscKeyPress}
+                  <CreateTaskBlockNote
                     value={value}
-                    textareaProps={{ placeholder: t('common:placeholder.sub_mdEditor') }}
-                    defaultTabEnable={true}
-                    preview={'edit'}
-                    onChange={(newValue) => {
-                      if (typeof newValue === 'string') onChange(newValue);
+                    onChange={(content, summary) => {
+                      onChange(content);
+                      form.setValue('summary', summary);
                     }}
-                    autoFocus={true}
-                    hideToolbar={true}
-                    visibleDragbar={false}
-                    height={'auto'}
-                    minHeight={40}
-                    className="text-sm my-1"
-                    style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C', background: 'transparent', padding: '0' }}
+                    mode={mode}
                   />
                 </FormControl>
                 <FormMessage />

@@ -6,7 +6,7 @@ import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import CreateSubTaskForm from './create-sub-task-form';
 import SubTask from './sub-task';
-import { TaskBlockNote } from './task-selectors/task-blocknote';
+import { TaskBlockNote } from '../common/blocknotes/task-blocknote';
 
 interface Props {
   task: Task;
@@ -22,12 +22,6 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
 
   const [createSubTask, setCreateSubTask] = useState(false);
 
-  // const handleUpdateMarkdown = (markdownValue: string) => {
-  //   const summaryFromMarkDown = markdownValue.split('\n')[0];
-  //   handleTaskChange('markdown', markdownValue, task.id);
-  //   handleTaskChange('summary', summaryFromMarkDown, task.id);
-  // };
-
   const handleUpdateMarkdown = (markdown: string, summary: string) => {
     handleTaskChange('summary', summary, task.id);
     handleTaskChange('markdown', markdown, task.id);
@@ -38,12 +32,6 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
       {!isExpanded ? (
         <div className="inline-flex items-center">
           <TaskBlockNote editing={false} html={task.markdown || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
-          {/* <MDEditor.Markdown
-            source={task.summary || ''}
-            style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-            className="inline summary before:!content-none after:!content-none prose font-light text-start max-w-none"
-          /> */}
-
           <div className="opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 inline ml-1 font-light gap-1">
             {(task.summary !== task.markdown || task.subTasks.length > 0) && (
               <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5 ml-1">
@@ -67,16 +55,6 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
       ) : (
         <>
           <TaskBlockNote editing={isFocused} html={task.markdown || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
-          {/* {isFocused ? (
-            <TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
-          ) : (
-            <MDEditor.Markdown
-              source={task.markdown || ''}
-              style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-              className="markdown inline before:!content-none after:!content-none prose font-light text-start max-w-none"
-            />
-          )} */}
-
           {task.subTasks.length > 0 || task.summary !== task.markdown ? (
             <div className={`${isSheet ? 'hidden' : ''}`}>
               <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">

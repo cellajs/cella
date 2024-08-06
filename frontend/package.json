@@ -56,7 +56,6 @@
     "@tanstack/react-query-devtools": "^5.51.15",
     "@tanstack/react-router": "1.45.14",
     "@tanstack/router-devtools": "1.45.14",
-    "@uiw/react-md-editor": "^4.0.4",
     "@uppy/audio": "^1.1.9",
     "@uppy/core": "^3.13.1",
     "@uppy/dashboard": "^3.9.1",
