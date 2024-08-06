@@ -1,4 +1,3 @@
-import MDEditor from '@uiw/react-md-editor';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -7,7 +6,7 @@ import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import CreateSubTaskForm from './create-sub-task-form';
 import SubTask from './sub-task';
-import { TaskEditor } from './task-selectors/task-editor';
+import { TaskBlockNote } from './task-selectors/task-blocknote';
 
 interface Props {
   task: Task;
@@ -23,21 +22,27 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
 
   const [createSubTask, setCreateSubTask] = useState(false);
 
-  const handleUpdateMarkdown = (markdownValue: string) => {
-    const summaryFromMarkDown = markdownValue.split('\n')[0];
-    handleTaskChange('markdown', markdownValue, task.id);
-    handleTaskChange('summary', summaryFromMarkDown, task.id);
+  // const handleUpdateMarkdown = (markdownValue: string) => {
+  //   const summaryFromMarkDown = markdownValue.split('\n')[0];
+  //   handleTaskChange('markdown', markdownValue, task.id);
+  //   handleTaskChange('summary', summaryFromMarkDown, task.id);
+  // };
+
+  const handleUpdateMarkdown = (markdown: string, summary: string) => {
+    handleTaskChange('summary', summary, task.id);
+    handleTaskChange('markdown', markdown, task.id);
   };
 
   return (
     <>
       {!isExpanded ? (
-        <div className="inline">
-          <MDEditor.Markdown
+        <div className="inline-flex items-center">
+          <TaskBlockNote editing={false} html={task.markdown || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          {/* <MDEditor.Markdown
             source={task.summary || ''}
             style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
             className="inline summary before:!content-none after:!content-none prose font-light text-start max-w-none"
-          />
+          /> */}
 
           <div className="opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 inline ml-1 font-light gap-1">
             {(task.summary !== task.markdown || task.subTasks.length > 0) && (
@@ -61,7 +66,8 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
         </div>
       ) : (
         <>
-          {isFocused ? (
+          <TaskBlockNote editing={isFocused} html={task.markdown || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          {/* {isFocused ? (
             <TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
           ) : (
             <MDEditor.Markdown
@@ -69,7 +75,7 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
               style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
               className="markdown inline before:!content-none after:!content-none prose font-light text-start max-w-none"
             />
-          )}
+          )} */}
 
           {task.subTasks.length > 0 || task.summary !== task.markdown ? (
             <div className={`${isSheet ? 'hidden' : ''}`}>

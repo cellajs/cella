@@ -1,4 +1,4 @@
-.bn-shadcn.dark {
+.bn-container[data-color-scheme="dark"]{
   --background: 240 10% 9%;
   --foreground: 0 0% 95%;
   --card: 240 10% 14%;
@@ -20,14 +20,17 @@
   --ring: 240 4.9% 83.9%;
   --success: 120 100% 40%;
 }
+
+p.bn-inline-content{
+  font-size: 14px !important
+}
+
 .bn-shadcn .bn-editor {
-  padding: 8px 12px 8px 36px;
-  border: 1px solid #3d3d42 !important
+  padding: 8px 12px;
+  background: transparent;
 }
-.bn-shadcn .bn-side-menu{
-  gap: 4px;
-}
-.bn-shadcn {
+
+.bn-container[data-color-scheme="light"] {
   --background: 0 0% 100%;
   --foreground: 240 10% 10%;
   --card: 0 0% 100%;
@@ -49,6 +52,9 @@
   --ring: 240 6% 10%;
   --radius: 0.5rem;
   --success: 120 100% 30%;
-
-  --radius: 0.5rem;
+}
+.newsletter-blocknote{ 
+  padding-left: 24px;
+  border: 1px solid #3d3d42;
+  border-radius: 6px;
 }

@@ -3,7 +3,6 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
-import MDEditor from '@uiw/react-md-editor';
 import { Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +15,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { DraggableItemData } from '~/types';
-import { TaskEditor } from './task-selectors/task-editor';
+import { TaskBlockNote } from './task-selectors/task-blocknote';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -52,11 +51,16 @@ const SubTask = ({
     setClosestEdge(extractClosestEdge(self.data));
   };
 
-  const handleUpdateMarkdown = (markdownValue: string) => {
-    const summaryFromMarkDown = markdownValue.split('\n')[0];
-    handleTaskChange('markdown', markdownValue, task.id);
-    handleTaskChange('summary', summaryFromMarkDown, task.id);
+  const handleUpdateMarkdown = (markdown: string, summary: string) => {
+    handleTaskChange('summary', summary, task.id);
+    handleTaskChange('markdown', markdown, task.id);
   };
+
+  // const handleUpdateMarkdown = (markdownValue: string) => {
+  //   const summaryFromMarkDown = markdownValue.split('\n')[0];
+  //   handleTaskChange('markdown', markdownValue, task.id);
+  //   handleTaskChange('summary', summaryFromMarkDown, task.id);
+  // };
 
   useDoubleClick({
     onSingleClick: () => setIsEditing(true),
@@ -126,15 +130,17 @@ const SubTask = ({
       </div>
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
         <div ref={subContentRef} className="inline">
-          {isEditing ? (
-            <TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
-          ) : (
-            <MDEditor.Markdown
-              source={isEditing ? task.markdown || '' : task.summary}
-              style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
-              className={`${isEditing ? 'markdown' : 'summary'} inline before:!content-none after:!content-none prose font-light text-start max-w-none`}
-            />
-          )}
+          <TaskBlockNote editing={isEditing} html={task.markdown || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          {/* {isEditing ? ( 
+
+            //<TaskEditor mode={mode} markdown={task.markdown || ''} handleUpdateMarkdown={handleUpdateMarkdown} id={task.id} />
+          // ) : (
+            // <MDEditor.Markdown
+            //   source={isEditing ? task.markdown || '' : task.summary}
+            //   style={{ color: mode === 'dark' ? '#F2F2F2' : '#17171C' }}
+            //   className={`${isEditing ? 'markdown' : 'summary'} inline before:!content-none after:!content-none prose font-light text-start max-w-none`}
+            // />
+          // )}*/}
           {task.summary !== task.markdown && (
             <Button onClick={() => setIsEditing(!isEditing)} variant="link" size="micro" className="py-0 ml-1">
               {t(`common:${isEditing ? 'less' : 'more'}`).toLowerCase()}
