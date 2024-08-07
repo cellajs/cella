@@ -17,7 +17,7 @@ export const getSubTask = (task: PivotalTask, taskId: string, organizationId: st
         organizationId: organizationId,
         projectId: projectId,
         impact: 0,
-        markdown: task[taskKey],
+        description: `<p class="bn-inline-content">${task[taskKey]}</p>`,
         status: task[statusKey] === 'completed' ? 6 : 0,
         order: i,
         createdAt: new Date(),

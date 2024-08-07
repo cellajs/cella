@@ -6,7 +6,7 @@ export const tasksTable = pgTable(
   {
     id: varchar('id').primaryKey().$defaultFn(nanoid),
     slug: varchar('slug').notNull(),
-    markdown: varchar('markdown'),
+    description: varchar('description'),
     summary: varchar('summary').notNull(),
     type: varchar('type', {
       enum: ['bug', 'feature', 'chore'],
@@ -36,7 +36,10 @@ export const tasksTable = pgTable(
     modifiedBy: varchar('modified_by'),
   },
   (table) => {
-    return { tasksMarkdownIdx: index('idx_tasks_markdown').on(table.markdown), tasksProjectIdx: index('idx_tasks_project').on(table.projectId) };
+    return {
+      tasksDescriptionIdx: index('idx_tasks_description').on(table.description),
+      tasksProjectIdx: index('idx_tasks_project').on(table.projectId),
+    };
   },
 );
 

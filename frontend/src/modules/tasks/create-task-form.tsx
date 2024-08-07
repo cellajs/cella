@@ -48,7 +48,7 @@ interface CreateTaskFormProps {
 const formSchema = z.object({
   id: z.string(),
   summary: z.string(),
-  content: z.string(),
+  description: z.string(),
   type: z.string(),
   impact: z.number().nullable(),
   assignedTo: z.array(
@@ -122,8 +122,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
     Electric.db.tasks
       .create({
         data: {
-          id: values.id, // TODO rename markdown
-          markdown: values.content,
+          id: values.id,
+          description: values.description,
           summary: values.summary,
           type: values.type as TaskType,
           impact: values.impact as TaskImpact,
@@ -155,15 +155,15 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
       >
         <FormField
           control={form.control}
-          name="content"
+          name="description"
           render={({ field: { value, onChange } }) => {
             return (
               <FormItem>
                 <FormControl>
                   <CreateTaskBlockNote
                     value={value}
-                    onChange={(content, summary) => {
-                      onChange(content);
+                    onChange={(description, summary) => {
+                      onChange(description);
                       form.setValue('summary', summary);
                     }}
                     mode={mode}

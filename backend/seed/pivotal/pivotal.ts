@@ -66,13 +66,13 @@ zip.loadAsync(data).then(async (zip) => {
     return {
       id: taskId,
       slug: task.Id,
-      summary: task.Title || 'No title',
+      summary: `<p class="bn-inline-content">${task.Title}</p>` || '<p class="bn-inline-content">No title</p>',
       type: (task.Type || 'chore') as 'feature' | 'bug' | 'chore',
       createdBy: 'pivotal',
       organizationId: project.organizationId,
       projectId: project.id,
       impact: ['0', '1', '2', '3'].includes(task.Estimate) ? +task.Estimate : 0,
-      markdown: `${task.Title}\n${task.Description}`,
+      description: `<p class="bn-inline-content">${task.Title}</p><p class="bn-inline-content">${task.Description}</p>`,
       labels: labelsIds,
       status:
         task['Current State'] === 'accepted'

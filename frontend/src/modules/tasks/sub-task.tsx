@@ -51,9 +51,9 @@ const SubTask = ({
     setClosestEdge(extractClosestEdge(self.data));
   };
 
-  const handleUpdateMarkdown = (markdown: string, summary: string) => {
+  const handleUpdateMarkdown = (content: string, summary: string) => {
     handleTaskChange('summary', summary, task.id);
-    handleTaskChange('markdown', markdown, task.id);
+    handleTaskChange('description', content, task.id);
   };
 
   useDoubleClick({
@@ -123,9 +123,9 @@ const SubTask = ({
         />
       </div>
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
-        <div ref={subContentRef} className="inline-flex items-center">
-          <TaskBlockNote editing={isEditing} html={task.markdown || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
-          {task.summary !== task.markdown && (
+        <div ref={subContentRef} className={!isEditing ? 'inline-flex items-center' : 'flex flex-col items-start'}>
+          <TaskBlockNote editing={isEditing} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          {task.summary !== task.description && (
             <Button onClick={() => setIsEditing(!isEditing)} variant="link" size="micro" className="py-0">
               {t(`common:${isEditing ? 'less' : 'more'}`).toLowerCase()}
             </Button>

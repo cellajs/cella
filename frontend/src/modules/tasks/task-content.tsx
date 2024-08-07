@@ -22,23 +22,22 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
 
   const [createSubTask, setCreateSubTask] = useState(false);
 
-  const handleUpdateMarkdown = (markdown: string, summary: string) => {
+  const handleUpdateMarkdown = (description: string, summary: string) => {
     handleTaskChange('summary', summary, task.id);
-    handleTaskChange('markdown', markdown, task.id);
+    handleTaskChange('description', description, task.id);
   };
 
   return (
     <>
       {!isExpanded ? (
         <div className="inline-flex items-center">
-          <TaskBlockNote editing={false} html={task.markdown || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
-          <div className="opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 inline ml-1 font-light gap-1">
-            {(task.summary !== task.markdown || task.subTasks.length > 0) && (
-              <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5 ml-1">
+          <TaskBlockNote editing={false} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100font-light px-2">
+            {(task.summary !== task.description || task.subTasks.length > 0) && (
+              <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5">
                 {t('common:more').toLowerCase()}
               </Button>
             )}
-
             {task.subTasks.length > 0 && (
               <div className="inline-flex py-0 h-5 ml-1 gap-[.1rem]">
                 <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
@@ -54,8 +53,8 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
         </div>
       ) : (
         <>
-          <TaskBlockNote editing={isFocused} html={task.markdown || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
-          {task.subTasks.length > 0 || task.summary !== task.markdown ? (
+          <TaskBlockNote editing={isFocused} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          {task.subTasks.length > 0 || task.summary !== task.description ? (
             <div className={`${isSheet ? 'hidden' : ''}`}>
               <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">
                 {t('common:less').toLowerCase()}

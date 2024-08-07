@@ -1,5 +1,5 @@
 {
-  "id": "a6738fe7-9688-4c9d-8bc6-72630db7d8d3",
+  "id": "4e9ebe44-94d6-4b63-a818-deadc7d25dcb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -37,6 +37,18 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "last_used": {
+          "name": "last_used",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "use_count": {
+          "name": "use_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -60,8 +72,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "markdown": {
-          "name": "markdown",
+        "description": {
+          "name": "description",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -138,18 +150,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "assigned_by": {
-          "name": "assigned_by",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "assigned_at": {
-          "name": "assigned_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "modified_at": {
           "name": "modified_at",
           "type": "timestamp",
@@ -163,7 +163,38 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_tasks_description": {
+          "name": "idx_tasks_description",
+          "columns": [
+            {
+              "expression": "description",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_tasks_project": {
+          "name": "idx_tasks_project",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "tasks_parent_id_tasks_id_fk": {
           "name": "tasks_parent_id_tasks_id_fk",
@@ -185,6 +216,7 @@
   },
   "enums": {},
   "schemas": {},
+  "sequences": {},
   "_meta": {
     "columns": {},
     "schemas": {},

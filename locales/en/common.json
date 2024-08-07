@@ -454,5 +454,6 @@
   "placeholder.type_name": "Type name ...",
   "checkout": "Checkout",
   "show_all": "Show all",
-  "todo": "Todo"
+  "todo": "Todo",
+  "task_sheet_text": "View and manage a specific task"
 }

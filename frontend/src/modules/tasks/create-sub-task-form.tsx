@@ -20,7 +20,7 @@ import { CreateTaskBlockNote } from '~/modules/common/blocknotes/create-task-blo
 const formSchema = z.object({
   id: z.string(),
   summary: z.string(),
-  content: z.string(),
+  description: z.string(),
   type: z.string(),
   impact: z.number().nullable(),
   parent_id: z.string(),
@@ -57,7 +57,7 @@ export const CreateSubTaskForm = ({
       resolver: zodResolver(formSchema),
       defaultValues: {
         id: '',
-        content: '',
+        description: '',
         summary: '',
         parent_id: parentTask.id,
         type: 'chore',
@@ -85,8 +85,7 @@ export const CreateSubTaskForm = ({
       .create({
         data: {
           id: subTaskId,
-          // TODO rename markdown
-          markdown: values.content,
+          description: values.description,
           summary: values.summary,
           type: 'chore',
           impact: null,
@@ -121,15 +120,15 @@ export const CreateSubTaskForm = ({
       <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary">
         <FormField
           control={form.control}
-          name="content"
+          name="description"
           render={({ field: { value, onChange } }) => {
             return (
               <FormItem>
                 <FormControl>
                   <CreateTaskBlockNote
                     value={value}
-                    onChange={(content, summary) => {
-                      onChange(content);
+                    onChange={(description, summary) => {
+                      onChange(description);
                       form.setValue('summary', summary);
                     }}
                     mode={mode}

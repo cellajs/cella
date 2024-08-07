@@ -74,7 +74,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
         project_id: project.id,
         AND: [
           {
-            markdown: {
+            description: {
               contains: searchQuery,
             },
           },
