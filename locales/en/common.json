@@ -455,5 +455,6 @@
   "checkout": "Checkout",
   "show_all": "Show all",
   "todo": "Todo",
-  "task_sheet_text": "View and manage a specific task"
+  "task_sheet_text": "View and manage a specific task",
+  "metrics": "Metrics"
 }

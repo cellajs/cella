@@ -3,15 +3,9 @@ import { Counter } from 'prom-client';
 import { trace } from '@opentelemetry/api';
 
 const httpRequestCounter = new Counter({
-  name: 'http_requests_total',
-  help: 'Total number of HTTP requests',
-  labelNames: ['method'],
-});
-
-const httpResponseCounter = new Counter({
-  name: 'http_responses_total',
-  help: 'Total number of HTTP responses',
-  labelNames: ['status', 'path'],
+  name: 'Requests',
+  help: 'Total number and date of requests',
+  labelNames: ['requestsNumber', 'date'],
 });
 
 export const observatoryMiddleware: MiddlewareHandler = async (ctx, next) => {
@@ -20,19 +14,15 @@ export const observatoryMiddleware: MiddlewareHandler = async (ctx, next) => {
   span.setAttribute('method', ctx.req.method);
   span.setAttribute('url', ctx.req.url);
 
+  const currentCounter = await httpRequestCounter.get();
   try {
-    const { method } = ctx.req;
-    httpRequestCounter.inc({ method });
+    httpRequestCounter.inc({ requestsNumber: currentCounter.values.length + 1, date: new Date().getTime() });
 
     // Wait for other handlers to run.
     await next();
 
     const { status } = ctx.res;
     span.setStatus({ code: status });
-    // Get a parameterized path name like `/posts/:id` instead of `/posts/1234`.
-    // Tries to find actual route names first before falling back on potential middleware handlers like `app.use('*')`.
-    const path = ctx.req.matchedRoutes.find((r) => r.method !== 'ALL')?.path ?? ctx.req.routePath;
-    httpResponseCounter.inc({ status, path });
   } finally {
     span.end();
   }

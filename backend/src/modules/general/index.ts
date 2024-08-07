@@ -33,6 +33,7 @@ import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
 import { register } from 'prom-client';
+import { calculateRequestsPerMinute, parsePromMetrics } from '../../lib/utils';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -41,13 +42,17 @@ const app = new CustomHono();
 export const streams = new Map<string, SSEStreamingApi>();
 
 // General endpoints
-const generalRoutes = app /*
- * Get metrics
- */
+const generalRoutes = app
+  /*
+   * Get metrics
+   */
   .openapi(generalRouteConfig.getMetrics, async (ctx) => {
     const metrics = await register.metrics();
 
-    return ctx.json({ success: true, data: { metrics } }, 200);
+    const parsedMetrics = parsePromMetrics(metrics);
+    const requestsPerMinute = calculateRequestsPerMinute(parsedMetrics);
+
+    return ctx.json({ success: true, data: requestsPerMinute }, 200);
   })
   /*
    * Get public counts

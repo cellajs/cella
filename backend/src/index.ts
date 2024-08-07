@@ -12,7 +12,7 @@ import { config } from 'config';
 
 // Set i18n instance before starting server
 import './lib/i18n';
-import { sdk } from './tracing';
+// import { sdk } from './tracing';
 
 const main = async () => {
   // Reset db every Sunday at midnight
@@ -36,7 +36,7 @@ const main = async () => {
   );
 };
 
-sdk.start();
+// sdk.start();
 main().catch((e) => {
   console.error('Failed to start server');
   console.error(e);

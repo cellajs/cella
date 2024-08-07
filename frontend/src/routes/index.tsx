@@ -21,7 +21,7 @@ import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRo
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
 import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
-import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
+import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute, MetricsRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
 import { Public } from '~/modules/common/public';
@@ -134,7 +134,7 @@ export const routeTree = rootRoute.addChildren([
     HomeRoute,
     HomeAliasRoute,
     WelcomeRoute,
-    SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute]),
+    SystemPanelRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute]),
     UserProfileRoute,
     UserSettingsRoute,
     WorkspaceRoute.addChildren([WorkspaceBoardRoute, WorkspaceTableRoute, WorkspaceOverviewRoute]),

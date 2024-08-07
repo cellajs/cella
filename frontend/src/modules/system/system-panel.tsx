@@ -2,7 +2,7 @@ import { Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageNav } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import { OrganizationsTableRoute, RequestsTableRoute, UsersTableRoute } from '~/routes/system';
+import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, UsersTableRoute } from '~/routes/system';
 import { FocusViewContainer } from '../common/focus-view';
 
 const SystemPanel = () => {
@@ -17,6 +17,7 @@ const SystemPanel = () => {
           { id: 'users', label: 'users', path: UsersTableRoute.fullPath },
           { id: 'organizations', label: 'organizations', path: OrganizationsTableRoute.fullPath },
           { id: 'requests', label: 'requests', path: RequestsTableRoute.fullPath },
+          { id: 'metrics', label: 'metrics', path: MetricsRoute.fullPath },
         ]}
       />
 

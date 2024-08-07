@@ -137,3 +137,10 @@ export const getMembers = async (
   const json = await handleResponse(response);
   return json.data;
 };
+
+// Get metrics
+export const getMetrics = async () => {
+  const response = await apiClient.metrics.$get();
+  const json = await handleResponse(response);
+  return json.data;
+};

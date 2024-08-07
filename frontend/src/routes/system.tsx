@@ -12,6 +12,7 @@ import { requestsQueryOptions } from '~/modules/system/requests-table';
 import SystemPanel from '~/modules/system/system-panel';
 import { usersQueryOptions } from '~/modules/users/users-table';
 import { AppRoute } from '.';
+import { RequestsPerMinute } from '~/modules/system/metrics-charts/requests-per-minute';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
@@ -90,4 +91,12 @@ export const RequestsTableRoute = createRoute({
       <RequestsTable />
     </Suspense>
   ),
+});
+
+export const MetricsRoute = createRoute({
+  path: '/metrics',
+  validateSearch: requestSearchSchema,
+  staticData: { pageTitle: 'Metrics', isAuth: true },
+  getParentRoute: () => SystemPanelRoute,
+  component: () => <RequestsPerMinute />,
 });
