@@ -1,4 +1,3 @@
-//
 export const config = {
   mode: 'development',
   name: 'Cella',

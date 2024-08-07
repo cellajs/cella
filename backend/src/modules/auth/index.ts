@@ -286,29 +286,6 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    // const oauthAccounts = await db
-    //   .select({
-    //     providerId: oauthAccountsTable.providerId,
-    //   })
-    //   .from(oauthAccountsTable)
-    //   .where(eq(oauthAccountsTable.userId, user.id));
-
-    // const [{ user, passkey }] = await db
-    //   .select({
-    //     user: usersTable,
-    //     passkey: passkeysTable.id,
-    //   })
-    //   .from(usersTable)
-    //   .leftJoin(passkeysTable, eq(passkeysTable.userEmail, email.toLowerCase()))
-    //   .where(eq(usersTable.email, email.toLowerCase()));
-
-    // const oauthAccounts = await db
-    //   .select({
-    //     providerId: oauthAccountsTable.providerId,
-    //   })
-    //   .from(oauthAccountsTable)
-    //   .where(eq(oauthAccountsTable.userId, user.id));
-
     // If the user is not found or signed up with oauth
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');

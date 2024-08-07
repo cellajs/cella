@@ -292,7 +292,6 @@ class AuthRoutesConfig {
         }),
         content: {
           'application/json': {
-            // schema: successWithDataSchema(userSchema.extend(signUpInfo.shape)),
             schema: successWithoutDataSchema,
           },
         },
