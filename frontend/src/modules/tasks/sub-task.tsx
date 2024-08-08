@@ -124,13 +124,19 @@ const SubTask = ({
       </div>
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
         <div ref={subContentRef} className={!isEditing ? 'inline-flex items-center' : 'flex flex-col items-start'}>
-          <TaskBlockNote
-            projectId={task.project_id}
-            editing={isEditing}
-            html={task.description || ''}
-            handleUpdateHTML={handleUpdateMarkdown}
-            mode={mode}
-          />
+          {isEditing ? (
+            <TaskBlockNote
+              projectId={task.project_id}
+              editing={true}
+              html={task.description || ''}
+              handleUpdateHTML={handleUpdateMarkdown}
+              mode={mode}
+            />
+          ) : (
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: to avoid using TaskBlockNote for not editing
+            <div dangerouslySetInnerHTML={{ __html: task.summary as string }} />
+          )}
+
           {task.summary !== task.description && (
             <Button onClick={() => setIsEditing(!isEditing)} variant="link" size="micro" className="py-0">
               {t(`common:${isEditing ? 'less' : 'more'}`).toLowerCase()}
