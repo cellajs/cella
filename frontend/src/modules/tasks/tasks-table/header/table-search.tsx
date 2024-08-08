@@ -28,6 +28,12 @@ export function TaskTableSearch({
     inputRef.current?.focus();
   };
 
+  const handleEscKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Escape') return;
+    inputRef.current?.blur();
+    setIsFocused(false);
+  };
+
   // Focus input when filter button clicked(mobile)
   useEffect(() => {
     if (isFilterActive) inputRef.current?.focus();
@@ -81,6 +87,7 @@ export function TaskTableSearch({
         style={{ paddingLeft: '2rem' }}
         className="h-10 w-full border-0 pr-14"
         value={innerSearchQuery}
+        onKeyDown={handleEscKeyPress}
         onChange={(e) => {
           if (e.target.value.length && selectedTasks.length) setSelectedTasks([]);
           setInnerSearchQuery(e.target.value);
@@ -90,14 +97,20 @@ export function TaskTableSearch({
         <XCircle
           size={16}
           className="absolute right-8 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
-          onClick={() => setInnerSearchQuery('')}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsFocused(false);
+            setInnerSearchQuery('');
+          }}
         />
       )}
-      {isFocused && <ListCollapse className="absolute right-2 top-1/2 opacity-100 -translate-y-1/2 h-4 w-4" />}
       {isFocused && (
-        <div className="top-12  absolute w-full" ref={dropdownRef}>
-          {children}
-        </div>
+        <>
+          <ListCollapse className="absolute right-2 top-1/2 opacity-100 -translate-y-1/2 h-4 w-4" />
+          <div className="top-12  absolute w-full" ref={dropdownRef}>
+            {children}
+          </div>
+        </>
       )}
     </div>
   );
