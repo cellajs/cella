@@ -188,7 +188,7 @@ export function TaskCard({
                 </Button>
               )}
             </div>
-            <div className="flex flex-col grow gap-2 mt-1.5">
+            <div className="flex flex-col grow gap-2 mt-0.5">
               <TaskMarkdown
                 mode={mode}
                 task={task}

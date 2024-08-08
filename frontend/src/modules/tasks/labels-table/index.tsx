@@ -103,7 +103,7 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
                   <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
                 </Button>
               </TooltipButton>
-              <TooltipButton toolTipContent={t('common:clear_selected_task')}>
+              <TooltipButton toolTipContent={t('common:clear_selection')}>
                 <Button variant="ghost" className="relative" onClick={() => setSelectedLabels([])}>
                   <XSquare size={16} />
                   <span className="ml-1 max-xs:hidden">{t('common:clear')}</span>

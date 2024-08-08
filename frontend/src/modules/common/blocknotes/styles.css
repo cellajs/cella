@@ -28,7 +28,7 @@ p.bn-inline-content{
 }
 
 .bn-shadcn .bn-editor {
-  padding: 8px 12px;
+  padding: 0px;
   background: transparent;
 }
 
@@ -62,6 +62,7 @@ p.bn-inline-content{
 }
 
 .task-blocknote{ 
+  width: 100%;
   border: none;
   background: transparent;
 }
