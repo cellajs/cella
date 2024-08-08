@@ -63,21 +63,9 @@ interface TaskProps {
   handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void;
   handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
   isSheet?: boolean;
-  handleTaskSelect?: (selected: boolean, taskId: string) => void;
 }
 
-export function TaskCard({
-  style,
-  task,
-  mode,
-  isSelected,
-  isFocused,
-  isExpanded,
-  isSheet,
-  handleTaskChange,
-  handleTaskSelect,
-  handleTaskActionClick,
-}: TaskProps) {
+export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded, isSheet, handleTaskChange, handleTaskActionClick }: TaskProps) {
   const { t } = useTranslation();
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
@@ -189,23 +177,16 @@ export function TaskCard({
               )}
             </div>
             <div className="flex flex-col grow gap-2 mt-0.5">
-              <TaskMarkdown
-                mode={mode}
-                task={task}
-                isExpanded={isExpanded}
-                isFocused={isFocused}
-                handleTaskChange={handleTaskChange}
-                isSheet={isSheet}
-              />
+              <TaskMarkdown mode={mode} task={task} isExpanded={isExpanded} handleTaskChange={handleTaskChange} isSheet={isSheet} />
             </div>
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex items-end justify-between gap-1">
-              {handleTaskSelect && (
+              {!isSheet && (
                 <Checkbox
                   className="group-hover/task:opacity-100 mb-1.5 border-foreground/40 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-80"
                   checked={isSelected}
-                  onCheckedChange={(checked) => handleTaskSelect(!!checked, task.id)}
+                  onCheckedChange={(checked) => dispatchCustomEvent('toggleSelectTask', { selected: !!checked, taskId: task.id })}
                 />
               )}
               {task.type !== 'bug' && (

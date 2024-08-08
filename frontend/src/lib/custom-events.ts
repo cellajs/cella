@@ -3,6 +3,7 @@ interface CustomEventMap {
   taskChange: CustomEvent<{ taskId: string; direction: number; projectId: string }>;
   taskCardClick: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
   toggleCard: CustomEvent<string>;
+  toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
 }
 

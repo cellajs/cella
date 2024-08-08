@@ -8,9 +8,9 @@ import { useMeasure } from '~/hooks/use-measure';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { WorkspaceStoreProject, TaskCardFocusEvent } from '~/types';
+import type { WorkspaceStoreProject, TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/types';
 import { useElectric } from '~/modules/common/electric/electrify';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { BoardColumn } from './board-column';
 import BoardHeader from './header/board-header';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -73,8 +73,7 @@ function BoardDesktop({
 
 export default function Board() {
   const { t } = useTranslation();
-  const { workspace, projects, focusedTaskId, setFocusedTaskId, setSearchQuery } = useWorkspaceStore();
-
+  const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
@@ -201,7 +200,14 @@ export default function Board() {
     setTaskExpanded(taskId, true);
   };
 
+  const handleToggleTaskSelect = (event: TaskCardToggleSelectEvent) => {
+    const { selected, taskId } = event.detail;
+    if (selected) return setSelectedTasks([...selectedTasks, taskId]);
+    return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
+  };
+
   useEventListener('taskCardClick', handleTaskClick);
+  useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('toggleCard', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
 
   useEffect(() => {

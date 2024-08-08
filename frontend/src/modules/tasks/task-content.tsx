@@ -12,12 +12,11 @@ interface Props {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
-  isFocused: boolean;
   handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void;
   isSheet?: boolean;
 }
 
-const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskChange }: Props) => {
+const TaskContent = ({ task, mode, isSheet, isExpanded, handleTaskChange }: Props) => {
   const { t } = useTranslation();
 
   const [createSubTask, setCreateSubTask] = useState(false);
@@ -54,13 +53,7 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
         </div>
       ) : (
         <>
-          <TaskBlockNote
-            projectId={task.project_id}
-            editing={isFocused}
-            html={task.description || ''}
-            handleUpdateHTML={handleUpdateMarkdown}
-            mode={mode}
-          />
+          <TaskBlockNote projectId={task.project_id} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
           {task.subTasks.length > 0 || task.summary !== task.description ? (
             <div className={`${isSheet ? 'hidden' : ''}`}>
               <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">

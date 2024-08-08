@@ -57,7 +57,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   const { user } = useUserStore();
   const { mode } = useThemeStore();
   const { menu } = useNavigationStore();
-  const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId, labels, setSelectedTasks } = useWorkspaceStore();
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId, labels } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
   const projectLabels = labels.filter((l) => l.project_id === project.id);
@@ -134,11 +134,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
       text: t('common:project_settings.text'),
       id: 'edit-project',
     });
-  };
-
-  const handleTaskSelect = (selected: boolean, taskId: string) => {
-    if (selected) return setSelectedTasks([...selectedTasks, taskId]);
-    return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
   const handleChange = async (field: keyof Task, value: string | number | null, taskId: string) => {
@@ -351,7 +346,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                           isFocused={task.id === focusedTaskId}
                           handleTaskChange={handleChange}
                           handleTaskActionClick={handleTaskActionClick}
-                          handleTaskSelect={handleTaskSelect}
                           mode={mode}
                         />
                       </FocusTrap>

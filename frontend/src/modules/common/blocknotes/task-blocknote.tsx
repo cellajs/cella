@@ -11,36 +11,37 @@ interface TaskEditorProps {
   mode: Mode;
   html: string;
   projectId: string;
-  editing: boolean;
   handleUpdateHTML: (newContent: string, newSummary: string) => void;
 }
 
-export const TaskBlockNote = ({ html, editing, projectId, mode, handleUpdateHTML }: TaskEditorProps) => {
+export const TaskBlockNote = ({ html, projectId, mode, handleUpdateHTML }: TaskEditorProps) => {
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
 
   const { projects } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
   const updateData = async () => {
     const summary = editor.document[0];
+    //remove empty lines
+    const content = editor.document.filter((d) => Array.isArray(d.content) && d.content.length);
     const summaryHTML = await editor.blocksToHTMLLossy([summary]);
-    const contentHtml = await editor.blocksToHTMLLossy(editor.document);
+    const contentHtml = await editor.blocksToHTMLLossy(content);
     handleUpdateHTML?.(contentHtml, summaryHTML);
+    editor.replaceBlocks(editor.document, content);
   };
 
   useEffect(() => {
     (async () => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
-      const showedBlock = editing ? blocks : [blocks[0]];
-      editor.replaceBlocks(editor.document, showedBlock);
+      editor.replaceBlocks(editor.document, blocks);
     })();
-  }, [editing]);
+  }, []);
 
   return (
     <Suspense>
       <BlockNoteView
         onBlur={async () => await updateData()}
-        editable={editing}
-        autoFocus={editing}
+        editable={true}
+        autoFocus={true}
         editor={editor}
         data-color-scheme={mode}
         className="task-blocknote"

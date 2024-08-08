@@ -27,6 +27,13 @@ export interface TaskCardFocusEvent extends Event {
   };
 }
 
+export interface TaskCardToggleSelectEvent extends Event {
+  detail: {
+    taskId: string;
+    selected: boolean;
+  };
+}
+
 export interface TaskChangeEvent extends Event {
   detail: {
     taskId: string;
