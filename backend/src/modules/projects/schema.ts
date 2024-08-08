@@ -29,7 +29,7 @@ export const getProjectsQuerySchema = paginationQuerySchema.merge(
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
     organizationId: idSchema.optional(),
     workspaceId: idSchema.optional(),
-    requestedUserId: idSchema.optional(),
+    userId: idSchema.optional(),
   }),
 );
 

@@ -65,10 +65,10 @@ class ProjectRoutesConfig {
   public getProjects = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [checkUserPermissions],
+    guard: [isAuthenticated, checkUserPermissions],
     tags: ['projects'],
     summary: 'Get list of projects',
-    description: 'Get list of projects in which you have a membership or - if a `requestedUserId` is provided - the projects of this user.',
+    description: 'Get list of projects in which you have a membership or - if a `userId` is provided - the projects of this user.',
     request: {
       query: getProjectsQuerySchema,
     },
