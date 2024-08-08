@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -19,8 +19,19 @@ import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 
 export const useColumns = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
   const { projects, workspace } = useWorkspaceStore();
+
+  const setPreviewSearch = (id: string, key: string) => {
+    navigate({
+      replace: true,
+      search: (prev) => ({
+        ...prev,
+        ...{ [`${key}Preview`]: id },
+      }),
+    });
+  };
   const columns: ColumnOrColumnGroup<Task>[] = [
     CheckboxColumn,
     {
@@ -35,7 +46,10 @@ export const useColumns = () => {
           variant="none"
           tabIndex={tabIndex}
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
-          onClick={() => dispatchCustomEvent('openTaskCardPreview', row.id)}
+          onClick={() => {
+            setPreviewSearch(row.id, 'taskId');
+            dispatchCustomEvent('openTaskCardPreview', row.id);
+          }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">
             {/* biome-ignore lint/security/noDangerouslySetInnerHtml: we need send it cos blackNote return an html*/}
@@ -170,6 +184,7 @@ export const useColumns = () => {
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
+              setPreviewSearch(user.id, 'userId');
               openUserPreviewSheet(user);
             }}
           >
@@ -207,6 +222,7 @@ export const useColumns = () => {
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
+              setPreviewSearch(user.id, 'userId');
               openUserPreviewSheet(user);
             }}
           >

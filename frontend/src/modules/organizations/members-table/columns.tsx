@@ -9,9 +9,14 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
-export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean, isSheet: boolean) => {
+export const useColumns = (
+  t: TFunction<'translation', undefined>,
+  openUserPreview: (user: Member) => void,
+  isMobile: boolean,
+  isAdmin: boolean,
+  isSheet: boolean,
+) => {
   const columns: ColumnOrColumnGroup<Member>[] = [
     ...(isAdmin ? [CheckboxColumn] : []),
     {
@@ -29,7 +34,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;
             e.preventDefault();
-            openUserPreviewSheet(row);
+            openUserPreview(row);
           }}
         >
           <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />

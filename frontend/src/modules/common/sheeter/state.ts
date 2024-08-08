@@ -1,5 +1,5 @@
 export type SheetT = {
-  id: number | string;
+  id: string;
   title?: string | React.ReactNode;
   text?: React.ReactNode;
   className?: string;
@@ -7,7 +7,7 @@ export type SheetT = {
 };
 
 export type SheetAction = {
-  id: number | string;
+  id: string;
   remove?: boolean;
 };
 
@@ -31,7 +31,7 @@ class SheetsStateObserver {
   };
 
   // Retrieve a sheet by its ID
-  get = (id: number | string) => this.sheets.find((sheet) => sheet.id === id);
+  get = (id: string) => this.sheets.find((sheet) => sheet.id === id);
 
   // Retrieve a all sheets
   getAll = () => this.sheets;
@@ -43,7 +43,7 @@ class SheetsStateObserver {
   };
 
   // Remove a sheet by its ID or clear all sheets and notify subscribers
-  remove = (id?: number | string) => {
+  remove = (id?: string) => {
     if (id) {
       // Remove a specific sheet by ID
       this.sheets = this.sheets.filter((sheet) => sheet.id !== id);
@@ -56,7 +56,7 @@ class SheetsStateObserver {
   };
 
   // Update an existing sheet or create a new one with the provided updates
-  update = (id: number | string, updates: Partial<SheetT>, leavePrevData = true) => {
+  update = (id: string, updates: Partial<SheetT>, leavePrevData = true) => {
     const existingSheet = leavePrevData ? this.get(id) : undefined;
     this.set({
       id,
@@ -66,7 +66,7 @@ class SheetsStateObserver {
 
   // Create a new sheet with the given content and optional additional data
   create = (content: React.ReactNode, data?: Omit<SheetT, 'content'>) => {
-    const id = data?.id || Date.now(); // Use existing ID or generate a new one
+    const id = data?.id || Date.now().toString(); // Use existing ID or generate a new one
     this.set({ id, content, ...data });
     return id;
   };

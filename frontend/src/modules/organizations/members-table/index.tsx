@@ -1,6 +1,7 @@
 import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useRef, useState, useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 
 import type { membersQuerySchema } from 'backend/modules/general/schema';
 import { motion } from 'framer-motion';
@@ -34,6 +35,7 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import type { EntityPage, Member, Organization, Project } from '~/types';
 import { useColumns } from './columns';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 const LIMIT = 40;
 
@@ -91,7 +93,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
   const { t } = useTranslation();
   const search = useSearch({ from: route });
   const containerRef = useRef(null);
-
+  const navigate = useNavigate();
   const entityType = entity.entity;
   const isAdmin = entity.membership?.role === 'admin';
 
@@ -129,9 +131,20 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 
+  const openUserPreview = (user: Member) => {
+    openUserPreviewSheet(user);
+    navigate({
+      replace: true,
+      search: (prev) => ({
+        ...prev,
+        ...{ userIdPreview: user.id },
+      }),
+    });
+  };
+
   // Build columns
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Member>[]>([]);
-  useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet)), [isAdmin]);
+  useMemo(() => setColumns(useColumns(t, openUserPreview, isMobile, isAdmin, isSheet)), [isAdmin]);
   // Map (updated) query data to rows
   useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
 
@@ -244,6 +257,12 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     setSelectedRows(new Set<string>());
     setSortColumns(getInitialSortColumns(search));
   }, [search, entity.id]);
+
+  useEffect(() => {
+    if (!rows.length || !('userIdPreview' in search) || !search.userIdPreview) return;
+    const user = rows.find((t) => t.id === search.userIdPreview);
+    if (user) openUserPreviewSheet(user);
+  }, [rows]);
 
   return (
     <div className="flex flex-col gap-4 h-full">

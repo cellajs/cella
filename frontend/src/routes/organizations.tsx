@@ -9,6 +9,7 @@ import { membersQueryOptions } from '~/modules/organizations/members-table';
 import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
 import type { Organization as OrganizationType } from '~/types';
 import { AppRoute } from '.';
+import { z } from 'zod';
 
 //Lazy-loaded components
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
@@ -35,7 +36,10 @@ export const OrganizationRoute = createRoute({
 
 export const OrganizationMembersRoute = createRoute({
   path: '/members',
-  validateSearch: membersSearchSchema,
+  validateSearch: z.object({
+    ...membersSearchSchema.shape,
+    userIdPreview: z.string().optional(),
+  }),
   staticData: { pageTitle: 'Members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),

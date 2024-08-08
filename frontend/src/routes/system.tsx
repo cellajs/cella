@@ -13,6 +13,7 @@ import SystemPanel from '~/modules/system/system-panel';
 import { usersQueryOptions } from '~/modules/users/users-table';
 import { AppRoute } from '.';
 import { RequestsPerMinute } from '~/modules/system/metrics-charts/requests-per-minute';
+import { z } from 'zod';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
@@ -21,7 +22,11 @@ const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
 
 // Search query schemas
 const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
-const usersSearchSchema = usersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+const baseUsersSearchSchema = usersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+const usersSearchSchema = z.object({
+  ...baseUsersSearchSchema.shape,
+  userIdPreview: z.string().optional(),
+});
 const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
 
 export const SystemPanelRoute = createRoute({

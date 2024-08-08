@@ -18,7 +18,7 @@ interface Props {
 const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
-  const openUpdateDialog = () => {
+  const openUpdateSheet = () => {
     sheet.create(
       <Card>
         <CardHeader>
@@ -37,7 +37,7 @@ const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
   };
 
   return (
-    <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={openUpdateDialog}>
+    <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={openUpdateSheet}>
       <Pencil size={16} />
     </Button>
   );

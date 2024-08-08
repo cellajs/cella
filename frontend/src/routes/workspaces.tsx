@@ -51,6 +51,8 @@ export const tasksSearchSchema = z.object({
   order: z.enum(['asc', 'desc']).default('asc').optional(),
   projectId: z.string().optional(),
   status: z.number().or(z.string()).optional(),
+  taskIdPreview: z.string().optional(),
+  userIdPreview: z.string().optional(),
 });
 
 export const WorkspaceTableRoute = createRoute({

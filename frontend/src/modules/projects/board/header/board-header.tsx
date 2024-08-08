@@ -37,7 +37,7 @@ const BoardHeader = () => {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:manage_labels'),
       // text: '',
-      id: 'workspace_settings',
+      id: 'workspace-settings',
     });
   };
 

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { User } from '~/types';
 
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
@@ -17,6 +17,7 @@ import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
   const columns: ColumnOrColumnGroup<User>[] = [
@@ -36,6 +37,13 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;
             e.preventDefault();
+            navigate({
+              replace: true,
+              search: (prev) => ({
+                ...prev,
+                ...{ userIdPreview: row.id },
+              }),
+            });
             openUserPreviewSheet(row);
           }}
         >

@@ -21,9 +21,9 @@ import { SearchDropDown } from './header/search-drop-down';
 import { TaskTableSearch } from './header/table-search';
 import TaskSheet from './task-sheet';
 import { useLiveQuery } from 'electric-sql/react';
-import type { CustomEventEventById } from '~/types';
 import { useEventListener } from '~/hooks/use-event-listener';
 import ColumnsView from '~/modules/common/data-table/columns-view';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -43,8 +43,10 @@ export default function TasksTable() {
     }),
   );
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
-  const [selectedStatuses, setSelectedStatuses] = useState<number[]>([]);
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<number[]>(
+    typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || [],
+  );
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(search.projectId?.split('_') || []);
   const [columns, setColumns] = useColumns();
   // Search query options
   const tableSort = sortColumns[0]?.columnKey as TasksSearch['tableSort'];
@@ -57,7 +59,7 @@ export default function TasksTable() {
       q: searchQuery,
       tableSort,
       order,
-      project_id: selectedProjects,
+      projectId: selectedProjects,
       status: selectedStatuses,
     }),
     [searchQuery, tableSort, order, selectedStatuses, selectedProjects],
@@ -116,8 +118,7 @@ export default function TasksTable() {
     setSelectedStatuses([]);
   };
 
-  const handleOpenPreview = (event: CustomEventEventById) => {
-    const taskId = event.detail;
+  const handleOpenPreview = (taskId: string) => {
     const relativeTasks = tasks.filter((t) => t.id === taskId || t.parent_id === taskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
     const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
@@ -126,23 +127,34 @@ export default function TasksTable() {
       className: 'max-w-full lg:max-w-4xl p-0',
       title: <span className="pl-4">{t('common:task')}</span>,
       text: <span className="pl-4">{t('common:task_sheet_text')}</span>,
-      id: `task-card-preview-${taskId}`,
+      id: `task-preview-${taskId}`,
     });
     setFocusedTaskId(taskId);
   };
 
-  useEventListener('openTaskCardPreview', handleOpenPreview);
+  useEventListener('openTaskCardPreview', (event) => handleOpenPreview(event.detail));
 
   useEffect(() => {
-    if (!tasks.length || !sheet.get(`task-card-preview-${focusedTaskId}`)) return;
+    if (!tasks.length || !sheet.get(`preview-${focusedTaskId}`)) return;
     const relativeTasks = tasks.filter((t) => t.id === focusedTaskId || t.parent_id === focusedTaskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === focusedTaskId);
     const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
     const [task] = enhanceTasks(relativeTasks, labels, members);
-    sheet.update(`task-card-preview-${task.id}`, {
+    sheet.update(`task-preview-${task.id}`, {
       content: <TaskSheet task={task} />,
     });
   }, [tasks, focusedTaskId]);
+
+  useEffect(() => {
+    if (!tasks.length || !search.taskIdPreview) return;
+    handleOpenPreview(search.taskIdPreview);
+  }, [tasks]);
+
+  useEffect(() => {
+    if (!rows.length || !search.userIdPreview) return;
+    const task = rows.find((t) => t.virtualCreatedBy?.id === search.userIdPreview);
+    if (task?.virtualCreatedBy) openUserPreviewSheet(task.virtualCreatedBy);
+  }, [rows]);
 
   useEffect(() => {
     if (search.q?.length) setSearchQuery(search.q);
