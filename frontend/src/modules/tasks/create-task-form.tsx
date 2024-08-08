@@ -161,6 +161,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
               <FormItem>
                 <FormControl>
                   <CreateTaskBlockNote
+                    projectId={projectId}
                     value={value}
                     onChange={(description, summary) => {
                       onChange(description);

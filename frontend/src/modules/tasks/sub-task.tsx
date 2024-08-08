@@ -124,7 +124,13 @@ const SubTask = ({
       </div>
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
         <div ref={subContentRef} className={!isEditing ? 'inline-flex items-center' : 'flex flex-col items-start'}>
-          <TaskBlockNote editing={isEditing} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          <TaskBlockNote
+            projectId={task.project_id}
+            editing={isEditing}
+            html={task.description || ''}
+            handleUpdateHTML={handleUpdateMarkdown}
+            mode={mode}
+          />
           {task.summary !== task.description && (
             <Button onClick={() => setIsEditing(!isEditing)} variant="link" size="micro" className="py-0">
               {t(`common:${isEditing ? 'less' : 'more'}`).toLowerCase()}

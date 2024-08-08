@@ -6,7 +6,7 @@ import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import CreateSubTaskForm from './create-sub-task-form';
 import SubTask from './sub-task';
-import { TaskBlockNote } from '../common/blocknotes/task-blocknote';
+import { TaskBlockNote } from '~/modules/common/blocknotes/task-blocknote';
 
 interface Props {
   task: Task;
@@ -31,7 +31,13 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
     <>
       {!isExpanded ? (
         <div className="inline-flex items-center">
-          <TaskBlockNote editing={false} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          <TaskBlockNote
+            projectId={task.project_id}
+            editing={false}
+            html={task.description || ''}
+            handleUpdateHTML={handleUpdateMarkdown}
+            mode={mode}
+          />
           <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100font-light px-2">
             {(task.summary !== task.description || task.subTasks.length > 0) && (
               <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5">
@@ -53,7 +59,13 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, isFocused, handleTaskCha
         </div>
       ) : (
         <>
-          <TaskBlockNote editing={isFocused} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          <TaskBlockNote
+            projectId={task.project_id}
+            editing={isFocused}
+            html={task.description || ''}
+            handleUpdateHTML={handleUpdateMarkdown}
+            mode={mode}
+          />
           {task.subTasks.length > 0 || task.summary !== task.description ? (
             <div className={`${isSheet ? 'hidden' : ''}`}>
               <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">

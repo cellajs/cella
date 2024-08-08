@@ -79,7 +79,7 @@ export function TaskTableSearch({
         placeholder={t('common:placeholder.search')}
         ref={inputRef}
         style={{ paddingLeft: '2rem' }}
-        className="h-10 w-full border-0"
+        className="h-10 w-full border-0 pr-14"
         value={innerSearchQuery}
         onChange={(e) => {
           if (e.target.value.length && selectedTasks.length) setSelectedTasks([]);

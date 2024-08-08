@@ -45,7 +45,7 @@ const BoardSearch = () => {
       <Input
         placeholder={t('common:placeholder.search')}
         style={{ paddingLeft: '2rem' }}
-        className="h-10 w-full border-0"
+        className="h-10 w-full border-0 pr-10"
         ref={inputRef}
         value={searchQuery}
         onChange={(e) => {

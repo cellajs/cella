@@ -126,6 +126,7 @@ export const CreateSubTaskForm = ({
               <FormItem>
                 <FormControl>
                   <CreateTaskBlockNote
+                    projectId={parentTask.project_id}
                     value={value}
                     onChange={(description, summary) => {
                       onChange(description);

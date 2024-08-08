@@ -255,6 +255,9 @@ importers:
       '@atlaskit/pragmatic-drag-and-drop-hitbox':
         specifier: ^1.0.3
         version: 1.0.3
+      '@blocknote/core':
+        specifier: ^0.15.3
+        version: 0.15.3
       '@blocknote/react':
         specifier: ^0.15.3
         version: 0.15.3(@tiptap/pm@2.5.9)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
