@@ -456,5 +456,6 @@
   "todo": "Todo",
   "task_sheet_text": "View and manage a specific task",
   "metrics": "Metrics",
-  "assigned_to": "Assigned to"
+  "assigned_to": "Assigned to",
+  "create_label.text": "Type a label name to create it"
 }

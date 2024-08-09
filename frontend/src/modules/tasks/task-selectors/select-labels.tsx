@@ -148,7 +148,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
         }}
         clearValue={setSearchValue}
         className="leading-normal"
-        placeholder={t('common:placeholder.search_labels')}
+        placeholder={showedLabels.length ? t('common:placeholder.search_labels') : t('common:create_label.text')}
       />
       {!isSearching && <Kbd value="L" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
@@ -187,7 +187,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
             </CommandItem>
           ))}
         </CommandGroup>
-        {!isSearching ? (
+        {!isSearching && selectedLabels.length ? (
           <CommandItem className="flex justify-center text-sm m-1" onSelect={() => setIsRemoving(!isRemoving)}>
             {isRemoving ? 'Show recent labels' : 'Show selected labels'}
           </CommandItem>
@@ -218,7 +218,7 @@ const CommandItemCreate = ({ searchValue, labels, onSelect }: CommandItemCreateP
   return (
     <CommandItem className="text-sm m-1 flex justify-center items-center" onSelect={onSelect}>
       {t('common:create_resource', { resource: t('common:label').toLowerCase() })}
-      <Badge className="ml-2 px-2 py-0 font-light flex  items-center" variant="plain">
+      <Badge className="ml-2 px-2 py-0 font-light flex" variant="plain">
         {searchValue}
       </Badge>
     </CommandItem>
