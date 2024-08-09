@@ -33,10 +33,8 @@ export const CreateSubTaskForm = ({
   parentTask,
   formOpen,
   setFormState,
-  firstSubTask,
 }: {
   parentTask: Task;
-  firstSubTask: boolean;
   formOpen: boolean;
   setFormState: (value: boolean) => void;
 }) => {
@@ -112,7 +110,7 @@ export const CreateSubTaskForm = ({
     return (
       <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none opacity-50 hover:opacity-100" onClick={() => setFormState(true)}>
         <Plus size={16} />
-        <span className="ml-1 font-normal">{firstSubTask ? t('common:create_subtask') : t('common:add_subtask')}</span>
+        <span className="ml-1 font-normal">{t('common:add_subtask')}</span>
       </Button>
     );
   return (
