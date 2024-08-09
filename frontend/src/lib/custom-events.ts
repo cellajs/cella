@@ -5,6 +5,7 @@ interface CustomEventMap {
   toggleCard: CustomEvent<string>;
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
+  searchDropDownClose: Event;
 }
 
 type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;

@@ -19,6 +19,7 @@ export const TaskBlockNote = ({ html, projectId, mode, handleUpdateHTML }: TaskE
 
   const { projects } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
+
   const updateData = async () => {
     const summary = editor.document[0];
     //remove empty lines
@@ -26,7 +27,6 @@ export const TaskBlockNote = ({ html, projectId, mode, handleUpdateHTML }: TaskE
     const summaryHTML = await editor.blocksToHTMLLossy([summary]);
     const contentHtml = await editor.blocksToHTMLLossy(content);
     handleUpdateHTML?.(contentHtml, summaryHTML);
-    editor.replaceBlocks(editor.document, content);
   };
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export const TaskBlockNote = ({ html, projectId, mode, handleUpdateHTML }: TaskE
       const blocks = await editor.tryParseHTMLToBlocks(html);
       editor.replaceBlocks(editor.document, blocks);
     })();
-  }, []);
+  }, [html]);
 
   return (
     <Suspense>

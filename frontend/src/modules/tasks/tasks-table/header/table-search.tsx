@@ -6,6 +6,7 @@ import { Search, XCircle, ListCollapse } from 'lucide-react';
 import { Input } from '~/modules/ui/input';
 import { useDebounce } from '~/hooks/use-debounce';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
+import { useEventListener } from '~/hooks/use-event-listener';
 
 export function TaskTableSearch({
   children,
@@ -66,22 +67,22 @@ export function TaskTableSearch({
       const target = event.target as Node;
       if (!wrapper?.contains(target) && !dropdownRef.current?.contains(target)) setIsFocused(false);
     };
-    const handleFocus = () => {
-      if (document.activeElement === inputRef.current) setIsFocused(true);
-    };
     const inputElement = inputRef.current;
-    if (inputElement) inputElement.addEventListener('focus', handleFocus);
+    if (inputElement) inputElement.addEventListener('focus', () => setIsFocused(true));
     document.addEventListener('mousedown', handleDocumentClick);
     return () => {
-      if (inputElement) inputElement.removeEventListener('focus', handleFocus);
+      if (inputElement) inputElement.removeEventListener('focus', () => setIsFocused(true));
       document.removeEventListener('mousedown', handleDocumentClick);
     };
   }, []);
+
+  useEventListener('searchDropDownClose', () => setIsFocused(false));
 
   return (
     <div id="input-wrap" className="relative flex w-full sm:min-w-44 items-center" onClick={handleClick} onKeyDown={undefined}>
       <Search size={16} className="absolute left-3" style={{ opacity: `${innerSearchQuery.length ? 1 : 0.5}` }} />
       <Input
+        id="table-search"
         placeholder={t('common:placeholder.search')}
         ref={inputRef}
         style={{ paddingLeft: '2rem' }}

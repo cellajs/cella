@@ -4,6 +4,7 @@ import { statusFillColors, taskStatuses, type TaskStatus } from '~/modules/tasks
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 
 export function SearchDropDown({
   selectedProjects,
@@ -77,7 +78,9 @@ export function SearchDropDown({
       rowHeight={42}
       rowKeyGetter={(row) => row.id}
       onCellKeyDown={(args, event) => {
-        if (event.key !== 'Enter') return;
+        if (event.key !== 'Enter' && event.key !== 'Escape') return;
+        if (event.key === 'Escape') return dispatchCustomEvent('searchDropDownClose');
+
         const index = args.rowIdx;
         const type = args.column.key;
         if (type === 'project') handleProjectClick(projects[index].id);
