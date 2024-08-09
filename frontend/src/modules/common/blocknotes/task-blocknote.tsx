@@ -34,15 +34,12 @@ export const TaskBlockNote = ({ id, html, projectId, mode, handleUpdateHTML }: T
     (async () => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
       editor.replaceBlocks(editor.document, blocks);
-      const editorContainerElement = document.getElementById(`blacknote-${id}`);
-      const editorElement = editorContainerElement?.getElementsByClassName('bn-editor');
-      if (editorElement?.length) (editorElement[0] as HTMLDivElement).focus();
     })();
   }, [html]);
 
   useEffect(() => {
     if (focusedTaskId !== id) return;
-    const editorContainerElement = document.getElementById(`blacknote-${id}`);
+    const editorContainerElement = document.getElementById(`blocknote-${id}`);
     const editorElement = editorContainerElement?.getElementsByClassName('bn-editor');
     if (editorElement?.length) (editorElement[0] as HTMLDivElement).focus();
   }, [focusedTaskId]);
@@ -50,7 +47,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, handleUpdateHTML }: T
   return (
     <Suspense>
       <BlockNoteView
-        id={`blacknote-${id}`}
+        id={`blocknote-${id}`}
         onBlur={async () => await updateData()}
         editor={editor}
         data-color-scheme={mode}
