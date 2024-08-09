@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import type { Mode } from '~/store/theme';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
@@ -17,31 +17,44 @@ interface TaskEditorProps {
 
 export const TaskBlockNote = ({ id, html, projectId, mode, handleUpdateHTML }: TaskEditorProps) => {
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
+  const initial = useRef(true);
 
   const { projects, focusedTaskId } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
 
   const updateData = async () => {
-    const summary = editor.document[0];
+    //if user in Formatting Toolbar does not update
+    if (editor.getSelection()) return;
+
     //remove empty lines
     const content = editor.document.filter((d) => Array.isArray(d.content) && d.content.length);
-    const summaryHTML = await editor.blocksToHTMLLossy([summary]);
     const contentHtml = await editor.blocksToHTMLLossy(content);
+    if (html === contentHtml && !editor.getSelection()) return editor.replaceBlocks(editor.document, content);
+    const summary = editor.document[0];
+    const summaryHTML = await editor.blocksToHTMLLossy([summary]);
     handleUpdateHTML?.(contentHtml, summaryHTML);
+  };
+
+  const triggerFocus = () => {
+    const editorContainerElement = document.getElementById(`blocknote-${id}`);
+    const editorElement = editorContainerElement?.getElementsByClassName('bn-editor');
+    if (editorElement?.length) (editorElement[0] as HTMLDivElement).focus();
   };
 
   useEffect(() => {
     (async () => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
       editor.replaceBlocks(editor.document, blocks);
+      if (initial.current) {
+        triggerFocus();
+        initial.current = false;
+      }
     })();
   }, [html]);
 
   useEffect(() => {
     if (focusedTaskId !== id) return;
-    const editorContainerElement = document.getElementById(`blocknote-${id}`);
-    const editorElement = editorContainerElement?.getElementsByClassName('bn-editor');
-    if (editorElement?.length) (editorElement[0] as HTMLDivElement).focus();
+    triggerFocus();
   }, [focusedTaskId]);
 
   return (
