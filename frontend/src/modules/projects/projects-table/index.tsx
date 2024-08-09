@@ -157,7 +157,8 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch value={query} setQuery={onSearch} />
+            {/* TODO: can we remove this type hack? */}
+            <TableSearch value={query as string | undefined} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />

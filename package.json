@@ -32,7 +32,7 @@
     "@biomejs/biome": "^1.8.3",
     "@evilmartians/lefthook": "^1.7.9",
     "rimraf": "^5.0.7",
-    "turbo": "^2.0.9",
+    "turbo": "^2.0.12",
     "typescript": "^5.5.4"
   },
   "packageManager": "pnpm@9.1.2"
