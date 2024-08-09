@@ -8,16 +8,17 @@ import './styles.css';
 import { getMentionMenuItems, schemaWithMentions } from './mention';
 
 interface TaskEditorProps {
+  id: string;
   mode: Mode;
   html: string;
   projectId: string;
   handleUpdateHTML: (newContent: string, newSummary: string) => void;
 }
 
-export const TaskBlockNote = ({ html, projectId, mode, handleUpdateHTML }: TaskEditorProps) => {
+export const TaskBlockNote = ({ id, html, projectId, mode, handleUpdateHTML }: TaskEditorProps) => {
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
 
-  const { projects } = useWorkspaceStore();
+  const { projects, focusedTaskId } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
 
   const updateData = async () => {
@@ -33,15 +34,24 @@ export const TaskBlockNote = ({ html, projectId, mode, handleUpdateHTML }: TaskE
     (async () => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
       editor.replaceBlocks(editor.document, blocks);
+      const editorContainerElement = document.getElementById(`blacknote-${id}`);
+      const editorElement = editorContainerElement?.getElementsByClassName('bn-editor');
+      if (editorElement?.length) (editorElement[0] as HTMLDivElement).focus();
     })();
   }, [html]);
+
+  useEffect(() => {
+    if (focusedTaskId !== id) return;
+    const editorContainerElement = document.getElementById(`blacknote-${id}`);
+    const editorElement = editorContainerElement?.getElementsByClassName('bn-editor');
+    if (editorElement?.length) (editorElement[0] as HTMLDivElement).focus();
+  }, [focusedTaskId]);
 
   return (
     <Suspense>
       <BlockNoteView
+        id={`blacknote-${id}`}
         onBlur={async () => await updateData()}
-        editable={true}
-        autoFocus={true}
         editor={editor}
         data-color-scheme={mode}
         className="task-blocknote"

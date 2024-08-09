@@ -53,7 +53,7 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, handleTaskChange }: Prop
         </div>
       ) : (
         <>
-          <TaskBlockNote projectId={task.project_id} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          <TaskBlockNote id={task.id} projectId={task.project_id} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
           {task.subTasks.length > 0 || task.summary !== task.description ? (
             <div className={`${isSheet ? 'hidden' : ''}`}>
               <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">
@@ -80,11 +80,7 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, handleTaskChange }: Prop
               ))}
             </div>
 
-            <CreateSubTaskForm
-              formOpen={createSubTask}
-              setFormState={(value) => setCreateSubTask(value)}
-              parentTask={task}
-            />
+            <CreateSubTaskForm formOpen={createSubTask} setFormState={(value) => setCreateSubTask(value)} parentTask={task} />
           </div>
         </>
       )}
