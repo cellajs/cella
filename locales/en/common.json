@@ -55,7 +55,6 @@
   "country": "Country",
   "choose_labels": "Choose labels",
   "create": "Create",
-  "create_subtask": "Create todo",
   "add_subtask": "Add todo",
   "create_resource": "Create {{resource}}",
   "create_project.text": "Set up a new project",

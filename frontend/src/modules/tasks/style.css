@@ -1,26 +1,3 @@
-.w-md-editor-text-pre > code,
-.w-md-editor-text,
-.wmde-markdown {
-  padding: 0;
-  font-size: inherit !important;
-  line-height: inherit !important;
-  white-space: inherit !important;
-  word-break: inherit !important;
-  white-space: pre-wrap !important;
-  background:  none !important;
-}
-
-.w-md-editor {
-  box-shadow: none !important;
-}
-
-.wmde-markdown.summary {
-  > p {
-    display: inline;
-  }
-}
-.wmde-markdown {
-  a {
-    word-break: break-all;
-  }
+.task-summary > .bn-inline-content {
+  display: inline;
 }

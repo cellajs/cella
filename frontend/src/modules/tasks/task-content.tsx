@@ -29,17 +29,17 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, handleTaskChange }: Prop
   return (
     <>
       {!isExpanded ? (
-        <div className="inline-flex items-center">
+        <div className="mt-1">
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: to avoid using TaskBlockNote for not editing */}
-          <div dangerouslySetInnerHTML={{ __html: task.summary as string }} />
-          <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100font-light px-2">
+          <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="inline font-light task-summary" />
+          <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 px-2">
             {(task.summary !== task.description || task.subTasks.length > 0) && (
               <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5">
                 {t('common:more').toLowerCase()}
               </Button>
             )}
             {task.subTasks.length > 0 && (
-              <div className="inline-flex py-0 h-5 ml-1 gap-[.1rem]">
+              <div className="inline-flex py-0.5 text-xs h-5 ml-1 gap-[.1rem]">
                 <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
                 <span className="font-light">/</span>
                 <span className="font-light">{task.subTasks.length}</span>
@@ -81,7 +81,6 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, handleTaskChange }: Prop
             </div>
 
             <CreateSubTaskForm
-              firstSubTask={task.subTasks.length < 1}
               formOpen={createSubTask}
               setFormState={(value) => setCreateSubTask(value)}
               parentTask={task}

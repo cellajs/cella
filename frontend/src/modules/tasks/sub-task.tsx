@@ -128,7 +128,7 @@ const SubTask = ({
             <TaskBlockNote projectId={task.project_id} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
           ) : (
             // biome-ignore lint/security/noDangerouslySetInnerHtml: to avoid using TaskBlockNote for not editing
-            <div dangerouslySetInnerHTML={{ __html: task.summary as string }} />
+            <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
           )}
 
           {task.summary !== task.description && (
