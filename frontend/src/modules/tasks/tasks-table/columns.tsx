@@ -16,6 +16,8 @@ import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { Dot } from 'lucide-react';
+import { badgeStyle } from '../task-selectors/select-labels';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -110,6 +112,48 @@ export const useColumns = () => {
             <status.icon className={`size-4 mr-2 fill-current ${statusFillColors[row.status as TaskStatus]}`} aria-hidden="true" />
             <span className={statusTextColors[row.status as TaskStatus]}>{t(status.status)}</span>
           </>
+        );
+      },
+    },
+    {
+      key: 'assigned_to',
+      name: t('common:assigned_to'),
+      sortable: false,
+      visible: false,
+      width: 160,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => {
+        if (!row.virtualAssignedTo.length) return '-';
+        return (
+          <div className="flex flex-col">
+            {row.virtualAssignedTo.map((user) => (
+              <div key={user.id} className="flex items-center gap-1">
+                <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                <span>{user.name}</span>
+              </div>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'labels',
+      name: t('common:labels'),
+      sortable: false,
+      visible: false,
+      width: 190,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => {
+        if (!row.virtualLabels.length) return '-';
+        return (
+          <div className="flex flex-col">
+            {row.virtualLabels.map((label) => (
+              <div key={label.id} className="flex items-center gap-1">
+                <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={6} />
+                <span>{label.name}</span>
+              </div>
+            ))}
+          </div>
         );
       },
     },

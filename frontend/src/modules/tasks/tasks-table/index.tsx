@@ -24,6 +24,7 @@ import { useLiveQuery } from 'electric-sql/react';
 import { useEventListener } from '~/hooks/use-event-listener';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import { configureForExport } from './helpers';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -103,7 +104,11 @@ export default function TasksTable() {
     true,
     true,
     labels,
-    projects.flatMap((p) => p.members),
+    projects
+      .flatMap((p) => p.members) // Flattens members arrays from all projects
+      .filter(
+        (user, index, self) => index === self.findIndex((u) => u.id === user.id), // Filters out duplicates based on id
+      ),
     true,
   );
   const isLoading = !updatedAt;
@@ -177,8 +182,11 @@ export default function TasksTable() {
           className="max-lg:hidden"
           filename={`Tasks from ${projects.map((p) => p.name).join(' and ')}`}
           columns={columns}
-          selectedRows={rows.filter((t) => selectedTasks.includes(t.id))}
-          fetchRows={async (limit) => rows.slice(0, limit)}
+          selectedRows={configureForExport(
+            rows.filter((t) => selectedTasks.includes(t.id)),
+            projects,
+          )}
+          fetchRows={async (limit) => configureForExport(rows.slice(0, limit), projects)}
         />
       </TableHeader>
       <DataTable<Task>

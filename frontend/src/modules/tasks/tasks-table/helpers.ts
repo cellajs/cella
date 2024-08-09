@@ -1,4 +1,7 @@
 import type { Task } from '~/modules/common/electric/electrify';
+import type { Project } from '~/types';
+import { impacts } from '../task-selectors/select-impact';
+import { taskStatuses } from '../task-selectors/select-status';
 
 export const sortBy = (
   tasks: Task[],
@@ -38,5 +41,25 @@ export const filterBy = (tasks: Task[], selectedProjects: string[], selectedStat
     const isStatusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(task.status);
 
     return isProjectMatch && isStatusMatch;
+  });
+};
+
+export const configureForExport = (tasks: Task[], projects: Omit<Project, 'counts'>[]) => {
+  return tasks.map((task) => {
+    const project = projects.find((p) => p.id === task.project_id);
+    const subTaskCount = `${task.subTasks.filter((st) => st.status === 6).length} of ${task.subTasks.length}`;
+    const impact = impacts[task.impact ?? 0];
+    return {
+      ...task,
+      summary: task.summary.replace('<p class="bn-inline-content">', '').replace('</p>', ''),
+      labels: task.virtualLabels.map((label) => label.name),
+      status: taskStatuses[task.status].status,
+      impact: impact.value,
+      subTasks: task.subTasks.length ? subTaskCount : '-',
+      project_id: project?.name ?? '-',
+      created_by: task.virtualCreatedBy?.name ?? '-',
+      modified_by: task.virtualUpdatedBy?.name ?? '-',
+      assigned_to: task.virtualAssignedTo.map((m) => m.name) || '-',
+    };
   });
 };

@@ -456,5 +456,6 @@
   "show_all": "Show all",
   "todo": "Todo",
   "task_sheet_text": "View and manage a specific task",
-  "metrics": "Metrics"
+  "metrics": "Metrics",
+  "assigned_to": "Assigned to"
 }
