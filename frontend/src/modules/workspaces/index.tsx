@@ -5,9 +5,7 @@ import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import { FocusViewContainer } from '../common/focus-view';
 import { PageHeader } from '../common/page-header';
-import { type Label, useElectric } from '../common/electric/electrify.ts';
 import { useEffect } from 'react';
-import { useLiveQuery } from 'electric-sql/react';
 
 export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -17,8 +15,6 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
 
 const WorkspacePage = () => {
   const { showPageHeader, setWorkspace, setProjects, setLabels, setSelectedTasks } = useWorkspaceStore();
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
 
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
@@ -29,23 +25,14 @@ const WorkspacePage = () => {
   setWorkspace(workspace);
   setProjects(projects);
 
-  const { results } = useLiveQuery(
-    Electric.db.labels.liveMany({
-      where: {
-        project_id: { in: projects.map((p) => p.id) },
-      },
-    }),
-  ) as {
-    results: Label[] | undefined;
-  };
-
   useEffect(() => {
     setSelectedTasks([]);
   }, [pathname]);
 
+  //TODO Fix labels
   useEffect(() => {
-    if (results) setLabels(results);
-  }, [results]);
+    setLabels([]);
+  }, []);
 
   return (
     <FocusViewContainer>

@@ -1,16 +1,14 @@
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
-import { useElectric } from '~/modules/common/electric/electrify.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
-import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Member } from '~/types/index.ts';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
+import { updateTask } from '~/api/tasks.ts';
 
 interface AssignMembersProps {
   value: Member[];
@@ -21,7 +19,6 @@ interface AssignMembersProps {
 
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 240 }: AssignMembersProps) => {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
   const { focusedTaskId, projects } = useWorkspaceStore();
   const [selectedMembers, setSelectedMembers] = useState<Member[]>(value);
   const [searchValue, setSearchValue] = useState('');
@@ -37,25 +34,14 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
 
   const showedMembers = showAll ? sortedMembers : sortedMembers.slice(0, 6);
   const isSearching = searchValue.length > 0;
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
 
-  const changeAssignedTo = (members: Member[]) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+  const changeAssignedTo = async (members: Member[]) => {
     if (!focusedTaskId) return;
-    const db = Electric.db;
-    const assignedTo = members.map((user) => user.id);
-    db.tasks.update({
-      data: {
-        assigned_to: assignedTo,
-        modified_at: new Date(),
-        modified_by: user.id,
-      },
-      where: {
-        id: focusedTaskId,
-      },
-    });
-    return;
+    await updateTask(
+      focusedTaskId,
+      'assignedTo',
+      members.map((user) => user.id),
+    );
   };
 
   const handleSelectClick = (id: string) => {

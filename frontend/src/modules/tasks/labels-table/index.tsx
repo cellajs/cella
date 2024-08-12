@@ -3,17 +3,15 @@ import { Trash, XSquare } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
-import type { Label } from '~/modules/common/electric/electrify';
-import { useElectric } from '~/modules/common/electric/electrify';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { useColumns } from './columns';
+import type { Label } from '~/types';
 
 interface LabelsParam {
   role?: 'secondary' | 'primary' | undefined;
@@ -24,7 +22,6 @@ interface LabelsParam {
 
 const LabelsTable = ({ labels }: { labels: Label[] }) => {
   const { t } = useTranslation();
-  const Electric = useElectric();
 
   const [columns] = useColumns();
   const defaultSearch: LabelsParam = { sort: 'name', order: 'asc' };
@@ -61,20 +58,19 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
   };
 
   const removeLabel = () => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-
-    Electric.db.labels
-      .deleteMany({
-        where: {
-          id: {
-            in: selectedLabels,
-          },
-        },
-      })
-      .then(() => {
-        toast.success(t(`common:success.delete_${selectedLabels.length > 1 ? 'labels' : 'label'}`));
-        setSelectedLabels([]);
-      });
+    //TODO inplement it
+    // Electric.db.labels
+    //   .deleteMany({
+    //     where: {
+    //       id: {
+    //         in: selectedLabels,
+    //       },
+    //     },
+    //   })
+    //   .then(() => {
+    //     toast.success(t(`common:success.delete_${selectedLabels.length > 1 ? 'labels' : 'label'}`));
+    //     setSelectedLabels([]);
+    //   });
   };
 
   const filteredLabels = useMemo(() => {

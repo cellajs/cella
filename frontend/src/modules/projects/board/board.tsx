@@ -9,12 +9,12 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { WorkspaceStoreProject, TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/types';
-import { useElectric } from '~/modules/common/electric/electrify';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { BoardColumn } from './board-column';
 import BoardHeader from './header/board-header';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { getTask } from '~/api/tasks';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -88,9 +88,6 @@ export default function Board() {
     return projects[0];
   }, [project, projects]);
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
-
   const toggleCreateTaskForm = (itemId: string) => {
     setColumnTaskCreate((prevState) => ({
       ...prevState,
@@ -100,18 +97,7 @@ export default function Board() {
 
   const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
     if (!projects.length) return;
-
-    const focusedTask = await electric.db.tasks
-      .findFirst({
-        where: {
-          ...(focusedTaskId
-            ? { id: focusedTaskId }
-            : {
-                project_id: projects[0].id,
-              }),
-        },
-      })
-      .catch((e) => console.error(e));
+    const focusedTask = await getTask(focusedTaskId ? focusedTaskId : projects[0].id);
 
     if (!focusedTask) return;
 
@@ -119,24 +105,16 @@ export default function Board() {
 
     dispatchCustomEvent('taskChange', {
       taskId: focusedTask.id,
-      projectId: focusedTask.project_id,
+      projectId: focusedTask.projectId,
       direction,
     });
   };
 
   const handleHorizontalArrowKeyDown = async (event: KeyboardEvent) => {
-    const focusedTask = await electric.db.tasks.findFirst({
-      where: {
-        ...(focusedTaskId
-          ? { id: focusedTaskId }
-          : {
-              project_id: projects[0].id,
-            }),
-      },
-    });
+    const focusedTask = await getTask(focusedTaskId ? focusedTaskId : projects[0].id);
 
     if (!focusedTask) return;
-    const currentProjectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
+    const currentProjectIndex = projects.findIndex((p) => p.id === focusedTask.projectId);
 
     const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;
     const nextProject = projects[nextProjectIndex];
@@ -148,15 +126,10 @@ export default function Board() {
   const handleNKeyDown = async () => {
     if (!projects.length) return;
 
-    const focusedTask = await electric.db.tasks.findFirst({
-      where: {
-        ...(focusedTaskId && { id: focusedTaskId }),
-      },
-    });
-
+    const focusedTask = await getTask(focusedTaskId ? focusedTaskId : projects[0].id);
     if (!focusedTask) return;
 
-    const projectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
+    const projectIndex = projects.findIndex((p) => p.id === focusedTask.projectId);
     if (projectIndex === -1) return;
 
     toggleCreateTaskForm(projects[projectIndex].id);

@@ -18,16 +18,21 @@ CREATE TABLE IF NOT EXISTS "tasks" (
 	"sort_order" double precision NOT NULL,
 	"status" integer NOT NULL,
 	"parent_id" varchar,
-	"labels" jsonb NOT NULL,
-	"assigned_to" jsonb NOT NULL,
+	"labels" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"assigned_to" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"organization_id" varchar NOT NULL,
 	"project_id" varchar NOT NULL,
-	"created_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar NOT NULL,
 	"modified_at" timestamp,
 	"modified_by" varchar
 );
 --> statement-breakpoint
-ALTER TABLE "tasks" ENABLE ELECTRIC;
+DO $$ BEGIN
+ ALTER TABLE "tasks" ADD CONSTRAINT "tasks_parent_id_tasks_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."tasks"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
-ALTER TABLE "labels" ENABLE ELECTRIC;
+CREATE INDEX IF NOT EXISTS "idx_tasks_description" ON "tasks" USING btree ("description");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_tasks_project" ON "tasks" USING btree ("project_id");

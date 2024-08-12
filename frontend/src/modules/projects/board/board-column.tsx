@@ -2,24 +2,21 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { lazy, useEffect, useRef, useState } from 'react';
+import { lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dropdowner } from '~/modules/common/dropdowner/state';
-import { type Task, useElectric } from '~/modules/common/electric/electrify';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
-import { useUserStore } from '~/store/user';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import type { CustomEventEventById, WorkspaceStoreProject, TaskChangeEvent, Project } from '~/types/index.ts';
+import type { CustomEventEventById, WorkspaceStoreProject, TaskChangeEvent, Project, Task } from '~/types';
 import { ProjectSettings } from '../project-settings';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '~/modules/tasks/create-task-form';
 import { getTaskOrder } from '~/modules/tasks/helpers';
@@ -32,11 +29,13 @@ import SelectStatus, { type TaskStatus } from '~/modules/tasks/task-selectors/se
 import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type';
 import { BoardColumnHeader } from './board-column-header';
 import { ColumnSkeleton } from './column-skeleton';
-import { useLiveQuery } from 'electric-sql/react';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useThemeStore } from '~/store/theme';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import FocusTrap from '~/modules/common/focus-trap';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { tasksQueryOptions } from '~/modules/tasks/tasks-table';
+import { getRelativeTask, updateTask } from '~/api/tasks';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -53,54 +52,41 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
-
-  const { user } = useUserStore();
   const { mode } = useThemeStore();
   const { menu } = useNavigationStore();
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId, labels } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
-  const projectLabels = labels.filter((l) => l.project_id === project.id);
+  const projectLabels = labels.filter((l) => l.projectId === project.id);
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
-
-  const { results: tasks = [], updatedAt } = useLiveQuery(
-    Electric.db.tasks.liveMany({
-      where: {
-        project_id: project.id,
-        AND: [
-          {
-            description: {
-              contains: searchQuery,
-            },
-          },
-        ],
-      },
+  // Query tasks
+  const queryResult = useInfiniteQuery(
+    tasksQueryOptions({
+      q: searchQuery,
+      projectId: project.id,
     }),
-  ) as {
-    results: Task[] | undefined;
-    updatedAt: Date | undefined;
-  };
-  const isLoading = !updatedAt;
+  );
+
+  const tasks = useMemo(() => {
+    return queryResult.data?.pages?.flatMap((page) => page.items) || [];
+  }, [queryResult.data]);
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
     if (field === 'impact')
       component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
-    else if (field === 'labels')
-      component = <SetLabels value={task.virtualLabels} organizationId={task.organization_id} projectId={task.project_id} />;
-    else if (field === 'assigned_to') component = <AssignMembers projectId={task.project_id} value={task.virtualAssignedTo} />;
+    else if (field === 'labels') component = <SetLabels value={task.virtualLabels} organizationId={task.organizationId} projectId={task.projectId} />;
+    else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.virtualAssignedTo} />;
     else if (field === 'status')
       component = (
         <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
       );
 
-    return dropdowner(component, { id: field, trigger, align: ['status', 'assigned_to'].includes(field) ? 'end' : 'start' });
+    return dropdowner(component, { id: field, trigger, align: ['status', 'assignedTo'].includes(field) ? 'end' : 'start' });
   };
 
   const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, projectLabels, project.members);
@@ -136,24 +122,9 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     });
   };
 
-  const handleChange = async (field: keyof Task, value: string | number | null, taskId: string) => {
-    if (!Electric) return toast.error('common:local_db_inoperable');
-
-    const db = Electric.db;
-    const isMainTask = tasks.find((t) => t.id === taskId)?.parent_id === null;
-    const newOrder = field === 'status' && isMainTask ? getTaskOrder(taskId, value, tasks) : null;
-
-    await db.tasks.update({
-      data: {
-        [field]: value,
-        ...(newOrder && { sort_order: newOrder }),
-        modified_at: new Date(),
-        modified_by: user.id,
-      },
-      where: {
-        id: taskId,
-      },
-    });
+  const handleChange = async (field: string, value: string | number | null, taskId: string) => {
+    const newOrder = field === 'status' ? getTaskOrder(taskId, value, []) : null;
+    await updateTask(taskId, field, value, newOrder);
   };
 
   const handleTaskFormClick = () => {
@@ -173,7 +144,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   };
 
   useHotkeys([
-    ['a', () => hotKeyPress('assigned_to')],
+    ['a', () => hotKeyPress('assignedTo')],
     ['i', () => hotKeyPress('impact')],
     ['l', () => hotKeyPress('labels')],
     ['s', () => hotKeyPress('status')],
@@ -215,63 +186,35 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
           const targetData = target.data;
           const edge: Edge | null = extractClosestEdge(targetData);
           // Drag a task
-          if (isTaskData(sourceData) && isTaskData(targetData)) {
-            const relativeTask = await Electric?.db.tasks.findFirst({
-              where: {
-                sort_order: { [edge === 'top' ? 'gt' : 'lt']: targetData.order },
-                project_id: targetData.item.project_id,
-              },
-              orderBy: {
-                sort_order: edge === 'top' ? 'asc' : 'desc',
-              },
-            });
+          if (isTaskData(sourceData) && isTaskData(targetData) && edge) {
+            const relativeTask = await getRelativeTask(edge, targetData.order, targetData.item.projectId);
+
             let newOrder: number;
-            if (!relativeTask || relativeTask.sort_order === targetData.order) {
+            if (!relativeTask || relativeTask.order === targetData.order) {
               newOrder = edge === 'top' ? targetData.order + 1 : targetData.order / 2;
             } else if (relativeTask.id === sourceData.item.id) {
-              newOrder = sourceData.item.sort_order;
+              newOrder = sourceData.item.order;
             } else {
-              newOrder = (relativeTask.sort_order + targetData.order) / 2;
+              newOrder = (relativeTask.order + targetData.order) / 2;
             }
             // Update order of dragged task
-            Electric?.db.tasks.update({
-              data: {
-                sort_order: newOrder,
-                // Define drag a task in same or different column
-                ...(sourceData.item.project_id !== targetData.item.project_id && { project_id: targetData.item.project_id }),
-              },
-              where: {
-                id: sourceData.item.id,
-              },
-            });
+
+            if (sourceData.item.projectId !== targetData.item.projectId)
+              await updateTask(sourceData.item.id, 'projectId', targetData.item.projectId, newOrder);
+            else await updateTask(sourceData.item.id, 'order', newOrder);
           }
-          if (isSubTaskData(sourceData) && isSubTaskData(targetData)) {
-            const relativeTask = await Electric?.db.tasks.findFirst({
-              where: {
-                sort_order: { [edge === 'top' ? 'lt' : 'gt']: targetData.order },
-                project_id: targetData.item.project_id,
-              },
-              orderBy: {
-                sort_order: edge === 'top' ? 'desc' : 'asc',
-              },
-            });
+          if (isSubTaskData(sourceData) && isSubTaskData(targetData) && edge) {
+            const relativeTask = await getRelativeTask(edge, targetData.order, targetData.item.projectId, true);
             let newOrder: number;
-            if (!relativeTask || relativeTask.sort_order === targetData.order) {
+            if (!relativeTask || relativeTask.order === targetData.order) {
               newOrder = edge === 'top' ? targetData.order / 2 : targetData.order + 1;
             } else if (relativeTask.id === sourceData.item.id) {
-              newOrder = sourceData.item.sort_order;
+              newOrder = sourceData.item.order;
             } else {
-              newOrder = (relativeTask.sort_order + targetData.order) / 2;
+              newOrder = (relativeTask.order + targetData.order) / 2;
             }
-            // Update order of dragged task
-            Electric?.db.tasks.update({
-              data: {
-                sort_order: newOrder,
-              },
-              where: {
-                id: sourceData.item.id,
-              },
-            });
+
+            await updateTask(sourceData.item.id, 'order', newOrder);
           }
         },
       }),
@@ -305,7 +248,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
             <CreateTaskForm
               projectId={project.id}
               organizationId={project.organizationId}
-              tasks={tasks}
+              tasks={showingTasks}
               labels={projectLabels}
               onCloseForm={() => toggleCreateForm(project.id)}
             />
@@ -313,7 +256,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
 
           <div ref={containerRef} />
 
-          {isLoading ? (
+          {queryResult.isLoading ? (
             <ColumnSkeleton />
           ) : (
             <div className="h-full flex flex-col" ref={cardListRef}>

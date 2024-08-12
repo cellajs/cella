@@ -14,7 +14,6 @@ import { membersSearchSchema } from './organizations';
 const Workspace = lazy(() => import('~/modules/workspaces'));
 const Board = lazy(() => import('~/modules/projects/board/board'));
 const TasksTable = lazy(() => import('~/modules/tasks/tasks-table'));
-const ElectricSuspense = lazy(() => import('~/modules/common/electric/suspense'));
 
 export const WorkspaceRoute = createRoute({
   path: 'workspaces/$idOrSlug',
@@ -29,9 +28,7 @@ export const WorkspaceRoute = createRoute({
   component: () => {
     return (
       <Suspense>
-        <ElectricSuspense>
-          <Workspace />
-        </ElectricSuspense>
+        <Workspace />
       </Suspense>
     );
   },
@@ -47,7 +44,7 @@ export const WorkspaceBoardRoute = createRoute({
 
 export const tasksSearchSchema = z.object({
   q: z.string().optional(),
-  tableSort: z.enum(['project_id', 'status', 'created_by', 'type', 'modified_at', 'created_at']).default('created_at').optional(),
+  tableSort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
   order: z.enum(['asc', 'desc']).default('asc').optional(),
   projectId: z.string().optional(),
   status: z.number().or(z.string()).optional(),

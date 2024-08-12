@@ -10,14 +10,14 @@ import { toast } from 'sonner';
 import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn, getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
-import { type Task, useElectric } from '~/modules/common/electric/electrify';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
-import type { DraggableItemData } from '~/types';
+import type { BaseTask, DraggableItemData } from '~/types';
 import { TaskBlockNote } from '../common/blocknotes/task-blocknote';
+import { deleteTasks } from '~/api/tasks';
 
-type TaskDraggableItemData = DraggableItemData<Task> & { type: 'subTask' };
+type TaskDraggableItemData = DraggableItemData<BaseTask> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
   return data.dragItem === true && typeof data.order === 'number' && data.type === 'subTask';
 };
@@ -26,9 +26,8 @@ const SubTask = ({
   task,
   mode,
   handleTaskChange,
-}: { task: Task; mode: Mode; handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void }) => {
+}: { task: BaseTask; mode: Mode; handleTaskChange: (field: string, value: string | number | null, taskId: string) => void }) => {
   const { t } = useTranslation();
-  const electric = useElectric();
   const subTaskRef = useRef<HTMLDivElement>(null);
   const subContentRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -36,14 +35,9 @@ const SubTask = ({
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const onRemove = (subTaskId: string) => {
-    if (!electric) return toast.error(t('common:local_db_inoperable'));
-    electric.db.tasks
-      .deleteMany({
-        where: {
-          id: subTaskId,
-        },
-      })
-      .then(() => toast.success(t('common:success.delete_resources', { resources: t('common:todo') })));
+    deleteTasks([subTaskId]).then((resp) => {
+      if (resp) toast.success(t('common:success.delete_resources', { resources: t('common:todo') }));
+    });
   };
 
   const setEdge = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
@@ -64,7 +58,7 @@ const SubTask = ({
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const data = getDraggableItemData<Task>(task, task.sort_order, 'subTask', 'project');
+    const data = getDraggableItemData<BaseTask>(task, task.order, 'subTask', 'project');
     const element = subTaskRef.current;
     if (!element) return;
 
@@ -127,7 +121,7 @@ const SubTask = ({
           {isEditing ? (
             <TaskBlockNote
               id={task.id}
-              projectId={task.project_id}
+              projectId={task.projectId}
               html={task.description || ''}
               handleUpdateHTML={handleUpdateMarkdown}
               mode={mode}

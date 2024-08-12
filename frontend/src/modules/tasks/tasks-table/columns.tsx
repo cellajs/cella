@@ -7,7 +7,6 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import type { Task } from '~/modules/common/electric/electrify';
 import { Button } from '~/modules/ui/button.tsx';
 import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected.tsx';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact.tsx';
@@ -18,6 +17,7 @@ import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { Dot } from 'lucide-react';
 import { badgeStyle } from '../task-selectors/select-labels';
+import type { Task } from '~/types';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -116,8 +116,8 @@ export const useColumns = () => {
       },
     },
     {
-      key: 'assigned_to',
-      name: t('common:assigned_to'),
+      key: 'assignedTo',
+      name: t('common:assignedTo'),
       sortable: false,
       visible: false,
       width: 160,
@@ -178,15 +178,15 @@ export const useColumns = () => {
         ),
     },
     {
-      key: 'project_id',
+      key: 'projectId',
       name: t('common:project'),
       sortable: true,
       visible: !isMobile,
       width: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
-        const project = projects.find((p) => p.id === row.project_id);
-        if (!project) return row.project_id;
+        const project = projects.find((p) => p.id === row.projectId);
+        if (!project) return row.projectId;
         return (
           <Link
             to={`/workspaces/${workspace.slug}/board?project=${project.slug}`}
@@ -201,16 +201,16 @@ export const useColumns = () => {
       },
     },
     {
-      key: 'created_at',
+      key: 'createdAt',
       name: t('common:created_at'),
       sortable: true,
       visible: !isMobile,
       width: 180,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => dateShort(row.created_at),
+      renderCell: ({ row }) => dateShort(row.createdAt),
     },
     {
-      key: 'created_by',
+      key: 'createdBy',
       name: t('common:created_by'),
       sortable: true,
       visible: !isMobile,
@@ -218,7 +218,7 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
         const user = row.virtualCreatedBy;
-        if (!user) return row.created_by;
+        if (!user) return row.createdBy;
         return (
           <Link
             to="/user/$idOrSlug"
@@ -239,16 +239,16 @@ export const useColumns = () => {
       },
     },
     {
-      key: 'modified_at',
+      key: 'modifiedAt',
       name: t('common:updated_at'),
       sortable: true,
       visible: false,
       width: 180,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => dateShort(row.modified_at),
+      renderCell: ({ row }) => dateShort(row.modifiedAt),
     },
     {
-      key: 'modified_by',
+      key: 'modifiedBy',
       name: t('common:updated_by'),
       sortable: false,
       visible: false,
@@ -256,7 +256,7 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
         const user = row.virtualUpdatedBy;
-        if (!user) return row.modified_by;
+        if (!user) return row.modifiedBy;
         return (
           <Link
             to="/user/$idOrSlug"

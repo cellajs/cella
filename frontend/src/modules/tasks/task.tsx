@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '~/lib/utils.ts';
-import type { Task } from '~/modules/common/electric/electrify.ts';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { impacts } from './task-selectors/select-impact.tsx';
@@ -24,7 +23,7 @@ import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/externa
 import { getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { Mode } from '~/store/theme.ts';
-import type { DraggableItemData } from '~/types';
+import type { DraggableItemData, Task } from '~/types';
 import TaskMarkdown from './task-content.tsx';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { Checkbox } from '~/modules/ui/checkbox.tsx';
@@ -60,8 +59,8 @@ interface TaskProps {
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
-  handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void;
-  handleTaskActionClick: (task: Task, field: keyof Task, trigger: HTMLElement) => void;
+  handleTaskChange: (field: string, value: string | number | null, taskId: string) => void;
+  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void;
   isSheet?: boolean;
 }
 
@@ -96,7 +95,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   useEffect(() => {
     const element = taskRef.current;
     const dragElement = taskDragRef.current;
-    const data = getDraggableItemData<Task>(task, task.sort_order, 'task', 'project');
+    const data = getDraggableItemData<Task>(task, task.order, 'task', 'project');
     if (!element || !dragElement) return;
 
     return combine(
@@ -240,8 +239,8 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
 
               <div className="flex gap-1 ml-auto mr-1">
                 <Button
-                  id="assigned_to"
-                  onClick={(event) => handleTaskActionClick(task, 'assigned_to', event.currentTarget)}
+                  id="assignedTo"
+                  onClick={(event) => handleTaskActionClick(task, 'assignedTo', event.currentTarget)}
                   aria-label="Assign"
                   variant="ghost"
                   size="xs"

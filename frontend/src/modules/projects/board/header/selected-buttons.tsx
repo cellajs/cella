@@ -3,43 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
-import { useElectric } from '~/modules/common/electric/electrify';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
+import { deleteTasks } from '~/api/tasks';
 
 const TaskSelectedTableButtons = () => {
   const { t } = useTranslation();
   const { selectedTasks, setSelectedTasks } = useWorkspaceStore();
 
-  const electric = useElectric();
-
   const onRemove = () => {
-    if (!electric) return toast.error(t('common:local_db_inoperable'));
-
-    // Delete child tasks first
-    electric.db.tasks
-      .deleteMany({
-        where: {
-          parent_id: {
-            in: selectedTasks,
-          },
-        },
-      })
-      .then(() => {
-        // Then delete parent tasks
-        electric.db.tasks
-          .deleteMany({
-            where: {
-              id: {
-                in: selectedTasks,
-              },
-            },
-          })
-          .then(() => {
-            toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
-            setSelectedTasks([]);
-          });
-      });
+    deleteTasks(selectedTasks).then((resp) => {
+      if (resp) {
+        toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
+        setSelectedTasks([]);
+      }
+    });
   };
 
   return (

@@ -1,5 +1,5 @@
 import defaultHook from './lib/default-hook';
-import docs from './lib/docs';
+// import docs from './lib/docs';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import authRoutes from './modules/auth';
@@ -9,6 +9,7 @@ import membershipsRoutes from './modules/memberships';
 import organizationsRoutes from './modules/organizations';
 import projectsRoutes from './modules/projects';
 import requestsRoutes from './modules/requests';
+import tasksRoutes from './modules/tasks';
 import usersRoutes from './modules/users';
 import workspacesRoutes from './modules/workspaces';
 
@@ -23,7 +24,7 @@ const app = new CustomHono({
 app.route('', middlewares);
 
 // Init OpenAPI docs
-docs(app);
+// docs(app);
 
 // Not found handler
 app.notFound((ctx) => {
@@ -49,7 +50,8 @@ const routes = app
 
   // App-specific routes go here
   .route('/workspaces', workspacesRoutes)
-  .route('/projects', projectsRoutes);
+  .route('/projects', projectsRoutes)
+  .route('/tasks', tasksRoutes);
 
 export default app;
 

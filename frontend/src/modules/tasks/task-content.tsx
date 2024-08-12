@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import type { Task } from '~/modules/common/electric/electrify';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import CreateSubTaskForm from './create-sub-task-form';
 import SubTask from './sub-task';
 import { TaskBlockNote } from '~/modules/common/blocknotes/task-blocknote';
+import type { Task } from '~/types';
 
 interface Props {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
-  handleTaskChange: (field: keyof Task, value: string | number | null, taskId: string) => void;
+  handleTaskChange: (field: string, value: string | number | null, taskId: string) => void;
   isSheet?: boolean;
 }
 
@@ -53,7 +53,7 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, handleTaskChange }: Prop
         </div>
       ) : (
         <>
-          <TaskBlockNote id={task.id} projectId={task.project_id} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
           {task.subTasks.length > 0 || task.summary !== task.description ? (
             <div className={`${isSheet ? 'hidden' : ''}`}>
               <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">

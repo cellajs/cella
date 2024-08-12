@@ -153,11 +153,12 @@ export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 
   };
 };
 
-export const recentlyUsed = (date: Date | null, days: number) => {
+export const recentlyUsed = (date: string | null, days: number) => {
   if (!date) return false;
+  const convertedDate = new Date(date);
   const daysAgo = dayjs().subtract(days, 'day');
   const today = dayjs();
-  return dayjs(date).isBetween(daysAgo, today, null, '[]');
+  return dayjs(convertedDate).isBetween(daysAgo, today, null, '[]');
 };
 
 // Helper function to decode base64 URL to Uint8Array

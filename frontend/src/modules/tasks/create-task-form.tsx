@@ -14,12 +14,11 @@ import { cn, nanoid } from '~/lib/utils.ts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
-import { type Label, type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import type { Member } from '~/types/index.ts';
+import type { Member, Task, Label } from '~/types/index.ts';
 import { Badge } from '~/modules/ui/badge';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
@@ -31,6 +30,7 @@ import AssignMembers from './task-selectors/select-members.tsx';
 import SelectStatus, { type TaskStatus, taskStatuses } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
 import { CreateTaskBlockNote } from '~/modules/common/blocknotes/create-task-blocknote.tsx';
+import { createTask } from '~/api/tasks.ts';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
@@ -78,7 +78,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
   const { user } = useUserStore(({ user }) => ({ user }));
   const defaultId = nanoid();
   const { ref, bounds } = useMeasure();
-  const Electric = useElectric();
 
   const handleCloseForm = () => {
     if (isDialog) dialog.remove();
@@ -111,38 +110,37 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
   const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    const projectTasks = tasks.filter((task) => task.project_id === projectId);
+    const projectTasks = tasks.filter((task) => task.projectId === projectId);
     // Extract text from summary HTML
     const parser = new DOMParser();
     const doc = parser.parseFromString(values.summary, 'text/html');
     const summaryText = doc.body.textContent || `subtask${values.id}`;
 
     const slug = summaryText.toLowerCase().replace(/ /g, '-');
-    Electric.db.tasks
-      .create({
-        data: {
-          id: values.id,
-          description: values.description,
-          summary: values.summary,
-          type: values.type as TaskType,
-          impact: values.impact as TaskImpact,
-          labels: values.labels.map((label) => label.id),
-          assigned_to: values.assignedTo.map((user) => user.id),
-          status: values.status,
-          organization_id: organizationId,
-          project_id: projectId,
-          created_at: new Date(),
-          created_by: user.id,
-          slug: slug,
-          sort_order: getNewTaskOrder(values.status, projectTasks),
-        },
-      })
-      .then(() => {
+
+    const newTask = {
+      id: values.id,
+      description: values.description,
+      summary: values.summary,
+      type: values.type as TaskType,
+      impact: values.impact as TaskImpact,
+      labels: values.labels.map((label) => label.id),
+      assignedTo: values.assignedTo.map((user) => user.id),
+      status: values.status,
+      organizationId: organizationId,
+      projectId: projectId,
+      createdBy: user.id,
+      slug: slug,
+      order: getNewTaskOrder(values.status, projectTasks),
+    };
+
+    createTask(newTask).then((resp) => {
+      if (resp) {
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('common:task') }));
         handleCloseForm();
-      });
+      }
+    });
   };
   // Fix types
   return (

@@ -2,16 +2,14 @@ import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { nanoid, recentlyUsed } from '~/lib/utils.ts';
-import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import { type Label, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
+import type { Label } from '~/types/index.ts';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -27,11 +25,8 @@ interface SetLabelsProps {
 }
 
 const SetLabels = ({ value, projectId, organizationId, creationValueChange, triggerWidth = 280 }: SetLabelsProps) => {
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
   const { t } = useTranslation();
   const { changeColumn } = useWorkspaceUIStore();
-  const user = useUserStore((state) => state.user);
   const { focusedTaskId, workspace, labels } = useWorkspaceStore();
 
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
@@ -53,40 +48,42 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
   }, [isRemoving, searchValue]);
 
   const createLabel = (newLabel: Label) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    // Save the new label to the database
-    Electric.db.labels.create({ data: newLabel });
+    console.log('newLabel:', newLabel);
+    // TODO Save the new label to the database
   };
 
   const updateTaskLabels = (labels: Label[]) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
+    console.log('labels:', labels);
     if (!focusedTaskId) return;
-    const db = Electric.db;
-    const labelsIds = labels.map((l) => l.id);
-    db.tasks.update({
-      data: {
-        labels: labelsIds,
-        modified_at: new Date(),
-        modified_by: user.id,
-      },
-      where: {
-        id: focusedTaskId,
-      },
-    });
+    //TODO fix
+    // const db = Electric.db;
+    // const labelsIds = labels.map((l) => l.id);
+    // db.tasks.update({
+    //   data: {
+    //     labels: labelsIds,
+    //     modified_at: new Date(),
+    //     modified_by: user.id,
+    //   },
+    //   where: {
+    //     id: focusedTaskId,
+    //   },
+    // });
     return;
   };
 
   const updateLabel = (labelId: string, useCount: number) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
-    Electric.db.labels.update({
-      data: {
-        last_used: new Date(),
-        use_count: useCount,
-      },
-      where: {
-        id: labelId,
-      },
-    });
+    console.log('labelId:', labelId);
+    console.log('useCount:', useCount);
+    //TODO fix
+    // Electric.db.labels.update({
+    //   data: {
+    //     last_used: new Date(),
+    //     use_count: useCount,
+    //   },
+    //   where: {
+    //     id: labelId,
+    //   },
+    // });
   };
 
   const handleSelectClick = (value?: string) => {

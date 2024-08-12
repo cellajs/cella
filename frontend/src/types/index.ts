@@ -67,6 +67,19 @@ export type EntityPage = Omit<BaseEntityPage, 'organizationId'> & {
   organizationId?: Project['organizationId'] | null;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+export type Label = any;
+
+export type BaseTask = Extract<InferResponseType<(typeof apiClient.tasks)['$get']>, { data: unknown }>['data']['items'][number];
+
+export type Task = BaseTask & {
+  virtualLabels: Label[];
+  virtualAssignedTo: Member[];
+  virtualCreatedBy?: Member;
+  virtualUpdatedBy?: Member;
+  subTasks: BaseTask[];
+};
+
 export type Project = Extract<InferResponseType<(typeof apiClient.projects)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Member = Extract<InferResponseType<(typeof apiClient.members)['$get']>, { data: unknown }>['data']['items'][number];

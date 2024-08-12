@@ -10,7 +10,6 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import Export from '~/modules/common/data-table/export.tsx';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import { type Task, useElectric } from '~/modules/common/electric/electrify';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useColumns } from './columns';
@@ -20,13 +19,54 @@ import TableHeader from './header/table-header';
 import { SearchDropDown } from './header/search-drop-down';
 import { TaskTableSearch } from './header/table-search';
 import TaskSheet from './task-sheet';
-import { useLiveQuery } from 'electric-sql/react';
 import { useEventListener } from '~/hooks/use-event-listener';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { configureForExport } from './helpers';
+import { getTasksList, type GetTasksParams } from '~/api/tasks';
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import type { Task } from '~/types';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
+
+export const tasksQueryOptions = ({
+  q,
+  tableSort: initialSort,
+  order: initialOrder,
+  limit = 2000,
+  projectId,
+  status,
+  rowsLength = 0,
+}: GetTasksParams & {
+  rowsLength?: number;
+}) => {
+  const tableSort = initialSort || 'createdAt';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['tasks', projectId, status, q, tableSort, order],
+    initialPageParam: 0,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    queryFn: async ({ pageParam: page, signal }) =>
+      await getTasksList(
+        {
+          page,
+          q,
+          tableSort,
+          order,
+          // Fetch more items than the limit if some items were deleted
+          limit: limit + Math.max(page * limit - rowsLength, 0),
+          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
+          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+          projectId,
+          status,
+        },
+        signal,
+      ),
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+  });
+};
 
 export default function TasksTable() {
   const { t } = useTranslation();
@@ -43,7 +83,8 @@ export default function TasksTable() {
       setFocusedTaskId,
     }),
   );
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'created_at'));
+
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'createdAt'));
   const [selectedStatuses, setSelectedStatuses] = useState<number[]>(
     typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || [],
   );
@@ -66,38 +107,22 @@ export default function TasksTable() {
     [searchQuery, tableSort, order, selectedStatuses, selectedProjects],
   );
 
-  useSaveInSearchParams(filters, { tableSort: 'created_at', order: 'desc' });
+  useSaveInSearchParams(filters, { tableSort: 'createdAt', order: 'desc' });
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
-
-  const { results: tasks = [], updatedAt } = useLiveQuery(
-    Electric.db.tasks.liveMany({
-      where: {
-        project_id: {
-          in: selectedProjects.length > 0 ? selectedProjects : projects.map((project) => project.id),
-        },
-        ...(selectedStatuses.length > 0 && {
-          status: {
-            in: selectedStatuses,
-          },
-        }),
-        AND: [
-          {
-            description: {
-              contains: searchQuery,
-            },
-          },
-        ],
-      },
-      orderBy: {
-        [tableSort || 'created_at']: order || 'desc',
-      },
+  // Query tasks
+  const queryResult = useInfiniteQuery(
+    tasksQueryOptions({
+      q: searchQuery,
+      tableSort,
+      order,
+      projectId: search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
+      status: `${search.status}`,
     }),
-  ) as {
-    results: Task[] | undefined;
-    updatedAt: Date | undefined;
-  };
+  );
+
+  const tasks = useMemo(() => {
+    return queryResult.data?.pages?.flatMap((page) => page.items) || [];
+  }, [queryResult.data]);
 
   const { showingTasks: rows } = useTaskFilters(
     tasks,
@@ -111,8 +136,8 @@ export default function TasksTable() {
       ),
     true,
   );
-  const isLoading = !updatedAt;
 
+  const totalCount = queryResult.data?.pages[0].total || rows.length;
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
     setSelectedTasks(Array.from(selectedRows));
   };
@@ -124,9 +149,9 @@ export default function TasksTable() {
   };
 
   const handleOpenPreview = (taskId: string) => {
-    const relativeTasks = tasks.filter((t) => t.id === taskId || t.parent_id === taskId);
+    const relativeTasks = tasks.filter((t) => t.id === taskId || t.parentId === taskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
-    const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
+    const members = projects.find((p) => p.id === currentTask.projectId)?.members || [];
     const [task] = enhanceTasks(relativeTasks, labels, members);
     sheet.create(<TaskSheet task={task} />, {
       className: 'max-w-full lg:max-w-4xl p-0',
@@ -141,9 +166,9 @@ export default function TasksTable() {
 
   useEffect(() => {
     if (!tasks.length || !sheet.get(`preview-${focusedTaskId}`)) return;
-    const relativeTasks = tasks.filter((t) => t.id === focusedTaskId || t.parent_id === focusedTaskId);
+    const relativeTasks = tasks.filter((t) => t.id === focusedTaskId || t.parentId === focusedTaskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === focusedTaskId);
-    const members = projects.find((p) => p.id === currentTask.project_id)?.members || [];
+    const members = projects.find((p) => p.id === currentTask.projectId)?.members || [];
     const [task] = enhanceTasks(relativeTasks, labels, members);
     sheet.update(`task-preview-${task.id}`, {
       content: <TaskSheet task={task} />,
@@ -168,7 +193,7 @@ export default function TasksTable() {
 
   return (
     <>
-      <TableHeader totalCount={rows.length} isFiltered={isFiltered} onResetFilters={onResetFilters}>
+      <TableHeader totalCount={totalCount} isFiltered={isFiltered} onResetFilters={onResetFilters}>
         <TaskTableSearch>
           <SearchDropDown
             selectedStatuses={selectedStatuses}
@@ -194,8 +219,9 @@ export default function TasksTable() {
           columns: columns.filter((column) => column.visible),
           rows,
           rowHeight: 42,
-          totalCount: rows.length,
-          isLoading,
+          totalCount,
+          isLoading: queryResult.isLoading,
+          isFetching: queryResult.isFetching,
           isFiltered,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,

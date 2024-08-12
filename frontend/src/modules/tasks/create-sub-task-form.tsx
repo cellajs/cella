@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
@@ -9,23 +9,17 @@ import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { nanoid } from '~/lib/utils.ts';
-import { type Task, useElectric } from '~/modules/common/electric/electrify.ts';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { getNewTaskOrder } from './helpers.ts';
 import { CreateTaskBlockNote } from '~/modules/common/blocknotes/create-task-blocknote.tsx';
+import { createTask } from '~/api/tasks.ts';
+import { createTaskSchema } from 'backend/modules/tasks/schema';
+import type { Task } from '~/types';
 
-const formSchema = z.object({
-  id: z.string(),
-  summary: z.string(),
-  description: z.string(),
-  type: z.string(),
-  impact: z.number().nullable(),
-  parent_id: z.string(),
-  status: z.number(),
-});
+const formSchema = createTaskSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -41,8 +35,6 @@ export const CreateSubTaskForm = ({
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore(({ user }) => ({ user }));
-
-  const Electric = useElectric();
 
   const handleHotKeysKeyPress = useCallback(() => {
     setFormState(false);
@@ -70,7 +62,6 @@ export const CreateSubTaskForm = ({
   const form = useFormWithDraft<FormValues>(`create-sub-task-${parentTask.id}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
-    if (!Electric) return toast.error(t('common:local_db_inoperable'));
     const subTaskId = nanoid();
     // Extract text from summary HTML
     const parser = new DOMParser();
@@ -79,31 +70,30 @@ export const CreateSubTaskForm = ({
 
     const slug = summaryText.toLowerCase().replace(/ /g, '-');
 
-    Electric.db.tasks
-      .create({
-        data: {
-          id: subTaskId,
-          description: values.description,
-          summary: values.summary,
-          type: 'chore',
-          impact: null,
-          status: 1,
-          parent_id: parentTask.id,
-          organization_id: parentTask.organization_id,
-          assigned_to: [],
-          labels: [],
-          project_id: parentTask.project_id,
-          created_at: new Date(),
-          created_by: user.id,
-          slug: slug,
-          sort_order: getNewTaskOrder(values.status, parentTask.subTasks),
-        },
-      })
-      .then(() => {
+    const newSubTask = {
+      id: subTaskId,
+      description: values.description,
+      summary: values.summary,
+      type: 'chore' as const,
+      impact: null,
+      status: 1,
+      parentId: parentTask.id,
+      organizationId: parentTask.organizationId,
+      assignedTo: [],
+      labels: [],
+      projectId: parentTask.projectId,
+      createdBy: user.id,
+      slug: slug,
+      order: getNewTaskOrder(values.status, parentTask.subTasks),
+    };
+
+    createTask(newSubTask).then((resp) => {
+      if (resp) {
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:todo') }));
+        toast.success(t('common:success.create_resource', { resource: t('common:task') }));
         setFormState(false);
-      });
+      }
+    });
   };
 
   if (!formOpen)
@@ -124,8 +114,8 @@ export const CreateSubTaskForm = ({
               <FormItem>
                 <FormControl>
                   <CreateTaskBlockNote
-                    projectId={parentTask.project_id}
-                    value={value}
+                    projectId={parentTask.projectId}
+                    value={value || ''}
                     onChange={(description, summary) => {
                       onChange(description);
                       form.setValue('summary', summary);

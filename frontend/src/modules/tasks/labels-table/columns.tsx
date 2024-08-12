@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import type { Label } from '~/modules/common/electric/electrify';
+import type { Label } from '~/types';
 
 export const useColumns = () => {
   const { t } = useTranslation();

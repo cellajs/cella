@@ -13,8 +13,6 @@ import { env } from '../../../env';
 import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { labelsTable } from '../../db/schema-electric/labels';
-import { tasksTable } from '../../db/schema-electric/tasks';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { projectsTable } from '../../db/schema/projects';
@@ -34,6 +32,8 @@ import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
 import { register } from 'prom-client';
 import { calculateRequestsPerMinute, parsePromMetrics } from '../../lib/utils';
+import { tasksTable } from '../../db/schema/tasks';
+import { labelsTable } from '../../db/schema/labels';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

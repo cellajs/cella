@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { Label } from '~/modules/common/electric/electrify';
+import type { Label } from '~/types';
 import type { Workspace, WorkspaceStoreProject } from '~/types';
 
 interface WorkspaceState {
