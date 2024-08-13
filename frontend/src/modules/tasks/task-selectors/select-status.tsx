@@ -14,6 +14,10 @@ import { IcedIcon } from './status-icons/iced';
 import { ReviewedIcon } from './status-icons/reviewed';
 import { StartedIcon } from './status-icons/started';
 import { UnstartedIcon } from './status-icons/unstarted';
+import { useWorkspaceStore } from '~/store/workspace';
+import { dispatchCustomEvent } from '~/lib/custom-events';
+import { updateTask } from '~/api/tasks';
+import { getTaskOrder } from '~/modules/tasks/helpers';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
@@ -34,11 +38,6 @@ type Status = {
 };
 
 export type TaskStatus = (typeof taskStatuses)[number]['value'];
-
-interface SelectStatusProps {
-  taskStatus: TaskStatus;
-  changeTaskStatus: (newStatus: number) => void;
-}
 
 export const statusTextColors = {
   0: 'text-sky-500',
@@ -74,10 +73,21 @@ export const statusVariants = cva('', {
   },
 });
 
-const SelectStatus = ({ taskStatus, changeTaskStatus }: SelectStatusProps) => {
+const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskStatus; creationValueChange?: (newValue: number) => void }) => {
   const { t } = useTranslation();
+  const { focusedTaskId } = useWorkspaceStore();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
+
+  const changeTaskStatus = async (newStatus: number) => {
+    if (creationValueChange) creationValueChange(newStatus);
+    if (!focusedTaskId) return;
+    //TODO rework logic
+    const newOrder = getTaskOrder(focusedTaskId, newStatus, []);
+    const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
+    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
+  };
 
   const isSearching = searchValue.length > 0;
 

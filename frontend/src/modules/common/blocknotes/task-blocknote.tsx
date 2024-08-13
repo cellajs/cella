@@ -3,6 +3,8 @@ import type { Mode } from '~/store/theme';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { useWorkspaceStore } from '~/store/workspace';
+import { dispatchCustomEvent } from '~/lib/custom-events';
+import { updateTask } from '~/api/tasks';
 
 import './styles.css';
 import { getMentionMenuItems, schemaWithMentions } from './mention';
@@ -12,15 +14,21 @@ interface TaskEditorProps {
   mode: Mode;
   html: string;
   projectId: string;
-  handleUpdateHTML: (newContent: string, newSummary: string) => void;
 }
 
-export const TaskBlockNote = ({ id, html, projectId, mode, handleUpdateHTML }: TaskEditorProps) => {
+export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) => {
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
   const initial = useRef(true);
 
   const { projects, focusedTaskId } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
+
+  const handleUpdateHTML = async (newContent: string, newSummary: string) => {
+    await updateTask(id, 'summary', newSummary);
+    const updatedTask = await updateTask(id, 'description', newContent);
+    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: updatedTask.parentId ? 'updateSubTask' : 'update' });
+    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: updatedTask.parentId ? 'updateSubTask' : 'update' });
+  };
 
   const updateData = async () => {
     //if user in Formatting Toolbar does not update

@@ -17,6 +17,7 @@ import type { SubTask as BaseSubTask, DraggableItemData } from '~/types';
 import { TaskBlockNote } from '~/modules/common/blocknotes/task-blocknote';
 import { deleteTasks } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { updateTask } from '~/api/tasks';
 
 type TaskDraggableItemData = DraggableItemData<BaseSubTask> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -26,11 +27,9 @@ export const isSubTaskData = (data: Record<string | symbol, unknown>): data is T
 const SubTask = ({
   task,
   mode,
-  handleTaskChange,
 }: {
   task: BaseSubTask;
   mode: Mode;
-  handleTaskChange: (field: string, value: string | number | null, taskId: string) => void;
 }) => {
   const { t } = useTranslation();
   const subTaskRef = useRef<HTMLDivElement>(null);
@@ -41,8 +40,8 @@ const SubTask = ({
 
   const onRemove = (subTaskId: string) => {
     deleteTasks([subTaskId]).then((resp) => {
-      dispatchCustomEvent('taskTableCRUD', { array: [{ id: subTaskId }], action: 'delete' });
-      dispatchCustomEvent('taskCRUD', { array: [{ id: subTaskId }], action: 'delete' });
+      dispatchCustomEvent('taskTableCRUD', { array: [{ id: subTaskId }], action: 'deleteSubTask' });
+      dispatchCustomEvent('taskCRUD', { array: [{ id: subTaskId }], action: 'deleteSubTask' });
       if (resp) toast.success(t('common:success.delete_resources', { resources: t('common:todo') }));
     });
   };
@@ -52,9 +51,10 @@ const SubTask = ({
     setClosestEdge(extractClosestEdge(self.data));
   };
 
-  const handleUpdateMarkdown = (content: string, summary: string) => {
-    handleTaskChange('summary', summary, task.id);
-    handleTaskChange('description', content, task.id);
+  const handleUpdateStatus = async (newStatus: number) => {
+    const updatedTask = await updateTask(task.id, 'status', newStatus);
+    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'updateSubTask' });
+    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'updateSubTask' });
   };
 
   useDoubleClick({
@@ -117,22 +117,13 @@ const SubTask = ({
             `${task.status === 6 ? 'data-[state=checked]:bg-green-700 border-green-700' : 'border-gray-500'}`,
           )}
           checked={task.status === 6}
-          onCheckedChange={(checkStatus) => {
-            if (checkStatus) handleTaskChange('status', 6, task.id);
-            if (!checkStatus) handleTaskChange('status', 1, task.id);
-          }}
+          onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
         />
       </div>
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
         <div ref={subContentRef} className={!isEditing ? 'inline-flex items-center' : 'flex flex-col items-start'}>
           {isEditing ? (
-            <TaskBlockNote
-              id={task.id}
-              projectId={task.projectId}
-              html={task.description || ''}
-              handleUpdateHTML={handleUpdateMarkdown}
-              mode={mode}
-            />
+            <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} />
           ) : (
             // biome-ignore lint/security/noDangerouslySetInnerHtml: to avoid using TaskBlockNote for not editing
             <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />

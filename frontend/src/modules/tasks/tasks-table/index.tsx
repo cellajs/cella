@@ -24,7 +24,7 @@ import { configureForExport } from './helpers';
 import { getTasksList, type GetTasksParams } from '~/api/tasks';
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import type { Task, TaskTableCRUDEvent } from '~/types';
-import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateInfiniteTaskQueryData } from '~/hooks/use-mutate-query-data';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -118,7 +118,7 @@ export default function TasksTable() {
     }),
   );
 
-  const callback = useMutateInfiniteQueryData([
+  const callback = useMutateInfiniteTaskQueryData([
     'tasks',
     search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
     selectedStatuses.join('_'),

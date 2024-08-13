@@ -28,6 +28,7 @@ import TaskDescription from './task-content.tsx';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
+import { updateTask } from '~/api/tasks.ts';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -59,12 +60,11 @@ interface TaskProps {
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
-  handleTaskChange: (field: string, value: string | number | null, taskId: string) => void;
   handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void;
   isSheet?: boolean;
 }
 
-export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded, isSheet, handleTaskChange, handleTaskActionClick }: TaskProps) {
+export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded, isSheet, handleTaskActionClick }: TaskProps) {
   const { t } = useTranslation();
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
@@ -74,6 +74,14 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
+
+  const updateStatus = async (newStatus: number) => {
+    //TODO rework logic
+    // const newOrder = getTaskOrder(task.id, newStatus, []);
+    const updatedTask = await updateTask(task.id, 'status', newStatus);
+    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
+  };
 
   const dragEnd = () => {
     setClosestEdge(null);
@@ -176,7 +184,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
               )}
             </div>
             <div className="flex flex-col grow gap-2 mt-0.5">
-              <TaskDescription mode={mode} task={task} isExpanded={isExpanded} handleTaskChange={handleTaskChange} isSheet={isSheet} />
+              <TaskDescription mode={mode} task={task} isExpanded={isExpanded} isSheet={isSheet} />
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -262,7 +270,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
 
                 <Button
                   id="status"
-                  onClick={() => handleTaskChange('status', task.status + 1, task.id)}
+                  onClick={() => updateStatus(task.status + 1)}
                   disabled={(task.status as TaskStatus) === 6}
                   variant="outlineGhost"
                   size="xs"

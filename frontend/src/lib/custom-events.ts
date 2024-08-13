@@ -8,8 +8,8 @@ interface CustomEventMap {
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
   searchDropDownClose: Event;
-  taskTableCRUD: CustomEvent<{ array: Task[] | { id: string }[]; action: 'update' | 'delete' }>;
-  taskCRUD: CustomEvent<{ array: Task[] | { id: string }[]; action: 'update' | 'delete' }>;
+  taskTableCRUD: CustomEvent<{ array: Task[] | { id: string }[]; action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask' }>;
+  taskCRUD: CustomEvent<{ array: Task[] | { id: string }[]; action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask' }>;
 }
 
 type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;

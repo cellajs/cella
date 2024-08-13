@@ -20,12 +20,27 @@ const tasksRoutes = app
    */
   .openapi(taskRoutesConfig.createTask, async (ctx) => {
     const newTask = ctx.req.valid('json');
-
-    await db.insert(tasksTable).values(newTask).returning();
+    const user = ctx.get('user');
+    const [createdTask] = await db.insert(tasksTable).values(newTask).returning();
 
     logEvent('Tasks created', { task: newTask.id });
 
-    return ctx.json({ success: true }, 200);
+    const uniqueAssignedUserIds = [...new Set(createdTask.assignedTo)];
+    const assignedTo = (await db.select().from(usersTable).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
+      transformDatabaseUser(user),
+    );
+    const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, createdTask.labels));
+
+    const finalTask = {
+      ...createdTask,
+      subTasks: [],
+      createdBy: transformDatabaseUser(user),
+      modifiedBy: null,
+      assignedTo: assignedTo.filter((m) => createdTask.assignedTo.includes(m.id)),
+      labels: labels.filter((m) => createdTask.labels.includes(m.id)),
+    };
+
+    return ctx.json({ success: true, data: finalTask }, 200);
   })
   /*
    * Get list of tasks

@@ -7,6 +7,9 @@ import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import type { TaskType } from '../create-task-form';
 import { inNumbersArray } from './helpers';
+import { useWorkspaceStore } from '~/store/workspace';
+import { dispatchCustomEvent } from '~/lib/custom-events';
+import { updateTask } from '~/api/tasks';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];
@@ -23,15 +26,21 @@ export const taskTypes = [
 export interface SelectTaskTypeProps {
   currentType: TaskType;
   className?: string;
-  changeTaskType?: (value: TaskType) => void;
 }
 
-export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: SelectTaskTypeProps) => {
+export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
-
+  const { focusedTaskId } = useWorkspaceStore();
   const [selectedType, setSelectedType] = useState<Type | undefined>(taskTypes[taskTypes.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
+
+  const changeTaskType = async (newType: TaskType) => {
+    if (!focusedTaskId) return;
+    const updatedTask = await updateTask(focusedTaskId, 'type', newType);
+    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
+  };
 
   useEffect(() => {
     setSelectedType(taskTypes[taskTypes.findIndex((type) => type.value === currentType)]);
@@ -47,7 +56,7 @@ export const SelectTaskType = ({ currentType, changeTaskType, className = '' }: 
           // If the user taskTypes a number, select the Impact like useHotkeys
           if (inNumbersArray(3, searchValue)) {
             const searchNumber = Number.parseInt(searchValue) - 1;
-            if (changeTaskType) changeTaskType(taskTypes[searchNumber].value);
+            changeTaskType(taskTypes[searchNumber].value);
             setSelectedType(taskTypes[searchNumber]);
             dropdowner.remove();
             setSearchValue('');

@@ -29,15 +29,15 @@ export interface TaskCardFocusEvent extends Event {
 
 export interface TaskCRUDEvent extends Event {
   detail: {
-    array: Task[] | { id: string }[];
-    action: 'update' | 'delete';
+    array: Task[] | SubTask[] | { id: string }[];
+    action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask';
   };
 }
 
 export interface TaskTableCRUDEvent extends Event {
   detail: {
-    array: Task[] | { id: string }[];
-    action: 'update' | 'delete';
+    array: Task[] | SubTask[] | { id: string }[];
+    action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask';
   };
 }
 

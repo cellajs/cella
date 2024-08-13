@@ -2,7 +2,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { lazy, useEffect, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -19,7 +19,6 @@ import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { CustomEventEventById, WorkspaceStoreProject, TaskChangeEvent, Project, Task, TaskCRUDEvent } from '~/types';
 import { ProjectSettings } from '../project-settings';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '~/modules/tasks/create-task-form';
-import { getTaskOrder } from '~/modules/tasks/helpers';
 import { isSubTaskData } from '~/modules/tasks/sub-task';
 import { isTaskData, TaskCard } from '~/modules/tasks/task';
 import { SelectImpact } from '~/modules/tasks/task-selectors/select-impact';
@@ -34,7 +33,7 @@ import { useThemeStore } from '~/store/theme';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import FocusTrap from '~/modules/common/focus-trap';
 import { getRelativeTaskOrder, getTasksList, updateTask, type GetTasksParams } from '~/api/tasks';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
@@ -75,24 +74,22 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   // Query tasks
   const tasksQuery = useSuspenseQuery(tasksQueryOptions({ projectId: project.id }));
 
-  const callback = useMutateQueryData(['boardTasks', project.id]);
+  const callback = useMutateTasksQueryData(['boardTasks', project.id]);
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
-    let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
+    let component = <SelectTaskType currentType={task.type as TaskType} />;
 
-    if (field === 'impact')
-      component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
+    if (field === 'impact') component = <SelectImpact value={task.impact as TaskImpact} />;
     else if (field === 'labels') component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
     else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;
-    else if (field === 'status')
-      component = (
-        <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
-      );
+    else if (field === 'status') component = <SelectStatus taskStatus={task.status as TaskStatus} />;
 
     return dropdowner(component, { id: field, trigger, align: ['status', 'assignedTo'].includes(field) ? 'end' : 'start' });
   };
 
-  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasksQuery.data?.items || [], showAccepted, showIced);
+  const tasks = useMemo(() => tasksQuery.data?.items || [], [tasksQuery.data]);
+
+  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced);
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
@@ -123,12 +120,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
       text: t('common:project_settings.text'),
       id: 'edit-project',
     });
-  };
-
-  const handleChange = async (field: string, value: string | number | null, taskId: string) => {
-    const newOrder = field === 'status' ? getTaskOrder(taskId, value, []) : null;
-    const updatedTask = await updateTask(taskId, field, value, newOrder);
-    callback([updatedTask], 'update');
   };
 
   const handleTaskFormClick = () => {
@@ -279,7 +270,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                           isExpanded={expandedTasks[task.id] || false}
                           isSelected={selectedTasks.includes(task.id)}
                           isFocused={task.id === focusedTaskId}
-                          handleTaskChange={handleChange}
                           handleTaskActionClick={handleTaskActionClick}
                           mode={mode}
                         />
@@ -327,7 +317,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                   }
                 />
               )}
-              {!showingTasks.length && searchQuery && (
+              {!tasks.length && searchQuery && (
                 <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
               )}
             </div>

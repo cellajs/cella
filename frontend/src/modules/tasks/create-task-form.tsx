@@ -31,6 +31,7 @@ import SelectStatus, { type TaskStatus, taskStatuses } from './task-selectors/se
 import { taskTypes } from './task-selectors/select-task-type.tsx';
 import { CreateTaskBlockNote } from '~/modules/common/blocknotes/create-task-blocknote.tsx';
 import { createTask } from '~/api/tasks.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
@@ -139,6 +140,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('common:task') }));
         handleCloseForm();
+        dispatchCustomEvent('taskCRUD', { array: [resp], action: 'create' });
       }
     });
   };
@@ -147,12 +149,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
   const isDirty = () => {
     const fieldsKeys = Object.keys(form.formState.dirtyFields);
     if (!fieldsKeys.length) return false;
-    if ('description' in fieldsKeys && fieldsKeys.length === 1) {
+    if (fieldsKeys.includes('description') && fieldsKeys.length === 1) {
       const description = form.getValues('description').replace('<p class="bn-inline-content"></p>', '');
+
       return !!description.length;
     }
     return true;
   };
+
   // Fix types
   return (
     <Form {...form}>
@@ -232,7 +236,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                       className="relative w-full text-left font-light flex gap-2 justify-start border"
                       type="button"
                       onClick={(event) => {
-                        dropdowner(<SelectImpact value={selectedImpactValue} triggerWidth={bounds.width - 3} changeTaskImpact={onChange} />, {
+                        dropdowner(<SelectImpact value={selectedImpactValue} triggerWidth={bounds.width - 3} creationValueChange={onChange} />, {
                           id: `impact-${defaultId}`,
                           trigger: event.currentTarget,
                         });
@@ -419,16 +423,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                           size="xs"
                           className="relative rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
                           onClick={(event) => {
-                            dropdowner(
-                              <SelectStatus
-                                taskStatus={form.getValues('status') as TaskStatus}
-                                changeTaskStatus={(newStatus) => onChange(newStatus)}
-                              />,
-                              {
-                                id: `status-${defaultId}`,
-                                trigger: event.currentTarget,
-                              },
-                            );
+                            dropdowner(<SelectStatus taskStatus={form.getValues('status') as TaskStatus} creationValueChange={onChange} />, {
+                              id: `status-${defaultId}`,
+                              trigger: event.currentTarget,
+                            });
                           }}
                         >
                           <ChevronDown size={16} />

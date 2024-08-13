@@ -1,6 +1,6 @@
 import { useQueryClient, type InfiniteData, type QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/lib/router';
-import type { Workspace, WorkspaceStoreProject, Membership, Project } from '~/types';
+import type { Workspace, WorkspaceStoreProject, Membership, Project, Task, SubTask } from '~/types';
 
 interface Item {
   id: string;
@@ -234,5 +234,165 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
           return data;
       }
     });
+  };
+};
+
+export const useMutateTasksQueryData = (queryKey: QueryKey) => {
+  return (newItems: Task[] | SubTask[] | { id: string }[], action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask') => {
+    queryClient.setQueryData<{
+      items: Task[];
+      total: number;
+    }>(queryKey, (data) => {
+      if (!data) return;
+
+      if (action === 'create') {
+        return {
+          items: [...(newItems as Task[]), ...data.items],
+          total: data.total + newItems.length,
+        };
+      }
+
+      if (action === 'update') {
+        return {
+          items: data.items.map((prevItem) => {
+            const updatedItem = (newItems as Task[]).find((el) => el.id === prevItem.id);
+            return updatedItem || prevItem;
+          }),
+          total: data.total,
+        };
+      }
+
+      if (action === 'delete') {
+        const updatedItems = data.items.filter((item) => !(newItems as { id: string }[]).some((deletedItem) => deletedItem.id === item.id));
+        const updatedTotal = data.total - (data.items.length - updatedItems.length);
+        return {
+          items: updatedItems,
+          total: updatedTotal,
+        };
+      }
+
+      if (action === 'updateSubTask') {
+        return {
+          items: data.items.map((currentItem) => ({
+            ...currentItem,
+            subTasks: currentItem.subTasks.map((subTask) => {
+              const updatedSubTask = (newItems as SubTask[]).find((el) => el.id === subTask.id);
+              return updatedSubTask || subTask;
+            }),
+          })),
+          total: data.total,
+        };
+      }
+
+      if (action === 'deleteSubTask') {
+        return {
+          items: data.items.map((currentItem) => ({
+            ...currentItem,
+            subTasks: currentItem.subTasks.filter((subTask) => !(newItems as { id: string }[]).some((deletedItem) => deletedItem.id === subTask.id)),
+          })),
+          total: data.total,
+        };
+      }
+    });
+  };
+};
+
+export const useMutateInfiniteTaskQueryData = (queryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
+  return (newItems: Task[] | SubTask[] | { id: string }[], action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask') => {
+    queryClient.setQueryData<
+      InfiniteData<{
+        items: Task[];
+        total: number;
+      }>
+    >(queryKey, (data) => {
+      if (!data) return;
+
+      if (action === 'create') {
+        return {
+          pages: [
+            {
+              items: [...(newItems as Task[]), ...data.pages[0].items],
+              total: data.pages[0].total + newItems.length,
+            },
+            ...data.pages.slice(1),
+          ],
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'update') {
+        const updatedPages = data.pages.map((page) => ({
+          items: page.items.map((item) => {
+            const updatedItem = (newItems as Task[]).find((el) => el.id === item.id);
+            if (item.id === updatedItem?.id) return updatedItem;
+            return item;
+          }),
+          total: page.total,
+        }));
+
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'delete') {
+        const updatedPages = data.pages.map((page) => {
+          const updatedItems = page.items.filter((item) => !(newItems as { id: string }[]).some((deletedItem) => deletedItem.id === item.id));
+          const updatedTotal = page.total - (page.items.length - updatedItems.length);
+          return {
+            items: updatedItems,
+            total: updatedTotal,
+          };
+        });
+
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'updateSubTask') {
+        const updatedPages = data.pages.map((page) => ({
+          items: page.items.map((currentItem) => ({
+            ...currentItem,
+            subTasks: currentItem.subTasks.map((subTask) => {
+              const updatedSubTask = (newItems as SubTask[]).find((el) => el.id === subTask.id);
+              if (subTask.id === updatedSubTask?.id) return updatedSubTask;
+              return subTask;
+            }),
+          })),
+          total: page.total,
+        }));
+
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'deleteSubTask') {
+        const updatedPages = data.pages.map((page) => ({
+          items: page.items.map((currentItem) => ({
+            ...currentItem,
+            subTasks: currentItem.subTasks.filter((subTask) => !(newItems as SubTask[]).some((deletedItem) => deletedItem.id === subTask.id)),
+          })),
+          total: page.total,
+        }));
+
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+    });
+
+    if (invalidateKeyGetter) {
+      for (const item of newItems) {
+        queryClient.invalidateQueries({
+          queryKey: invalidateKeyGetter(item as Item),
+        });
+      }
+    }
   };
 };

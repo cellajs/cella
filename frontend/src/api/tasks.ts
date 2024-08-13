@@ -9,7 +9,7 @@ type CreateTaskParams = Parameters<(typeof client)['$post']>['0']['json'];
 export const createTask = async (task: CreateTaskParams) => {
   const response = await client.$post({ json: task });
   const json = await handleResponse(response);
-  return json.success;
+  return json.data;
 };
 
 export type GetTasksParams = Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {

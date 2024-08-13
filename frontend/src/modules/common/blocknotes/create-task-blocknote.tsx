@@ -31,6 +31,14 @@ export const CreateTaskBlockNote = ({ value, projectId, mode, onChange }: TaskEd
       const blocks = await editor.tryParseHTMLToBlocks(value);
       editor.replaceBlocks(editor.document, blocks);
     })();
+  }, []);
+
+  useEffect(() => {
+    if (value !== undefined && value !== '<p class="bn-inline-content"></p>' && value !== '') return;
+    (async () => {
+      const blocks = await editor.tryParseHTMLToBlocks('');
+      editor.replaceBlocks(editor.document, blocks);
+    })();
   }, [value]);
 
   return (

@@ -12,19 +12,12 @@ interface Props {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
-  handleTaskChange: (field: string, value: string | number | null, taskId: string) => void;
   isSheet?: boolean;
 }
 
-const TaskContent = ({ task, mode, isSheet, isExpanded, handleTaskChange }: Props) => {
+const TaskContent = ({ task, mode, isSheet, isExpanded }: Props) => {
   const { t } = useTranslation();
-
   const [createSubTask, setCreateSubTask] = useState(false);
-
-  const handleUpdateMarkdown = (description: string, summary: string) => {
-    handleTaskChange('summary', summary, task.id);
-    handleTaskChange('description', description, task.id);
-  };
 
   return (
     <>
@@ -53,7 +46,7 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, handleTaskChange }: Prop
         </div>
       ) : (
         <>
-          <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} handleUpdateHTML={handleUpdateMarkdown} mode={mode} />
+          <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} />
           {task.subTasks.length > 0 || task.summary !== task.description ? (
             <div className={`${isSheet ? 'hidden' : ''}`}>
               <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">
@@ -76,7 +69,7 @@ const TaskContent = ({ task, mode, isSheet, isExpanded, handleTaskChange }: Prop
           <div className="-ml-10 -mr-1 relative z-10">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (
-                <SubTask mode={mode} key={task.id} task={task} handleTaskChange={handleTaskChange} />
+                <SubTask mode={mode} key={task.id} task={task} />
               ))}
             </div>
 

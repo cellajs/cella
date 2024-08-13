@@ -10,6 +10,9 @@ import { HighIcon } from './impact-icons/high';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
 import { NoneIcon } from './impact-icons/none';
+import { useWorkspaceStore } from '~/store/workspace';
+import { dispatchCustomEvent } from '~/lib/custom-events';
+import { updateTask } from '~/api/tasks';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -27,15 +30,24 @@ export const impacts = [
 
 interface SelectImpactProps {
   value: TaskImpact;
-  changeTaskImpact: (value: TaskImpact) => void;
   triggerWidth?: number;
+  creationValueChange?: (newValue: TaskImpact) => void;
 }
 
-export const SelectImpact = ({ value, changeTaskImpact, triggerWidth = 192 }: SelectImpactProps) => {
+export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
   const { t } = useTranslation();
+  const { focusedTaskId } = useWorkspaceStore();
   const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(value !== null ? impacts[value] : null);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
+
+  const changeTaskImpact = async (newImpact: TaskImpact) => {
+    if (creationValueChange) return creationValueChange(newImpact);
+    if (!focusedTaskId) return;
+    const updatedTask = await updateTask(focusedTaskId, 'impact', newImpact);
+    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
+  };
 
   return (
     <Command className="relative rounded-lg" style={{ width: `${triggerWidth}px` }}>
