@@ -1,4 +1,4 @@
-import type { Task, BaseTask } from '~/types';
+import type { Task, SubTask } from '~/types';
 
 // To sort Tasks by its status & order
 export const sortTaskOrder = (task1: Pick<Task, 'status' | 'order'>, task2: Pick<Task, 'status' | 'order'>, reverse?: boolean) => {
@@ -23,7 +23,7 @@ export const getTaskOrder = (taskId: string, newStatus: string | number | null, 
   return filteredTasks[0].order + 1;
 };
 
-export const getNewTaskOrder = (status: number, tasks: BaseTask[]) => {
+export const getNewTaskOrder = (status: number, tasks: Task[] | SubTask[]) => {
   const filteredTasks = tasks.filter((t) => t.status === status).sort((a, b) => b.order - a.order);
   return filteredTasks.length > 0 ? filteredTasks[0].order + 1 : 1;
 };

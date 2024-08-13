@@ -5,22 +5,25 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import type { Member } from '~/types/index.ts';
+import type { User } from '~/types/index.ts';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
 import { updateTask } from '~/api/tasks.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+
+type AssignableMember = Omit<User, 'counts'>;
 
 interface AssignMembersProps {
-  value: Member[];
+  value: AssignableMember[];
   projectId: string;
   triggerWidth?: number;
-  creationValueChange?: (users: Member[]) => void;
+  creationValueChange?: (users: AssignableMember[]) => void;
 }
 
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 240 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const { focusedTaskId, projects } = useWorkspaceStore();
-  const [selectedMembers, setSelectedMembers] = useState<Member[]>(value);
+  const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
 
@@ -35,13 +38,15 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
   const showedMembers = showAll ? sortedMembers : sortedMembers.slice(0, 6);
   const isSearching = searchValue.length > 0;
 
-  const changeAssignedTo = async (members: Member[]) => {
+  const changeAssignedTo = async (members: AssignableMember[]) => {
     if (!focusedTaskId) return;
-    await updateTask(
+    const updatedTask = await updateTask(
       focusedTaskId,
       'assignedTo',
       members.map((user) => user.id),
     );
+    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
   };
 
   const handleSelectClick = (id: string) => {

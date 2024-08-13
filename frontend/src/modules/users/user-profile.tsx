@@ -11,12 +11,12 @@ import ProjectsTable from '../projects/projects-table';
 import { Button } from '../ui/button';
 
 interface UserContextValue {
-  user: User;
+  user: Omit<User, 'counts'>;
 }
 
 export const UserContext = createContext({} as UserContextValue);
 
-export const UserProfile = ({ user, sheet }: { user: User; sheet?: boolean }) => {
+export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user: currentUser } = useUserStore();

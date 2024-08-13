@@ -10,14 +10,14 @@ export const configureForExport = (tasks: Task[], projects: Omit<Project, 'count
     return {
       ...task,
       summary: task.summary.replace('<p class="bn-inline-content">', '').replace('</p>', ''),
-      labels: task.virtualLabels.map((label) => label.name),
+      labels: task.labels.map((label) => label.name),
       status: taskStatuses[task.status].status,
       impact: impact.value,
       subTasks: task.subTasks.length ? subTaskCount : '-',
       projectId: project?.name ?? '-',
-      createdBy: task.virtualCreatedBy?.name ?? '-',
-      modifiedBy: task.virtualUpdatedBy?.name ?? '-',
-      assignedTo: task.virtualAssignedTo.map((m) => m.name) || '-',
+      createdBy: task.createdBy?.name ?? '-',
+      modifiedBy: task.modifiedBy?.name ?? '-',
+      assignedTo: task.assignedTo.map((m) => m.name) || '-',
     };
   });
 };

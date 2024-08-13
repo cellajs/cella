@@ -6,6 +6,7 @@ import { useWorkspaceStore } from '~/store/workspace';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { deleteTasks } from '~/api/tasks';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 
 const TaskSelectedTableButtons = () => {
   const { t } = useTranslation();
@@ -16,6 +17,23 @@ const TaskSelectedTableButtons = () => {
       if (resp) {
         toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
         setSelectedTasks([]);
+
+        dispatchCustomEvent('taskTableCRUD', {
+          array: selectedTasks.map((id) => {
+            return {
+              id,
+            };
+          }),
+          action: 'delete',
+        });
+        dispatchCustomEvent('taskCRUD', {
+          array: selectedTasks.map((id) => {
+            return {
+              id,
+            };
+          }),
+          action: 'delete',
+        });
       }
     });
   };

@@ -24,7 +24,7 @@ import { getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { Mode } from '~/store/theme.ts';
 import type { DraggableItemData, Task } from '~/types';
-import TaskMarkdown from './task-content.tsx';
+import TaskDescription from './task-content.tsx';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
@@ -176,7 +176,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
               )}
             </div>
             <div className="flex flex-col grow gap-2 mt-0.5">
-              <TaskMarkdown mode={mode} task={task} isExpanded={isExpanded} handleTaskChange={handleTaskChange} isSheet={isSheet} />
+              <TaskDescription mode={mode} task={task} isExpanded={isExpanded} handleTaskChange={handleTaskChange} isSheet={isSheet} />
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -217,8 +217,8 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
                 className="relative flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
               >
                 <div className="flex truncate flex-wrap gap-[.07rem]">
-                  {task.virtualLabels.length > 0 ? (
-                    task.virtualLabels.map(({ name, id }) => {
+                  {task.labels.length > 0 ? (
+                    task.labels.map(({ name, id }) => {
                       return (
                         <div key={id} className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full border px-0 bg-border">
                           <Badge
@@ -246,10 +246,10 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
                   size="xs"
                   className="relative flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
                 >
-                  {task.virtualAssignedTo.length > 0 ? (
+                  {task.assignedTo.length > 0 ? (
                     <AvatarGroup limit={3}>
                       <AvatarGroupList>
-                        {task.virtualAssignedTo.map((user) => (
+                        {task.assignedTo.map((user) => (
                           <AvatarWrap type="user" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
                         ))}
                       </AvatarGroupList>

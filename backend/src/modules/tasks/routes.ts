@@ -1,10 +1,19 @@
+import { z } from 'zod';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema, successWithPaginationSchema } from '../../lib/common-responses';
 import { idsQuerySchema } from '../../lib/common-schemas';
 
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
 
-import { getTasksQuerySchema, taskSchema, createTaskSchema, idParamSchema, updateTaskSchema, relativeQuerySchema } from './schema';
+import {
+  getTasksQuerySchema,
+  simpleTaskSchema,
+  createTaskSchema,
+  idParamSchema,
+  updateTaskSchema,
+  relativeQuerySchema,
+  fullTaskSchema,
+} from './schema';
 
 class TaskRoutesConfig {
   public createTask = createRouteConfig({
@@ -52,7 +61,7 @@ class TaskRoutesConfig {
         description: 'Task',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(taskSchema),
+            schema: successWithPaginationSchema(fullTaskSchema),
           },
         },
         ...errorResponses,
@@ -75,7 +84,7 @@ class TaskRoutesConfig {
         description: 'Task',
         content: {
           'application/json': {
-            schema: successWithDataSchema(taskSchema),
+            schema: successWithDataSchema(simpleTaskSchema),
           },
         },
       },
@@ -83,7 +92,7 @@ class TaskRoutesConfig {
     },
   });
 
-  public getRelativeTask = createRouteConfig({
+  public getRelativeTaskOrder = createRouteConfig({
     method: 'post',
     path: '/relative',
     guard: [isAuthenticated],
@@ -105,7 +114,7 @@ class TaskRoutesConfig {
         description: 'Task',
         content: {
           'application/json': {
-            schema: successWithDataSchema(taskSchema),
+            schema: successWithDataSchema(z.number()),
           },
         },
       },
@@ -135,7 +144,7 @@ class TaskRoutesConfig {
         description: 'Project updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(taskSchema),
+            schema: successWithDataSchema(fullTaskSchema),
           },
         },
       },

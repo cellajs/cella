@@ -2,7 +2,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
@@ -16,7 +16,7 @@ import { WorkspaceRoute } from '~/routes/workspaces';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import type { CustomEventEventById, WorkspaceStoreProject, TaskChangeEvent, Project, Task } from '~/types';
+import type { CustomEventEventById, WorkspaceStoreProject, TaskChangeEvent, Project, Task, TaskCRUDEvent } from '~/types';
 import { ProjectSettings } from '../project-settings';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '~/modules/tasks/create-task-form';
 import { getTaskOrder } from '~/modules/tasks/helpers';
@@ -33,9 +33,9 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { useThemeStore } from '~/store/theme';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import FocusTrap from '~/modules/common/focus-trap';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { tasksQueryOptions } from '~/modules/tasks/tasks-table';
-import { getRelativeTask, updateTask } from '~/api/tasks';
+import { getRelativeTaskOrder, getTasksList, updateTask, type GetTasksParams } from '~/api/tasks';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -45,6 +45,16 @@ interface BoardColumnProps {
   createForm: boolean;
   toggleCreateForm: (projectId: string) => void;
 }
+
+const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
+  return queryOptions({
+    queryKey: ['boardTasks', projectId],
+    queryFn: async () =>
+      await getTasksList({
+        projectId,
+      }),
+  });
+};
 
 export function BoardColumn({ project, expandedTasks, createForm, toggleCreateForm }: BoardColumnProps) {
   const { t } = useTranslation();
@@ -63,24 +73,17 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
 
   // Query tasks
-  const queryResult = useInfiniteQuery(
-    tasksQueryOptions({
-      q: searchQuery,
-      projectId: project.id,
-    }),
-  );
+  const tasksQuery = useSuspenseQuery(tasksQueryOptions({ projectId: project.id }));
 
-  const tasks = useMemo(() => {
-    return queryResult.data?.pages?.flatMap((page) => page.items) || [];
-  }, [queryResult.data]);
+  const callback = useMutateQueryData(['boardTasks', project.id]);
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} changeTaskType={(newType) => handleChange('type', newType, task.id)} />;
 
     if (field === 'impact')
       component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
-    else if (field === 'labels') component = <SetLabels value={task.virtualLabels} organizationId={task.organizationId} projectId={task.projectId} />;
-    else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.virtualAssignedTo} />;
+    else if (field === 'labels') component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
+    else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;
     else if (field === 'status')
       component = (
         <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
@@ -89,7 +92,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     return dropdowner(component, { id: field, trigger, align: ['status', 'assignedTo'].includes(field) ? 'end' : 'start' });
   };
 
-  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced, projectLabels, project.members);
+  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasksQuery.data?.items || [], showAccepted, showIced);
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
@@ -124,7 +127,8 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
 
   const handleChange = async (field: string, value: string | number | null, taskId: string) => {
     const newOrder = field === 'status' ? getTaskOrder(taskId, value, []) : null;
-    await updateTask(taskId, field, value, newOrder);
+    const updatedTask = await updateTask(taskId, field, value, newOrder);
+    callback([updatedTask], 'update');
   };
 
   const handleTaskFormClick = () => {
@@ -170,6 +174,12 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     setFocusedTaskId(id);
   };
 
+  const handleCRUD = (event: TaskCRUDEvent) => {
+    const { array, action } = event.detail;
+    callback(array, action);
+  };
+
+  useEventListener('taskCRUD', handleCRUD);
   useEventListener('taskChange', handleTaskChangeEventListener);
   useEventListener('projectChange', handleProjectChangeEventListener);
 
@@ -185,36 +195,18 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
           if (!target) return;
           const targetData = target.data;
           const edge: Edge | null = extractClosestEdge(targetData);
-          // Drag a task
-          if (isTaskData(sourceData) && isTaskData(targetData) && edge) {
-            const relativeTask = await getRelativeTask(edge, targetData.order, targetData.item.projectId);
-
-            let newOrder: number;
-            if (!relativeTask || relativeTask.order === targetData.order) {
-              newOrder = edge === 'top' ? targetData.order + 1 : targetData.order / 2;
-            } else if (relativeTask.id === sourceData.item.id) {
-              newOrder = sourceData.item.order;
+          const isTask = isTaskData(sourceData) && isTaskData(targetData);
+          const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
+          if (!edge) return;
+          if (isSubTask || isTask) {
+            const newOrder: number = await getRelativeTaskOrder(edge, targetData.order, sourceData.item.id, targetData.item.projectId, isSubTask);
+            if (sourceData.item.projectId !== targetData.item.projectId) {
+              const updatedTask = await updateTask(sourceData.item.id, 'projectId', targetData.item.projectId, newOrder);
+              callback([updatedTask], 'update');
             } else {
-              newOrder = (relativeTask.order + targetData.order) / 2;
+              const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+              callback([updatedTask], 'update');
             }
-            // Update order of dragged task
-
-            if (sourceData.item.projectId !== targetData.item.projectId)
-              await updateTask(sourceData.item.id, 'projectId', targetData.item.projectId, newOrder);
-            else await updateTask(sourceData.item.id, 'order', newOrder);
-          }
-          if (isSubTaskData(sourceData) && isSubTaskData(targetData) && edge) {
-            const relativeTask = await getRelativeTask(edge, targetData.order, targetData.item.projectId, true);
-            let newOrder: number;
-            if (!relativeTask || relativeTask.order === targetData.order) {
-              newOrder = edge === 'top' ? targetData.order / 2 : targetData.order + 1;
-            } else if (relativeTask.id === sourceData.item.id) {
-              newOrder = sourceData.item.order;
-            } else {
-              newOrder = (relativeTask.order + targetData.order) / 2;
-            }
-
-            await updateTask(sourceData.item.id, 'order', newOrder);
           }
         },
       }),
@@ -256,7 +248,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
 
           <div ref={containerRef} />
 
-          {queryResult.isLoading ? (
+          {tasksQuery.isLoading ? (
             <ColumnSkeleton />
           ) : (
             <div className="h-full flex flex-col" ref={cardListRef}>
@@ -335,7 +327,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                   }
                 />
               )}
-              {!tasks.length && searchQuery && (
+              {!showingTasks.length && searchQuery && (
                 <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
               )}
             </div>

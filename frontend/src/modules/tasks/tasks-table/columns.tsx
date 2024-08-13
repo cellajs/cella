@@ -123,10 +123,10 @@ export const useColumns = () => {
       width: 160,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
-        if (!row.virtualAssignedTo.length) return '-';
+        if (!row.assignedTo.length) return '-';
         return (
           <div className="flex flex-col">
-            {row.virtualAssignedTo.map((user) => (
+            {row.assignedTo.map((user) => (
               <div key={user.id} className="flex items-center gap-1">
                 <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
                 <span>{user.name}</span>
@@ -144,10 +144,10 @@ export const useColumns = () => {
       width: 190,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
-        if (!row.virtualLabels.length) return '-';
+        if (!row.labels.length) return '-';
         return (
           <div className="flex flex-col">
-            {row.virtualLabels.map((label) => (
+            {row.labels.map((label) => (
               <div key={label.id} className="flex items-center gap-1">
                 <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={6} />
                 <span>{label.name}</span>
@@ -217,8 +217,8 @@ export const useColumns = () => {
       width: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
-        const user = row.virtualCreatedBy;
-        if (!user) return row.createdBy;
+        const user = row.createdBy;
+        if (!user) return '-';
         return (
           <Link
             to="/user/$idOrSlug"
@@ -255,8 +255,8 @@ export const useColumns = () => {
       width: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
-        const user = row.virtualUpdatedBy;
-        if (!user) return row.modifiedBy;
+        const user = row.modifiedBy;
+        if (!user) return '-';
         return (
           <Link
             to="/user/$idOrSlug"

@@ -1,3 +1,5 @@
+import type { Task } from '~/types';
+
 interface CustomEventMap {
   projectChange: CustomEvent<string>;
   taskChange: CustomEvent<{ taskId: string; direction: number; projectId: string }>;
@@ -6,6 +8,8 @@ interface CustomEventMap {
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
   searchDropDownClose: Event;
+  taskTableCRUD: CustomEvent<{ array: Task[] | { id: string }[]; action: 'update' | 'delete' }>;
+  taskCRUD: CustomEvent<{ array: Task[] | { id: string }[]; action: 'update' | 'delete' }>;
 }
 
 type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;

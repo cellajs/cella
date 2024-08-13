@@ -28,6 +28,11 @@ const openAPITags = [
     description:
       'App-specific entity (will be split from template). Projects - like organizations - can have multiple members and are the primary entity in relation to the content-related resources: tasks, labels and attachments. Because a project can be in multiple workspaces, a relations table is maintained.',
   },
+  {
+    name: 'tasks',
+    description:
+      'App-specific entity (will be split from template). Tasks content-related resource of project. Also contain task related info and can include subtasks.',
+  },
 ];
 
 const docs = (app: CustomHono) => {

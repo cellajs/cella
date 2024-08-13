@@ -10,13 +10,19 @@ import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type'
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/types';
 import { updateTask } from '~/api/tasks';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 
 const TaskSheet = ({ task }: { task: Task }) => {
   const { mode } = useThemeStore();
 
   const handleChange = async (field: string, value: string | number | null, taskId: string) => {
     const newOrder = field === 'status' ? getTaskOrder(taskId, value, []) : null;
-    await updateTask(taskId, field, value, newOrder);
+    const updatedTask = await updateTask(taskId, field, value, newOrder);
+
+    dispatchCustomEvent('taskTableCRUD', {
+      array: [updatedTask],
+      action: 'update',
+    });
   };
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
@@ -24,13 +30,12 @@ const TaskSheet = ({ task }: { task: Task }) => {
 
     if (field === 'impact')
       component = <SelectImpact value={task.impact as TaskImpact} changeTaskImpact={(newImpact) => handleChange('impact', newImpact, task.id)} />;
-    else if (field === 'labels') component = <SetLabels value={task.virtualLabels} organizationId={task.organizationId} projectId={task.projectId} />;
-    else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.virtualAssignedTo} />;
+    else if (field === 'labels') component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
+    else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;
     else if (field === 'status')
       component = (
         <SelectStatus taskStatus={task.status as TaskStatus} changeTaskStatus={(newStatus) => handleChange('status', newStatus, task.id)} />
       );
-
     return dropdowner(component, { id: field, trigger, align: ['status', 'assignedTo'].includes(field) ? 'end' : 'start' });
   };
 

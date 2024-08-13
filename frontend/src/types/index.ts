@@ -27,6 +27,20 @@ export interface TaskCardFocusEvent extends Event {
   };
 }
 
+export interface TaskCRUDEvent extends Event {
+  detail: {
+    array: Task[] | { id: string }[];
+    action: 'update' | 'delete';
+  };
+}
+
+export interface TaskTableCRUDEvent extends Event {
+  detail: {
+    array: Task[] | { id: string }[];
+    action: 'update' | 'delete';
+  };
+}
+
 export interface TaskCardToggleSelectEvent extends Event {
   detail: {
     taskId: string;
@@ -70,15 +84,9 @@ export type EntityPage = Omit<BaseEntityPage, 'organizationId'> & {
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
 export type Label = any;
 
-export type BaseTask = Extract<InferResponseType<(typeof apiClient.tasks)['$get']>, { data: unknown }>['data']['items'][number];
+export type Task = Extract<InferResponseType<(typeof apiClient.tasks)['$get']>, { data: unknown }>['data']['items'][number];
 
-export type Task = BaseTask & {
-  virtualLabels: Label[];
-  virtualAssignedTo: Member[];
-  virtualCreatedBy?: Member;
-  virtualUpdatedBy?: Member;
-  subTasks: BaseTask[];
-};
+export type SubTask = Extract<InferResponseType<(typeof apiClient.tasks)['$get']>, { data: unknown }>['data']['items'][number]['subTasks'][number];
 
 export type Project = Extract<InferResponseType<(typeof apiClient.projects)['$get']>, { data: unknown }>['data']['items'][number];
 

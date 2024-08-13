@@ -142,6 +142,17 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
       }
     });
   };
+
+  // default value in blocknote <p class="bn-inline-content"></p so check by removing it
+  const isDirty = () => {
+    const fieldsKeys = Object.keys(form.formState.dirtyFields);
+    if (!fieldsKeys.length) return false;
+    if ('description' in fieldsKeys && fieldsKeys.length === 1) {
+      const description = form.getValues('description').replace('<p class="bn-inline-content"></p>', '');
+      return !!description.length;
+    }
+    return true;
+  };
   // Fix types
   return (
     <Form {...form}>
@@ -386,7 +397,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
             <Button
               size={'xs'}
               type="submit"
-              disabled={!form.formState.isDirty}
+              disabled={!isDirty()}
               className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'} [&:not(.absolute)]:active:translate-y-0`}
             >
               <span>
@@ -435,7 +446,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
             size={'xs'}
             type="reset"
             variant="secondary"
-            className={form.formState.isDirty ? '' : 'invisible'}
+            className={isDirty() ? '' : 'invisible'}
             aria-label="Cancel"
             onClick={() => form.reset()}
           >

@@ -27,12 +27,11 @@ export const CreateTaskBlockNote = ({ value, projectId, mode, onChange }: TaskEd
   };
 
   useEffect(() => {
-    if (value === '') return;
     (async () => {
       const blocks = await editor.tryParseHTMLToBlocks(value);
       editor.replaceBlocks(editor.document, blocks);
     })();
-  }, []);
+  }, [value]);
 
   return (
     <Suspense>

@@ -13,11 +13,12 @@ import { DropIndicator } from '~/modules/common/drop-indicator';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
-import type { BaseTask, DraggableItemData } from '~/types';
-import { TaskBlockNote } from '../common/blocknotes/task-blocknote';
+import type { SubTask as BaseSubTask, DraggableItemData } from '~/types';
+import { TaskBlockNote } from '~/modules/common/blocknotes/task-blocknote';
 import { deleteTasks } from '~/api/tasks';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 
-type TaskDraggableItemData = DraggableItemData<BaseTask> & { type: 'subTask' };
+type TaskDraggableItemData = DraggableItemData<BaseSubTask> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
   return data.dragItem === true && typeof data.order === 'number' && data.type === 'subTask';
 };
@@ -26,7 +27,11 @@ const SubTask = ({
   task,
   mode,
   handleTaskChange,
-}: { task: BaseTask; mode: Mode; handleTaskChange: (field: string, value: string | number | null, taskId: string) => void }) => {
+}: {
+  task: BaseSubTask;
+  mode: Mode;
+  handleTaskChange: (field: string, value: string | number | null, taskId: string) => void;
+}) => {
   const { t } = useTranslation();
   const subTaskRef = useRef<HTMLDivElement>(null);
   const subContentRef = useRef<HTMLDivElement>(null);
@@ -36,6 +41,8 @@ const SubTask = ({
 
   const onRemove = (subTaskId: string) => {
     deleteTasks([subTaskId]).then((resp) => {
+      dispatchCustomEvent('taskTableCRUD', { array: [{ id: subTaskId }], action: 'delete' });
+      dispatchCustomEvent('taskCRUD', { array: [{ id: subTaskId }], action: 'delete' });
       if (resp) toast.success(t('common:success.delete_resources', { resources: t('common:todo') }));
     });
   };
@@ -58,7 +65,7 @@ const SubTask = ({
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const data = getDraggableItemData<BaseTask>(task, task.order, 'subTask', 'project');
+    const data = getDraggableItemData<BaseSubTask>(task, task.order, 'subTask', 'project');
     const element = subTaskRef.current;
     if (!element) return;
 

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import useTaskFilters from '~/hooks/use-filtered-tasks';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -14,7 +13,6 @@ import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces
 import { useWorkspaceStore } from '~/store/workspace';
 import { useColumns } from './columns';
 import { sheet } from '~/modules/common/sheeter/state';
-import { enhanceTasks } from '~/hooks/use-filtered-task-helpers';
 import TableHeader from './header/table-header';
 import { SearchDropDown } from './header/search-drop-down';
 import { TaskTableSearch } from './header/table-search';
@@ -25,11 +23,12 @@ import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { configureForExport } from './helpers';
 import { getTasksList, type GetTasksParams } from '~/api/tasks';
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
-import type { Task } from '~/types';
+import type { Task, TaskTableCRUDEvent } from '~/types';
+import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
-export const tasksQueryOptions = ({
+const tasksQueryOptions = ({
   q,
   tableSort: initialSort,
   order: initialOrder,
@@ -71,15 +70,14 @@ export const tasksQueryOptions = ({
 export default function TasksTable() {
   const { t } = useTranslation();
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, labels, setFocusedTaskId } = useWorkspaceStore(
-    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, labels, setFocusedTaskId }) => ({
+  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId } = useWorkspaceStore(
+    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId }) => ({
       focusedTaskId,
       searchQuery,
       selectedTasks,
       setSelectedTasks,
       projects,
       setSearchQuery,
-      labels,
       setFocusedTaskId,
     }),
   );
@@ -116,28 +114,25 @@ export default function TasksTable() {
       tableSort,
       order,
       projectId: search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
-      status: `${search.status}`,
+      status: selectedStatuses.join('_'),
     }),
   );
 
-  const tasks = useMemo(() => {
+  const callback = useMutateInfiniteQueryData([
+    'tasks',
+    search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
+    selectedStatuses.join('_'),
+    searchQuery,
+    tableSort,
+    order,
+  ]);
+
+  const rows = useMemo(() => {
     return queryResult.data?.pages?.flatMap((page) => page.items) || [];
   }, [queryResult.data]);
 
-  const { showingTasks: rows } = useTaskFilters(
-    tasks,
-    true,
-    true,
-    labels,
-    projects
-      .flatMap((p) => p.members) // Flattens members arrays from all projects
-      .filter(
-        (user, index, self) => index === self.findIndex((u) => u.id === user.id), // Filters out duplicates based on id
-      ),
-    true,
-  );
-
   const totalCount = queryResult.data?.pages[0].total || rows.length;
+
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
     setSelectedTasks(Array.from(selectedRows));
   };
@@ -149,11 +144,9 @@ export default function TasksTable() {
   };
 
   const handleOpenPreview = (taskId: string) => {
-    const relativeTasks = tasks.filter((t) => t.id === taskId || t.parentId === taskId);
+    const relativeTasks = rows.filter((t) => t.id === taskId || t.parentId === taskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
-    const members = projects.find((p) => p.id === currentTask.projectId)?.members || [];
-    const [task] = enhanceTasks(relativeTasks, labels, members);
-    sheet.create(<TaskSheet task={task} />, {
+    sheet.create(<TaskSheet task={currentTask} />, {
       className: 'max-w-full lg:max-w-4xl p-0',
       title: <span className="pl-4">{t('common:task')}</span>,
       text: <span className="pl-4">{t('common:task_sheet_text')}</span>,
@@ -162,28 +155,32 @@ export default function TasksTable() {
     setFocusedTaskId(taskId);
   };
 
+  const handleCRUD = (event: TaskTableCRUDEvent) => {
+    const { array, action } = event.detail;
+    callback(array, action);
+  };
+
   useEventListener('openTaskCardPreview', (event) => handleOpenPreview(event.detail));
+  useEventListener('taskTableCRUD', handleCRUD);
 
   useEffect(() => {
-    if (!tasks.length || !sheet.get(`preview-${focusedTaskId}`)) return;
-    const relativeTasks = tasks.filter((t) => t.id === focusedTaskId || t.parentId === focusedTaskId);
+    if (!rows.length || !sheet.get(`preview-${focusedTaskId}`)) return;
+    const relativeTasks = rows.filter((t) => t.id === focusedTaskId || t.parentId === focusedTaskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === focusedTaskId);
-    const members = projects.find((p) => p.id === currentTask.projectId)?.members || [];
-    const [task] = enhanceTasks(relativeTasks, labels, members);
-    sheet.update(`task-preview-${task.id}`, {
-      content: <TaskSheet task={task} />,
+    sheet.update(`task-preview-${currentTask.id}`, {
+      content: <TaskSheet task={currentTask} />,
     });
-  }, [tasks, focusedTaskId]);
+  }, [rows, focusedTaskId]);
 
   useEffect(() => {
-    if (!tasks.length || !search.taskIdPreview) return;
+    if (!rows.length || !search.taskIdPreview) return;
     handleOpenPreview(search.taskIdPreview);
-  }, [tasks]);
+  }, [rows]);
 
   useEffect(() => {
     if (!rows.length || !search.userIdPreview) return;
-    const task = rows.find((t) => t.virtualCreatedBy?.id === search.userIdPreview);
-    if (task?.virtualCreatedBy) openUserPreviewSheet(task.virtualCreatedBy);
+    const task = rows.find((t) => t.createdBy?.id === search.userIdPreview);
+    if (task?.createdBy) openUserPreviewSheet(task.createdBy);
   }, [rows]);
 
   useEffect(() => {

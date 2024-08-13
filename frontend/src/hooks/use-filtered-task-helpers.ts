@@ -1,8 +1,8 @@
 import { recentlyUsed } from '~/lib/utils.ts';
 import { sortTaskOrder } from '~/modules/tasks/helpers';
-import type { Label, Member, Task, BaseTask } from '~/types';
+import type { Task } from '~/types';
 
-export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced: boolean, table?: boolean) => {
+export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced: boolean) => {
   let acceptedCount = 0;
   let icedCount = 0;
 
@@ -18,29 +18,5 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
       return task.status !== 0 && task.status !== 6;
     });
 
-  return { sortedTasks: table ? filteredTasks : filteredTasks.sort((a, b) => sortTaskOrder(a, b)), acceptedCount, icedCount };
-};
-
-export const enhanceTasks = (tasks: BaseTask[], labels: Label[], members: Member[]): Task[] => {
-  const withSubtask = tasks
-    .filter((task) => !task.parentId)
-    .map((task) => ({
-      ...task,
-      subTasks: tasks.filter((t) => t.parentId === task.id).sort((a, b) => a.order - b.order),
-    }));
-  return withSubtask.map((task) => {
-    // TODO: This is a temporary solution to get the labels and assignedTo for the tasks
-    // Perhaps we should store in db as labelIds and call them labels here
-    const virtualAssignedTo = task.assignedTo?.length ? members.filter((m) => task.assignedTo?.includes(m.id)) : [];
-    const virtualLabels = task.labels?.length ? labels.filter((l) => task.labels?.includes(l.id)) : [];
-    const virtualCreatedBy = members.find((m) => m.id === task.createdBy);
-    const virtualUpdatedBy = members.find((m) => m.id === task.modifiedBy);
-    return {
-      ...task,
-      virtualAssignedTo,
-      virtualLabels,
-      virtualCreatedBy,
-      virtualUpdatedBy,
-    };
-  });
+  return { sortedTasks: filteredTasks.sort((a, b) => sortTaskOrder(a, b)), acceptedCount, icedCount };
 };

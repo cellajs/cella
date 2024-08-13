@@ -7,6 +7,9 @@ import { CustomHono } from '../../types/common';
 import taskRoutesConfig from './routes';
 import { tasksTable } from '../../db/schema/tasks';
 import { errorResponse } from '../../lib/errors';
+import { usersTable } from '../../db/schema/users';
+import { labelsTable } from '../../db/schema/labels';
+import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 
 const app = new CustomHono();
 
@@ -55,11 +58,40 @@ const tasksRoutes = app
 
     const tasks = await db.select().from(tasksQuery.as('tasks')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
+    const uniqueAssignedUserIds = Array.from(
+      new Set([
+        ...tasks.flatMap((t) => t.assignedTo),
+        ...tasks.map((t) => t.createdBy),
+        ...tasks.map((t) => t.modifiedBy).filter((id) => id !== null),
+      ]),
+    );
+    const uniqueLabelIds = Array.from(new Set([...tasks.flatMap((t) => t.labels)]));
+
+    const users = (await db.select().from(usersTable).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
+      transformDatabaseUser(user),
+    );
+
+    const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, uniqueLabelIds));
+
+    const tasksWithSubtasks = tasks.map((task) => ({
+      ...task,
+      subTasks: tasks.filter((st) => st.parentId === task.id).sort((a, b) => a.order - b.order),
+    }));
+
+    const finalTasks = tasksWithSubtasks.map((task) => ({
+      ...task,
+      // biome-ignore lint/style/noNonNullAssertion: <explanation>
+      createdBy: users.find((m) => m.id === task.createdBy)!,
+      modifiedBy: users.find((m) => m.id === task.modifiedBy) || null,
+      assignedTo: users.filter((m) => task.assignedTo.includes(m.id)),
+      labels: labels.filter((m) => task.labels.includes(m.id)),
+    }));
+
     return ctx.json(
       {
         success: true,
         data: {
-          items: tasks,
+          items: finalTasks,
           total: tasks.length,
         },
       },
@@ -84,10 +116,10 @@ const tasksRoutes = app
     );
   })
   /*
-   * Get  relative task by main task id
+   * Get  relative task order by main task id
    */
-  .openapi(taskRoutesConfig.getRelativeTask, async (ctx) => {
-    const { edge, currentOrder, projectId, reversed } = ctx.req.valid('json');
+  .openapi(taskRoutesConfig.getRelativeTaskOrder, async (ctx) => {
+    const { edge, currentOrder, sourceId, projectId, reversed } = ctx.req.valid('json');
 
     const filter = [eq(tasksTable.projectId, projectId)];
     filter.push(edge === 'top' ? gt(tasksTable.order, currentOrder) : lt(tasksTable.order, currentOrder));
@@ -100,10 +132,21 @@ const tasksRoutes = app
       .where(and(...filter))
       .orderBy(edge === controlEdge ? asc(tasksTable.order) : desc(tasksTable.order));
 
+    let newOrder: number;
+
+    if (!relativeTask || relativeTask.order === currentOrder) {
+      if (reversed) newOrder = edge === 'top' ? currentOrder / 2 : currentOrder + 1;
+      else newOrder = edge === 'top' ? currentOrder + 1 : currentOrder / 2;
+    } else if (relativeTask.id === sourceId) {
+      newOrder = relativeTask.order;
+    } else {
+      newOrder = (relativeTask.order + currentOrder) / 2;
+    }
+
     return ctx.json(
       {
         success: true,
-        data: relativeTask,
+        data: newOrder,
       },
       200,
     );
@@ -130,10 +173,29 @@ const tasksRoutes = app
       .where(eq(tasksTable.id, id))
       .returning();
 
+    const subTasks = await db.select().from(tasksTable).where(eq(tasksTable.parentId, updatedTask.id));
+
+    const uniqueAssignedUserIds = Array.from(new Set([...updatedTask.assignedTo, updatedTask.createdBy]));
+    if (updatedTask.modifiedBy) uniqueAssignedUserIds.push(updatedTask.modifiedBy);
+    const users = (await db.select().from(usersTable).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
+      transformDatabaseUser(user),
+    );
+    const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, updatedTask.labels));
+
+    const finalTask = {
+      subTasks,
+      ...updatedTask,
+      // biome-ignore lint/style/noNonNullAssertion: <explanation>
+      createdBy: users.find((m) => m.id === updatedTask.createdBy)!,
+      modifiedBy: users.find((m) => m.id === updatedTask.modifiedBy) || null,
+      assignedTo: users.filter((m) => updatedTask.assignedTo.includes(m.id)),
+      labels: labels.filter((m) => updatedTask.labels.includes(m.id)),
+    };
+
     return ctx.json(
       {
         success: true,
-        data: updatedTask,
+        data: finalTask,
       },
       200,
     );

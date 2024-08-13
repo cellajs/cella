@@ -96,6 +96,12 @@ export const CreateSubTaskForm = ({
     });
   };
 
+  // default value in blocknote <p class="bn-inline-content"></p so check by removing it
+  const isDirty = () => {
+    const fields = form.getValues('description').replace('<p class="bn-inline-content"></p>', '');
+    return !!fields.length;
+  };
+
   if (!formOpen)
     return (
       <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none opacity-50 hover:opacity-100" onClick={() => setFormState(true)}>
@@ -130,14 +136,14 @@ export const CreateSubTaskForm = ({
         />
         <div className="inline-flex justify-between">
           <div className="inline-flex gap-2">
-            <Button size={'xs'} type="submit" disabled={!form.formState.isDirty}>
+            <Button size={'xs'} type="submit" disabled={!isDirty()}>
               <span>{t('common:create')}</span>
             </Button>
             <Button
               size={'xs'}
               type="reset"
               variant="secondary"
-              className={form.formState.isDirty ? '' : 'hidden'}
+              className={isDirty() ? '' : 'hidden'}
               aria-label="Cancel"
               onClick={() => form.reset()}
             >
@@ -149,7 +155,7 @@ export const CreateSubTaskForm = ({
               variant="secondary"
               aria-label="close"
               onClick={() => setFormState(false)}
-              className={form.formState.isDirty ? 'hidden' : ''}
+              className={isDirty() ? 'hidden' : ''}
             >
               {t('common:close')}
             </Button>
