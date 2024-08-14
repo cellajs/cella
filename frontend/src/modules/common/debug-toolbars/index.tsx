@@ -16,7 +16,6 @@ interface DebugItem {
 
 const debugOptions: DebugItem[] = [
   { id: 'drizzle-studio', icon: '💦', url: 'https://local.drizzle.studio/' },
-  { id: 'electric-sql', icon: '⚡', parent: '#__electric_debug_toolbar_container', element: '.rt-reset.rt-BaseButton' },
   { id: 'tanstack-router', icon: '🌴', parent: '.TanStackRouterDevtools', element: ':scope > button' },
   { id: 'react-query', icon: '📡', parent: '.tsqd-parent-container', element: '.tsqd-open-btn' },
 ];
@@ -30,11 +29,8 @@ const DebugToolbars = () => {
 
     const parent = document.querySelector<HTMLElement>(item.parent);
     if (!parent) return;
-    let htmlElement: HTMLButtonElement | null | undefined = parent.querySelector<HTMLButtonElement>(item.element);
-    if (item.id === 'electric-sql') htmlElement = parent.shadowRoot?.querySelector<HTMLButtonElement>(item.element);
+    const htmlElement: HTMLButtonElement | null | undefined = parent.querySelector<HTMLButtonElement>(item.element);
     if (!htmlElement) return;
-
-    if (item.id === 'electric-sql') parent.classList.remove('hidden');
     htmlElement.click();
   };
 
