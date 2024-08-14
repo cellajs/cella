@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import type { Mode } from '~/store/theme';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
@@ -8,16 +8,18 @@ import './styles.css';
 import { getMentionMenuItems, schemaWithMentions } from './mention';
 
 interface TaskEditorProps {
+  id: string;
   mode: Mode;
   value: string;
   projectId: string;
   onChange: (newContent: string, newSummary: string) => void;
 }
 
-export const CreateTaskBlockNote = ({ value, projectId, mode, onChange }: TaskEditorProps) => {
+export const CreateTaskBlockNote = ({ id, value, projectId, mode, onChange }: TaskEditorProps) => {
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
   const { projects } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
+  const initial = useRef(true);
 
   const updateData = async () => {
     const summary = editor.document[0];
@@ -26,24 +28,28 @@ export const CreateTaskBlockNote = ({ value, projectId, mode, onChange }: TaskEd
     onChange(contentHtml, summaryHTML);
   };
 
-  useEffect(() => {
-    (async () => {
-      const blocks = await editor.tryParseHTMLToBlocks(value);
-      editor.replaceBlocks(editor.document, blocks);
-    })();
-  }, []);
+  const triggerFocus = () => {
+    const editorContainerElement = document.getElementById(`create-blocknote-${id}`);
+    const editorElement = editorContainerElement?.getElementsByClassName('bn-editor');
+    if (editorElement?.length) (editorElement[0] as HTMLDivElement).focus();
+  };
 
   useEffect(() => {
-    if (value !== undefined && value !== '<p class="bn-inline-content"></p>' && value !== '') return;
+    if (!initial.current && value !== undefined && value !== '<p class="bn-inline-content"></p>' && value !== '') return;
     (async () => {
       const blocks = await editor.tryParseHTMLToBlocks('');
       editor.replaceBlocks(editor.document, blocks);
+      if (initial.current) {
+        triggerFocus();
+        initial.current = false;
+      }
     })();
   }, [value]);
 
   return (
     <Suspense>
       <BlockNoteView
+        id={`create-blocknote-${id}`}
         onChange={async () => await updateData()}
         editable={true}
         autoFocus={true}

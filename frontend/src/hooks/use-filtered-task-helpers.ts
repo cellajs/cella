@@ -20,7 +20,6 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
     ...task,
     subTasks: task.subTasks.sort((a, b) => a.order - b.order),
   }));
-  console.log('tasksWithSortedSubtasks:', tasksWithSortedSubtasks[0]);
 
   // Sort the main tasks
   const sortedTasks = tasksWithSortedSubtasks.sort((a, b) => sortTaskOrder(a, b));

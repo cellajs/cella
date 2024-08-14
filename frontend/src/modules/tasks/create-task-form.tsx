@@ -173,6 +173,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
               <FormItem>
                 <FormControl>
                   <CreateTaskBlockNote
+                    id={defaultId}
                     projectId={projectId}
                     value={value}
                     onChange={(description, summary) => {
@@ -283,7 +284,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                           creationValueChange={onChange}
                         />,
                         {
-                          id: `assign_to-${defaultId}`,
+                          id: `assignTo-${defaultId}`,
                           trigger: event.currentTarget,
                         },
                       );
@@ -325,10 +326,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
             );
           }}
         />
-
-        {
-          // TODO: Bind the entire project object instead of individual IDs
-        }
         <FormField
           control={form.control}
           name="labels"

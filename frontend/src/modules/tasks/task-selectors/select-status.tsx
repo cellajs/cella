@@ -91,16 +91,15 @@ const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskSta
     dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
   };
 
-  const isSearching = searchValue.length > 0;
-
-  const statusChange = (index: number) => {
-    const newStatus = taskStatuses[index];
+  const statusChange = (newValue: number) => {
+    const newStatus = taskStatuses.find((s) => s.value === newValue);
+    if (!newStatus) return;
     setSelectedStatus(newStatus);
-    changeTaskStatus(index);
+    changeTaskStatus(newValue);
   };
 
-  const handleStatusChangeClick = (index: number) => {
-    statusChange(index);
+  const handleStatusChangeClick = (status: number) => {
+    statusChange(status);
     dropdowner.remove();
     setSearchValue('');
   };
@@ -123,8 +122,7 @@ const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskSta
         }}
         placeholder={t('common:placeholder.set_status')}
       />
-      {!isSearching && <Kbd value="S" className="max-sm:hidden absolute top-3 right-2.5" />}
-
+      {!searchValue && <Kbd value="S" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
         {!!searchValue.length && (
           <CommandEmpty className="flex justify-center items-center p-2 text-sm">
@@ -132,27 +130,23 @@ const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskSta
           </CommandEmpty>
         )}
         <CommandGroup>
-          {taskStatuses.map((status, index) => {
-            return (
-              <CommandItem
-                key={status.value}
-                value={status.status}
-                onSelect={() => {
-                  handleStatusChangeClick(index);
-                }}
-                className="group rounded-md flex justify-between items-center w-full leading-normal"
-              >
-                <div className="flex items-center">
-                  <status.icon className={`size-4 mr-2 fill-current ${statusFillColors[status.value] || ''} `} />
-                  <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''} `}>{t(status.status)}</span>
-                </div>
-                <div className="flex items-center">
-                  {selectedStatus.value === status.value && <Check size={16} className="text-success" />}
-                  {!isSearching && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
-                </div>
-              </CommandItem>
-            );
-          })}
+          {taskStatuses.map((status, index) => (
+            <CommandItem
+              key={status.value}
+              value={status.status}
+              onSelect={() => handleStatusChangeClick(status.value)}
+              className="group rounded-md flex justify-between items-center w-full leading-normal"
+            >
+              <div className="flex items-center">
+                <status.icon className={`size-4 mr-2 fill-current ${statusFillColors[status.value] || ''}`} />
+                <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''}`}>{t(status.status)}</span>
+              </div>
+              <div className="flex items-center">
+                {selectedStatus.value === status.value && <Check size={16} className="text-success" />}
+                {!searchValue && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
+              </div>
+            </CommandItem>
+          ))}
         </CommandGroup>
       </CommandList>
     </Command>

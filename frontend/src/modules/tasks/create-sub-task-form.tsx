@@ -45,6 +45,7 @@ export const CreateSubTaskForm = ({
   const { mode } = useThemeStore();
   const { pathname } = useLocation();
   const { user } = useUserStore(({ user }) => ({ user }));
+  const defaultId = nanoid();
 
   const handleHotKeysKeyPress = useCallback(() => {
     setFormState(false);
@@ -56,7 +57,7 @@ export const CreateSubTaskForm = ({
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: '',
+        id: defaultId,
         description: '',
         summary: '',
         type: 'chore',
@@ -72,15 +73,14 @@ export const CreateSubTaskForm = ({
   const form = useFormWithDraft<FormValues>(`create-sub-task-${parentTask.id}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
-    const subTaskId = nanoid();
     // Extract text from summary HTML
     const parser = new DOMParser();
     const doc = parser.parseFromString(values.summary, 'text/html');
-    const summaryText = doc.body.textContent || `subtask${subTaskId}`;
+    const summaryText = doc.body.textContent || `subtask${defaultId}`;
 
     const slug = summaryText.toLowerCase().replace(/ /g, '-');
     const newSubTask = {
-      id: subTaskId,
+      id: values.id,
       description: values.description,
       summary: values.summary,
       type: 'chore' as const,
@@ -131,6 +131,7 @@ export const CreateSubTaskForm = ({
               <FormItem>
                 <FormControl>
                   <CreateTaskBlockNote
+                    id={defaultId}
                     projectId={parentTask.projectId}
                     value={value || ''}
                     onChange={(description, summary) => {

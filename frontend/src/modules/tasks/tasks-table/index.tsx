@@ -25,6 +25,7 @@ import { getTasksList, type GetTasksParams } from '~/api/tasks';
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import type { Task, TaskTableCRUDEvent } from '~/types';
 import { useMutateInfiniteTaskQueryData } from '~/hooks/use-mutate-query-data';
+import useTaskFilters from '~/hooks/use-filtered-tasks';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -108,7 +109,7 @@ export default function TasksTable() {
   useSaveInSearchParams(filters, { tableSort: 'createdAt', order: 'desc' });
 
   // Query tasks
-  const queryResult = useInfiniteQuery(
+  const tasksQuery = useInfiniteQuery(
     tasksQueryOptions({
       q: searchQuery,
       tableSort,
@@ -127,11 +128,11 @@ export default function TasksTable() {
     order,
   ]);
 
-  const rows = useMemo(() => {
-    return queryResult.data?.pages?.flatMap((page) => page.items) || [];
-  }, [queryResult.data]);
+  const tasks = useMemo(() => tasksQuery.data?.pages[0].items || [], [tasksQuery.data]);
 
-  const totalCount = queryResult.data?.pages[0].total || rows.length;
+  const { showingTasks: rows } = useTaskFilters(tasks, true, true);
+
+  const totalCount = rows.length;
 
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
     setSelectedTasks(Array.from(selectedRows));
@@ -217,8 +218,8 @@ export default function TasksTable() {
           rows,
           rowHeight: 42,
           totalCount,
-          isLoading: queryResult.isLoading,
-          isFetching: queryResult.isFetching,
+          isLoading: tasksQuery.isLoading,
+          isFetching: tasksQuery.isFetching,
           isFiltered,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,

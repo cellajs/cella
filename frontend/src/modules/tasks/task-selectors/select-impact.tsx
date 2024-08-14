@@ -72,12 +72,12 @@ export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }:
         placeholder={t('common:placeholder.impact')}
       />
       {!isSearching && <Kbd value="I" className="max-sm:hidden absolute top-3 right-2.5" />}
+      {isSearching && (
+        <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+          {t('common:no_resource_found', { resource: t('common:impact').toLowerCase() })}
+        </CommandEmpty>
+      )}
       <CommandList>
-        {!!searchValue.length && (
-          <CommandEmpty className="flex justify-center items-center p-2 text-sm">
-            {t('common:no_resource_found', { resource: t('common:impact').toLowerCase() })}
-          </CommandEmpty>
-        )}
         <CommandGroup>
           {impacts.map((Impact, index) => (
             <CommandItem

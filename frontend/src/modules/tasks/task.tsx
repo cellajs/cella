@@ -215,9 +215,6 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
                 </Button>
               )}
 
-              {
-                // TODO: Bind the entire task object instead of individual IDs
-              }
               <Button
                 id="labels"
                 onClick={(event) => handleTaskActionClick(task, 'labels', event.currentTarget)}

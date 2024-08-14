@@ -249,8 +249,10 @@ export const useMutateTasksQueryData = (queryKey: QueryKey) => {
       if (!data) return;
 
       if (action === 'create') {
+        const [newTask] = newItems as Task[];
+        if (newTask.projectId !== queryKey[1]) return;
         return {
-          items: [...(newItems as Task[]), ...data.items],
+          items: [newTask, ...data.items],
           total: data.total + newItems.length,
         };
       }
