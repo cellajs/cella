@@ -238,7 +238,10 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
 };
 
 export const useMutateTasksQueryData = (queryKey: QueryKey) => {
-  return (newItems: Task[] | SubTask[] | { id: string }[], action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask') => {
+  return (
+    newItems: Task[] | SubTask[] | { id: string }[],
+    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask',
+  ) => {
     queryClient.setQueryData<{
       items: Task[];
       total: number;
@@ -271,6 +274,22 @@ export const useMutateTasksQueryData = (queryKey: QueryKey) => {
         };
       }
 
+      if (action === 'createSubTask') {
+        return {
+          items: data.items.map((currentItem) => {
+            const newSubTask = newItems[0] as SubTask;
+            if (currentItem.id === newSubTask.parentId) {
+              return {
+                ...currentItem,
+                subTasks: [...currentItem.subTasks, newSubTask],
+              };
+            }
+            return currentItem;
+          }),
+          total: data.total,
+        };
+      }
+
       if (action === 'updateSubTask') {
         return {
           items: data.items.map((currentItem) => ({
@@ -298,7 +317,10 @@ export const useMutateTasksQueryData = (queryKey: QueryKey) => {
 };
 
 export const useMutateInfiniteTaskQueryData = (queryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
-  return (newItems: Task[] | SubTask[] | { id: string }[], action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask') => {
+  return (
+    newItems: Task[] | SubTask[] | { id: string }[],
+    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask',
+  ) => {
     queryClient.setQueryData<
       InfiniteData<{
         items: Task[];
@@ -346,6 +368,26 @@ export const useMutateInfiniteTaskQueryData = (queryKey: QueryKey, invalidateKey
           };
         });
 
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'createSubTask') {
+        const updatedPages = data.pages.map((page) => ({
+          items: page.items.map((currentItem) => {
+            const newSubTask = newItems[0] as SubTask;
+            if (currentItem.id === newSubTask.parentId) {
+              return {
+                ...currentItem,
+                subTasks: [...currentItem.subTasks, newSubTask],
+              };
+            }
+            return currentItem;
+          }),
+          total: page.total,
+        }));
         return {
           pages: updatedPages,
           pageParams: data.pageParams,

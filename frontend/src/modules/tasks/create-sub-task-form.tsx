@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
@@ -16,10 +16,18 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { getNewTaskOrder } from './helpers.ts';
 import { CreateTaskBlockNote } from '~/modules/common/blocknotes/create-task-blocknote.tsx';
 import { createTask } from '~/api/tasks.ts';
-import { createTaskSchema } from 'backend/modules/tasks/schema';
 import type { Task } from '~/types';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 
-const formSchema = createTaskSchema;
+const formSchema = z.object({
+  id: z.string(),
+  summary: z.string(),
+  description: z.string(),
+  type: z.string(),
+  impact: z.number().nullable(),
+  status: z.number(),
+  parentId: z.string(),
+});
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -49,10 +57,10 @@ export const CreateSubTaskForm = ({
         id: '',
         description: '',
         summary: '',
-        parent_id: parentTask.id,
         type: 'chore',
         impact: null,
         status: 1,
+        parentId: parentTask.id,
       },
     }),
     [],
@@ -91,6 +99,8 @@ export const CreateSubTaskForm = ({
       if (resp) {
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('common:task') }));
+        dispatchCustomEvent('taskTableCRUD', { array: [newSubTask], action: 'createSubTask' });
+        dispatchCustomEvent('taskCRUD', { array: [newSubTask], action: 'createSubTask' });
         setFormState(false);
       }
     });

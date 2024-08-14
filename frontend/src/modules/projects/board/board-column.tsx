@@ -196,7 +196,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
               callback([updatedTask], 'update');
             } else {
               const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
-              callback([updatedTask], 'update');
+              callback([updatedTask], isTask ? 'update' : 'updateSubTask');
             }
           }
         },

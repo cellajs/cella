@@ -95,7 +95,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
       resolver: zodResolver(formSchema),
       defaultValues: {
         id: defaultId,
-        content: '',
+        description: '',
         summary: '',
         type: 'feature',
         impact: null,
@@ -157,7 +157,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
     return true;
   };
 
-  // Fix types
   return (
     <Form {...form}>
       <form

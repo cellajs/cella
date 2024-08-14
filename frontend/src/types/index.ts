@@ -30,14 +30,14 @@ export interface TaskCardFocusEvent extends Event {
 export interface TaskCRUDEvent extends Event {
   detail: {
     array: Task[] | SubTask[] | { id: string }[];
-    action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask';
+    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
   };
 }
 
 export interface TaskTableCRUDEvent extends Event {
   detail: {
     array: Task[] | SubTask[] | { id: string }[];
-    action: 'create' | 'update' | 'delete' | 'updateSubTask' | 'deleteSubTask';
+    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
   };
 }
 
