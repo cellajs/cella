@@ -30,8 +30,11 @@ const openAPITags = [
   },
   {
     name: 'tasks',
-    description:
-      'App-specific entity (will be split from template). Tasks content-related resource of project. Also contain task related info and can include subtasks.',
+    description: 'App-specific. Tasks content-related resource of project. Also contain task related info and can include subtasks.',
+  },
+  {
+    name: 'labels',
+    description: 'App-specific. Labels content-related resource of project. That is using inside the tasks.',
   },
 ];
 
