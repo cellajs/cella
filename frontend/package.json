@@ -13,8 +13,8 @@
     "electric:prepare": "pnpm electric:proxy & (pnpm electric:generate && tsx prepare-files.ts)",
     "electric:prepare:dev": "electric-sql generate && tsx prepare-files.ts",
     "dev": "NODE_ENV=development vite --mode development",
-    "build": "pnpm run electric:prepare && tsc && vite build",
-    "build:dev": "electric:prepare:dev && tsc && NODE_ENV=development vite build --mode development",
+    "build": "tsc && vite build",
+    "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000"
   },
   "dependencies": {
@@ -91,7 +91,6 @@
     "locales": "workspace:*",
     "lucide-react": "^0.358.0",
     "nanoid": "^5.0.7",
-    "npm": "^10.8.2",
     "react": "^18.3.1",
     "react-confetti-explosion": "^2.1.2",
     "react-data-grid": "7.0.0-beta.43",
