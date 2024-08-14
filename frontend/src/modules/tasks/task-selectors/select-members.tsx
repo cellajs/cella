@@ -47,8 +47,8 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
       'assignedTo',
       members.map((user) => user.id),
     );
-    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
   };
 
   const handleSelectClick = (id: string) => {

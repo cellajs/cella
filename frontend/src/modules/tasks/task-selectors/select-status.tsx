@@ -87,8 +87,8 @@ const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskSta
     //TODO rework logic
     const newOrder = getTaskOrder(focusedTaskId, newStatus, []);
     const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
-    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
   };
 
   const isSearching = searchValue.length > 0;

@@ -43,8 +43,8 @@ const SubTask = ({
 
   const onRemove = (subTaskId: string) => {
     deleteTasks([subTaskId]).then((resp) => {
-      if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [{ id: subTaskId }], action: 'deleteSubTask' });
-      dispatchCustomEvent('taskTableCRUD', { array: [{ id: subTaskId }], action: 'deleteSubTask' });
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [{ id: subTaskId }], action: 'deleteSubTask' });
       if (resp) toast.success(t('common:success.delete_resources', { resources: t('common:todo') }));
     });
   };
@@ -56,8 +56,8 @@ const SubTask = ({
 
   const handleUpdateStatus = async (newStatus: number) => {
     const updatedTask = await updateTask(task.id, 'status', newStatus);
-    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'updateSubTask' });
-    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'updateSubTask' });
+    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask' });
   };
 
   useDoubleClick({

@@ -1,5 +1,5 @@
 import defaultHook from './lib/default-hook';
-import docs from './lib/docs';
+// import docs from './lib/docs';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import authRoutes from './modules/auth';
@@ -25,7 +25,7 @@ const app = new CustomHono({
 app.route('', middlewares);
 
 // Init OpenAPI docs
-docs(app);
+// docs(app);
 
 // Not found handler
 app.notFound((ctx) => {

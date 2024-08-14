@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useCallback, useEffect, useRef } from 'react';
 import type { Mode } from '~/store/theme';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
@@ -9,6 +9,7 @@ import { useLocation } from '@tanstack/react-router';
 
 import './styles.css';
 import { getMentionMenuItems, schemaWithMentions } from './mention';
+import router from '~/lib/router';
 
 interface TaskEditorProps {
   id: string;
@@ -25,14 +26,17 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
   const { projects, focusedTaskId } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
 
-  const handleUpdateHTML = async (newContent: string, newSummary: string) => {
-    await updateTask(id, 'summary', newSummary);
-    const updatedTask = await updateTask(id, 'description', newContent);
-    if (pathname.includes('/board')) {
-      dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: updatedTask.parentId ? 'updateSubTask' : 'update' });
-    }
-    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: updatedTask.parentId ? 'updateSubTask' : 'update' });
-  };
+  const handleUpdateHTML = useCallback(
+    async (newContent: string, newSummary: string) => {
+      await updateTask(id, 'summary', newSummary);
+      const updatedTask = await updateTask(id, 'description', newContent);
+
+      const action = updatedTask.parentId ? 'updateSubTask' : 'update';
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action });
+    },
+    [pathname],
+  );
 
   const updateData = async () => {
     //if user in Formatting Toolbar does not update
@@ -68,6 +72,11 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
     if (focusedTaskId !== id) return;
     triggerFocus();
   }, [focusedTaskId]);
+
+  useEffect(() => {
+    const unsubscribe = router.subscribe('onBeforeLoad', updateData);
+    return () => unsubscribe();
+  }, []);
 
   return (
     <Suspense>

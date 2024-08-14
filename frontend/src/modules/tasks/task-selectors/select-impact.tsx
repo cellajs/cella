@@ -47,8 +47,8 @@ export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }:
     if (creationValueChange) return creationValueChange(newImpact);
     if (!focusedTaskId) return;
     const updatedTask = await updateTask(focusedTaskId, 'impact', newImpact);
-    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
   };
 
   return (

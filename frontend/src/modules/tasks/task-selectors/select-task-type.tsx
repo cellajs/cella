@@ -40,8 +40,8 @@ export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypePr
   const changeTaskType = async (newType: TaskType) => {
     if (!focusedTaskId) return;
     const updatedTask = await updateTask(focusedTaskId, 'type', newType);
-    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
   };
 
   useEffect(() => {

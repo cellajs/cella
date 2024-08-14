@@ -19,8 +19,8 @@ const TaskSelectedTableButtons = () => {
       if (resp) {
         toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
         setSelectedTasks([]);
-
-        dispatchCustomEvent('taskTableCRUD', {
+        const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+        dispatchCustomEvent(eventName, {
           array: selectedTasks.map((id) => {
             return {
               id,
@@ -28,16 +28,6 @@ const TaskSelectedTableButtons = () => {
           }),
           action: 'delete',
         });
-        if (pathname.includes('/board')) {
-          dispatchCustomEvent('taskCRUD', {
-            array: selectedTasks.map((id) => {
-              return {
-                id,
-              };
-            }),
-            action: 'delete',
-          });
-        }
       }
     });
   };

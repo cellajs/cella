@@ -81,8 +81,8 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
     //TODO rework logic
     // const newOrder = getTaskOrder(task.id, newStatus, []);
     const updatedTask = await updateTask(task.id, 'status', newStatus);
-    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
+    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
   };
 
   const dragEnd = () => {
