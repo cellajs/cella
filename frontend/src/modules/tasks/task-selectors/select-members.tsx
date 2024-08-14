@@ -1,16 +1,17 @@
-import { Check } from 'lucide-react';
-import { useState } from 'react';
+import { Check, XCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { User } from '~/types/index.ts';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command.tsx';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { inNumbersArray } from './helpers.ts';
 import { updateTask } from '~/api/tasks.ts';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { useLocation } from '@tanstack/react-router';
+import { Input } from '~/modules/ui/input';
 
 type AssignableMember = Omit<User, 'counts'>;
 
@@ -37,8 +38,11 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
     return bSelected - aSelected;
   });
 
-  const showedMembers = showAll ? sortedMembers : sortedMembers.slice(0, 6);
-  const isSearching = searchValue.length > 0;
+  const showedMembers = useMemo(() => {
+    if (searchValue.length) return sortedMembers.filter((m) => m.name.toLowerCase().includes(searchValue.toLowerCase()));
+    if (showAll) return sortedMembers;
+    return sortedMembers.slice(0, 6);
+  }, [showAll, searchValue, sortedMembers]);
 
   const changeAssignedTo = async (members: AssignableMember[]) => {
     if (!focusedTaskId) return;
@@ -74,27 +78,39 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
 
   return (
     <Command className="relative rounded-lg max-h-[40vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
-      <CommandInput
-        autoFocus={true}
+      <Input
+        className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden"
+        placeholder={t('common:placeholder.assign')}
         value={searchValue}
-        onValueChange={(searchValue) => {
+        autoFocus={true}
+        onChange={(e) => {
+          const searchValue = e.target.value;
           // If the user types a number, select status like useHotkeys
           if (!showAll && inNumbersArray(6, searchValue)) return handleSelectClick(members[Number.parseInt(searchValue) - 1]?.id);
           setSearchValue(searchValue);
         }}
-        clearValue={setSearchValue}
-        wrapClassName="max-sm:hidden"
-        className="leading-normal"
-        placeholder={t('common:placeholder.assign')}
       />
-      {!isSearching && <Kbd value="A" className="max-sm:hidden absolute top-3 right-2.5" />}
+
+      {!searchValue.length ? (
+        <Kbd value="A" className="max-sm:hidden absolute top-3 right-2.5" />
+      ) : (
+        <XCircle
+          size={16}
+          className="absolute top-5 right-2.5 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSearchValue('');
+          }}
+        />
+      )}
+
       <CommandList>
         {!!searchValue.length && (
           <CommandEmpty className="flex justify-center items-center p-2 text-sm">
             {t('common:no_resource_found', { resource: t('common:members').toLowerCase() })}
           </CommandEmpty>
         )}
-        {sortedMembers && (
+        {showedMembers && (
           <CommandGroup>
             {showedMembers.map((user, index) => (
               <CommandItem
@@ -114,11 +130,11 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
 
                 <div className="flex items-center">
                   {selectedMembers.some((u) => u.id === user.id) && <Check size={16} className="text-success" />}
-                  {!isSearching && !showAll && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
+                  {!searchValue.length && !showAll && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
                 </div>
               </CommandItem>
             ))}
-            {sortedMembers.length > 5 && (
+            {showedMembers.length > 5 && !searchValue.length && (
               <CommandItem className="flex items-center justify-center opacity-80 hover:opacity-100" onSelect={() => setShowAll(!showAll)}>
                 <span className="text-xs">{showAll ? t('common:hide') : t('common:show_all')}</span>
               </CommandItem>

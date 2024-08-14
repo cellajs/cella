@@ -1,11 +1,10 @@
 import { cva } from 'class-variance-authority';
-import { CommandEmpty } from 'cmdk';
-import { Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Check, XCircle } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Command, CommandGroup, CommandItem, CommandEmpty, CommandList } from '~/modules/ui/command';
 import { inNumbersArray } from './helpers';
 import { AcceptedIcon } from './status-icons/accepted';
 import { DeliveredIcon } from './status-icons/delivered';
@@ -19,6 +18,7 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { updateTask } from '~/api/tasks';
 import { getTaskOrder } from '~/modules/tasks/helpers';
 import { useLocation } from '@tanstack/react-router';
+import { Input } from '~/modules/ui/input';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
@@ -81,6 +81,12 @@ const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskSta
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
 
+  const showedStatuses = useMemo(() => {
+    if (searchValue.length) return taskStatuses.filter((s) => s.status.includes(searchValue.toLowerCase()));
+
+    return taskStatuses;
+  }, [searchValue]);
+
   const changeTaskStatus = async (newStatus: number) => {
     if (creationValueChange) creationValueChange(newStatus);
     if (!focusedTaskId) return;
@@ -110,19 +116,31 @@ const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskSta
 
   return (
     <Command className="relative rounded-lg w-60">
-      <CommandInput
-        autoFocus={true}
+      <Input
+        className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden"
+        placeholder={t('common:placeholder.set_status')}
         value={searchValue}
-        clearValue={setSearchValue}
-        wrapClassName="max-sm:hidden"
-        onValueChange={(searchValue) => {
+        autoFocus={true}
+        onChange={(e) => {
+          const searchValue = e.target.value;
           // If the user types a number, select status like useHotkeys
           if (inNumbersArray(7, searchValue)) return handleStatusChangeClick(Number.parseInt(searchValue) - 1);
           setSearchValue(searchValue);
         }}
-        placeholder={t('common:placeholder.set_status')}
       />
-      {!searchValue && <Kbd value="S" className="max-sm:hidden absolute top-3 right-2.5" />}
+
+      {!searchValue.length ? (
+        <Kbd value="S" className="max-sm:hidden absolute top-3 right-2.5" />
+      ) : (
+        <XCircle
+          size={16}
+          className="absolute top-5 right-2.5 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSearchValue('');
+          }}
+        />
+      )}
       <CommandList>
         {!!searchValue.length && (
           <CommandEmpty className="flex justify-center items-center p-2 text-sm">
@@ -130,7 +148,7 @@ const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskSta
           </CommandEmpty>
         )}
         <CommandGroup>
-          {taskStatuses.map((status, index) => (
+          {showedStatuses.map((status, index) => (
             <CommandItem
               key={status.value}
               value={status.status}
