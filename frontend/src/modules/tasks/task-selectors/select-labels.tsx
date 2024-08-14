@@ -36,7 +36,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
 
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
-  const [isRemoving, setIsRemoving] = useState(false);
+  const [isRecent, setIsRecent] = useState(true);
 
   const [orderedLabels] = useState(
     labels.filter((l) => l.projectId === projectId).sort((a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()),
@@ -46,13 +46,13 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
 
   const showedLabels = useMemo(() => {
     if (searchValue.length) return orderedLabels.filter((l) => l.name.toLowerCase().includes(searchValue));
-    if (isRemoving) return selectedLabels;
+    if (!isRecent) return selectedLabels;
     // save to recent labels all labels that used in past 3 days
     changeColumn(workspace.id, projectId, {
       recentLabels: orderedLabels.filter((l) => recentlyUsed(l.lastUsed, 3)),
     });
     return orderedLabels.slice(0, 8);
-  }, [isRemoving, searchValue]);
+  }, [isRecent, searchValue]);
 
   const updateTaskLabels = async (labels: Label[]) => {
     if (!focusedTaskId) return;
@@ -101,7 +101,8 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
     await createLabel(newLabel);
     const updatedLabels = [...selectedLabels, newLabel];
     setSelectedLabels(updatedLabels);
-    updateTaskLabels(updatedLabels);
+    if (creationValueChange) return creationValueChange(updatedLabels);
+    await updateTaskLabels(updatedLabels);
   };
 
   useEffect(() => {
@@ -145,7 +146,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
               className="group rounded-md flex justify-between items-center w-full leading-normal"
             >
               <div className="flex items-center gap-2">
-                {isSearching || isRemoving ? (
+                {isSearching || !isRecent ? (
                   <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={8} />
                 ) : (
                   <History size={16} />
@@ -159,9 +160,9 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
             </CommandItem>
           ))}
         </CommandGroup>
-        {!isSearching && selectedLabels.length ? (
-          <CommandItem className="flex justify-center text-sm m-1" onSelect={() => setIsRemoving(!isRemoving)}>
-            {isRemoving ? 'Show recent labels' : 'Show selected labels'}
+        {!isSearching && selectedLabels.length && creationValueChange === undefined ? (
+          <CommandItem className="flex justify-center text-sm m-1" onSelect={() => setIsRecent(!isRecent)}>
+            {isRecent ? 'Show selected labels' : 'Show recent labels'}
           </CommandItem>
         ) : (
           <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} searchValue={searchValue} labels={labels} />

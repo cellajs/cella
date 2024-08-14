@@ -48,7 +48,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
     if (html === contentHtml && !editor.getSelection()) return editor.replaceBlocks(editor.document, content);
     const summary = editor.document[0];
     const summaryHTML = await editor.blocksToHTMLLossy([summary]);
-    handleUpdateHTML?.(contentHtml, summaryHTML);
+    handleUpdateHTML(contentHtml, summaryHTML);
   };
 
   const triggerFocus = () => {
@@ -82,7 +82,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
     <Suspense>
       <BlockNoteView
         id={`blocknote-${id}`}
-        onBlur={async () => await updateData()}
+        onBlur={updateData}
         editor={editor}
         data-color-scheme={mode}
         className="task-blocknote"

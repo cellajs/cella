@@ -79,7 +79,6 @@ export const CreateSubTaskForm = ({
     const summaryText = doc.body.textContent || `subtask${subTaskId}`;
 
     const slug = summaryText.toLowerCase().replace(/ /g, '-');
-
     const newSubTask = {
       id: subTaskId,
       description: values.description,

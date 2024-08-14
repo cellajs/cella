@@ -85,5 +85,6 @@ export const relativeQuerySchema = z.object({
   currentOrder: z.number(),
   projectId: z.string(),
   sourceId: z.string(),
-  reversed: z.boolean().optional(),
+  parentId: z.string().optional(),
+  status: z.number().optional(),
 });

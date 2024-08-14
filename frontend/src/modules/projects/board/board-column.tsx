@@ -78,7 +78,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} />;
-
     if (field === 'impact') component = <SelectImpact value={task.impact as TaskImpact} />;
     else if (field === 'labels') component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
     else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;
@@ -190,14 +189,31 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
           const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
           if (!edge) return;
           if (isSubTask || isTask) {
-            const newOrder: number = await getRelativeTaskOrder(edge, targetData.order, sourceData.item.id, targetData.item.projectId, isSubTask);
+            const newOrder: number = await getRelativeTaskOrder({
+              edge,
+              currentOrder: targetData.order,
+              sourceId: sourceData.item.id,
+              projectId: targetData.item.projectId,
+              status: sourceData.item.status,
+            });
             if (sourceData.item.projectId !== targetData.item.projectId) {
               const updatedTask = await updateTask(sourceData.item.id, 'projectId', targetData.item.projectId, newOrder);
               callback([updatedTask], 'update');
             } else {
               const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
-              callback([updatedTask], isTask ? 'update' : 'updateSubTask');
+              callback([updatedTask], 'update');
             }
+          }
+          if (isSubTask) {
+            const newOrder: number = await getRelativeTaskOrder({
+              edge,
+              currentOrder: targetData.order,
+              sourceId: sourceData.item.id,
+              projectId: targetData.item.projectId,
+              parentId: targetData.item.parentId ?? undefined,
+            });
+            const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+            callback([updatedTask], 'updateSubTask');
           }
         },
       }),

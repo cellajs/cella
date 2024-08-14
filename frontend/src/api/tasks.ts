@@ -61,9 +61,16 @@ export const getTask = async (id: string) => {
 };
 
 // Get a task by its ID
-export const getRelativeTaskOrder = async (edge: Edge, currentOrder: number, sourceId: string, projectId: string, reversed?: boolean) => {
+export const getRelativeTaskOrder = async (info: {
+  edge: Edge;
+  currentOrder: number;
+  sourceId: string;
+  projectId: string;
+  parentId?: string;
+  status?: number;
+}) => {
   const response = await client.relative.$post({
-    json: { edge, currentOrder, sourceId, projectId, reversed },
+    json: info,
   });
 
   const json = await handleResponse(response);

@@ -18,8 +18,9 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
   // Sort subtasks within each task by order
   const tasksWithSortedSubtasks = filteredTasks.map((task) => ({
     ...task,
-    subTasks: task.subTasks.sort((a, b) => b.order - a.order),
+    subTasks: task.subTasks.sort((a, b) => a.order - b.order),
   }));
+  console.log('tasksWithSortedSubtasks:', tasksWithSortedSubtasks[0]);
 
   // Sort the main tasks
   const sortedTasks = tasksWithSortedSubtasks.sort((a, b) => sortTaskOrder(a, b));

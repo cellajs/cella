@@ -136,12 +136,16 @@ const tasksRoutes = app
    * Get  relative task order by main task id
    */
   .openapi(taskRoutesConfig.getRelativeTaskOrder, async (ctx) => {
-    const { edge, currentOrder, sourceId, projectId, reversed } = ctx.req.valid('json');
+    const { edge, currentOrder, sourceId, projectId, status, parentId } = ctx.req.valid('json');
 
     const filter = [eq(tasksTable.projectId, projectId)];
-    filter.push(edge === 'top' ? gt(tasksTable.order, currentOrder) : lt(tasksTable.order, currentOrder));
+    if (status) filter.push(eq(tasksTable.status, status));
+    if (parentId) {
+      filter.push(eq(tasksTable.parentId, parentId));
+      filter.push(edge === 'top' ? lt(tasksTable.order, currentOrder) : gt(tasksTable.order, currentOrder));
+    } else filter.push(edge === 'top' ? gt(tasksTable.order, currentOrder) : lt(tasksTable.order, currentOrder));
 
-    const controlEdge = reversed ? 'bottom' : 'top';
+    const controlEdge = parentId ? 'bottom' : 'top';
 
     const [relativeTask] = await db
       .select()
@@ -152,7 +156,7 @@ const tasksRoutes = app
     let newOrder: number;
 
     if (!relativeTask || relativeTask.order === currentOrder) {
-      if (reversed) newOrder = edge === 'top' ? currentOrder / 2 : currentOrder + 1;
+      if (parentId) newOrder = edge === 'top' ? currentOrder / 2 : currentOrder + 1;
       else newOrder = edge === 'top' ? currentOrder + 1 : currentOrder / 2;
     } else if (relativeTask.id === sourceId) {
       newOrder = relativeTask.order;
