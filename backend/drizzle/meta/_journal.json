@@ -57,6 +57,13 @@
       "when": 1723476729975,
       "tag": "0007_watery_shard",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1723643930820,
+      "tag": "0008_swift_power_pack",
+      "breakpoints": true
     }
   ]
 }
