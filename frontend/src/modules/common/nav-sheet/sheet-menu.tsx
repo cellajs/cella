@@ -127,7 +127,7 @@ export const SheetMenu = memo(() => {
           </div>
           <div className="max-sm:hidden my-4 flex items-center justify-center space-x-2">
             <Checkbox
-              id="hideSubmenuProjects"
+              id="hideSubmenu"
               checked={hideSubmenu}
               onCheckedChange={toggleHideSubmenu}
               aria-label={t('common:hide_projects')}
