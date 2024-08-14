@@ -126,7 +126,7 @@ class TaskRoutesConfig {
     method: 'put',
     path: '/{id}',
     guard: [isAuthenticated],
-    tags: ['projects'],
+    tags: ['tasks'],
     summary: 'Update Task',
     description: 'Update Task by id.',
     request: {
@@ -141,7 +141,7 @@ class TaskRoutesConfig {
     },
     responses: {
       200: {
-        description: 'Project updated',
+        description: 'Task updated',
         content: {
           'application/json': {
             schema: successWithDataSchema(fullTaskSchema),

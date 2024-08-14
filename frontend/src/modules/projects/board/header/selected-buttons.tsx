@@ -7,9 +7,11 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { deleteTasks } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { useLocation } from '@tanstack/react-router';
 
 const TaskSelectedTableButtons = () => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const { selectedTasks, setSelectedTasks } = useWorkspaceStore();
 
   const onRemove = () => {
@@ -26,14 +28,16 @@ const TaskSelectedTableButtons = () => {
           }),
           action: 'delete',
         });
-        dispatchCustomEvent('taskCRUD', {
-          array: selectedTasks.map((id) => {
-            return {
-              id,
-            };
-          }),
-          action: 'delete',
-        });
+        if (pathname.includes('/board')) {
+          dispatchCustomEvent('taskCRUD', {
+            array: selectedTasks.map((id) => {
+              return {
+                id,
+              };
+            }),
+            action: 'delete',
+          });
+        }
       }
     });
   };

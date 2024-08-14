@@ -12,6 +12,7 @@ import requestsRoutes from './modules/requests';
 import tasksRoutes from './modules/tasks';
 import usersRoutes from './modules/users';
 import workspacesRoutes from './modules/workspaces';
+import labelsRoutes from './modules/labels';
 
 import { CustomHono } from './types/common';
 
@@ -51,6 +52,7 @@ const routes = app
   // App-specific routes go here
   .route('/workspaces', workspacesRoutes)
   .route('/projects', projectsRoutes)
+  .route('/labels', labelsRoutes)
   .route('/tasks', tasksRoutes);
 
 export default app;

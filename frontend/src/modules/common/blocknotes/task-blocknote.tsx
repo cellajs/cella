@@ -5,6 +5,7 @@ import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/rea
 import { useWorkspaceStore } from '~/store/workspace';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { updateTask } from '~/api/tasks';
+import { useLocation } from '@tanstack/react-router';
 
 import './styles.css';
 import { getMentionMenuItems, schemaWithMentions } from './mention';
@@ -20,14 +21,17 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
   const initial = useRef(true);
 
+  const { pathname } = useLocation();
   const { projects, focusedTaskId } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
 
   const handleUpdateHTML = async (newContent: string, newSummary: string) => {
     await updateTask(id, 'summary', newSummary);
     const updatedTask = await updateTask(id, 'description', newContent);
+    if (pathname.includes('/board')) {
+      dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: updatedTask.parentId ? 'updateSubTask' : 'update' });
+    }
     dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: updatedTask.parentId ? 'updateSubTask' : 'update' });
-    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: updatedTask.parentId ? 'updateSubTask' : 'update' });
   };
 
   const updateData = async () => {

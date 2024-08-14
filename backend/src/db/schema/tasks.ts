@@ -30,7 +30,7 @@ export const tasksTable = pgTable(
     projectId: varchar('project_id')
       .notNull()
       .references(() => projectsTable.id, {
-        onDelete: 'set null',
+        onDelete: 'cascade',
       }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     createdBy: varchar('created_by')

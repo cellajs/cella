@@ -88,10 +88,12 @@ const tasksRoutes = app
 
     const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, uniqueLabelIds));
 
-    const tasksWithSubtasks = tasks.map((task) => ({
-      ...task,
-      subTasks: tasks.filter((st) => st.parentId === task.id).sort((a, b) => a.order - b.order),
-    }));
+    const tasksWithSubtasks = tasks
+      .filter((t) => !t.parentId)
+      .map((task) => ({
+        ...task,
+        subTasks: tasks.filter((st) => st.parentId === task.id).sort((a, b) => a.order - b.order),
+      }));
 
     const finalTasks = tasksWithSubtasks.map((task) => ({
       ...task,

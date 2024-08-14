@@ -10,6 +10,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { inNumbersArray } from './helpers.ts';
 import { updateTask } from '~/api/tasks.ts';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { useLocation } from '@tanstack/react-router';
 
 type AssignableMember = Omit<User, 'counts'>;
 
@@ -22,6 +23,7 @@ interface AssignMembersProps {
 
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 240 }: AssignMembersProps) => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const { focusedTaskId, projects } = useWorkspaceStore();
   const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
   const [searchValue, setSearchValue] = useState('');
@@ -45,8 +47,8 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
       'assignedTo',
       members.map((user) => user.id),
     );
+    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
     dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
   };
 
   const handleSelectClick = (id: string) => {

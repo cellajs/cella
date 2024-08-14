@@ -12,11 +12,13 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { useColumns } from './columns';
 import type { Label } from '~/types';
+import { deleteLabels } from '~/api/labels';
+import { toast } from 'sonner';
 
 interface LabelsParam {
   role?: 'secondary' | 'primary' | undefined;
   query?: string | undefined;
-  sort?: 'name' | 'count' | undefined;
+  sort?: 'name' | undefined;
   order?: 'desc' | 'asc' | undefined;
 }
 
@@ -58,19 +60,10 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
   };
 
   const removeLabel = () => {
-    //TODO inplement it
-    // Electric.db.labels
-    //   .deleteMany({
-    //     where: {
-    //       id: {
-    //         in: selectedLabels,
-    //       },
-    //     },
-    //   })
-    //   .then(() => {
-    //     toast.success(t(`common:success.delete_${selectedLabels.length > 1 ? 'labels' : 'label'}`));
-    //     setSelectedLabels([]);
-    //   });
+    deleteLabels(selectedLabels).then(() => {
+      toast.success(t(`common:success.delete_${selectedLabels.length > 1 ? 'labels' : 'label'}`));
+      setSelectedLabels([]);
+    });
   };
 
   const filteredLabels = useMemo(() => {

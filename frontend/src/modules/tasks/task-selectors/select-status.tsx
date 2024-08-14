@@ -18,6 +18,7 @@ import { useWorkspaceStore } from '~/store/workspace';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { updateTask } from '~/api/tasks';
 import { getTaskOrder } from '~/modules/tasks/helpers';
+import { useLocation } from '@tanstack/react-router';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
@@ -75,6 +76,7 @@ export const statusVariants = cva('', {
 
 const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskStatus; creationValueChange?: (newValue: number) => void }) => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
@@ -85,8 +87,8 @@ const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskSta
     //TODO rework logic
     const newOrder = getTaskOrder(focusedTaskId, newStatus, []);
     const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
+    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
     dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
   };
 
   const isSearching = searchValue.length > 0;

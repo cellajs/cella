@@ -10,6 +10,7 @@ import { inNumbersArray } from './helpers';
 import { useWorkspaceStore } from '~/store/workspace';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { updateTask } from '~/api/tasks';
+import { useLocation } from '@tanstack/react-router';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];
@@ -30,6 +31,7 @@ export interface SelectTaskTypeProps {
 
 export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
   const [selectedType, setSelectedType] = useState<Type | undefined>(taskTypes[taskTypes.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
@@ -38,8 +40,8 @@ export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypePr
   const changeTaskType = async (newType: TaskType) => {
     if (!focusedTaskId) return;
     const updatedTask = await updateTask(focusedTaskId, 'type', newType);
+    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
     dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
   };
 
   useEffect(() => {

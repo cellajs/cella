@@ -18,7 +18,7 @@ export type GetTasksParams = Omit<Parameters<(typeof client)['$get']>['0']['quer
   page?: number;
 };
 
-// Get list of tasks menu
+// Get list of tasks
 export const getTasksList = async (
   { q, tableSort = 'createdAt', order = 'asc', page = 0, limit = 1000, offset, projectId, status }: GetTasksParams,
   signal?: AbortSignal,

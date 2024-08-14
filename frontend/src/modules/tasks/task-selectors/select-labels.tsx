@@ -10,6 +10,10 @@ import { Badge } from '~/modules/ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command.tsx';
 import { inNumbersArray } from './helpers.ts';
 import type { Label } from '~/types/index.ts';
+import { createLabel, updateLabel, type CreateLabelParams } from '~/api/labels.ts';
+import { updateTask } from '~/api/tasks.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { useLocation } from '@tanstack/react-router';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -26,6 +30,7 @@ interface SetLabelsProps {
 
 const SetLabels = ({ value, projectId, organizationId, creationValueChange, triggerWidth = 280 }: SetLabelsProps) => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const { changeColumn } = useWorkspaceUIStore();
   const { focusedTaskId, workspace, labels } = useWorkspaceStore();
 
@@ -33,7 +38,9 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
   const [searchValue, setSearchValue] = useState('');
   const [isRemoving, setIsRemoving] = useState(false);
 
-  const [orderedLabels] = useState(labels.filter((l) => l.project_id === projectId).sort((a, b) => b.last_used.getTime() - a.last_used.getTime()));
+  const [orderedLabels] = useState(
+    labels.filter((l) => l.projectId === projectId).sort((a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()),
+  );
 
   const isSearching = searchValue.length > 0;
 
@@ -42,51 +49,21 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
     if (isRemoving) return selectedLabels;
     // save to recent labels all labels that used in past 3 days
     changeColumn(workspace.id, projectId, {
-      recentLabels: orderedLabels.filter((l) => recentlyUsed(l.last_used, 3)),
+      recentLabels: orderedLabels.filter((l) => recentlyUsed(l.lastUsed, 3)),
     });
     return orderedLabels.slice(0, 8);
   }, [isRemoving, searchValue]);
 
-  const createLabel = (newLabel: Label) => {
-    console.log('newLabel:', newLabel);
-    // TODO Save the new label to the database
-  };
-
-  const updateTaskLabels = (labels: Label[]) => {
-    console.log('labels:', labels);
+  const updateTaskLabels = async (labels: Label[]) => {
     if (!focusedTaskId) return;
-    //TODO fix
-    // const db = Electric.db;
-    // const labelsIds = labels.map((l) => l.id);
-    // db.tasks.update({
-    //   data: {
-    //     labels: labelsIds,
-    //     modified_at: new Date(),
-    //     modified_by: user.id,
-    //   },
-    //   where: {
-    //     id: focusedTaskId,
-    //   },
-    // });
+    const labelIds = labels.map((l) => l.id);
+    const updatedTask = await updateTask(focusedTaskId, 'labels', labelIds);
+    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
+    dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
     return;
   };
 
-  const updateLabel = (labelId: string, useCount: number) => {
-    console.log('labelId:', labelId);
-    console.log('useCount:', useCount);
-    //TODO fix
-    // Electric.db.labels.update({
-    //   data: {
-    //     last_used: new Date(),
-    //     use_count: useCount,
-    //   },
-    //   where: {
-    //     id: labelId,
-    //   },
-    // });
-  };
-
-  const handleSelectClick = (value?: string) => {
+  const handleSelectClick = async (value?: string) => {
     if (!value) return;
     setSearchValue('');
     const existingLabel = selectedLabels.find((label) => label.name === value);
@@ -94,8 +71,8 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       const updatedLabels = selectedLabels.filter((label) => label.name !== value);
       setSelectedLabels(updatedLabels);
       if (creationValueChange) return creationValueChange(updatedLabels);
-      updateTaskLabels(updatedLabels);
-      updateLabel(existingLabel.id, existingLabel.use_count + 1);
+      await updateTaskLabels(updatedLabels);
+      await updateLabel(existingLabel.id, existingLabel.useCount + 1);
       return;
     }
     const newLabel = labels.find((label) => label.name === value);
@@ -103,27 +80,25 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       const updatedLabels = [...selectedLabels, newLabel];
       setSelectedLabels(updatedLabels);
       if (creationValueChange) return creationValueChange(updatedLabels);
-      updateLabel(newLabel.id, newLabel.use_count + 1);
-      updateTaskLabels(updatedLabels);
+      await updateLabel(newLabel.id, newLabel.useCount + 1);
+      await updateTaskLabels(updatedLabels);
       return;
     }
   };
 
-  const handleCreateClick = (value: string) => {
+  const handleCreateClick = async (value: string) => {
     setSearchValue('');
     if (labels.find((l) => l.name === value)) return handleSelectClick(value);
 
-    const newLabel: Label = {
+    const newLabel: CreateLabelParams = {
       id: nanoid(),
       name: value,
       color: '#FFA9BA',
-      organization_id: organizationId,
-      project_id: projectId,
-      last_used: new Date(),
-      use_count: 1,
+      organizationId: organizationId,
+      projectId: projectId,
     };
 
-    createLabel(newLabel);
+    await createLabel(newLabel);
     const updatedLabels = [...selectedLabels, newLabel];
     setSelectedLabels(updatedLabels);
     updateTaskLabels(updatedLabels);

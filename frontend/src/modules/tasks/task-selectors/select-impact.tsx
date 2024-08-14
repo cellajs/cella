@@ -13,6 +13,7 @@ import { NoneIcon } from './impact-icons/none';
 import { useWorkspaceStore } from '~/store/workspace';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { updateTask } from '~/api/tasks';
+import { useLocation } from '@tanstack/react-router';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -36,6 +37,7 @@ interface SelectImpactProps {
 
 export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
   const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(value !== null ? impacts[value] : null);
   const [searchValue, setSearchValue] = useState('');
@@ -45,8 +47,8 @@ export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }:
     if (creationValueChange) return creationValueChange(newImpact);
     if (!focusedTaskId) return;
     const updatedTask = await updateTask(focusedTaskId, 'impact', newImpact);
+    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
     dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
   };
 
   return (

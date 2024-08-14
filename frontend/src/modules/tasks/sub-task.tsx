@@ -18,6 +18,7 @@ import { TaskBlockNote } from '~/modules/common/blocknotes/task-blocknote';
 import { deleteTasks } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { updateTask } from '~/api/tasks';
+import { useLocation } from '@tanstack/react-router';
 
 type TaskDraggableItemData = DraggableItemData<BaseSubTask> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -32,6 +33,8 @@ const SubTask = ({
   mode: Mode;
 }) => {
   const { t } = useTranslation();
+
+  const { pathname } = useLocation();
   const subTaskRef = useRef<HTMLDivElement>(null);
   const subContentRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -40,8 +43,8 @@ const SubTask = ({
 
   const onRemove = (subTaskId: string) => {
     deleteTasks([subTaskId]).then((resp) => {
+      if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [{ id: subTaskId }], action: 'deleteSubTask' });
       dispatchCustomEvent('taskTableCRUD', { array: [{ id: subTaskId }], action: 'deleteSubTask' });
-      dispatchCustomEvent('taskCRUD', { array: [{ id: subTaskId }], action: 'deleteSubTask' });
       if (resp) toast.success(t('common:success.delete_resources', { resources: t('common:todo') }));
     });
   };
@@ -53,8 +56,8 @@ const SubTask = ({
 
   const handleUpdateStatus = async (newStatus: number) => {
     const updatedTask = await updateTask(task.id, 'status', newStatus);
+    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'updateSubTask' });
     dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'updateSubTask' });
-    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'updateSubTask' });
   };
 
   useDoubleClick({

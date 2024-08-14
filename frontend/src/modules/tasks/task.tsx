@@ -29,6 +29,7 @@ import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { updateTask } from '~/api/tasks.ts';
+import { useLocation } from '@tanstack/react-router';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -66,6 +67,7 @@ interface TaskProps {
 
 export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded, isSheet, handleTaskActionClick }: TaskProps) {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
 
@@ -79,8 +81,8 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
     //TODO rework logic
     // const newOrder = getTaskOrder(task.id, newStatus, []);
     const updatedTask = await updateTask(task.id, 'status', newStatus);
+    if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
     dispatchCustomEvent('taskTableCRUD', { array: [updatedTask], action: 'update' });
-    dispatchCustomEvent('taskCRUD', { array: [updatedTask], action: 'update' });
   };
 
   const dragEnd = () => {

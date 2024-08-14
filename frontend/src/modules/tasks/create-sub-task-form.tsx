@@ -18,6 +18,7 @@ import { CreateTaskBlockNote } from '~/modules/common/blocknotes/create-task-blo
 import { createTask } from '~/api/tasks.ts';
 import type { Task } from '~/types';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { useLocation } from '@tanstack/react-router';
 
 const formSchema = z.object({
   id: z.string(),
@@ -42,6 +43,7 @@ export const CreateSubTaskForm = ({
 }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+  const { pathname } = useLocation();
   const { user } = useUserStore(({ user }) => ({ user }));
 
   const handleHotKeysKeyPress = useCallback(() => {
@@ -99,8 +101,8 @@ export const CreateSubTaskForm = ({
       if (resp) {
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('common:task') }));
+        if (pathname.includes('/board')) dispatchCustomEvent('taskCRUD', { array: [newSubTask], action: 'createSubTask' });
         dispatchCustomEvent('taskTableCRUD', { array: [newSubTask], action: 'createSubTask' });
-        dispatchCustomEvent('taskCRUD', { array: [newSubTask], action: 'createSubTask' });
         setFormState(false);
       }
     });
