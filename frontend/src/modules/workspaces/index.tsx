@@ -21,7 +21,7 @@ export const labelsQueryOptions = (projectId: string) =>
   });
 
 const WorkspacePage = () => {
-  const { showPageHeader, setWorkspace, setProjects, setLabels, setSelectedTasks } = useWorkspaceStore();
+  const { showPageHeader, setWorkspace, setProjects, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
 
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
@@ -35,6 +35,7 @@ const WorkspacePage = () => {
   const labelsQuery = useSuspenseQuery(labelsQueryOptions(projects.map((p) => p.id).join('_')));
   setLabels(labelsQuery.data.items);
   useEffect(() => {
+    setSearchQuery('');
     setSelectedTasks([]);
   }, [pathname]);
 
