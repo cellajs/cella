@@ -86,7 +86,11 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     return dropdowner(component, { id: field, trigger, align: field.startsWith('status') || field === 'assignedTo' ? 'end' : 'start' });
   };
 
-  const tasks = useMemo(() => tasksQuery.data?.items || [], [tasksQuery.data]);
+  const tasks = useMemo(() => {
+    const respTasks = tasksQuery.data?.items || [];
+    if (!searchQuery.length) return respTasks;
+    return respTasks.filter((t) => t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [tasksQuery.data, searchQuery]);
 
   const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced);
 
