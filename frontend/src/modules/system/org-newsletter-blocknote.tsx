@@ -4,7 +4,7 @@ import '@blocknote/shadcn/style.css';
 import { Suspense } from 'react';
 import { useThemeStore } from '~/store/theme';
 
-import './styles.css';
+import '~/modules/common/blocknote/styles.css';
 
 const BlockNote = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
   const editor = useCreateBlockNote();

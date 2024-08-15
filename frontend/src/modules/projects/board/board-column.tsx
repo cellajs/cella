@@ -81,9 +81,9 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     if (field === 'impact') component = <SelectImpact value={task.impact as TaskImpact} />;
     else if (field === 'labels') component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
     else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;
-    else if (field === 'status') component = <SelectStatus taskStatus={task.status as TaskStatus} />;
+    else if (field.includes('status')) component = <SelectStatus taskStatus={task.status as TaskStatus} />;
 
-    return dropdowner(component, { id: field, trigger, align: ['status', 'assignedTo'].includes(field) ? 'end' : 'start' });
+    return dropdowner(component, { id: field, trigger, align: field.startsWith('status') || field === 'assignedTo' ? 'end' : 'start' });
   };
 
   const tasks = useMemo(() => tasksQuery.data?.items || [], [tasksQuery.data]);
@@ -141,7 +141,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     ['a', () => hotKeyPress('assignedTo')],
     ['i', () => hotKeyPress('impact')],
     ['l', () => hotKeyPress('labels')],
-    ['s', () => hotKeyPress('status')],
+    ['s', () => hotKeyPress(`status-${focusedTaskId}`)],
     ['t', () => hotKeyPress('type')],
   ]);
 
@@ -259,7 +259,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
             <ColumnSkeleton />
           ) : (
             <div className="h-full flex flex-col" ref={cardListRef}>
-              {!!showingTasks.length && (
+              {!!tasks.length && (
                 <ScrollArea id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
                   <ScrollBar size="indicatorVertical" />
                   <div className="flex flex-col flex-grow">
@@ -311,7 +311,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                 </ScrollArea>
               )}
 
-              {!showingTasks.length && !searchQuery && (
+              {!tasks.length && !searchQuery && (
                 <ContentPlaceholder
                   Icon={Palmtree}
                   title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}

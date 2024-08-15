@@ -30,6 +30,7 @@ import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { updateTask } from '~/api/tasks.ts';
 import { useLocation } from '@tanstack/react-router';
+import { dropdownerState, type DropDownToRemove } from '~/modules/common/dropdowner/state';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -74,6 +75,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   const [dragging, setDragging] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
@@ -97,9 +99,20 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   };
 
   const handleCardClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    const target = event.target as HTMLElement;
     if (isExpanded && isFocused) return;
-    dispatchCustomEvent('taskCardClick', { taskId: task.id, clickTarget: event.target as HTMLElement });
+    dispatchCustomEvent('taskCardClick', { taskId: task.id, clickTarget: target });
   };
+
+  useEffect(() => {
+    const unsubscribe = dropdownerState.subscribe((dropdowner) => {
+      if (dropdowner.id === `status-${task.id}`) setIsStatusDropdownOpen(!(dropdowner as DropDownToRemove).remove);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [dropdownerState]);
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
@@ -281,7 +294,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
                   {t(taskStatuses[task.status as TaskStatus].action)}
                 </Button>
                 <Button
-                  onClick={(event) => handleTaskActionClick(task, 'status', event.currentTarget)}
+                  onClick={(event) => handleTaskActionClick(task, `status-${task.id}`, event.currentTarget)}
                   aria-label="Set status"
                   variant="outlineGhost"
                   size="xs"
@@ -290,7 +303,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
                     statusVariants({ status: task.status as TaskStatus }),
                   )}
                 >
-                  <ChevronDown size={12} />
+                  <ChevronDown size={12} className={`transition-transform ${isStatusDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
                 </Button>
               </div>
             </div>

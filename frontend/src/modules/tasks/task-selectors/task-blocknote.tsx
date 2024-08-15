@@ -1,15 +1,17 @@
 import { Suspense, useCallback, useEffect, useRef } from 'react';
 import type { Mode } from '~/store/theme';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
+import { useCreateBlockNote } from '@blocknote/react';
 import { useWorkspaceStore } from '~/store/workspace';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { updateTask } from '~/api/tasks';
 import { useLocation } from '@tanstack/react-router';
-
-import './styles.css';
-import { getMentionMenuItems, schemaWithMentions } from './mention';
 import router from '~/lib/router';
+
+import '~/modules/common/blocknote/styles.css';
+import { schemaWithMentions } from '~/modules/common/blocknote/mention';
+import { triggerFocus } from '~/modules/common/blocknote/helpers';
+import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
 
 interface TaskEditorProps {
   id: string;
@@ -19,11 +21,10 @@ interface TaskEditorProps {
 }
 
 export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) => {
-  const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
   const initial = useRef(true);
-
+  const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
   const { pathname } = useLocation();
-  const { projects, focusedTaskId } = useWorkspaceStore();
+  const { projects } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
 
   const handleUpdateHTML = useCallback(
@@ -43,7 +44,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
     if (editor.getSelection()) return;
 
     //remove empty lines
-    const content = editor.document.filter((d) => Array.isArray(d.content) && d.content.length);
+    const content = editor.document.filter((d) => !(d.type === 'paragraph' && Array.isArray(d.content) && !d.content.length));
     const contentHtml = await editor.blocksToHTMLLossy(content);
     if (html === contentHtml && !editor.getSelection()) return editor.replaceBlocks(editor.document, content);
     const summary = editor.document[0];
@@ -51,27 +52,16 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
     handleUpdateHTML(contentHtml, summaryHTML);
   };
 
-  const triggerFocus = () => {
-    const editorContainerElement = document.getElementById(`blocknote-${id}`);
-    const editorElement = editorContainerElement?.getElementsByClassName('bn-editor');
-    if (editorElement?.length) (editorElement[0] as HTMLDivElement).focus();
-  };
-
   useEffect(() => {
-    (async () => {
+    const blockUpdate = async (html: string) => {
+      if (!initial.current) return;
       const blocks = await editor.tryParseHTMLToBlocks(html);
       editor.replaceBlocks(editor.document, blocks);
-      if (initial.current) {
-        triggerFocus();
-        initial.current = false;
-      }
-    })();
+      triggerFocus(`blocknote-${id}`);
+      initial.current = false;
+    };
+    blockUpdate(html);
   }, [html]);
-
-  useEffect(() => {
-    if (focusedTaskId !== id) return;
-    triggerFocus();
-  }, [focusedTaskId]);
 
   useEffect(() => {
     const unsubscribe = router.subscribe('onBeforeLoad', updateData);
@@ -89,23 +79,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
         sideMenu={false}
         emojiPicker={false}
       >
-        <GridSuggestionMenuController
-          triggerCharacter={'@'}
-          getItems={async () =>
-            getMentionMenuItems(currentProject?.members || [], editor).map((item) => ({
-              ...item,
-              title: item.id,
-            }))
-          }
-          columns={2}
-          minQueryLength={0}
-        />
-        <GridSuggestionMenuController
-          triggerCharacter={':'}
-          // Changes the Emoji Picker to only have 10 columns & min length of 0.
-          columns={10}
-          minQueryLength={0}
-        />
+        <BlockNoteForTaskContent editor={editor} members={currentProject?.members || []} />
       </BlockNoteView>
     </Suspense>
   );

@@ -29,7 +29,7 @@ import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import SelectStatus, { type TaskStatus, taskStatuses } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
-import { CreateTaskBlockNote } from '~/modules/common/blocknotes/create-task-blocknote.tsx';
+import { CreateTaskBlockNote } from './create-task-blocknote.tsx';
 import { createTask } from '~/api/tasks.ts';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 

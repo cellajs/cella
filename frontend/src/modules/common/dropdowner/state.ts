@@ -19,46 +19,43 @@ export type ExternalDropDown = Omit<DropDownT, 'id' | 'content'> & {
   id?: number | string;
 };
 
-export const isDropDown = (dropdowner: DropDownT | DropDownToRemove): dropdowner is DropDownT => {
+const isDropDown = (dropdowner: DropDownT | DropDownToRemove): dropdowner is DropDownT => {
   return !(dropdowner as DropDownToRemove).remove;
 };
 
 class Observer {
-  subscriber: ((dropdowner: DropDownT | DropDownToRemove) => void) | null;
+  subscribers: ((dropdowner: DropDownT | DropDownToRemove) => void)[];
   dropdowner: DropDownT | null;
 
   constructor() {
-    this.subscriber = null;
+    this.subscribers = [];
     this.dropdowner = null;
   }
 
   subscribe = (subscriber: (dropdowner: DropDownT | DropDownToRemove) => void) => {
-    this.subscriber = subscriber;
-    if (this.dropdowner) {
-      this.subscriber(this.dropdowner);
-    }
+    this.subscribers.push(subscriber);
+    if (this.dropdowner) subscriber(this.dropdowner);
+
     return () => {
-      this.subscriber = null;
+      this.subscribers = this.subscribers.filter((sub) => sub !== subscriber);
     };
   };
 
   publish = (data: DropDownT | DropDownToRemove) => {
     this.dropdowner = isDropDown(data) ? data : null;
-    if (this.subscriber) {
-      this.subscriber(data);
-    }
+    for (const subscriber of this.subscribers) subscriber(data);
   };
 
   set = (data: DropDownT) => {
     this.publish(data);
   };
 
-  get = (id: number | string) => {
-    return this.dropdowner?.id === id;
-  };
-
   remove = (refocus = true) => {
     if (this.dropdowner) this.publish({ ...this.dropdowner, remove: true, refocus });
+  };
+
+  get = (id: number | string) => {
+    return this.dropdowner ? this.dropdowner.id === id : false;
   };
 }
 

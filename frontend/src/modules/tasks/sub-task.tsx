@@ -14,7 +14,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { SubTask as BaseSubTask, DraggableItemData } from '~/types';
-import { TaskBlockNote } from '~/modules/common/blocknotes/task-blocknote';
+import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { deleteTasks } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { updateTask } from '~/api/tasks';

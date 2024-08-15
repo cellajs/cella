@@ -18,8 +18,12 @@ const TaskSheet = ({ task }: { task: Task }) => {
     if (field === 'impact') component = <SelectImpact value={task.impact as TaskImpact} />;
     else if (field === 'labels') component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
     else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;
-    else if (field === 'status') component = <SelectStatus taskStatus={task.status as TaskStatus} />;
-    return dropdowner(component, { id: field, trigger, align: ['status', 'assignedTo'].includes(field) ? 'end' : 'start' });
+    else if (field.includes('status')) component = <SelectStatus taskStatus={task.status as TaskStatus} />;
+    return dropdowner(component, {
+      id: field,
+      trigger,
+      align: field.startsWith('status') || field === 'assignedTo' ? 'end' : 'start',
+    });
   };
 
   return (

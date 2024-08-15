@@ -5,7 +5,7 @@ import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import CreateSubTaskForm from './create-sub-task-form';
 import SubTask from './sub-task';
-import { TaskBlockNote } from '~/modules/common/blocknotes/task-blocknote';
+import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import type { Task } from '~/types';
 
 interface Props {

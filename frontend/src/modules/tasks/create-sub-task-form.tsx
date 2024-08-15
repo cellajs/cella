@@ -14,7 +14,7 @@ import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { getNewTaskOrder } from './helpers.ts';
-import { CreateTaskBlockNote } from '~/modules/common/blocknotes/create-task-blocknote.tsx';
+import { CreateTaskBlockNote } from './create-task-blocknote.tsx';
 import { createTask } from '~/api/tasks.ts';
 import type { Task } from '~/types';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
