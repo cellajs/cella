@@ -161,12 +161,12 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
 
         const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).flatMap((_, index) => {
-          const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+          const name = organizationsUniqueEnforcer.enforce(() => faker.commerce.productName());
           const mainTaskId = nanoid();
           // 60% change to set Subtasks
           const insertSubTasks: InsertTaskModel[] = Array.from({ length: Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 3) + 1 }).map(
             (_, subIndex) => {
-              const subTaskName = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+              const subTaskName = organizationsUniqueEnforcer.enforce(() => faker.commerce.productName());
               return {
                 id: nanoid(),
                 organizationId: organization.id,
@@ -179,7 +179,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
                 status: Math.random() < 0.5 ? 1 : 6,
                 impact: 0,
                 type: 'chore',
-                description: `<p class="bn-inline-content">${faker.lorem.paragraphs()}</p>`,
+                description: `<p class="bn-inline-content">${subTaskName}</p><br/><p class="bn-inline-content">${faker.commerce.productDescription()}</p>`,
                 createdAt: faker.date.past(),
                 createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
                 modifiedAt: faker.date.past(),
@@ -200,7 +200,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
             // random integer between 0 and 3
             impact: Math.floor(Math.random() * 4),
-            description: `<p class="bn-inline-content">${faker.lorem.paragraphs()}</p>`,
+            description: `p class="bn-inline-content">${name}</p><br/><p class="bn-inline-content">${faker.commerce.productDescription()}</p>`,
             createdAt: faker.date.past(),
             createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
             modifiedAt: faker.date.past(),
