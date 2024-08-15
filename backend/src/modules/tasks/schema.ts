@@ -76,6 +76,12 @@ export const getTasksQuerySchema = paginationQuerySchema.merge(
   }),
 );
 
+export const getNewOrderQuerySchema = z.object({
+  oldStatus: z.string(),
+  newStatus: z.string(),
+  projectId: z.string(),
+});
+
 export const idParamSchema = z.object({
   id: idSchema,
 });

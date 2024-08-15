@@ -13,6 +13,7 @@ import {
   updateTaskSchema,
   relativeQuerySchema,
   fullTaskSchema,
+  getNewOrderQuerySchema,
 } from './schema';
 
 class TaskRoutesConfig {
@@ -62,6 +63,29 @@ class TaskRoutesConfig {
         content: {
           'application/json': {
             schema: successWithPaginationSchema(fullTaskSchema),
+          },
+        },
+        ...errorResponses,
+      },
+    },
+  });
+
+  public getNewTaskOrder = createRouteConfig({
+    method: 'get',
+    path: '/new-order',
+    guard: [isAuthenticated],
+    tags: ['tasks'],
+    summary: 'Get new order',
+    description: 'Get new Task order on status change ',
+    request: {
+      query: getNewOrderQuerySchema,
+    },
+    responses: {
+      200: {
+        description: 'Task',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(z.number()),
           },
         },
         ...errorResponses,

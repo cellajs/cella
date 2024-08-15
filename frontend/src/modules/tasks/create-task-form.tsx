@@ -419,10 +419,17 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                           size="xs"
                           className="relative rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
                           onClick={(event) => {
-                            dropdowner(<SelectStatus taskStatus={form.getValues('status') as TaskStatus} creationValueChange={onChange} />, {
-                              id: `status-${defaultId}`,
-                              trigger: event.currentTarget,
-                            });
+                            dropdowner(
+                              <SelectStatus
+                                taskStatus={form.getValues('status') as TaskStatus}
+                                projectId={projectId}
+                                creationValueChange={onChange}
+                              />,
+                              {
+                                id: `status-${defaultId}`,
+                                trigger: event.currentTarget,
+                              },
+                            );
                           }}
                         >
                           <ChevronDown size={16} />

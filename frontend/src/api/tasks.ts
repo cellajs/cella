@@ -77,6 +77,16 @@ export const getRelativeTaskOrder = async (info: {
   return json.data;
 };
 
+// Get a New task order on status change
+export const getChangeStatusTaskOrder = async (oldStatus: number, newStatus: number, projectId: string) => {
+  const response = await client['new-order'].$get({
+    query: { oldStatus: oldStatus.toString(), newStatus: newStatus.toString(), projectId },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
 // Update task by its ID
 export const updateTask = async (id: string, key: string, data: string | string[] | number | null, order?: number | null) => {
   const newOrder = order || null;

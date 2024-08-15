@@ -15,8 +15,7 @@ import { StartedIcon } from './status-icons/started';
 import { UnstartedIcon } from './status-icons/unstarted';
 import { useWorkspaceStore } from '~/store/workspace';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { updateTask } from '~/api/tasks';
-import { getTaskOrder } from '~/modules/tasks/helpers';
+import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks';
 import { useLocation } from '@tanstack/react-router';
 import { Input } from '~/modules/ui/input';
 
@@ -74,7 +73,11 @@ export const statusVariants = cva('', {
   },
 });
 
-const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskStatus; creationValueChange?: (newValue: number) => void }) => {
+const SelectStatus = ({
+  taskStatus,
+  projectId,
+  creationValueChange,
+}: { taskStatus: TaskStatus; projectId: string; creationValueChange?: (newValue: number) => void }) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
@@ -90,8 +93,7 @@ const SelectStatus = ({ taskStatus, creationValueChange }: { taskStatus: TaskSta
   const changeTaskStatus = async (newStatus: number) => {
     if (creationValueChange) creationValueChange(newStatus);
     if (!focusedTaskId) return;
-    //TODO rework logic
-    const newOrder = getTaskOrder(focusedTaskId, newStatus, []);
+    const newOrder = await getChangeStatusTaskOrder(taskStatus, newStatus, projectId);
     const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
     const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
     dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });

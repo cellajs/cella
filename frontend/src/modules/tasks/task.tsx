@@ -28,7 +28,7 @@ import TaskDescription from './task-content.tsx';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
-import { updateTask } from '~/api/tasks.ts';
+import { updateTask, getChangeStatusTaskOrder } from '~/api/tasks.ts';
 import { useLocation } from '@tanstack/react-router';
 import { dropdownerState, type DropDownToRemove } from '~/modules/common/dropdowner/state';
 
@@ -80,9 +80,8 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   const updateStatus = async (newStatus: number) => {
-    //TODO rework logic
-    // const newOrder = getTaskOrder(task.id, newStatus, []);
-    const updatedTask = await updateTask(task.id, 'status', newStatus);
+    const newOrder = await getChangeStatusTaskOrder(task.status, newStatus, task.projectId);
+    const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
     const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
     dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
   };

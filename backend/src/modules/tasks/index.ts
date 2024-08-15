@@ -1,4 +1,4 @@
-import { type SQL, and, eq, gt, ilike, inArray, lt, asc, desc } from 'drizzle-orm';
+import { type SQL, and, eq, gt, ilike, inArray, lt, asc, desc, isNull } from 'drizzle-orm';
 import { db } from '../../db/db';
 
 import { getOrderColumn } from '../../lib/order-column';
@@ -116,6 +116,30 @@ const tasksRoutes = app
     );
   })
   /*
+   * Get new task order on status change
+   */
+  .openapi(taskRoutesConfig.getNewTaskOrder, async (ctx) => {
+    const { oldStatus, newStatus, projectId } = ctx.req.valid('query');
+
+    const direction = +newStatus - +oldStatus;
+
+    const [task] = await db
+      .select()
+      .from(tasksTable)
+      .where(and(eq(tasksTable.projectId, projectId), eq(tasksTable.status, Number(newStatus)), isNull(tasksTable.parentId)))
+      .orderBy(direction > 0 ? asc(tasksTable.order) : desc(tasksTable.order));
+
+    const newOrder = task ? (direction > 0 ? task.order / 2 : task.order + 1) : 1;
+
+    return ctx.json(
+      {
+        success: true,
+        data: newOrder,
+      },
+      200,
+    );
+  })
+  /*
    * Get task by id
    */
   .openapi(taskRoutesConfig.getTask, async (ctx) => {
@@ -133,7 +157,7 @@ const tasksRoutes = app
     );
   })
   /*
-   * Get  relative task order by main task id
+   * Get relative task order by main task id
    */
   .openapi(taskRoutesConfig.getRelativeTaskOrder, async (ctx) => {
     const { edge, currentOrder, sourceId, projectId, status, parentId } = ctx.req.valid('json');
@@ -151,7 +175,8 @@ const tasksRoutes = app
       .select()
       .from(tasksTable)
       .where(and(...filter))
-      .orderBy(edge === controlEdge ? asc(tasksTable.order) : desc(tasksTable.order));
+      .orderBy(edge === controlEdge ? asc(tasksTable.order) : desc(tasksTable.order))
+      .limit(1);
 
     let newOrder: number;
 
@@ -172,7 +197,6 @@ const tasksRoutes = app
       200,
     );
   })
-
   /*
    * Update task by id
    */
@@ -182,7 +206,6 @@ const tasksRoutes = app
     const user = ctx.get('user');
     const { key, data, order } = ctx.req.valid('json');
 
-    await db.select().from(tasksTable).where(eq(tasksTable.id, id));
     const [updatedTask] = await db
       .update(tasksTable)
       .set({

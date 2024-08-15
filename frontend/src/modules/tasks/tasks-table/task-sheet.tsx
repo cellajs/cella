@@ -18,7 +18,7 @@ const TaskSheet = ({ task }: { task: Task }) => {
     if (field === 'impact') component = <SelectImpact value={task.impact as TaskImpact} />;
     else if (field === 'labels') component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
     else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;
-    else if (field.includes('status')) component = <SelectStatus taskStatus={task.status as TaskStatus} />;
+    else if (field.includes('status')) component = <SelectStatus taskStatus={task.status as TaskStatus} projectId={task.projectId} />;
     return dropdowner(component, {
       id: field,
       trigger,
