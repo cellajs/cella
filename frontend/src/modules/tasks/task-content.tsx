@@ -24,7 +24,7 @@ const TaskContent = ({ task, mode, isSheet, isExpanded }: Props) => {
       {!isExpanded ? (
         <div className="mt-1">
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: to avoid using TaskBlockNote for not editing */}
-          <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="inline font-light task-summary" />
+          <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="task-summary" />
           <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 px-2">
             {(task.summary !== task.description || task.subTasks.length > 0) && (
               <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5">

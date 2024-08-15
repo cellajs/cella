@@ -25,6 +25,10 @@ p.bn-inline-content{
   font-size: 14px !important;
 }
 
+.bn-block-content {
+  padding-top: 4px;
+}
+
 .bn-shadcn .bn-editor {
   white-space: pre-wrap;
   word-break: break-word;
