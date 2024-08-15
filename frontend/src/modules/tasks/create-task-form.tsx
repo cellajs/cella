@@ -231,9 +231,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                   <FormControl>
                     <Button
                       aria-label="Set impact"
-                      variant="ghost"
+                      variant="input"
                       size="sm"
-                      className="relative w-full text-left font-light flex gap-2 justify-start border"
+                      className="relative font-light flex gap-2 justify-start"
                       type="button"
                       onClick={(event) => {
                         dropdowner(<SelectImpact value={selectedImpactValue} triggerWidth={bounds.width - 3} creationValueChange={onChange} />, {
@@ -271,9 +271,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                 <FormControl>
                   <Button
                     aria-label="Assign"
-                    variant="ghost"
+                    variant="input"
                     size="sm"
-                    className="relative flex justify-start gap-2 font-light w-full text-left border"
+                    className="relative flex justify-start gap-2 font-light"
                     type="button"
                     onClick={(event) => {
                       dropdowner(
@@ -336,9 +336,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                   <Button
                     type="button"
                     aria-label="Set labels"
-                    variant="ghost"
+                    variant="input"
                     size="sm"
-                    className="relative flex h-auto justify-start font-light w-full text-left min-h-9 py-1 border hover:bg-accent/20"
+                    className="relative flex h-auto justify-start font-light min-h-9 py-1 hover:bg-accent/20"
                     onClick={(event) => {
                       dropdowner(
                         <SetLabels

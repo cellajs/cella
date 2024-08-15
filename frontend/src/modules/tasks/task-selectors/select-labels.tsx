@@ -161,7 +161,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
           ))}
         </CommandGroup>
         {!isSearching && selectedLabels.length && creationValueChange === undefined ? (
-          <CommandItem className="flex justify-center text-sm m-1" onSelect={() => setIsRecent(!isRecent)}>
+          <CommandItem className="flex justify-center text-xs m-1" onSelect={() => setIsRecent(!isRecent)}>
             {isRecent ? 'Show selected labels' : 'Show recent labels'}
           </CommandItem>
         ) : (
