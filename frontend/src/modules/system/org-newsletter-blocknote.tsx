@@ -3,6 +3,7 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
 import { Suspense } from 'react';
 import { useThemeStore } from '~/store/theme';
+import DOMPurify from 'dompurify';
 
 import '~/modules/common/blocknote/styles.css';
 
@@ -12,7 +13,8 @@ const BlockNote = ({ value, onChange }: { value: string; onChange: (value: strin
   const onBlockNoteChange = async () => {
     // Converts the editor's contents from Block objects to HTML
     const html = await editor.blocksToHTMLLossy(editor.document);
-    return html;
+    const cleanHtml = DOMPurify.sanitize(html);
+    return cleanHtml;
   };
 
   return (

@@ -3,6 +3,7 @@ import type { Mode } from '~/store/theme';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useCreateBlockNote } from '@blocknote/react';
 import { useWorkspaceStore } from '~/store/workspace';
+import DOMPurify from 'dompurify';
 
 import '~/modules/common/blocknote/styles.css';
 import { schemaWithMentions } from '~/modules/common/blocknote/mention';
@@ -26,8 +27,10 @@ export const CreateTaskBlockNote = ({ id, value, projectId, mode, onChange }: Ta
   const updateData = async () => {
     const summary = editor.document[0];
     const summaryHTML = await editor.blocksToHTMLLossy([summary]);
-    const contentHtml = await editor.blocksToHTMLLossy(editor.document);
-    onChange(contentHtml, summaryHTML);
+    const descriptionHtml = await editor.blocksToHTMLLossy(editor.document);
+    const cleanSummary = DOMPurify.sanitize(summaryHTML);
+    const cleanDescription = DOMPurify.sanitize(descriptionHtml);
+    onChange(cleanDescription, cleanSummary);
   };
 
   useEffect(() => {

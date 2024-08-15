@@ -12,6 +12,7 @@ import '~/modules/common/blocknote/styles.css';
 import { schemaWithMentions } from '~/modules/common/blocknote/mention';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
+import DOMPurify from 'dompurify';
 
 interface TaskEditorProps {
   id: string;
@@ -45,11 +46,13 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
 
     //remove empty lines
     const content = editor.document.filter((d) => !(d.type === 'paragraph' && Array.isArray(d.content) && !d.content.length));
-    const contentHtml = await editor.blocksToHTMLLossy(content);
-    if (html === contentHtml && !editor.getSelection()) return editor.replaceBlocks(editor.document, content);
+    const descriptionHtml = await editor.blocksToHTMLLossy(content);
+    if (html === descriptionHtml && !editor.getSelection()) return editor.replaceBlocks(editor.document, content);
     const summary = editor.document[0];
     const summaryHTML = await editor.blocksToHTMLLossy([summary]);
-    handleUpdateHTML(contentHtml, summaryHTML);
+    const cleanSummary = DOMPurify.sanitize(summaryHTML);
+    const cleanDescription = DOMPurify.sanitize(descriptionHtml);
+    handleUpdateHTML(cleanDescription, cleanSummary);
   };
 
   useEffect(() => {
