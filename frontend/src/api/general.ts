@@ -144,3 +144,14 @@ export const getMetrics = async () => {
   const json = await handleResponse(response);
   return json.data;
 };
+
+// Check minimum entity info
+export const getMinimumEntityInfo = async (idOrSlug: string, entityType: ContextEntity) => {
+  const response = await apiClient['entity-info'][':idOrSlug'].$get({
+    param: { idOrSlug },
+    query: { entityType },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};

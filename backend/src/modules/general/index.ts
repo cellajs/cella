@@ -450,6 +450,30 @@ const generalRoutes = app
     return ctx.json({ success: true, data: { items: members, total } }, 200);
   })
   /*
+   *  Get Minimum entity info
+   */
+  .openapi(generalRouteConfig.getMinimumEntityInfo, async (ctx) => {
+    const idOrSlug = ctx.req.param('idOrSlug');
+    const { entityType } = ctx.req.valid('query');
+
+    const { id, slug, name, thumbnailUrl, bannerUrl } = await resolveEntity(entityType, idOrSlug);
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          id,
+          slug,
+          name,
+          thumbnailUrl,
+          bannerUrl,
+          entity: entityType,
+        },
+      },
+      200,
+    );
+  })
+  /*
    *  Get SSE stream
    */
   .get('/sse', isAuthenticated, async (ctx) => {
