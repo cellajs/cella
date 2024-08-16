@@ -96,10 +96,12 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       color: '#FFA9BA',
       organizationId: organizationId,
       projectId: projectId,
+      lastUsed: new Date(),
+      useCount: 1,
     };
 
     await createLabel(newLabel);
-    const updatedLabels = [...selectedLabels, newLabel];
+    const updatedLabels = [...selectedLabels, { ...newLabel, lastUsed: newLabel.lastUsed.toString() }];
     setSelectedLabels(updatedLabels);
     if (creationValueChange) return creationValueChange(updatedLabels);
     await updateTaskLabels(updatedLabels);

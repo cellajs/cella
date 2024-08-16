@@ -83,8 +83,7 @@ export type EntityPage = Omit<BaseEntityPage, 'organizationId'> & {
   organizationId?: Project['organizationId'] | null;
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export type Label = any;
+export type Label = Extract<InferResponseType<(typeof apiClient.labels)['$get']>, { data: unknown }>['data']['items'][number];
 
 export type Task = Extract<InferResponseType<(typeof apiClient.tasks)['$get']>, { data: unknown }>['data']['items'][number];
 

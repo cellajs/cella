@@ -4,12 +4,8 @@ import { createSelectSchema } from 'drizzle-zod';
 import { labelsTable } from '../../db/schema/labels';
 import { paginationQuerySchema } from '../../lib/common-schemas';
 
-export const responseLabelSchema = z.object({
+export const labelSchema = z.object({
   ...createSelectSchema(labelsTable).shape,
-});
-
-export const createLabelSchema = z.object({
-  ...responseLabelSchema.omit({ lastUsed: true, useCount: true }).shape,
 });
 
 export const updateLabelSchema = z.object({

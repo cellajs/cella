@@ -65,7 +65,10 @@ const formSchema = z.object({
       id: z.string(),
       name: z.string(),
       color: z.string().nullable(),
-      project_id: z.string(),
+      projectId: z.string(),
+      organizationId: z.string(),
+      useCount: z.number(),
+      lastUsed: z.string(),
     }),
   ),
   status: z.number(),
@@ -111,6 +114,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
   const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
+    console.log('values:', values);
     const projectTasks = tasks.filter((task) => task.projectId === projectId);
     // Extract text from summary HTML
     const parser = new DOMParser();

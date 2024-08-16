@@ -5,7 +5,7 @@ import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
 import { idParamSchema } from '../tasks/schema';
 
-import { createLabelSchema, getLabelsQuerySchema, responseLabelSchema, updateLabelSchema } from './schema';
+import { labelSchema, getLabelsQuerySchema, updateLabelSchema } from './schema';
 
 class LabelsRoutesConfig {
   public createLabel = createRouteConfig({
@@ -20,7 +20,7 @@ class LabelsRoutesConfig {
         required: true,
         content: {
           'application/json': {
-            schema: createLabelSchema,
+            schema: labelSchema,
           },
         },
       },
@@ -30,7 +30,7 @@ class LabelsRoutesConfig {
         description: 'Label creation',
         content: {
           'application/json': {
-            schema: successWithDataSchema(responseLabelSchema),
+            schema: successWithDataSchema(labelSchema),
           },
         },
       },
@@ -53,7 +53,7 @@ class LabelsRoutesConfig {
         description: 'Task',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(responseLabelSchema),
+            schema: successWithPaginationSchema(labelSchema),
           },
         },
         ...errorResponses,
