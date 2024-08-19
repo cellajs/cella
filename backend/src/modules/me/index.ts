@@ -50,9 +50,6 @@ const meRoutes = app
     // Update last visit date
     await db.update(usersTable).set({ lastVisitAt: new Date() }).where(eq(usersTable.id, user.id));
 
-    // // Generate a JWT token for electric
-    // const electricJWTToken = await generateElectricJWTToken({ userId: user.id });
-
     return ctx.json(
       {
         success: true,
@@ -61,7 +58,6 @@ const meRoutes = app
           oauth: oauthAccounts.map((el) => el.providerId),
           passkey: !!passkey.length,
           sessions: await getPreparedSessions(user.id, ctx),
-          // electricJWTToken,
         },
       },
       200,
