@@ -12,10 +12,9 @@ interface Props {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
-  isSheet?: boolean;
 }
 
-const TaskContent = ({ task, mode, isSheet, isExpanded }: Props) => {
+const TaskContent = ({ task, mode, isExpanded }: Props) => {
   const { t } = useTranslation();
   const [createSubTask, setCreateSubTask] = useState(false);
 
@@ -23,48 +22,36 @@ const TaskContent = ({ task, mode, isSheet, isExpanded }: Props) => {
     <>
       {!isExpanded ? (
         <div className="mt-1">
-          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: to avoid using TaskBlockNote for not editing */}
-          <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="task-summary" />
-          <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 px-2">
-            {(task.summary !== task.description || task.subTasks.length > 0) && (
+          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend */}
+          <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="task-summary inline" />
+          {(task.summary !== task.description || task.subTasks.length > 0) && (
+            <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 pl-2">
               <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5">
                 {t('common:more').toLowerCase()}
               </Button>
-            )}
-            {task.subTasks.length > 0 && (
-              <div className="inline-flex py-0.5 text-xs h-5 ml-1 gap-[.1rem]">
-                <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
-                <span className="font-light">/</span>
-                <span className="font-light">{task.subTasks.length}</span>
-              </div>
-            )}
-            {/* <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
+              {task.subTasks.length > 0 && (
+                <div className="inline-flex py-0.5 text-xs h-5 ml-1 gap-[.1rem]">
+                  <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
+                  <span className="font-light">/</span>
+                  <span className="font-light">{task.subTasks.length}</span>
+                </div>
+              )}
+              {/* <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
                <Paperclip size={10} className="transition-transform -rotate-45" />
                <span>3</span>
              </Button> */}
-          </div>
+            </div>
+          )}
         </div>
       ) : (
         <>
-          <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} />
-          {task.subTasks.length > 0 || task.summary !== task.description ? (
-            <div className={`${isSheet ? 'hidden' : ''}`}>
-              <Button onClick={() => dispatchCustomEvent('toggleCard', task.id)} variant="link" size="micro" className="py-0 -ml-1">
-                {t('common:less').toLowerCase()}
-              </Button>
-            </div>
-          ) : (
-            // so ChevronUp can be clickable and add todo don't break UI
-            <div className="h-8" />
-          )}
-          {task.subTasks.length > 0 && (
-            <div className="inline-flex py-0 h-4 items-center mt-4 gap-1 text-sm">
-              <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
-              <span>/</span>
-              <span>{task.subTasks.length}</span>
-              <span>{t('common:todos')}</span>
-            </div>
-          )}
+          <TaskBlockNote
+            id={task.id}
+            projectId={task.projectId}
+            html={task.description || ''}
+            mode={mode}
+            className="min-h-16 w-full bg-transparent border-none mt-1"
+          />
 
           <div className="-ml-10 -mr-1 relative z-10">
             <div className="flex flex-col">

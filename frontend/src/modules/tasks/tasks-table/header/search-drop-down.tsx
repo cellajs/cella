@@ -35,8 +35,8 @@ export function SearchDropDown({
   };
 
   const innerColumns = [
-    { key: 'status', name: 'Filter by status' },
-    { key: 'project', name: 'Filter by projects' },
+    { key: 'status', name: t('common:status') },
+    { key: 'project', name: t('common:project') },
   ];
   const maxLength = Math.max(projects.length, taskStatuses.length);
 

@@ -200,7 +200,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
               )}
             </div>
             <div className="flex flex-col grow gap-2 mt-0.5">
-              <TaskDescription mode={mode} task={task} isExpanded={isExpanded} isSheet={isSheet} />
+              <TaskDescription mode={mode} task={task} isExpanded={isExpanded} />
             </div>
           </div>
           <div className="flex flex-col gap-2">

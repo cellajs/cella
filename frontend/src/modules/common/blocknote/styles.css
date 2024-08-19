@@ -26,7 +26,7 @@ p.bn-inline-content{
 }
 
 .bn-block-content {
-  padding-top: 4px;
+  padding: 0;
 }
 
 .bn-shadcn .bn-editor {
@@ -58,15 +58,4 @@ p.bn-inline-content{
   --ring: 240 6% 10%;
   --radius: 0.5rem;
   --success: 120 100% 30%;
-}
-.newsletter-blocknote{ 
-  padding-left: 24px;
-  border: 1px solid #3d3d42;
-  border-radius: 6px;
-}
-
-.task-blocknote{ 
-  width: 100%;
-  border: none;
-  background: transparent;
 }

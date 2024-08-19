@@ -3,11 +3,10 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
-import { Trash } from 'lucide-react';
+import { ChevronUp, Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import useDoubleClick from '~/hooks/use-double-click.tsx';
 import { cn, getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { Button } from '~/modules/ui/button';
@@ -36,7 +35,6 @@ const SubTask = ({
 
   const { pathname } = useLocation();
   const subTaskRef = useRef<HTMLDivElement>(null);
-  const subContentRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -59,12 +57,6 @@ const SubTask = ({
     const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
     dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask' });
   };
-
-  useDoubleClick({
-    onSingleClick: () => setIsEditing(true),
-    allowedTargets: ['p', 'div'],
-    ref: subTaskRef,
-  });
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
@@ -112,24 +104,37 @@ const SubTask = ({
       id="sub-item"
       className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'}  bg-secondary`}
     >
-      <div className="flex flex-col gap-2 relative">
+      <div className="flex flex-col gap-1 relative">
         <Checkbox
           className={cn(
             'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
-            'transition-all bg-background w-5 h-5 m-1 ml-1.5',
+            'transition-all bg-background w-5 h-5 m-1.5',
             `${task.status === 6 ? 'data-[state=checked]:bg-green-700 border-green-700' : 'border-gray-500'}`,
           )}
           checked={task.status === 6}
           onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
         />
+
+        {isEditing && task.summary !== task.description && (
+          <Button
+            onClick={() => setIsEditing(false)}
+            aria-label="Collapse"
+            variant="ghost"
+            size="xs"
+            className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+          >
+            <ChevronUp size={16} />
+          </Button>
+        )}
       </div>
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
-        <div ref={subContentRef} className={!isEditing ? 'inline-flex items-center' : 'flex flex-col items-start'}>
+        <div className={!isEditing ? 'inline-flex items-center mt-1' : 'flex flex-col items-start mt-1'}>
           {isEditing ? (
-            <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} />
+            <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className="w-full bg-transparent border-none" />
           ) : (
             // biome-ignore lint/security/noDangerouslySetInnerHtml: to avoid using TaskBlockNote for not editing
-            <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
+            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+<div onClick={() => setIsEditing(true)} dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
           )}
 
           {task.summary !== task.description && !isEditing && (

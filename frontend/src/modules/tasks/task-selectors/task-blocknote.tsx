@@ -14,14 +14,15 @@ import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
 import DOMPurify from 'dompurify';
 
-interface TaskEditorProps {
+interface TaskBlockNoteProps {
   id: string;
   mode: Mode;
   html: string;
   projectId: string;
+  className?: string;
 }
 
-export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) => {
+export const TaskBlockNote = ({ id, html, projectId, mode, className = '' }: TaskBlockNoteProps) => {
   const initial = useRef(true);
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
   const { pathname } = useLocation();
@@ -78,7 +79,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode }: TaskEditorProps) =>
         onBlur={updateData}
         editor={editor}
         data-color-scheme={mode}
-        className="task-blocknote"
+        className={className}
         sideMenu={false}
         emojiPicker={false}
       >

@@ -25,7 +25,7 @@ const BlockNote = ({ value, onChange }: { value: string; onChange: (value: strin
         defaultValue={value}
         onChange={async () => onChange(await onBlockNoteChange())}
         sideMenu={false}
-        className="newsletter-blocknote"
+        className="pl-6 border rounded-lg"
       >
         <SideMenuController
           sideMenu={(props) => (
