@@ -21,7 +21,7 @@ export const setCookie = (ctx: Context, name: string, value: string) =>
   });
 
 export const setSessionCookie = async (ctx: Context, userId: User['id'], strategy: string) => {
-  const session = await auth.createSession(userId, { type: 'regular' });
+  const session = await auth.createSession(userId, { type: 'regular', adminUserId: null });
   const sessionCookie = auth.createSessionCookie(session.id);
 
   const lastSignInAt = new Date();
@@ -32,8 +32,8 @@ export const setSessionCookie = async (ctx: Context, userId: User['id'], strateg
   ctx.header('Set-Cookie', sessionCookie.serialize());
 };
 
-export const setImpersonationSessionCookie = async (ctx: Context, userId: User['id']) => {
-  const session = await auth.createSession(userId, { type: 'impersonation' });
+export const setImpersonationSessionCookie = async (ctx: Context, userId: User['id'], adminUserId: User['id']) => {
+  const session = await auth.createSession(userId, { type: 'impersonation', adminUserId });
   const sessionCookie = auth.createSessionCookie(session.id);
 
   logEvent('Admin impersonation signed in', { user: userId, strategy: 'impersonation' });

@@ -315,19 +315,51 @@ const authRoutes = app
     // );
   })
   /*
-   * Impersonate sign in impersonate
+   * Impersonate sign in
    */
-  .openapi(authRoutesConfig.impersonation, async (ctx) => {
+  .openapi(authRoutesConfig.impersonationSignIn, async (ctx) => {
+    const user = ctx.get('user');
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
     if (!sessionId) {
       removeSessionCookie(ctx);
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
-    await auth.invalidateSession(sessionId);
-    removeSessionCookie(ctx);
     const { targetUserId } = ctx.req.valid('query');
-    await setImpersonationSessionCookie(ctx, targetUserId);
+    await setImpersonationSessionCookie(ctx, targetUserId, user.id);
+
+    return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Impersonate sign out
+   */
+  .openapi(authRoutesConfig.impersonationSignOut, async (ctx) => {
+    const cookieHeader = ctx.req.raw.headers.get('Cookie');
+    const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+
+    if (!sessionId) {
+      removeSessionCookie(ctx);
+      return errorResponse(ctx, 401, 'unauthorized', 'warn');
+    }
+
+    const { session } = await auth.validateSession(sessionId);
+
+    if (session) {
+      await auth.invalidateSession(session.id);
+      if (session.adminUserId) {
+        const sessions = await auth.getUserSessions(session.adminUserId);
+        const [lastSession] = sessions.sort((a, b) => b.expiresAt.getTime() - a.expiresAt.getTime());
+        const adminsLastSession = await auth.validateSession(lastSession.id);
+        if (!adminsLastSession.session) {
+          removeSessionCookie(ctx);
+          return errorResponse(ctx, 401, 'unauthorized', 'warn');
+        }
+        const sessionCookie = auth.createSessionCookie(adminsLastSession.session.id);
+        ctx.header('Set-Cookie', sessionCookie.serialize());
+      }
+    }
+    removeSessionCookie(ctx);
+    logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
 
     return ctx.json({ success: true }, 200);
   })
@@ -345,9 +377,7 @@ const authRoutes = app
 
     const { session } = await auth.validateSession(sessionId);
 
-    if (session) {
-      await auth.invalidateSession(session.id);
-    }
+    if (session) await auth.invalidateSession(session.id);
 
     removeSessionCookie(ctx);
     logEvent('User signed out', { user: session?.userId || 'na' });

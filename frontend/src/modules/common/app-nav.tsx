@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
+import { Home, type LucideProps, Menu, Search, User, UserX } from 'lucide-react';
 import { Fragment, lazy, useEffect } from 'react';
 import { Suspense } from 'react';
 import { useThemeStore } from '~/store/theme';
@@ -19,7 +19,10 @@ import { NavButton } from './app-nav-button';
 import { AppSearch } from './app-search';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useWorkspaceStore } from '~/store/workspace';
+import { useUserStore } from '~/store/user';
 import { sheet } from '~/modules/common/sheeter/state';
+import { impersonateSignOut } from '~/api/auth';
+import { getAndSetMe, getAndSetMenu } from '~/routes';
 
 export type NavItem = {
   id: string;
@@ -46,6 +49,18 @@ const AppNav = () => {
 
   const { focusedTaskId } = useWorkspaceStore();
   const { theme } = useThemeStore();
+  const currentSession = useUserStore((state) => {
+    if (state.user) {
+      return state.user.sessions.find((s) => s.current);
+    }
+  });
+
+  const stopImpersonation = async () => {
+    await impersonateSignOut();
+    await Promise.all([getAndSetMe(), getAndSetMenu()]);
+    navigate({ to: '/', replace: true });
+  };
+
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
 
   const navButtonClick = (navItem: NavItem) => {
@@ -127,6 +142,13 @@ const AppNav = () => {
               </Fragment>
             );
           })}
+          {currentSession?.impersonation && (
+            <Fragment>
+              <li className={cn('sm:grow-0', 'flex justify-start')}>
+                <NavButton navItem={{ id: 'stop_impersonation', icon: UserX }} onClick={stopImpersonation} isActive={false} />
+              </li>
+            </Fragment>
+          )}
         </ul>
         <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
       </nav>

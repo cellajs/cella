@@ -47,7 +47,7 @@ export const signIn = async ({ email, password, token }: { email: string; passwo
 
 // Impersonation sign in by user admin
 export const impersonateSignIn = async (targetUserId: string) => {
-  const response = await apiClient.auth.impersonation.$get({
+  const response = await apiClient.auth['impersonation-sign-in'].$get({
     query: { targetUserId },
   });
 
@@ -82,6 +82,9 @@ export const resetPassword = async ({ token, password }: { token: string; passwo
 
   await handleResponse(response);
 };
+
+// Impersonation sign out, returning to user admin page
+export const impersonateSignOut = () => apiClient.auth['impersonation-sign-out'].$get();
 
 export const signOut = () => apiClient.auth['sign-out'].$get();
 

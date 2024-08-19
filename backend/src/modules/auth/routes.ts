@@ -9,9 +9,9 @@ import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { authBodySchema, emailBodySchema } from './schema';
 
 class AuthRoutesConfig {
-  public impersonation = createRouteConfig({
+  public impersonationSignIn = createRouteConfig({
     method: 'get',
-    path: '/impersonation',
+    path: '/impersonation-sign-in',
     guard: [isAuthenticated, isSystemAdmin],
     tags: ['auth'],
     summary: '',
@@ -23,6 +23,26 @@ class AuthRoutesConfig {
         headers: z.object({
           'Set-Cookie': cookieSchema,
         }),
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public impersonationSignOut = createRouteConfig({
+    method: 'get',
+    path: '/impersonation-sign-out',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Sign out',
+    description: 'Sign out yourself and clear session.',
+    responses: {
+      200: {
+        description: 'User signed out',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,

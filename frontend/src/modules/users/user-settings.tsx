@@ -29,6 +29,7 @@ export type Session = {
   id: string;
   type: string;
   current: boolean;
+  impersonation: boolean;
 };
 
 const tabs = [
