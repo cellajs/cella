@@ -1,0 +1,5 @@
+
+# fpx local database
+fpx.db
+# fpx local env vars
+fpx.v0.config.json

@@ -23,7 +23,7 @@ const tasksRoutes = app
     const user = ctx.get('user');
     const [createdTask] = await db.insert(tasksTable).values(newTask).returning();
 
-    logEvent('Tasks created', { task: newTask.id });
+    logEvent('Task created', { task: newTask.id });
 
     const uniqueAssignedUserIds = [...new Set(createdTask.assignedTo)];
     const assignedTo = (await db.select().from(usersTable).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
