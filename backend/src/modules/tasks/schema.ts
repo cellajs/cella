@@ -48,7 +48,7 @@ const taskSchema = z.object({
   createdAt: z.string(),
   parentId: z.string().nullable(),
   modifiedAt: z.string().nullable(),
-  createdBy: userSchema.omit({ counts: true }),
+  createdBy: userSchema.omit({ counts: true }).nullable(),
   modifiedBy: userSchema.omit({ counts: true }).nullable(),
 });
 

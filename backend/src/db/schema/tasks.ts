@@ -25,7 +25,7 @@ export const tasksTable = pgTable(
     organizationId: varchar('organization_id')
       .notNull()
       .references(() => organizationsTable.id, {
-        onDelete: 'set null',
+        onDelete: 'cascade',
       }),
     projectId: varchar('project_id')
       .notNull()
@@ -35,8 +35,9 @@ export const tasksTable = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     createdBy: varchar('created_by')
       .notNull()
+      .default('admin')
       .references(() => usersTable.id, {
-        onDelete: 'set null',
+        onDelete: 'set default',
       }),
     modifiedAt: timestamp('modified_at'),
     modifiedBy: varchar('modified_by').references(() => usersTable.id, {

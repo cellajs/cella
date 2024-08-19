@@ -161,12 +161,12 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
 
         const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).flatMap((_, index) => {
-          const name = organizationsUniqueEnforcer.enforce(() => faker.commerce.productName());
+          const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
           const mainTaskId = nanoid();
           // 60% change to set Subtasks
           const insertSubTasks: InsertTaskModel[] = Array.from({ length: Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 3) + 1 }).map(
             (_, subIndex) => {
-              const subTaskName = organizationsUniqueEnforcer.enforce(() => faker.commerce.productName());
+              const subTaskName = organizationsUniqueEnforcer.enforce(() => faker.company.name());
               return {
                 id: nanoid(),
                 organizationId: organization.id,

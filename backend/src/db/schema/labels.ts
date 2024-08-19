@@ -11,7 +11,7 @@ export const labelsTable = pgTable('labels', {
   organizationId: varchar('organization_id')
     .notNull()
     .references(() => organizationsTable.id, {
-      onDelete: 'set null',
+      onDelete: 'cascade',
     }),
   projectId: varchar('project_id')
     .notNull()

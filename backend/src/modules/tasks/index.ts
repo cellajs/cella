@@ -97,8 +97,7 @@ const tasksRoutes = app
 
     const finalTasks = tasksWithSubtasks.map((task) => ({
       ...task,
-      // biome-ignore lint/style/noNonNullAssertion: <explanation>
-      createdBy: users.find((m) => m.id === task.createdBy)!,
+      createdBy: users.find((m) => m.id === task.createdBy) || null,
       modifiedBy: users.find((m) => m.id === task.modifiedBy) || null,
       assignedTo: users.filter((m) => task.assignedTo.includes(m.id)),
       labels: labels.filter((m) => task.labels.includes(m.id)),
