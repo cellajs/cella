@@ -200,7 +200,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
             // random integer between 0 and 3
             impact: Math.floor(Math.random() * 4),
-            description: `p class="bn-inline-content">${name}</p><br/><p class="bn-inline-content">${faker.commerce.productDescription()}</p>`,
+            description: `<p class="bn-inline-content">${name}</p><br/><p class="bn-inline-content">${faker.commerce.productDescription()}</p>`,
             createdAt: faker.date.past(),
             createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
             modifiedAt: faker.date.past(),
