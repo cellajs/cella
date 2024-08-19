@@ -20,7 +20,7 @@ const labelsRoutes = app
 
     const [createdLabel] = await db
       .insert(labelsTable)
-      .values({ ...newLabel })
+      .values({ ...newLabel, ...{ lastUsed: new Date(newLabel.lastUsed) } })
       .returning();
 
     logEvent('Label created', { task: createdLabel.id });

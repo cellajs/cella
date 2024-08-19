@@ -14,7 +14,6 @@ import { useWorkspaceStore } from '~/store/workspace';
 export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();
   const { workspace } = useWorkspaceStore();
-  // const callback = useMutateQueryData(['projects', project.workspaceId]);
   const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
 
   const openDeleteDialog = () => {

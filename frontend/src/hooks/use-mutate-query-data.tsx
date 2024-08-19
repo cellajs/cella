@@ -9,11 +9,13 @@ interface Item {
 
 // This hook is used to mutate the data of a query
 export const useMutateQueryData = (queryKey: QueryKey) => {
-  return (items: Item[], action: 'create' | 'update' | 'delete' | 'updateMembership') => {
+  return (items: Item[], action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<{
       items: Item[];
       total: number;
     }>(queryKey, (data) => {
+      console.log('queryKey:', queryKey);
+      console.log('data:', data);
       if (!data) return;
 
       if (action === 'create') {

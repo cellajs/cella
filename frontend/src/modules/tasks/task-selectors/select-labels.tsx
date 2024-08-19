@@ -14,6 +14,7 @@ import { createLabel, updateLabel, type CreateLabelParams } from '~/api/labels.t
 import { updateTask } from '~/api/tasks.ts';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { useLocation } from '@tanstack/react-router';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -32,14 +33,16 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { changeColumn } = useWorkspaceUIStore();
-  const { focusedTaskId, workspace, labels } = useWorkspaceStore();
+  const { focusedTaskId, workspace, labels, projects } = useWorkspaceStore();
+  const callback = useMutateQueryData(['labels', projects.map((p) => p.id).join('_')]);
 
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [isRecent, setIsRecent] = useState(true);
 
-  const [orderedLabels] = useState(
-    labels.filter((l) => l.projectId === projectId).sort((a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()),
+  const orderedLabels = useMemo(
+    () => labels.filter((l) => l.projectId === projectId).sort((a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()),
+    [labels],
   );
 
   const isSearching = searchValue.length > 0;
@@ -52,7 +55,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       recentLabels: orderedLabels.filter((l) => recentlyUsed(l.lastUsed, 3)),
     });
     return orderedLabels.slice(0, 8);
-  }, [isRecent, searchValue]);
+  }, [isRecent, searchValue, orderedLabels]);
 
   const updateTaskLabels = async (labels: Label[]) => {
     if (!focusedTaskId) return;
@@ -96,12 +99,13 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       color: '#FFA9BA',
       organizationId: organizationId,
       projectId: projectId,
-      lastUsed: new Date(),
+      lastUsed: new Date().toString(),
       useCount: 1,
     };
 
     await createLabel(newLabel);
-    const updatedLabels = [...selectedLabels, { ...newLabel, lastUsed: newLabel.lastUsed.toString() }];
+    callback([newLabel], 'create');
+    const updatedLabels = [...selectedLabels, newLabel];
     setSelectedLabels(updatedLabels);
     if (creationValueChange) return creationValueChange(updatedLabels);
     await updateTaskLabels(updatedLabels);
