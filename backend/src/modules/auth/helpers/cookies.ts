@@ -21,13 +21,22 @@ export const setCookie = (ctx: Context, name: string, value: string) =>
   });
 
 export const setSessionCookie = async (ctx: Context, userId: User['id'], strategy: string) => {
-  const session = await auth.createSession(userId, {});
+  const session = await auth.createSession(userId, { type: 'regular' });
   const sessionCookie = auth.createSessionCookie(session.id);
 
   const lastSignInAt = new Date();
   await db.update(usersTable).set({ lastSignInAt }).where(eq(usersTable.id, userId));
 
   logEvent('User signed in', { user: userId, strategy: strategy });
+
+  ctx.header('Set-Cookie', sessionCookie.serialize());
+};
+
+export const setImpersonationSessionCookie = async (ctx: Context, userId: User['id']) => {
+  const session = await auth.createSession(userId, { type: 'impersonation' });
+  const sessionCookie = auth.createSessionCookie(session.id);
+
+  logEvent('Admin impersonation signed in', { user: userId, strategy: 'impersonation' });
 
   ctx.header('Set-Cookie', sessionCookie.serialize());
 };

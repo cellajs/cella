@@ -13,6 +13,7 @@ interface UserState {
   lastUser: PartialUser | null;
   clearLastUser: () => void;
   setUser: (user: MeUser) => void;
+  setUserWithoutSetLastUser: (user: MeUser) => void;
   updateUser: (user: User) => void;
 }
 
@@ -41,6 +42,13 @@ export const useUserStore = create<UserState>()(
               slug: user.slug,
             },
           }));
+
+          i18n.changeLanguage(user.language || 'en');
+        },
+        setUserWithoutSetLastUser: (user) => {
+          set((state) => {
+            state.user = user;
+          });
 
           i18n.changeLanguage(user.language || 'en');
         },

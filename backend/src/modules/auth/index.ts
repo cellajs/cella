@@ -29,7 +29,7 @@ import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import generalRouteConfig from '../general/routes';
-import { removeSessionCookie, setCookie, setSessionCookie } from './helpers/cookies';
+import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
@@ -313,6 +313,23 @@ const authRoutes = app
     //   { success: true, data: { ...transformDatabaseUser(user), oauth: oauthAccounts.map((el) => el.providerId), passkey: !!passkey } },
     //   200,
     // );
+  })
+  /*
+   * Impersonate sign in impersonate
+   */
+  .openapi(authRoutesConfig.impersonation, async (ctx) => {
+    const cookieHeader = ctx.req.raw.headers.get('Cookie');
+    const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+    if (!sessionId) {
+      removeSessionCookie(ctx);
+      return errorResponse(ctx, 401, 'unauthorized', 'warn');
+    }
+    await auth.invalidateSession(sessionId);
+    removeSessionCookie(ctx);
+    const { targetUserId } = ctx.req.valid('query');
+    await setImpersonationSessionCookie(ctx, targetUserId);
+
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Sign out

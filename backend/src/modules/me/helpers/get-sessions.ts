@@ -8,6 +8,8 @@ export const getPreparedSessions = async (userId: string, ctx: Context) => {
     ...session,
     type: 'DESKTOP' as const,
     current: session.id === currentSessionId,
+    impersonation: session.type === 'impersonation',
   }));
+
   return preparedSessions;
 };

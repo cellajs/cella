@@ -31,7 +31,11 @@ const App = lazy(() => import('~/modules/common/app'));
 
 export const getAndSetMe = async () => {
   const user = await getSelf();
-  useUserStore.getState().setUser(user);
+  const currentSession = user.sessions.find((s) => s.current);
+  // if it's an impersonation session don't change the last user
+  if (currentSession?.impersonation) useUserStore.getState().setUserWithoutSetLastUser(user);
+  else useUserStore.getState().setUser(user);
+
   return user;
 };
 

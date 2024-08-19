@@ -45,6 +45,16 @@ export const signIn = async ({ email, password, token }: { email: string; passwo
   return json.success;
 };
 
+// Impersonation sign in by user admin
+export const impersonateSignIn = async (targetUserId: string) => {
+  const response = await apiClient.auth.impersonation.$get({
+    query: { targetUserId },
+  });
+
+  const json = await handleResponse(response);
+  return json.success;
+};
+
 // Send a verification email
 export const sendVerificationEmail = async (email: string) => {
   const response = await apiClient.auth['send-verification-email'].$post({

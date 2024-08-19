@@ -16,7 +16,6 @@ import { transformDatabaseUserWithCount } from '../users/helpers/transform-datab
 import meRoutesConfig from './routes';
 
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
-import { generateElectricJWTToken } from '../../lib/utils';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { getPreparedSessions } from './helpers/get-sessions';
 import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
@@ -51,8 +50,8 @@ const meRoutes = app
     // Update last visit date
     await db.update(usersTable).set({ lastVisitAt: new Date() }).where(eq(usersTable.id, user.id));
 
-    // Generate a JWT token for electric
-    const electricJWTToken = await generateElectricJWTToken({ userId: user.id });
+    // // Generate a JWT token for electric
+    // const electricJWTToken = await generateElectricJWTToken({ userId: user.id });
 
     return ctx.json(
       {
@@ -62,7 +61,7 @@ const meRoutes = app
           oauth: oauthAccounts.map((el) => el.providerId),
           passkey: !!passkey.length,
           sessions: await getPreparedSessions(user.id, ctx),
-          electricJWTToken,
+          // electricJWTToken,
         },
       },
       200,

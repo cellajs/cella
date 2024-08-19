@@ -14,9 +14,15 @@ import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import UpdateRow from './update-row';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import { impersonateSignIn } from '~/api/auth';
+import { Button } from '~/modules/ui/button';
+import { useUserStore } from '~/store/user';
+import type { MeUser } from '~/types';
+import { getAndSetMe, getAndSetMenu } from '~/routes';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
+  const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -29,27 +35,43 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
-        <Link
-          to="/user/$idOrSlug"
-          tabIndex={tabIndex}
-          params={{ idOrSlug: row.slug }}
-          className="flex space-x-2 items-center outline-0 ring-0 group"
-          onClick={(e) => {
-            if (e.metaKey || e.ctrlKey) return;
-            e.preventDefault();
-            navigate({
-              replace: true,
-              search: (prev) => ({
-                ...prev,
-                ...{ userIdPreview: row.id },
-              }),
-            });
-            openUserPreviewSheet(row);
-          }}
-        >
-          <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
-          <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
-        </Link>
+        <div className="inline-flex justify-between items-center w-full">
+          <Link
+            to="/user/$idOrSlug"
+            tabIndex={tabIndex}
+            params={{ idOrSlug: row.slug }}
+            className="flex space-x-2 items-center outline-0 ring-0 group"
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey) return;
+              e.preventDefault();
+              navigate({
+                replace: true,
+                search: (prev) => ({
+                  ...prev,
+                  ...{ userIdPreview: row.id },
+                }),
+              });
+              openUserPreviewSheet(row);
+            }}
+          >
+            <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
+          </Link>
+          {user.id !== row.id && (
+            <Button
+              variant="link"
+              size="micro"
+              onClick={async () => {
+                useUserStore.setState({ user: null as unknown as MeUser });
+                await impersonateSignIn(row.id);
+                navigate({ to: '/', replace: true });
+                await Promise.all([getAndSetMe(), getAndSetMenu()]);
+              }}
+            >
+              {t('common:impersonate')}
+            </Button>
+          )}
+        </div>
       ),
     },
     {

@@ -1,34 +1,34 @@
-import { sign } from 'hono/jwt';
-import { env } from '../../env';
+// import { sign } from 'hono/jwt';
+// import { env } from '../../env';
 import { createHash, createVerify } from 'node:crypto';
 import cbor from 'cbor';
 import { config } from 'config';
 import * as jose from 'jose';
 import type { KeyLike } from 'jose';
 
-interface GenerateTokenOptions {
-  userId: string;
-}
+// interface GenerateTokenOptions {
+//   userId: string;
+// }
 
-/**
- * Generates a JWT token for Electric. Expires in 1 day.
- *
- * @param {string} userId - The user ID to include in the token.
- * @returns {Promise<string>} - A promise that resolves to the generated JWT token.
- */
-export const generateElectricJWTToken = async ({ userId }: GenerateTokenOptions): Promise<string> => {
-  return await sign(
-    {
-      iat: Math.floor(Date.now() / 1000),
-      iss: 'cella_backend',
-      aud: 'cella_client',
-      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // Token expires in 1 day
-      sub: userId,
-    },
-    env.ELECTRIC_PRIVATE_KEY_ES256,
-    'ES256',
-  );
-};
+// /**
+//  * Generates a JWT token for Electric. Expires in 1 day.
+//  *
+//  * @param {string} userId - The user ID to include in the token.
+//  * @returns {Promise<string>} - A promise that resolves to the generated JWT token.
+//  */
+// export const generateElectricJWTToken = async ({ userId }: GenerateTokenOptions): Promise<string> => {
+//   return await sign(
+//     {
+//       iat: Math.floor(Date.now() / 1000),
+//       iss: 'cella_backend',
+//       aud: 'cella_client',
+//       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // Token expires in 1 day
+//       sub: userId,
+//     },
+//     env.ELECTRIC_PRIVATE_KEY_ES256,
+//     'ES256',
+//   );
+// };
 
 export const base64UrlDecode = (base64urlStr: string) => {
   let base64String = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');

@@ -3,12 +3,36 @@ import { z } from '@hono/zod-openapi';
 import { errorResponses, successWithoutDataSchema } from '../../lib/common-responses';
 import { cookieSchema, passwordSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isPublicAccess } from '../../middlewares/guard';
+import { isPublicAccess, isSystemAdmin, isAuthenticated } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
 import { authBodySchema, emailBodySchema } from './schema';
 
 class AuthRoutesConfig {
+  public impersonation = createRouteConfig({
+    method: 'get',
+    path: '/impersonation',
+    guard: [isAuthenticated, isSystemAdmin],
+    tags: ['auth'],
+    summary: '',
+    description: '',
+    request: { query: z.object({ targetUserId: z.string() }) },
+    responses: {
+      200: {
+        description: 'Email exists',
+        headers: z.object({
+          'Set-Cookie': cookieSchema,
+        }),
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
   public checkEmail = createRouteConfig({
     method: 'post',
     path: '/check-email',
