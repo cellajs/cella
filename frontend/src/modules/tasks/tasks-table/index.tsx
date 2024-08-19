@@ -150,7 +150,6 @@ export default function TasksTable() {
     sheet.create(<TaskSheet task={currentTask} />, {
       className: 'max-w-full lg:max-w-4xl p-0',
       title: <span className="pl-4">{t('common:task')}</span>,
-      text: <span className="pl-4">{t('common:task_sheet_text')}</span>,
       id: `task-preview-${taskId}`,
     });
     setFocusedTaskId(taskId);
