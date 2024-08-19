@@ -132,9 +132,9 @@ const SubTask = ({
             <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
           )}
 
-          {task.summary !== task.description && (
-            <Button onClick={() => setIsEditing(!isEditing)} variant="link" size="micro" className="py-0">
-              {t(`common:${isEditing ? 'less' : 'more'}`).toLowerCase()}
+          {task.summary !== task.description && !isEditing && (
+            <Button onClick={() => setIsEditing(true)} variant="link" size="micro" className="py-0">
+              {t('common:more').toLowerCase()}
             </Button>
           )}
         </div>

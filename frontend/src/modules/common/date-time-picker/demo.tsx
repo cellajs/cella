@@ -47,7 +47,7 @@ export function DateTimePickerForm() {
                   </PopoverTrigger>
                 </FormControl>
                 <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} />
                   <div className="p-3 border-t border-border">
                     <TimePicker setDate={field.onChange} date={field.value} />
                   </div>

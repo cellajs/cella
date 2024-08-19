@@ -76,7 +76,7 @@ class TaskRoutesConfig {
     guard: [isAuthenticated],
     tags: ['tasks'],
     summary: 'Get new order',
-    description: 'Get new Task order on status change ',
+    description: 'Get new task order on status change ',
     request: {
       query: getNewOrderQuerySchema,
     },
