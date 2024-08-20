@@ -90,6 +90,13 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+    envVars:
+      - key: SKIP_INSTALL_DEPS
+        sync: true
+        value: true
+      - key: NODE_VERSION
+        sync: true
+        value: 22
     buildFilter:
       paths:
         - frontend/**/*.?s

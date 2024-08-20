@@ -52,7 +52,7 @@ export const CreateTaskBlockNote = ({ id, value, projectId, mode, onChange }: Ta
         autoFocus={true}
         editor={editor}
         data-color-scheme={mode}
-        className="task-blocknote"
+        className="min-h-16"
         sideMenu={false}
         emojiPicker={false}
       >

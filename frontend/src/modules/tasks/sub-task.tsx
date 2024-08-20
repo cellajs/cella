@@ -102,9 +102,9 @@ const SubTask = ({
     <div
       ref={subTaskRef}
       id="sub-item"
-      className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'}  bg-secondary`}
+      className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'} bg-secondary/50`}
     >
-      <div className="flex flex-col gap-1 relative">
+      <div className="flex flex-col gap-1">
         <Checkbox
           className={cn(
             'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
@@ -121,7 +121,7 @@ const SubTask = ({
             aria-label="Collapse"
             variant="ghost"
             size="xs"
-            className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+            className="bg-secondary/80"
           >
             <ChevronUp size={16} />
           </Button>

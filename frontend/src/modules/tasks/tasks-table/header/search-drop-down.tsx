@@ -92,7 +92,6 @@ export function SearchDropDown({
         if (type === 'project') handleProjectClick(projects[index].id);
         if (type === 'status') handleStatusClick(taskStatuses[index].value);
       }}
-      enableVirtualization
     />
   );
 }

@@ -19,6 +19,7 @@
     "seed:organizations": "tsx seed/organizations/index.ts",
     "seed:data": "tsx seed/data/index.ts",
     "seed": "tsx scripts/seed.ts",
+    "reset:db": "tsx scripts/reset-db.ts",
     "generate:pg": "drizzle-kit generate --config drizzle.config.ts",
     "generate": "pnpm run generate:pg",
     "push": "drizzle-kit push",

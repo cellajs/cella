@@ -68,7 +68,11 @@ const BoardHeader = () => {
               )}
             </Button>
           </TooltipButton>
-          {!searchQuery.length && (
+        </div>
+      )}
+      {!!selectedTasks.length && <TaskSelectedTableButtons />}
+      <BoardSearch />
+      {!searchQuery.length && (
             <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
               <Button variant="plain" onClick={handleAddProjects}>
                 <Plus size={16} />
@@ -76,10 +80,6 @@ const BoardHeader = () => {
               </Button>
             </TooltipButton>
           )}
-        </div>
-      )}
-      {!!selectedTasks.length && <TaskSelectedTableButtons />}
-      <BoardSearch />
       <WorkspaceActions createNewProject={handleAddProjects} openSettingsSheet={openSettingsSheet} openLabelsSheet={openLabelsSheet} />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />

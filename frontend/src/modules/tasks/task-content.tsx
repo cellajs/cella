@@ -53,7 +53,7 @@ const TaskContent = ({ task, mode, isExpanded }: Props) => {
             className="min-h-16 w-full bg-transparent border-none mt-1"
           />
 
-          <div className="-ml-10 -mr-1 relative z-10">
+          <div className="-ml-10 -mr-1">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (
                 <SubTask mode={mode} key={task.id} task={task} />

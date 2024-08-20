@@ -251,7 +251,11 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                     >
                       {selectedImpact !== null ? (
                         <>
-                          <selectedImpact.icon className="size-4" aria-hidden="true" />
+                          <selectedImpact.icon
+                            className='size-4 fill-current'
+                            aria-hidden="true"
+                          />
+
                           {selectedImpact.label}
                         </>
                       ) : (

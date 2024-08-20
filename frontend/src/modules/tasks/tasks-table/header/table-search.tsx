@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useRef, useEffect, useContext, useState } from 'react';
-import { Search, XCircle, ListCollapse } from 'lucide-react';
+import { Search, XCircle } from 'lucide-react';
 import { Input } from '~/modules/ui/input';
 import { useDebounce } from '~/hooks/use-debounce';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
@@ -85,8 +85,8 @@ export function TaskTableSearch({
         id="table-search"
         placeholder={t('common:placeholder.search')}
         ref={inputRef}
-        style={{ paddingLeft: '2rem' }}
-        className="h-10 w-full border-0 pr-14"
+        className="h-10 w-full border-0 pr-8 pl-8"
+        autoComplete="off"
         value={innerSearchQuery}
         onKeyDown={handleEscKeyPress}
         onChange={(e) => {
@@ -97,7 +97,7 @@ export function TaskTableSearch({
       {!!innerSearchQuery.length && (
         <XCircle
           size={16}
-          className="absolute right-8 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+          className="absolute right-2 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
           onClick={(e) => {
             e.stopPropagation();
             setIsFocused(false);
@@ -106,12 +106,9 @@ export function TaskTableSearch({
         />
       )}
       {isFocused && (
-        <>
-          <ListCollapse className="absolute right-2 top-1/2 opacity-100 -translate-y-1/2 h-4 w-4" />
-          <div className="top-12  absolute w-full" ref={dropdownRef}>
-            {children}
-          </div>
-        </>
+        <div className="top-12 absolute w-full" ref={dropdownRef}>
+          {children}
+        </div>
       )}
     </div>
   );

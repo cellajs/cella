@@ -226,7 +226,6 @@
   "without_color": "Without color",
   "local_db_inoperable": "No local db. Try reloading or contact support",
   "organization_required": "Organization required",
-  "new_project": "New project",
   "no_projects.text": "to start your first project.",
   "no_resource_yet": "No {{resource}} yet",
   "no_selection": "None selected",
