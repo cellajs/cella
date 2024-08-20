@@ -264,8 +264,8 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
           ) : (
             <div className="h-full flex flex-col" ref={cardListRef}>
               {!!tasks.length && (
-                <ScrollArea id={project.id} size="indicatorVertical" className="h-full mx-[-.07rem]">
-                  <ScrollBar size="indicatorVertical" />
+                <ScrollArea id={project.id} className="h-full mx-[-.07rem]">
+                  <ScrollBar />
                   <div className="flex flex-col flex-grow">
                     <Button
                       onClick={handleAcceptedClick}
