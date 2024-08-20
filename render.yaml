@@ -35,7 +35,7 @@ services:
     region: frankfurt
     rootDir: tus
     buildCommand: pnpm install && pnpm build
-    startCommand: pnpm proxy & pnpm start
+    startCommand: pnpm start
     numInstances: 1
     envVars:
       - key: TUS_UPLOAD_API_SECRET
