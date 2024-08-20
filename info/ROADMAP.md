@@ -3,7 +3,6 @@ We maintain a very rough roadmap here. Its a work in progress and things will ge
 Last update: July 8,2024
 
 ## 📅 &nbsp; Current projects
-* Electric SQL: local-first file attachments
 * [imado.eu](imado.eu) for file handling
 * A customizable, extendable permission system
 * Blog section

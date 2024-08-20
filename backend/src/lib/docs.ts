@@ -28,8 +28,17 @@ const openAPITags = [
     description:
       'App-specific entity (will be split from template). Projects - like organizations - can have multiple members and are the primary entity in relation to the content-related resources: tasks, labels and attachments. Because a project can be in multiple workspaces, a relations table is maintained.',
   },
+  {
+    name: 'tasks',
+    description: 'App-specific. Tasks content-related resource of project. Also contain task related info and can include subtasks.',
+  },
+  {
+    name: 'labels',
+    description: 'App-specific. Labels content-related resource of project. That is using inside the tasks.',
+  },
 ];
 
+// Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
 const docs = (app: CustomHono) => {
   const registry = app.openAPIRegistry;
 
@@ -55,8 +64,6 @@ const docs = (app: CustomHono) => {
       2) a subclass are 'contextual entities' (ie organization, not user)
       3) remaining data objects are simply content-related 'resources'.
 
-      - Content-related resources - called simply 'resources' - dont have an API
-        they run through the Electric SQL sync engine
       - SSE stream is not included in this API documentation
       - API design is flat, not nested
       `,
@@ -66,9 +73,16 @@ const docs = (app: CustomHono) => {
     security: [{ cookieAuth: [] }],
   });
 
+  // For more info on options, see
+  // https://github.com/scalar/scalar/blob/main/documentation/configuration.md
   app.get(
     '/docs',
     apiReference({
+      defaultHttpClient: {
+        targetKey: 'node',
+        clientKey: 'fetch',
+      },
+      hiddenClients: true,
       spec: {
         url: 'openapi.json',
       },

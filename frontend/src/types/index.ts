@@ -23,8 +23,41 @@ export type DraggableItemData<T> = {
 export interface TaskCardFocusEvent extends Event {
   detail: {
     taskId: string;
-    projectId: string;
+    clickTarget: HTMLElement;
   };
+}
+
+export interface TaskCRUDEvent extends Event {
+  detail: {
+    array: Task[] | SubTask[] | { id: string }[];
+    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
+  };
+}
+
+export interface TaskTableCRUDEvent extends Event {
+  detail: {
+    array: Task[] | SubTask[] | { id: string }[];
+    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
+  };
+}
+
+export interface TaskCardToggleSelectEvent extends Event {
+  detail: {
+    taskId: string;
+    selected: boolean;
+  };
+}
+
+export interface TaskChangeEvent extends Event {
+  detail: {
+    taskId: string;
+    projectId: string;
+    direction: number;
+  };
+}
+
+export interface CustomEventEventById extends Event {
+  detail: string;
 }
 export type Entity = (typeof config.entityTypes)[number];
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
@@ -33,7 +66,7 @@ export type RequestProp = InferRequestType<typeof apiClient.requests.$post>['jso
 
 export type User = Extract<InferResponseType<(typeof apiClient.users)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 
-export type MeUser = User & { electricJWTToken: string; sessions: Session[] };
+export type MeUser = User & { sessions: Session[]; passkey: boolean; oauth: ('github' | 'google' | 'microsoft')[] };
 
 export type Organization = Extract<InferResponseType<(typeof apiClient.organizations)['$get']>, { data: unknown }>['data']['items'][number];
 
@@ -41,12 +74,20 @@ export type Request = Extract<InferResponseType<(typeof apiClient.requests)['$ge
 
 export type Workspace = Extract<InferResponseType<(typeof apiClient.workspaces)[':idOrSlug']['$get']>, { data: unknown }>['data']['workspace'];
 
+export type WorkspaceQuery = Extract<InferResponseType<(typeof apiClient.workspaces)[':idOrSlug']['$get']>, { data: unknown }>['data'];
+
 type EntityPageProps = 'id' | 'slug' | 'entity' | 'name' | 'createdAt' | 'thumbnailUrl' | 'bannerUrl' | 'organizationId';
 type BaseEntityPage = Pick<Omit<Project, 'entity'> & { entity: ContextEntity }, EntityPageProps>;
 
 export type EntityPage = Omit<BaseEntityPage, 'organizationId'> & {
   organizationId?: Project['organizationId'] | null;
 };
+
+export type Label = Extract<InferResponseType<(typeof apiClient.labels)['$get']>, { data: unknown }>['data']['items'][number];
+
+export type Task = Extract<InferResponseType<(typeof apiClient.tasks)['$get']>, { data: unknown }>['data']['items'][number];
+
+export type SubTask = Extract<InferResponseType<(typeof apiClient.tasks)['$get']>, { data: unknown }>['data']['items'][number]['subTasks'][number];
 
 export type Project = Extract<InferResponseType<(typeof apiClient.projects)['$get']>, { data: unknown }>['data']['items'][number];
 
@@ -60,4 +101,7 @@ export type UserMenuItem = NonNullable<
   Extract<InferResponseType<(typeof apiClient.me.menu)['$get']>, { data: unknown }>['data']['workspaces'][number]
 >;
 
-export type WorkspaceStoreMember = Member & { projectIds: string[] };
+export type WorkspaceStoreProject = Extract<
+  InferResponseType<(typeof apiClient.workspaces)[':idOrSlug']['$get']>,
+  { data: unknown }
+>['data']['projects'][number];

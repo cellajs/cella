@@ -1,15 +1,58 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '../../lib/common-responses';
+import { errorResponses, successWithoutDataSchema } from '../../lib/common-responses';
 import { cookieSchema, passwordSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
-import { isPublicAccess } from '../../middlewares/guard';
+import { isPublicAccess, isSystemAdmin, isAuthenticated } from '../../middlewares/guard';
 import { authRateLimiter } from '../../middlewares/rate-limiter';
 import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
-import { userSchema } from '../users/schema';
 import { authBodySchema, emailBodySchema } from './schema';
 
 class AuthRoutesConfig {
+  public impersonationSignIn = createRouteConfig({
+    method: 'get',
+    path: '/impersonation-sign-in',
+    guard: [isAuthenticated, isSystemAdmin],
+    tags: ['auth'],
+    summary: '',
+    description: '',
+    request: { query: z.object({ targetUserId: z.string() }) },
+    responses: {
+      200: {
+        description: 'Email exists',
+        headers: z.object({
+          'Set-Cookie': cookieSchema,
+        }),
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public impersonationSignOut = createRouteConfig({
+    method: 'get',
+    path: '/impersonation-sign-out',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Sign out',
+    description: 'Sign out yourself and clear session.',
+    responses: {
+      200: {
+        description: 'User signed out',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
   public checkEmail = createRouteConfig({
     method: 'post',
     path: '/check-email',
@@ -205,6 +248,68 @@ class AuthRoutesConfig {
     },
   });
 
+  public getUserHavePasskey = createRouteConfig({
+    method: 'get',
+    path: '/passkey/{email}',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Get if user have an passkey sign in option',
+    description: 'Check if the user have an passkey sign in option',
+    request: {
+      params: z.object({ email: z.string() }),
+    },
+    responses: {
+      200: {
+        description: 'Passkey state of user',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public verifyPasskey = createRouteConfig({
+    method: 'post',
+    path: '/verify-passkey',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Verify users passkey',
+    description: 'Verify users passkey',
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: z.object({
+              credentialId: z.string(),
+              clientDataJSON: z.string(),
+              authenticatorData: z.string(),
+              signature: z.string(),
+              email: z.string(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Verify users passkey',
+        headers: z.object({
+          'Set-Cookie': cookieSchema,
+        }),
+        content: {
+          'application/json': {
+            // schema: successWithDataSchema(userSchema.extend(signUpInfo.shape)),
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
   public signIn = createRouteConfig({
     method: 'post',
     path: '/sign-in',
@@ -231,7 +336,7 @@ class AuthRoutesConfig {
         }),
         content: {
           'application/json': {
-            schema: successWithDataSchema(userSchema),
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -284,6 +389,62 @@ class AuthRoutesConfig {
         headers: z.object({
           Location: z.string(),
         }),
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getPasskeyChallenge = createRouteConfig({
+    method: 'get',
+    path: '/passkey-challenge',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Get challenge for passkey',
+    description: 'Challenge for passkey auth.',
+    security: [],
+    responses: {
+      200: {
+        description: 'Challenge created',
+        content: {
+          'application/json': {
+            schema: z.object({ challengeBase64: z.string() }),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public setPasskey = createRouteConfig({
+    method: 'post',
+    path: '/passkey-registration',
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Get challenge for passkey',
+    description: 'Challenge for passkey auth.',
+    security: [],
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: z.object({
+              email: z.string(),
+              attestationObject: z.string(),
+              clientDataJSON: z.string(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Passkey created',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
       },
       ...errorResponses,
     },

@@ -18,7 +18,6 @@ import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
-import type { MeUser } from '~/types';
 import type { TokenData } from '.';
 
 const formSchema = authBodySchema;
@@ -26,15 +25,13 @@ const formSchema = authBodySchema;
 export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: string) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setUser, lastUser, clearLastUser } = useUserStore();
+  const { lastUser, clearLastUser } = useUserStore();
 
   const { redirect } = useSearch({ from: SignInRoute.id });
 
   const { mutate: signIn, isPending } = useMutation({
     mutationFn: baseSignIn,
-    onSuccess: (signedInUser) => {
-      setUser(signedInUser as MeUser);
-
+    onSuccess: () => {
       // Redirect to the invite page if token is present
       // Otherwise, redirect to a redirect URL or to home
       const to = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
@@ -108,7 +105,6 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
           {t('common:sign_in')}
           <ArrowRight size={16} className="ml-2" />
         </Button>
-
         <ResetPasswordRequest email={email} />
       </form>
     </Form>

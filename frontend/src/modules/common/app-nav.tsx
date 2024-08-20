@@ -1,10 +1,11 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { Home, type LucideProps, Menu, Search, User } from 'lucide-react';
-import { Fragment, lazy } from 'react';
+import { Home, type LucideProps, Menu, Search, User, UserX } from 'lucide-react';
+import { Fragment, lazy, useEffect } from 'react';
 import { Suspense } from 'react';
 import { useThemeStore } from '~/store/theme';
 
+import router from '~/lib/router';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -16,6 +17,12 @@ import { SheetMenu } from './nav-sheet/sheet-menu';
 import useMounted from '~/hooks/use-mounted';
 import { NavButton } from './app-nav-button';
 import { AppSearch } from './app-search';
+import { useHotkeys } from '~/hooks/use-hot-keys';
+import { useWorkspaceStore } from '~/store/workspace';
+import { useUserStore } from '~/store/user';
+import { sheet } from '~/modules/common/sheeter/state';
+import { impersonateSignOut } from '~/api/auth';
+import { getAndSetMe, getAndSetMenu } from '~/routes';
 
 export type NavItem = {
   id: string;
@@ -38,8 +45,22 @@ const AppNav = () => {
   const navigate = useNavigate();
   const { hasStarted } = useMounted();
   const isSmallScreen = useBreakpoints('max', 'xl');
-  const { activeSheet, setSheet, focusView } = useNavigationStore();
+  const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
+
+  const { focusedTaskId } = useWorkspaceStore();
   const { theme } = useThemeStore();
+  const currentSession = useUserStore((state) => {
+    if (state.user) {
+      return state.user.sessions.find((s) => s.current);
+    }
+  });
+
+  const stopImpersonation = async () => {
+    await impersonateSignOut();
+    await Promise.all([getAndSetMe(), getAndSetMenu()]);
+    navigate({ to: '/', replace: true });
+  };
+
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
 
   const navButtonClick = (navItem: NavItem) => {
@@ -62,18 +83,48 @@ const AppNav = () => {
     setSheet(isNew ? navItem : null);
   };
 
+  const buttonsClick = (index: number) => {
+    if (index === 3 && focusedTaskId) return;
+    if (sheet.getAll().length) return;
+    navButtonClick(navItems[index]);
+  };
+
+  useHotkeys([
+    ['A', () => buttonsClick(3)],
+    ['F', () => buttonsClick(2)],
+    ['H', () => buttonsClick(1)],
+    ['M', () => buttonsClick(0)],
+  ]);
+
+  useEffect(() => {
+    router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
+      if (toLocation.pathname !== fromLocation.pathname) {
+        // Disable focus view
+        setFocusView(false);
+        // Remove sheets in content
+        sheet.remove();
+        // Remove navigation sheet
+        setSheet(null, 'routeChange');
+      }
+      pathChanged && setLoading(true);
+    });
+    router.subscribe('onLoad', () => {
+      setLoading(false);
+    });
+  }, []);
+
   return (
     <>
       <nav
         id="app-nav"
         className={cn(
-          'fixed z-[90] w-full max-sm:bottom-0 overflow-y-auto transition-transform ease-out sm:left-0 sm:top-0 sm:h-screen sm:w-16',
+          'fixed z-[90] w-full max-sm:bottom-0 transition-transform ease-out sm:left-0 sm:top-0 sm:h-screen sm:w-16',
           navBackground,
           !hasStarted && 'max-sm:translate-y-full sm:-translate-x-full',
           focusView && 'hidden',
         )}
       >
-        <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1 sm:my-1">
+        <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">
           {navItems.map((navItem: NavItem, index: number) => {
             const isSecondItem = index === 1;
             const isActive = activeSheet?.id === navItem.id;
@@ -91,6 +142,13 @@ const AppNav = () => {
               </Fragment>
             );
           })}
+          {currentSession?.impersonation && (
+            <Fragment>
+              <li className={cn('sm:grow-0', 'flex justify-start')}>
+                <NavButton navItem={{ id: 'stop_impersonation', icon: UserX }} onClick={stopImpersonation} isActive={false} />
+              </li>
+            </Fragment>
+          )}
         </ul>
         <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
       </nav>

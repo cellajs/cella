@@ -29,6 +29,12 @@ export const createOrganizationBodySchema = z.object({
   slug: validSlugSchema,
 });
 
+export const sendNewsletterBodySchema = z.object({
+  organizationIds: z.array(z.string()),
+  subject: z.string(),
+  content: z.string(),
+});
+
 export const updateOrganizationBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
   name: nameSchema,

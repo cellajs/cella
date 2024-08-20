@@ -11,7 +11,7 @@ services:
     region: frankfurt
     rootDir: backend
     buildCommand: pnpm install && pnpm build
-    preDeployCommand: pnpm predeploy
+    # preDeployCommand: pnpm predeploy
     startCommand: pnpm start
     numInstances: 1
     healthCheckPath: /ping
@@ -35,7 +35,7 @@ services:
     region: frankfurt
     rootDir: tus
     buildCommand: pnpm install && pnpm build
-    startCommand: pnpm proxy & pnpm start
+    startCommand: pnpm start
     numInstances: 1
     envVars:
       - key: TUS_UPLOAD_API_SECRET
@@ -54,7 +54,6 @@ services:
     runtime: static
     rootDir: frontend
     - buildCommand: pnpm install && pnpm build
-    
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true
     headers:
@@ -98,53 +97,11 @@ services:
       paths:
         - frontend/**/*.?s
 
-  - type: web
-    name: cella-electric-sync
-    runtime: image
-    image:
-      url: docker.io/electricsql/electric:latest
-    plan: standard
-    envVars:
-    - key: PG_PROXY_PORT
-      value: http
-      sync: true
-    - key: PG_PROXY_PASSWORD
-      sync: false
-    - key: LOGICAL_PUBLISHER_HOST
-      value: electric-sync.cellajs.com
-      sync: true
-    - key: ELECTRIC_WRITE_TO_PG_MODE
-      value: direct_writes
-      sync: true
-    - key: ELECTRIC_RESUMABLE_WAL_WINDOW
-      value: 800M
-      sync: true
-    - key: DATABASE_USE_IPV6
-      value: false
-      sync: true
-    - key: DATABASE_URL
-      sync: false
-    - key: AUTH_MODE
-      value: secure
-      sync: true
-    - key: AUTH_JWT_KEY
-      sync: false
-    - key: AUTH_JWT_ISS
-      value: cella_backend
-      sync: true
-    - key: AUTH_JWT_AUD
-      value: cella_client
-      sync: true
-    - key: AUTH_JWT_ALG
-      value: ES256
-      sync: true
-    region: frankfurt
-
 # Postgres database
-# databases:
-#   - name: cella-db
-#     databaseName: cella
-#     region: frankfurt
-#     plan: starter
-#     previewPlan: starter
-#     postgresMajorVersion: 15
+databases:
+  - name: cella-db
+    databaseName: cella
+    region: frankfurt
+    plan: starter
+    previewPlan: starter
+    postgresMajorVersion: 16

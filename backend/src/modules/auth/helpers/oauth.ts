@@ -38,7 +38,7 @@ export const getRedirectUrl = (ctx: Context, firstSignIn?: boolean): string => {
 
 // Insert oauth account into db
 export const insertOauthAccount = async (userId: string, providerId: OauthProviderOptions, providerUserId: string) => {
-  db.insert(oauthAccountsTable).values({ providerId, providerUserId, userId });
+  await db.insert(oauthAccountsTable).values({ providerId, providerUserId, userId });
 };
 
 // Find oauth account in db

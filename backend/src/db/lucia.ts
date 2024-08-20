@@ -45,6 +45,9 @@ export const auth = new Lucia(adapter, {
   getUserAttributes({ hashedPassword, ...databaseUserAttributes }) {
     return databaseUserAttributes;
   },
+  getSessionAttributes(databaseSessionAttributes) {
+    return { type: databaseSessionAttributes.type, adminUserId: databaseSessionAttributes.adminUserId };
+  },
 });
 
 export type Auth = typeof auth;
@@ -53,5 +56,6 @@ declare module 'lucia' {
   interface Register {
     Lucia: typeof auth;
     DatabaseUserAttributes: UserModel;
+    DatabaseSessionAttributes: { type: 'regular' | 'impersonation'; adminUserId: null | string };
   }
 }

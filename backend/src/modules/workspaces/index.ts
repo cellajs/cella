@@ -14,6 +14,7 @@ import workspaceRoutesConfig from './routes';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { projectsTable } from '../../db/schema/projects';
 import { usersTable } from '../../db/schema/users';
+import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 
 const app = new CustomHono();
 
@@ -78,7 +79,7 @@ const workspacesRoutes = app
         and(
           eq(membershipsTable.projectId, projectsToWorkspacesTable.projectId),
           eq(membershipsTable.userId, user.id),
-          eq(membershipsTable.inactive, false),
+          eq(membershipsTable.archived, false),
         ),
       )
       .where(eq(projectsTable.id, projectsToWorkspacesTable.projectId))
@@ -122,30 +123,24 @@ const workspacesRoutes = app
       .innerJoin(membershipsTable, and(...membersFilters));
 
     const members = (await membersQuery).map(({ user, membership, projectId, counts }) => ({
-      ...user,
+      ...transformDatabaseUserWithCount(user, counts.memberships),
       membership: toMembershipInfo.required(membership),
       projectId,
-      counts,
     }));
-    const uniqueMembersMap = members.reduce((acc, member) => {
-      const existingMember = acc.get(member.id);
-      if (existingMember) {
-        existingMember.projectIds.push(member.projectId);
-      } else {
-        acc.set(member.id, { ...member, projectIds: [member.projectId] });
-      }
-      return acc;
-    }, new Map());
 
-    const uniqueMembers = Array.from(uniqueMembersMap.values());
+    const projectsWithMembers = projects.map((p) => {
+      return {
+        ...p,
+        members: members.filter((m) => m.projectId === p.id),
+      };
+    });
 
     return ctx.json(
       {
         success: true,
         data: {
           workspace: { ...workspace, membership: toMembershipInfo(membership) },
-          relatedProjects: projects,
-          workspaceMembers: uniqueMembers,
+          projects: projectsWithMembers,
         },
       },
       200,

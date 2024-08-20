@@ -2,11 +2,11 @@ import { Link } from '@tanstack/react-router';
 import type { Entity } from 'backend/types/common';
 import { ChevronRight, Home } from 'lucide-react';
 import { useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { PageCover } from './page-cover';
+import { useGetEntity } from '~/hooks/use-get-entity-minimum-info';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
@@ -22,8 +22,9 @@ interface PageHeaderProps {
 
 // PageHeader Component
 const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizationId, disableScroll }: PageHeaderProps) => {
-  const { t } = useTranslation();
   const scrollToRef = useRef<HTMLDivElement>(null);
+
+  const organization = organizationId ? useGetEntity(organizationId, 'organization') : null;
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
 
@@ -57,12 +58,12 @@ const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizat
               <BreadcrumbSeparator className="max-sm:hidden">
                 <ChevronRight size={12} />
               </BreadcrumbSeparator>
-              {!!organizationId && (
+              {organization && (
                 <>
                   <BreadcrumbItem>
                     <BreadcrumbLink className="flex items-center" asChild>
-                      <Link to="/$idOrSlug/members" params={{ idOrSlug: organizationId }}>
-                        <span>{t('common:organization').toLowerCase()}</span>
+                      <Link to="/$idOrSlug/members" params={{ idOrSlug: organization.slug }}>
+                        <span>{organization.name}</span>
                       </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>

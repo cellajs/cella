@@ -22,7 +22,7 @@ interface NavigationState {
   toggleHideSubmenu: (status: boolean) => void;
   activeSections: Record<string, boolean> | null;
   toggleSection: (section: string) => void;
-  setSection: (section: string, sectionState: boolean) => void;
+  setSectionsDefault: () => void;
   navLoading: boolean;
   setLoading: (status: boolean) => void;
   focusView: boolean;
@@ -98,15 +98,14 @@ export const useNavigationStore = create<NavigationState>()(
           },
           toggleSection: (section) => {
             set((state) => {
-              if (state.activeSections) state.activeSections[section] = !state.activeSections[section];
+              if (!state.activeSections) state.activeSections = { [section]: false };
+              else if (state.activeSections[section] !== undefined) state.activeSections[section] = !state.activeSections[section];
+              else state.activeSections = { ...state.activeSections, ...{ [section]: false } };
             });
           },
-          setSection: (section, sectionState) => {
+          setSectionsDefault: () => {
             set((state) => {
-              if (!state.activeSections) {
-                state.activeSections = {};
-                state.activeSections[section] = sectionState;
-              }
+              state.activeSections = null;
             });
           },
           archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => {
@@ -134,7 +133,7 @@ export const useNavigationStore = create<NavigationState>()(
           clearNavigationStore: () => set(initStore, true),
         }),
         {
-          version: 3,
+          version: 4,
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
             menu: state.menu,

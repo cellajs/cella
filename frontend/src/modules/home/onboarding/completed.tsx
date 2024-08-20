@@ -11,7 +11,7 @@ import type { UserMenuItem } from '~/types';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
-  const { menu, setSheet, setSection, finishedOnboarding, setFinishedOnboarding } = useNavigationStore();
+  const { menu, setSheet, setSectionsDefault, finishedOnboarding, setFinishedOnboarding } = useNavigationStore();
   const [isExploding, _] = useState(true);
   const effectRan = useRef(false);
 
@@ -35,7 +35,6 @@ export const OnboardingCompleted = () => {
           name: `Demo project ${namingArr[i - 1]}`,
           slug: `${lastCreatedOrganization.slug}-project-${i}`,
           organizationId: lastCreatedOrganization.id,
-          color: '#000000',
         }).then((createdProject) => {
           useNavigationStore.setState({
             menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
@@ -43,8 +42,7 @@ export const OnboardingCompleted = () => {
         });
       }
     });
-    setSection('organizations', true);
-    setSection('workspaces', true);
+    setSectionsDefault();
     setTimeout(
       () => {
         setSheet({ id: 'menu', sheet: <SheetMenu />, icon: Menu });

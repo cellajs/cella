@@ -10,6 +10,7 @@ import { SheetTitle } from '~/modules/ui/sheet';
 import { useUserStore } from '~/store/user';
 import { AppFooter } from '../app-footer';
 import { AvatarWrap } from '../avatar-wrap';
+import { useEffect, useRef } from 'react';
 
 type AccountButtonProps = {
   lucide: React.ElementType<LucideProps>;
@@ -20,10 +21,10 @@ type AccountButtonProps = {
 
 // Create a button for each account action
 const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, action }) => {
-  const btnClass = `${id === 'btn-signout' && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left`;
+  const btnClass = `${id === 'btn-signout' && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`;
 
   return (
-    <Link to={action} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}>
+    <Link id={id} to={action} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}>
       <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
       {label}
     </Link>
@@ -34,12 +35,17 @@ export const SheetAccount = () => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const isSystemAdmin = user.role === 'admin';
-
+  const buttonWrapper = useRef<HTMLDivElement | null>(null);
   const bgClass = user.bannerUrl ? 'bg-background' : getColorClass(user.id);
   const bannerClass = `relative group transition-all duration-300 hover:-mx-8 -mx-4 bg-cover bg-center h-24 ${bgClass}`;
 
+  useEffect(() => {
+    const firstRow = buttonWrapper.current?.querySelector('#btn-profile') as HTMLElement;
+    firstRow?.focus();
+  }, []);
+
   return (
-    <div className="flex flex-col gap-4 min-h-[calc(100vh-3rem)]">
+    <div ref={buttonWrapper} className="flex flex-col gap-4 min-h-[calc(100vh-2rem)]">
       <SheetTitle>{t('common:account')}</SheetTitle>
 
       <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
@@ -59,14 +65,14 @@ export const SheetAccount = () => {
 
       <div className="flex flex-col gap-1 max-sm:mt-4">
         <AccountButton lucide={CircleUserRound} id="btn-profile" label={t('common:view_profile')} action={`/user/${user.slug}`} />
-        <AccountButton lucide={UserCog} id="btn-account" label={t('common:account')} action="/user/settings" />
+        <AccountButton lucide={UserCog} id="btn-account" label={t('common:settings')} action="/user/settings" />
         {isSystemAdmin && <AccountButton lucide={Wrench} id="btn-system" label={t('common:system_panel')} action="/system/users" />}
         <AccountButton lucide={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
       </div>
 
-      <div className="grow" />
+      <div className="grow border-b border-dashed" />
 
-      <AppFooter className="scale-90" />
+      <AppFooter className="ml-2" />
     </div>
   );
 };

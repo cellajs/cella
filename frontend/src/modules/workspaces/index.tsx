@@ -1,14 +1,12 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams, useLocation } from '@tanstack/react-router';
 import { getWorkspace } from '~/api/workspaces';
+import { getLabels } from '~/api/labels';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Project } from '~/types';
-import { FocusViewContainer } from '../common/focus-view';
-import { PageHeader } from '../common/page-header';
-import { type Label, useElectric } from '../common/electric/electrify.ts';
+import { FocusViewContainer } from '~/modules/common/focus-view';
+import { PageHeader } from '~/modules/common/page-header';
 import { useEffect } from 'react';
-import { useLiveQuery } from 'electric-sql/react';
 
 export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -16,40 +14,30 @@ export const workspaceQueryOptions = (idOrSlug: string) =>
     queryFn: () => getWorkspace(idOrSlug),
   });
 
+export const labelsQueryOptions = (projectId: string) =>
+  queryOptions({
+    queryKey: ['labels', projectId],
+    queryFn: () => getLabels({ projectId }),
+  });
+
 const WorkspacePage = () => {
-  const { showPageHeader, setWorkspace, setProjects, setMembers, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const Electric = useElectric()!;
+  const { showPageHeader, setWorkspace, setProjects, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
 
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const workspace = workspaceQuery.data.workspace;
-  const projects = workspaceQuery.data.relatedProjects;
-  const workspaceMembers = workspaceQuery.data.workspaceMembers;
-  //TODO find other solution tan useMutateWorkspaceQueryData hook
+  const projects = workspaceQuery.data.projects;
+  //TODO find other solution other than useMutateWorkspaceQueryData hook
   setWorkspace(workspace);
-  setMembers(workspaceMembers);
-  setProjects(projects as Project[]);
+  setProjects(projects);
 
-  const { results } = useLiveQuery(
-    Electric.db.labels.liveMany({
-      where: {
-        project_id: { in: projects.map((p) => p.id) },
-      },
-    }),
-  ) as {
-    results: Label[] | undefined;
-  };
-
+  const labelsQuery = useSuspenseQuery(labelsQueryOptions(projects.map((p) => p.id).join('_')));
+  setLabels(labelsQuery.data.items);
   useEffect(() => {
     setSearchQuery('');
     setSelectedTasks([]);
   }, [pathname]);
-
-  useEffect(() => {
-    if (results) setLabels(results);
-  }, [results]);
 
   return (
     <FocusViewContainer>

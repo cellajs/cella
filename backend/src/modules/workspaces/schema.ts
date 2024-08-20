@@ -5,7 +5,7 @@ import { workspacesTable } from '../../db/schema/workspaces';
 import { idSchema, imageUrlSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { projectsTable } from '../../db/schema/projects';
-import { userSchema } from '../users/schema';
+import { membersSchema } from '../general/schema';
 
 export const workspaceSchema = z.object({
   ...createSelectSchema(workspacesTable).shape,
@@ -21,20 +21,14 @@ export const workspaceWithProjectSchema = z.object({
     modifiedAt: z.string().nullable(),
     membership: membershipInfoSchema.nullable(),
   }),
-  relatedProjects: z.array(
+  projects: z.array(
     z.object({
       ...createSelectSchema(projectsTable).shape,
       createdAt: z.string(),
       modifiedAt: z.string().nullable(),
       membership: membershipInfoSchema.nullable(),
       workspaceId: z.string().nullish(),
-    }),
-  ),
-  workspaceMembers: z.array(
-    z.object({
-      ...userSchema.shape,
-      membership: membershipInfoSchema,
-      projectIds: z.array(z.string()),
+      members: z.array(membersSchema),
     }),
   ),
 });

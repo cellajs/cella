@@ -1,8 +1,20 @@
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '../../lib/common-responses';
+import {
+  errorResponses,
+  successWithDataSchema,
+  successWithErrorsSchema,
+  successWithoutDataSchema,
+  successWithPaginationSchema,
+} from '../../lib/common-responses';
 import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
-import { createOrganizationBodySchema, getOrganizationsQuerySchema, organizationSchema, updateOrganizationBodySchema } from './schema';
+import {
+  createOrganizationBodySchema,
+  getOrganizationsQuerySchema,
+  organizationSchema,
+  sendNewsletterBodySchema,
+  updateOrganizationBodySchema,
+} from './schema';
 
 class OrganizationRoutesConfig {
   public createOrganization = createRouteConfig({
@@ -104,6 +116,36 @@ class OrganizationRoutesConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(organizationSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public sendNewsletterEmail = createRouteConfig({
+    method: 'post',
+    path: '/send-newsletter',
+    guard: [isAuthenticated, isSystemAdmin],
+    tags: ['organizations'],
+    summary: 'Newsletter for members',
+    description: 'Sends to requested organizations members, a newsletter.',
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: sendNewsletterBodySchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Organization',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
           },
         },
       },

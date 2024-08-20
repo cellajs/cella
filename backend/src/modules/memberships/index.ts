@@ -2,12 +2,12 @@ import { and, eq, inArray, or } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 
-import { render } from '@react-email/render';
+import { render } from 'jsx-email';
 import { config } from 'config';
-import { emailSender } from 'email';
+import { emailSender } from '../../lib/mailer';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
-import { InviteMemberEmail } from '../../../../email/emails/member-invite';
+import { InviteMemberEmail } from '../../../emails/member-invite';
 
 import type { OrganizationModel } from '../../db/schema/organizations';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
@@ -179,7 +179,7 @@ const membershipsRoutes = app
         });
 
         // Render email template
-        const emailHtml = render(InviteMemberEmail({ organization, targetUser, user, token }));
+        const emailHtml = await render(InviteMemberEmail({ organization, targetUser, user, token }));
 
         // Log event for user invitation
         logEvent('User invited to organization', { organization: organization.id });
@@ -290,7 +290,7 @@ const membershipsRoutes = app
    */
   .openapi(membershipRouteConfig.updateMembership, async (ctx) => {
     const { id: membershipId } = ctx.req.valid('param');
-    const { role, inactive, muted, order } = ctx.req.valid('json');
+    const { role, archived, muted, order } = ctx.req.valid('json');
     const user = ctx.get('user');
 
     // Get the membership
@@ -323,7 +323,7 @@ const membershipsRoutes = app
         role,
         ...(order !== undefined && { order }),
         ...(muted !== undefined && { muted }),
-        ...(inactive !== undefined && { inactive }),
+        ...(archived !== undefined && { archived }),
         modifiedBy: user.id,
         modifiedAt: new Date(),
       })
@@ -347,10 +347,7 @@ const membershipsRoutes = app
     const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
     sendSSEToUsers(membersIds, 'update_entity', {
       ...membershipContext,
-      membership: {
-        ...updatedMembership,
-        archived: updatedMembership.inactive,
-      },
+      membership: updatedMembership,
     });
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
@@ -358,10 +355,7 @@ const membershipsRoutes = app
     return ctx.json(
       {
         success: true,
-        data: {
-          ...updatedMembership,
-          archived: updatedMembership.inactive,
-        },
+        data: updatedMembership,
       },
       200,
     );

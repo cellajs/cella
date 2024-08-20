@@ -19,7 +19,6 @@ This document describes the high-level architecture of Cella.
 - [React](https://reactjs.org)
 - [Tanstack Router](https://github.com/tanstack/router)
 - [Tanstack Query](https://github.com/tanstack/query)
-- [Electric SQL](https://github.com/electric-sql/electric)
 - [Zustand](https://github.com/pmndrs/zustand)
 
 ### Frontend / UI
@@ -38,18 +37,17 @@ This document describes the high-level architecture of Cella.
 ```
 .
 ├── backend
+|   ├── emails                Email templates with jsx-email
 │   ├── drizzle               DB migrations
 │   ├── seed                  Seed scripts
 │   ├── src                   
 │   │   ├── cron              
-│   │   ├── db                
+│   │   ├── db                Connect, db schemas
 │   │   ├── lib               Library code and helper functions
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
 │   │   └── types             
 ├── config                    Shared config: default, development, production etc
-├── email                     React-email
-├── env                       .env file for secure development
 ├── frontend                  Frontend SPA
 │   ├── public                
 │   ├── src                   

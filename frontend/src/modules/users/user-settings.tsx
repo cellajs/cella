@@ -1,8 +1,8 @@
-import { Trash2, Zap, ZapOff } from 'lucide-react';
+import { Trash2, Zap, ZapOff, Check } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { Send } from 'lucide-react';
+import { Send, KeyRound } from 'lucide-react';
 import { deleteMySessions as baseTerminateMySessions } from '~/api/me';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
@@ -13,7 +13,7 @@ import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail } from '~/api/auth';
+import { sendResetPasswordEmail, setPasskey, getChallenge } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { AsideNav } from '~/modules/common/aside-nav';
 import StickyBox from '~/modules/common/sticky-box';
@@ -23,11 +23,13 @@ import { oauthProviders } from '../auth/oauth-options';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
 import DeleteSelf from './delete-self';
+import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 
 export type Session = {
   id: string;
   type: string;
   current: boolean;
+  impersonation: boolean;
 };
 
 const tabs = [
@@ -121,6 +123,42 @@ const UserSettings = () => {
     );
   };
 
+  async function registerPasskey() {
+    const { challengeBase64 } = await getChallenge();
+
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        rp: {
+          id: config.mode === 'development' ? 'localhost' : config.domain,
+          name: config.name,
+        },
+        user: {
+          id: new TextEncoder().encode(user.id),
+          name: user.name,
+          displayName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'No name provided',
+        },
+        challenge: base64UrlDecode(challengeBase64),
+        pubKeyCredParams: [{ type: 'public-key', alg: -257 }],
+        authenticatorSelection: { userVerification: 'required' },
+        attestation: 'none',
+      },
+    });
+
+    if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create credential');
+    const response = credential.response;
+    if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error('Unexpected response type');
+
+    const credentialData = {
+      email: user.email,
+      attestationObject: arrayBufferToBase64Url(response.attestationObject),
+      clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
+    };
+
+    const result = await setPasskey(credentialData);
+    if (result) toast.success('Passkey created successfully.');
+    else toast.error('Creation of passkey failed.');
+  }
+
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';
 
@@ -128,7 +166,7 @@ const UserSettings = () => {
     <div className="container md:flex md:flex-row my-4 md:my-8 mx-auto gap-4">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-2">
         <StickyBox className="z-10 max-md:!block">
-          <SimpleHeader className="p-3" heading="common:account" text="common:account.text" />
+          <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />
           <AsideNav tabs={tabs} className="py-2" />
         </StickyBox>
       </div>
@@ -176,6 +214,30 @@ const UserSettings = () => {
                   initialDisplayCount={3}
                   expandText="common:more_sessions"
                 />
+              </div>
+            </CardContent>
+          </Card>
+        </AsideAnchor>
+
+        <AsideAnchor id="passkey">
+          <Card className="mx-auto sm:w-full">
+            <div className="flex justify-between items-center ">
+              <CardHeader>
+                <CardTitle>{user.passkey ? t('common:already_have_passkey') : t('common:register_passkey')}</CardTitle>
+                <CardDescription>{t('common:register_passkey_text')}</CardDescription>
+              </CardHeader>
+              {user.passkey && (
+                <div className="flex items-center p-6">
+                  <Check size={18} className="text-success" />
+                </div>
+              )}
+            </div>
+            <CardContent>
+              <div className="flex flex-col justify-center gap-2">
+                <Button key="passkey" type="button" variant="outline" onClick={() => registerPasskey()}>
+                  <KeyRound className="w-4 h-4 mr-2" />
+                  {user.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
+                </Button>
               </div>
             </CardContent>
           </Card>

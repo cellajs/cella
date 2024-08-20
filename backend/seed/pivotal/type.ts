@@ -87,8 +87,10 @@ export interface Subtask {
   organizationId: string;
   projectId: string;
   impact: number;
-  markdown: string;
+  description: string;
   status: number;
   order: number;
   createdAt: Date;
+  keywords: string;
+  expandable: boolean;
 }

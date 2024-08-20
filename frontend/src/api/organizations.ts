@@ -84,7 +84,7 @@ export const deleteOrganizations = async (ids: string[]) => {
   await handleResponse(response);
 };
 
-// INFO: Send newsletter to organizations (not implemented)
+// Send newsletter to organizations
 export const sendNewsletter = async ({
   organizationIds,
   subject,
@@ -94,7 +94,10 @@ export const sendNewsletter = async ({
   subject: string;
   content: string;
 }) => {
-  console.info('Sending newsletter to organizations', organizationIds, subject, content);
+  const response = await client['send-newsletter'].$post({
+    json: { organizationIds, subject, content },
+  });
 
-  return { success: true };
+  const json = await handleResponse(response);
+  return json.success;
 };

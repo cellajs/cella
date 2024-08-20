@@ -1,17 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { type DropDownT, type DropDownToRemove, dropdownerState } from '../dropdowner/state';
 
 export function DropDowner() {
   const [dropdowner, setDropdowner] = useState<DropDownT | null>(null);
-  const removeDropDown = useCallback((dropdowner: DropDownT | DropDownToRemove) => {
-    if (dropdowner.id === dropdowner?.id) setDropdowner(null);
-  }, []);
 
   useEffect(() => {
     return dropdownerState.subscribe((dropdowner) => {
-      if ((dropdowner as DropDownToRemove).remove) removeDropDown(dropdowner as DropDownT);
+      if ((dropdowner as DropDownToRemove).remove) setDropdowner(null);
       else setDropdowner(dropdowner as DropDownT);
     });
   }, []);

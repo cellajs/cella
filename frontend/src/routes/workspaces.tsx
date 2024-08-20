@@ -13,8 +13,7 @@ import { membersSearchSchema } from './organizations';
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));
 const Board = lazy(() => import('~/modules/projects/board/board'));
-const TasksTable = lazy(() => import('~/modules/projects/tasks-table'));
-const ElectricSuspense = lazy(() => import('~/modules/common/electric/suspense'));
+const TasksTable = lazy(() => import('~/modules/tasks/tasks-table'));
 
 export const WorkspaceRoute = createRoute({
   path: 'workspaces/$idOrSlug',
@@ -29,9 +28,7 @@ export const WorkspaceRoute = createRoute({
   component: () => {
     return (
       <Suspense>
-        <ElectricSuspense>
-          <Workspace />
-        </ElectricSuspense>
+        <Workspace />
       </Suspense>
     );
   },
@@ -42,19 +39,17 @@ export const WorkspaceBoardRoute = createRoute({
   staticData: { pageTitle: 'Board', isAuth: true },
   validateSearch: z.object({ project: z.string().optional() }),
   getParentRoute: () => WorkspaceRoute,
-  component: () => (
-    <Suspense>
-      <Board />
-    </Suspense>
-  ),
+  component: () => <Board />,
 });
 
 export const tasksSearchSchema = z.object({
   q: z.string().optional(),
-  tableSort: z.enum(['project_id', 'status', 'created_by', 'type', 'modified_at', 'created_at']).default('created_at').optional(),
+  tableSort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
   order: z.enum(['asc', 'desc']).default('asc').optional(),
-  projectId: z.array(z.string()).optional(),
-  status: z.array(z.number()).optional(),
+  projectId: z.string().optional(),
+  status: z.number().or(z.string()).optional(),
+  taskIdPreview: z.string().optional(),
+  userIdPreview: z.string().optional(),
 });
 
 export const WorkspaceTableRoute = createRoute({
@@ -62,11 +57,7 @@ export const WorkspaceTableRoute = createRoute({
   validateSearch: tasksSearchSchema,
   staticData: { pageTitle: 'Table', isAuth: true },
   getParentRoute: () => WorkspaceRoute,
-  component: () => (
-    <Suspense>
-      <TasksTable />
-    </Suspense>
-  ),
+  component: () => <TasksTable />,
 });
 
 export const WorkspaceOverviewRoute = createRoute({

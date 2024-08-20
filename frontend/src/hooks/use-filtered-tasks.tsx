@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
-import type { Label, Task } from '~/modules/common/electric/electrify';
-import type { Member } from '~/types';
-import { enhanceTasks, sortAndGetCounts } from './use-filtered-task-helpers';
+import type { Task } from '~/types';
+import { sortAndGetCounts } from './use-filtered-task-helpers';
 
-const useTaskFilters = (tasks: Task[], showAccepted: boolean, showIced: boolean, labels: Label[], members: Member[], table?: boolean) => {
+const useTaskFilters = (tasks: Task[], showAccepted: boolean, showIced: boolean) => {
   return useMemo(() => {
-    const enhancedTasks = enhanceTasks(tasks, labels, members);
-    const { sortedTasks, acceptedCount, icedCount } = sortAndGetCounts(enhancedTasks, showAccepted, showIced, table);
+    const { sortedTasks, acceptedCount, icedCount } = sortAndGetCounts(tasks, showAccepted, showIced);
     return { showingTasks: sortedTasks, acceptedCount, icedCount };
-  }, [tasks, showAccepted, showIced, labels, members]);
+  }, [tasks, showAccepted, showIced]);
 };
 
 export default useTaskFilters;

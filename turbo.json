@@ -19,7 +19,6 @@
       "persistent": true
     },
     "check:types": {},
-    "email:dev": {},
     "push": {
       "persistent": true
     },
@@ -30,10 +29,6 @@
     "generate:pg": {
       "persistent": true
     },
-    "electric:generate": {
-      "persistent": true
-    },
-    "electric:generate:custom": {},
     "studio": {}
   }
 }

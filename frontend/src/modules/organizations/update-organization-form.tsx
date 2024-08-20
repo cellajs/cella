@@ -20,7 +20,7 @@ import { SelectLanguage, SelectLanguages } from '~/modules/common/form-fields/la
 import SelectCountry from '~/modules/common/form-fields/select-country';
 import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
+import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
@@ -109,14 +109,13 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-organization');
-      if (targetSheet && checkSheet(targetSheet)) {
+      if (targetSheet) {
         sheet.update('update-organization', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
       }
       return;
     }
-    sheet.reset('update-organization');
   }, [form.unsavedChanges]);
 
   return (

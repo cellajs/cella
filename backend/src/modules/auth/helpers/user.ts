@@ -24,9 +24,7 @@ export const handleCreateUser = async (
   },
 ) => {
   // If sign up is disabled, return an error
-  if (!config.has.signUp) {
-    return errorResponse(ctx, 403, 'sign_up_disabled', 'warn', undefined);
-  }
+  if (!config.has.signUp) return errorResponse(ctx, 403, 'sign_up_disabled', 'warn', undefined);
 
   // Check if the slug is available
   const slugAvailable = await checkSlugAvailable(data.slug);
@@ -46,8 +44,10 @@ export const handleCreateUser = async (
       })
       .returning();
 
+    console.log('USERBEENCREATED');
     // If a provider is passed, insert the oauth account
     if (options?.provider) {
+      console.log('INSERT USER');
       await insertOauthAccount(data.id, options.provider.id, options.provider.userId);
       // await setSessionCookie(ctx, data.id, options.provider.id.toLowerCase());
     }

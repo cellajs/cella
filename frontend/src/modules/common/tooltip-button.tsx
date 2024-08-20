@@ -1,5 +1,6 @@
 import type * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
+import React from 'react';
 
 interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
   children: React.ReactNode;
@@ -11,37 +12,29 @@ interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof Toolt
   portal?: boolean;
 }
 
-export const TooltipButton = ({
-  children,
-  toolTipContent,
-  disabled,
-  side = 'bottom',
-  sideOffset = 8,
-  className,
-  hideWhenDetached,
-  portal = false,
-  ...props
-}: TooltipButtonProps) => {
-  if (disabled) {
-    return children;
-  }
+export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps>(
+  ({ children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, className, hideWhenDetached, portal = false, ...props }, ref) => {
+    if (disabled) return children;
 
-  return (
-    <Tooltip>
-      <TooltipTrigger className={className} asChild>
-        {children}
-      </TooltipTrigger>
-      {portal ? (
-        <TooltipPortal>
+    return (
+      <Tooltip>
+        <TooltipTrigger className={className} asChild>
+          {React.cloneElement(children as React.ReactElement, { ref })}
+        </TooltipTrigger>
+        {portal ? (
+          <TooltipPortal>
+            <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
+              {toolTipContent}
+            </TooltipContent>
+          </TooltipPortal>
+        ) : (
           <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
             {toolTipContent}
           </TooltipContent>
-        </TooltipPortal>
-      ) : (
-        <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
-          {toolTipContent}
-        </TooltipContent>
-      )}
-    </Tooltip>
-  );
-};
+        )}
+      </Tooltip>
+    );
+  },
+);
+
+TooltipButton.displayName = 'TooltipButton';

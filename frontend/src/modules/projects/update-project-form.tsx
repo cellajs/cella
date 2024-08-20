@@ -3,6 +3,8 @@ import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
+import { cleanUrl } from '~/lib/utils';
+import AvatarFormField from '~/modules/common/form-fields/avatar';
 import { updateProjectBodySchema } from 'backend/modules/projects/schema';
 import { useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
@@ -15,7 +17,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
-import { isSheet as checkSheet, sheet } from '~/modules/common/sheeter/state';
+import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -56,7 +58,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
     defaultValues: {
       slug: project.slug,
       name: project.name,
-      color: project.color,
+      thumbnailUrl: cleanUrl(project.thumbnailUrl),
       workspaceId: project.workspaceId,
     },
   };
@@ -65,6 +67,10 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
 
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
+
+  const setImageUrl = (url: string) => {
+    form.setValue('thumbnailUrl', url, { shouldDirty: true });
+  };
 
   const onSubmit = (values: FormValues) => {
     mutate(values, {
@@ -83,19 +89,27 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
     if (!isSheet) return;
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('edit-project');
-      if (targetSheet && checkSheet(targetSheet)) {
+      if (targetSheet) {
         sheet.update('edit-project', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
         return;
       }
     }
-    sheet.reset('edit-project');
   }, [form.unsavedChanges]);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <AvatarFormField
+          control={form.control}
+          label={t('common:project_logo')}
+          type="project"
+          name="thumbnailUrl"
+          entity={project}
+          url={form.getValues('thumbnailUrl')}
+          setUrl={setImageUrl}
+        />
         <InputFormField control={form.control} name="name" label={t('common:name')} required />
         <SlugFormField
           control={form.control}
@@ -104,7 +118,6 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
           description={t('common:project_handle.text')}
           previousSlug={project.slug}
         />
-        <InputFormField control={form.control} name="color" label={t('common:color')} required />
         <SelectParentFormField
           collection="workspaces"
           type="workspace"

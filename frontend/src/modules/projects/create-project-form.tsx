@@ -21,6 +21,7 @@ import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { UserMenuItem, Workspace } from '~/types';
 import { Form } from '../ui/form';
+import { useUserStore } from '~/store/user';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -34,6 +35,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
+  const user = useUserStore((state) => state.user);
   const type = 'project';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -41,7 +43,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       defaultValues: {
         name: '',
         slug: '',
-        color: '#000000',
         workspaceId: workspace.id,
         organizationId: workspace.organizationId,
       },
@@ -54,7 +55,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
-  // const callback = useMutateQueryData(['projects', workspace.id]);
   const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
   const { mutate: create, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
@@ -64,7 +64,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type}`) }));
       // callback([createdProject], 'create');
-      callback([createdProject], 'createProject');
+      callback([{ ...createdProject, ...{ members: [user] } }], 'createProject');
       useNavigationStore.setState({
         menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
       });

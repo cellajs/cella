@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { type GetUsersParams, getUsers, updateUser } from '~/api/users';
 
 import type { usersQuerySchema } from 'backend/modules/users/schema';
@@ -32,6 +32,7 @@ import { UsersTableRoute } from '~/routes/system';
 import type { User } from '~/types';
 import DeleteUsers from '../delete-users';
 import { useColumns } from './columns';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 
@@ -195,6 +196,12 @@ const UsersTable = () => {
       },
     );
   };
+
+  useEffect(() => {
+    if (!rows.length || !search.userIdPreview) return;
+    const user = rows.find((t) => t.id === search.userIdPreview);
+    if (user) openUserPreviewSheet(user);
+  }, [rows]);
 
   return (
     <div className="flex flex-col gap-4 h-full">

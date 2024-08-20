@@ -3,9 +3,10 @@ import { faker } from '@faker-js/faker';
 import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
 
+import { Command } from '@commander-js/extra-typings';
 import { UniqueEnforcer } from 'enforce-unique';
-import { type InsertLabelModel, labelsTable } from '../../src/db/schema-electric/labels';
-import { type InsertTaskModel, tasksTable } from '../../src/db/schema-electric/tasks';
+import { type InsertLabelModel, labelsTable } from '../../src/db/schema/labels';
+import { type InsertTaskModel, tasksTable } from '../../src/db/schema/tasks';
 import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
 import { organizationsTable } from '../../src/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '../../src/db/schema/projects';
@@ -14,6 +15,10 @@ import { type InsertWorkspaceModel, workspacesTable } from '../../src/db/schema/
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 import slugify from 'slugify';
+import { extractKeywords } from './helpers';
+
+const seedCommand = new Command().option('--addImages', 'Add images to members').parse(process.argv);
+const options = seedCommand.opts();
 
 export const dataSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
@@ -43,8 +48,8 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         organizationId: organization.id,
         name: faker.company.name(),
         slug: faker.helpers.slugify(name).toLowerCase(),
-        bannerUrl: faker.image.url(),
-        thumbnailUrl: faker.image.url(),
+        bannerUrl: options.addImages ? faker.image.url() : null,
+        thumbnailUrl: options.addImages ? faker.image.url() : null,
         createdAt: faker.date.past(),
         createdBy: orgMemberships[Math.floor(Math.random() * orgMemberships.length)].userId,
         modifiedAt: faker.date.past(),
@@ -157,25 +162,29 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
 
         const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).flatMap((_, index) => {
+          const taskDescription = faker.commerce.productDescription();
           const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
           const mainTaskId = nanoid();
           // 60% change to set Subtasks
           const insertSubTasks: InsertTaskModel[] = Array.from({ length: Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 3) + 1 }).map(
             (_, subIndex) => {
+              const subTaskDescription = faker.commerce.productDescription();
               const subTaskName = organizationsUniqueEnforcer.enforce(() => faker.company.name());
               return {
                 id: nanoid(),
                 organizationId: organization.id,
                 projectId: project.id,
-                summary: subTaskName,
+                summary: `<p class="bn-inline-content">${subTaskName}</p>`,
+                keywords: extractKeywords(subTaskDescription),
+                expandable: true,
                 parentId: mainTaskId,
                 slug: faker.helpers.slugify(subTaskName).toLowerCase(),
-                order: subIndex,
+                order: subIndex + 1,
                 // status in sub tasks only 1 or 6
                 status: Math.random() < 0.5 ? 1 : 6,
                 impact: 0,
                 type: 'chore',
-                markdown: faker.lorem.paragraphs(),
+                description: `<p class="bn-inline-content">${subTaskName}</p><p class="bn-inline-content">${subTaskDescription}</p>`,
                 createdAt: faker.date.past(),
                 createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
                 modifiedAt: faker.date.past(),
@@ -188,21 +197,21 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             id: mainTaskId,
             organizationId: organization.id,
             projectId: project.id,
-            summary: name,
+            summary: `<p class="bn-inline-content">${name}</p>`,
+            keywords: extractKeywords(taskDescription),
+            expandable: true,
             slug: faker.helpers.slugify(name).toLowerCase(),
-            order: index,
+            order: index + 1,
             // random integer between 0 and 6
             status: Math.floor(Math.random() * 7),
             type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
             // random integer between 0 and 3
             impact: Math.floor(Math.random() * 4),
-            markdown: faker.lorem.paragraphs(),
+            description: `<p class="bn-inline-content">${name}</p><p class="bn-inline-content">${taskDescription}</p>`,
             createdAt: faker.date.past(),
             createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
             modifiedAt: faker.date.past(),
             modifiedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
-            assignedAt: faker.date.past(),
-            assignedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
           };
 
           // Combine main task with its subtasks

@@ -1,12 +1,13 @@
 import { z } from '@hono/zod-openapi';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '../../lib/common-responses';
-import { entityTypeSchema, slugSchema, tokenSchema } from '../../lib/common-schemas';
+import { entityParamSchema, entityTypeSchema, contextEntityTypeSchema, slugSchema, tokenSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
 import {
   acceptInviteBodySchema,
   checkTokenSchema,
+  minEntityInfoSchema,
   inviteBodySchema,
   membersQuerySchema,
   membersSchema,
@@ -15,6 +16,24 @@ import {
 } from './schema';
 
 class GeneralRoutesConfig {
+  public getMetrics = createRouteConfig({
+    method: 'get',
+    path: '/metrics',
+    guard: isPublicAccess,
+    tags: ['general'],
+    summary: 'Get metrics',
+    responses: {
+      200: {
+        description: 'Metrics',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(z.any()),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
   public getPublicCounts = createRouteConfig({
     method: 'get',
     path: '/public/counts',
@@ -265,6 +284,29 @@ class GeneralRoutesConfig {
         content: {
           'application/json': {
             schema: successWithPaginationSchema(membersSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getMinimumEntityInfo = createRouteConfig({
+    method: 'get',
+    path: '/entity-info/{idOrSlug}',
+    guard: isAuthenticated,
+    tags: ['general'],
+    summary: 'Get minimal entity info(id, entity, slug, name, thumbnailUrl, bannerUrl)',
+    request: {
+      params: entityParamSchema,
+      query: z.object({ entityType: contextEntityTypeSchema }),
+    },
+    responses: {
+      200: {
+        description: 'Entity info',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(minEntityInfoSchema),
           },
         },
       },

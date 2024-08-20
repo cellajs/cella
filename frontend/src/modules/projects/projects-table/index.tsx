@@ -31,7 +31,7 @@ export const projectsQueryOptions = ({
   sort: initialSort,
   order: initialOrder,
   limit = LIMIT,
-  requestedUserId,
+  userId,
   rowsLength = 0,
 }: GetProjectsParams & {
   rowsLength?: number;
@@ -40,7 +40,7 @@ export const projectsQueryOptions = ({
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['projects', requestedUserId, q, sort, order],
+    queryKey: ['projects', userId, q, sort, order],
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
@@ -55,7 +55,7 @@ export const projectsQueryOptions = ({
           limit: limit + Math.max(page * limit - rowsLength, 0),
           // If some items were added, offset should be undefined, otherwise it should be the length of the rows
           offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
-          requestedUserId,
+          userId,
         },
         signal,
       ),
@@ -79,7 +79,6 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
   const sort = sortColumns[0]?.columnKey as ProjectsSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as ProjectsSearch['order'];
   const limit = LIMIT;
-  const requestedUserId = userId;
 
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
@@ -88,7 +87,7 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
   };
 
   // Query projects
-  const queryResult = useInfiniteQuery(projectsQueryOptions({ q, sort, order, limit, requestedUserId, rowsLength: rows.length }));
+  const queryResult = useInfiniteQuery(projectsQueryOptions({ q, sort, order, limit, userId, rowsLength: rows.length }));
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
@@ -158,7 +157,8 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch value={query} setQuery={onSearch} />
+            {/* TODO: can we remove this type hack? */}
+            <TableSearch value={query as string | undefined} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />

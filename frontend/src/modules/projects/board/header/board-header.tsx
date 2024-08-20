@@ -1,8 +1,5 @@
-import { PanelTopClose, Plus, Trash, XSquare } from 'lucide-react';
-import type React from 'react';
+import { PanelTopClose, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import TableCount from '~/modules/common/data-table/table-count';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -13,23 +10,21 @@ import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
-import { AvatarWrap } from '../../../common/avatar-wrap';
-import { useElectric } from '../../../common/electric/electrify';
-import { TooltipButton } from '../../../common/tooltip-button';
-import { Badge } from '../../../ui/badge';
-import AddProjects from '../../add-project';
-import LabelsTable from '../../labels-table';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { TooltipButton } from '~/modules/common/tooltip-button';
+import AddProjects from '~/modules/projects/add-project';
+import LabelsTable from '~/modules/tasks/labels-table';
 import WorkspaceActions from './board-header-actions';
+import TaskSelectedTableButtons from './selected-buttons';
 
-const BoardHeader = ({ mode, children, totalCount }: { mode: 'table' | 'board'; children?: React.ReactNode; totalCount?: number }) => {
+const BoardHeader = () => {
   const { t } = useTranslation();
 
   const { setFocusView } = useNavigationStore();
-  const { workspace, selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, showPageHeader, togglePageHeader, labels } = useWorkspaceStore();
-  const electric = useElectric();
+  const { workspace, selectedTasks, searchQuery, showPageHeader, togglePageHeader, labels } = useWorkspaceStore();
 
   const openSettingsSheet = () => {
-    sheet(<WorkspaceSettings sheet workspace={workspace} />, {
+    sheet.create(<WorkspaceSettings sheet workspace={workspace} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),
@@ -38,41 +33,12 @@ const BoardHeader = ({ mode, children, totalCount }: { mode: 'table' | 'board'; 
   };
 
   const openLabelsSheet = () => {
-    sheet(<LabelsTable labels={labels} />, {
+    sheet.create(<LabelsTable labels={labels} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:manage_labels'),
       // text: '',
-      id: 'workspace_settings',
+      id: 'workspace-settings',
     });
-  };
-
-  const onRemove = () => {
-    if (!electric) return toast.error(t('common:local_db_inoperable'));
-
-    // Delete child tasks first
-    electric.db.tasks
-      .deleteMany({
-        where: {
-          parent_id: {
-            in: selectedTasks,
-          },
-        },
-      })
-      .then(() => {
-        // Then delete parent tasks
-        electric.db.tasks
-          .deleteMany({
-            where: {
-              id: {
-                in: selectedTasks,
-              },
-            },
-          })
-          .then(() => {
-            toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
-            setSelectedTasks([]);
-          });
-      });
   };
 
   const handleAddProjects = () => {
@@ -90,23 +56,19 @@ const BoardHeader = ({ mode, children, totalCount }: { mode: 'table' | 'board'; 
   };
 
   return (
-    <StickyBox enabled={mode === 'table'} className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
+    <StickyBox className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
       {!selectedTasks.length && (
         <div className="flex gap-2">
+          <TooltipButton toolTipContent={t('common:page_view')}>
+            <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
+              {showPageHeader ? (
+                <PanelTopClose size={16} />
+              ) : (
+                <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+              )}
+            </Button>
+          </TooltipButton>
           {!searchQuery.length && (
-            <TooltipButton toolTipContent={t('common:page_view')}>
-              <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
-                {showPageHeader ? (
-                  <PanelTopClose size={16} />
-                ) : (
-                  <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
-                )}
-              </Button>
-            </TooltipButton>
-          )}
-          {mode === 'table' ? (
-            <TableCount count={totalCount} type="task" isFiltered={!!searchQuery} onResetFilters={() => setSearchQuery('')} />
-          ) : (
             <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
               <Button variant="plain" onClick={handleAddProjects}>
                 <Plus size={16} />
@@ -116,26 +78,8 @@ const BoardHeader = ({ mode, children, totalCount }: { mode: 'table' | 'board'; 
           )}
         </div>
       )}
-      {!!selectedTasks.length && (
-        <div className="inline-flex align-center items-center gap-2">
-          <TooltipButton toolTipContent={t('common:remove_task')}>
-            <Button variant="destructive" className="relative" onClick={onRemove}>
-              <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 shadow-sm">{selectedTasks.length}</Badge>
-              <Trash size={16} />
-              <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
-            </Button>
-          </TooltipButton>
-          <TooltipButton toolTipContent={t('common:clear_selected_task')}>
-            <Button variant="ghost" className="relative" onClick={() => setSelectedTasks([])}>
-              <XSquare size={16} />
-              <span className="ml-1 max-xs:hidden">{t('common:clear')}</span>
-            </Button>
-          </TooltipButton>
-        </div>
-      )}
-
+      {!!selectedTasks.length && <TaskSelectedTableButtons />}
       <BoardSearch />
-      {children}
       <WorkspaceActions createNewProject={handleAddProjects} openSettingsSheet={openSettingsSheet} openLabelsSheet={openLabelsSheet} />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />

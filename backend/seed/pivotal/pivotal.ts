@@ -1,15 +1,15 @@
 import fs from 'node:fs';
-import { Command } from 'commander';
+import { Command } from '@commander-js/extra-typings';
 import { eq } from 'drizzle-orm';
 import JSZip from 'jszip';
 import papaparse from 'papaparse';
-import { db } from '../../src/db/db.electric';
-import { tasksTable } from '../../src/db/schema-electric/tasks';
+import { db } from '../../src/db/db';
+import { tasksTable } from '../../src/db/schema/tasks';
 import { projectsTable } from '../../src/db/schema/projects';
-import { labelsTable } from '../../src/db/schema-electric/labels';
+import { labelsTable } from '../../src/db/schema/labels';
 import { nanoid } from 'nanoid';
 import type { PivotalTask, Subtask } from './type';
-import { getLabels, getSubTask, getTaskLabels } from './helper';
+import { extractKeywords, getLabels, getSubTask, getTaskLabels } from './helper';
 
 const program = new Command().option('--file <file>', 'Zip file to upload').option('--project <project>', 'Project to upload tasks to').parse();
 
@@ -66,13 +66,15 @@ zip.loadAsync(data).then(async (zip) => {
     return {
       id: taskId,
       slug: task.Id,
-      summary: task.Title || 'No title',
+      summary: `<p class="bn-inline-content">${task.Title}</p>` || '<p class="bn-inline-content">No title</p>',
       type: (task.Type || 'chore') as 'feature' | 'bug' | 'chore',
       createdBy: 'pivotal',
       organizationId: project.organizationId,
       projectId: project.id,
+      expandable: true,
+      keywords: extractKeywords(task.Description.length ? task.Description : task.Title),
       impact: ['0', '1', '2', '3'].includes(task.Estimate) ? +task.Estimate : 0,
-      markdown: `${task.Title}\n${task.Description}`,
+      description: `<p class="bn-inline-content">${task.Title}</p><p class="bn-inline-content">${task.Description}</p>`,
       labels: labelsIds,
       status:
         task['Current State'] === 'accepted'

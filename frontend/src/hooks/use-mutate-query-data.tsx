@@ -1,6 +1,6 @@
 import { useQueryClient, type InfiniteData, type QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/lib/router';
-import type { Workspace, WorkspaceStoreMember, Project, Membership } from '~/types';
+import type { Workspace, WorkspaceStoreProject, Membership, Project, Task, SubTask } from '~/types';
 
 interface Item {
   id: string;
@@ -9,11 +9,13 @@ interface Item {
 
 // This hook is used to mutate the data of a query
 export const useMutateQueryData = (queryKey: QueryKey) => {
-  return (items: Item[], action: 'create' | 'update' | 'delete' | 'updateMembership') => {
+  return (items: Item[], action: 'create' | 'update' | 'delete') => {
     queryClient.setQueryData<{
       items: Item[];
       total: number;
     }>(queryKey, (data) => {
+      console.log('queryKey:', queryKey);
+      console.log('data:', data);
       if (!data) return;
 
       if (action === 'create') {
@@ -151,9 +153,8 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
 
 export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   const queryClient = useQueryClient();
-
   return (
-    items: Workspace[] | Project[] | WorkspaceStoreMember[] | Membership[],
+    items: Workspace[] | Project[] | Membership[],
     action:
       | 'createProject'
       | 'updateProject'
@@ -165,30 +166,29 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   ) => {
     queryClient.setQueryData<{
       workspace: Workspace;
-      relatedProjects: Project[];
-      workspaceMembers: WorkspaceStoreMember[];
+      projects: WorkspaceStoreProject[];
     }>(queryKey, (data) => {
       if (!data) return data;
       switch (action) {
         case 'createProject':
           return {
             ...data,
-            relatedProjects: [...(items as Project[]), ...data.relatedProjects],
+            projects: [...(items as unknown as WorkspaceStoreProject[]), ...data.projects],
           };
 
         case 'updateProject':
           return {
             ...data,
-            relatedProjects: data.relatedProjects.map((existingProject) => {
-              const updatedItem = (items as Project[]).find((newProject) => existingProject.id === newProject.id);
-              return updatedItem ? updatedItem : existingProject;
+            projects: data.projects.map((existingProject) => {
+              const updatedItem = (items as unknown as WorkspaceStoreProject[]).find((newProject) => existingProject.id === newProject.id);
+              return updatedItem ? { ...updatedItem, ...{ members: existingProject.members } } : existingProject;
             }),
           };
 
         case 'deleteProject':
           return {
             ...data,
-            relatedProjects: data.relatedProjects.filter((existingProject) => !items.find((item) => item.id === existingProject.id)),
+            projects: data.projects.filter((existingProject) => !items.find((item) => item.id === existingProject.id)),
           };
 
         case 'updateWorkspace':
@@ -205,38 +205,240 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
               membership: {
                 ...data.workspace.membership,
                 ...(items[0] as Membership),
-                archived: (items[0] as Membership).inactive ?? false,
               },
             },
           };
 
         case 'updateProjectMembership': {
           const updatedMembership = items[0] as Membership;
-          const newProjects = data.relatedProjects.map((existing) => ({
+          const newProjects = data.projects.map((existing) => ({
             ...existing,
-            membership:
-              existing.membership?.id === updatedMembership.id
-                ? { ...existing.membership, ...updatedMembership, archived: updatedMembership.inactive ?? false }
-                : existing.membership,
+            membership: existing.membership?.id === updatedMembership.id ? { ...existing.membership, ...updatedMembership } : existing.membership,
           }));
 
           return {
             ...data,
-            relatedProjects: newProjects
-              .filter((p) => !p.membership?.archived)
-              .sort((a, b) => (a.membership?.order ?? 0) - (b.membership?.order ?? 0)),
+            projects: newProjects.filter((p) => !p.membership?.archived).sort((a, b) => (a.membership?.order ?? 0) - (b.membership?.order ?? 0)),
           };
         }
 
-        case 'updateMembers':
+        case 'updateMembers': {
           return {
             ...data,
-            workspaceMembers: items as WorkspaceStoreMember[],
+            projects: {
+              ...data.projects,
+              ...{ members: items },
+            },
           };
+        }
 
         default:
           return data;
       }
     });
+  };
+};
+
+export const useMutateTasksQueryData = (queryKey: QueryKey) => {
+  return (
+    newItems: Task[] | SubTask[] | { id: string }[],
+    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask',
+  ) => {
+    queryClient.setQueryData<{
+      items: Task[];
+      total: number;
+    }>(queryKey, (data) => {
+      if (!data) return;
+
+      if (action === 'create') {
+        const [newTask] = newItems as Task[];
+        if (newTask.projectId !== queryKey[1]) return;
+        return {
+          items: [newTask, ...data.items],
+          total: data.total + newItems.length,
+        };
+      }
+
+      if (action === 'update') {
+        return {
+          items: data.items.map((prevItem) => {
+            const updatedItem = (newItems as Task[]).find((el) => el.id === prevItem.id);
+            return updatedItem || prevItem;
+          }),
+          total: data.total,
+        };
+      }
+
+      if (action === 'delete') {
+        const updatedItems = data.items.filter((item) => !(newItems as { id: string }[]).some((deletedItem) => deletedItem.id === item.id));
+        const updatedTotal = data.total - (data.items.length - updatedItems.length);
+        return {
+          items: updatedItems,
+          total: updatedTotal,
+        };
+      }
+
+      if (action === 'createSubTask') {
+        return {
+          items: data.items.map((currentItem) => {
+            const newSubTask = newItems[0] as SubTask;
+            if (currentItem.id === newSubTask.parentId) {
+              return {
+                ...currentItem,
+                subTasks: [...currentItem.subTasks, newSubTask],
+              };
+            }
+            return currentItem;
+          }),
+          total: data.total,
+        };
+      }
+
+      if (action === 'updateSubTask') {
+        return {
+          items: data.items.map((currentItem) => ({
+            ...currentItem,
+            subTasks: currentItem.subTasks.map((subTask) => {
+              const updatedSubTask = (newItems as SubTask[]).find((el) => el.id === subTask.id);
+              return updatedSubTask || subTask;
+            }),
+          })),
+          total: data.total,
+        };
+      }
+
+      if (action === 'deleteSubTask') {
+        return {
+          items: data.items.map((currentItem) => ({
+            ...currentItem,
+            subTasks: currentItem.subTasks.filter((subTask) => !(newItems as { id: string }[]).some((deletedItem) => deletedItem.id === subTask.id)),
+          })),
+          total: data.total,
+        };
+      }
+    });
+  };
+};
+
+export const useMutateInfiniteTaskQueryData = (queryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
+  return (
+    newItems: Task[] | SubTask[] | { id: string }[],
+    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask',
+  ) => {
+    queryClient.setQueryData<
+      InfiniteData<{
+        items: Task[];
+        total: number;
+      }>
+    >(queryKey, (data) => {
+      if (!data) return;
+
+      if (action === 'create') {
+        return {
+          pages: [
+            {
+              items: [...(newItems as Task[]), ...data.pages[0].items],
+              total: data.pages[0].total + newItems.length,
+            },
+            ...data.pages.slice(1),
+          ],
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'update') {
+        const updatedPages = data.pages.map((page) => ({
+          items: page.items.map((item) => {
+            const updatedItem = (newItems as Task[]).find((el) => el.id === item.id);
+            if (item.id === updatedItem?.id) return updatedItem;
+            return item;
+          }),
+          total: page.total,
+        }));
+
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'delete') {
+        const updatedPages = data.pages.map((page) => {
+          const updatedItems = page.items.filter((item) => !(newItems as { id: string }[]).some((deletedItem) => deletedItem.id === item.id));
+          const updatedTotal = page.total - (page.items.length - updatedItems.length);
+          return {
+            items: updatedItems,
+            total: updatedTotal,
+          };
+        });
+
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'createSubTask') {
+        const updatedPages = data.pages.map((page) => ({
+          items: page.items.map((currentItem) => {
+            const newSubTask = newItems[0] as SubTask;
+            if (currentItem.id === newSubTask.parentId) {
+              return {
+                ...currentItem,
+                subTasks: [...currentItem.subTasks, newSubTask],
+              };
+            }
+            return currentItem;
+          }),
+          total: page.total,
+        }));
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'updateSubTask') {
+        const updatedPages = data.pages.map((page) => ({
+          items: page.items.map((currentItem) => ({
+            ...currentItem,
+            subTasks: currentItem.subTasks.map((subTask) => {
+              const updatedSubTask = (newItems as SubTask[]).find((el) => el.id === subTask.id);
+              if (subTask.id === updatedSubTask?.id) return updatedSubTask;
+              return subTask;
+            }),
+          })),
+          total: page.total,
+        }));
+
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+
+      if (action === 'deleteSubTask') {
+        const updatedPages = data.pages.map((page) => ({
+          items: page.items.map((currentItem) => ({
+            ...currentItem,
+            subTasks: currentItem.subTasks.filter((subTask) => !(newItems as SubTask[]).some((deletedItem) => deletedItem.id === subTask.id)),
+          })),
+          total: page.total,
+        }));
+
+        return {
+          pages: updatedPages,
+          pageParams: data.pageParams,
+        };
+      }
+    });
+
+    if (invalidateKeyGetter) {
+      for (const item of newItems) {
+        queryClient.invalidateQueries({
+          queryKey: invalidateKeyGetter(item as Item),
+        });
+      }
+    }
   };
 };

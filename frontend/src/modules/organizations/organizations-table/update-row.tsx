@@ -4,6 +4,7 @@ import UpdateOrganizationForm from '../update-organization-form';
 
 import { Pencil } from 'lucide-react';
 // import { dialog } from '../../common/dialoger/state';
+
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
@@ -17,8 +18,8 @@ interface Props {
 const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
   const { t } = useTranslation();
 
-  const openUpdateDialog = () => {
-    sheet(
+  const openUpdateSheet = () => {
+    sheet.create(
       <Card>
         <CardHeader>
           <CardTitle>{t('common:general')}</CardTitle>
@@ -36,7 +37,7 @@ const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
   };
 
   return (
-    <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={openUpdateDialog}>
+    <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={openUpdateSheet}>
       <Pencil size={16} />
     </Button>
   );

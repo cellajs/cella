@@ -28,15 +28,15 @@ export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: s
 
   await handleResponse(response);
 };
-export type UpdateMenuOptionsProp = { membershipId: string; role?: Membership['role']; archive?: boolean; muted?: boolean; order?: number };
+export type UpdateMenuOptionsProp = { membershipId: string; role?: Membership['role']; archived?: boolean; muted?: boolean; order?: number };
 
 export const updateMembership = async (values: UpdateMenuOptionsProp) => {
-  const { membershipId, role, archive, muted, order } = values;
+  const { membershipId, role, archived, muted, order } = values;
   const response = await client[':id'].$put({
     param: {
       id: membershipId,
     },
-    json: { role, inactive: archive, muted, order },
+    json: { role, archived, muted, order },
   });
 
   const json = await handleResponse(response);

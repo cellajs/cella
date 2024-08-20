@@ -153,9 +153,31 @@ export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 
   };
 };
 
-export const recentlyUsed = (date: Date | null, days: number) => {
+export const recentlyUsed = (date: string | null, days: number) => {
   if (!date) return false;
+  const convertedDate = new Date(date);
   const daysAgo = dayjs().subtract(days, 'day');
   const today = dayjs();
-  return dayjs(date).isBetween(daysAgo, today, null, '[]');
+  return dayjs(convertedDate).isBetween(daysAgo, today, null, '[]');
+};
+
+// Helper function to decode base64 URL to Uint8Array
+export const base64UrlDecode = (base64urlStr: string) => {
+  let base64String = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64String.length % 4 !== 0) {
+    base64String += '=';
+  }
+  const binaryString = atob(base64String);
+  return Uint8Array.from(binaryString.split('').map((char) => char.charCodeAt(0))).buffer;
+};
+
+// Helper function to encode Uint8Array to base64 URL
+const base64UrlEncode = (uint8Array: Uint8Array): string => {
+  const binaryString = String.fromCharCode(...uint8Array);
+  return btoa(binaryString).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+export const arrayBufferToBase64Url = (buffer: ArrayBuffer) => {
+  const uint8Array = new Uint8Array(buffer);
+  return base64UrlEncode(uint8Array);
 };

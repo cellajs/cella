@@ -11,13 +11,13 @@ import { useWorkspaceUIStore } from '~/store/workspace-ui';
 interface BoardColumnHeaderProps {
   id: string;
   name: string;
-  color: string;
+  thumbnailUrl: string | null;
   createFormOpen: boolean;
   openSettings: () => void;
   createFormClick: () => void;
 }
 
-export function BoardColumnHeader({ id, name, color, createFormOpen, openSettings, createFormClick }: BoardColumnHeaderProps) {
+export function BoardColumnHeader({ id, name, thumbnailUrl, createFormOpen, openSettings, createFormClick }: BoardColumnHeaderProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { changeColumn } = useWorkspaceUIStore();
@@ -53,8 +53,7 @@ export function BoardColumnHeader({ id, name, color, createFormOpen, openSetting
 
   return (
     <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
-      {/* Omit style background if projects will be without a color preference. */}
-      <AvatarWrap className="h-8 w-8 text-xs" name={name} backgroundColor={color} />
+      <AvatarWrap className="h-8 w-8 text-xs" id={id} type="project" name={name} url={thumbnailUrl} />
       <div className="truncate leading-6">{name}</div>
       <div className="grow" />
       <TooltipButton toolTipContent={t('common:project_settings')} side="bottom" sideOffset={13} className="max-sm:hidden">

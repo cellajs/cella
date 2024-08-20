@@ -8,11 +8,13 @@ import { useMeasure } from '~/hooks/use-measure';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Project, TaskCardFocusEvent } from '~/types';
-import { useElectric } from '../../common/electric/electrify';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../ui/resizable';
+import type { WorkspaceStoreProject, TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/types';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { BoardColumn } from './board-column';
 import BoardHeader from './header/board-header';
+import { useEventListener } from '~/hooks/use-event-listener';
+import { dispatchCustomEvent } from '~/lib/custom-events';
+import { getTask } from '~/api/tasks';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -26,10 +28,12 @@ function getScrollerWidth(containerWidth: number, projectsLength: number) {
 function BoardDesktop({
   workspaceId,
   projects,
+  expandedTasks,
   columnTaskCreate,
   toggleCreateForm,
 }: {
-  projects: Project[];
+  expandedTasks: Record<string, boolean>;
+  projects: WorkspaceStoreProject[];
   workspaceId: string;
   columnTaskCreate: Record<string, boolean>;
   toggleCreateForm: (projectId: string) => void;
@@ -47,7 +51,13 @@ function BoardDesktop({
             return (
               <Fragment key={project.id}>
                 <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
-                  <BoardColumn createForm={isFormOpen} toggleCreateForm={toggleCreateForm} key={project.id} project={project} />
+                  <BoardColumn
+                    expandedTasks={expandedTasks}
+                    createForm={isFormOpen}
+                    toggleCreateForm={toggleCreateForm}
+                    key={project.id}
+                    project={project}
+                  />
                 </ResizablePanel>
                 {projects.length > index + 1 && (
                   <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
@@ -63,12 +73,12 @@ function BoardDesktop({
 
 export default function Board() {
   const { t } = useTranslation();
-  const { workspace, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
-
+  const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
-  const { project } = useSearch({
+  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
+  const { project, q } = useSearch({
     from: WorkspaceBoardRoute.id,
   });
 
@@ -77,9 +87,6 @@ export default function Board() {
     if (project) return projects.find((p) => p.slug === project) || projects[0];
     return projects[0];
   }, [project, projects]);
-
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  const electric = useElectric()!;
 
   const toggleCreateTaskForm = (itemId: string) => {
     setColumnTaskCreate((prevState) => ({
@@ -90,75 +97,57 @@ export default function Board() {
 
   const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
     if (!projects.length) return;
-
-    const focusedTask = await electric.db.tasks
-      .findFirst({
-        where: {
-          ...(focusedTaskId
-            ? { id: focusedTaskId }
-            : {
-                project_id: projects[0].id,
-              }),
-        },
-      })
-      .catch((e) => console.error(e));
+    const focusedTask = await getTask(focusedTaskId ? focusedTaskId : projects[0].id);
 
     if (!focusedTask) return;
 
     const direction = event.key === 'ArrowDown' ? 1 : -1;
-    const triggeredEvent = new CustomEvent('task-change', {
-      detail: {
-        taskId: focusedTask.id,
-        projectId: focusedTask.project_id,
-        direction,
-      },
+
+    dispatchCustomEvent('taskChange', {
+      taskId: focusedTask.id,
+      projectId: focusedTask.projectId,
+      direction,
     });
-    document.dispatchEvent(triggeredEvent);
   };
 
   const handleHorizontalArrowKeyDown = async (event: KeyboardEvent) => {
-    const focusedTask = await electric.db.tasks.findFirst({
-      where: {
-        ...(focusedTaskId
-          ? { id: focusedTaskId }
-          : {
-              project_id: projects[0].id,
-            }),
-      },
-    });
+    const focusedTask = await getTask(focusedTaskId ? focusedTaskId : projects[0].id);
 
     if (!focusedTask) return;
-
-    const currentProjectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
+    const currentProjectIndex = projects.findIndex((p) => p.id === focusedTask.projectId);
 
     const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;
     const nextProject = projects[nextProjectIndex];
 
     if (!nextProject) return;
-
-    const triggeredEvent = new CustomEvent('project-change', {
-      detail: {
-        projectId: nextProject.id,
-      },
-    });
-    document.dispatchEvent(triggeredEvent);
+    dispatchCustomEvent('projectChange', nextProject.id);
   };
 
   const handleNKeyDown = async () => {
     if (!projects.length) return;
 
-    const focusedTask = await electric.db.tasks.findFirst({
-      where: {
-        ...(focusedTaskId && { id: focusedTaskId }),
-      },
-    });
-
+    const focusedTask = await getTask(focusedTaskId ? focusedTaskId : projects[0].id);
     if (!focusedTask) return;
 
-    const projectIndex = projects.findIndex((p) => p.id === focusedTask.project_id);
+    const projectIndex = projects.findIndex((p) => p.id === focusedTask.projectId);
     if (projectIndex === -1) return;
 
     toggleCreateTaskForm(projects[projectIndex].id);
+  };
+
+  const setTaskExpanded = (taskId: string, isExpanded: boolean) => {
+    setExpandedTasks((prevState) => ({
+      ...prevState,
+      [taskId]: isExpanded,
+    }));
+  };
+
+  const handleEscKeyPress = () => {
+    if (focusedTaskId && expandedTasks[focusedTaskId]) setTaskExpanded(focusedTaskId, false);
+  };
+
+  const handleEnterKeyPress = () => {
+    if (focusedTaskId) setTaskExpanded(focusedTaskId, true);
   };
 
   useHotkeys([
@@ -167,20 +156,40 @@ export default function Board() {
     ['ArrowDown', handleVerticalArrowKeyDown],
     ['ArrowUp', handleVerticalArrowKeyDown],
     ['N', handleNKeyDown],
+    ['Escape', handleEscKeyPress],
+    ['Enter', handleEnterKeyPress],
   ]);
 
+  const handleTaskClick = (event: TaskCardFocusEvent) => {
+    const { taskId, clickTarget } = event.detail;
+
+    if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(taskId);
+    if (focusedTaskId === taskId) return setTaskExpanded(taskId, true);
+
+    const taskCard = document.getElementById(taskId);
+    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
+
+    setFocusedTaskId(taskId);
+    setTaskExpanded(taskId, true);
+  };
+
+  const handleToggleTaskSelect = (event: TaskCardToggleSelectEvent) => {
+    const { selected, taskId } = event.detail;
+    if (selected) return setSelectedTasks([...selectedTasks, taskId]);
+    return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
+  };
+
+  useEventListener('taskCardClick', handleTaskClick);
+  useEventListener('toggleSelectTask', handleToggleTaskSelect);
+  useEventListener('toggleCard', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
+
   useEffect(() => {
-    const handleFocus = (event: Event) => {
-      const { taskId } = (event as TaskCardFocusEvent).detail;
-      setFocusedTaskId(taskId);
-    };
-    document.addEventListener('task-card-focus', handleFocus);
-    return () => document.removeEventListener('task-card-focus', handleFocus);
+    if (q?.length) setSearchQuery(q);
   }, []);
 
   return (
     <>
-      <BoardHeader mode="board" />
+      <BoardHeader />
       {!projects.length ? (
         <ContentPlaceholder
           className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"
@@ -205,6 +214,7 @@ export default function Board() {
         <>
           {isDesktopLayout ? (
             <BoardDesktop
+              expandedTasks={expandedTasks}
               columnTaskCreate={columnTaskCreate}
               toggleCreateForm={toggleCreateTaskForm}
               projects={projects}
@@ -212,6 +222,7 @@ export default function Board() {
             />
           ) : (
             <BoardColumn
+              expandedTasks={expandedTasks}
               createForm={columnTaskCreate[mobileDeviceProject.id] || false}
               toggleCreateForm={toggleCreateTaskForm}
               project={mobileDeviceProject}

@@ -27,6 +27,7 @@
 .rdg-cell {
   display: flex;
   align-items: center;
+  min-height: var(--rdg-header-row-height);
 }
 
 .rdg-cell:not([role="columnheader"]) {

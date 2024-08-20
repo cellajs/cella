@@ -1,9 +1,9 @@
-import { render } from '@react-email/render';
+import { render } from 'jsx-email';
 import { eq } from 'drizzle-orm';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
-import { VerificationEmail } from '../../../../email/emails/email-verification';
-import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
+import { VerificationEmail } from '../../../emails/email-verification';
+import { ResetPasswordEmail } from '../../../emails/reset-password';
 
 import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
@@ -16,9 +16,10 @@ import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
 
 import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
 
+import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
 import type { z } from 'zod';
-import { emailSender } from '../../../../email';
+import { emailSender } from '../../lib/mailer';
 import { db } from '../../db/db';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
@@ -28,11 +29,12 @@ import { nanoid } from '../../lib/nanoid';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import generalRouteConfig from '../general/routes';
-import { transformDatabaseUser } from '../users/helpers/transform-database-user';
-import { removeSessionCookie, setSessionCookie } from './helpers/cookies';
+import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
+import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '../../lib/utils';
+import { passkeysTable } from '../../db/schema/passkeys';
 
 // Scopes for OAuth providers
 const githubScopes = { scopes: ['user:email'] };
@@ -119,7 +121,7 @@ const authRoutes = app
     const emailLanguage = user?.language || config.defaultLanguage;
 
     // generating email html
-    const emailHtml = render(
+    const emailHtml = await render(
       VerificationEmail({
         i18n: i18n.cloneInstance({
           lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
@@ -210,7 +212,7 @@ const authRoutes = app
     const emailLanguage = user?.language || config.defaultLanguage;
 
     // generating email html
-    const emailHtml = render(
+    const emailHtml = await render(
       ResetPasswordEmail({
         i18n: i18n.cloneInstance({
           lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
@@ -259,6 +261,16 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
+   * Have user a passkey
+   */
+  .openapi(authRoutesConfig.getUserHavePasskey, async (ctx) => {
+    const email = ctx.req.valid('param').email;
+
+    const userWithPassKey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, email));
+
+    return ctx.json({ success: !!userWithPassKey.length }, 200);
+  })
+  /*
    * Sign in with email and password
    */
   .openapi(authRoutesConfig.signIn, async (ctx) => {
@@ -295,8 +307,61 @@ const authRoutes = app
     } else {
       await setSessionCookie(ctx, user.id, 'password');
     }
+    return ctx.json({ success: true }, 200);
 
-    return ctx.json({ success: true, data: transformDatabaseUser(user) }, 200);
+    // return ctx.json(
+    //   { success: true, data: { ...transformDatabaseUser(user), oauth: oauthAccounts.map((el) => el.providerId), passkey: !!passkey } },
+    //   200,
+    // );
+  })
+  /*
+   * Impersonate sign in
+   */
+  .openapi(authRoutesConfig.impersonationSignIn, async (ctx) => {
+    const user = ctx.get('user');
+    const cookieHeader = ctx.req.raw.headers.get('Cookie');
+    const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+    if (!sessionId) {
+      removeSessionCookie(ctx);
+      return errorResponse(ctx, 401, 'unauthorized', 'warn');
+    }
+    const { targetUserId } = ctx.req.valid('query');
+    await setImpersonationSessionCookie(ctx, targetUserId, user.id);
+
+    return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Impersonate sign out
+   */
+  .openapi(authRoutesConfig.impersonationSignOut, async (ctx) => {
+    const cookieHeader = ctx.req.raw.headers.get('Cookie');
+    const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+
+    if (!sessionId) {
+      removeSessionCookie(ctx);
+      return errorResponse(ctx, 401, 'unauthorized', 'warn');
+    }
+
+    const { session } = await auth.validateSession(sessionId);
+    console.log('session:', session);
+
+    if (session) {
+      await auth.invalidateSession(session.id);
+      if (session.adminUserId) {
+        const sessions = await auth.getUserSessions(session.adminUserId);
+        const [lastSession] = sessions.sort((a, b) => b.expiresAt.getTime() - a.expiresAt.getTime());
+        const adminsLastSession = await auth.validateSession(lastSession.id);
+        if (!adminsLastSession.session) {
+          removeSessionCookie(ctx);
+          return errorResponse(ctx, 401, 'unauthorized', 'warn');
+        }
+        const sessionCookie = auth.createSessionCookie(adminsLastSession.session.id);
+        ctx.header('Set-Cookie', sessionCookie.serialize());
+      }
+    } else removeSessionCookie(ctx);
+    logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
+
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Sign out
@@ -312,9 +377,7 @@ const authRoutes = app
 
     const { session } = await auth.validateSession(sessionId);
 
-    if (session) {
-      await auth.invalidateSession(session.id);
-    }
+    if (session) await auth.invalidateSession(session.id);
 
     removeSessionCookie(ctx);
     logEvent('User signed out', { user: session?.userId || 'na' });
@@ -718,6 +781,80 @@ const authRoutes = app
 
       throw error;
     }
-  });
+  })
+  /*
+   * Passkey challenge
+   */
+  .openapi(authRoutesConfig.getPasskeyChallenge, async (ctx) => {
+    // Generate a random challenge
+    const challenge = getRandomValues(new Uint8Array(32));
+    const challengeBase64 = Buffer.from(challenge).toString('base64url');
+    setCookie(ctx, 'challenge', challengeBase64);
+    return ctx.json({ challengeBase64 }, 200);
+  })
+  /*
+   * Passkey registration
+   */
+  .openapi(authRoutesConfig.setPasskey, async (ctx) => {
+    const { attestationObject, clientDataJSON, email } = await ctx.req.json();
 
+    const challengeFromCookie = getCookie(ctx, 'challenge');
+
+    const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
+    // Save public key in the database
+    await db.insert(passkeysTable).values({
+      userEmail: email,
+      credentialId,
+      publicKey,
+    });
+    return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Verifies the passkey response
+   */
+  .openapi(authRoutesConfig.verifyPasskey, async (ctx) => {
+    const { clientDataJSON, authenticatorData, signature, email } = await ctx.req.json();
+
+    // Retrieve user and challenge record
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
+    // const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+
+    // Decode & parse clientDataJSON 4 verify challenge
+    const clientData = JSON.parse(Buffer.from(base64UrlDecode(clientDataJSON)).toString());
+    const challengeFromCookie = getCookie(ctx, 'challenge');
+    if (clientData.challenge !== challengeFromCookie) return errorResponse(ctx, 400, 'Invalid challenge', 'warn', undefined);
+
+    const [credential] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, email));
+    if (!credential) return errorResponse(ctx, 404, 'Credential not found', 'warn');
+    // Decode & parse authenticatorData 4 user verify
+    const authData = base64UrlDecode(authenticatorData);
+    const flags = authData[32];
+    const userPresent = (flags & 0x01) !== 0;
+    const userVerified = (flags & 0x04) !== 0;
+    if (!userPresent || !userVerified) return errorResponse(ctx, 400, 'User presence or verification failed', 'warn', undefined);
+
+    const isValid = verifyPassKeyPublic(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
+    if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
+
+    // const oauthAccounts = await db
+    //   .select({
+    //     providerId: oauthAccountsTable.providerId,
+    //   })
+    //   .from(oauthAccountsTable)
+    //   .where(eq(oauthAccountsTable.userId, user.id));
+
+    // Extract the counter
+    // Optionally do we need update the counter in the database
+    // const counter = authData.slice(33, 37).readUInt32BE(0);
+
+    await setSessionCookie(ctx, user.id, 'passkey');
+    return ctx.json({ success: true }, 200);
+    // return ctx.json(
+    //   {
+    //     success: true,
+    //     data: { ...transformDatabaseUserWithCount(user, memberships.length), oauth: oauthAccounts.map((el) => el.providerId), passkey: true },
+    //   },
+    //   200,
+    // );
+  });
 export default authRoutes;

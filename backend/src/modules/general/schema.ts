@@ -70,3 +70,12 @@ export const membersQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
   role: z.enum(config.rolesByType.entityRoles).default('member').optional(),
 });
+
+export const minEntityInfoSchema = z.object({
+  id: idSchema,
+  slug: slugSchema,
+  name: nameSchema,
+  thumbnailUrl: imageUrlSchema.nullable().optional(),
+  bannerUrl: imageUrlSchema.nullable().optional(),
+  entity: z.enum(config.contextEntityTypes),
+});

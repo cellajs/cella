@@ -1,126 +1,83 @@
-let sheetsCounter = 1;
-
 export type SheetT = {
-  id: number | string;
+  id: string;
   title?: string | React.ReactNode;
   text?: React.ReactNode;
   className?: string;
   content?: React.ReactNode;
 };
 
-export type SheetToRemove = {
-  id: number | string;
-  remove: true;
+export type SheetAction = {
+  id: string;
+  remove?: boolean;
 };
 
-export type SheetToReset = {
-  id: number | string;
-  reset: true;
-};
+class SheetsStateObserver {
+  // Array to store the current sheets
+  private sheets: SheetT[] = [];
+  // Array to store subscribers that will be notified of changes
+  private subscribers: Array<(action: SheetAction & SheetT) => void> = [];
 
-export type ExternalSheet = Omit<SheetT, 'id' | 'content'> & {
-  id?: number | string;
-};
-
-export const isSheet = (dialog: SheetT | SheetToRemove): dialog is SheetT => {
-  return !(dialog as SheetToRemove).remove;
-};
-
-class Observer {
-  subscribers: Array<(sheet: SheetT | SheetToRemove | SheetToReset) => void>;
-  sheets: (SheetT | SheetToRemove | SheetToReset)[];
-
-  constructor() {
-    this.subscribers = [];
-    this.sheets = [];
-  }
-
-  subscribe = (subscriber: (sheet: SheetT | SheetToRemove | SheetToReset) => void) => {
-    this.subscribers.push(subscriber);
-
+  // Method to subscribe to changes
+  subscribe = (callback: (action: SheetAction & SheetT) => void) => {
+    this.subscribers.push(callback);
     return () => {
-      const index = this.subscribers.indexOf(subscriber);
-      this.subscribers.splice(index, 1);
+      this.subscribers = this.subscribers.filter((sub) => sub !== callback);
     };
   };
 
-  publish = (data: SheetT) => {
-    for (const subscriber of this.subscribers) {
-      subscriber(data);
-    }
+  // Notify all subscribers of a change
+  private notifySubscribers = (action: SheetAction & SheetT) => {
+    for (const sub of this.subscribers) sub(action);
   };
 
-  get = (id: number | string) => {
-    return this.sheets.find((sheet) => sheet.id === id);
+  // Retrieve a sheet by its ID
+  get = (id: string) => this.sheets.find((sheet) => sheet.id === id);
+
+  // Retrieve a all sheets
+  getAll = () => this.sheets;
+
+  // Add or update a sheet and notify subscribers
+  set = (sheet: SheetT) => {
+    this.sheets = [...this.sheets.filter((s) => s.id !== sheet.id), sheet];
+    this.notifySubscribers(sheet);
   };
 
-  set = (data: SheetT) => {
-    this.publish(data);
-    this.sheets = [...this.sheets, data];
-  };
-
-  remove = (id?: number | string) => {
+  // Remove a sheet by its ID or clear all sheets and notify subscribers
+  remove = (id?: string) => {
     if (id) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id, remove: true });
-      }
-
-      return;
-    }
-
-    for (const sheet of this.sheets) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id: sheet.id, remove: true });
-      }
+      // Remove a specific sheet by ID
+      this.sheets = this.sheets.filter((sheet) => sheet.id !== id);
+      this.notifySubscribers({ id, remove: true });
+    } else {
+      // Remove all sheets
+      for (const sheet of this.sheets) this.notifySubscribers({ id: sheet.id, remove: true });
+      this.sheets = [];
     }
   };
 
-  //Update sheet
-  update = (id: number | string, data: Partial<SheetT>) => {
-    if (!id) return;
-
-    for (const subscriber of this.subscribers) {
-      subscriber({ id, ...data });
-    }
-
-    return;
+  // Update an existing sheet or create a new one with the provided updates
+  update = (id: string, updates: Partial<SheetT>, leavePrevData = true) => {
+    const existingSheet = leavePrevData ? this.get(id) : undefined;
+    this.set({
+      id,
+      ...(existingSheet ? { ...existingSheet, ...updates } : updates),
+    });
   };
 
-  // Reset sheet
-  reset = (id?: number | string) => {
-    if (id) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id, reset: true });
-      }
-      return;
-    }
-    // Reset all sheets
-    for (const dialog of this.sheets) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id: dialog.id, reset: true });
-      }
-    }
+  // Create a new sheet with the given content and optional additional data
+  create = (content: React.ReactNode, data?: Omit<SheetT, 'content'>) => {
+    const id = data?.id || Date.now().toString(); // Use existing ID or generate a new one
+    this.set({ id, content, ...data });
+    return id;
   };
 }
 
-export const SheetState = new Observer();
+export const SheetObserver = new SheetsStateObserver();
 
-const sheetFunction = (content: React.ReactNode, data?: ExternalSheet) => {
-  const id = data?.id || sheetsCounter++;
-
-  SheetState.set({
-    content,
-    ...data,
-    id,
-  });
-  return id;
-};
-
-export const basicSheet = sheetFunction;
-
-export const sheet = Object.assign(basicSheet, {
-  remove: SheetState.remove,
-  update: SheetState.update,
-  reset: SheetState.reset,
-  get: SheetState.get,
+export const sheet = Object.assign({
+  create: SheetObserver.create,
+  remove: SheetObserver.remove,
+  update: SheetObserver.update,
+  get: SheetObserver.get,
+  getAll: SheetObserver.getAll,
 });

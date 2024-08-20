@@ -23,7 +23,7 @@ const projectsRoutes = app
    * Create project
    */
   .openapi(projectRoutesConfig.createProject, async (ctx) => {
-    const { name, slug, color, organizationId } = ctx.req.valid('json');
+    const { name, slug, organizationId } = ctx.req.valid('json');
     const workspaceId = ctx.req.query('workspaceId');
 
     const user = ctx.get('user');
@@ -41,7 +41,6 @@ const projectsRoutes = app
         organizationId,
         name,
         slug,
-        color,
         createdBy: user.id,
       })
       .returning();
@@ -97,12 +96,12 @@ const projectsRoutes = app
    * Get list of projects
    */
   .openapi(projectRoutesConfig.getProjects, async (ctx) => {
-    // TODO: also be able to filter on organizationId
-    const { q, sort, order, offset, limit, workspaceId, requestedUserId } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, workspaceId, organizationId } = ctx.req.valid('query');
     const user = ctx.get('user');
 
-    const filter: SQL | undefined = q ? ilike(projectsTable.name, `%${q}%`) : undefined;
-    const projectsFilters = [filter];
+    const projectsFilters: SQL[] = [];
+    if (q) projectsFilters.push(ilike(projectsTable.name, `%${q}%`));
+    if (organizationId) projectsFilters.push(eq(projectsTable.organizationId, organizationId));
 
     const projectsQuery = db
       .select()
@@ -111,13 +110,7 @@ const projectsRoutes = app
 
     const countsQuery = await counts('project');
 
-    // @TODO: Permission check which projects a user is allowed to see? (this will skip when requestedUserId is used in query!)
-    // It should check organization permissions, project permissions and system admin permission
-    const memberships = db
-      .select()
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, requestedUserId ? requestedUserId : user.id))
-      .as('memberships');
+    const memberships = db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)).as('memberships');
 
     const orderColumn = getOrderColumn(
       {
@@ -197,14 +190,11 @@ const projectsRoutes = app
     const user = ctx.get('user');
     const project = ctx.get('project');
 
-    const { name, slug, color, workspaceId } = ctx.req.valid('json');
+    const { name, thumbnailUrl, slug, workspaceId } = ctx.req.valid('json');
 
     if (slug && slug !== project.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-
-      if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'project', { slug });
-      }
+      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'project', { slug });
     }
 
     const [updatedProject] = await db
@@ -212,7 +202,7 @@ const projectsRoutes = app
       .set({
         name,
         slug,
-        color,
+        thumbnailUrl,
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })

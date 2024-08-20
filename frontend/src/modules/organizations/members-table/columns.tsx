@@ -9,10 +9,16 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
-export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean, isSheet: boolean) => {
-  const mobileColumns: ColumnOrColumnGroup<Member>[] = [
+export const useColumns = (
+  t: TFunction<'translation', undefined>,
+  openUserPreview: (user: Member) => void,
+  isMobile: boolean,
+  isAdmin: boolean,
+  isSheet: boolean,
+) => {
+  const columns: ColumnOrColumnGroup<Member>[] = [
+    ...(isAdmin ? [CheckboxColumn] : []),
     {
       key: 'name',
       name: t('common:name'),
@@ -28,7 +34,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;
             e.preventDefault();
-            openUserPreviewSheet(row);
+            openUserPreview(row);
           }}
         >
           <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
@@ -36,13 +42,11 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
         </Link>
       ),
     },
-  ];
-  const columns: ColumnOrColumnGroup<Member>[] = [
     {
       key: 'email',
       name: t('common:email'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       minWidth: 140,
       renderCell: ({ row, tabIndex }) => {
@@ -57,7 +61,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       key: 'role',
       name: t('common:role'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => t(row.membership.role),
       width: 100,
@@ -74,7 +78,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       key: 'createdAt',
       name: t('common:created_at'),
       sortable: true,
-      visible: !isSheet,
+      visible: !isSheet && !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.createdAt),
       minWidth: 180,
@@ -83,14 +87,12 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       key: 'lastSeenAt',
       name: t('common:last_seen_at'),
       sortable: true,
-      visible: true,
+      visible: !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => dateShort(row.lastSeenAt),
       minWidth: 180,
     },
   ];
 
-  if (isAdmin) mobileColumns.unshift(CheckboxColumn);
-
-  return isMobile ? mobileColumns : [...mobileColumns, ...columns];
+  return columns;
 };

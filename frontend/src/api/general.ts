@@ -137,3 +137,21 @@ export const getMembers = async (
   const json = await handleResponse(response);
   return json.data;
 };
+
+// Get metrics
+export const getMetrics = async () => {
+  const response = await apiClient.metrics.$get();
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+// Check minimum entity info
+export const getMinimumEntityInfo = async (idOrSlug: string, entityType: ContextEntity) => {
+  const response = await apiClient['entity-info'][':idOrSlug'].$get({
+    param: { idOrSlug },
+    query: { entityType },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};

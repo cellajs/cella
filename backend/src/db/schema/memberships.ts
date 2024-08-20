@@ -25,7 +25,7 @@ export const membershipsTable = pgTable('memberships', {
   modifiedBy: varchar('modified_by').references(() => usersTable.id, {
     onDelete: 'set null',
   }),
-  inactive: boolean('inactive').default(false).notNull(),
+  archived: boolean('archived').default(false).notNull(),
   muted: boolean('muted').default(false).notNull(),
   order: doublePrecision('sort_order').notNull(),
 });

@@ -6,7 +6,6 @@ import { Dialoger } from '~/modules/common/dialoger';
 import { DropDowner } from '~/modules/common/dropdowner';
 import { Sheeter } from '~/modules/common/sheeter';
 import SSE from '~/modules/common/sse';
-import ElectricProvider from './electric';
 import ErrorNotice from './error-notice';
 import { SSEProvider } from './sse/provider';
 
@@ -16,16 +15,14 @@ const App = () => {
       <ErrorBoundary
         fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} isRootLevel resetErrorBoundary={resetErrorBoundary} />}
       >
-        <ElectricProvider>
-          <SSEProvider>
-            <AppNav />
-            <SSE />
-            <AppContent />
-            <Dialoger />
-            <Sheeter />
-            <DropDowner />
-          </SSEProvider>
-        </ElectricProvider>
+        <SSEProvider>
+          <AppNav />
+          <SSE />
+          <AppContent />
+          <Dialoger />
+          <Sheeter />
+          <DropDowner />
+        </SSEProvider>
       </ErrorBoundary>
     </div>
   );

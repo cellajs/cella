@@ -42,7 +42,17 @@ export const signIn = async ({ email, password, token }: { email: string; passwo
   });
 
   const json = await handleResponse(response);
-  return json.data;
+  return json.success;
+};
+
+// Impersonation sign in by user admin
+export const impersonateSignIn = async (targetUserId: string) => {
+  const response = await apiClient.auth['impersonation-sign-in'].$get({
+    query: { targetUserId },
+  });
+
+  const json = await handleResponse(response);
+  return json.success;
 };
 
 // Send a verification email
@@ -73,4 +83,50 @@ export const resetPassword = async ({ token, password }: { token: string; passwo
   await handleResponse(response);
 };
 
+// Impersonation sign out, returning to user admin page
+export const impersonateSignOut = () => apiClient.auth['impersonation-sign-out'].$get();
+
 export const signOut = () => apiClient.auth['sign-out'].$get();
+
+export const getChallenge = async () => {
+  const response = await apiClient.auth['passkey-challenge'].$get();
+  const json = await handleResponse(response);
+  return json;
+};
+
+export const setPasskey = async ({
+  clientDataJSON,
+  attestationObject,
+  email,
+}: {
+  attestationObject: string;
+  clientDataJSON: string;
+  email: string;
+}) => {
+  const apiResponse = await apiClient.auth['passkey-registration'].$post({
+    json: { attestationObject, clientDataJSON, email },
+  });
+  const json = await handleResponse(apiResponse);
+  return json.success;
+};
+
+export const authThroughPasskey = async ({
+  credentialId,
+  clientDataJSON,
+  authenticatorData,
+  signature,
+  email,
+}: { credentialId: string; clientDataJSON: string; authenticatorData: string; signature: string; email: string }) => {
+  const response = await apiClient.auth['verify-passkey'].$post({ json: { credentialId, clientDataJSON, authenticatorData, signature, email } });
+
+  const json = await handleResponse(response);
+  return json.success;
+};
+
+// Check if user have passkey
+export const checkUserPasskey = async (email: string) => {
+  const response = await apiClient.auth.passkey[':email'].$get({ param: { email } });
+
+  const json = await handleResponse(response);
+  return json.success;
+};
