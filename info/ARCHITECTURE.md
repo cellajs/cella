@@ -38,18 +38,17 @@ This document describes the high-level architecture of Cella.
 ```
 .
 ├── backend
+|   ├── emails                Email templates with jsx-email
 │   ├── drizzle               DB migrations
 │   ├── seed                  Seed scripts
 │   ├── src                   
 │   │   ├── cron              
-│   │   ├── db                
+│   │   ├── db                Connect, db schemas
 │   │   ├── lib               Library code and helper functions
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
 │   │   └── types             
 ├── config                    Shared config: default, development, production etc
-├── email                     JSX-email
-├── env                       .env file for secure development
 ├── frontend                  Frontend SPA
 │   ├── public                
 │   ├── src                   

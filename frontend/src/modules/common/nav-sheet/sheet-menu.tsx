@@ -107,37 +107,37 @@ export const SheetMenu = memo(() => {
         </div>
       )}
 
-      {!searchTerm && <div className="mt-2">{renderedSections}</div>}
-
-      <div className="grow" />
-
       {!searchTerm && (
-        <div className="flex flex-col">
-          <div className="max-xl:hidden my-4 flex items-center justify-center space-x-2">
-            <Checkbox
-              id="keepMenuOpen"
-              checked={keepMenuOpen}
-              onCheckedChange={toggleKeepMenu}
-              aria-label={t('common:keep_menu_open')}
-              className="w-4 h-4"
-            />
-            <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
-              {t('common:keep_menu_open')}
-            </label>
+        <>
+          <div className="mt-2">{renderedSections}</div>
+          <div className="grow mt-4 border-b border-dashed" />
+          <div className="flex flex-col my-6 mx-2 gap-6">
+            <div className="max-xl:hidden flex items-center gap-2">
+              <Checkbox
+                id="keepMenuOpen"
+                checked={keepMenuOpen}
+                onCheckedChange={toggleKeepMenu}
+                aria-label={t('common:keep_menu_open')}
+                className="w-4 h-4"
+              />
+              <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
+                {t('common:keep_menu_open')}
+              </label>
+            </div>
+            <div className="max-sm:hidden flex items-center gap-2">
+              <Checkbox
+                id="hideSubmenu"
+                checked={hideSubmenu}
+                onCheckedChange={toggleHideSubmenu}
+                aria-label={t('common:hide_projects')}
+                className="w-4 h-4"
+              />
+              <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
+                {t('common:hide_projects')}
+              </label>
+            </div>
           </div>
-          <div className="max-sm:hidden my-4 flex items-center justify-center space-x-2">
-            <Checkbox
-              id="hideSubmenu"
-              checked={hideSubmenu}
-              onCheckedChange={toggleHideSubmenu}
-              aria-label={t('common:hide_projects')}
-              className="w-4 h-4"
-            />
-            <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
-              {t('common:hide_projects')}
-            </label>
-          </div>
-        </div>
+        </>
       )}
     </>
   );

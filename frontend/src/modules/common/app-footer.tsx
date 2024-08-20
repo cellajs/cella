@@ -19,7 +19,7 @@ export const FooterLink = ({ id, href }: FooterLinkProps) => {
   return (
     <li>
       <Link to={href}>
-        <Button variant="ghost">{t(`common:${id}`)}</Button>
+        <Button variant="ghost" className="font-light" size="xs">{t(`common:${id}`)}</Button>
       </Link>
     </li>
   );
@@ -49,21 +49,14 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
       text: t('common:contact_us.text'),
     });
   };
-  // Not on every page we have footer e.g. workspace
-  // useEffect(() => {
-  //   document.addEventListener('openContactForm', handleOpenContactForm);
-  //   return () => {
-  //     document.removeEventListener('openContactForm', handleOpenContactForm);
-  //   };
-  // }, []);
 
   return (
-    <ul className={cn('text-foreground/60 flex flex-wrap justify-center gap-2 text-center text-sm', className)}>
+    <ul className={cn('flex flex-wrap gap-4 text-center', className)}>
       {links.map((link) => (
         <FooterLink key={link.id} id={link.id} href={link.href} />
       ))}
       <li>
-        <Button variant="ghost" aria-label="Open contact form" onClick={handleOpenContactForm}>
+        <Button variant="ghost" className="font-light" size="xs" aria-label="Open contact form" onClick={handleOpenContactForm}>
           {t('common:contact')}
         </Button>
       </li>
@@ -74,7 +67,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
 // App Footer component
 export const AppFooter = ({ className = '' }) => {
   return (
-    <footer className={cn('flex flex-col items-center gap-2', className)}>
+    <footer className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center gap-4">
         <UserLanguage align="start" />
         <div className="mr-1 font-light text-muted">|</div>

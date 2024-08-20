@@ -45,7 +45,7 @@ export const SheetAccount = () => {
   }, []);
 
   return (
-    <div ref={buttonWrapper} className="flex flex-col gap-4 min-h-[calc(100vh-3rem)]">
+    <div ref={buttonWrapper} className="flex flex-col gap-4 min-h-[calc(100vh-2rem)]">
       <SheetTitle>{t('common:account')}</SheetTitle>
 
       <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
@@ -65,14 +65,14 @@ export const SheetAccount = () => {
 
       <div className="flex flex-col gap-1 max-sm:mt-4">
         <AccountButton lucide={CircleUserRound} id="btn-profile" label={t('common:view_profile')} action={`/user/${user.slug}`} />
-        <AccountButton lucide={UserCog} id="btn-account" label={t('common:account')} action="/user/settings" />
+        <AccountButton lucide={UserCog} id="btn-account" label={t('common:settings')} action="/user/settings" />
         {isSystemAdmin && <AccountButton lucide={Wrench} id="btn-system" label={t('common:system_panel')} action="/system/users" />}
         <AccountButton lucide={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
       </div>
 
-      <div className="grow" />
+      <div className="grow border-b border-dashed" />
 
-      <AppFooter className="scale-90" />
+      <AppFooter className="ml-2" />
     </div>
   );
 };

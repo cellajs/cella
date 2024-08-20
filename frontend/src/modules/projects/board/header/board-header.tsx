@@ -59,23 +59,23 @@ const BoardHeader = () => {
     <StickyBox className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
       {!selectedTasks.length && (
         <div className="flex gap-2">
+          <TooltipButton toolTipContent={t('common:page_view')}>
+            <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
+              {showPageHeader ? (
+                <PanelTopClose size={16} />
+              ) : (
+                <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
+              )}
+            </Button>
+          </TooltipButton>
           {!searchQuery.length && (
-            <TooltipButton toolTipContent={t('common:page_view')}>
-              <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
-                {showPageHeader ? (
-                  <PanelTopClose size={16} />
-                ) : (
-                  <AvatarWrap className="cursor-pointer" type="workspace" id={workspace.id} name={workspace.name} url={workspace.thumbnailUrl} />
-                )}
+            <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
+              <Button variant="plain" onClick={handleAddProjects}>
+                <Plus size={16} />
+                <span className="max-lg:hidden ml-1">{t('common:add')}</span>
               </Button>
             </TooltipButton>
           )}
-          <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
-            <Button variant="plain" onClick={handleAddProjects}>
-              <Plus size={16} />
-              <span className="max-lg:hidden ml-1">{t('common:add')}</span>
-            </Button>
-          </TooltipButton>
         </div>
       )}
       {!!selectedTasks.length && <TaskSelectedTableButtons />}
