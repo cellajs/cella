@@ -17,6 +17,8 @@ const integrations: Integrations[] = [
   { name: 'Sentry', country: 'US', url: 'sentry.io', logo: 'sentry.svg' },
   { name: 'Better Stack', invert: true, country: 'CZ', url: 'betterstack.com', logo: 'betterstack.svg' },
   { name: 'Paddle', country: 'GB', url: 'paddle.com', logo: 'paddle.svg' },
+  { name: 'BlockNote', country: 'NL', url: 'blocknotejs.org', logo: 'blocknote.svg' },
+  { name: 'Novu', country: 'IL', url: 'novu.co', logo: 'novu.svg' },
   { name: 'Gleap', country: 'AT', url: 'gleap.io', logo: 'gleap.svg' },
   { name: 'Imado', country: 'NL', url: 'imado.eu', logo: 'imado.svg' },
 ];

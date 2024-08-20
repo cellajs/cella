@@ -11,7 +11,6 @@ export default {
   frontendUrl: 'http://localhost:3000',
   backendUrl: 'http://localhost:4000',
   backendAuthUrl: 'http://localhost:4000/auth',
-  electricUrl: 'http://localhost:5133',
   tusUrl: 'http://localhost:1080',
 
   // Hide chat widget in development

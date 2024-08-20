@@ -1,7 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.7.2/schema.json",
   "files": {
-    "ignore": ["node_modules", "dist", "generated", "wa-sqlite-async.mjs", "drizzle", "drizzle-electric"]
+    "ignore": ["node_modules", "dist", "generated", "drizzle"]
   },
   "organizeImports": {
     "enabled": true

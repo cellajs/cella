@@ -5,7 +5,6 @@ import 'dotenv/config';
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
-    ELECTRIC_SYNC_URL: z.string().url(),
     NODE_ENV: z.union([z.literal('development'), z.literal('production')]),
     PORT: z.string().optional(),
 
@@ -34,7 +33,6 @@ export const env = createEnv({
     AWS_CLOUDFRONT_KEY_ID: z.string().default(''),
     AWS_CLOUDFRONT_PRIVATE_KEY: z.string().default(''),
     TUS_UPLOAD_API_SECRET: z.string().default('very_secret'),
-    ELECTRIC_PRIVATE_KEY_ES256: z.string().default(''),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

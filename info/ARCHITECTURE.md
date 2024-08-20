@@ -19,7 +19,6 @@ This document describes the high-level architecture of Cella.
 - [React](https://reactjs.org)
 - [Tanstack Router](https://github.com/tanstack/router)
 - [Tanstack Query](https://github.com/tanstack/query)
-- [Electric SQL](https://github.com/electric-sql/electric)
 - [Zustand](https://github.com/pmndrs/zustand)
 
 ### Frontend / UI

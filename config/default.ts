@@ -8,7 +8,6 @@ export const config = {
   backendUrl: 'https://api.cellajs.com',
   backendAuthUrl: 'https://api.cellajs.com/auth',
   tusUrl: 'https://tus.cellajs.com',
-  electricUrl: 'https://electric-sync.cellajs.com',
 
   defaultRedirectPath: '/home',
   firstSignInRedirectPath: '/welcome',

@@ -8,10 +8,6 @@
   "scripts": {
     "start": "pnpm run preview",
     "check:types": "tsc",
-    "electric:generate": "electric-sql generate --service https://electric-sync.cellajs.com --proxy postgresql://postgres:proxy_password@0.0.0.0:65432/postgres",
-    "electric:proxy": "electric-sql proxy-tunnel --service https://electric-sync.cellajs.com --local-port 65432",
-    "electric:prepare": "pnpm electric:proxy & (pnpm electric:generate && tsx prepare-files.ts)",
-    "electric:prepare:dev": "electric-sql generate && tsx prepare-files.ts",
     "dev": "NODE_ENV=development vite --mode development && node --trace-warnings",
     "build": "tsc && vite build",
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",

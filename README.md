@@ -71,8 +71,6 @@ Start all servers:
 pnpm dev
 ```
 
-Page-related resources are handled by fetching from an [API](https://api.cellajs.com/docs). Content-related resources use a *local-first* strategy with [ElectricSQL](https://github.com/electric-sql/electric). Generate backend migrations for both and client-side schemas for *electrified schemas*.
-
 ```bash
 pnpm generate
 ```
@@ -96,4 +94,4 @@ Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can 
 <br />
 <br />
 
-💙💛 Big thank you too [drizzle-orm](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router), [electric-sql](https://github.com/electric-sql/electric) & [shadcn](https://github.com/shadcn-ui/ui).
+💙💛 Big thank you too [drizzle-orm](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router) & [shadcn](https://github.com/shadcn-ui/ui).
