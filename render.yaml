@@ -11,7 +11,7 @@ services:
     region: frankfurt
     rootDir: backend
     buildCommand: pnpm install && pnpm build
-    preDeployCommand: pnpm predeploy
+    # preDeployCommand: pnpm predeploy
     startCommand: pnpm start
     numInstances: 1
     healthCheckPath: /ping
@@ -54,7 +54,6 @@ services:
     runtime: static
     rootDir: frontend
     - buildCommand: pnpm install && pnpm build
-    
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true
     headers:
@@ -105,4 +104,4 @@ databases:
     region: frankfurt
     plan: starter
     previewPlan: starter
-    postgresMajorVersion: 15
+    postgresMajorVersion: 16
