@@ -1,4 +1,4 @@
-import { Img, Section } from '@react-email/components';
+import { Img, Section } from 'jsx-email';
 
 import { config } from 'config';
 

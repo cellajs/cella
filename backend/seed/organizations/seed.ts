@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
 import { Argon2id } from 'oslo/password';
 
-import { Command } from 'commander';
+import { Command } from '@commander-js/extra-typings';
 import { config } from 'config';
 import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';

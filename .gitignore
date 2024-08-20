@@ -30,7 +30,6 @@ dist-ssr
 
 # Other
 .netlify
-.react-email
 .wrangler
 backend/files
 frontend/stats.html

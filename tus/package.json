@@ -6,8 +6,8 @@
   "scripts": {
     "build": "NODE_ENV=production tsup",
     "build:dev": "NODE_ENV=development tsup",
-    "start": "NODE_ENV=production tsx dist/index.cjs",
-    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.cjs\""
+    "start": "NODE_ENV=production tsx dist/index.js",
+    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.js\""
   },
   "keywords": ["tus", "imado"],
   "author": "CellaJS <info@cellajs.com>",

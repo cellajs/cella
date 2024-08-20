@@ -1,4 +1,4 @@
-import { Button, Section } from '@react-email/components';
+import { Button, Section } from 'jsx-email';
 
 export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: string }) => (
   <Section className="my-[2rem] text-center">

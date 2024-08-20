@@ -1,8 +1,8 @@
 import { type SQL, and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
-import { emailSender } from '../../../../email';
-import { InviteSystemEmail } from '../../../../email/emails/system-invite';
+import { emailSender } from '../../lib/mailer';
+import { InviteSystemEmail } from '../../../emails/system-invite';
 
-import { render } from '@react-email/render';
+import { render } from 'jsx-email';
 import { config } from 'config';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
@@ -174,7 +174,7 @@ const generalRoutes = app
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 
-      const emailHtml = render(
+      const emailHtml = await render(
         InviteSystemEmail({
           user,
           targetUser,

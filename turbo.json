@@ -19,7 +19,6 @@
       "persistent": true
     },
     "check:types": {},
-    "email:dev": {},
     "push": {
       "persistent": true
     },

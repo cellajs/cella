@@ -1,4 +1,4 @@
-import { Heading } from '@react-email/components';
+import { Heading } from 'jsx-email';
 import { Logo } from './logo';
 
 export const EmailHeader = ({ headerText }: { headerText: string }) => (

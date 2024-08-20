@@ -58,7 +58,7 @@ First step is to clone
 git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
-Use `.env.example` to create `.env` files in `/backend`, `/email` and `/tus`. Install and run docker.
+Use `.env.example` to create `.env` files in `/backend` and (optionally) `/tus`. Install and run docker.
 
 ```bash
 pnpm install

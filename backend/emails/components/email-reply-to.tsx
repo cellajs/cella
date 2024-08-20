@@ -1,4 +1,4 @@
-import { Text } from '@react-email/components';
+import { Text } from 'jsx-email';
 import { config } from 'config';
 import { i18n } from '../../../backend/src/lib/i18n';
 

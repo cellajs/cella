@@ -12,8 +12,13 @@ export const env = createEnv({
     NOVU_API_KEY: z.string().optional(),
     NOVU_SUB_ID: z.string().optional(),
     NOVU_SLACK_WEBHOOK: z.string().optional(),
+
+    SEND_ALL_TO_EMAIL: z.string().optional(),
+    SENDGRID_API_KEY: z.string().optional(),
+
     PADDLE_API_KEY: z.string().optional(),
     PADDLE_WEBHOOK_KEY: z.string().optional(),
+
     LOGTAIL_TOKEN: z.string().optional(),
 
     GITHUB_CLIENT_ID: z.string().optional(),

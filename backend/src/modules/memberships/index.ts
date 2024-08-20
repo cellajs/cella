@@ -2,12 +2,12 @@ import { and, eq, inArray, or } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 
-import { render } from '@react-email/render';
+import { render } from 'jsx-email';
 import { config } from 'config';
-import { emailSender } from 'email';
+import { emailSender } from '../../lib/mailer';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
-import { InviteMemberEmail } from '../../../../email/emails/member-invite';
+import { InviteMemberEmail } from '../../../emails/member-invite';
 
 import type { OrganizationModel } from '../../db/schema/organizations';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
@@ -179,7 +179,7 @@ const membershipsRoutes = app
         });
 
         // Render email template
-        const emailHtml = render(InviteMemberEmail({ organization, targetUser, user, token }));
+        const emailHtml = await render(InviteMemberEmail({ organization, targetUser, user, token }));
 
         // Log event for user invitation
         logEvent('User invited to organization', { organization: organization.id });

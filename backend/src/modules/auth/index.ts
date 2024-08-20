@@ -1,9 +1,9 @@
-import { render } from '@react-email/render';
+import { render } from 'jsx-email';
 import { eq } from 'drizzle-orm';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
-import { VerificationEmail } from '../../../../email/emails/email-verification';
-import { ResetPasswordEmail } from '../../../../email/emails/reset-password';
+import { VerificationEmail } from '../../../emails/email-verification';
+import { ResetPasswordEmail } from '../../../emails/reset-password';
 
 import { Argon2id } from 'oslo/password';
 import { auth } from '../../db/lucia';
@@ -19,7 +19,7 @@ import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handl
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
 import type { z } from 'zod';
-import { emailSender } from '../../../../email';
+import { emailSender } from '../../lib/mailer';
 import { db } from '../../db/db';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
@@ -121,7 +121,7 @@ const authRoutes = app
     const emailLanguage = user?.language || config.defaultLanguage;
 
     // generating email html
-    const emailHtml = render(
+    const emailHtml = await render(
       VerificationEmail({
         i18n: i18n.cloneInstance({
           lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
@@ -212,7 +212,7 @@ const authRoutes = app
     const emailLanguage = user?.language || config.defaultLanguage;
 
     // generating email html
-    const emailHtml = render(
+    const emailHtml = await render(
       ResetPasswordEmail({
         i18n: i18n.cloneInstance({
           lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,

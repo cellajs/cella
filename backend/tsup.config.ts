@@ -5,6 +5,14 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: true,
-  format: ['cjs'],
+  dts: false,
+  format: ['esm'],
+  target: 'es2020',
   minify: false,
+  esbuildOptions(options) {
+    options.platform = 'node'; // Ensure the platform is set to Node.js
+    options.mainFields = ['module', 'main']; // Prioritize ESM entry points
+    options.conditions = ['module']; // Enforce use of ESM
+  },
+  external: [], 
 });

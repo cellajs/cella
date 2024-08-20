@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { Command } from 'commander';
+import { Command } from '@commander-js/extra-typings';
 import { eq } from 'drizzle-orm';
 import JSZip from 'jszip';
 import papaparse from 'papaparse';

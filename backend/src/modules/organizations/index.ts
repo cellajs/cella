@@ -14,9 +14,9 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import organizationRoutesConfig from './routes';
-import organizationsNewsletter from '../../../../email/emails/organization-newsletter';
-import { emailSender } from 'email';
-import { render } from '@react-email/render';
+import organizationsNewsletter from '../../../emails/organization-newsletter';
+import { emailSender } from '../../lib/mailer';
+import { render } from 'jsx-email';
 import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
@@ -307,7 +307,7 @@ const organizationsRoutes = app
       return errorResponse(ctx, 400, 'Only receiver is sender', 'warn', 'organization');
 
     // generating email html
-    const emailHtml = render(organizationsNewsletter({ subject, content }));
+    const emailHtml = await render(organizationsNewsletter({ subject, content }));
 
     for (const user of organizationsMembersEmails) {
       emailSender.send(user.email, subject, emailHtml);

@@ -1,4 +1,4 @@
-import { Section, Text } from '@react-email/components';
+import { Section, Text } from 'jsx-email';
 import { EmailContainer } from './components/container';
 import { Footer } from './components/footer';
 import { Logo } from './components/logo';

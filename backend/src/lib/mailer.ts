@@ -1,6 +1,8 @@
-import sendgrid from '@sendgrid/mail';
+import { MailService } from '@sendgrid/mail';
 import { config } from 'config';
-import { env } from './env';
+import { env } from '../../env';
+
+const sendgrid = new MailService();
 
 sendgrid.setApiKey(env.SENDGRID_API_KEY ?? '');
 

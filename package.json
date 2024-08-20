@@ -25,8 +25,7 @@
     "check:fix": "pnpm dlx @biomejs/biome check --write .",
     "build": "pnpm run clean && turbo build --filter backend --filter frontend --filter tus",
     "build:dev": "turbo build:dev --filter backend --filter frontend --filter tus",
-    "start": "turbo start --filter backend --filter frontend --filter tus",
-    "email:dev": "turbo dev --filter email"
+    "start": "turbo start --filter backend --filter frontend --filter tus"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",

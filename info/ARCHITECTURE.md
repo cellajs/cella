@@ -48,7 +48,7 @@ This document describes the high-level architecture of Cella.
 │   │   ├── modules           Modular distribution of routes, schemas etc
 │   │   └── types             
 ├── config                    Shared config: default, development, production etc
-├── email                     React-email
+├── email                     JSX-email
 ├── env                       .env file for secure development
 ├── frontend                  Frontend SPA
 │   ├── public                

@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
 
-import { Command } from 'commander';
+import { Command } from '@commander-js/extra-typings';
 import { UniqueEnforcer } from 'enforce-unique';
 import { type InsertLabelModel, labelsTable } from '../../src/db/schema/labels';
 import { type InsertTaskModel, tasksTable } from '../../src/db/schema/tasks';
