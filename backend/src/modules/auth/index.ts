@@ -343,6 +343,7 @@ const authRoutes = app
     }
 
     const { session } = await auth.validateSession(sessionId);
+    console.log('session:', session);
 
     if (session) {
       await auth.invalidateSession(session.id);
@@ -357,8 +358,7 @@ const authRoutes = app
         const sessionCookie = auth.createSessionCookie(adminsLastSession.session.id);
         ctx.header('Set-Cookie', sessionCookie.serialize());
       }
-    }
-    removeSessionCookie(ctx);
+    } else removeSessionCookie(ctx);
     logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
 
     return ctx.json({ success: true }, 200);
