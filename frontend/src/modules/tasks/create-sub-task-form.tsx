@@ -13,7 +13,7 @@ import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
-import { getNewTaskOrder } from './helpers.ts';
+import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers.ts';
 import { CreateTaskBlockNote } from './create-task-blocknote.tsx';
 import { createTask } from '~/api/tasks.ts';
 import type { Task } from '~/types';
@@ -45,7 +45,6 @@ export const CreateSubTaskForm = ({
   const { mode } = useThemeStore();
   const { pathname } = useLocation();
   const { user } = useUserStore(({ user }) => ({ user }));
-  const defaultId = nanoid();
 
   const handleHotKeysKeyPress = useCallback(() => {
     setFormState(false);
@@ -57,13 +56,15 @@ export const CreateSubTaskForm = ({
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: defaultId,
+        id: '',
         description: '',
         summary: '',
         type: 'chore',
         impact: null,
         status: 1,
         parentId: parentTask.id,
+        expandable: false,
+        keywords: '',
       },
     }),
     [],
@@ -73,6 +74,7 @@ export const CreateSubTaskForm = ({
   const form = useFormWithDraft<FormValues>(`create-sub-task-${parentTask.id}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
+    const defaultId = nanoid();
     // Extract text from summary HTML
     const parser = new DOMParser();
     const doc = parser.parseFromString(values.summary, 'text/html');
@@ -80,9 +82,11 @@ export const CreateSubTaskForm = ({
 
     const slug = summaryText.toLowerCase().replace(/ /g, '-');
     const newSubTask = {
-      id: values.id,
+      id: defaultId,
       description: values.description,
       summary: values.summary,
+      expandable: taskExpandable(values.summary, values.description),
+      keywords: extractUniqueWordsFromHTML(values.description),
       type: 'chore' as const,
       impact: null,
       status: 1,
@@ -131,7 +135,7 @@ export const CreateSubTaskForm = ({
               <FormItem>
                 <FormControl>
                   <CreateTaskBlockNote
-                    id={defaultId}
+                    id={parentTask.id}
                     projectId={parentTask.projectId}
                     value={value || ''}
                     onChange={(description, summary) => {

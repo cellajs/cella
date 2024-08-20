@@ -115,7 +115,7 @@ const SubTask = ({
           onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
         />
 
-        {isEditing && task.summary !== task.description && (
+        {isEditing && task.expandable && (
           <Button
             onClick={() => setIsEditing(false)}
             aria-label="Collapse"
@@ -130,14 +130,20 @@ const SubTask = ({
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
         <div className={!isEditing ? 'inline-flex items-center mt-1' : 'flex flex-col items-start mt-1'}>
           {isEditing ? (
-            <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className="w-full bg-transparent border-none" />
+            <TaskBlockNote
+              id={task.id}
+              projectId={task.projectId}
+              html={task.description || ''}
+              mode={mode}
+              className="w-full bg-transparent border-none"
+            />
           ) : (
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: to avoid using TaskBlockNote for not editing
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
             // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-<div onClick={() => setIsEditing(true)} dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
+            <div onClick={() => setIsEditing(true)} dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
           )}
 
-          {task.summary !== task.description && !isEditing && (
+          {task.expandable && !isEditing && (
             <Button onClick={() => setIsEditing(true)} variant="link" size="micro" className="py-0">
               {t('common:more').toLowerCase()}
             </Button>

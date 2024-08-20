@@ -1,8 +1,7 @@
 import { nanoid } from 'nanoid';
-import type { Labels, PivotalTask } from './type';
-
+import type { Labels, PivotalTask, Subtask } from './type';
 export const getSubTask = (task: PivotalTask, taskId: string, organizationId: string, projectId: string) => {
-  const subtasks = [];
+  const subtasks: Subtask[] = [];
   for (let i = 0; i <= 27; i++) {
     const taskKey = `Task_${i}` as keyof PivotalTask;
     const statusKey = `Task Status_${i}` as keyof PivotalTask;
@@ -10,8 +9,9 @@ export const getSubTask = (task: PivotalTask, taskId: string, organizationId: st
       subtasks.push({
         id: nanoid(),
         slug: `${task.Id}_${i}`,
-        summary: task[taskKey],
+        summary: `<p class="bn-inline-content">${task[taskKey]}</p>`,
         type: 'chore' as const,
+        keywords: extractKeywords(task[taskKey]),
         parentId: taskId,
         createdBy: 'pivotal',
         organizationId: organizationId,
@@ -21,6 +21,7 @@ export const getSubTask = (task: PivotalTask, taskId: string, organizationId: st
         status: task[statusKey] === 'completed' ? 6 : 0,
         order: i,
         createdAt: new Date(),
+        expandable: false,
       });
     }
   }
@@ -55,4 +56,16 @@ export const getTaskLabels = (task: PivotalTask, labelsToInsert: Labels[]) => {
     .map((taskLabel) => labelsToInsert.find((label) => label.name === taskLabel)?.id)
     .filter((id) => typeof id === 'string');
   return labelsIds;
+};
+
+export const extractKeywords = (description: string) => {
+  const words = description
+    .split(/\s+/) // Split by any whitespace
+    .map((word) => word.toLowerCase()) // Convert to lowercase
+    .map((word) => word.replace(/[^a-z0-9]/g, '')) // Remove non-alphanumeric chars
+    .filter((word) => word.length > 0); // Filter out empty strings
+
+  const uniqueWords = [...new Set(words)];
+
+  return uniqueWords.join(' ');
 };

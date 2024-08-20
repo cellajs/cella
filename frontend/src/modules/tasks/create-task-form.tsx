@@ -22,7 +22,7 @@ import type { Member, Task, Label } from '~/types/index.ts';
 import { Badge } from '~/modules/ui/badge';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
-import { getNewTaskOrder } from './helpers.ts';
+import { getNewTaskOrder, taskExpandable, extractUniqueWordsFromHTML } from './helpers.ts';
 import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 import { SelectImpact, impacts } from './task-selectors/select-impact.tsx';
 import SetLabels from './task-selectors/select-labels.tsx';
@@ -105,6 +105,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
         assignedTo: [],
         labels: [],
         status: 1,
+        expandable: false,
+        keywords: '',
       },
     }),
     [],
@@ -114,7 +116,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
   const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
-    console.log('values:', values);
     const projectTasks = tasks.filter((task) => task.projectId === projectId);
     // Extract text from summary HTML
     const parser = new DOMParser();
@@ -127,6 +128,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
       id: values.id,
       description: values.description,
       summary: values.summary,
+      expandable: taskExpandable(values.summary, values.description),
+      keywords: extractUniqueWordsFromHTML(values.description),
       type: values.type as TaskType,
       impact: values.impact as TaskImpact,
       labels: values.labels.map((label) => label.id),
@@ -149,7 +152,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
     });
   };
 
-  // default value in blocknote <p class="bn-inline-content"></p so check by removing it
+  // default value in blocknote <p class="bn-inline-content"></p> so check by removing it
   const isDirty = () => {
     const fieldsKeys = Object.keys(form.formState.dirtyFields);
     if (!fieldsKeys.length) return false;

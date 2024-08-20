@@ -24,7 +24,7 @@ const TaskContent = ({ task, mode, isExpanded }: Props) => {
         <div className="mt-1">
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend */}
           <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="task-summary inline" />
-          {(task.summary !== task.description || task.subTasks.length > 0) && (
+          {(task.expandable || task.subTasks.length > 0) && (
             <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 pl-2">
               <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5">
                 {t('common:more').toLowerCase()}

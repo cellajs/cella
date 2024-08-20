@@ -1,4 +1,4 @@
-import { type AnyPgColumn, doublePrecision, index, integer, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { type AnyPgColumn, doublePrecision, index, integer, jsonb, pgTable, timestamp, varchar, boolean } from 'drizzle-orm/pg-core';
 import { nanoid } from '../../lib/nanoid';
 import { relations } from 'drizzle-orm';
 import { organizationsTable } from './organizations';
@@ -11,6 +11,8 @@ export const tasksTable = pgTable(
     id: varchar('id').primaryKey().$defaultFn(nanoid),
     slug: varchar('slug').notNull(),
     description: varchar('description').notNull(),
+    keywords: varchar('keywords').notNull(),
+    expandable: boolean('expandable').default(false),
     summary: varchar('summary').notNull(),
     type: varchar('type', {
       enum: ['bug', 'feature', 'chore'],
@@ -48,6 +50,7 @@ export const tasksTable = pgTable(
     return {
       tasksDescriptionIdx: index('idx_tasks_description').on(table.description),
       tasksProjectIdx: index('idx_tasks_project').on(table.projectId),
+      tasksKeywordsIdx: index('idx_tasks_keywords').on(table.keywords),
     };
   },
 );

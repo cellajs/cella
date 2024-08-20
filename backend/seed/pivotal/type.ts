@@ -91,4 +91,6 @@ export interface Subtask {
   status: number;
   order: number;
   createdAt: Date;
+  keywords: string;
+  expandable: boolean;
 }

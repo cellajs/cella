@@ -13,6 +13,7 @@ import { schemaWithMentions } from '~/modules/common/blocknote/mention';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
 import DOMPurify from 'dompurify';
+import { taskExpandable } from '../helpers';
 
 interface TaskBlockNoteProps {
   id: string;
@@ -33,10 +34,13 @@ export const TaskBlockNote = ({ id, html, projectId, mode, className = '' }: Tas
     async (newContent: string, newSummary: string) => {
       await updateTask(id, 'summary', newSummary);
       const updatedTask = await updateTask(id, 'description', newContent);
+      const expandable = taskExpandable(newSummary, newContent);
+
+      if (updatedTask.expandable !== expandable) updateTask(id, 'expandable', expandable);
 
       const action = updatedTask.parentId ? 'updateSubTask' : 'update';
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action });
+      dispatchCustomEvent(eventName, { array: [{ ...updatedTask, expandable }], action });
     },
     [pathname],
   );

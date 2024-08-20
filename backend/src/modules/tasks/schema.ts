@@ -16,7 +16,7 @@ export const createTaskSchema = z.object({
 
 export const updateTaskSchema = z.object({
   key: z.string(),
-  data: z.union([z.array(z.string()), z.string(), z.number()]).nullable(),
+  data: z.union([z.array(z.string()), z.string(), z.number(), z.boolean()]).nullable(),
   order: z.number().nullable(),
 });
 

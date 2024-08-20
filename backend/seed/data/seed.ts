@@ -15,6 +15,7 @@ import { type InsertWorkspaceModel, workspacesTable } from '../../src/db/schema/
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 import slugify from 'slugify';
+import { extractKeywords } from './helpers';
 
 const seedCommand = new Command().option('--addImages', 'Add images to members').parse(process.argv);
 const options = seedCommand.opts();
@@ -161,17 +162,21 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
 
         const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).flatMap((_, index) => {
+          const taskDescription = faker.commerce.productDescription();
           const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
           const mainTaskId = nanoid();
           // 60% change to set Subtasks
           const insertSubTasks: InsertTaskModel[] = Array.from({ length: Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 3) + 1 }).map(
             (_, subIndex) => {
+              const subTaskDescription = faker.commerce.productDescription();
               const subTaskName = organizationsUniqueEnforcer.enforce(() => faker.company.name());
               return {
                 id: nanoid(),
                 organizationId: organization.id,
                 projectId: project.id,
                 summary: `<p class="bn-inline-content">${subTaskName}</p>`,
+                keywords: extractKeywords(subTaskDescription),
+                expandable: true,
                 parentId: mainTaskId,
                 slug: faker.helpers.slugify(subTaskName).toLowerCase(),
                 order: subIndex + 1,
@@ -179,7 +184,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
                 status: Math.random() < 0.5 ? 1 : 6,
                 impact: 0,
                 type: 'chore',
-                description: `<p class="bn-inline-content">${subTaskName}</p><br/><p class="bn-inline-content">${faker.commerce.productDescription()}</p>`,
+                description: `<p class="bn-inline-content">${subTaskName}</p><p class="bn-inline-content">${subTaskDescription}</p>`,
                 createdAt: faker.date.past(),
                 createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
                 modifiedAt: faker.date.past(),
@@ -193,6 +198,8 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             organizationId: organization.id,
             projectId: project.id,
             summary: `<p class="bn-inline-content">${name}</p>`,
+            keywords: extractKeywords(taskDescription),
+            expandable: true,
             slug: faker.helpers.slugify(name).toLowerCase(),
             order: index + 1,
             // random integer between 0 and 6
@@ -200,7 +207,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
             // random integer between 0 and 3
             impact: Math.floor(Math.random() * 4),
-            description: `<p class="bn-inline-content">${name}</p><br/><p class="bn-inline-content">${faker.commerce.productDescription()}</p>`,
+            description: `<p class="bn-inline-content">${name}</p><p class="bn-inline-content">${taskDescription}</p>`,
             createdAt: faker.date.past(),
             createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
             modifiedAt: faker.date.past(),

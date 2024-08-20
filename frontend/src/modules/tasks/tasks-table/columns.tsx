@@ -18,6 +18,7 @@ import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { Dot } from 'lucide-react';
 import { badgeStyle } from '../task-selectors/select-labels';
 import type { Task } from '~/types';
+import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -54,7 +55,7 @@ export const useColumns = () => {
           }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">
-            {/* biome-ignore lint/security/noDangerouslySetInnerHtml: we need send it cos blackNote return an html*/}
+            {/* biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend*/}
             {row.summary ? <div dangerouslySetInnerHTML={{ __html: row.summary }} /> : '-'}
           </span>
         </Button>
@@ -117,22 +118,22 @@ export const useColumns = () => {
     },
     {
       key: 'assignedTo',
-      name: t('common:assignedTo'),
+      name: t('common:assigned_to'),
       sortable: false,
       visible: false,
-      width: 160,
+      width: 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
         if (!row.assignedTo.length) return '-';
         return (
-          <div className="flex flex-col">
-            {row.assignedTo.map((user) => (
-              <div key={user.id} className="flex items-center gap-1">
-                <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
-                <span>{user.name}</span>
-              </div>
-            ))}
-          </div>
+          <AvatarGroup limit={3}>
+            <AvatarGroupList>
+              {row.assignedTo.map((user) => (
+                <AvatarWrap type="user" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+              ))}
+            </AvatarGroupList>
+            <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
+          </AvatarGroup>
         );
       },
     },

@@ -88,7 +88,7 @@ export const getChangeStatusTaskOrder = async (oldStatus: number, newStatus: num
 };
 
 // Update task by its ID
-export const updateTask = async (id: string, key: string, data: string | string[] | number | null, order?: number | null) => {
+export const updateTask = async (id: string, key: string, data: string | string[] | number | null | boolean, order?: number | null) => {
   const newOrder = order || null;
   const response = await client[':id'].$put({
     param: { id },
