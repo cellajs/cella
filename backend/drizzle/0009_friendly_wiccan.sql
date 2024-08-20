@@ -1,1 +1,0 @@
-ALTER TABLE "sessions" ADD COLUMN "type" varchar DEFAULT 'regular' NOT NULL;

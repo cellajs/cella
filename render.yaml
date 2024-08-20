@@ -90,9 +90,6 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-    envVars:
-      - key: SKIP_INSTALL_DEPS
-        value: true
     buildFilter:
       paths:
         - frontend/**/*.?s
