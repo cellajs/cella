@@ -17,11 +17,7 @@ const useSaveInSearchParams = (
   useEffect(() => {
     const searchParams = values;
     for (const key in searchParams) {
-      if (
-        (typeof defaultValues?.[key] !== 'undefined' && searchParams[key] === defaultValues?.[key]) ||
-        currentSearchParams[key as keyof typeof currentSearchParams] === searchParams[key]
-      )
-        delete searchParams[key];
+      if (currentSearchParams[key as keyof typeof currentSearchParams] === searchParams[key]) delete searchParams[key];
       if (searchParams[key] === '' || (Array.isArray(searchParams[key]) && searchParams[key]?.length === 0)) searchParams[key] = undefined;
       if (Array.isArray(searchParams[key]) && searchParams[key]?.length > 0)
         searchParams[key] = searchParams[key].length === 1 ? searchParams[key][0] : searchParams[key].join('_');
@@ -34,7 +30,7 @@ const useSaveInSearchParams = (
       replace: true,
       search: (prev) => ({
         ...prev,
-        ...searchParams,
+        ...(Object.keys(searchParams).length ? searchParams : defaultValues),
       }),
     });
   }, [values, navigate]);
