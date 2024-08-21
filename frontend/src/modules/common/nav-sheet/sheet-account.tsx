@@ -67,7 +67,7 @@ export const SheetAccount = () => {
 
       <div className="grow border-b border-dashed" />
 
-      <AppFooter className="ml-2 items-center" />
+      <AppFooter className="items-center" />
     </div>
   );
 };
