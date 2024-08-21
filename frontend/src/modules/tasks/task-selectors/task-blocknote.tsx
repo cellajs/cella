@@ -86,6 +86,8 @@ export const TaskBlockNote = ({ id, html, projectId, mode, className = '' }: Tas
         className={className}
         sideMenu={false}
         emojiPicker={false}
+        formattingToolbar={false}
+        slashMenu={false}
       >
         <BlockNoteForTaskContent editor={editor} members={currentProject?.members || []} />
       </BlockNoteView>
