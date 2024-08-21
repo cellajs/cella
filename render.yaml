@@ -53,7 +53,7 @@ services:
     name: cella-frontend
     runtime: static
     rootDir: frontend
-    - buildCommand: pnpm install && pnpm build
+    buildCommand: pnpm install && pnpm build
     staticPublishPath: ./dist
     pullRequestPreviewsEnabled: true
     headers:
