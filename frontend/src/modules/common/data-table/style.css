@@ -5,9 +5,9 @@
   --rdg-background-color: hsl(var(--background));
   --rdg-header-background-color: hsl(var(--background));
   --rdg-header-draggable-background-color: hsl(var(--accent));
-  --rdg-row-hover-background-color: hsl(var(--accent));
-  --rdg-row-selected-background-color: hsl(var(--accent));
-  --rdg-row-selected-hover-background-color: hsl(var(--muted));
+  --rdg-row-hover-background-color: hsla(var(--accent) / 0.2);
+  --rdg-row-selected-background-color: hsla(var(--accent) / 0.4);
+  --rdg-row-selected-hover-background-color: hsla(var(--accent) / 0.6);
   --rdg-checkbox-color: hsl(var(--muted-foreground));
   --rdg-checkbox-focus-color: hsl(var(--ring));
   --rdg-checkbox-disabled-border-color: hsl(var(--muted-foreground));

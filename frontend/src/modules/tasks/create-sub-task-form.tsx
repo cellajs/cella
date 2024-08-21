@@ -14,7 +14,7 @@ import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers.ts';
-import { CreateTaskBlockNote } from './create-task-blocknote.tsx';
+import { TaskBlockNote } from './task-selectors/task-blocknote.tsx';
 import { createTask } from '~/api/tasks.ts';
 import type { Task } from '~/types';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
@@ -119,14 +119,14 @@ export const CreateSubTaskForm = ({
 
   if (!formOpen)
     return (
-      <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none opacity-50 hover:opacity-100" onClick={() => setFormState(true)}>
+      <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none bg-secondary/50" onClick={() => setFormState(true)}>
         <Plus size={16} />
         <span className="ml-1 font-normal">{t('common:add_subtask')}</span>
       </Button>
     );
   return (
     <Form {...form}>
-      <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary">
+      <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary/50">
         <FormField
           control={form.control}
           name="description"
@@ -134,15 +134,16 @@ export const CreateSubTaskForm = ({
             return (
               <FormItem>
                 <FormControl>
-                  <CreateTaskBlockNote
+                  <TaskBlockNote
                     id={parentTask.id}
                     projectId={parentTask.projectId}
-                    value={value || ''}
+                    html={value || ''}
                     onChange={(description, summary) => {
                       onChange(description);
                       form.setValue('summary', summary);
                     }}
                     mode={mode}
+                    subTask
                   />
                 </FormControl>
                 <FormMessage />

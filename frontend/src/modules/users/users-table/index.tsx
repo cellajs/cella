@@ -92,6 +92,7 @@ const UsersTable = () => {
   const q = useDebounce(query, 200);
   const sort = sortColumns[0]?.columnKey as UsersSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'];
+
   const limit = LIMIT;
 
   const isFiltered = role !== undefined || !!q;
@@ -106,11 +107,11 @@ const UsersTable = () => {
   const filters = useMemo(
     () => ({
       q,
-      sort: sortColumns[0]?.columnKey,
-      order: sortColumns[0]?.direction.toLowerCase(),
+      sort,
+      order,
       role,
     }),
-    [q, role, sortColumns],
+    [q, role, order, sort],
   );
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 

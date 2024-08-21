@@ -55,7 +55,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       recentLabels: orderedLabels.filter((l) => recentlyUsed(l.lastUsed, 3)),
     });
     return orderedLabels.slice(0, 8);
-  }, [isRecent, searchValue, orderedLabels]);
+  }, [isRecent, searchValue, orderedLabels, selectedLabels]);
 
   const updateTaskLabels = async (labels: Label[]) => {
     if (!focusedTaskId) return;

@@ -29,7 +29,7 @@ import SetLabels from './task-selectors/select-labels.tsx';
 import AssignMembers from './task-selectors/select-members.tsx';
 import SelectStatus, { type TaskStatus, taskStatuses } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
-import { CreateTaskBlockNote } from './create-task-blocknote.tsx';
+import { TaskBlockNote } from './task-selectors/task-blocknote.tsx';
 import { createTask } from '~/api/tasks.ts';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 
@@ -179,10 +179,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
             return (
               <FormItem>
                 <FormControl>
-                  <CreateTaskBlockNote
+                  <TaskBlockNote
                     id={defaultId}
                     projectId={projectId}
-                    value={value}
+                    html={value}
                     onChange={(description, summary) => {
                       onChange(description);
                       form.setValue('summary', summary);
@@ -251,7 +251,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                     >
                       {selectedImpact !== null ? (
                         <>
-                          <selectedImpact.icon className="size-4" aria-hidden="true" />
+                          <selectedImpact.icon className="size-4 fill-current" aria-hidden="true" />
+
                           {selectedImpact.label}
                         </>
                       ) : (

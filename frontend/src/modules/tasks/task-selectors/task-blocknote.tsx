@@ -21,9 +21,11 @@ interface TaskBlockNoteProps {
   html: string;
   projectId: string;
   className?: string;
+  onChange?: (newContent: string, newSummary: string) => void;
+  subTask?: boolean;
 }
 
-export const TaskBlockNote = ({ id, html, projectId, mode, className = '' }: TaskBlockNoteProps) => {
+export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = false, className = '' }: TaskBlockNoteProps) => {
   const initial = useRef(true);
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
   const { pathname } = useLocation();
@@ -49,23 +51,34 @@ export const TaskBlockNote = ({ id, html, projectId, mode, className = '' }: Tas
     //if user in Formatting Toolbar does not update
     if (editor.getSelection()) return;
 
-    //remove empty lines
-    const content = editor.document.filter((d) => !(d.type === 'paragraph' && Array.isArray(d.content) && !d.content.length));
-    const descriptionHtml = await editor.blocksToHTMLLossy(content);
-    if (html === descriptionHtml && !editor.getSelection()) return editor.replaceBlocks(editor.document, content);
+    const descriptionHtml = await editor.blocksToHTMLLossy(editor.document);
     const summary = editor.document[0];
     const summaryHTML = await editor.blocksToHTMLLossy([summary]);
     const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
-    handleUpdateHTML(cleanDescription, cleanSummary);
+    if (onChange) onChange(cleanDescription, cleanSummary);
+    else handleUpdateHTML(cleanDescription, cleanSummary);
   };
 
   useEffect(() => {
+    if (!initial.current && html !== undefined && html !== '<p class="bn-inline-content"></p>' && html !== '') return;
     const blockUpdate = async (html: string) => {
-      if (!initial.current) return;
-      const blocks = await editor.tryParseHTMLToBlocks(html);
-      editor.replaceBlocks(editor.document, blocks);
-      triggerFocus(`blocknote-${id}`);
+      // Define base content to replace 'plug' text
+      const baseContent = [{ styles: {}, text: '', type: 'text' }];
+      // Replace empty lines with 'plug' for parsing
+      const modifiedHtml = html.replace(/<p class="bn-inline-content"><\/p>/g, '<p class="bn-inline-content">plug</p>');
+      const blocks = await editor.tryParseHTMLToBlocks(modifiedHtml);
+      // Clean up 'plug' text in blocks
+
+      const cleanedBlocks = blocks.map((block) => {
+        if (block.type === 'paragraph' && (block.content as typeof baseContent)[0]?.text === 'plug') {
+          return { ...block, content: baseContent };
+        }
+        return block;
+      });
+
+      editor.replaceBlocks(editor.document, cleanedBlocks);
+      triggerFocus(subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`);
       initial.current = false;
     };
     blockUpdate(html);
@@ -79,13 +92,19 @@ export const TaskBlockNote = ({ id, html, projectId, mode, className = '' }: Tas
   return (
     <Suspense>
       <BlockNoteView
-        id={`blocknote-${id}`}
+        id={subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`}
+        onChange={() => {
+          if (!onChange) return;
+          updateData();
+        }}
         onBlur={updateData}
         editor={editor}
         data-color-scheme={mode}
         className={className}
         sideMenu={false}
         emojiPicker={false}
+        formattingToolbar={false}
+        slashMenu={false}
       >
         <BlockNoteForTaskContent editor={editor} members={currentProject?.members || []} />
       </BlockNoteView>

@@ -16,6 +16,7 @@ import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 import slugify from 'slugify';
 import { extractKeywords } from './helpers';
+import { eq, and } from 'drizzle-orm';
 
 const seedCommand = new Command().option('--addImages', 'Add images to members').parse(process.argv);
 const options = seedCommand.opts();
@@ -23,7 +24,11 @@ const options = seedCommand.opts();
 export const dataSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
   const memberships = await db.select().from(membershipsTable);
-
+  const adminMemberships = await db
+    .select()
+    .from(membershipsTable)
+    .where(and(eq(membershipsTable.userId, 'admin12345678'), eq(membershipsTable.type, 'organization')));
+  const adminOrgIds = adminMemberships.map((m) => m.organizationId).filter((el) => el !== null);
   const organizationsUniqueEnforcer = new UniqueEnforcer();
 
   let workspacesCount = 0;
@@ -86,7 +91,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
 
       if (progressCallback) progressCallback('memberships', membershipsCount, 'inserting');
       // add admin user to every even workspace
-      if (workspacesCount % 2 === 0) {
+      if (workspacesCount % 2 === 0 && adminOrgIds.includes(organization.id)) {
         workspaceMemberships.push({
           id: nanoid(),
           type: 'workspace',
@@ -142,7 +147,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         });
 
         // add admin user to every even project in every even workspace
-        if (workspacesCount % 2 === 0 && projectsCount % 2 === 0) {
+        if (workspacesCount % 2 === 0 && adminOrgIds.includes(organization.id) && projectsCount % 2 === 0) {
           projectMemberships.push({
             id: nanoid(),
             userId: adminUser.id,

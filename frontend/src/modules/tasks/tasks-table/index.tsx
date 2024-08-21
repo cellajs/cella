@@ -138,17 +138,17 @@ export default function TasksTable() {
     setSelectedTasks(Array.from(selectedRows));
   };
 
-  const onResetFilters = () => {
-    setSearchQuery('');
-    setSelectedProjects([]);
-    setSelectedStatuses([]);
-  };
+  // const onResetFilters = () => {
+  //   setSearchQuery('');
+  //   setSelectedProjects([]);
+  //   setSelectedStatuses([]);
+  // };
 
   const handleOpenPreview = (taskId: string) => {
     const relativeTasks = rows.filter((t) => t.id === taskId || t.parentId === taskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
     sheet.create(<TaskSheet task={currentTask} />, {
-      className: 'max-w-full lg:max-w-4xl p-0',
+      className: 'max-w-full lg:max-w-4xl',
       title: <span className="pl-4">{t('common:task')}</span>,
       id: `task-preview-${taskId}`,
     });
@@ -190,7 +190,7 @@ export default function TasksTable() {
 
   return (
     <>
-      <TableHeader totalCount={totalCount} isFiltered={isFiltered} onResetFilters={onResetFilters}>
+      <TableHeader>
         <TaskTableSearch>
           <SearchDropDown
             selectedStatuses={selectedStatuses}

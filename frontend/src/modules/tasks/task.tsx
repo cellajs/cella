@@ -86,7 +86,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
     dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
   };
 
-  console.log('rerender');
+  // console.log('rerender');
 
   const dragEnd = () => {
     setClosestEdge(null);
@@ -166,7 +166,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
         `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
         focus-visible:none border-l-2 via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} 
         ${dragOver ? 'bg-card/20' : ''} 
-        ${isFocused ? 'border-l-primary is-focused' : 'border-l-transparent'}
+        ${isFocused && !isSheet ? 'border-l-primary is-focused' : 'border-l-transparent'}
         ${isExpanded ? 'is-expanded' : 'is-collapsed'}`,
         variants({
           status: task.status as TaskStatus,
@@ -176,7 +176,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
       <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 pr-2 space-between flex flex-col relative">
         <div className="flex flex-col gap-1">
           <div className="flex gap-1 w-full">
-            <div className="flex flex-col gap-1 relative">
+            <div className="flex flex-col gap-1">
               <Button
                 id="type"
                 onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}

@@ -59,3 +59,53 @@ p.bn-inline-content{
   --radius: 0.5rem;
   --success: 120 100% 30%;
 }
+
+.slash-menu {
+  z-index: 9999;
+
+  background-color: hsl( 240 10% 11%);
+  border: 1px solid hsl(240, 3.7%, 20%);
+  border-radius: 8px;
+  box-shadow: 0 0 8px hsl( 240 10% 8%);
+
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  max-height: 100%;
+  overflow: auto;
+  padding: 8px;
+  top: 8px;
+}
+
+.slash-menu-item {
+  background-color: hsl( 240 10% 11%);
+  border-radius: 4px;
+
+  cursor: pointer;
+
+  font-size: 16px;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+  padding: 8px;
+}
+
+.slash-menu-item-badge{
+  font-size: 12px;
+  align-items: center;
+  display: flex;
+  background-color: hsl( 240 10% 10%);
+  border-radius: 12px;
+  padding: 2px 8px;
+}
+
+
+.slash-menu-separator{
+  border: 0.5px solid hsl(240, 3.7%, 20%);
+}
+
+.slash-menu-item:hover, .slash-menu-item.selected {
+  background-color: hsl(240 3.7% 15%);
+}
