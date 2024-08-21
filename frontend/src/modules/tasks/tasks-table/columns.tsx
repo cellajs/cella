@@ -55,8 +55,15 @@ export const useColumns = () => {
           }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">
-            {/* biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend*/}
-            {row.summary ? <div dangerouslySetInnerHTML={{ __html: row.summary }} /> : '-'}
+            {row.summary ? (
+              <div
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+                dangerouslySetInnerHTML={{ __html: row.summary as string }}
+                className="bn-container bn-shadcn"
+              />
+            ) : (
+              '-'
+            )}
           </span>
         </Button>
       ),

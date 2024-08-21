@@ -9,7 +9,6 @@ import { Card, CardContent } from '~/modules/ui/card';
 import { impacts } from './task-selectors/select-impact.tsx';
 import { type TaskStatus, statusVariants, taskStatuses } from './task-selectors/select-status.tsx';
 import { taskTypes } from './task-selectors/select-task-type.tsx';
-import './style.css';
 
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
@@ -163,7 +162,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
       tabIndex={0}
       ref={taskRef}
       className={cn(
-        `group/task relative rounded-none border-0 border-b text-sm bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
+        `group/task relative rounded-none border-0 border-b bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
         focus-visible:none border-l-2 via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} 
         ${dragOver ? 'bg-card/20' : ''} 
         ${isFocused && !isSheet ? 'border-l-primary is-focused' : 'border-l-transparent'}
