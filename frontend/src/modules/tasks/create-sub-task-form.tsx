@@ -14,7 +14,7 @@ import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers.ts';
-import { CreateTaskBlockNote } from './create-task-blocknote.tsx';
+import { TaskBlockNote } from './task-selectors/task-blocknote.tsx';
 import { createTask } from '~/api/tasks.ts';
 import type { Task } from '~/types';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
@@ -134,15 +134,16 @@ export const CreateSubTaskForm = ({
             return (
               <FormItem>
                 <FormControl>
-                  <CreateTaskBlockNote
+                  <TaskBlockNote
                     id={parentTask.id}
                     projectId={parentTask.projectId}
-                    value={value || ''}
+                    html={value || ''}
                     onChange={(description, summary) => {
                       onChange(description);
                       form.setValue('summary', summary);
                     }}
                     mode={mode}
+                    subTask
                   />
                 </FormControl>
                 <FormMessage />

@@ -116,13 +116,7 @@ const SubTask = ({
         />
 
         {isEditing && task.expandable && (
-          <Button
-            onClick={() => setIsEditing(false)}
-            aria-label="Collapse"
-            variant="ghost"
-            size="xs"
-            className="bg-secondary/80"
-          >
+          <Button onClick={() => setIsEditing(false)} aria-label="Collapse" variant="ghost" size="xs" className="bg-secondary/80">
             <ChevronUp size={16} />
           </Button>
         )}
@@ -136,6 +130,7 @@ const SubTask = ({
               html={task.description || ''}
               mode={mode}
               className="w-full bg-transparent border-none"
+              subTask
             />
           ) : (
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend

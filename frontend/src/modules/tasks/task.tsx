@@ -86,7 +86,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
     dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
   };
 
-  console.log('rerender');
+  // console.log('rerender');
 
   const dragEnd = () => {
     setClosestEdge(null);
