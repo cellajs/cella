@@ -63,8 +63,21 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
   useEffect(() => {
     if (!initial.current && html !== undefined && html !== '<p class="bn-inline-content"></p>' && html !== '') return;
     const blockUpdate = async (html: string) => {
-      const blocks = await editor.tryParseHTMLToBlocks(html);
-      editor.replaceBlocks(editor.document, blocks);
+      // Define base content to replace 'plug' text
+      const baseContent = [{ styles: {}, text: '', type: 'text' }];
+      // Replace empty lines with 'plug' for parsing
+      const modifiedHtml = html.replace(/<p class="bn-inline-content"><\/p>/g, '<p class="bn-inline-content">plug</p>');
+      const blocks = await editor.tryParseHTMLToBlocks(modifiedHtml);
+      // Clean up 'plug' text in blocks
+
+      const cleanedBlocks = blocks.map((block) => {
+        if (block.type === 'paragraph' && (block.content as typeof baseContent)[0]?.text === 'plug') {
+          return { ...block, content: baseContent };
+        }
+        return block;
+      });
+
+      editor.replaceBlocks(editor.document, cleanedBlocks);
       triggerFocus(subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`);
       initial.current = false;
     };
