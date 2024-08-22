@@ -1,8 +1,8 @@
 import { GridSuggestionMenuController } from '@blocknote/react';
 import type { Member } from '~/types';
-import { getMentionMenuItems, type schemaWithMentions } from './mention';
-import { CustomSlashMenu } from './custom-slash-menu';
 import { CustomFormattingToolbar } from './custom-formatting-toolbar';
+import { CustomSlashMenu } from './custom-slash-menu';
+import { getMentionMenuItems, type schemaWithMentions } from './mention';
 
 export const BlockNoteForTaskContent = ({ editor, members }: { editor: typeof schemaWithMentions.BlockNoteEditor; members: Member[] }) => (
   <>

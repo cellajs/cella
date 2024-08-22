@@ -1,15 +1,15 @@
-import { useParams, useSearch, useNavigate } from '@tanstack/react-router';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { useState, useEffect } from 'react';
 import { KeySquare } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl, authThroughPasskey, getChallenge, checkUserPasskey } from '~/api/auth';
+import { authThroughPasskey, checkUserPasskey, getChallenge, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/auth';
 import { acceptInvite } from '~/api/general';
+import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/authentication';
 import { useThemeStore } from '~/store/theme';
 import type { Step } from '.';
-import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 
 export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
 

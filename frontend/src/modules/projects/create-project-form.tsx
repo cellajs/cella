@@ -19,9 +19,9 @@ import { SlugFormField } from '~/modules/common/form-fields/slug';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
+import { useUserStore } from '~/store/user';
 import type { UserMenuItem, Workspace } from '~/types';
 import { Form } from '../ui/form';
-import { useUserStore } from '~/store/user';
 
 interface CreateProjectFormProps {
   workspace: Workspace;

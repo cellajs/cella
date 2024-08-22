@@ -1,18 +1,18 @@
-import { Suspense, useCallback, useEffect, useRef } from 'react';
-import type { Mode } from '~/store/theme';
-import { BlockNoteView } from '@blocknote/shadcn';
 import { useCreateBlockNote } from '@blocknote/react';
-import { useWorkspaceStore } from '~/store/workspace';
-import { dispatchCustomEvent } from '~/lib/custom-events';
-import { updateTask } from '~/api/tasks';
+import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
+import { Suspense, useCallback, useEffect, useRef } from 'react';
+import { updateTask } from '~/api/tasks';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
+import type { Mode } from '~/store/theme';
+import { useWorkspaceStore } from '~/store/workspace';
 
 import '~/modules/common/blocknote/styles.css';
-import { schemaWithMentions } from '~/modules/common/blocknote/mention';
-import { triggerFocus } from '~/modules/common/blocknote/helpers';
-import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
 import DOMPurify from 'dompurify';
+import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
+import { triggerFocus } from '~/modules/common/blocknote/helpers';
+import { schemaWithMentions } from '~/modules/common/blocknote/mention';
 import { taskExpandable } from '../helpers';
 
 interface TaskBlockNoteProps {

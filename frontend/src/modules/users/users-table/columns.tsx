@@ -5,27 +5,26 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
+import { impersonateSignIn } from '~/api/auth';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { renderSelect } from '~/modules/common/data-table/select-column';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import { Button } from '~/modules/ui/button';
+import { getAndSetMe, getAndSetMenu } from '~/routes';
+import { useUserStore } from '~/store/user';
+import type { MeUser } from '~/types';
 import { AvatarWrap } from '../../common/avatar-wrap';
 import CheckboxColumn from '../../common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
 import HeaderCell from '../../common/data-table/header-cell';
 import UpdateRow from './update-row';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
-import { impersonateSignIn } from '~/api/auth';
-import { Button } from '~/modules/ui/button';
-import { useUserStore } from '~/store/user';
-import type { MeUser } from '~/types';
-import { getAndSetMe, getAndSetMenu } from '~/routes';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
-
   const columns: ColumnOrColumnGroup<User>[] = [
     CheckboxColumn,
     {
@@ -46,6 +45,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
               e.preventDefault();
               navigate({
                 replace: true,
+                resetScroll: false,
                 search: (prev) => ({
                   ...prev,
                   ...{ userIdPreview: row.id },

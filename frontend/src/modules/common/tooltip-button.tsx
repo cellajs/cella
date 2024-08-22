@@ -1,6 +1,6 @@
 import type * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 import React from 'react';
+import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 
 interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
   children: React.ReactNode;

@@ -15,11 +15,11 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
+import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
+import { passkeysTable } from '../../db/schema/passkeys';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { getPreparedSessions } from './helpers/get-sessions';
-import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
-import { passkeysTable } from '../../db/schema/passkeys';
 
 const app = new CustomHono();
 
@@ -262,6 +262,16 @@ const meRoutes = app
     await auth.invalidateUserSessions(user.id);
     removeSessionCookie(ctx);
     logEvent('User deleted', { user: user.id });
+
+    return ctx.json({ success: true }, 200);
+  })
+  /*
+   * Remove user's passkey
+   */
+  .openapi(meRoutesConfig.removePasskey, async (ctx) => {
+    const user = ctx.get('user');
+
+    await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
     return ctx.json({ success: true }, 200);
   });

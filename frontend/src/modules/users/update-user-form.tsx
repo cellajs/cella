@@ -4,8 +4,8 @@ import { updateUserBodySchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import type { User } from '~/types';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
+import type { User } from '~/types';
 
 import { updateSelf } from '~/api/me';
 import { type UpdateUserParams, updateUser } from '~/api/users';
@@ -21,13 +21,13 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
 import { cleanUrl } from '~/lib/utils';
-import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { useUserStore } from '~/store/user';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/language-selector';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { useUserStore } from '~/store/user';
 
 interface UpdateUserFormProps {
   user: User;

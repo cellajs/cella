@@ -1,19 +1,19 @@
 import { PanelTopClose, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
 import StickyBox from '~/modules/common/sticky-box';
+import { TooltipButton } from '~/modules/common/tooltip-button';
+import AddProjects from '~/modules/projects/add-project';
 import BoardSearch from '~/modules/projects/board/header/board-search';
 import DisplayOptions from '~/modules/projects/board/header/display-options';
+import LabelsTable from '~/modules/tasks/labels-table';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { TooltipButton } from '~/modules/common/tooltip-button';
-import AddProjects from '~/modules/projects/add-project';
-import LabelsTable from '~/modules/tasks/labels-table';
 import WorkspaceActions from './board-header-actions';
 import TaskSelectedTableButtons from './selected-buttons';
 
@@ -73,13 +73,13 @@ const BoardHeader = () => {
       {!!selectedTasks.length && <TaskSelectedTableButtons />}
       <BoardSearch />
       {!searchQuery.length && (
-            <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
-              <Button variant="plain" onClick={handleAddProjects}>
-                <Plus size={16} />
-                <span className="max-lg:hidden ml-1">{t('common:add')}</span>
-              </Button>
-            </TooltipButton>
-          )}
+        <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_project')}>
+          <Button variant="plain" onClick={handleAddProjects}>
+            <Plus size={16} />
+            <span className="max-lg:hidden ml-1">{t('common:add')}</span>
+          </Button>
+        </TooltipButton>
+      )}
       <WorkspaceActions createNewProject={handleAddProjects} openSettingsSheet={openSettingsSheet} openLabelsSheet={openLabelsSheet} />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />

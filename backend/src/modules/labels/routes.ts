@@ -1,11 +1,11 @@
-import { errorResponses, successWithDataSchema, successWithoutDataSchema, successWithPaginationSchema } from '../../lib/common-responses';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '../../lib/common-responses';
 import { idsQuerySchema } from '../../lib/common-schemas';
 
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
 import { idParamSchema } from '../tasks/schema';
 
-import { labelSchema, getLabelsQuerySchema, updateLabelSchema } from './schema';
+import { getLabelsQuerySchema, labelSchema, updateLabelSchema } from './schema';
 
 class LabelsRoutesConfig {
   public createLabel = createRouteConfig({

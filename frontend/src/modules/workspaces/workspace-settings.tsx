@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { Workspace } from '~/types';
@@ -10,7 +11,6 @@ import { dialog } from '../common/dialoger/state';
 import { Button } from '../ui/button';
 import DeleteWorkspaces from './delete-workspace';
 import UpdateWorkspaceForm from './update-workspace-form';
-import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 
 export const WorkspaceSettings = ({ workspace, sheet: isSheet }: { workspace: Workspace; sheet?: boolean }) => {
   const { t } = useTranslation();

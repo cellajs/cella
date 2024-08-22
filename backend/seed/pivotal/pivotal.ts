@@ -2,14 +2,14 @@ import fs from 'node:fs';
 import { Command } from '@commander-js/extra-typings';
 import { eq } from 'drizzle-orm';
 import JSZip from 'jszip';
+import { nanoid } from 'nanoid';
 import papaparse from 'papaparse';
 import { db } from '../../src/db/db';
-import { tasksTable } from '../../src/db/schema/tasks';
-import { projectsTable } from '../../src/db/schema/projects';
 import { labelsTable } from '../../src/db/schema/labels';
-import { nanoid } from 'nanoid';
-import type { PivotalTask, Subtask } from './type';
+import { projectsTable } from '../../src/db/schema/projects';
+import { tasksTable } from '../../src/db/schema/tasks';
 import { extractKeywords, getLabels, getSubTask, getTaskLabels } from './helper';
+import type { PivotalTask, Subtask } from './type';
 
 const program = new Command().option('--file <file>', 'Zip file to upload').option('--project <project>', 'Project to upload tasks to').parse();
 

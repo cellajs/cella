@@ -3,21 +3,21 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
+import { useLocation } from '@tanstack/react-router';
 import { ChevronUp, Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { deleteTasks } from '~/api/tasks';
+import { updateTask } from '~/api/tasks';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { cn, getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { SubTask as BaseSubTask, DraggableItemData } from '~/types';
-import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
-import { deleteTasks } from '~/api/tasks';
-import { dispatchCustomEvent } from '~/lib/custom-events';
-import { updateTask } from '~/api/tasks';
-import { useLocation } from '@tanstack/react-router';
 
 type TaskDraggableItemData = DraggableItemData<BaseSubTask> & { type: 'subTask' };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -109,7 +109,7 @@ const SubTask = ({
           className={cn(
             'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
             'transition-all bg-background w-5 h-5 m-1.5',
-            `${task.status === 6 ? 'data-[state=checked]:bg-green-700 border-green-700' : 'border-gray-500'}`,
+            `${task.status === 6 ? 'data-[state=checked]:bg-green-700 !text-primary border-green-700' : 'border-gray-500'}`,
           )}
           checked={task.status === 6}
           onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}

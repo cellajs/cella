@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { ChevronDown, Tag, UserX, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Tag, UserX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -19,17 +19,17 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
+import { useLocation } from '@tanstack/react-router';
+import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
+import { Badge } from '~/modules/ui/badge.tsx';
+import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import type { Mode } from '~/store/theme.ts';
 import type { DraggableItemData, Task } from '~/types';
 import TaskDescription from './task-content.tsx';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
-import { Checkbox } from '~/modules/ui/checkbox.tsx';
-import { Badge } from '~/modules/ui/badge.tsx';
-import { updateTask, getChangeStatusTaskOrder } from '~/api/tasks.ts';
-import { useLocation } from '@tanstack/react-router';
-import { dropdownerState, type DropDownToRemove } from '~/modules/common/dropdowner/state';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {

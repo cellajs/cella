@@ -1,17 +1,17 @@
+import { useLocation } from '@tanstack/react-router';
 import { Check, XCircle } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { updateTask } from '~/api/tasks.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd.tsx';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
+import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { User } from '~/types/index.ts';
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { inNumbersArray } from './helpers.ts';
-import { updateTask } from '~/api/tasks.ts';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
-import { useLocation } from '@tanstack/react-router';
-import { Input } from '~/modules/ui/input';
 
 type AssignableMember = Omit<User, 'counts'>;
 

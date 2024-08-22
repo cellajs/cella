@@ -1,10 +1,10 @@
-import DataGrid from 'react-data-grid';
 import { Check } from 'lucide-react';
-import { statusFillColors, taskStatuses, type TaskStatus } from '~/modules/tasks/task-selectors/select-status';
+import DataGrid from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { useWorkspaceStore } from '~/store/workspace';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { type TaskStatus, statusFillColors, taskStatuses } from '~/modules/tasks/task-selectors/select-status';
+import { useWorkspaceStore } from '~/store/workspace';
 
 export function SearchDropDown({
   selectedProjects,

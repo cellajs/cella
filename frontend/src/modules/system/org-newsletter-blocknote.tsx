@@ -1,9 +1,9 @@
-import { useCreateBlockNote, DragHandleButton, SideMenu, SideMenuController } from '@blocknote/react';
+import { DragHandleButton, SideMenu, SideMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
+import DOMPurify from 'dompurify';
 import { Suspense } from 'react';
 import { useThemeStore } from '~/store/theme';
-import DOMPurify from 'dompurify';
 
 import '~/modules/common/blocknote/styles.css';
 

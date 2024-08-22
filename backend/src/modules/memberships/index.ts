@@ -2,12 +2,12 @@ import { and, eq, inArray, or } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 
-import { render } from 'jsx-email';
 import { config } from 'config';
-import { emailSender } from '../../lib/mailer';
+import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
 import { InviteMemberEmail } from '../../../emails/member-invite';
+import { emailSender } from '../../lib/mailer';
 
 import type { OrganizationModel } from '../../db/schema/organizations';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';

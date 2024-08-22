@@ -4,8 +4,12 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 
 import { config } from 'config';
+import { render } from 'jsx-email';
+import organizationsNewsletter from '../../../emails/organization-newsletter';
+import { usersTable } from '../../db/schema/users';
 import { counts } from '../../lib/counts';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
+import { emailSender } from '../../lib/mailer';
 import { getOrderColumn } from '../../lib/order-column';
 import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -14,10 +18,6 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import organizationRoutesConfig from './routes';
-import organizationsNewsletter from '../../../emails/organization-newsletter';
-import { emailSender } from '../../lib/mailer';
-import { render } from 'jsx-email';
-import { usersTable } from '../../db/schema/users';
 
 const app = new CustomHono();
 

@@ -1,6 +1,6 @@
-import { useQueryClient, type InfiniteData, type QueryKey } from '@tanstack/react-query';
+import { type InfiniteData, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { queryClient } from '~/lib/router';
-import type { Workspace, WorkspaceStoreProject, Membership, Project, Task, SubTask } from '~/types';
+import type { Membership, Project, SubTask, Task, Workspace, WorkspaceStoreProject } from '~/types';
 
 interface Item {
   id: string;
@@ -14,8 +14,6 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
       items: Item[];
       total: number;
     }>(queryKey, (data) => {
-      console.log('queryKey:', queryKey);
-      console.log('data:', data);
       if (!data) return;
 
       if (action === 'create') {

@@ -1,20 +1,20 @@
+import { useLocation } from '@tanstack/react-router';
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { type CreateLabelParams, createLabel, updateLabel } from '~/api/labels.ts';
+import { updateTask } from '~/api/tasks.ts';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { nanoid, recentlyUsed } from '~/lib/utils.ts';
-import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
-import { useWorkspaceStore } from '~/store/workspace.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command.tsx';
-import { inNumbersArray } from './helpers.ts';
+import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
+import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Label } from '~/types/index.ts';
-import { createLabel, updateLabel, type CreateLabelParams } from '~/api/labels.ts';
-import { updateTask } from '~/api/tasks.ts';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
-import { useLocation } from '@tanstack/react-router';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { inNumbersArray } from './helpers.ts';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};

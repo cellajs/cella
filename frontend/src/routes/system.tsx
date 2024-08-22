@@ -4,16 +4,16 @@ import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schem
 import { getRequestsQuerySchema } from 'backend/modules/requests/schema';
 import { usersQuerySchema } from 'backend/modules/users/schema';
 import { Suspense, lazy } from 'react';
+import { z } from 'zod';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table';
+import { RequestsPerMinute } from '~/modules/system/metrics-charts/requests-per-minute';
 import { requestsQueryOptions } from '~/modules/system/requests-table';
 import SystemPanel from '~/modules/system/system-panel';
 import { usersQueryOptions } from '~/modules/users/users-table';
 import { AppRoute } from '.';
-import { RequestsPerMinute } from '~/modules/system/metrics-charts/requests-per-minute';
-import { z } from 'zod';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));

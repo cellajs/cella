@@ -19,7 +19,9 @@ export const FooterLink = ({ id, href }: FooterLinkProps) => {
   return (
     <li>
       <Link to={href}>
-        <Button variant="ghost" className="font-light" size="xs">{t(`common:${id}`)}</Button>
+        <Button variant="ghost" className="font-light" size="xs">
+          {t(`common:${id}`)}
+        </Button>
       </Link>
     </li>
   );

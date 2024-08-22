@@ -14,14 +14,14 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@cellajs/imado": "^0.1.2",
-    "@t3-oss/env-core": "^0.10.1",
+    "@t3-oss/env-core": "^0.11.0",
     "config": "workspace:*",
     "dotenv": "^16.4.5",
-    "tsx": "^4.7.0",
+    "tsx": "^4.17.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4"
   }
 }

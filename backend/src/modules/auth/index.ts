@@ -1,5 +1,5 @@
-import { render } from 'jsx-email';
 import { eq } from 'drizzle-orm';
+import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { VerificationEmail } from '../../../emails/email-verification';
@@ -19,13 +19,15 @@ import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handl
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
 import type { z } from 'zod';
-import { emailSender } from '../../lib/mailer';
 import { db } from '../../db/db';
+import { passkeysTable } from '../../db/schema/passkeys';
 import { tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
+import { emailSender } from '../../lib/mailer';
 import { nanoid } from '../../lib/nanoid';
+import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '../../lib/utils';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import generalRouteConfig from '../general/routes';
@@ -33,8 +35,6 @@ import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessi
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
-import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '../../lib/utils';
-import { passkeysTable } from '../../db/schema/passkeys';
 
 // Scopes for OAuth providers
 const githubScopes = { scopes: ['user:email'] };
@@ -308,11 +308,6 @@ const authRoutes = app
       await setSessionCookie(ctx, user.id, 'password');
     }
     return ctx.json({ success: true }, 200);
-
-    // return ctx.json(
-    //   { success: true, data: { ...transformDatabaseUser(user), oauth: oauthAccounts.map((el) => el.providerId), passkey: !!passkey } },
-    //   200,
-    // );
   })
   /*
    * Impersonate sign in
@@ -343,7 +338,6 @@ const authRoutes = app
     }
 
     const { session } = await auth.validateSession(sessionId);
-    console.log('session:', session);
 
     if (session) {
       await auth.invalidateSession(session.id);

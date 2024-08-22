@@ -1,9 +1,8 @@
-import { Trash2, Zap, ZapOff, Check } from 'lucide-react';
+import { Check, KeyRound, Send, Trash2, Zap, ZapOff } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { Send, KeyRound } from 'lucide-react';
-import { deleteMySessions as baseTerminateMySessions } from '~/api/me';
+import { removePasskey as baseRemovePasskey, deleteMySessions as baseTerminateMySessions } from '~/api/me';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
@@ -13,8 +12,9 @@ import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail, setPasskey, getChallenge } from '~/api/auth';
+import { getChallenge, sendResetPasswordEmail, setPasskey } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
+import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 import { AsideNav } from '~/modules/common/aside-nav';
 import StickyBox from '~/modules/common/sticky-box';
 import UpdateUserForm from '~/modules/users/update-user-form';
@@ -23,7 +23,6 @@ import { oauthProviders } from '../auth/oauth-options';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
 import DeleteSelf from './delete-self';
-import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 
 export type Session = {
   id: string;
@@ -81,7 +80,7 @@ const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps)
 };
 
 const UserSettings = () => {
-  const { user } = useUserStore();
+  const { user, setUser } = useUserStore();
   const { mode } = useThemeStore();
   const { t } = useTranslation();
 
@@ -122,8 +121,14 @@ const UserSettings = () => {
       },
     );
   };
-
-  async function registerPasskey() {
+  const removePasskey = async () => {
+    const result = await baseRemovePasskey();
+    if (result) {
+      toast.success('Passkey removed successfully.');
+      setUser({ ...user, passkey: false });
+    } else toast.error('Removing of passkey failed.');
+  };
+  const registerPasskey = async () => {
     const { challengeBase64 } = await getChallenge();
 
     const credential = await navigator.credentials.create({
@@ -155,9 +160,11 @@ const UserSettings = () => {
     };
 
     const result = await setPasskey(credentialData);
-    if (result) toast.success('Passkey created successfully.');
-    else toast.error('Creation of passkey failed.');
-  }
+    if (result) {
+      toast.success('Passkey created successfully.');
+      setUser({ ...user, passkey: true });
+    } else toast.error('Creation of passkey failed.');
+  };
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';
@@ -238,6 +245,12 @@ const UserSettings = () => {
                   <KeyRound className="w-4 h-4 mr-2" />
                   {user.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>
+                {user.passkey && (
+                  <Button key="passkey" type="button" variant="outline" onClick={() => removePasskey()}>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {t('common:remove_passkey')}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -254,7 +267,18 @@ const UserSettings = () => {
                 {config.enabledOauthProviders.map((id) => {
                   const option = oauthProviders.find((provider) => provider.id === id);
                   if (!option) return;
-
+                  if (user.oauth.includes(id))
+                    return (
+                      <div key={option.name} className="flex items-center justify-center py-2 px-3 gap-2 border rounded-md">
+                        <img
+                          src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
+                          alt={option.name}
+                          className={`w-4 h-4 ${option.id === 'github' ? invertClass : ''}`}
+                          loading="lazy"
+                        />
+                        {`${t('common:already_connected_to')} ${option.name} `}
+                      </div>
+                    );
                   return (
                     <Button
                       key={option.name}

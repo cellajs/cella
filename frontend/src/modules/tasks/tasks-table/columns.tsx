@@ -1,24 +1,24 @@
 import { Link, useNavigate } from '@tanstack/react-router';
+import { Dot } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import { Button } from '~/modules/ui/button.tsx';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected.tsx';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact.tsx';
 import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } from '~/modules/tasks/task-selectors/select-status';
 import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type.tsx';
-import { useWorkspaceStore } from '~/store/workspace.ts';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
-import { Dot } from 'lucide-react';
-import { badgeStyle } from '../task-selectors/select-labels';
-import type { Task } from '~/types';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
+import { Button } from '~/modules/ui/button.tsx';
+import { useWorkspaceStore } from '~/store/workspace.ts';
+import type { Task } from '~/types';
+import { badgeStyle } from '../task-selectors/select-labels';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -29,6 +29,7 @@ export const useColumns = () => {
   const setPreviewSearch = (id: string, key: string) => {
     navigate({
       replace: true,
+      resetScroll: false,
       search: (prev) => ({
         ...prev,
         ...{ [`${key}Preview`]: id },

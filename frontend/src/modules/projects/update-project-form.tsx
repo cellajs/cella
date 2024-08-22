@@ -3,8 +3,6 @@ import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { cleanUrl } from '~/lib/utils';
-import AvatarFormField from '~/modules/common/form-fields/avatar';
 import { updateProjectBodySchema } from 'backend/modules/projects/schema';
 import { useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
@@ -13,7 +11,9 @@ import { type UpdateProjectParams, updateProject } from '~/api/projects';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
+import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
+import AvatarFormField from '~/modules/common/form-fields/avatar';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { SlugFormField } from '~/modules/common/form-fields/slug';

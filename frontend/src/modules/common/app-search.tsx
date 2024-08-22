@@ -166,27 +166,28 @@ export const AppSearch = () => {
             {suggestions.total > 0 && (
               <>
                 {suggestionSections.map((section) => {
+                  const filteredSuggestions = suggestions.items.filter((el) => el.entity === section.type);
+                  // Skip rendering if no items match the section type
+                  if (filteredSuggestions.length === 0) return null;
                   return (
                     <Fragment key={section.id}>
                       <CommandSeparator />
                       <CommandGroup className="">
                         <StickyBox className="z-10 px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t(section.label)}</StickyBox>
-                        {suggestions.items
-                          .filter((el) => el.entity === section.type)
-                          .map((suggestion: SuggestionType) => (
-                            <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
-                              <div className="flex space-x-2 items-center outline-0 ring-0 group">
-                                <AvatarWrap
-                                  type={section.type}
-                                  className="h-8 w-8"
-                                  id={suggestion.id}
-                                  name={suggestion.name}
-                                  url={suggestion.thumbnailUrl}
-                                />
-                                <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
-                              </div>
-                            </CommandItem>
-                          ))}
+                        {filteredSuggestions.map((suggestion: SuggestionType) => (
+                          <CommandItem key={suggestion.id} onSelect={() => onSelectSuggestion(suggestion)}>
+                            <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                              <AvatarWrap
+                                type={section.type}
+                                className="h-8 w-8"
+                                id={suggestion.id}
+                                name={suggestion.name}
+                                url={suggestion.thumbnailUrl}
+                              />
+                              <span className="group-hover:underline underline-offset-4 truncate font-medium">{suggestion.name}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
                       </CommandGroup>
                     </Fragment>
                   );
