@@ -308,11 +308,6 @@ const authRoutes = app
       await setSessionCookie(ctx, user.id, 'password');
     }
     return ctx.json({ success: true }, 200);
-
-    // return ctx.json(
-    //   { success: true, data: { ...transformDatabaseUser(user), oauth: oauthAccounts.map((el) => el.providerId), passkey: !!passkey } },
-    //   200,
-    // );
   })
   /*
    * Impersonate sign in
@@ -343,7 +338,6 @@ const authRoutes = app
     }
 
     const { session } = await auth.validateSession(sessionId);
-    console.log('session:', session);
 
     if (session) {
       await auth.invalidateSession(session.id);

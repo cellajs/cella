@@ -457,5 +457,6 @@
   "assigned_to": "Assigned to",
   "create_label.text": "Type a label name to create it",
   "impersonate": "Impersonate",
-  "stop_impersonation": "Stop impersonation"
+  "stop_impersonation": "Stop impersonation",
+  "remove_passkey": "Remove passkey"
 }

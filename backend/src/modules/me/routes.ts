@@ -120,5 +120,25 @@ class MeRoutesConfig {
       ...errorResponses,
     },
   });
+  public removePasskey = createRouteConfig({
+    method: 'delete',
+    path: '/passkey',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Remove user`s passkey',
+    description: 'Remove user`s passkey auth.',
+    security: [],
+    responses: {
+      200: {
+        description: 'Passkey removed',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
 }
 export default new MeRoutesConfig();
