@@ -15,6 +15,7 @@ export function Sheeter() {
     if (!open) {
       navigate({
         replace: true,
+        resetScroll: false,
         search: (prev) => {
           const newSearch = { ...prev } as Record<string, string>;
           for (const key of Object.keys(newSearch)) {

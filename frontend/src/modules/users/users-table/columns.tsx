@@ -25,7 +25,6 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
   const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
-
   const columns: ColumnOrColumnGroup<User>[] = [
     CheckboxColumn,
     {
@@ -46,6 +45,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
               e.preventDefault();
               navigate({
                 replace: true,
+                resetScroll: false,
                 search: (prev) => ({
                   ...prev,
                   ...{ userIdPreview: row.id },
