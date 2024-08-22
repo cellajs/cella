@@ -4,6 +4,7 @@ import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-d
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { useLocation } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
 import { ChevronUp, Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -99,58 +100,59 @@ const SubTask = ({
   }, [task]);
 
   return (
-    <div
-      ref={subTaskRef}
-      id="sub-item"
-      className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'} bg-secondary/50`}
-    >
-      <div className="flex flex-col gap-1">
-        <Checkbox
-          className={cn(
-            'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
-            'transition-all bg-background w-5 h-5 m-1.5',
-            `${task.status === 6 ? 'data-[state=checked]:bg-green-700 !text-primary border-green-700' : 'border-gray-500'}`,
-          )}
-          checked={task.status === 6}
-          onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
-        />
+    <motion.div layout>
+      <div
+        ref={subTaskRef}
+        className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'} bg-secondary/50`}
+      >
+        <div className="flex flex-col gap-1">
+          <Checkbox
+            className={cn(
+              'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
+              'transition-all bg-background w-5 h-5 m-1.5',
+              `${task.status === 6 ? 'data-[state=checked]:bg-green-700 !text-primary border-green-700' : 'border-gray-500'}`,
+            )}
+            checked={task.status === 6}
+            onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
+          />
 
-        {isEditing && task.expandable && (
-          <Button onClick={() => setIsEditing(false)} aria-label="Collapse" variant="ghost" size="xs" className="bg-secondary/80">
-            <ChevronUp size={16} />
-          </Button>
-        )}
-      </div>
-      <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
-        <div className={!isEditing ? 'inline-flex items-center mt-1' : 'flex flex-col items-start mt-1'}>
-          {isEditing ? (
-            <TaskBlockNote
-              id={task.id}
-              projectId={task.projectId}
-              html={task.description || ''}
-              mode={mode}
-              className="w-full bg-transparent border-none"
-              subTask
-            />
-          ) : (
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
-            // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-            <div onClick={() => setIsEditing(true)} dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
-          )}
-
-          {task.expandable && !isEditing && (
-            <Button onClick={() => setIsEditing(true)} variant="link" size="micro" className="py-0">
-              {t('common:more').toLowerCase()}
+          {isEditing && task.expandable && (
+            <Button onClick={() => setIsEditing(false)} aria-label="Collapse" variant="ghost" size="xs" className="bg-secondary/80">
+              <ChevronUp size={16} />
             </Button>
           )}
         </div>
+        <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
+          <div className={!isEditing ? 'inline-flex items-center mt-1' : 'flex flex-col items-start mt-1'}>
+            {isEditing ? (
+              <TaskBlockNote
+                id={task.id}
+                projectId={task.projectId}
+                html={task.description || ''}
+                mode={mode}
+                className="w-full bg-transparent border-none"
+                subTask
+              />
+            ) : (
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+              // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+              <div onClick={() => setIsEditing(true)} dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
+            )}
+
+            {task.expandable && !isEditing && (
+              <Button onClick={() => setIsEditing(true)} variant="link" size="micro" className="py-0">
+                {t('common:more').toLowerCase()}
+              </Button>
+            )}
+          </div>
+        </div>
+        <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer opacity-30">
+          <span className="sr-only">{t('common:move_task')}</span>
+          <Trash size={16} />
+        </Button>
+        {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
       </div>
-      <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer opacity-30">
-        <span className="sr-only">{t('common:move_task')}</span>
-        <Trash size={16} />
-      </Button>
-      {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
-    </div>
+    </motion.div>
   );
 };
 
