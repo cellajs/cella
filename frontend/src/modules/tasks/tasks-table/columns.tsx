@@ -29,6 +29,7 @@ export const useColumns = () => {
   const setPreviewSearch = (id: string, key: string) => {
     navigate({
       replace: true,
+      resetScroll: false,
       search: (prev) => ({
         ...prev,
         ...{ [`${key}Preview`]: id },

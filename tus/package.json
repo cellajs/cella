@@ -9,10 +9,7 @@
     "start": "NODE_ENV=production tsx dist/index.js",
     "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.js\""
   },
-  "keywords": [
-    "tus",
-    "imado"
-  ],
+  "keywords": ["tus", "imado"],
   "author": "CellaJS <info@cellajs.com>",
   "license": "UNLICENSED",
   "dependencies": {

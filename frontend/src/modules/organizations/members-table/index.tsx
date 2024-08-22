@@ -135,6 +135,7 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
     openUserPreviewSheet(user);
     navigate({
       replace: true,
+      resetScroll: false,
       search: (prev) => ({
         ...prev,
         ...{ userIdPreview: user.id },
@@ -254,7 +255,6 @@ const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => 
   };
 
   useEffect(() => {
-    setSelectedRows(new Set<string>());
     setSortColumns(getInitialSortColumns(search));
   }, [search, entity.id]);
 
