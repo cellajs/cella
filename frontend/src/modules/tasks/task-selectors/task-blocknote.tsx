@@ -51,9 +51,9 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
     //if user in Formatting Toolbar does not update
     if (editor.getSelection()) return;
 
-    const descriptionHtml = await editor.blocksToHTMLLossy(editor.document);
+    const descriptionHtml = await editor.blocksToFullHTML(editor.document);
     const summary = editor.document[0];
-    const summaryHTML = await editor.blocksToHTMLLossy([summary]);
+    const summaryHTML = await editor.blocksToFullHTML([summary]);
     const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (onChange) onChange(cleanDescription, cleanSummary);
@@ -61,23 +61,17 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
   };
 
   useEffect(() => {
-    if (!initial.current && html !== undefined && html !== '<p class="bn-inline-content"></p>' && html !== '') return;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    // Select all <p class="bn-inline-content"></p> elements
+    const emptyPElements = doc.querySelectorAll('p.bn-inline-content');
+    // Check if there is exactly one <p> element and it is empty
+    const contentEmpty = emptyPElements.length === 1 && emptyPElements[0].textContent === '';
+
+    if (!initial.current && html !== undefined && contentEmpty && html !== '') return;
     const blockUpdate = async (html: string) => {
-      // Define base content to replace 'plug' text
-      const baseContent = [{ styles: {}, text: '', type: 'text' }];
-      // Replace empty lines with 'plug' for parsing
-      const modifiedHtml = html.replace(/<p class="bn-inline-content"><\/p>/g, '<p class="bn-inline-content">plug</p>');
-      const blocks = await editor.tryParseHTMLToBlocks(modifiedHtml);
-      // Clean up 'plug' text in blocks
-
-      const cleanedBlocks = blocks.map((block) => {
-        if (block.type === 'paragraph' && (block.content as typeof baseContent)[0]?.text === 'plug') {
-          return { ...block, content: baseContent };
-        }
-        return block;
-      });
-
-      editor.replaceBlocks(editor.document, cleanedBlocks);
+      const blocks = await editor.tryParseHTMLToBlocks(html);
+      editor.replaceBlocks(editor.document, blocks);
       triggerFocus(subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`);
       initial.current = false;
     };

@@ -7,6 +7,7 @@ import CreateSubTaskForm from './create-sub-task-form';
 import SubTask from './sub-task';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import type { Task } from '~/types';
+import '@blocknote/shadcn/style.css';
 
 interface Props {
   task: Task;
@@ -17,13 +18,20 @@ interface Props {
 const TaskContent = ({ task, mode, isExpanded }: Props) => {
   const { t } = useTranslation();
   const [createSubTask, setCreateSubTask] = useState(false);
+  // const [isEditing, setIsEditing] = useState(true);
 
+  const expandedStyle = 'min-h-16 w-full bg-transparent border-none mt-1';
   return (
     <>
       {!isExpanded ? (
-        <div className="mt-1">
-          {/* biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend */}
-          <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="task-summary inline" />
+        <div className="mt-1 inline-flex">
+          <div
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+            dangerouslySetInnerHTML={{ __html: task.summary }}
+            data-color-scheme={mode}
+            className="bn-container bn-shadcn"
+          />
+
           {(task.expandable || task.subTasks.length > 0) && (
             <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 pl-2">
               <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleCard', task.id)} className="inline-flex py-0 h-5">
@@ -45,14 +53,18 @@ const TaskContent = ({ task, mode, isExpanded }: Props) => {
         </div>
       ) : (
         <>
-          <TaskBlockNote
-            id={task.id}
-            projectId={task.projectId}
-            html={task.description || ''}
-            mode={mode}
-            className="min-h-16 w-full bg-transparent border-none mt-1"
-          />
-
+          {/* {isEditing ? ( */}
+          <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
+          {/* ) : (
+            <div className={`${expandedStyle} bn-container bn-shadcn`} data-color-scheme={mode}>
+              <div
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+                dangerouslySetInnerHTML={{ __html: task.description }}
+                onClick={() => setIsEditing(true)}
+                onKeyDown={() => {}}
+              />
+            </div>
+          )} */}
           <div className="-ml-10 -mr-1">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (

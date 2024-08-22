@@ -111,10 +111,21 @@ export const CreateSubTaskForm = ({
     });
   };
 
-  // default value in blocknote <p class="bn-inline-content"></p so check by removing it
+  // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
   const isDirty = () => {
-    const fields = form.getValues('description').replace('<p class="bn-inline-content"></p>', '');
-    return !!fields.length;
+    const { dirtyFields } = form.formState;
+    const fieldsKeys = Object.keys(dirtyFields);
+    if (fieldsKeys.length === 0) return false;
+    if (fieldsKeys.includes('description') && fieldsKeys.length === 1) {
+      const description = form.getValues('description');
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(description, 'text/html');
+      const emptyPElements = Array.from(doc.querySelectorAll('p.bn-inline-content'));
+
+      // Check if any <p> element has non-empty text content
+      return emptyPElements.some((el) => el.textContent && el.textContent.trim() !== '');
+    }
+    return true;
   };
 
   if (!formOpen)
