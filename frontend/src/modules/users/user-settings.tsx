@@ -81,6 +81,7 @@ const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps)
 
 const UserSettings = () => {
   const { user, setUser } = useUserStore();
+  console.log('user:', user);
   const { mode } = useThemeStore();
   const { t } = useTranslation();
 
@@ -267,7 +268,18 @@ const UserSettings = () => {
                 {config.enabledOauthProviders.map((id) => {
                   const option = oauthProviders.find((provider) => provider.id === id);
                   if (!option) return;
-
+                  if (user.oauth.includes(id))
+                    return (
+                      <div key={option.name} className="flex items-center justify-center py-2 px-3 gap-2 border rounded-md">
+                        <img
+                          src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
+                          alt={option.name}
+                          className={`w-4 h-4 ${option.id === 'github' ? invertClass : ''}`}
+                          loading="lazy"
+                        />
+                        {`${t('common:already_connected_to')} ${option.name} `}
+                      </div>
+                    );
                   return (
                     <Button
                       key={option.name}

@@ -458,5 +458,6 @@
   "create_label.text": "Type a label name to create it",
   "impersonate": "Impersonate",
   "stop_impersonation": "Stop impersonation",
-  "remove_passkey": "Remove passkey"
+  "remove_passkey": "Remove passkey",
+  "already_connected_to": "Already connected to"
 }
