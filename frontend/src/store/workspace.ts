@@ -12,8 +12,8 @@ interface WorkspaceState {
   labels: Label[];
   setLabels: (labels: Label[]) => void;
   selectedTasks: string[];
-  searchQuery: string;
   setSelectedTasks: (tasks: string[]) => void;
+  searchQuery: string;
   setSearchQuery: (query: string) => void;
   focusedTaskId: string | null;
   setFocusedTaskId: (taskId: string | null) => void;
@@ -25,25 +25,27 @@ export const useWorkspaceStore = create<WorkspaceState>()(
   devtools(
     immer((set) => ({
       workspace: null as unknown as Workspace,
+      projects: [],
+      labels: [],
+      selectedTasks: [],
+      searchQuery: '',
+      focusedTaskId: null,
+      showPageHeader: false,
       setWorkspace: (workspace) => {
         set((state) => {
           state.workspace = workspace;
         });
       },
-      projects: [],
       setProjects: (projects) => {
         set((state) => {
           state.projects = projects;
         });
       },
-      labels: [],
       setLabels: (labels) => {
         set((state) => {
           state.labels = labels;
         });
       },
-      selectedTasks: [],
-      searchQuery: '',
       setSelectedTasks: (tasks) => {
         set((state) => {
           state.selectedTasks = tasks;
@@ -54,13 +56,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           state.searchQuery = query;
         });
       },
-      focusedTaskId: null,
       setFocusedTaskId: (id) => {
         set((state) => {
           state.focusedTaskId = id;
         });
       },
-      showPageHeader: false,
       togglePageHeader: () => {
         set((state) => {
           state.showPageHeader = !state.showPageHeader;

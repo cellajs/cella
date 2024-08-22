@@ -18,19 +18,16 @@ export const useDraftStore = create<DraftState>()(
     persist(
       (set, get) => ({
         forms: {},
-
         setForm<T>(key: string, value: T) {
           set((state) => {
             state.forms[key] = value;
           });
         },
-
         resetForm(key: string) {
           set((state) => {
             delete state.forms[key];
           });
         },
-
         getForm<T>(key: string): T | undefined {
           return get().forms[key] as T | undefined;
         },
