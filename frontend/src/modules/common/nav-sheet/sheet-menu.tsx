@@ -1,11 +1,11 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import type { ContextEntity, UserMenu } from '~/types';
 
-import { Checkbox } from '~/modules/ui/checkbox';
 import { useNavigationStore } from '~/store/navigation';
 
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Switch } from '~/modules/ui/switch';
 import type { UserMenuItem } from '~/types';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
 import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
@@ -113,25 +113,14 @@ export const SheetMenu = memo(() => {
           <div className="grow mt-4 border-b border-dashed" />
           <div className="flex flex-col my-6 mx-2 gap-6">
             <div className="max-xl:hidden flex items-center gap-2">
-              <Checkbox
-                id="keepMenuOpen"
-                checked={keepMenuOpen}
-                onCheckedChange={toggleKeepMenu}
-                aria-label={t('common:keep_menu_open')}
-                className="w-4 h-4"
-              />
+              <Switch size="xs" id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
+
               <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
                 {t('common:keep_menu_open')}
               </label>
             </div>
             <div className="max-sm:hidden flex items-center gap-2">
-              <Checkbox
-                id="hideSubmenu"
-                checked={hideSubmenu}
-                onCheckedChange={toggleHideSubmenu}
-                aria-label={t('common:hide_projects')}
-                className="w-4 h-4"
-              />
+              <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:hide_projects')} />
               <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
                 {t('common:hide_projects')}
               </label>
