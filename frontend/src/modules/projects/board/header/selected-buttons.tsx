@@ -1,13 +1,13 @@
+import { useLocation } from '@tanstack/react-router';
 import { Trash, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Button } from '~/modules/ui/button';
-import { useWorkspaceStore } from '~/store/workspace';
-import { TooltipButton } from '~/modules/common/tooltip-button';
-import { Badge } from '~/modules/ui/badge';
 import { deleteTasks } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
-import { useLocation } from '@tanstack/react-router';
+import { TooltipButton } from '~/modules/common/tooltip-button';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
+import { useWorkspaceStore } from '~/store/workspace';
 
 const TaskSelectedTableButtons = () => {
   const { t } = useTranslation();

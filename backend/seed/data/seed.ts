@@ -4,19 +4,19 @@ import { db } from '../../src/db/db';
 import { nanoid } from '../../src/lib/nanoid';
 
 import { Command } from '@commander-js/extra-typings';
+import { and, eq } from 'drizzle-orm';
 import { UniqueEnforcer } from 'enforce-unique';
+import slugify from 'slugify';
 import { type InsertLabelModel, labelsTable } from '../../src/db/schema/labels';
-import { type InsertTaskModel, tasksTable } from '../../src/db/schema/tasks';
 import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
 import { organizationsTable } from '../../src/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '../../src/db/schema/projects';
 import { projectsToWorkspacesTable } from '../../src/db/schema/projects-to-workspaces';
+import { type InsertTaskModel, tasksTable } from '../../src/db/schema/tasks';
 import { type InsertWorkspaceModel, workspacesTable } from '../../src/db/schema/workspaces';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
-import slugify from 'slugify';
 import { extractKeywords } from './helpers';
-import { eq, and } from 'drizzle-orm';
 
 const seedCommand = new Command().option('--addImages', 'Add images to members').parse(process.argv);
 const options = seedCommand.opts();

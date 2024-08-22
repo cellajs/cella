@@ -3,9 +3,9 @@ import { Search, XCircle } from 'lucide-react';
 import { useContext, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
+import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
-import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 
 const BoardSearch = () => {
   const navigate = useNavigate();

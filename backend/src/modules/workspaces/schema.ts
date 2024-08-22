@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { projectsTable } from '../../db/schema/projects';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { idSchema, imageUrlSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
-import { membershipInfoSchema } from '../memberships/schema';
-import { projectsTable } from '../../db/schema/projects';
 import { membersSchema } from '../general/schema';
+import { membershipInfoSchema } from '../memberships/schema';
 
 export const workspaceSchema = z.object({
   ...createSelectSchema(workspacesTable).shape,

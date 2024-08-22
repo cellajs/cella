@@ -3,22 +3,22 @@ import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
+import { useLocation } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
+import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { nanoid } from '~/lib/utils.ts';
 import { Button } from '~/modules/ui/button';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
+import type { Task } from '~/types';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers.ts';
 import { TaskBlockNote } from './task-selectors/task-blocknote.tsx';
-import { createTask } from '~/api/tasks.ts';
-import type { Task } from '~/types';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
-import { useLocation } from '@tanstack/react-router';
 
 const formSchema = z.object({
   id: z.string(),

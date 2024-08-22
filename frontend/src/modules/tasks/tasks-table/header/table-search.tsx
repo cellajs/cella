@@ -1,12 +1,12 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
-import { useWorkspaceStore } from '~/store/workspace';
-import { useRef, useEffect, useContext, useState } from 'react';
 import { Search, XCircle } from 'lucide-react';
-import { Input } from '~/modules/ui/input';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
-import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 import { useEventListener } from '~/hooks/use-event-listener';
+import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
+import { Input } from '~/modules/ui/input';
+import { useWorkspaceStore } from '~/store/workspace';
 
 export function TaskTableSearch({
   children,

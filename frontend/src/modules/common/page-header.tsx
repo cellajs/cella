@@ -2,11 +2,11 @@ import { Link } from '@tanstack/react-router';
 import type { Entity } from 'backend/types/common';
 import { ChevronRight, Home } from 'lucide-react';
 import { useRef } from 'react';
+import { useGetEntity } from '~/hooks/use-get-entity-minimum-info';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { PageCover } from './page-cover';
-import { useGetEntity } from '~/hooks/use-get-entity-minimum-info';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {

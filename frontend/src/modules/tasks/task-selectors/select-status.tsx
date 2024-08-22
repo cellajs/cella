@@ -1,10 +1,15 @@
+import { useLocation } from '@tanstack/react-router';
 import { cva } from 'class-variance-authority';
 import { Check, XCircle } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
-import { Command, CommandGroup, CommandItem, CommandEmpty, CommandList } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
+import { Input } from '~/modules/ui/input';
+import { useWorkspaceStore } from '~/store/workspace';
 import { inNumbersArray } from './helpers';
 import { AcceptedIcon } from './status-icons/accepted';
 import { DeliveredIcon } from './status-icons/delivered';
@@ -13,11 +18,6 @@ import { IcedIcon } from './status-icons/iced';
 import { ReviewedIcon } from './status-icons/reviewed';
 import { StartedIcon } from './status-icons/started';
 import { UnstartedIcon } from './status-icons/unstarted';
-import { useWorkspaceStore } from '~/store/workspace';
-import { dispatchCustomEvent } from '~/lib/custom-events';
-import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks';
-import { useLocation } from '@tanstack/react-router';
-import { Input } from '~/modules/ui/input';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },

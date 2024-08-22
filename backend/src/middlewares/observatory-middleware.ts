@@ -1,6 +1,6 @@
+import { trace } from '@opentelemetry/api';
 import type { MiddlewareHandler } from 'hono/types';
 import { Counter } from 'prom-client';
-import { trace } from '@opentelemetry/api';
 
 const httpRequestCounter = new Counter({
   name: 'Requests',

@@ -4,12 +4,12 @@ import { toast } from 'sonner';
 import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
+import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
 import { dialog } from '../common/dialoger/state';
 import { Button } from '../ui/button';
 import DeleteProjects from './delete-projects';
 import UpdateProjectForm from './update-project-form';
-import { useWorkspaceStore } from '~/store/workspace';
 
 export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();

@@ -1,4 +1,4 @@
-import type { Task, SubTask } from '~/types';
+import type { SubTask, Task } from '~/types';
 
 // To sort Tasks by its status & order
 export const sortTaskOrder = (task1: Pick<Task, 'status' | 'order'>, task2: Pick<Task, 'status' | 'order'>, reverse?: boolean) => {

@@ -1,19 +1,19 @@
 import { z } from 'zod';
-import { errorResponses, successWithDataSchema, successWithoutDataSchema, successWithPaginationSchema } from '../../lib/common-responses';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '../../lib/common-responses';
 import { idsQuerySchema } from '../../lib/common-schemas';
 
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
 
 import {
-  getTasksQuerySchema,
-  simpleTaskSchema,
   createTaskSchema,
-  idParamSchema,
-  updateTaskSchema,
-  relativeQuerySchema,
   fullTaskSchema,
   getNewOrderQuerySchema,
+  getTasksQuerySchema,
+  idParamSchema,
+  relativeQuerySchema,
+  simpleTaskSchema,
+  updateTaskSchema,
 } from './schema';
 
 class TaskRoutesConfig {

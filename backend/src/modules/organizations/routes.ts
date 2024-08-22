@@ -2,8 +2,8 @@ import {
   errorResponses,
   successWithDataSchema,
   successWithErrorsSchema,
-  successWithoutDataSchema,
   successWithPaginationSchema,
+  successWithoutDataSchema,
 } from '../../lib/common-responses';
 import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';

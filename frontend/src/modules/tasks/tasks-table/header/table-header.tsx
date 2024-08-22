@@ -1,9 +1,9 @@
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { FocusView } from '~/modules/common/focus-view';
 import StickyBox from '~/modules/common/sticky-box';
 import DisplayOptions from '~/modules/projects/board/header/display-options';
-import { useWorkspaceStore } from '~/store/workspace';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import TaskSelectedTableButtons from '~/modules/projects/board/header/selected-buttons';
+import { useWorkspaceStore } from '~/store/workspace';
 
 const TableHeader = ({
   children,

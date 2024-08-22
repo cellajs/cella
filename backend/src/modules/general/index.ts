@@ -1,11 +1,11 @@
 import { type SQL, and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
-import { emailSender } from '../../lib/mailer';
 import { InviteSystemEmail } from '../../../emails/system-invite';
+import { emailSender } from '../../lib/mailer';
 
-import { render } from 'jsx-email';
 import { config } from 'config';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
+import { render } from 'jsx-email';
 import { type User, generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { env } from '../../../env';
@@ -13,15 +13,19 @@ import { env } from '../../../env';
 import { db } from '../../db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { register } from 'prom-client';
+import { labelsTable } from '../../db/schema/labels';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { projectsTable } from '../../db/schema/projects';
+import { tasksTable } from '../../db/schema/tasks';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
+import { calculateRequestsPerMinute, parsePromMetrics } from '../../lib/utils';
 import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
@@ -30,10 +34,6 @@ import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
-import { register } from 'prom-client';
-import { calculateRequestsPerMinute, parsePromMetrics } from '../../lib/utils';
-import { tasksTable } from '../../db/schema/tasks';
-import { labelsTable } from '../../db/schema/labels';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 

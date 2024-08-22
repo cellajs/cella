@@ -1,5 +1,5 @@
+import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
-import { useState, useEffect } from 'react';
 import { getMetrics } from '~/api/general';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { type ChartConfig, ChartContainer } from '~/modules/ui/chart';

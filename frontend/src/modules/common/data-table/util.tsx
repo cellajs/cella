@@ -1,6 +1,6 @@
-import type { User } from '~/types';
 import { sheet } from '~/modules/common/sheeter/state';
 import { UserProfile } from '~/modules/users/user-profile';
+import type { User } from '~/types';
 
 export const openUserPreviewSheet = (user: Omit<User, 'counts'>) => {
   sheet.create(<UserProfile sheet user={user} />, {

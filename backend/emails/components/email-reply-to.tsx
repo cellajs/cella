@@ -1,5 +1,5 @@
-import { Text } from 'jsx-email';
 import { config } from 'config';
+import { Text } from 'jsx-email';
 import { i18n } from '../../../backend/src/lib/i18n';
 
 export const EmailReplyTo = ({ email }: { email: string }) => (

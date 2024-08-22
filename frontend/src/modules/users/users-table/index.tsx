@@ -22,6 +22,7 @@ import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-col
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
@@ -32,7 +33,6 @@ import { UsersTableRoute } from '~/routes/system';
 import type { User } from '~/types';
 import DeleteUsers from '../delete-users';
 import { useColumns } from './columns';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 

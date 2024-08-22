@@ -15,11 +15,11 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
+import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
+import { passkeysTable } from '../../db/schema/passkeys';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { getPreparedSessions } from './helpers/get-sessions';
-import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
-import { passkeysTable } from '../../db/schema/passkeys';
 
 const app = new CustomHono();
 

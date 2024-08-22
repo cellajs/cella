@@ -5,8 +5,8 @@ import { Fragment, lazy, useEffect } from 'react';
 import { Suspense } from 'react';
 import { useThemeStore } from '~/store/theme';
 
-import router from '~/lib/router';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import router from '~/lib/router';
 import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useNavigationStore } from '~/store/navigation';
@@ -14,15 +14,15 @@ import { NavSheet } from './nav-sheet';
 import { SheetAccount } from './nav-sheet/sheet-account';
 import { SheetMenu } from './nav-sheet/sheet-menu';
 
+import { impersonateSignOut } from '~/api/auth';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 import useMounted from '~/hooks/use-mounted';
+import { sheet } from '~/modules/common/sheeter/state';
+import { getAndSetMe, getAndSetMenu } from '~/routes';
+import { useUserStore } from '~/store/user';
+import { useWorkspaceStore } from '~/store/workspace';
 import { NavButton } from './app-nav-button';
 import { AppSearch } from './app-search';
-import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useWorkspaceStore } from '~/store/workspace';
-import { useUserStore } from '~/store/user';
-import { sheet } from '~/modules/common/sheeter/state';
-import { impersonateSignOut } from '~/api/auth';
-import { getAndSetMe, getAndSetMenu } from '~/routes';
 
 export type NavItem = {
   id: string;

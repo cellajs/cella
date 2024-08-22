@@ -1,12 +1,12 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { Outlet, useParams, useLocation } from '@tanstack/react-router';
-import { getWorkspace } from '~/api/workspaces';
+import { Outlet, useLocation, useParams } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { getLabels } from '~/api/labels';
-import { WorkspaceRoute } from '~/routes/workspaces';
-import { useWorkspaceStore } from '~/store/workspace';
+import { getWorkspace } from '~/api/workspaces';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
-import { useEffect } from 'react';
+import { WorkspaceRoute } from '~/routes/workspaces';
+import { useWorkspaceStore } from '~/store/workspace';
 
 export const workspaceQueryOptions = (idOrSlug: string) =>
   queryOptions({

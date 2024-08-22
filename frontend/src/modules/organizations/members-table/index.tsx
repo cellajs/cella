@@ -1,7 +1,7 @@
 import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { membersQuerySchema } from 'backend/modules/general/schema';
 import { motion } from 'framer-motion';
@@ -26,6 +26,7 @@ import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-col
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
@@ -35,7 +36,6 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import type { EntityPage, Member, Organization, Project } from '~/types';
 import { useColumns } from './columns';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 
 const LIMIT = 40;
 

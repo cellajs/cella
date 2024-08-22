@@ -2,19 +2,19 @@ import { useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
 import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getTask } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useMeasure } from '~/hooks/use-measure';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { WorkspaceStoreProject, TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/types';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
+import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, WorkspaceStoreProject } from '~/types';
 import { BoardColumn } from './board-column';
 import BoardHeader from './header/board-header';
-import { useEventListener } from '~/hooks/use-event-listener';
-import { dispatchCustomEvent } from '~/lib/custom-events';
-import { getTask } from '~/api/tasks';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels

@@ -1,9 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useNavigationStore } from '~/store/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 
-import type { UserMenuItem, UserMenu, WorkspaceQuery, WorkspaceStoreProject, ContextEntity } from '~/types';
 import { getMinimumEntityInfo } from '~/api/general';
+import type { ContextEntity, UserMenu, UserMenuItem, WorkspaceQuery, WorkspaceStoreProject } from '~/types';
 
 type EntityItem = {
   id: string;

@@ -3,13 +3,13 @@ import { CircleUserRound, LogOut, type LucideProps, UserCog, Wrench } from 'luci
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useEffect, useRef } from 'react';
 import { getColorClass } from '~/lib/utils';
 import { cn } from '~/lib/utils';
 import { buttonVariants } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import { AppFooter } from '../app-footer';
 import { AvatarWrap } from '../avatar-wrap';
-import { useEffect, useRef } from 'react';
 
 type AccountButtonProps = {
   lucide: React.ElementType<LucideProps>;
@@ -45,16 +45,15 @@ export const SheetAccount = () => {
 
   return (
     <div ref={buttonWrapper} className="flex flex-col gap-4 min-h-[calc(100vh-2rem)]">
-
       <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
         <div className={bannerClass} style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}>
-        <AvatarWrap
-          className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 border-bg border-2 rounded-full"
-          type="user"
-          id={user.id}
-          name={user.name}
-          url={user.thumbnailUrl}
-        />   
+          <AvatarWrap
+            className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 border-bg border-2 rounded-full"
+            type="user"
+            id={user.id}
+            name={user.name}
+            url={user.thumbnailUrl}
+          />
         </div>
       </Link>
 

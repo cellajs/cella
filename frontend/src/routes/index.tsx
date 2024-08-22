@@ -16,15 +16,15 @@ import AcceptInvite from '~/modules/common/accept-invite';
 import { Suspense, lazy } from 'react';
 import type { ApiError } from '~/api';
 import { onError } from '~/lib/query-client';
+import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
 import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
-import { OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute, MetricsRoute } from './system';
+import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
 import { UserProfileRoute, UserSettingsRoute } from './users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
-import { Public } from '~/modules/common/public';
 
 // Lazy load main App component, which is behind authentication
 const App = lazy(() => import('~/modules/common/app'));

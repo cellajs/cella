@@ -1,8 +1,8 @@
-import { Trash2, Zap, ZapOff, Check } from 'lucide-react';
+import { Check, Trash2, Zap, ZapOff } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { Send, KeyRound } from 'lucide-react';
+import { KeyRound, Send } from 'lucide-react';
 import { deleteMySessions as baseTerminateMySessions } from '~/api/me';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
@@ -13,8 +13,9 @@ import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail, setPasskey, getChallenge } from '~/api/auth';
+import { getChallenge, sendResetPasswordEmail, setPasskey } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
+import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 import { AsideNav } from '~/modules/common/aside-nav';
 import StickyBox from '~/modules/common/sticky-box';
 import UpdateUserForm from '~/modules/users/update-user-form';
@@ -23,7 +24,6 @@ import { oauthProviders } from '../auth/oauth-options';
 import { AsideAnchor } from '../common/aside-anchor';
 import { Badge } from '../ui/badge';
 import DeleteSelf from './delete-self';
-import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 
 export type Session = {
   id: string;

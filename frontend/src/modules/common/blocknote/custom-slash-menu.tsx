@@ -1,4 +1,4 @@
-import { type DefaultReactSuggestionItem, type SuggestionMenuProps, SuggestionMenuController } from '@blocknote/react';
+import { type DefaultReactSuggestionItem, SuggestionMenuController, type SuggestionMenuProps } from '@blocknote/react';
 
 const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>) => {
   const { items, selectedIndex, onItemClick } = props;

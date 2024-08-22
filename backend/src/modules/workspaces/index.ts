@@ -1,8 +1,11 @@
-import { and, count, eq, inArray, asc } from 'drizzle-orm';
+import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
 
+import { projectsTable } from '../../db/schema/projects';
+import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
+import { usersTable } from '../../db/schema/users';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -10,11 +13,8 @@ import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
-import workspaceRoutesConfig from './routes';
-import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
-import { projectsTable } from '../../db/schema/projects';
-import { usersTable } from '../../db/schema/users';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
+import workspaceRoutesConfig from './routes';
 
 const app = new CustomHono();
 

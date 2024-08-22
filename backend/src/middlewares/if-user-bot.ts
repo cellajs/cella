@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono/types';
-import { errorResponse } from '../lib/errors';
 import { isbot } from 'isbot';
 import { createIsbotFromList, isbotMatches, list } from 'isbot';
+import { errorResponse } from '../lib/errors';
 
 export const checkIsBot: MiddlewareHandler = async (ctx, next) => {
   const userAgent = ctx.req.header('user-agent');

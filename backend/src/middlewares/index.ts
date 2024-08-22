@@ -6,8 +6,8 @@ import { secureHeaders } from 'hono/secure-headers';
 import { CustomHono } from '../types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
-import { rateLimiter } from './rate-limiter';
 import { observatoryMiddleware } from './observatory-middleware';
+import { rateLimiter } from './rate-limiter';
 
 const app = new CustomHono();
 
