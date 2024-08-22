@@ -81,7 +81,6 @@ const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps)
 
 const UserSettings = () => {
   const { user, setUser } = useUserStore();
-  console.log('user:', user);
   const { mode } = useThemeStore();
   const { t } = useTranslation();
 

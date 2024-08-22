@@ -5,7 +5,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { getMinimumEntityInfo } from '~/api/general';
 import type { ContextEntity, UserMenu, UserMenuItem, WorkspaceQuery, WorkspaceStoreProject } from '~/types';
 
-type EntityItem = {
+export type EntityItem = {
   id: string;
   entity: ContextEntity;
   slug: string;

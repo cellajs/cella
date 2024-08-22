@@ -14,8 +14,6 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
       items: Item[];
       total: number;
     }>(queryKey, (data) => {
-      console.log('queryKey:', queryKey);
-      console.log('data:', data);
       if (!data) return;
 
       if (action === 'create') {
