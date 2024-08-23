@@ -110,9 +110,9 @@ export const SheetMenu = memo(() => {
       {!searchTerm && (
         <>
           <div className="mt-2">{renderedSections}</div>
-          <div className="grow mt-4 border-b border-dashed" />
+          <div className="grow mt-4 md:border-b md:border-dashed" />
           <div className="flex flex-col my-6 mx-2 gap-6">
-            <div className="max-xl:hidden flex items-center gap-2">
+            <div className="max-xl:hidden flex items-center gap-4 ml-1">
               <Switch size="xs" id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
 
               <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
