@@ -101,7 +101,10 @@ const SubTask = ({
 
   return (
     <motion.div layout>
-      <div
+      {/* To prevent on expand animation */}
+      <motion.div
+        layout
+        transition={{ duration: 0 }}
         ref={subTaskRef}
         className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'} bg-secondary/50`}
       >
@@ -151,7 +154,7 @@ const SubTask = ({
           <Trash size={16} />
         </Button>
         {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
-      </div>
+      </motion.div>
     </motion.div>
   );
 };

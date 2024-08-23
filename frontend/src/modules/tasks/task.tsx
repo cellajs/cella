@@ -156,7 +156,14 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   }, [task]);
 
   return (
-    <motion.div layout>
+    <motion.div
+      layout
+      style={{ overflow: 'hidden' }} // Ensure content doesn't overflow during transition
+      transition={{
+        layout: { duration: 0.3 }, // Animate position changes
+        height: { duration: 0 }, // Prevent height change animation
+      }}
+    >
       <Card
         id={task.id}
         onClick={handleCardClick}
@@ -175,7 +182,8 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
         )}
       >
         <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 pr-2 space-between flex flex-col relative">
-          <div className="flex flex-col gap-1">
+          {/* To prevent on expand animation */}
+          <motion.div className="flex flex-col gap-1" layout transition={{ duration: 0 }}>
             <div className="flex gap-1 w-full">
               <div className="flex flex-col gap-1">
                 <Button
@@ -313,7 +321,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </CardContent>
         {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
       </Card>
