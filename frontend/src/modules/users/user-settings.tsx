@@ -241,12 +241,12 @@ const UserSettings = () => {
             </div>
             <CardContent>
               <div className="flex flex-col justify-center gap-2">
-                <Button key="passkey" type="button" variant="outline" onClick={() => registerPasskey()}>
+                <Button key="setPasskey" type="button" variant="outline" onClick={() => registerPasskey()}>
                   <KeyRound className="w-4 h-4 mr-2" />
                   {user.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>
                 {user.passkey && (
-                  <Button key="passkey" type="button" variant="outline" onClick={() => removePasskey()}>
+                  <Button key="removePasskey" type="button" variant="outline" onClick={() => removePasskey()}>
                     <Trash2 className="w-4 h-4 mr-2" />
                     {t('common:remove_passkey')}
                   </Button>
