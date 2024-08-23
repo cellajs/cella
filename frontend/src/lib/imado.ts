@@ -7,15 +7,22 @@ import type { UploadParams, UploadType } from '../types';
 
 import '@uppy/core/dist/style.min.css';
 
+// Your own metadata on files
+export type UppyMeta = { public?: boolean };
+// The response from your server
+// biome-ignore lint/complexity/noBannedTypes: <explanation>
+export type UppyBody = {};
+
+
 const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
 
 interface ImadoUploadParams extends UploadParams {
-  completionHandler: (urls: URL[], result?: UploadResult) => void;
+  completionHandler: (urls: URL[], result?: UploadResult<UppyMeta, UppyBody>) => void;
 }
 // ImadoUppy helps to create an Uppy instance that works with the Imado API
 export async function ImadoUppy(
   type: UploadType,
-  uppyOptions: UppyOptions,
+  uppyOptions: UppyOptions<UppyMeta, UppyBody>,
   opts: ImadoUploadParams = { public: false, completionHandler: () => {}, organizationId: undefined },
 ): Promise<Uppy> {
   // Get upload token and check if public or private files
@@ -47,12 +54,12 @@ export async function ImadoUppy(
     .on('error', (error) => {
       console.error('Upload error:', error);
     })
-    .on('complete', (result: UploadResult) => {
+    .on('complete', (result: UploadResult<UppyMeta, UppyBody>) => {
       if (!useImadoAPI) console.warn('Imado API is disabled, files will not be uploaded to Imado.');
 
       if (result.successful && useImadoAPI) {
         const urls = result.successful.map((file) => {
-          const uploadKey = file.uploadURL.split('/').pop();
+          const uploadKey = file.uploadURL?.split('/').pop();
           // Sub can be user id, or user id w/ organization id
           return new URL(`${rootUrl}/${sub}/${uploadKey}`);
         });

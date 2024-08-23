@@ -29,9 +29,13 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
           uploadType={UploadType.Personal}
           uppyOptions={{
             restrictions: {
-              maxFileSize: 10 * 1024 * 1024,
+              maxFileSize: 10 * 1024 * 1024, // 10MB
               maxNumberOfFiles: 1,
               allowedFileTypes: ['.jpg', '.jpeg', '.png'],
+              minFileSize: null,
+              maxTotalFileSize: 10 * 1024 * 1024, // 10MB
+              minNumberOfFiles: null,
+              requiredMetaFields: []
             },
           }}
           plugins={['webcam', 'image-editor']}
