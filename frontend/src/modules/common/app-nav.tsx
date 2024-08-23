@@ -47,12 +47,10 @@ const AppNav = () => {
   const isSmallScreen = useBreakpoints('max', 'xl');
   const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
 
-  const { focusedTaskId } = useWorkspaceStore();
   const { theme } = useThemeStore();
+  const focusedTaskId = useWorkspaceStore((state) => state.focusedTaskId);
   const currentSession = useUserStore((state) => {
-    if (state.user) {
-      return state.user.sessions.find((s) => s.current);
-    }
+    if (state.user) return state.user.sessions.find((s) => s.current);
   });
 
   const stopImpersonation = async () => {
