@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
-import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { useMutateInfiniteTaskQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -20,6 +19,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task, TaskTableCRUDEvent } from '~/types';
+import { sortAndGetCounts } from '../helpers';
 import { useColumns } from './columns';
 import { SearchDropDown } from './header/search-drop-down';
 import TableHeader from './header/table-header';
@@ -130,7 +130,7 @@ export default function TasksTable() {
 
   const tasks = useMemo(() => tasksQuery.data?.pages[0].items || [], [tasksQuery.data]);
 
-  const { showingTasks: rows } = useTaskFilters(tasks, true, true);
+  const { sortedTasks: rows } = useMemo(() => sortAndGetCounts(tasks, true, true), [tasks]);
 
   const totalCount = rows.length;
 

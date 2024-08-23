@@ -4,7 +4,6 @@ import { lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
-import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
 import { cn } from '~/lib/utils';
@@ -14,6 +13,7 @@ import FocusTrap from '~/modules/common/focus-trap';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '~/modules/tasks/create-task-form';
+import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
 import { SelectImpact } from '~/modules/tasks/task-selectors/select-impact';
 import SetLabels from '~/modules/tasks/task-selectors/select-labels';
@@ -86,7 +86,11 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     return respTasks.filter((t) => t.description.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [tasksQuery.data, searchQuery]);
 
-  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced);
+  const {
+    sortedTasks: showingTasks,
+    acceptedCount,
+    icedCount,
+  } = useMemo(() => sortAndGetCounts(tasks, showAccepted, showIced), [tasks, showAccepted, showIced]);
 
   const handleIcedClick = () => {
     setShowIced(!showIced);

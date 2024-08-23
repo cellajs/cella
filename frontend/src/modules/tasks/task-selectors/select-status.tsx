@@ -10,7 +10,7 @@ import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
-import { inNumbersArray } from './helpers';
+import { inNumbersArray } from '../helpers';
 import { AcceptedIcon } from './status-icons/accepted';
 import { DeliveredIcon } from './status-icons/delivered';
 import { FinishedIcon } from './status-icons/finished';

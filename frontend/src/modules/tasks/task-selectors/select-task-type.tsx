@@ -10,7 +10,7 @@ import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { TaskType } from '../create-task-form';
-import { inNumbersArray } from './helpers';
+import { inNumbersArray } from '../helpers';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];

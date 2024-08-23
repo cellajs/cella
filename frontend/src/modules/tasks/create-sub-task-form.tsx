@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types';
-import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers.ts';
+import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers';
 import { TaskBlockNote } from './task-selectors/task-blocknote.tsx';
 
 const formSchema = z.object({
