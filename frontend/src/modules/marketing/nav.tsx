@@ -9,7 +9,7 @@ import { cn } from '~/lib/utils';
 import Logo from '~/modules/common/logo';
 import UserTheme from '~/modules/common/user-theme';
 import { Button, buttonVariants } from '~/modules/ui/button';
-import { Sheet, SheetContent } from '~/modules/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '~/modules/ui/sheet';
 import HamburgerButton from '../common/hamburger';
 import UserLanguage from '../common/user-language';
 
@@ -115,6 +115,8 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
 
       <Sheet open={showSheet} onOpenChange={toggleSheet}>
         <SheetContent side="top" className={`fixed z-[100] border-none ${showSheet ? '' : 'delay-300'}`}>
+          {/* prevent  DialogContent requires a DialogTitle */}
+          <SheetTitle />
           <div
             ref={ref}
             className={`bg-background flex mt-2 flex-col gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
