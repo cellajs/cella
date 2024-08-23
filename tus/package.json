@@ -13,7 +13,7 @@
   "author": "CellaJS <info@cellajs.com>",
   "license": "UNLICENSED",
   "dependencies": {
-    "@cellajs/imado": "^0.1.2",
+    "@cellajs/imado": "^0.1.3",
     "@t3-oss/env-core": "^0.11.0",
     "config": "workspace:*",
     "dotenv": "^16.4.5",

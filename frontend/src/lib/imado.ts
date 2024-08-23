@@ -21,7 +21,7 @@ interface ImadoUploadParams extends UploadParams {
 // ImadoUppy helps to create an Uppy instance that works with the Imado API
 export async function ImadoUppy(
   type: UploadType,
-  uppyOptions: UppyOptions<UppyMeta & UppyBody>,
+  uppyOptions: UppyOptions<UppyMeta, UppyBody>,
   opts: ImadoUploadParams = { public: false, completionHandler: () => {}, organizationId: undefined },
 ): Promise<Uppy> {
   // Get upload token and check if public or private files

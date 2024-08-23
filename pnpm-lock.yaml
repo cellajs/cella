@@ -27,8 +27,8 @@ importers:
   backend:
     dependencies:
       '@cellajs/imado':
-        specifier: ^0.1.2
-        version: 0.1.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.41)(tsx@4.17.0)(yaml@2.5.0)
+        specifier: ^0.1.3
+        version: 0.1.3(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.41)(tsx@4.17.0)(yaml@2.5.0)
       '@cellajs/permission-manager':
         specifier: ^0.1.0
         version: 0.1.0(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.41)(tsx@4.17.0)(yaml@2.5.0)
@@ -591,8 +591,8 @@ importers:
   tus:
     dependencies:
       '@cellajs/imado':
-        specifier: ^0.1.2
-        version: 0.1.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.41)(tsx@4.17.0)(yaml@2.5.0)
+        specifier: ^0.1.3
+        version: 0.1.3(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.41)(tsx@4.17.0)(yaml@2.5.0)
       '@t3-oss/env-core':
         specifier: ^0.11.0
         version: 0.11.0(typescript@5.5.4)(zod@3.23.8)
@@ -1505,8 +1505,8 @@ packages:
       react: ^18
       react-dom: ^18
 
-  '@cellajs/imado@0.1.2':
-    resolution: {integrity: sha512-Mz60x71qevowEJXvwv1MVr+clJEEOsrl5m70UayhSDUryYJQqgiD+l/SaUgWvyl0meuvcMsQ19eQFx10kx+VvA==}
+  '@cellajs/imado@0.1.3':
+    resolution: {integrity: sha512-WDUVh44nfYT/HOoKlZIBH54Gh7Qt4bR6IbM04nLPFdYBWqo9fVtxROl2yEmutux85zmjG4t+HztH3U7iRGEePQ==}
 
   '@cellajs/permission-manager@0.1.0':
     resolution: {integrity: sha512-+vGHLdGrR5Jez+dp6yHsgij8hIuZbdU88IU4JAV8nO4FzH1RDNkkj++O9RhMf3CKKDslYn7QiwI8D16u379+0A==}
@@ -2653,7 +2653,6 @@ packages:
 
   '@evilmartians/lefthook@1.7.14':
     resolution: {integrity: sha512-0FPRdmd7hIZXjTQKQjLnmqxx4xGRIM1oGN9pJ4PyI14tOqEAwstmLIbauqQpTVTj3MAPeylsQVXh9RGaq/F2/A==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -11519,7 +11518,7 @@ snapshots:
       - supports-color
       - ts-node
 
-  '@cellajs/imado@0.1.2(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.41)(tsx@4.17.0)(yaml@2.5.0)':
+  '@cellajs/imado@0.1.3(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.41)(tsx@4.17.0)(yaml@2.5.0)':
     dependencies:
       '@aws-sdk/client-s3': 3.637.0
       '@aws-sdk/cloudfront-signer': 3.621.0
@@ -12523,8 +12522,8 @@ snapshots:
     dependencies:
       '@antfu/ni': 0.21.12
       '@axiomhq/js': 1.0.0-rc.3
-      '@babel/core': 7.24.6
-      '@babel/types': 7.24.6
+      '@babel/core': 7.25.2
+      '@babel/types': 7.25.4
       '@clack/prompts': 0.7.0
       cli-high: 0.4.2
       diff: 5.2.0

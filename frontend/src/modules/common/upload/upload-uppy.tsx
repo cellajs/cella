@@ -16,19 +16,12 @@ import '@uppy/screen-capture/dist/style.css';
 import '@uppy/webcam/dist/style.css';
 import './uppy.css';
 
-type UppyCombinedOptions = UppyOptions<UppyMeta & UppyBody>;
-
-type CombinedWebcamOptions = WebcamOptions & {
-  meta: UppyMeta;
-  body: UppyBody;
-};
-
 interface UploadUppyProps {
   uploadType: UploadType;
   isPublic: boolean;
   setUrl: (url: string) => void;
   plugins?: ('webcam' | 'image-editor' | 'audio' | 'screen-capture')[];
-  uppyOptions: UppyCombinedOptions;
+  uppyOptions: UppyOptions<UppyMeta, UppyBody>;
   imageMode?: 'cover' | 'avatar';
   organizationId?: string;
 }
@@ -126,13 +119,11 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, setUrl, uppyO
         };
       }
 
-      const webcamOptions: CombinedWebcamOptions = {
+      const webcamOptions: WebcamOptions<UppyMeta, UppyBody> = {
         videoConstraints: {
           width: 1280,
           height: 720,
         },
-        meta: {},
-        body: {},
       };
 
       if (imageMode) webcamOptions.modes = ['picture'];
