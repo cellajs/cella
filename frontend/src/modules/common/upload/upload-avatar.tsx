@@ -35,7 +35,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
               minFileSize: null,
               maxTotalFileSize: 10 * 1024 * 1024, // 10MB
               minNumberOfFiles: null,
-              requiredMetaFields: []
+              requiredMetaFields: [],
             },
           }}
           plugins={['webcam', 'image-editor']}

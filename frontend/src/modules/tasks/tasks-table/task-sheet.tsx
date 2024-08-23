@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import type { TaskImpact, TaskType } from '~/modules/tasks/create-task-form';
 import { TaskCard } from '~/modules/tasks/task';
@@ -7,9 +8,21 @@ import AssignMembers from '~/modules/tasks/task-selectors/select-members';
 import SelectStatus, { type TaskStatus } from '~/modules/tasks/task-selectors/select-status';
 import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type';
 import { useThemeStore } from '~/store/theme';
-import type { Task } from '~/types';
+import type { Task, TaskQueryActions } from '~/types';
 
-const TaskSheet = ({ task }: { task: Task }) => {
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
+import { isSubTaskData } from '~/modules/tasks/sub-task';
+
+const TaskSheet = ({
+  task,
+  callback,
+}: {
+  task: Task;
+  callback?: (task: Task[], action: TaskQueryActions) => void;
+}) => {
   const { mode } = useThemeStore();
 
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
@@ -25,6 +38,35 @@ const TaskSheet = ({ task }: { task: Task }) => {
       align: field.startsWith('status') || field === 'assignedTo' ? 'end' : 'start',
     });
   };
+
+  useEffect(() => {
+    return combine(
+      monitorForElements({
+        canMonitor({ source }) {
+          return source.data.type === 'subTask';
+        },
+        async onDrop({ location, source }) {
+          const target = location.current.dropTargets[0];
+          if (!target) return;
+          const sourceData = source.data;
+          const targetData = target.data;
+
+          const edge: Edge | null = extractClosestEdge(targetData);
+          const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
+          if (!edge || !isSubTask) return;
+          const newOrder: number = await getRelativeTaskOrder({
+            edge,
+            currentOrder: targetData.order,
+            sourceId: sourceData.item.id,
+            projectId: targetData.item.projectId,
+            parentId: targetData.item.parentId ?? undefined,
+          });
+          const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+          callback?.([updatedTask], 'updateSubTask');
+        },
+      }),
+    );
+  }, [task]);
 
   return (
     <TaskCard mode={mode} task={task} isExpanded={true} isSelected={false} isFocused={true} handleTaskActionClick={handleTaskActionClick} isSheet />

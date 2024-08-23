@@ -147,7 +147,7 @@ export default function TasksTable() {
   const handleOpenPreview = (taskId: string) => {
     const relativeTasks = rows.filter((t) => t.id === taskId || t.parentId === taskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
-    sheet.create(<TaskSheet task={currentTask} />, {
+    sheet.create(<TaskSheet task={currentTask} callback={callback} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: <span className="pl-4">{t('common:task')}</span>,
       id: `task-preview-${taskId}`,
@@ -168,7 +168,7 @@ export default function TasksTable() {
     const relativeTasks = rows.filter((t) => t.id === focusedTaskId || t.parentId === focusedTaskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === focusedTaskId);
     sheet.update(`task-preview-${currentTask.id}`, {
-      content: <TaskSheet task={currentTask} />,
+      content: <TaskSheet task={currentTask} callback={callback} />,
     });
   }, [rows, focusedTaskId]);
 

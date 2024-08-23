@@ -63,7 +63,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
               minFileSize: null,
               maxTotalFileSize: 10 * 1024 * 1024, // 100MB
               minNumberOfFiles: null,
-              requiredMetaFields: []
+              requiredMetaFields: [],
             },
           }}
           plugins={['webcam', 'image-editor']}
