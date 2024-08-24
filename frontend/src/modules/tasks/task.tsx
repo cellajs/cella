@@ -156,14 +156,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   }, [task]);
 
   return (
-    <motion.div
-      layout
-      style={{ overflow: 'hidden' }} // Ensure content doesn't overflow during transition
-      transition={{
-        layout: { duration: 0.3 }, // Animate position changes
-        height: { duration: 0 }, // Prevent height change animation
-      }}
-    >
+    <motion.div layout transition={{ duration: 0.3 }}>
       <Card
         id={task.id}
         onClick={handleCardClick}

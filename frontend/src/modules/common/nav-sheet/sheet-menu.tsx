@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ContextEntity, UserMenu } from '~/types';
 
+import { useParams } from '@tanstack/react-router';
 import { useNavigationStore } from '~/store/navigation';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
@@ -66,6 +67,7 @@ export type SearchResultsType = typeof initialSearchResults;
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
+  const { idOrSlug } = useParams({ strict: false });
   const { keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -99,9 +101,7 @@ export const SheetMenu = memo(() => {
     setSearchResults(results);
   }, []);
 
-  // TODO fix callback
-  // const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
-  const callback = useMutateWorkSpaceQueryData(['workspaces', '']);
+  const callback = useMutateWorkSpaceQueryData(['workspaces', idOrSlug]);
 
   // monitoring drop event
   useEffect(() => {
@@ -132,7 +132,8 @@ export const SheetMenu = memo(() => {
           else newOrder = (relativeItem.membership.order + targetData.order) / 2;
 
           const updatedItem = await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
-          callback([updatedItem], sourceData.item.parentSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
+          const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
+          if (idOrSlug === slug) callback([updatedItem], sourceData.item.parentSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
         },
       }),
     );
