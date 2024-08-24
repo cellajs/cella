@@ -204,7 +204,6 @@ export default function Board() {
           return source.data.type === 'task' || source.data.type === 'subTask';
         },
         async onDrop({ location, source }) {
-          console.log(22);
           const target = location.current.dropTargets[0];
           if (!target) return;
           const sourceData = source.data;

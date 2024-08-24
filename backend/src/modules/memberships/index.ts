@@ -1,4 +1,4 @@
-import { and, eq, inArray, or } from 'drizzle-orm';
+import { and, desc, eq, inArray, or } from 'drizzle-orm';
 import { db } from '../../db/db';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 
@@ -293,11 +293,24 @@ const membershipsRoutes = app
     const { role, archived, muted, order } = ctx.req.valid('json');
     const user = ctx.get('user');
 
+    let orderToUpdate = order;
     // Get the membership
     const [membershipToUpdate] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
     if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { membership: membershipId });
 
     const updatedType = membershipToUpdate.type;
+
+    // on restore item set last order in memberships
+    if (archived === false) {
+      const [lastOrderMembership] = await db
+        .select()
+        .from(membershipsTable)
+        .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable.userId, user.id)))
+        .orderBy(desc(membershipsTable.order))
+        .limit(1);
+      const ceilOrder = Math.ceil(lastOrderMembership.order);
+      orderToUpdate = lastOrderMembership.order === ceilOrder ? ceilOrder + 1 : ceilOrder;
+    }
 
     // TODO: Refactor
     const membershipContext = await resolveEntity(
@@ -321,7 +334,7 @@ const membershipsRoutes = app
       .update(membershipsTable)
       .set({
         role,
-        ...(order !== undefined && { order }),
+        ...(orderToUpdate !== undefined && { order: orderToUpdate }),
         ...(muted !== undefined && { muted }),
         ...(archived !== undefined && { archived }),
         modifiedBy: user.id,

@@ -1,15 +1,21 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ContextEntity, UserMenu } from '~/types';
 
 import { useNavigationStore } from '~/store/navigation';
 
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { updateMembership } from '~/api/memberships';
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { Switch } from '~/modules/ui/switch';
 import type { UserMenuItem } from '~/types';
 import CreateOrganizationForm from '../../organizations/create-organization-form';
 import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
 import ContentPlaceholder from '../content-placeholder';
+import { findRelatedItemsByType, isPageData } from './helpers';
 import { SheetMenuItem } from './sheet-menu-items';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
@@ -92,6 +98,45 @@ export const SheetMenu = memo(() => {
   const handleSearchResultsChange = useCallback((results: SearchResultsType) => {
     setSearchResults(results);
   }, []);
+
+  // TODO fix callback
+  // const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
+  const callback = useMutateWorkSpaceQueryData(['workspaces', '']);
+
+  // monitoring drop event
+  useEffect(() => {
+    return combine(
+      monitorForElements({
+        canMonitor({ source }) {
+          return isPageData(source.data);
+        },
+        async onDrop({ source, location }) {
+          const target = location.current.dropTargets[0];
+          if (!target) return;
+
+          const sourceData = source.data;
+          const targetData = target.data;
+          if (!isPageData(targetData) || !isPageData(sourceData)) return;
+
+          const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
+          const neededItems = findRelatedItemsByType(menu, sourceData.item.entity);
+          const targetItemIndex = neededItems.findIndex((i) => i.id === targetData.item.id);
+          const relativeItemIndex = closestEdgeOfTarget === 'top' ? targetItemIndex - 1 : targetItemIndex + 1;
+
+          const relativeItem = neededItems[relativeItemIndex];
+          let newOrder: number;
+
+          if (relativeItem === undefined || relativeItem.membership.order === targetData.order) {
+            newOrder = closestEdgeOfTarget === 'top' ? targetData.order / 2 : targetData.order + 1;
+          } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
+          else newOrder = (relativeItem.membership.order + targetData.order) / 2;
+
+          const updatedItem = await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
+          callback([updatedItem], sourceData.item.parentSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
+        },
+      }),
+    );
+  }, [menu]);
 
   return (
     <>

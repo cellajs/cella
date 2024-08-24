@@ -8,7 +8,7 @@ import { dialog } from '../dialoger/state';
 import { MenuArchiveToggle } from './menu-archive-toggle';
 import { MenuSectionSticky } from './menu-section-sticky';
 import { SheetMenuItems } from './sheet-menu-items';
-import { SheetMenuItemsOptions } from './sheet-menu-items-options';
+import { SheetMenuItemsOptions } from './sheet-menu-options';
 
 interface MenuSectionProps {
   data: UserMenuItem[];
@@ -19,6 +19,7 @@ interface MenuSectionProps {
 
 export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuSectionProps) => {
   const { t } = useTranslation();
+
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
   const { activeSections } = useNavigationStore();
@@ -52,11 +53,8 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
     const elements = ref.current.querySelectorAll<HTMLElement>('*');
     for (let i = 0; i < elements.length; i++) {
       const el = elements[i];
-      if (isVisible) {
-        el.removeAttribute('tabindex');
-      } else {
-        el.setAttribute('tabindex', '-1');
-      }
+      if (isVisible) el.removeAttribute('tabindex');
+      else el.setAttribute('tabindex', '-1');
     }
   };
 
