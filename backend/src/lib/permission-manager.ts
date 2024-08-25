@@ -6,6 +6,7 @@ import {
   type Membership,
   MembershipAdapter,
   PermissionManager,
+  Product,
   type Subject,
   SubjectAdapter,
 } from '@cellajs/permission-manager';
@@ -15,7 +16,9 @@ import {
  */
 const organization = new Context('organization', ['admin', 'member']);
 new Context('workspace', ['admin', 'member'], new Set([organization]));
-new Context('project', ['admin', 'member'], new Set([organization]));
+const project = new Context('project', ['admin', 'member'], new Set([organization]));
+
+new Product('task', new Set([project]));
 
 /**
  * Initialize the PermissionManager and configure access policies.
@@ -38,6 +41,11 @@ permissionManager.accessPolicies.configureAccessPolicies(({ subject, contexts }:
       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
       contexts.project.admin({ create: 0, read: 1, update: 1, delete: 1 });
       contexts.project.member({ create: 0, read: 1, update: 0, delete: 0 });
+      break;
+    case 'task':
+      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.project.admin({ create: 1, read: 1, update: 1, delete: 1 });
+      contexts.project.member({ create: 1, read: 1, update: 1, delete: 1 });
       break;
   }
 });
@@ -79,12 +87,13 @@ class AdaptedSubjectAdapter extends SubjectAdapter {
   // biome-ignore lint/suspicious/noExplicitAny: The format of the subject can vary depending on the subject.
   adapt(s: any): Subject {
     return {
-      // TODO: Temporarily retain parent checks... Remove logic once migration is complete and 'entity' property is added to subjects.
-      name: 'entity' in s ? s.entity : 'workspaceId' in s ? 'project' : 'organizationId' in s ? 'workspace' : 'organization',
+      // TODO: Temporarily retain parent checks... Remove logic once migration is complete and 'entity' property is added to all subjects.
+      name: s.entity || 'task',
       key: s.id,
       ancestors: {
         organization: s.organizationId,
         workspace: s.workspaceId,
+        project: s.projectId,
       },
     };
   }

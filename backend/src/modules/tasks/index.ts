@@ -156,7 +156,7 @@ const tasksRoutes = app
     );
   })
   /*
-   * Get relative task order by main task id
+   * Get relative task order
    */
   .openapi(taskRoutesConfig.getRelativeTaskOrder, async (ctx) => {
     const { edge, currentOrder, sourceId, projectId, status, parentId } = ctx.req.valid('json');
@@ -197,7 +197,7 @@ const tasksRoutes = app
     );
   })
   /*
-   * Update task by id
+   * Update task
    */
   .openapi(taskRoutesConfig.updateTask, async (ctx) => {
     const id = ctx.req.param('id');

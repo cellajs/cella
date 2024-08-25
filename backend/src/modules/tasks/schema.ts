@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createSelectSchema } from 'drizzle-zod';
 import { labelsTable } from '../../db/schema/labels';
 import { tasksTable } from '../../db/schema/tasks';
-import { idSchema, paginationQuerySchema } from '../../lib/common-schemas';
+import { paginationQuerySchema } from '../../lib/common-schemas';
 import { userSchema } from '../users/schema';
 
 export const createTaskSchema = z.object({
@@ -80,10 +80,6 @@ export const getNewOrderQuerySchema = z.object({
   oldStatus: z.string(),
   newStatus: z.string(),
   projectId: z.string(),
-});
-
-export const idParamSchema = z.object({
-  id: idSchema,
 });
 
 export const relativeQuerySchema = z.object({

@@ -9,7 +9,7 @@ Guard is where cella protects and secures endpoints with middleware. There are c
 * isAllowedTo
 * isSystemAdmin
 
-### Rate limuter
+### Rate limiter
 
 ### Logger
 

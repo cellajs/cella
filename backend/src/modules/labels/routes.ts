@@ -1,9 +1,8 @@
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '../../lib/common-responses';
-import { idsQuerySchema } from '../../lib/common-schemas';
+import { idsQuerySchema, productParamSchema } from '../../lib/common-schemas';
 
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated } from '../../middlewares/guard';
-import { idParamSchema } from '../tasks/schema';
 
 import { getLabelsQuerySchema, labelSchema, updateLabelSchema } from './schema';
 
@@ -13,8 +12,8 @@ class LabelsRoutesConfig {
     path: '/',
     guard: [isAuthenticated],
     tags: ['labels'],
-    summary: 'Create new labels',
-    description: 'Create a new labels with project bound.',
+    summary: 'Create new label',
+    description: 'Create a new label with project bound.',
     request: {
       body: {
         required: true,
@@ -69,7 +68,7 @@ class LabelsRoutesConfig {
     summary: 'Update label',
     description: 'Update label by id.',
     request: {
-      params: idParamSchema,
+      params: productParamSchema,
       body: {
         content: {
           'application/json': {

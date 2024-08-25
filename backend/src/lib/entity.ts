@@ -6,11 +6,11 @@ import { usersTable } from '../db/schema/users';
 import { workspacesTable } from '../db/schema/workspaces';
 
 // Create a map to store tables for different resource types
-export const entityTables = new Map<string, typeof organizationsTable | typeof workspacesTable | typeof projectsTable | typeof usersTable>([
+export const entityTables = new Map<string, typeof usersTable | typeof organizationsTable | typeof workspacesTable | typeof projectsTable>([
+  ['user', usersTable],
   ['organization', organizationsTable],
   ['workspace', workspacesTable],
   ['project', projectsTable],
-  ['user', usersTable],
 ]);
 
 /**

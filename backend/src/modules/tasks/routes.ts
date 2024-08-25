@@ -1,16 +1,15 @@
 import { z } from 'zod';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '../../lib/common-responses';
-import { idsQuerySchema } from '../../lib/common-schemas';
+import { idsQuerySchema, productParamSchema } from '../../lib/common-schemas';
 
 import { createRouteConfig } from '../../lib/route-config';
-import { isAuthenticated } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
 
 import {
   createTaskSchema,
   fullTaskSchema,
   getNewOrderQuerySchema,
   getTasksQuerySchema,
-  idParamSchema,
   relativeQuerySchema,
   simpleTaskSchema,
   updateTaskSchema,
@@ -20,10 +19,10 @@ class TaskRoutesConfig {
   public createTask = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, isAllowedTo('create', 'task')],
     tags: ['tasks'],
     summary: 'Create new task',
-    description: 'Create a new task in an project.',
+    description: 'Create a new task in a project.',
     request: {
       body: {
         required: true,
@@ -53,13 +52,13 @@ class TaskRoutesConfig {
     guard: [isAuthenticated],
     tags: ['tasks'],
     summary: 'Get list of tasks',
-    description: 'Get list of tasks that in requested projects.',
+    description: 'Get list of tasks for specific projects.',
     request: {
       query: getTasksQuerySchema,
     },
     responses: {
       200: {
-        description: 'Task',
+        description: 'Tasks',
         content: {
           'application/json': {
             schema: successWithPaginationSchema(fullTaskSchema),
@@ -73,7 +72,7 @@ class TaskRoutesConfig {
   public getNewTaskOrder = createRouteConfig({
     method: 'get',
     path: '/new-order',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, isAllowedTo('update', 'task')],
     tags: ['tasks'],
     summary: 'Get new order',
     description: 'Get new task order on status change ',
@@ -96,12 +95,12 @@ class TaskRoutesConfig {
   public getTask = createRouteConfig({
     method: 'get',
     path: '/{id}',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, isAllowedTo('read', 'task')],
     tags: ['tasks'],
-    summary: 'Get tasks',
-    description: 'Get tasks by id.',
+    summary: 'Get task',
+    description: 'Get a task by id.',
     request: {
-      params: idParamSchema,
+      params: productParamSchema,
     },
     responses: {
       200: {
@@ -119,7 +118,7 @@ class TaskRoutesConfig {
   public getRelativeTaskOrder = createRouteConfig({
     method: 'post',
     path: '/relative',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, isAllowedTo('read', 'task')],
     tags: ['tasks'],
     summary: 'Get relative task',
     description: 'Get relative task by main task order position and edge of trigger',
@@ -149,12 +148,12 @@ class TaskRoutesConfig {
   public updateTask = createRouteConfig({
     method: 'put',
     path: '/{id}',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, isAllowedTo('update', 'task')],
     tags: ['tasks'],
-    summary: 'Update Task',
-    description: 'Update Task by id.',
+    summary: 'Update task',
+    description: 'Update task by id or slug.',
     request: {
-      params: idParamSchema,
+      params: productParamSchema,
       body: {
         content: {
           'application/json': {
@@ -179,7 +178,7 @@ class TaskRoutesConfig {
   public deleteTasks = createRouteConfig({
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, splitByAllowance('delete', 'task')],
     tags: ['tasks'],
     summary: 'Delete tasks',
     description: 'Delete tasks by ids.',

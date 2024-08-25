@@ -62,8 +62,14 @@ This document describes the high-level architecture of Cella.
 ├── info                      General info
 ├── locales                   Translations
 └── tus                       TUS server
-
 ```
+
+## Data modeling
+Entities can be split in three types:
+* PageEntity: Entity that has a membership (ie organizations, projects)
+* UserEntity: Users themselves
+* ContentEntity: Content entities (ie tasks, articles)
+
 ## API Design
 An OpenAPI is built with [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started.
 
