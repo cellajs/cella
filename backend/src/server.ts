@@ -52,8 +52,8 @@ const routes = app
   // App-specific routes go here
   .route('/workspaces', workspacesRoutes)
   .route('/projects', projectsRoutes)
-  .route('/labels', labelsRoutes)
-  .route('/tasks', tasksRoutes);
+  .route('/tasks', tasksRoutes)
+  .route('/labels', labelsRoutes);
 
 export default app;
 
