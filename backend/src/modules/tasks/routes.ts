@@ -3,7 +3,7 @@ import { errorResponses, successWithDataSchema, successWithPaginationSchema, suc
 import { idsQuerySchema, productParamSchema } from '../../lib/common-schemas';
 
 import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
+import { isAllowedTo, isAuthenticated } from '../../middlewares/guard';
 
 import {
   createTaskSchema,
@@ -178,7 +178,7 @@ class TaskRoutesConfig {
   public deleteTasks = createRouteConfig({
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, splitByAllowance('delete', 'task')],
+    guard: [isAuthenticated],
     tags: ['tasks'],
     summary: 'Delete tasks',
     description: 'Delete tasks by ids.',

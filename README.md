@@ -35,8 +35,8 @@
 > [!CAUTION]
 > Please be aware this is a prerelease. It does not meet production requirements yet and large breaking changes still occur regularly. Want to contribute? Let's connect! ✉️ <info@cellajs.com>
 
-> [!INFO]
-> Due to a new - rewritten, refocused - version of Electric-SQL, we had to revert to basic API calls everywhere. We are now exploring ways to quickly get local-first back into cella.
+> [!NOTE]
+> Due to a new - rewritten, refocused - version of ElectricSQL, we had to revert to basic API calls everywhere. We are now exploring ways to quickly get local-first back into cella.
 
 
 #### Contents
@@ -86,13 +86,6 @@ pnpm seed
 
 Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can be found at [localhost:4000/docs](http://localhost:4000/docs). Manage your local db with [local.drizzle.studio](http:local.drizzle.studio).
 
-
-### More info
-- Please [install](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) [Biome](https://biomejs.dev/) for code style. Fix with `pnpm run check:fix` and type check with `pnpm run check:types`
-- EADDRINUSE errors? Try `sudo lsof -i :1080 -i :3000 -i :4000` and then `kill -9 *PID*` with a space-separated list of `PID`
-- pnpm cache issues? Try `pnpm store prune`
-- turbo cache issues? Try adding `--force` to the command
-- docker cache issues? Try `docker builder prune --force`
 
 <br />
 <br />
