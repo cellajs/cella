@@ -44,11 +44,13 @@ export const updateWorkspaceBodySchema = createInsertSchema(workspacesTable, {
   slug: validSlugSchema,
   organizationId: idSchema,
   thumbnailUrl: imageUrlSchema,
+  bannerUrl: imageUrlSchema,
 })
   .pick({
     slug: true,
     name: true,
     thumbnailUrl: true,
     organizationId: true,
+    bannerUrl: true,
   })
   .partial();

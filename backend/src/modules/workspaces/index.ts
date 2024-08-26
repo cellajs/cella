@@ -153,7 +153,7 @@ const workspacesRoutes = app
     const user = ctx.get('user');
     const workspace = ctx.get('workspace');
 
-    const { name, slug, thumbnailUrl } = ctx.req.valid('json');
+    const { name, slug, thumbnailUrl, bannerUrl } = ctx.req.valid('json');
 
     if (slug && slug !== workspace.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -169,6 +169,7 @@ const workspacesRoutes = app
         name,
         slug,
         thumbnailUrl,
+        bannerUrl,
         organizationId: workspace.organizationId,
         modifiedAt: new Date(),
         modifiedBy: user.id,

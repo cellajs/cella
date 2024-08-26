@@ -37,12 +37,6 @@ export const useUpdateWorkspaceMutation = (idOrSlug: string) => {
   return useMutation<Workspace, DefaultError, UpdateWorkspaceParams>({
     mutationKey: ['workspaces', 'update', idOrSlug],
     mutationFn: (params) => updateWorkspace(idOrSlug, params),
-    // onSuccess: (updatedWorkspace) => {
-    //   queryClient.setQueryData(['workspaces', idOrSlug], updatedWorkspace);
-    //   queryClient.invalidateQueries({
-    //     queryKey: ['workspaces'],
-    //   });
-    // },
     gcTime: 1000 * 10,
   });
 };

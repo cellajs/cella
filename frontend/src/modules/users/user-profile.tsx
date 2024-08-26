@@ -1,11 +1,14 @@
 import { useNavigate } from '@tanstack/react-router';
-import { createContext } from 'react';
+import { createContext, useState } from 'react';
 
 import type { User } from '~/types';
 
 import { UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page-header';
+import { useUpdateUserMutation } from '~/modules/users/update-user-form';
 import { useUserStore } from '~/store/user';
 import ProjectsTable from '../projects/projects-table';
 import { Button } from '../ui/button';
@@ -20,6 +23,8 @@ export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user: currentUser } = useUserStore();
+  const { mutate } = useUpdateUserMutation(currentUser.id);
+  const [passedUser, setPassedUser] = useState(user);
 
   const isSelf = currentUser.id === user.id;
 
@@ -27,16 +32,29 @@ export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet
     navigate({ to: '/user/settings', replace: true });
   };
 
+  useEventListener('updateUserCover', (e) => {
+    const banner = { bannerUrl: e.detail };
+    mutate(banner, {
+      onSuccess: () => {
+        toast.success(t('common:success.upload_cover'));
+        setPassedUser((prev) => {
+          return { ...prev, ...banner };
+        });
+      },
+      onError: () => toast.error(t('common:error.image_upload_failed')),
+    });
+  });
+
   return (
     <>
-      <UserContext.Provider value={{ user }}>
+      <UserContext.Provider value={{ user: passedUser }}>
         <PageHeader
-          id={user.id}
-          title={user.name}
+          id={passedUser.id}
+          title={passedUser.name}
           type="user"
           disableScroll={true}
-          thumbnailUrl={user.thumbnailUrl}
-          bannerUrl={user.bannerUrl}
+          thumbnailUrl={passedUser.thumbnailUrl}
+          bannerUrl={passedUser.bannerUrl}
           panel={
             <>
               {isSelf && (

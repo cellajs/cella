@@ -8,6 +8,9 @@ interface CustomEventMap {
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
   searchDropDownClose: Event;
+  updateUserCover: CustomEvent<string>;
+  updateOrganizationCover: CustomEvent<string>;
+  updateWorkspaceCover: CustomEvent<string>;
   taskTableCRUD: CustomEvent<{
     array: Task[] | { id: string }[];
     action: TaskQueryActions;

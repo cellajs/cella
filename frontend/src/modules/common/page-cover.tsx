@@ -3,12 +3,11 @@ import { Upload } from 'lucide-react';
 import { Suspense, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
-import { toast } from 'sonner';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { getColorClass } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
 import { Button } from '~/modules/ui/button';
-import { useUpdateUserMutation } from '~/modules/users/update-user-form';
+import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { UploadType } from '~/types';
 
@@ -24,27 +23,21 @@ export interface PageCoverProps {
 const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
+  const { menu } = useNavigationStore();
+  const [entity] = Object.values(menu)
+    .flat()
+    .filter((el) => el.id === id);
+
+  const isSelf = id === user.id;
+  const isAdmin = entity ? entity.membership.role === 'admin' : false;
 
   const bannerHeight = url ? 'h-[20vw] min-h-40 sm:min-w-52' : 'h-32'; // : 'h-14';
   const bannerClass = url ? 'bg-background' : getColorClass(id);
 
-  const { mutate: mutateOrganization } = useUpdateOrganizationMutation(id);
-  const { mutate: mutateUser } = useUpdateUserMutation(id);
-
-  const isSelf = id === user.id;
-
-  const mutateOptions = {
-    onSuccess: () => {
-      toast.success(t('common:success.upload_cover'));
-    },
-    onError: () => {
-      toast.error(t('common:error.image_upload_failed'));
-    },
-  };
-
   const setUrl = (url: string) => {
-    if (type === 'organization') mutateOrganization({ bannerUrl: url }, mutateOptions);
-    else mutateUser({ bannerUrl: url }, mutateOptions);
+    if (type === 'organization') dispatchCustomEvent('updateOrganizationCover', url);
+    if (type === 'user') dispatchCustomEvent('updateUserCover', url);
+    if (type === 'workspace') dispatchCustomEvent('updateWorkspaceCover', url);
   };
 
   // Open the upload dialog
@@ -84,7 +77,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   };
   return (
     <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={url ? { backgroundImage: `url(${url})` } : {}}>
-      {(type !== 'user' || isSelf) && (
+      {(isAdmin || isSelf) && (
         <Button
           variant="secondary"
           size="sm"
