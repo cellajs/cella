@@ -11,6 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useWorkspaceStore } from '~/store/workspace';
 import type { TaskType } from '../create-task-form';
 import { inNumbersArray } from '../helpers';
+import { toast } from 'sonner';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];
@@ -39,9 +40,13 @@ export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypePr
 
   const changeTaskType = async (newType: TaskType) => {
     if (!focusedTaskId) return;
-    const updatedTask = await updateTask(focusedTaskId, 'type', newType);
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    try {
+      const updatedTask = await updateTask(focusedTaskId, 'type', newType);
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+    }
   };
 
   useEffect(() => {

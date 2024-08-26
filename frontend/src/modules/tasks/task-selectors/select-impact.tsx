@@ -14,6 +14,7 @@ import { HighIcon } from './impact-icons/high';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
 import { NoneIcon } from './impact-icons/none';
+import { toast } from 'sonner';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -44,11 +45,15 @@ export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }:
   const isSearching = searchValue.length > 0;
 
   const changeTaskImpact = async (newImpact: TaskImpact) => {
-    if (creationValueChange) return creationValueChange(newImpact);
-    if (!focusedTaskId) return;
-    const updatedTask = await updateTask(focusedTaskId, 'impact', newImpact);
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    try {
+      if (creationValueChange) return creationValueChange(newImpact);
+      if (!focusedTaskId) return;
+      const updatedTask = await updateTask(focusedTaskId, 'impact', newImpact);
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+    }
   };
 
   return (

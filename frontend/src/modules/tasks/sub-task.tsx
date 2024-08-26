@@ -44,7 +44,8 @@ const SubTask = ({
     deleteTasks([subTaskId]).then((resp) => {
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [{ id: subTaskId }], action: 'deleteSubTask' });
-      if (resp) toast.success(t('common:success.delete_resources', { resources: t('common:todo') }));
+      if (resp) toast.success(t('common:success.delete_resources', { resources: t('common:todos') }));
+      else toast.error(t('common:error.delete_resources', { resources: t('common:todos') }));
     });
   };
 
@@ -54,9 +55,13 @@ const SubTask = ({
   };
 
   const handleUpdateStatus = async (newStatus: number) => {
-    const updatedTask = await updateTask(task.id, 'status', newStatus);
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask' });
+    try {
+      const updatedTask = await updateTask(task.id, 'status', newStatus);
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask' });
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:todo') }));
+    }
   };
 
   // create draggable & dropTarget elements and auto scroll

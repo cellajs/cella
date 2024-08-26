@@ -24,6 +24,7 @@ import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
 import { isSubTaskData } from '~/modules/tasks/sub-task';
 import { isTaskData } from '~/modules/tasks/task';
 import { useNavigationStore } from '~/store/navigation';
+import { toast } from 'sonner';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -224,15 +225,19 @@ export default function Board() {
               projectId: targetData.item.projectId,
               status: sourceData.item.status,
             });
+            try {
+              if (sourceData.item.projectId !== targetData.item.projectId) {
+                const updatedTask = await updateTask(sourceData.item.id, 'projectId', targetData.item.projectId, newOrder);
 
-            if (sourceData.item.projectId !== targetData.item.projectId) {
-              const updatedTask = await updateTask(sourceData.item.id, 'projectId', targetData.item.projectId, newOrder);
-              const targetProjectCallback = useMutateTasksQueryData(['boardTasks', targetData.item.projectId]);
-              mainCallback([updatedTask], 'delete');
-              targetProjectCallback([updatedTask], 'create');
-            } else {
-              const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
-              mainCallback([updatedTask], 'update');
+                const targetProjectCallback = useMutateTasksQueryData(['boardTasks', targetData.item.projectId]);
+                mainCallback([updatedTask], 'delete');
+                targetProjectCallback([updatedTask], 'create');
+              } else {
+                const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+                mainCallback([updatedTask], 'update');
+              }
+            } catch (err) {
+              toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
             }
           }
 
@@ -245,8 +250,12 @@ export default function Board() {
               projectId: targetData.item.projectId,
               parentId: targetData.item.parentId ?? undefined,
             });
-            const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
-            mainCallback([updatedTask], 'updateSubTask');
+            try {
+              const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+              mainCallback([updatedTask], 'updateSubTask');
+            } catch (err) {
+              toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
+            }
           }
         },
       }),

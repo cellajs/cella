@@ -15,6 +15,7 @@ import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Label } from '~/types';
 import { inNumbersArray } from '../helpers';
+import { toast } from 'sonner';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -59,11 +60,15 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
 
   const updateTaskLabels = async (labels: Label[]) => {
     if (!focusedTaskId) return;
-    const labelIds = labels.map((l) => l.id);
-    const updatedTask = await updateTask(focusedTaskId, 'labels', labelIds);
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
-    return;
+    try {
+      const labelIds = labels.map((l) => l.id);
+      const updatedTask = await updateTask(focusedTaskId, 'labels', labelIds);
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+      return;
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+    }
   };
 
   const handleSelectClick = async (value?: string) => {

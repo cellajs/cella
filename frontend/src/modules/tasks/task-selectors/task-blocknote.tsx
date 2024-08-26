@@ -14,6 +14,8 @@ import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-co
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import { schemaWithMentions } from '~/modules/common/blocknote/mention';
 import { taskExpandable } from '../helpers';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface TaskBlockNoteProps {
   id: string;
@@ -26,6 +28,7 @@ interface TaskBlockNoteProps {
 }
 
 export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = false, className = '' }: TaskBlockNoteProps) => {
+  const { t } = useTranslation();
   const initial = useRef(true);
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
   const { pathname } = useLocation();
@@ -34,15 +37,19 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
 
   const handleUpdateHTML = useCallback(
     async (newContent: string, newSummary: string) => {
-      await updateTask(id, 'summary', newSummary);
-      const updatedTask = await updateTask(id, 'description', newContent);
-      const expandable = taskExpandable(newSummary, newContent);
+      try {
+        await updateTask(id, 'summary', newSummary);
+        const updatedTask = await updateTask(id, 'description', newContent);
+        const expandable = taskExpandable(newSummary, newContent);
 
-      if (updatedTask.expandable !== expandable) updateTask(id, 'expandable', expandable);
+        if (updatedTask.expandable !== expandable) updateTask(id, 'expandable', expandable);
 
-      const action = updatedTask.parentId ? 'updateSubTask' : 'update';
-      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [{ ...updatedTask, expandable }], action });
+        const action = updatedTask.parentId ? 'updateSubTask' : 'update';
+        const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+        dispatchCustomEvent(eventName, { array: [{ ...updatedTask, expandable }], action });
+      } catch (err) {
+        toast.error(t('common:error.update_resources', { resources: t('common:todo') }));
+      }
     },
     [pathname],
   );

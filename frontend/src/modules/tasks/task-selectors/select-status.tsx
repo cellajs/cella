@@ -18,6 +18,7 @@ import { IcedIcon } from './status-icons/iced';
 import { ReviewedIcon } from './status-icons/reviewed';
 import { StartedIcon } from './status-icons/started';
 import { UnstartedIcon } from './status-icons/unstarted';
+import { toast } from 'sonner';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
@@ -93,10 +94,14 @@ const SelectStatus = ({
   const changeTaskStatus = async (newStatus: number) => {
     if (creationValueChange) creationValueChange(newStatus);
     if (!focusedTaskId) return;
-    const newOrder = await getChangeStatusTaskOrder(taskStatus, newStatus, projectId);
-    const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    try {
+      const newOrder = await getChangeStatusTaskOrder(taskStatus, newStatus, projectId);
+      const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+    }
   };
 
   const statusChange = (newValue: number) => {

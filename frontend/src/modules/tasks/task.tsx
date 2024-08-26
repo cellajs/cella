@@ -31,6 +31,7 @@ import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import type { Mode } from '~/store/theme.ts';
 import type { DraggableItemData, Task } from '~/types';
 import TaskDescription from './task-content.tsx';
+import { toast } from 'sonner';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -80,10 +81,14 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   const updateStatus = async (newStatus: number) => {
-    const newOrder = await getChangeStatusTaskOrder(task.status, newStatus, task.projectId);
-    const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    try {
+      const newOrder = await getChangeStatusTaskOrder(task.status, newStatus, task.projectId);
+      const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+    }
   };
 
   // console.log('rerender');

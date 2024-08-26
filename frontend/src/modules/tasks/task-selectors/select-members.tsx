@@ -12,6 +12,7 @@ import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { User } from '~/types';
 import { inNumbersArray } from '../helpers';
+import { toast } from 'sonner';
 
 type AssignableMember = Omit<User, 'counts'>;
 
@@ -46,13 +47,17 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
 
   const changeAssignedTo = async (members: AssignableMember[]) => {
     if (!focusedTaskId) return;
-    const updatedTask = await updateTask(
-      focusedTaskId,
-      'assignedTo',
-      members.map((user) => user.id),
-    );
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    try {
+      const updatedTask = await updateTask(
+        focusedTaskId,
+        'assignedTo',
+        members.map((user) => user.id),
+      );
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+    }
   };
 
   const handleSelectClick = (id: string) => {

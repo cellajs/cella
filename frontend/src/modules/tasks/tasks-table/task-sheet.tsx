@@ -15,6 +15,8 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
 import { isSubTaskData } from '~/modules/tasks/sub-task';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const TaskSheet = ({
   task,
@@ -46,6 +48,7 @@ const TaskSheet = ({
           return source.data.type === 'subTask';
         },
         async onDrop({ location, source }) {
+          const { t } = useTranslation();
           const target = location.current.dropTargets[0];
           if (!target) return;
           const sourceData = source.data;
@@ -61,8 +64,12 @@ const TaskSheet = ({
             projectId: targetData.item.projectId,
             parentId: targetData.item.parentId ?? undefined,
           });
-          const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
-          callback?.([updatedTask], 'updateSubTask');
+          try {
+            const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+            callback?.([updatedTask], 'updateSubTask');
+          } catch (err) {
+            toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
+          }
         },
       }),
     );

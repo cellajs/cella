@@ -142,14 +142,15 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
       order: getNewTaskOrder(values.status, projectTasks),
     };
 
-    createTask(newTask).then((resp) => {
-      if (resp) {
+    createTask(newTask)
+      .then((resp) => {
+        if (!resp) toast.error(t('common:error.create_resource', { resource: t('common:task') }));
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('common:task') }));
         handleCloseForm();
         dispatchCustomEvent('taskCRUD', { array: [resp], action: 'create' });
-      }
-    });
+      })
+      .catch(() => toast.error(t('common:error.create_resource', { resource: t('common:task') })));
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one

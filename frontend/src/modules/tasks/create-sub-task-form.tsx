@@ -100,15 +100,16 @@ export const CreateSubTaskForm = ({
       order: getNewTaskOrder(values.status, parentTask.subTasks),
     };
 
-    createTask(newSubTask).then((resp) => {
-      if (resp) {
+    createTask(newSubTask)
+      .then((resp) => {
+        if (!resp) toast.error(t('common:error.create_resource', { resource: t('common:todo') }));
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:task') }));
+        toast.success(t('common:success.create_resource', { resource: t('common:todo') }));
         const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
         dispatchCustomEvent(eventName, { array: [newSubTask], action: 'createSubTask' });
         setFormState(false);
-      }
-    });
+      })
+      .catch(() => toast.error(t('common:error.create_resource', { resource: t('common:todo') })));
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
