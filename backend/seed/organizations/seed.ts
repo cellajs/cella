@@ -72,11 +72,16 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
 
       const name = faker.person.fullName(firstAndLastName);
       const email = usersEmailUniqueEnforcer.enforce(() => faker.internet.email(firstAndLastName).toLocaleLowerCase());
-      const slug = usersSlugUniqueEnforcer.enforce(() =>
-        faker.internet
-          .userName(firstAndLastName)
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '-'),
+      const slug = usersSlugUniqueEnforcer.enforce(
+        () =>
+          faker.internet
+            .userName(firstAndLastName)
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '-'),
+        {
+          maxTime: 500,
+          maxRetries: 500,
+        },
       );
 
       return {
