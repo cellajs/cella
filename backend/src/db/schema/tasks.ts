@@ -12,7 +12,7 @@ export const tasksTable = pgTable(
     slug: varchar('slug').notNull(),
     description: varchar('description').notNull(),
     keywords: varchar('keywords').notNull(),
-    expandable: boolean('expandable').default(false),
+    expandable: boolean('expandable').default(false).notNull(),
     summary: varchar('summary').notNull(),
     type: varchar('type', {
       enum: ['bug', 'feature', 'chore'],

@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ALTER COLUMN "expandable" SET NOT NULL;

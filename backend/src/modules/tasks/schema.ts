@@ -52,18 +52,24 @@ const taskSchema = z.object({
   modifiedBy: userSchema.omit({ counts: true }).nullable(),
 });
 
+export const subTaskSchema = z.array(
+  z.object({
+    ...createSelectSchema(tasksTable).pick({
+      id: true,
+      description: true,
+      summary: true,
+      expandable: true,
+      status: true,
+      order: true,
+      projectId: true,
+      parentId: true,
+    }).shape,
+  }),
+);
+
 export const fullTaskSchema = z.object({
   ...taskSchema.shape,
-  subTasks: z.array(
-    z.object({
-      ...createSelectSchema(tasksTable).omit({
-        modifiedAt: true,
-        createdAt: true,
-      }).shape,
-      createdAt: z.string(),
-      modifiedAt: z.string().nullable(),
-    }),
-  ),
+  subTasks: subTaskSchema,
 });
 
 export const getTasksQuerySchema = paginationQuerySchema.merge(

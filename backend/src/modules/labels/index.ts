@@ -28,7 +28,7 @@ const labelsRoutes = app
     return ctx.json({ success: true, data: createdLabel }, 200);
   })
   /*
-   * Get list of tasks
+   * Get list of labels
    */
   .openapi(labelsRoutesConfig.getLabels, async (ctx) => {
     const { q, sort, order, offset, limit, projectId } = ctx.req.valid('query');
