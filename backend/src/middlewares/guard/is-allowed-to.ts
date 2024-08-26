@@ -5,30 +5,32 @@ import { membershipsTable } from '../../db/schema/memberships';
 import { resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
-import type { ContextEntity, Env } from '../../types/common';
+import { resolveProduct } from '../../lib/product';
+import type { ContextEntity, Env, Product } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
 export type PermissionAction = 'create' | 'update' | 'read' | 'write';
 
 /**
  * Middleware to protect routes by checking user permissions.
- * @param action - The action to be performed (e.g., 'read', 'write').
- * @param entityType - The type of the entity (e.g., 'user', 'organization').
+ * @param action - The action to be performed (e.g. 'read', 'write').
+ * @param type - The type of the entity (e.g. 'user', 'organization') or product ('task').
  * @returns MiddlewareHandler to protect routes based on user permissions.
  */
+
 const isAllowedTo =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    (action: PermissionAction, entityType: ContextEntity): MiddlewareHandler<Env, any> =>
+    (action: PermissionAction, type: ContextEntity | Product): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
       const user = ctx.get('user');
 
       // Retrieve the context of the entity to be authorized (e.g., 'organization', 'workspace')
-      const contextEntity = await getEntityContext(ctx, entityType);
+      const contextEntity = await getEntityContext(ctx, type);
 
       // Check if user or context is missing
       if (!contextEntity || !user) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', entityType, {
+        return errorResponse(ctx, 404, 'not_found', 'warn', type, {
           user: user?.id,
           id: contextEntity?.id || '',
         });
@@ -42,15 +44,15 @@ const isAllowedTo =
 
       // If not allowed and not admin, return forbidden
       if (!isAllowed && user.role !== 'admin') {
-        return errorResponse(ctx, 403, 'forbidden', 'warn', entityType, { user: user.id, id: contextEntity.id });
+        return errorResponse(ctx, 403, 'forbidden', 'warn', type, { user: user.id, id: contextEntity.id });
       }
 
       // Store user memberships and authorized context entity in hono ctx
       ctx.set('memberships', memberships);
-      ctx.set(entityType, contextEntity);
+      ctx.set(type, contextEntity);
 
       // Log user allowance in the context
-      logEvent(`User is allowed to ${action} ${contextEntity.entity}`, { user: user.id, id: contextEntity.id });
+      logEvent(`User is allowed to ${action} ${type}`, { user: user.id, id: contextEntity.id });
 
       await next();
     };
@@ -63,17 +65,26 @@ const isAllowedTo =
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function getEntityContext(ctx: any, entityType: ContextEntity) {
+async function getEntityContext(ctx: any, entityType: ContextEntity | Product) {
   // Check if entity is configured; if not, return early
   if (!HierarchicalEntity.instanceMap.has(entityType)) {
     return;
   }
 
+  // Extract entity id or slug from request params or query
   const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(`${entityType}Id`);
+
+  // Extract product id or slug from request params or query
+  const id = ctx.req.param('id') || ctx.req.query(`${entityType}Id`);
 
   if (idOrSlug) {
     // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
     return await resolveEntity(entityType, idOrSlug);
+  }
+
+  if (id) {
+    // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
+    return await resolveProduct(entityType, id);
   }
 
   // Generate a context using the lowest parent for entity operations, such as fetching or creating child entities
@@ -87,7 +98,7 @@ async function getEntityContext(ctx: any, entityType: ContextEntity) {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function createEntityContext(entityType: ContextEntity, ctx: any) {
+async function createEntityContext(entityType: ContextEntity | Product, ctx: any) {
   const entity = HierarchicalEntity.instanceMap.get(entityType);
 
   // Return early if entity is not available

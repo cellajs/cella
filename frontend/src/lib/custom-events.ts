@@ -1,4 +1,4 @@
-import type { Task } from '~/types';
+import type { Task, TaskQueryActions } from '~/types';
 
 interface CustomEventMap {
   projectChange: CustomEvent<string>;
@@ -8,13 +8,16 @@ interface CustomEventMap {
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
   searchDropDownClose: Event;
+  updateUserCover: CustomEvent<string>;
+  updateOrganizationCover: CustomEvent<string>;
+  updateWorkspaceCover: CustomEvent<string>;
   taskTableCRUD: CustomEvent<{
     array: Task[] | { id: string }[];
-    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
+    action: TaskQueryActions;
   }>;
   taskCRUD: CustomEvent<{
     array: Task[] | { id: string }[];
-    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
+    action: TaskQueryActions;
   }>;
 }
 

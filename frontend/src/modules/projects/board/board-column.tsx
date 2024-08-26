@@ -1,13 +1,10 @@
-import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type GetTasksParams, getRelativeTaskOrder, getTasksList, updateTask } from '~/api/tasks';
+import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
-import useTaskFilters from '~/hooks/use-filtered-tasks';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
 import { cn } from '~/lib/utils';
@@ -17,8 +14,8 @@ import FocusTrap from '~/modules/common/focus-trap';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '~/modules/tasks/create-task-form';
-import { isSubTaskData } from '~/modules/tasks/sub-task';
-import { TaskCard, isTaskData } from '~/modules/tasks/task';
+import { sortAndGetCounts } from '~/modules/tasks/helpers';
+import { TaskCard } from '~/modules/tasks/task';
 import { SelectImpact } from '~/modules/tasks/task-selectors/select-impact';
 import SetLabels from '~/modules/tasks/task-selectors/select-labels';
 import AssignMembers from '~/modules/tasks/task-selectors/select-members';
@@ -27,7 +24,6 @@ import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type'
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { WorkspaceRoute } from '~/routes/workspaces';
-import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
@@ -62,7 +58,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   const cardListRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef(null);
   const { mode } = useThemeStore();
-  const { menu } = useNavigationStore();
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId, labels } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
@@ -92,7 +87,11 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     return respTasks.filter((t) => t.description.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [tasksQuery.data, searchQuery]);
 
-  const { showingTasks, acceptedCount, icedCount } = useTaskFilters(tasks, showAccepted, showIced);
+  const {
+    sortedTasks: showingTasks,
+    acceptedCount,
+    icedCount,
+  } = useMemo(() => sortAndGetCounts(tasks, showAccepted, showIced), [tasks, showAccepted, showIced]);
 
   const handleIcedClick = () => {
     setShowIced(!showIced);
@@ -177,57 +176,15 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   useEventListener('taskChange', handleTaskChangeEventListener);
   useEventListener('projectChange', handleProjectChangeEventListener);
 
-  useEffect(() => {
-    return combine(
-      monitorForElements({
-        canMonitor({ source }) {
-          return source.data.type === 'task' || source.data.type === 'subTask';
-        },
-        async onDrop({ location, source }) {
-          const target = location.current.dropTargets[0];
-          const sourceData = source.data;
-          if (!target) return;
-          const targetData = target.data;
-          const edge: Edge | null = extractClosestEdge(targetData);
-          const isTask = isTaskData(sourceData) && isTaskData(targetData);
-          const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
-          if (!edge) return;
-          if (isSubTask || isTask) {
-            const newOrder: number = await getRelativeTaskOrder({
-              edge,
-              currentOrder: targetData.order,
-              sourceId: sourceData.item.id,
-              projectId: targetData.item.projectId,
-              status: sourceData.item.status,
-            });
-            if (sourceData.item.projectId !== targetData.item.projectId) {
-              const updatedTask = await updateTask(sourceData.item.id, 'projectId', targetData.item.projectId, newOrder);
-              callback([updatedTask], 'update');
-            } else {
-              const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
-              callback([updatedTask], 'update');
-            }
-          }
-          if (isSubTask) {
-            const newOrder: number = await getRelativeTaskOrder({
-              edge,
-              currentOrder: targetData.order,
-              sourceId: sourceData.item.id,
-              projectId: targetData.item.projectId,
-              parentId: targetData.item.parentId ?? undefined,
-            });
-            const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
-            callback([updatedTask], 'updateSubTask');
-          }
-        },
-      }),
-    );
-  }, [menu]);
-
   // Hides underscroll elements
   // 4rem refers to the header height
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
+  const taskVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: { opacity: 1, height: 'auto' },
+    exit: { opacity: 0, height: 0 },
+  };
   return (
     <div ref={columnRef} className="flex flex-col h-full">
       <BoardColumnHeader
@@ -284,16 +241,18 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                       )}
                     </Button>
                     {showingTasks.map((task) => (
-                      <FocusTrap key={task.id} mainElementId={task.id} active={task.id === focusedTaskId}>
-                        <TaskCard
-                          task={task}
-                          isExpanded={expandedTasks[task.id] || false}
-                          isSelected={selectedTasks.includes(task.id)}
-                          isFocused={task.id === focusedTaskId}
-                          handleTaskActionClick={handleTaskActionClick}
-                          mode={mode}
-                        />
-                      </FocusTrap>
+                      <motion.div key={task.id} variants={taskVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0 }}>
+                        <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
+                          <TaskCard
+                            task={task}
+                            isExpanded={expandedTasks[task.id] || false}
+                            isSelected={selectedTasks.includes(task.id)}
+                            isFocused={task.id === focusedTaskId}
+                            handleTaskActionClick={handleTaskActionClick}
+                            mode={mode}
+                          />
+                        </FocusTrap>
+                      </motion.div>
                     ))}
                     <Button
                       onClick={handleIcedClick}

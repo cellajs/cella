@@ -13,7 +13,7 @@ import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { cn, nanoid } from '~/lib/utils.ts';
-import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
@@ -24,14 +24,14 @@ import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import type { Label, Member, Task } from '~/types/index.ts';
-import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers.ts';
-import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
-import { SelectImpact, impacts } from './task-selectors/select-impact.tsx';
-import SetLabels from './task-selectors/select-labels.tsx';
-import AssignMembers from './task-selectors/select-members.tsx';
-import SelectStatus, { type TaskStatus, taskStatuses } from './task-selectors/select-status.tsx';
-import { taskTypes } from './task-selectors/select-task-type.tsx';
-import { TaskBlockNote } from './task-selectors/task-blocknote.tsx';
+import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers';
+import { NotSelected } from './task-selectors/impact-icons/not-selected';
+import { SelectImpact, impacts } from './task-selectors/select-impact';
+import SetLabels from './task-selectors/select-labels';
+import AssignMembers from './task-selectors/select-members';
+import SelectStatus, { type TaskStatus, taskStatuses } from './task-selectors/select-status';
+import { taskTypes } from './task-selectors/select-task-type';
+import { TaskBlockNote } from './task-selectors/task-blocknote';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
@@ -142,14 +142,15 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
       order: getNewTaskOrder(values.status, projectTasks),
     };
 
-    createTask(newTask).then((resp) => {
-      if (resp) {
+    createTask(newTask)
+      .then((resp) => {
+        if (!resp) toast.error(t('common:error.create_resource', { resource: t('common:task') }));
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('common:task') }));
         handleCloseForm();
         dispatchCustomEvent('taskCRUD', { array: [resp], action: 'create' });
-      }
-    });
+      })
+      .catch(() => toast.error(t('common:error.create_resource', { resource: t('common:task') })));
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one

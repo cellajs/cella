@@ -13,6 +13,7 @@ interface PageHeaderProps {
   title?: string | null;
   type: Entity;
   id: string;
+  isAdmin?: boolean;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;

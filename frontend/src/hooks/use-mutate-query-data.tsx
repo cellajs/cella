@@ -1,6 +1,6 @@
 import { type InfiniteData, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { queryClient } from '~/lib/router';
-import type { Membership, Project, SubTask, Task, Workspace, WorkspaceStoreProject } from '~/types';
+import type { Membership, Project, SubTask, Task, TaskQueryActions, Workspace, WorkspaceStoreProject } from '~/types';
 
 interface Item {
   id: string;
@@ -238,10 +238,7 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
 };
 
 export const useMutateTasksQueryData = (queryKey: QueryKey) => {
-  return (
-    newItems: Task[] | SubTask[] | { id: string }[],
-    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask',
-  ) => {
+  return (newItems: Task[] | SubTask[] | { id: string }[], action: TaskQueryActions) => {
     queryClient.setQueryData<{
       items: Task[];
       total: number;
@@ -319,10 +316,7 @@ export const useMutateTasksQueryData = (queryKey: QueryKey) => {
 };
 
 export const useMutateInfiniteTaskQueryData = (queryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
-  return (
-    newItems: Task[] | SubTask[] | { id: string }[],
-    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask',
-  ) => {
+  return (newItems: Task[] | SubTask[] | { id: string }[], action: TaskQueryActions) => {
     queryClient.setQueryData<
       InfiniteData<{
         items: Task[];

@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority';
 import { Check, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -10,7 +11,7 @@ import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
-import { inNumbersArray } from './helpers';
+import { inNumbersArray } from '../helpers';
 import { AcceptedIcon } from './status-icons/accepted';
 import { DeliveredIcon } from './status-icons/delivered';
 import { FinishedIcon } from './status-icons/finished';
@@ -93,10 +94,14 @@ const SelectStatus = ({
   const changeTaskStatus = async (newStatus: number) => {
     if (creationValueChange) creationValueChange(newStatus);
     if (!focusedTaskId) return;
-    const newOrder = await getChangeStatusTaskOrder(taskStatus, newStatus, projectId);
-    const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    try {
+      const newOrder = await getChangeStatusTaskOrder(taskStatus, newStatus, projectId);
+      const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+    }
   };
 
   const statusChange = (newValue: number) => {

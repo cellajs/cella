@@ -14,6 +14,8 @@ export type Entity = (typeof config.entityTypes)[number];
 
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
 
+export type Product = (typeof config.productTypes)[number];
+
 export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
 
 export type NonEmptyArray<T> = readonly [T, ...T[]];

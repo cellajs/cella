@@ -20,6 +20,8 @@ import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-d
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { useLocation } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks.ts';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { getDraggableItemData } from '~/lib/utils';
@@ -79,10 +81,14 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   const updateStatus = async (newStatus: number) => {
-    const newOrder = await getChangeStatusTaskOrder(task.status, newStatus, task.projectId);
-    const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    try {
+      const newOrder = await getChangeStatusTaskOrder(task.status, newStatus, task.projectId);
+      const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+    }
   };
 
   // console.log('rerender');
@@ -155,162 +161,168 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
   }, [task]);
 
   return (
-    <Card
-      id={task.id}
-      onClick={handleCardClick}
-      style={style}
-      tabIndex={0}
-      ref={taskRef}
-      className={cn(
-        `group/task relative rounded-none border-0 border-b bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
+    <motion.div layout transition={{ duration: 0.3 }}>
+      <Card
+        id={task.id}
+        onClick={handleCardClick}
+        style={style}
+        tabIndex={0}
+        ref={taskRef}
+        className={cn(
+          `group/task relative rounded-none border-0 border-b bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
         focus-visible:none border-l-2 via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} 
         ${dragOver ? 'bg-card/20' : ''} 
         ${isFocused && !isSheet ? 'border-l-primary is-focused' : 'border-l-transparent'}
         ${isExpanded ? 'is-expanded' : 'is-collapsed'}`,
-        variants({
-          status: task.status as TaskStatus,
-        }),
-      )}
-    >
-      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 pr-2 space-between flex flex-col relative">
-        <div className="flex flex-col gap-1">
-          <div className="flex gap-1 w-full">
-            <div className="flex flex-col gap-1">
-              <Button
-                id="type"
-                onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
-                aria-label="Set type"
-                variant="ghost"
-                size="xs"
-                className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
-              >
-                {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
-              </Button>
-              {isExpanded && !isSheet && (
+          variants({
+            status: task.status as TaskStatus,
+          }),
+        )}
+      >
+        <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 pr-2 space-between flex flex-col relative">
+          {/* To prevent on expand animation */}
+          <motion.div className="flex flex-col gap-1" layout transition={{ duration: 0 }}>
+            <div className="flex gap-1 w-full">
+              <div className="flex flex-col gap-1">
                 <Button
-                  onClick={() => dispatchCustomEvent('toggleCard', task.id)}
-                  aria-label="Collapse"
+                  id="type"
+                  onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
+                  aria-label="Set type"
                   variant="ghost"
                   size="xs"
                   className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
                 >
-                  <ChevronUp size={16} />
+                  {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
                 </Button>
-              )}
-            </div>
-            <div className="flex flex-col grow gap-2 mt-0.5">
-              <TaskDescription mode={mode} task={task} isExpanded={isExpanded} />
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-end justify-between gap-1">
-              {!isSheet && (
-                <Checkbox
-                  className="group-hover/task:opacity-100 mb-1.5 border-foreground/40 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-80"
-                  checked={isSelected}
-                  onCheckedChange={(checked) => dispatchCustomEvent('toggleSelectTask', { selected: !!checked, taskId: task.id })}
-                />
-              )}
-              {task.type !== 'bug' && (
-                <Button
-                  id="impact"
-                  onClick={(event) => handleTaskActionClick(task, 'impact', event.currentTarget)}
-                  aria-label="Set impact"
-                  variant="ghost"
-                  size="xs"
-                  className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
-                >
-                  {selectedImpact === null ? (
-                    <NotSelected className="size-4 fill-current" aria-hidden="true" />
-                  ) : (
-                    <selectedImpact.icon className="size-4 fill-current" aria-hidden="true" />
-                  )}
-                </Button>
-              )}
-
-              <Button
-                id="labels"
-                onClick={(event) => handleTaskActionClick(task, 'labels', event.currentTarget)}
-                aria-label="Set labels"
-                variant="ghost"
-                size="xs"
-                className="relative flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
-              >
-                <div className="flex truncate flex-wrap gap-[.07rem]">
-                  {task.labels.length > 0 ? (
-                    task.labels.map(({ name, id }) => {
-                      return (
-                        <div key={id} className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full border px-0 bg-border">
-                          <Badge
-                            variant="outline"
-                            key={id}
-                            className="inline-block border-0 max-w-32 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
-                          >
-                            {name}
-                          </Badge>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <Tag size={16} className="opacity-60" />
-                  )}
-                </div>
-              </Button>
-
-              <div className="flex gap-1 ml-auto mr-1">
-                <Button
-                  id="assignedTo"
-                  onClick={(event) => handleTaskActionClick(task, 'assignedTo', event.currentTarget)}
-                  aria-label="Assign"
-                  variant="ghost"
-                  size="xs"
-                  className="relative flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
-                >
-                  {task.assignedTo.length > 0 ? (
-                    <AvatarGroup limit={3}>
-                      <AvatarGroupList>
-                        {task.assignedTo.map((user) => (
-                          <AvatarWrap type="user" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
-                        ))}
-                      </AvatarGroupList>
-                      <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
-                    </AvatarGroup>
-                  ) : (
-                    <UserX className="h-4 w-4 opacity-60" />
-                  )}
-                </Button>
-
-                <Button
-                  id="status"
-                  onClick={() => updateStatus(task.status + 1)}
-                  disabled={(task.status as TaskStatus) === 6}
-                  variant="outlineGhost"
-                  size="xs"
-                  className={cn(
-                    'relative border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
-                    statusVariants({ status: task.status as TaskStatus }),
-                  )}
-                >
-                  {t(taskStatuses[task.status as TaskStatus].action)}
-                </Button>
-                <Button
-                  onClick={(event) => handleTaskActionClick(task, `status-${task.id}`, event.currentTarget)}
-                  aria-label="Set status"
-                  variant="outlineGhost"
-                  size="xs"
-                  className={cn(
-                    'relative rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
-                    statusVariants({ status: task.status as TaskStatus }),
-                  )}
-                >
-                  <ChevronDown size={12} className={`transition-transform ${isStatusDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
-                </Button>
+                {isExpanded && !isSheet && (
+                  <Button
+                    onClick={() => dispatchCustomEvent('toggleCard', task.id)}
+                    aria-label="Collapse"
+                    variant="ghost"
+                    size="xs"
+                    className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+                  >
+                    <ChevronUp size={16} />
+                  </Button>
+                )}
+              </div>
+              <div className="flex flex-col grow gap-2 mt-0.5">
+                <TaskDescription mode={mode} task={task} isExpanded={isExpanded} />
               </div>
             </div>
-          </div>
-        </div>
-      </CardContent>
-      {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
-    </Card>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-end justify-between gap-1">
+                {!isSheet && (
+                  <Checkbox
+                    className="group-hover/task:opacity-100 mb-1.5 border-foreground/40 data-[state=checked]:border-primary ml-1.5 group-[.is-focused]/task:opacity-100 opacity-80"
+                    checked={isSelected}
+                    onCheckedChange={(checked) => dispatchCustomEvent('toggleSelectTask', { selected: !!checked, taskId: task.id })}
+                  />
+                )}
+                {task.type !== 'bug' && (
+                  <Button
+                    id="impact"
+                    onClick={(event) => handleTaskActionClick(task, 'impact', event.currentTarget)}
+                    aria-label="Set impact"
+                    variant="ghost"
+                    size="xs"
+                    className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+                  >
+                    {selectedImpact === null ? (
+                      <NotSelected className="size-4 fill-current" aria-hidden="true" />
+                    ) : (
+                      <selectedImpact.icon className="size-4 fill-current" aria-hidden="true" />
+                    )}
+                  </Button>
+                )}
+
+                <Button
+                  id="labels"
+                  onClick={(event) => handleTaskActionClick(task, 'labels', event.currentTarget)}
+                  aria-label="Set labels"
+                  variant="ghost"
+                  size="xs"
+                  className="relative flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+                >
+                  <div className="flex truncate flex-wrap gap-[.07rem]">
+                    {task.labels.length > 0 ? (
+                      task.labels.map(({ name, id }) => {
+                        return (
+                          <div
+                            key={id}
+                            className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full border px-0 bg-border"
+                          >
+                            <Badge
+                              variant="outline"
+                              key={id}
+                              className="inline-block border-0 max-w-32 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
+                            >
+                              {name}
+                            </Badge>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <Tag size={16} className="opacity-60" />
+                    )}
+                  </div>
+                </Button>
+
+                <div className="flex gap-1 ml-auto mr-1">
+                  <Button
+                    id="assignedTo"
+                    onClick={(event) => handleTaskActionClick(task, 'assignedTo', event.currentTarget)}
+                    aria-label="Assign"
+                    variant="ghost"
+                    size="xs"
+                    className="relative flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+                  >
+                    {task.assignedTo.length > 0 ? (
+                      <AvatarGroup limit={3}>
+                        <AvatarGroupList>
+                          {task.assignedTo.map((user) => (
+                            <AvatarWrap type="user" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
+                          ))}
+                        </AvatarGroupList>
+                        <AvatarOverflowIndicator className="h-6 w-6 text-xs" />
+                      </AvatarGroup>
+                    ) : (
+                      <UserX className="h-4 w-4 opacity-60" />
+                    )}
+                  </Button>
+
+                  <Button
+                    id="status"
+                    onClick={() => updateStatus(task.status + 1)}
+                    disabled={(task.status as TaskStatus) === 6}
+                    variant="outlineGhost"
+                    size="xs"
+                    className={cn(
+                      'relative border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
+                      statusVariants({ status: task.status as TaskStatus }),
+                    )}
+                  >
+                    {t(taskStatuses[task.status as TaskStatus].action)}
+                  </Button>
+                  <Button
+                    onClick={(event) => handleTaskActionClick(task, `status-${task.id}`, event.currentTarget)}
+                    aria-label="Set status"
+                    variant="outlineGhost"
+                    size="xs"
+                    className={cn(
+                      'relative rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
+                      statusVariants({ status: task.status as TaskStatus }),
+                    )}
+                  >
+                    <ChevronDown size={12} className={`transition-transform ${isStatusDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </CardContent>
+        {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
+      </Card>
+    </motion.div>
   );
 }

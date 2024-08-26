@@ -103,6 +103,5 @@ export const handleExistingUser = async (
   }
 
   await setSessionCookie(ctx, existingUser.id, providerId.toLowerCase());
-
   return ctx.redirect(redirectUrl, 302);
 };

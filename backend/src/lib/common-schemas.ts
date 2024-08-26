@@ -8,6 +8,8 @@ export const cookieSchema = z.string();
 export const entityTypeSchema = z.enum(config.entityTypes);
 export const contextEntityTypeSchema = z.enum(config.contextEntityTypes);
 
+export const productTypeSchema = z.enum(config.productTypes);
+
 export const idSchema = z.string();
 
 export const slugSchema = z.string();
@@ -23,7 +25,7 @@ export const errorSchema = z.object({
   type: z.string(),
   status: z.number(),
   severity: z.string(),
-  entityType: entityTypeSchema.optional(),
+  entityType: entityTypeSchema.or(productTypeSchema).optional(),
   logId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
@@ -78,6 +80,10 @@ export const validDomainsSchema = z
 
 export const entityParamSchema = z.object({
   idOrSlug: idOrSlugSchema,
+});
+
+export const productParamSchema = z.object({
+  id: idSchema,
 });
 
 export const membershipsCountSchema = z.object({

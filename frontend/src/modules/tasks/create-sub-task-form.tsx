@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types';
-import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers.ts';
+import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from './helpers';
 import { TaskBlockNote } from './task-selectors/task-blocknote.tsx';
 
 const formSchema = z.object({
@@ -100,15 +100,16 @@ export const CreateSubTaskForm = ({
       order: getNewTaskOrder(values.status, parentTask.subTasks),
     };
 
-    createTask(newSubTask).then((resp) => {
-      if (resp) {
+    createTask(newSubTask)
+      .then((resp) => {
+        if (!resp) toast.error(t('common:error.create_resource', { resource: t('common:todo') }));
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:task') }));
+        toast.success(t('common:success.create_resource', { resource: t('common:todo') }));
         const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
         dispatchCustomEvent(eventName, { array: [newSubTask], action: 'createSubTask' });
         setFormState(false);
-      }
-    });
+      })
+      .catch(() => toast.error(t('common:error.create_resource', { resource: t('common:todo') })));
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one

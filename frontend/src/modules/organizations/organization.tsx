@@ -1,11 +1,16 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { getOrganization } from '~/api/organizations';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
 import { FocusViewContainer } from '../common/focus-view';
 import JoinLeaveButton from './join-leave-button';
+
+import { toast } from 'sonner';
+import { useEventListener } from '~/hooks/use-event-listener';
+import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
@@ -19,11 +24,20 @@ export const organizationQueryOptions = (idOrSlug: string) =>
   });
 
 const OrganizationPage = () => {
+  const { t } = useTranslation();
   const { idOrSlug } = useParams({ from: OrganizationRoute.id });
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
   const isAdmin = organization.membership?.role === 'admin';
   const tabs = isAdmin ? organizationTabs : [organizationTabs[0]];
+
+  const { mutate } = useUpdateOrganizationMutation(organization.id);
+  useEventListener('updateOrganizationCover', (e) => {
+    mutate(
+      { bannerUrl: e.detail },
+      { onSuccess: () => toast.success(t('common:success.upload_cover')), onError: () => toast.error(t('common:error.image_upload_failed')) },
+    );
+  });
 
   return (
     <>

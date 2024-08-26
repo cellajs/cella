@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createSelectSchema } from 'drizzle-zod';
 import { labelsTable } from '../../db/schema/labels';
 import { tasksTable } from '../../db/schema/tasks';
-import { idSchema, paginationQuerySchema } from '../../lib/common-schemas';
+import { paginationQuerySchema } from '../../lib/common-schemas';
 import { userSchema } from '../users/schema';
 
 export const createTaskSchema = z.object({
@@ -52,18 +52,24 @@ const taskSchema = z.object({
   modifiedBy: userSchema.omit({ counts: true }).nullable(),
 });
 
+export const subTaskSchema = z.array(
+  z.object({
+    ...createSelectSchema(tasksTable).pick({
+      id: true,
+      description: true,
+      summary: true,
+      expandable: true,
+      status: true,
+      order: true,
+      projectId: true,
+      parentId: true,
+    }).shape,
+  }),
+);
+
 export const fullTaskSchema = z.object({
   ...taskSchema.shape,
-  subTasks: z.array(
-    z.object({
-      ...createSelectSchema(tasksTable).omit({
-        modifiedAt: true,
-        createdAt: true,
-      }).shape,
-      createdAt: z.string(),
-      modifiedAt: z.string().nullable(),
-    }),
-  ),
+  subTasks: subTaskSchema,
 });
 
 export const getTasksQuerySchema = paginationQuerySchema.merge(
@@ -80,10 +86,6 @@ export const getNewOrderQuerySchema = z.object({
   oldStatus: z.string(),
   newStatus: z.string(),
   projectId: z.string(),
-});
-
-export const idParamSchema = z.object({
-  id: idSchema,
 });
 
 export const relativeQuerySchema = z.object({

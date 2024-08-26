@@ -3,6 +3,8 @@ import type { InferRequestType, InferResponseType } from 'hono/client';
 import type { apiClient } from '~/api';
 import type { Session } from '~/modules/users/user-settings';
 
+export type TaskQueryActions = 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
+
 export enum UploadType {
   Personal,
   Organization,
@@ -30,14 +32,14 @@ export interface TaskCardFocusEvent extends Event {
 export interface TaskCRUDEvent extends Event {
   detail: {
     array: Task[] | SubTask[] | { id: string }[];
-    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
+    action: TaskQueryActions;
   };
 }
 
 export interface TaskTableCRUDEvent extends Event {
   detail: {
     array: Task[] | SubTask[] | { id: string }[];
-    action: 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
+    action: TaskQueryActions;
   };
 }
 

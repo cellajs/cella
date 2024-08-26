@@ -1,11 +1,11 @@
 import Audio from '@uppy/audio';
 import type { Uppy, UppyOptions } from '@uppy/core';
-import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
+import ImageEditor from '@uppy/image-editor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { useEffect, useState } from 'react';
-import { ImadoUppy } from '~/lib/imado';
+import { ImadoUppy, type UppyBody, type UppyMeta } from '~/lib/imado';
 import { useThemeStore } from '~/store/theme';
 import type { UploadType } from '~/types';
 
@@ -21,7 +21,7 @@ interface UploadUppyProps {
   isPublic: boolean;
   setUrl: (url: string) => void;
   plugins?: ('webcam' | 'image-editor' | 'audio' | 'screen-capture')[];
-  uppyOptions: UppyOptions;
+  uppyOptions: UppyOptions<UppyMeta, UppyBody>;
   imageMode?: 'cover' | 'avatar';
   organizationId?: string;
 }
@@ -48,8 +48,10 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, setUrl, uppyO
         },
       });
 
+      // TODO: Somehow the type ImageEditorOptions is not being imported
       // For more info on ImageEditorOptions, see: https://uppy.io/docs/image-editor/#options
-      const imageEditorOptions: ImageEditorOptions = {
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+      const imageEditorOptions: any = {
         quality: 0.9,
       };
 
@@ -117,7 +119,7 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, setUrl, uppyO
         };
       }
 
-      const webcamOptions: WebcamOptions = {
+      const webcamOptions: WebcamOptions<UppyMeta, UppyBody> = {
         videoConstraints: {
           width: 1280,
           height: 720,
@@ -138,9 +140,7 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, setUrl, uppyO
     initializeUppy();
   }, [setUrl]);
 
-  return (
-    <>{uppy && <Dashboard uppy={uppy} autoOpenFileEditor={true} width="100%" height="400px" theme={mode} proudlyDisplayPoweredByUppy={false} />}</>
-  );
+  return <>{uppy && <Dashboard uppy={uppy} width="100%" height="400px" theme={mode} proudlyDisplayPoweredByUppy={false} />}</>;
 };
 
 export default UploadUppy;

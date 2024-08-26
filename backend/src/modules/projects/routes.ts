@@ -2,7 +2,6 @@ import { errorResponses, successWithDataSchema, successWithErrorsSchema, success
 import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
-import checkUserPermissions from './middlewares/userPermissionsCheck';
 
 import { createProjectBodySchema, createProjectQuerySchema, getProjectsQuerySchema, projectSchema, updateProjectBodySchema } from './schema';
 
@@ -65,10 +64,10 @@ class ProjectRoutesConfig {
   public getProjects = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, checkUserPermissions],
+    guard: [isAuthenticated],
     tags: ['projects'],
     summary: 'Get list of projects',
-    description: 'Get list of projects in which you have a membership or - if a `userId` is provided - the projects of this user.',
+    description: 'Get list of projects.',
     request: {
       query: getProjectsQuerySchema,
     },

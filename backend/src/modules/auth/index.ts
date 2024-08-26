@@ -388,7 +388,6 @@ const authRoutes = app
     const url = await githubAuth.createAuthorizationURL(state, githubScopes);
 
     createSession(ctx, 'github', state, '', redirect);
-
     return ctx.redirect(url.toString(), 302);
   })
   /*
@@ -426,7 +425,6 @@ const authRoutes = app
     const { code, state } = ctx.req.valid('query');
 
     const stateCookie = getCookie(ctx, 'oauth_state');
-
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
       // t('common:error.invalid_state.text')
@@ -481,7 +479,6 @@ const authRoutes = app
       const [existingOauthAccount] = await findOauthAccount('github', String(githubUser.id));
       if (existingOauthAccount) {
         await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
-
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 

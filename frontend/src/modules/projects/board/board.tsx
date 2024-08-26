@@ -16,6 +16,16 @@ import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, WorkspaceStoreProje
 import { BoardColumn } from './board-column';
 import BoardHeader from './header/board-header';
 
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { toast } from 'sonner';
+import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
+import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
+import { isSubTaskData } from '~/modules/tasks/sub-task';
+import { isTaskData } from '~/modules/tasks/task';
+import { useNavigationStore } from '~/store/navigation';
+
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
 const EMPTY_SPACE_WIDTH = 300;
@@ -73,6 +83,7 @@ function BoardDesktop({
 
 export default function Board() {
   const { t } = useTranslation();
+  const { menu } = useNavigationStore();
   const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const isDesktopLayout = useBreakpoints('min', 'sm');
 
@@ -186,6 +197,70 @@ export default function Board() {
   useEffect(() => {
     if (q?.length) setSearchQuery(q);
   }, []);
+
+  useEffect(() => {
+    return combine(
+      monitorForElements({
+        canMonitor({ source }) {
+          return source.data.type === 'task' || source.data.type === 'subTask';
+        },
+        async onDrop({ location, source }) {
+          const target = location.current.dropTargets[0];
+          if (!target) return;
+          const sourceData = source.data;
+          const targetData = target.data;
+
+          const edge: Edge | null = extractClosestEdge(targetData);
+          if (!edge) return;
+
+          const isTask = isTaskData(sourceData) && isTaskData(targetData);
+          const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
+
+          if (isTask) {
+            const mainCallback = useMutateTasksQueryData(['boardTasks', sourceData.item.projectId]);
+            const newOrder: number = await getRelativeTaskOrder({
+              edge,
+              currentOrder: targetData.order,
+              sourceId: sourceData.item.id,
+              projectId: targetData.item.projectId,
+              status: sourceData.item.status,
+            });
+            try {
+              if (sourceData.item.projectId !== targetData.item.projectId) {
+                const updatedTask = await updateTask(sourceData.item.id, 'projectId', targetData.item.projectId, newOrder);
+
+                const targetProjectCallback = useMutateTasksQueryData(['boardTasks', targetData.item.projectId]);
+                mainCallback([updatedTask], 'delete');
+                targetProjectCallback([updatedTask], 'create');
+              } else {
+                const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+                mainCallback([updatedTask], 'update');
+              }
+            } catch (err) {
+              toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
+            }
+          }
+
+          if (isSubTask) {
+            const mainCallback = useMutateTasksQueryData(['boardTasks', sourceData.item.projectId]);
+            const newOrder: number = await getRelativeTaskOrder({
+              edge,
+              currentOrder: targetData.order,
+              sourceId: sourceData.item.id,
+              projectId: targetData.item.projectId,
+              parentId: targetData.item.parentId ?? undefined,
+            });
+            try {
+              const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+              mainCallback([updatedTask], 'updateSubTask');
+            } catch (err) {
+              toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
+            }
+          }
+        },
+      }),
+    );
+  }, [menu]);
 
   return (
     <>

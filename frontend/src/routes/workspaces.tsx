@@ -4,9 +4,11 @@ import { config } from 'config';
 import { Construction } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
+import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
+import { workspaceQueryOptions } from '~/modules/workspaces/index';
 import { AppRoute } from '.';
 import { membersSearchSchema } from './organizations';
 
@@ -24,6 +26,9 @@ export const WorkspaceRoute = createRoute({
   staticData: { pageTitle: 'Workspace', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
+  loader: async ({ params: { idOrSlug } }) => {
+    await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+  },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
     return (

@@ -2,6 +2,7 @@ import { useLocation } from '@tanstack/react-router';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -9,7 +10,7 @@ import { Kbd } from '~/modules/common/kbd';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { TaskImpact } from '../create-task-form';
-import { inNumbersArray } from './helpers';
+import { inNumbersArray } from '../helpers';
 import { HighIcon } from './impact-icons/high';
 import { LowIcon } from './impact-icons/low';
 import { MediumIcon } from './impact-icons/medium';
@@ -44,11 +45,15 @@ export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }:
   const isSearching = searchValue.length > 0;
 
   const changeTaskImpact = async (newImpact: TaskImpact) => {
-    if (creationValueChange) return creationValueChange(newImpact);
-    if (!focusedTaskId) return;
-    const updatedTask = await updateTask(focusedTaskId, 'impact', newImpact);
-    const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-    dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    try {
+      if (creationValueChange) return creationValueChange(newImpact);
+      if (!focusedTaskId) return;
+      const updatedTask = await updateTask(focusedTaskId, 'impact', newImpact);
+      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+    } catch (err) {
+      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+    }
   };
 
   return (

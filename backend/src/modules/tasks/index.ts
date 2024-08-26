@@ -1,6 +1,7 @@
 import { type SQL, and, asc, desc, eq, gt, ilike, inArray, isNull, lt } from 'drizzle-orm';
 import { db } from '../../db/db';
 
+import type { z } from 'zod';
 import { labelsTable } from '../../db/schema/labels';
 import { tasksTable } from '../../db/schema/tasks';
 import { usersTable } from '../../db/schema/users';
@@ -10,6 +11,7 @@ import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import taskRoutesConfig from './routes';
+import type { subTaskSchema } from './schema';
 
 const app = new CustomHono();
 
@@ -33,7 +35,7 @@ const tasksRoutes = app
 
     const finalTask = {
       ...createdTask,
-      subTasks: [],
+      subTasks: [] as z.infer<typeof subTaskSchema>,
       createdBy: transformDatabaseUser(user),
       modifiedBy: null,
       assignedTo: assignedTo.filter((m) => createdTask.assignedTo.includes(m.id)),
@@ -156,7 +158,7 @@ const tasksRoutes = app
     );
   })
   /*
-   * Get relative task order by main task id
+   * Get relative task order
    */
   .openapi(taskRoutesConfig.getRelativeTaskOrder, async (ctx) => {
     const { edge, currentOrder, sourceId, projectId, status, parentId } = ctx.req.valid('json');
@@ -197,7 +199,7 @@ const tasksRoutes = app
     );
   })
   /*
-   * Update task by id
+   * Update task
    */
   .openapi(taskRoutesConfig.updateTask, async (ctx) => {
     const id = ctx.req.param('id');
@@ -228,8 +230,7 @@ const tasksRoutes = app
     const finalTask = {
       subTasks,
       ...updatedTask,
-      // biome-ignore lint/style/noNonNullAssertion: <explanation>
-      createdBy: users.find((m) => m.id === updatedTask.createdBy)!,
+      createdBy: users.find((m) => m.id === updatedTask.createdBy) || null,
       modifiedBy: users.find((m) => m.id === updatedTask.modifiedBy) || null,
       assignedTo: users.filter((m) => updatedTask.assignedTo.includes(m.id)),
       labels: labels.filter((m) => updatedTask.labels.includes(m.id)),
