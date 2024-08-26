@@ -35,6 +35,9 @@
 > [!CAUTION]
 > Please be aware this is a prerelease. It does not meet production requirements yet and large breaking changes still occur regularly. Want to contribute? Let's connect! ✉️ <info@cellajs.com>
 
+> [!INFO]
+> Due to a new - rewritten, refocused - version of Electric-SQL, we had to revert to basic API calls everywhere. We are now exploring ways to quickly get local-first back into cella.
+
 
 #### Contents
 - [Installation](#installation)
