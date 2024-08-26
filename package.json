@@ -13,8 +13,7 @@
     "node": ">=20.14.0"
   },
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "postinstall": "lefthook install && cd backend",
+    "prepare": "cross-env [ $NODE_ENV=development ] && lefthook install && code --install-extension biomejs.biome; exit 0",
     "docker": "pnpm --filter backend run docker:up --detach",
     "generate": "pnpm --filter backend run generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
@@ -30,6 +29,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
     "@evilmartians/lefthook": "^1.7.14",
+    "cross-env": "^7.0.3",
     "rimraf": "^6.0.1",
     "turbo": "^2.0.14",
     "typescript": "^5.5.4"
