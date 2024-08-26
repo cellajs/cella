@@ -241,14 +241,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                       )}
                     </Button>
                     {showingTasks.map((task) => (
-                      <motion.div
-                        key={task.id}
-                        variants={taskVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        transition={{ duration: 0.15 }}
-                      >
+                      <motion.div key={task.id} variants={taskVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0 }}>
                         <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                           <TaskCard
                             task={task}
