@@ -2,6 +2,7 @@ import { useLocation } from '@tanstack/react-router';
 import { Check, XCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -12,7 +13,6 @@ import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { User } from '~/types';
 import { inNumbersArray } from '../helpers';
-import { toast } from 'sonner';
 
 type AssignableMember = Omit<User, 'counts'>;
 

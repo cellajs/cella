@@ -3,6 +3,7 @@ import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { type CreateLabelParams, createLabel, updateLabel } from '~/api/labels.ts';
 import { updateTask } from '~/api/tasks.ts';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
@@ -15,7 +16,6 @@ import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Label } from '~/types';
 import { inNumbersArray } from '../helpers';
-import { toast } from 'sonner';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};

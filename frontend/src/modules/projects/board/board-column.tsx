@@ -1,4 +1,5 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -179,6 +180,11 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   // 4rem refers to the header height
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
+  const taskVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: { opacity: 1, height: 'auto' },
+    exit: { opacity: 0, height: 0 },
+  };
   return (
     <div ref={columnRef} className="flex flex-col h-full">
       <BoardColumnHeader
@@ -235,16 +241,25 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                       )}
                     </Button>
                     {showingTasks.map((task) => (
-                      <FocusTrap key={task.id} mainElementId={task.id} active={task.id === focusedTaskId}>
-                        <TaskCard
-                          task={task}
-                          isExpanded={expandedTasks[task.id] || false}
-                          isSelected={selectedTasks.includes(task.id)}
-                          isFocused={task.id === focusedTaskId}
-                          handleTaskActionClick={handleTaskActionClick}
-                          mode={mode}
-                        />
-                      </FocusTrap>
+                      <motion.div
+                        key={task.id}
+                        variants={taskVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        transition={{ duration: 0.15 }}
+                      >
+                        <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
+                          <TaskCard
+                            task={task}
+                            isExpanded={expandedTasks[task.id] || false}
+                            isSelected={selectedTasks.includes(task.id)}
+                            isFocused={task.id === focusedTaskId}
+                            handleTaskActionClick={handleTaskActionClick}
+                            mode={mode}
+                          />
+                        </FocusTrap>
+                      </motion.div>
                     ))}
                     <Button
                       onClick={handleIcedClick}

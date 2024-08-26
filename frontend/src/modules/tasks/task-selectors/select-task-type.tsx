@@ -2,6 +2,7 @@ import { useLocation } from '@tanstack/react-router';
 import { Bolt, Bug, Check, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { cn } from '~/lib/utils';
@@ -11,7 +12,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useWorkspaceStore } from '~/store/workspace';
 import type { TaskType } from '../create-task-form';
 import { inNumbersArray } from '../helpers';
-import { toast } from 'sonner';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];

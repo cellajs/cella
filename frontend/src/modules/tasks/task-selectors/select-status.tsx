@@ -3,6 +3,7 @@ import { cva } from 'class-variance-authority';
 import { Check, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -18,7 +19,6 @@ import { IcedIcon } from './status-icons/iced';
 import { ReviewedIcon } from './status-icons/reviewed';
 import { StartedIcon } from './status-icons/started';
 import { UnstartedIcon } from './status-icons/unstarted';
-import { toast } from 'sonner';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },

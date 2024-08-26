@@ -21,6 +21,7 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { useLocation } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks.ts';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { getDraggableItemData } from '~/lib/utils';
@@ -31,7 +32,6 @@ import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import type { Mode } from '~/store/theme.ts';
 import type { DraggableItemData, Task } from '~/types';
 import TaskDescription from './task-content.tsx';
-import { toast } from 'sonner';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {

@@ -13,10 +13,10 @@ import type { Task, TaskQueryActions } from '~/types';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
 import { isSubTaskData } from '~/modules/tasks/sub-task';
-import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
 
 const TaskSheet = ({
   task,
