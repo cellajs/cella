@@ -13,12 +13,12 @@ interface Props {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
+  isEditing: boolean;
 }
 
-const TaskContent = ({ task, mode, isExpanded }: Props) => {
+const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
   const { t } = useTranslation();
   const [createSubTask, setCreateSubTask] = useState(false);
-  // const [isEditing, setIsEditing] = useState(true);
 
   const expandedStyle = 'min-h-16 w-full bg-transparent border-none mt-1';
   return (
@@ -53,18 +53,18 @@ const TaskContent = ({ task, mode, isExpanded }: Props) => {
         </div>
       ) : (
         <>
-          {/* {isEditing ? ( */}
-          <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
-          {/* ) : (
+          {isEditing ? (
+            <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
+          ) : (
             <div className={`${expandedStyle} bn-container bn-shadcn`} data-color-scheme={mode}>
               <div
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
                 dangerouslySetInnerHTML={{ __html: task.description }}
-                onClick={() => setIsEditing(true)}
+                onClick={() => dispatchCustomEvent('toggleTaskEditing', { id: task.id, state: true })}
                 onKeyDown={() => {}}
               />
             </div>
-          )} */}
+          )}
           <div className="-ml-10 -mr-1">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (

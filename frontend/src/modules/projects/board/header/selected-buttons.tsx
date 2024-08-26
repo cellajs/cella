@@ -15,20 +15,24 @@ const TaskSelectedTableButtons = () => {
   const { selectedTasks, setSelectedTasks } = useWorkspaceStore();
 
   const onRemove = () => {
-    deleteTasks(selectedTasks).then((resp) => {
-      if (!resp) toast.error(t('common:error.delete_resources', { resources: t('common:tasks') }));
-      toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
-      setSelectedTasks([]);
-      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, {
-        array: selectedTasks.map((id) => {
-          return {
-            id,
-          };
-        }),
-        action: 'delete',
-      });
-    });
+    deleteTasks(selectedTasks)
+      .then((resp) => {
+        if (resp) {
+          toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
+          setSelectedTasks([]);
+          const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+          dispatchCustomEvent(eventName, {
+            array: selectedTasks.map((id) => {
+              return {
+                id,
+              };
+            }),
+            action: 'delete',
+          });
+        }
+        if (!resp) toast.error(t('common:error.delete_resources', { resources: t('common:tasks') }));
+      })
+      .catch(() => toast.error(t('common:error.delete_resources', { resources: t('common:tasks') })));
   };
 
   return (
