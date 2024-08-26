@@ -113,7 +113,7 @@ const SubTask = ({
             className={cn(
               'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
               'transition-all bg-background w-5 h-5 m-1.5',
-              `${task.status === 6 ? 'data-[state=checked]:bg-green-700 !text-primary border-green-700' : 'border-gray-500'}`,
+              `${task.status === 6 ? 'data-[state=checked]:bg-green-700 !text-white border-green-700' : 'border-gray-500'}`,
             )}
             checked={task.status === 6}
             onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
