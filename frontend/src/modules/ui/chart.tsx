@@ -2,9 +2,9 @@ import * as React from 'react';
 import { cn } from '~/lib/utils';
 
 // Lazy import for individual Recharts components
-const ResponsiveContainer = React.lazy(() => import('recharts').then(module => ({ default: module.ResponsiveContainer })));
-const Tooltip = React.lazy(() => import('recharts').then(module => ({ default: module.Tooltip })));
-const Legend = React.lazy(() => import('recharts').then(module => ({ default: module.Legend })))
+const ResponsiveContainer = React.lazy(() => import('recharts').then((module) => ({ default: module.ResponsiveContainer })));
+const Tooltip = React.lazy(() => import('recharts').then((module) => ({ default: module.Tooltip })));
+const Legend = React.lazy(() => import('recharts').then((module) => ({ default: module.Legend })));
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;

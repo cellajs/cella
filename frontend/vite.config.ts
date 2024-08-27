@@ -19,17 +19,20 @@ export default defineConfig(() => {
       host: '0.0.0.0',
       port: Number(frontendUrl.port),
     },
-    build: {rollupOptions: {
-      output: {
-        manualChunks: id => {
-            if (id.includes('node_modules/recharts') ||
-            id.includes('node_modules/@atlaskit/pragmatic-drag-and-drop') ||
-            id.includes('node_modules/@atlaskit/pragmatic-drag-and-drop-auto-scroll') ||
-            id.includes('node_modules/@atlaskit/pragmatic-drag-and-drop-hitbox')) 
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            if (
+              id.includes('node_modules/recharts') ||
+              id.includes('node_modules/@atlaskit/pragmatic-drag-and-drop') ||
+              id.includes('node_modules/@atlaskit/pragmatic-drag-and-drop-auto-scroll') ||
+              id.includes('node_modules/@atlaskit/pragmatic-drag-and-drop-hitbox')
+            )
               return 'recharts&pragmatic-dnd';
-        }
-      }
-    },
+          },
+        },
+      },
       sourcemap: true,
     },
     optimizeDeps: {
