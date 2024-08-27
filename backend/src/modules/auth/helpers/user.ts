@@ -3,6 +3,7 @@ import type { Context } from 'hono';
 import { db } from '../../../db/db';
 import { type InsertUserModel, usersTable } from '../../../db/schema/users';
 import { errorResponse } from '../../../lib/errors';
+import { generateUnsubscribeToken } from '../../../lib/utils';
 import { logEvent } from '../../../middlewares/logger/log-event';
 import type { OauthProviderOptions } from '../../../types/common';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
@@ -13,7 +14,7 @@ import { sendVerificationEmail } from './verify-email';
 // Handle creating a user
 export const handleCreateUser = async (
   ctx: Context,
-  data: InsertUserModel,
+  data: Omit<InsertUserModel, 'unsubscribeToken'>,
   options?: {
     provider?: {
       id: OauthProviderOptions;
@@ -39,6 +40,7 @@ export const handleCreateUser = async (
         firstName: data.firstName,
         email: data.email.toLowerCase(),
         name: data.name,
+        unsubscribeToken: generateUnsubscribeToken(data.email),
         language: config.defaultLanguage,
         hashedPassword: data.hashedPassword,
       })

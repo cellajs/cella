@@ -1,8 +1,11 @@
-import { createHash, createVerify } from 'node:crypto';
+import { createHash, createHmac, createVerify } from 'node:crypto';
 import cbor from 'cbor';
 import { config } from 'config';
 import * as jose from 'jose';
 import type { KeyLike } from 'jose';
+import { env } from '../../env';
+
+const secretKey = env.SECRET_UNSUBSCRIBE_TOKEN;
 
 export const base64UrlDecode = (base64urlStr: string) => {
   let base64String = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
@@ -121,4 +124,15 @@ export const calculateRequestsPerMinute = (metrics: Record<string, string | numb
     date,
     count,
   }));
+};
+
+export const generateUnsubscribeToken = (email: string) => {
+  const hmac = createHmac('sha256', secretKey);
+  hmac.update(email);
+  return hmac.digest('hex');
+};
+
+export const verifyUnsubscribeToken = (email: string, token: string) => {
+  const generatedToken = generateUnsubscribeToken(email);
+  return generatedToken === token;
 };

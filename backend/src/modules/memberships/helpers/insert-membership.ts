@@ -7,7 +7,7 @@ import type { UserModel } from '../../../db/schema/users';
 import type { WorkspaceModel } from '../../../db/schema/workspaces';
 import { logEvent } from '../../../middlewares/logger/log-event';
 
-type UserWithoutPassword = Omit<UserModel, 'hashedPassword'>;
+type UserWithoutPassword = Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
 
 interface Props {
   user: UserWithoutPassword;

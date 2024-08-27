@@ -10,6 +10,7 @@ import { nanoid } from '../../src/lib/nanoid';
 import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '../../src/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '../../src/db/schema/users';
+import { generateUnsubscribeToken } from '../../src/lib/utils';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 
@@ -92,6 +93,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         language: config.defaultLanguage,
         name,
         email,
+        unsubscribeToken: generateUnsubscribeToken(email),
         hashedPassword,
         slug,
         avatarUrl: options.addImages ? faker.image.avatar() : null,

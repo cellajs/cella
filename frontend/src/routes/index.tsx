@@ -18,6 +18,7 @@ import type { ApiError } from '~/api';
 import { onError } from '~/lib/query-client';
 import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
+import UnsubscribePage from '~/modules/common/unsubscribe-page';
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
@@ -124,9 +125,17 @@ export const acceptInviteRoute = createRoute({
   component: () => <AcceptInvite />,
 });
 
+export const newsletterUnsubscribeRoute = createRoute({
+  path: '/newsletter-unsubscribe',
+  staticData: { pageTitle: 'Unsubscribe from newsletter', isAuth: false },
+  getParentRoute: () => PublicRoute,
+  component: () => <UnsubscribePage />,
+});
+
 export const routeTree = rootRoute.addChildren([
   PublicRoute.addChildren([
     AboutRoute,
+    newsletterUnsubscribeRoute,
     ContactRoute,
     LegalRoute,
     AccessibilityRoute,

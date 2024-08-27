@@ -14,6 +14,7 @@ export const usersTable = pgTable(
       .default('user'),
     hashedPassword: varchar('hashed_password'),
     slug: varchar('slug').unique().notNull(),
+    unsubscribeToken: varchar('unsubscribe_token').unique().notNull(),
     name: varchar('name').notNull(),
     firstName: varchar('first_name'),
     lastName: varchar('last_name'),
@@ -39,6 +40,7 @@ export const usersTable = pgTable(
   (table) => {
     return {
       nameIndex: index('users_name_index').on(table.name.desc()),
+      unsubscribeTokenIndex: index('users_token_index').on(table.unsubscribeToken),
       emailIndex: index('users_email_index').on(table.email.desc()),
       createdAtIndex: index('users_created_at_index').on(table.createdAt.desc()),
       modifiedByReference: foreignKey({

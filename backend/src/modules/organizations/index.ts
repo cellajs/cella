@@ -295,7 +295,7 @@ const organizationsRoutes = app
 
     // Get members
     const organizationsMembersEmails = await db
-      .select({ email: usersTable.email })
+      .select({ email: usersTable.email, unsubscribeToken: usersTable.unsubscribeToken })
       .from(membershipsTable)
       .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
       // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
@@ -306,10 +306,10 @@ const organizationsRoutes = app
     if (organizationsMembersEmails.length === 1 && user.email === organizationsMembersEmails[0].email)
       return errorResponse(ctx, 400, 'Only receiver is sender', 'warn', 'organization');
 
-    // generating email html
-    const emailHtml = await render(organizationsNewsletter({ subject, content }));
-
     for (const user of organizationsMembersEmails) {
+      const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${user.unsubscribeToken}`;
+      // generating email html
+      const emailHtml = await render(organizationsNewsletter({ subject, content, unsubscribeLink }));
       emailSender.send(user.email, subject, emailHtml);
     }
 

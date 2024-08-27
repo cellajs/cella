@@ -13,8 +13,8 @@ import { Footer } from './components/footer';
 
 interface Props {
   organization: OrganizationModel;
-  targetUser?: Omit<UserModel, 'hashedPassword'>;
-  user: Omit<UserModel, 'hashedPassword'>;
+  targetUser?: Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
+  user: Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
   token: string;
 }
 

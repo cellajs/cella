@@ -4,6 +4,7 @@ import { contextEntityTypeSchema, entityParamSchema, entityTypeSchema, slugSchem
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
 import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
+import { userUnsubscribeQuerySchema } from '../users/schema';
 import {
   acceptInviteBodySchema,
   checkTokenSchema,
@@ -30,6 +31,24 @@ class GeneralRoutesConfig {
             schema: successWithDataSchema(z.any()),
           },
         },
+      },
+      ...errorResponses,
+    },
+  });
+  public unsubscribeUser = createRouteConfig({
+    method: 'get',
+    path: '/unsubscribe',
+    guard: isPublicAccess,
+    tags: ['users'],
+    summary: 'Unsubscribe from news letters',
+    description: 'Unsubscribe from news letters using publick access through his unsubscribe token',
+    request: {
+      query: userUnsubscribeQuerySchema,
+    },
+    responses: {
+      302: {
+        description: 'Redirect to FE',
+        headers: z.object({ Location: z.string() }),
       },
       ...errorResponses,
     },

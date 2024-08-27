@@ -25,7 +25,7 @@ import { workspacesTable } from '../../db/schema/workspaces';
 import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
-import { calculateRequestsPerMinute, parsePromMetrics } from '../../lib/utils';
+import { calculateRequestsPerMinute, parsePromMetrics, verifyUnsubscribeToken } from '../../lib/utils';
 import { isAuthenticated } from '../../middlewares/guard';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
@@ -472,6 +472,27 @@ const generalRoutes = app
       },
       200,
     );
+  })
+  /*
+   * Unsubscribe a user by token
+   */
+  .openapi(generalRouteConfig.unsubscribeUser, async (ctx) => {
+    const { token } = ctx.req.valid('query');
+
+    if (!token) return errorResponse(ctx, 400, 'No token provided', 'warn', 'user');
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.unsubscribeToken, token)).limit(1);
+
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+
+    const isValid = verifyUnsubscribeToken(user.email, token);
+
+    if (!isValid) return errorResponse(ctx, 400, 'Token verification failed', 'warn', 'user');
+
+    await db.update(usersTable).set({ newsletter: true }).where(eq(usersTable.id, user.id));
+
+    const redirectUrl = `${config.frontendUrl}/newsletter-unsubscribe`;
+    return ctx.redirect(redirectUrl, 302);
   })
   /*
    *  Get SSE stream

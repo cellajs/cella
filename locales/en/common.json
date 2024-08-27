@@ -462,5 +462,7 @@
   "impersonate": "Impersonate",
   "stop_impersonation": "Stop impersonation",
   "remove_passkey": "Remove passkey",
-  "already_connected_to": "Already connected to"
+  "already_connected_to": "Already connected to",
+  "unsubscribe_text": "We`ve updated your account settings so you will no longer receive newsletter at {{email}}. You can opt back in to receiving the newslettter by changing your settings anytime.",
+  "unsubscribe_title": "You`ve unsubscribe"
 }
