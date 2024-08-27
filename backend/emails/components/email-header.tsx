@@ -1,11 +1,23 @@
 import { Heading } from 'jsx-email';
 import { Logo } from './logo';
 
-export const EmailHeader = ({ headerText }: { headerText: string }) => (
+export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNode }) => (
   <>
     <Logo />
-    <Heading className="mx-0 my-[30px] p-0 text-center text-[1.5rem] font-normal text-black">
-      <div>{headerText}</div>
+    <Heading
+      style={{
+        marginLeft: '0',
+        marginRight: '0',
+        marginTop: '30px',
+        marginBottom: '30px',
+        padding: '0',
+        textAlign: 'center',
+        fontSize: '1.5rem',
+        fontWeight: 400,
+        color: '#000000',
+      }}
+    >
+      {typeof headerText === 'string' ? <div>{headerText}</div> : headerText}
     </Heading>
   </>
 );

@@ -10,7 +10,17 @@ interface Props {
 
 export const organizationsNewsletter = ({ content, subject }: Props) => {
   return (
-    <EmailContainer previewText={subject} bodyClassName="py-2.5" containerClassName="border-[#f0f0f0] p-10 max-w-full text-[#404040] leading-6">
+    <EmailContainer
+      previewText={subject}
+      bodyStyle={{ padding: '0 0.625rem' }}
+      containerStyle={{
+        borderColor: '#f0f0f0',
+        padding: '2.5rem',
+        maxWidth: '100%',
+        color: '#404040',
+        lineHeight: '1.5',
+      }}
+    >
       <Logo />
       <Section>
         <Text>{subject}</Text>

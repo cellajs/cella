@@ -2,11 +2,11 @@ import { Hr, Section, Text } from 'jsx-email';
 
 import { config } from 'config';
 
-export const Footer = ({ hrClassName = '' }: { hrClassName?: string }) => (
+export const Footer = ({ hrStyle = {} }: { hrStyle?: React.CSSProperties }) => (
   <>
-    <Hr className={hrClassName} />
-    <Section className="text-[#6a737d]">
-      <Text className="text-[.75rem] leading-[1.13rem]">
+    <Hr style={hrStyle} />
+    <Section style={{ color: '#6a737d' }}>
+      <Text style={{ fontSize: '.75rem', lineHeight: '1.13rem' }}>
         {config.name}
         <br />
         {config.company.streetAddress}

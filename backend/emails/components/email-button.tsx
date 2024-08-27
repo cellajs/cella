@@ -1,8 +1,20 @@
 import { Button, Section } from 'jsx-email';
 
 export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: string }) => (
-  <Section className="my-[2rem] text-center">
-    <Button className="rounded bg-[#000000] px-5 py-3 text-center text-[.75rem] font-semibold text-white no-underline" href={href}>
+  <Section style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '2rem' }}>
+    <Button
+      style={{
+        textAlign: 'center',
+        background: '#000',
+        color: 'white',
+        padding: '0.75rem 1.25rem',
+        fontSize: '.75rem',
+        textDecoration: 'none',
+        fontWeight: 'font-semibold',
+        borderRadius: '0.25rem',
+      }}
+      href={href}
+    >
       {ButtonText}
     </Button>
   </Section>

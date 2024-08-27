@@ -4,16 +4,16 @@ import { i18n } from '../../../backend/src/lib/i18n';
 
 export const EmailReplyTo = ({ email }: { email: string }) => (
   <>
-    <Text className="text-[.75rem] leading-[1.13rem] text-[#6a737d] mt-[1.25rem] gap-1">
+    <Text style={{ fontSize: '.75rem', lineHeight: '1.13rem', color: '#6a737d', marginTop: '1.25rem', gap: '0.25rem' }}>
       {i18n.t('backend:email.invite_reply_to')}
-      <a className="ml-1" href={`mailto:${email}`}>
+      <a style={{ marginLeft: '0.25rem' }} href={`mailto:${email}`}>
         {email}
       </a>
       {' or '}
-      <a className="ml-1" href={`mailto:${config.supportEmail}`}>
+      <a style={{ marginLeft: '0.25rem' }} href={`mailto:${config.supportEmail}`}>
         {config.supportEmail}
       </a>
     </Text>
-    <Text className="text-[.75rem] leading-[1.13rem] text-[#6a737d] mt-[1.25rem]">{i18n.t('backend:email.invite_expire')}</Text>
+    <Text style={{ fontSize: '.75rem', lineHeight: '1.13rem', color: '#6a737d', marginTop: '1.25rem' }}>{i18n.t('backend:email.invite_expire')}</Text>
   </>
 );

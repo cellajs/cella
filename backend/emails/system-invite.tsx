@@ -27,11 +27,28 @@ export const InviteSystemEmail = ({ user, targetUser, token }: Props) => {
   return (
     <EmailContainer
       previewText={i18nInstance.t('backend:email.invite_preview_text')}
-      bodyClassName="m-auto"
-      containerClassName="mx-auto my-10 w-[465px] rounded border border-solid border-[#eaeaea] p-5"
+      bodyStyle={{ margin: 'auto' }}
+      containerStyle={{
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        marginTop: '2.5rem',
+        marginBottom: '2.5rem',
+        width: '465px',
+        borderRadius: '0.25rem',
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        borderColor: '#eaeaea',
+        padding: '1.25rem',
+      }}
     >
       <EmailHeader headerText={i18nInstance.t('backend:email.invite_title')} />
-      <Text className="text-sm leading-6 text-black">
+      <Text
+        style={{
+          fontSize: '0.875rem',
+          lineHeight: '1.5',
+          color: '#000000',
+        }}
+      >
         <div
           // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
           dangerouslySetInnerHTML={{
@@ -43,16 +60,30 @@ export const InviteSystemEmail = ({ user, targetUser, token }: Props) => {
         />
       </Text>
       <EmailReplyTo email={user.email} />
-      <Section className="mt-12">
+      <Section style={{ marginTop: '3rem' }}>
         <Row>
           <Column align="right">
-            <Img className="rounded-full" src={userLogo} width="64" height="64" />
+            <Img
+              style={{
+                borderRadius: '9999px',
+              }}
+              src={userLogo}
+              width="64"
+              height="64"
+            />
           </Column>
           <Column align="center">
             <Img src={`${productionUrl}/static/email/arrow.png`} width="12" height="9" alt="invited to" />
           </Column>
           <Column align="left">
-            <Img src={`${productionUrl}/static/email/logo.png`} height="37" alt={config.name} className="mx-auto my-0" />
+            <Img
+              src={`${productionUrl}/static/email/logo.png`}
+              height="37"
+              alt={config.name}
+              style={{
+                margin: '0 auto',
+              }}
+            />
           </Column>
         </Row>
       </Section>

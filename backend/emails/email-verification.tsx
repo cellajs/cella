@@ -19,15 +19,24 @@ export const VerificationEmail = ({ i18n, verificationLink = baseUrl }: Props) =
   return (
     <EmailContainer
       previewText={i18n.t('backend:email.please_verify_email')}
-      bodyClassName="py-2.5"
-      containerClassName="border-[#f0f0f0] p-12 font-light text-[#404040] leading-6"
+      bodyStyle={{
+        paddingTop: '0.625rem',
+        paddingBottom: '0.625rem',
+      }}
+      containerStyle={{
+        borderColor: '#f0f0f0',
+        padding: '3rem',
+        fontWeight: 300,
+        color: '#404040',
+        lineHeight: '1.5',
+      }}
     >
       <Logo />
       <Section>
         <Text>{i18n.t('backend:email.verification_text_1')}</Text>
         <EmailButton ButtonText={i18n.t('common:verify_my_email')} href={verificationLink} />
       </Section>
-      <Footer hrClassName="mt-6" />
+      <Footer hrStyle={{ marginTop: '1.5rem' }} />
     </EmailContainer>
   );
 };
