@@ -6,10 +6,7 @@ export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNo
     <Logo />
     <Heading
       style={{
-        marginLeft: '0',
-        marginRight: '0',
-        marginTop: '30px',
-        marginBottom: '30px',
+        margin: '1.875rem 0',
         padding: '0',
         textAlign: 'center',
         fontSize: '1.5rem',

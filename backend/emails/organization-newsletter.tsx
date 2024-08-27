@@ -27,6 +27,7 @@ export const organizationsNewsletter = ({ content, subject }: Props) => {
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: we need send it cos blackNote return an html*/}
         <div dangerouslySetInnerHTML={{ __html: content }} />
       </Section>
+
       <Footer />
     </EmailContainer>
   );

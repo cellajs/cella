@@ -27,45 +27,54 @@ export const InviteSystemEmail = ({ user, targetUser, token }: Props) => {
   return (
     <EmailContainer
       previewText={i18nInstance.t('backend:email.invite_preview_text')}
-      bodyStyle={{ margin: 'auto' }}
       containerStyle={{
-        marginLeft: 'auto',
-        marginRight: 'auto',
         marginTop: '2.5rem',
         marginBottom: '2.5rem',
-        width: '465px',
-        borderRadius: '0.25rem',
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderColor: '#eaeaea',
-        padding: '1.25rem',
+        width: '32rem',
       }}
     >
-      <EmailHeader headerText={i18nInstance.t('backend:email.invite_title')} />
-      <Text
+      <EmailHeader
+        headerText={
+          <div
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            dangerouslySetInnerHTML={{
+              __html: i18nInstance.t('backend:email.invite_title'),
+            }}
+          />
+        }
+      />
+      <Section
         style={{
-          fontSize: '0.875rem',
-          lineHeight: '1.5',
-          color: '#000000',
+          borderRadius: '0.25rem',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: '#eaeaea',
+          padding: '1rem',
         }}
       >
-        <div
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
-          dangerouslySetInnerHTML={{
-            __html: i18nInstance.t('backend:email.invite_description', {
-              username,
-              invitedBy: user.name || i18nInstance.t('common:unknown_inviter'),
-            }),
+        <Text
+          style={{
+            fontSize: '1rem',
+            lineHeight: '1.5',
+            color: '#000000',
           }}
-        />
-      </Text>
-      <EmailReplyTo email={user.email} />
-      <Section style={{ marginTop: '3rem' }}>
+        >
+          <div
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            dangerouslySetInnerHTML={{
+              __html: i18nInstance.t('backend:email.invite_description', {
+                username,
+                invitedBy: user.name || i18nInstance.t('common:unknown_inviter'),
+              }),
+            }}
+          />
+        </Text>
         <Row>
           <Column align="right">
             <Img
               style={{
                 borderRadius: '9999px',
+                margin: '0 0 0 5.625rem',
               }}
               src={userLogo}
               width="64"
@@ -81,13 +90,16 @@ export const InviteSystemEmail = ({ user, targetUser, token }: Props) => {
               height="37"
               alt={config.name}
               style={{
-                margin: '0 auto',
+                margin: '0 5.625rem 0 0',
               }}
             />
           </Column>
         </Row>
+        <EmailButton ButtonText={i18n.t('common:accept')} href={`${config.frontendUrl}/auth/invite/${token}`} />
+        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>{i18n.t('backend:email.invite_expire')}</Text>
       </Section>
-      <EmailButton ButtonText={i18n.t('common:accept')} href={`${config.frontendUrl}/auth/invite/${token}`} />
+
+      <EmailReplyTo email={user.email} />
       <Footer />
     </EmailContainer>
   );

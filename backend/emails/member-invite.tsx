@@ -31,18 +31,10 @@ export const InviteMemberEmail = ({ organization, user, targetUser, token }: Pro
   return (
     <EmailContainer
       previewText={i18nInstance.t('backend:email.invite_in_organization_preview_text', { orgName })}
-      bodyStyle={{ margin: 'auto' }}
       containerStyle={{
-        marginLeft: 'auto',
-        marginRight: 'auto',
         marginTop: '2.5rem',
         marginBottom: '2.5rem',
-        width: '28rem',
-        borderRadius: '0.25rem',
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderColor: '#eaeaea',
-        padding: '1rem',
+        width: '32rem',
       }}
     >
       <EmailHeader
@@ -55,26 +47,33 @@ export const InviteMemberEmail = ({ organization, user, targetUser, token }: Pro
           />
         }
       />
-      <Text
+      <Section
         style={{
-          fontSize: '1rem',
-          lineHeight: '1.5rem',
-          color: '#000000',
+          borderRadius: '0.25rem',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: '#eaeaea',
+          padding: '1rem',
         }}
       >
-        <div
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
-          dangerouslySetInnerHTML={{
-            __html: i18nInstance.t('backend:email.invite_to_organization_description', {
-              username,
-              invitedBy: user.name || i18nInstance.t('common:unknown_inviter'),
-              orgName,
-            }),
+        <Text
+          style={{
+            fontSize: '1rem',
+            lineHeight: '1.5rem',
+            color: '#000000',
           }}
-        />
-      </Text>
-      <EmailReplyTo email={user.email} />
-      <Section style={{ marginTop: '3rem' }}>
+        >
+          <div
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            dangerouslySetInnerHTML={{
+              __html: i18nInstance.t('backend:email.invite_to_organization_description', {
+                username,
+                invitedBy: user.name || i18nInstance.t('common:unknown_inviter'),
+                orgName,
+              }),
+            }}
+          />
+        </Text>
         <Row>
           <Column align="right">
             <Img
@@ -100,8 +99,10 @@ export const InviteMemberEmail = ({ organization, user, targetUser, token }: Pro
             />
           </Column>
         </Row>
+        <EmailButton ButtonText={i18nInstance.t('common:accept')} href={`${config.frontendUrl}/auth/invite/${token}`} />
+        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>{i18n.t('backend:email.invite_expire')}</Text>
       </Section>
-      <EmailButton ButtonText={i18nInstance.t('common:accept')} href={`${config.frontendUrl}/auth/invite/${token}`} />
+      <EmailReplyTo email={user.email} />
       <Footer />
     </EmailContainer>
   );
