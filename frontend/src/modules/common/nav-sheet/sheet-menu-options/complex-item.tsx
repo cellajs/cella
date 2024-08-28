@@ -1,4 +1,6 @@
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
+import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useEffect, useRef, useState } from 'react';
 import { getDraggableItemData } from '~/lib/utils';
 import type { UserMenuItem } from '~/types';
@@ -7,10 +9,6 @@ import { isPageData } from '../helpers';
 import { MenuArchiveToggle } from '../menu-archive-toggle';
 import { SheetMenuItemsOptions } from './index';
 import { ItemOption } from './item-option';
-
-const { draggable, dropTargetForElements } = await import('@atlaskit/pragmatic-drag-and-drop/element/adapter');
-const { attachClosestEdge, extractClosestEdge } = await import('@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge');
-const { combine } = await import('@atlaskit/pragmatic-drag-and-drop/combine');
 
 interface ComplexOptionElementProps {
   item: UserMenuItem;

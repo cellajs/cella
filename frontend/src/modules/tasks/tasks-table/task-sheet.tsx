@@ -10,15 +10,13 @@ import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type'
 import { useThemeStore } from '~/store/theme';
 import type { Task, TaskQueryActions } from '~/types';
 
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
 import { isSubTaskData } from '~/modules/tasks/sub-task';
-
-const { monitorForElements } = await import('@atlaskit/pragmatic-drag-and-drop/element/adapter');
-const { extractClosestEdge } = await import('@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge');
-const { combine } = await import('@atlaskit/pragmatic-drag-and-drop/combine');
 
 const TaskSheet = ({
   task,

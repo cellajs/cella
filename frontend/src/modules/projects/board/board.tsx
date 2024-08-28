@@ -16,17 +16,15 @@ import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, WorkspaceStoreProje
 import { BoardColumn } from './board-column';
 import BoardHeader from './header/board-header';
 
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { toast } from 'sonner';
 import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
 import { isSubTaskData } from '~/modules/tasks/sub-task';
 import { isTaskData } from '~/modules/tasks/task';
 import { useNavigationStore } from '~/store/navigation';
-
-const { monitorForElements } = await import('@atlaskit/pragmatic-drag-and-drop/element/adapter');
-const { extractClosestEdge } = await import('@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge');
-const { combine } = await import('@atlaskit/pragmatic-drag-and-drop/combine');
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
