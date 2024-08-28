@@ -8,14 +8,13 @@
   "scripts": {
     "start": "pnpm run preview",
     "check:types": "tsc",
-    "dev": "NODE_ENV=development vite --mode development && node --trace-warnings",
+    "dev": "vite --mode development && node --trace-warnings",
     "build": "tsc && vite build",
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.3.0",
-    "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^1.4.0",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.3",
     "@blocknote/core": "^0.15.5",
     "@blocknote/react": "^0.15.5",

@@ -14,11 +14,8 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 
-import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
-import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { useLocation } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -32,6 +29,11 @@ import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import type { Mode } from '~/store/theme.ts';
 import type { DraggableItemData, Task } from '~/types';
 import TaskDescription from './task-content.tsx';
+
+const { dropTargetForExternal } = await import('@atlaskit/pragmatic-drag-and-drop/external/adapter');
+const { draggable, dropTargetForElements } = await import('@atlaskit/pragmatic-drag-and-drop/element/adapter');
+const { attachClosestEdge, extractClosestEdge } = await import('@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge');
+const { combine } = await import('@atlaskit/pragmatic-drag-and-drop/combine');
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {

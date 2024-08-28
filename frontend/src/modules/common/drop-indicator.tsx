@@ -1,4 +1,4 @@
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import type React from 'react';
 import { cn } from '~/lib/utils';
 

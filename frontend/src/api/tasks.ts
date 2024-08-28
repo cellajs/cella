@@ -1,4 +1,4 @@
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import { apiClient, handleResponse } from '.';
 
 const client = apiClient.tasks;

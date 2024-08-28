@@ -4,9 +4,7 @@ import type { ContextEntity, UserMenu } from '~/types';
 import { useParams } from '@tanstack/react-router';
 import { useNavigationStore } from '~/store/navigation';
 
-import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
@@ -20,6 +18,10 @@ import { findRelatedItemsByType, isPageData } from './helpers';
 import { SheetMenuItem } from './sheet-menu-items';
 import { SheetMenuSearch } from './sheet-menu-search';
 import { MenuSection } from './sheet-menu-section';
+
+const { monitorForElements } = await import('@atlaskit/pragmatic-drag-and-drop/element/adapter');
+const { extractClosestEdge } = await import('@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge');
+const { combine } = await import('@atlaskit/pragmatic-drag-and-drop/combine');
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
