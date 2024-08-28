@@ -84,6 +84,7 @@ const AppNav = () => {
   const buttonsClick = (index: number) => {
     if (index === 3 && focusedTaskId) return;
     if (sheet.getAll().length) return;
+    if (dialog.haveOpenDialogs()) return;
     navButtonClick(navItems[index]);
   };
 

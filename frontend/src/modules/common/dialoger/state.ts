@@ -16,6 +16,7 @@ export type DialogT = {
   titleContent?: string | React.ReactNode;
   addToTitle?: boolean;
   useDefaultTitle?: boolean;
+  open?: boolean;
 };
 
 export type DialogToRemove = {
@@ -45,7 +46,6 @@ class Observer {
     this.subscribers = [];
     this.dialogs = [];
   }
-
   subscribe = (subscriber: (dialog: DialogT | DialogToRemove | DialogToReset) => void) => {
     this.subscribers.push(subscriber);
 
@@ -70,6 +70,10 @@ class Observer {
     return this.dialogs.find((dialog) => dialog.id === id);
   };
 
+  haveOpenDialogs = () => {
+    return this.dialogs.some((d) => (d as DialogT).open);
+  };
+
   remove = (refocus = true, id?: number | string) => {
     if (id) {
       for (const subscriber of this.subscribers) {
@@ -91,10 +95,16 @@ class Observer {
   update = (id: number | string, data: Partial<DialogT>) => {
     if (!id) return;
 
+    const existingDialog = this.dialogs.find((dialog) => dialog.id === id);
+    if (!existingDialog) return;
+
+    const updatedDialog = { ...existingDialog, ...data };
+
     for (const subscriber of this.subscribers) {
-      subscriber({ id, ...data });
+      subscriber(updatedDialog);
     }
 
+    this.dialogs = this.dialogs.map((dialog) => (dialog.id === id ? updatedDialog : dialog));
     return;
   };
 
@@ -128,6 +138,7 @@ const dialogFunction = (content: React.ReactNode, data?: ExternalDialog) => {
     refocus: true,
     autoFocus: true,
     hideClose: false,
+    open: true,
     ...data,
     id,
   });
@@ -139,4 +150,5 @@ export const dialog = Object.assign(dialogFunction, {
   update: DialogState.update,
   get: DialogState.get,
   reset: DialogState.reset,
+  haveOpenDialogs: DialogState.haveOpenDialogs,
 });

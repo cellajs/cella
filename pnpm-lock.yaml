@@ -222,6 +222,9 @@ importers:
       tsx:
         specifier: ^4.17.0
         version: 4.17.0
+      typescript:
+        specifier: ^5.5.4
+        version: 5.5.4
 
   config: {}
 
@@ -2656,7 +2659,6 @@ packages:
 
   '@evilmartians/lefthook@1.7.14':
     resolution: {integrity: sha512-0FPRdmd7hIZXjTQKQjLnmqxx4xGRIM1oGN9pJ4PyI14tOqEAwstmLIbauqQpTVTj3MAPeylsQVXh9RGaq/F2/A==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 

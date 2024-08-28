@@ -94,7 +94,8 @@
     "jszip": "^3.10.1",
     "papaparse": "^5.4.1",
     "tsup": "^8.2.4",
-    "tsx": "^4.17.0"
+    "tsx": "^4.17.0",
+    "typescript": "^5.5.4"
   },
   "babel": {
     "presets": ["@babel/preset-typescript"]
