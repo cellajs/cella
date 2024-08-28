@@ -13,7 +13,7 @@
     "node": ">=20.14.0"
   },
   "scripts": {
-    "prepare": "cross-env NODE_ENV=development lefthook install && code --install-extension biomejs.biome || exit 0",
+    "prepare": "cross-env [ $NODE_ENV=development ] && lefthook install && code --install-extension biomejs.biome; exit 0",
     "docker": "pnpm --filter backend run docker:up --detach",
     "generate": "pnpm --filter backend run generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
