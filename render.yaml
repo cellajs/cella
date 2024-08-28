@@ -18,6 +18,8 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      - key: UNSUBSCRIBE_TOKEN_SECRET
+        sync: false
       - key: TUS_UPLOAD_API_SECRET
         sync: false
       - key: AWS_CLOUDFRONT_KEY_ID

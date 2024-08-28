@@ -1,13 +1,13 @@
 import { createEnv } from '@t3-oss/env-core';
-import { z } from 'zod';
 import 'dotenv/config';
+import { z } from 'zod';
 
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
     NODE_ENV: z.union([z.literal('development'), z.literal('production')]),
     PORT: z.string().optional(),
-    SECRET_UNSUBSCRIBE_TOKEN: z.string(),
+    UNSUBSCRIBE_TOKEN_SECRET: z.string(),
 
     NOVU_API_KEY: z.string().optional(),
     NOVU_SUB_ID: z.string().optional(),

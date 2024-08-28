@@ -1,11 +1,11 @@
 import { createHash, createHmac, createVerify } from 'node:crypto';
 import cbor from 'cbor';
 import { config } from 'config';
-import * as jose from 'jose';
 import type { KeyLike } from 'jose';
+import * as jose from 'jose';
 import { env } from '../../env';
 
-const secretKey = env.SECRET_UNSUBSCRIBE_TOKEN;
+const secretKey = env.UNSUBSCRIBE_TOKEN_SECRET;
 
 export const base64UrlDecode = (base64urlStr: string) => {
   let base64String = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
