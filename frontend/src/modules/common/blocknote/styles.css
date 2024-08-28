@@ -30,10 +30,10 @@ p.bn-inline-content{
 }
 
 .bn-shadcn .bn-editor {
-  white-space: pre-wrap;
-  word-break: break-word;
-  padding: 0px;
-  background: transparent;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  padding: 0px !important;
+  background: transparent !important;
 }
 
 .bn-container[data-color-scheme="light"] {

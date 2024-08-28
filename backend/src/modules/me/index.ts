@@ -266,9 +266,9 @@ const meRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Remove user's passkey
+   * Delete passkey of self
    */
-  .openapi(meRoutesConfig.removePasskey, async (ctx) => {
+  .openapi(meRoutesConfig.deletePasskey, async (ctx) => {
     const user = ctx.get('user');
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));

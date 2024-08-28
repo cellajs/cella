@@ -40,8 +40,8 @@ class GeneralRoutesConfig {
     path: '/unsubscribe',
     guard: isPublicAccess,
     tags: ['users'],
-    summary: 'Unsubscribe from news letters',
-    description: 'Unsubscribe from news letters using publick access through his unsubscribe token',
+    summary: 'Unsubscribe',
+    description: 'Unsubscribe from newsletters using a personal unsubscribe token',
     request: {
       query: userUnsubscribeQuerySchema,
     },

@@ -10,7 +10,11 @@ export function Dialoger() {
   const isMobile = useBreakpoints('max', 'sm');
   const prevFocusedElement = useRef<HTMLElement | null>(null);
 
+  const updateDialog = (dialog: DialogT, open: boolean) => {
+    DialogState.update(dialog.id, { open });
+  };
   const onOpenChange = (dialog: DialogT) => (open: boolean) => {
+    updateDialog(dialog, open);
     if (!open) removeDialog(dialog);
   };
 
@@ -38,16 +42,13 @@ export function Dialoger() {
       prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
       setUpdatedDialogs((updatedDialogs) => {
         const existingDialog = updatedDialogs.find(({ id }) => id === dialog.id);
-        if (existingDialog) {
-          return updatedDialogs.map((d) => (d.id === dialog.id ? dialog : d));
-        }
+        if (existingDialog) return updatedDialogs.map((d) => (d.id === dialog.id ? dialog : d));
+
         return [...updatedDialogs, dialog];
       });
       setDialogs((dialogs) => {
         const existingDialog = dialogs.find(({ id }) => id === dialog.id);
-        if (existingDialog) {
-          return dialogs;
-        }
+        if (existingDialog) return dialogs;
         return [...dialogs, dialog];
       });
     });
@@ -62,7 +63,7 @@ export function Dialoger() {
 
     if (!isMobile || !dialog.drawerOnMobile) {
       return (
-        <Dialog key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)} modal={!dialog.container}>
+        <Dialog key={dialog.id} open={dialog.open} onOpenChange={onOpenChange(dialog)} modal={!dialog.container}>
           {dialog.container && (
             <div className="fixed inset-0 z-[100] bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
           )}
@@ -92,7 +93,7 @@ export function Dialoger() {
     }
 
     return (
-      <Drawer key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)}>
+      <Drawer key={dialog.id} open={dialog.open} onOpenChange={onOpenChange(dialog)}>
         <DrawerContent className={dialog.className}>
           {dialog.title || dialog.text ? (
             <DrawerHeader className="text-left">

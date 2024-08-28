@@ -44,7 +44,11 @@ export const WorkspaceBoardRoute = createRoute({
   staticData: { pageTitle: 'Board', isAuth: true },
   validateSearch: z.object({ project: z.string().optional() }),
   getParentRoute: () => WorkspaceRoute,
-  component: () => <Board />,
+  component: () => (
+    <Suspense>
+      <Board />
+    </Suspense>
+  ),
 });
 
 export const tasksSearchSchema = z.object({
@@ -62,7 +66,11 @@ export const WorkspaceTableRoute = createRoute({
   validateSearch: tasksSearchSchema,
   staticData: { pageTitle: 'Table', isAuth: true },
   getParentRoute: () => WorkspaceRoute,
-  component: () => <TasksTable />,
+  component: () => (
+    <Suspense>
+      <TasksTable />
+    </Suspense>
+  ),
 });
 
 export const WorkspaceOverviewRoute = createRoute({

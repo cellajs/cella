@@ -45,7 +45,7 @@ export const deleteMySessions = async (sessionIds: string[]) => {
 };
 
 // Remove passkey
-export const removePasskey = async () => {
+export const deletePasskey = async () => {
   const response = await client.passkey.$delete();
 
   const json = await handleResponse(response);

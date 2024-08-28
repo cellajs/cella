@@ -151,7 +151,7 @@ class TaskRoutesConfig {
     guard: [isAuthenticated, isAllowedTo('update', 'task')],
     tags: ['tasks'],
     summary: 'Update task',
-    description: 'Update task by id or slug.',
+    description: 'Update task by id.',
     request: {
       params: productParamSchema,
       body: {

@@ -117,7 +117,9 @@ export const authThroughPasskey = async ({
   signature,
   email,
 }: { credentialId: string; clientDataJSON: string; authenticatorData: string; signature: string; email: string }) => {
-  const response = await apiClient.auth['verify-passkey'].$post({ json: { credentialId, clientDataJSON, authenticatorData, signature, email } });
+  const response = await apiClient.auth['passkey-verification'].$post({
+    json: { credentialId, clientDataJSON, authenticatorData, signature, email },
+  });
 
   const json = await handleResponse(response);
   return json.success;
