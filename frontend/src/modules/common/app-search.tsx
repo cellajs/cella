@@ -80,12 +80,19 @@ export const AppSearch = () => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
+    let to = '/$idOrSlug';
+    let idOrSlug = suggestion.slug;
+    if (suggestion.entity === 'user') to = '/user/$idOrSlug';
+    if (suggestion.entity === 'project' && suggestion.parentId) {
+      to = `/workspaces/$idOrSlug/board?project=${suggestion.slug}`;
+      idOrSlug = suggestion.parentId;
+    }
+    if (suggestion.entity === 'workspace') to = '/workspaces/$idOrSlug';
+
     navigate({
-      to: suggestion.entity === 'organization' ? '/$idOrSlug' : `/${suggestion.entity}/$idOrSlug`,
+      to,
       resetScroll: false,
-      params: {
-        idOrSlug: suggestion.slug,
-      },
+      params: { idOrSlug },
     });
 
     dialog.remove(false);

@@ -78,7 +78,7 @@ pnpm dev
 pnpm generate
 ```
 
-Lastly, [seed](/backend/seed/README.md) your db (with `dev` running) to sign in as [admin user](/backend/seed/README.md).
+Lastly, [seed](/backend/scripts/README.md) your db (with `dev` running) to sign in as [admin user](/backend/scripts/README.md).
 
 ```bash
 pnpm seed

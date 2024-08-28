@@ -37,7 +37,7 @@ export const tasksTable = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
     createdBy: varchar('created_by')
       .notNull()
-      .default('admin')
+      .default('unknown')
       .references(() => usersTable.id, {
         onDelete: 'set default',
       }),

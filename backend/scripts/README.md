@@ -1,5 +1,12 @@
+# Scripts
 
-# Seed Scripts Overview
+## Clear db
+Clear all data in all tables
+
+## Reset db
+Not just clear the database, but also add new mock data
+
+## Seeds
 
 ### User seed (required)
 This script seeds the database with an admin user:

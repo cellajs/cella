@@ -4,13 +4,13 @@ import { Argon2id } from 'oslo/password';
 
 import { Command } from '@commander-js/extra-typings';
 import { config } from 'config';
-import { db } from '../../src/db/db';
-import { nanoid } from '../../src/lib/nanoid';
+import { db } from '../../../src/db/db';
+import { nanoid } from '../../../src/lib/nanoid';
 
-import { type InsertMembershipModel, membershipsTable } from '../../src/db/schema/memberships';
-import { type InsertOrganizationModel, organizationsTable } from '../../src/db/schema/organizations';
-import { type InsertUserModel, usersTable } from '../../src/db/schema/users';
-import { generateUnsubscribeToken } from '../../src/lib/utils';
+import { type InsertMembershipModel, membershipsTable } from '../../../src/db/schema/memberships';
+import { type InsertOrganizationModel, organizationsTable } from '../../../src/db/schema/organizations';
+import { type InsertUserModel, usersTable } from '../../../src/db/schema/users';
+import { generateUnsubscribeToken } from '../../../src/lib/utils';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 

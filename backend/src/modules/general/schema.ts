@@ -50,6 +50,7 @@ export const entitySuggestionSchema = z.object({
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
   entity: z.enum(config.entityTypes),
+  parentId: z.string().optional(),
 });
 
 export type Suggestion = z.infer<typeof entitySuggestionSchema>;
