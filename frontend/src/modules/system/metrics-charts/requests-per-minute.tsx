@@ -15,7 +15,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function RequestsPerMinute() {
+function RequestsPerMinute() {
   const [metrics, setMetrics] = useState<Record<string, number>[]>([]);
 
   useEffect(() => {
@@ -52,3 +52,5 @@ export function RequestsPerMinute() {
     </Card>
   );
 }
+
+export default RequestsPerMinute;

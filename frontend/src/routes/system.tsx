@@ -9,7 +9,6 @@ import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
-import { RequestsPerMinute } from '~/modules/system/metrics-charts/requests-per-minute';
 import { requestsQueryOptions } from '~/modules/system/requests-table';
 import SystemPanel from '~/modules/system/system-panel';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
@@ -19,6 +18,7 @@ import { AppRoute } from '.';
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
 const UsersTable = lazy(() => import('~/modules/users/users-table'));
 const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
+const RequestsPerMinute = lazy(() => import('~/modules/system/metrics-charts/requests-per-minute'));
 
 // Search query schemas
 const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
