@@ -7,6 +7,7 @@ import { useThemeStore } from '~/store/theme';
 
 import '~/modules/common/blocknote/styles.css';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
+import { CustomFormattingToolbar } from '../common/blocknote/custom-formatting-toolbar';
 
 const BlockNote = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
   const editor = useCreateBlockNote();
@@ -26,9 +27,11 @@ const BlockNote = ({ value, onChange }: { value: string; onChange: (value: strin
         defaultValue={value}
         onChange={async () => onChange(await onBlockNoteChange())}
         sideMenu={false}
+        formattingToolbar={false}
         className="p-2 border rounded-lg"
       >
         <CustomSlashMenu />
+        <CustomFormattingToolbar />
       </BlockNoteView>
     </Suspense>
   );
