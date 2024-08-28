@@ -1,6 +1,6 @@
-import { resetDb } from '../src/cron/manage-db';
+import { clearDb } from '../src/cron/manage-db';
 
-resetDb()
+clearDb()
   .catch((error) => {
     console.error(error);
     process.exit(1);
