@@ -120,13 +120,13 @@ class MeRoutesConfig {
       ...errorResponses,
     },
   });
-  public removePasskey = createRouteConfig({
+  public deletePasskey = createRouteConfig({
     method: 'delete',
     path: '/passkey',
     guard: isAuthenticated,
     tags: ['me'],
-    summary: 'Remove user`s passkey',
-    description: 'Remove user`s passkey auth.',
+    summary: 'Delete passkey of self',
+    description: 'Delete your passkey record.',
     security: [],
     responses: {
       200: {

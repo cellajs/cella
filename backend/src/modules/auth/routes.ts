@@ -14,12 +14,12 @@ class AuthRoutesConfig {
     path: '/impersonation-sign-in',
     guard: [isAuthenticated, isSystemAdmin],
     tags: ['auth'],
-    summary: 'Impersonating sign in',
-    description: 'Admin sign in from perspective of selected user',
+    summary: 'Start impersonating',
+    description: 'System admin impersonates a selected user by id by receiving a special impersonation session.',
     request: { query: z.object({ targetUserId: z.string() }) },
     responses: {
       200: {
-        description: 'Impersonating status',
+        description: 'Impersonating',
         headers: z.object({
           'Set-Cookie': cookieSchema,
         }),
@@ -38,11 +38,11 @@ class AuthRoutesConfig {
     path: '/impersonation-sign-out',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Impersonating sign out',
-    description: 'Sign out admin from impersonating and clear session.',
+    summary: 'Stop impersonating',
+    description: 'Stop impersonating by clearing impersonation session.',
     responses: {
       200: {
-        description: 'Admin stopped impersonating',
+        description: 'Stopped impersonating',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,
@@ -279,11 +279,11 @@ class AuthRoutesConfig {
 
   public verifyPasskey = createRouteConfig({
     method: 'post',
-    path: '/verify-passkey',
+    path: '/passkey-verification',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Verify user`s passkey',
-    description: "Verify the user's passkey by checking the validity of the signature with the public key.",
+    summary: 'Verify passkey',
+    description: 'Verify passkey by checking the validity of signature with public key.',
     request: {
       body: {
         content: {
@@ -404,7 +404,7 @@ class AuthRoutesConfig {
     path: '/passkey-challenge',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Get challenge for passkey',
+    summary: 'Get passkey challenge',
     description: 'Handing over the challenge, which results in a key pair, a private and a public key, being created on the device',
     security: [],
     responses: {
@@ -425,7 +425,7 @@ class AuthRoutesConfig {
     path: '/passkey-registration',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Finalize passkey registration',
+    summary: 'Register passkey',
     description:
       'The server associates the public key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the public key.',
     security: [],

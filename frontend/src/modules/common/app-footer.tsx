@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import ContactForm from '~/modules/common/contact-form/contact-form';
@@ -30,6 +31,7 @@ export const FooterLink = ({ id, href }: FooterLinkProps) => {
 // Default footer links
 const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'about', href: '/about' },
+  { id: 'docs', href: `${config.backendUrl}/docs` },
   { id: 'legal', href: '/legal' },
 ];
 

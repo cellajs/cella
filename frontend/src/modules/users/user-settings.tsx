@@ -2,7 +2,7 @@ import { Check, KeyRound, Send, Trash2, Zap, ZapOff } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { removePasskey as baseRemovePasskey, deleteMySessions as baseTerminateMySessions } from '~/api/me';
+import { deletePasskey as baseRemovePasskey, deleteMySessions as baseTerminateMySessions } from '~/api/me';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
@@ -121,7 +121,7 @@ const UserSettings = () => {
       },
     );
   };
-  const removePasskey = async () => {
+  const deletePasskey = async () => {
     const result = await baseRemovePasskey();
     if (result) {
       toast.success('Passkey removed successfully.');
@@ -246,7 +246,7 @@ const UserSettings = () => {
                   {user.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>
                 {user.passkey && (
-                  <Button key="removePasskey" type="button" variant="outline" onClick={() => removePasskey()}>
+                  <Button key="deletePasskey" type="button" variant="outline" onClick={() => deletePasskey()}>
                     <Trash2 className="w-4 h-4 mr-2" />
                     {t('common:remove_passkey')}
                   </Button>

@@ -80,9 +80,8 @@ const docs = (app: CustomHono) => {
     apiReference({
       defaultHttpClient: {
         targetKey: 'node',
-        clientKey: 'fetch',
+        clientKey: 'axios',
       },
-      hiddenClients: true,
       spec: {
         url: 'openapi.json',
       },
