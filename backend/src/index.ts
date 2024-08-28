@@ -2,10 +2,10 @@ import { serve } from '@hono/node-server';
 import cron from 'node-cron';
 
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { resetDb } from '~/cron/manage-db';
+import { db } from '~/db/db';
+import ascii from '~/lib/ascii';
 import { env } from '../env';
-import { resetDb } from './cron/manage-db';
-import { db } from './db/db';
-import ascii from './lib/ascii';
 import app from './server';
 
 // Set i18n instance before starting server

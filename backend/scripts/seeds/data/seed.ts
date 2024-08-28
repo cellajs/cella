@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 
-import { db } from '../../../src/db/db';
+import { db } from '~/db/db';
 import { nanoid } from '../../../src/lib/nanoid';
 
 import { Command } from '@commander-js/extra-typings';
