@@ -1,7 +1,7 @@
-import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
-import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
+import { getOrganizations } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { config } from 'config';
@@ -37,43 +37,9 @@ import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
 import { useColumns } from './columns';
+import { organizationsQueryOptions } from './helpers/query-options';
 
 type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
-
-export const organizationsQueryOptions = ({
-  q,
-  sort: initialSort,
-  order: initialOrder,
-  limit = LIMIT,
-  rowsLength = 0,
-}: GetOrganizationsParams & {
-  rowsLength?: number;
-}) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
-
-  return infiniteQueryOptions({
-    queryKey: ['organizations', q, sort, order],
-    initialPageParam: 0,
-    retry: 1,
-    refetchOnWindowFocus: false,
-    queryFn: async ({ pageParam: page, signal }) =>
-      await getOrganizations(
-        {
-          page,
-          q,
-          sort,
-          order,
-          // Fetch more items than the limit if some items were deleted
-          limit: limit + Math.max(page * limit - rowsLength, 0),
-          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
-          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
-        },
-        signal,
-      ),
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
-  });
-};
 
 const LIMIT = 40;
 

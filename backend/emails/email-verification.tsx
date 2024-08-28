@@ -5,6 +5,7 @@ import type { i18n } from '../../backend/src/lib/i18n';
 
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
+import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
 import { Logo } from './components/logo';
 
@@ -19,15 +20,32 @@ export const VerificationEmail = ({ i18n, verificationLink = baseUrl }: Props) =
   return (
     <EmailContainer
       previewText={i18n.t('backend:email.please_verify_email')}
-      bodyClassName="py-2.5"
-      containerClassName="border-[#f0f0f0] p-12 font-light text-[#404040] leading-6"
+      bodyStyle={{
+        padding: '0.625rem 0',
+      }}
+      containerStyle={{
+        padding: '3rem',
+        fontWeight: 300,
+        color: '#404040',
+        lineHeight: '1.5',
+      }}
     >
       <Logo />
-      <Section>
+      <Section
+        style={{
+          borderRadius: '0.25rem',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: '#eaeaea',
+          padding: '1.5rem',
+          marginTop: '2rem',
+        }}
+      >
         <Text>{i18n.t('backend:email.verification_text_1')}</Text>
         <EmailButton ButtonText={i18n.t('common:verify_my_email')} href={verificationLink} />
       </Section>
-      <Footer hrClassName="mt-6" />
+      <EmailReplyTo />
+      <Footer />
     </EmailContainer>
   );
 };

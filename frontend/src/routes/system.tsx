@@ -8,11 +8,11 @@ import { z } from 'zod';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
-import { organizationsQueryOptions } from '~/modules/organizations/organizations-table';
+import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import { RequestsPerMinute } from '~/modules/system/metrics-charts/requests-per-minute';
 import { requestsQueryOptions } from '~/modules/system/requests-table';
 import SystemPanel from '~/modules/system/system-panel';
-import { usersQueryOptions } from '~/modules/users/users-table';
+import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
 import { AppRoute } from '.';
 
 // Lazy-loaded route components

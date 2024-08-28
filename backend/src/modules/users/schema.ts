@@ -15,6 +15,7 @@ export const userSchema = createSelectSchema(usersTable, {
 })
   .omit({
     hashedPassword: true,
+    unsubscribeToken: true,
   })
   .setKey(
     'counts',
@@ -29,6 +30,9 @@ export const usersQuerySchema = paginationQuerySchema.merge(
     role: z.enum(config.rolesByType.systemRoles).default('user').optional(),
   }),
 );
+export const userUnsubscribeQuerySchema = z.object({
+  token: z.string(),
+});
 
 export const updateUserBodySchema = createInsertSchema(usersTable, {
   email: z.string().email(),

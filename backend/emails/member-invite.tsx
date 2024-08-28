@@ -13,8 +13,8 @@ import { Footer } from './components/footer';
 
 interface Props {
   organization: OrganizationModel;
-  targetUser?: Omit<UserModel, 'hashedPassword'>;
-  user: Omit<UserModel, 'hashedPassword'>;
+  targetUser?: Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
+  user: Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
   token: string;
 }
 
@@ -31,37 +31,78 @@ export const InviteMemberEmail = ({ organization, user, targetUser, token }: Pro
   return (
     <EmailContainer
       previewText={i18nInstance.t('backend:email.invite_in_organization_preview_text', { orgName })}
-      bodyClassName="m-auto"
-      containerClassName="mx-auto my-10 w-[28rem] rounded border border-solid border-[#eaeaea] p-4"
+      containerStyle={{
+        marginTop: '2.5rem',
+        marginBottom: '2.5rem',
+        width: '32rem',
+      }}
     >
-      <EmailHeader headerText={i18nInstance.t('backend:email.invite_to_organization_title', { orgName: orgName })} />
-      <Text className="text-base leading-6 text-black">
-        <div
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
-          dangerouslySetInnerHTML={{
-            __html: i18nInstance.t('backend:email.invite_to_organization_description', {
-              username,
-              invitedBy: user.name || i18nInstance.t('common:unknown_inviter'),
-              orgName,
-            }),
+      <EmailHeader
+        headerText={
+          <div
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            dangerouslySetInnerHTML={{
+              __html: i18nInstance.t('backend:email.invite_to_organization_title', { orgName: orgName }),
+            }}
+          />
+        }
+      />
+      <Section
+        style={{
+          borderRadius: '0.25rem',
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          borderColor: '#eaeaea',
+          padding: '1rem',
+        }}
+      >
+        <Text
+          style={{
+            fontSize: '1rem',
+            lineHeight: '1.5rem',
+            color: '#000000',
           }}
-        />
-      </Text>
-      <EmailReplyTo email={user.email} />
-      <Section className="mt-12">
+        >
+          <div
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            dangerouslySetInnerHTML={{
+              __html: i18nInstance.t('backend:email.invite_to_organization_description', {
+                username,
+                invitedBy: user.name || i18nInstance.t('common:unknown_inviter'),
+                orgName,
+              }),
+            }}
+          />
+        </Text>
         <Row>
           <Column align="right">
-            <Img className="rounded-full" src={userLogo} width="64" height="64" />
+            <Img
+              style={{
+                borderRadius: '9999px',
+              }}
+              src={userLogo}
+              width="64"
+              height="64"
+            />
           </Column>
           <Column align="center">
             <Img src={`${productionUrl}/static/email/arrow.png`} width="12" height="9" alt="invited to" />
           </Column>
           <Column align="left">
-            <Img className="rounded-full" src={orgLogo} width="64" height="64" />
+            <Img
+              style={{
+                borderRadius: '9999px',
+              }}
+              src={orgLogo}
+              width="64"
+              height="64"
+            />
           </Column>
         </Row>
+        <EmailButton ButtonText={i18nInstance.t('common:accept')} href={`${config.frontendUrl}/auth/invite/${token}`} />
+        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>{i18n.t('backend:email.invite_expire')}</Text>
       </Section>
-      <EmailButton ButtonText={i18nInstance.t('common:accept')} href={`${config.frontendUrl}/auth/invite/${token}`} />
+      <EmailReplyTo email={user.email} />
       <Footer />
     </EmailContainer>
   );

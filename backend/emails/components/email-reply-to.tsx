@@ -1,19 +1,24 @@
 import { config } from 'config';
-import { Text } from 'jsx-email';
+import { Link, Text } from 'jsx-email';
 import { i18n } from '../../../backend/src/lib/i18n';
 
-export const EmailReplyTo = ({ email }: { email: string }) => (
-  <>
-    <Text className="text-[.75rem] leading-[1.13rem] text-[#6a737d] mt-[1.25rem] gap-1">
-      {i18n.t('backend:email.invite_reply_to')}
-      <a className="ml-1" href={`mailto:${email}`}>
-        {email}
-      </a>
-      {' or '}
-      <a className="ml-1" href={`mailto:${config.supportEmail}`}>
-        {config.supportEmail}
-      </a>
-    </Text>
-    <Text className="text-[.75rem] leading-[1.13rem] text-[#6a737d] mt-[1.25rem]">{i18n.t('backend:email.invite_expire')}</Text>
-  </>
+const link = {
+  color: '#0366d6',
+  fontSize: '.75rem',
+  lineHeight: '1.13rem',
+};
+
+export const EmailReplyTo = ({ email }: { email?: string }) => (
+  <Text style={{ marginTop: '1.25rem', gap: '0.25rem', textAlign: 'center' as const }}>
+    {email && (
+      <Link style={link} href={`mailto:${email}`}>
+        {i18n.t('backend:email.inviter_email')}
+      </Link>
+    )}
+    ・
+    <Link style={link} href={`mailto:${config.supportEmail}`}>
+      {i18n.t('backend:email.support_email')}
+    </Link>
+    {!email && '・'}
+  </Text>
 );

@@ -264,7 +264,7 @@ const authRoutes = app
    * Have user a passkey
    */
   .openapi(authRoutesConfig.getUserHavePasskey, async (ctx) => {
-    const email = ctx.req.valid('param').email;
+    const { email } = ctx.req.valid('json');
 
     const userWithPassKey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, email));
 
@@ -827,25 +827,11 @@ const authRoutes = app
     const isValid = verifyPassKeyPublic(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
     if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
 
-    // const oauthAccounts = await db
-    //   .select({
-    //     providerId: oauthAccountsTable.providerId,
-    //   })
-    //   .from(oauthAccountsTable)
-    //   .where(eq(oauthAccountsTable.userId, user.id));
-
     // Extract the counter
     // Optionally do we need update the counter in the database
     // const counter = authData.slice(33, 37).readUInt32BE(0);
 
     await setSessionCookie(ctx, user.id, 'passkey');
     return ctx.json({ success: true }, 200);
-    // return ctx.json(
-    //   {
-    //     success: true,
-    //     data: { ...transformDatabaseUserWithCount(user, memberships.length), oauth: oauthAccounts.map((el) => el.providerId), passkey: true },
-    //   },
-    //   200,
-    // );
   });
 export default authRoutes;

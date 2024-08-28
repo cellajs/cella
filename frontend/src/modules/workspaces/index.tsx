@@ -1,28 +1,15 @@
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useLocation, useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { getLabels } from '~/api/labels';
-import { getWorkspace } from '~/api/workspaces';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
 import { useUpdateWorkspaceMutation } from '~/modules/workspaces/update-workspace-form';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-
-export const workspaceQueryOptions = (idOrSlug: string) =>
-  queryOptions({
-    queryKey: ['workspaces', idOrSlug],
-    queryFn: () => getWorkspace(idOrSlug),
-  });
-
-export const labelsQueryOptions = (projectId: string) =>
-  queryOptions({
-    queryKey: ['labels', projectId],
-    queryFn: () => getLabels({ projectId }),
-  });
+import { labelsQueryOptions, workspaceQueryOptions } from './helpers/quey-options';
 
 const WorkspacePage = () => {
   const { t } = useTranslation();

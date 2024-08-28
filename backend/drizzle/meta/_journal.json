@@ -15,6 +15,13 @@
       "when": 1724661213387,
       "tag": "0001_cold_dormammu",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1724762092627,
+      "tag": "0002_last_the_anarchist",
+      "breakpoints": true
     }
   ]
 }

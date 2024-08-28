@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -10,7 +10,7 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
-import { type GetMembersParams, getMembers } from '~/api/general';
+import { getMembers } from '~/api/general';
 import { updateMembership } from '~/api/memberships';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -36,6 +36,7 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import type { EntityPage, Member, Organization, Project } from '~/types';
 import { useColumns } from './columns';
+import { membersQueryOptions } from './helpers/query-options';
 
 const LIMIT = 40;
 
@@ -46,48 +47,6 @@ interface MembersTableProps {
   route: '/layout/$idOrSlug/members' | '/layout/workspaces/$idOrSlug';
   isSheet?: boolean;
 }
-
-// Build query to get members with infinite scroll
-export const membersQueryOptions = ({
-  idOrSlug,
-  entityType,
-  q,
-  sort: initialSort,
-  order: initialOrder,
-  role,
-  limit = LIMIT,
-  rowsLength = 0,
-}: GetMembersParams & {
-  rowsLength?: number;
-}) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
-
-  return infiniteQueryOptions({
-    queryKey: ['members', idOrSlug, entityType, q, sort, order, role],
-    initialPageParam: 0,
-    retry: 1,
-    refetchOnWindowFocus: false,
-    queryFn: async ({ pageParam: page, signal }) =>
-      getMembers(
-        {
-          page,
-          q,
-          sort,
-          order,
-          role,
-          // Fetch more items than the limit if some items were deleted
-          limit: limit + Math.max(page * limit - rowsLength, 0),
-          idOrSlug,
-          entityType,
-          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
-          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
-        },
-        signal,
-      ),
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
-  });
-};
 
 const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();

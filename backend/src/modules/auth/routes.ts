@@ -14,12 +14,12 @@ class AuthRoutesConfig {
     path: '/impersonation-sign-in',
     guard: [isAuthenticated, isSystemAdmin],
     tags: ['auth'],
-    summary: '',
-    description: '',
+    summary: 'Impersonating sign in',
+    description: 'Admin sign in from perspective of selected user',
     request: { query: z.object({ targetUserId: z.string() }) },
     responses: {
       200: {
-        description: 'Email exists',
+        description: 'Impersonating status',
         headers: z.object({
           'Set-Cookie': cookieSchema,
         }),
@@ -38,11 +38,11 @@ class AuthRoutesConfig {
     path: '/impersonation-sign-out',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Sign out',
-    description: 'Sign out yourself and clear session.',
+    summary: 'Impersonating sign out',
+    description: 'Sign out admin from impersonating and clear session.',
     responses: {
       200: {
-        description: 'User signed out',
+        description: 'Admin stopped impersonating',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,
@@ -249,18 +249,24 @@ class AuthRoutesConfig {
   });
 
   public getUserHavePasskey = createRouteConfig({
-    method: 'get',
-    path: '/passkey/{email}',
+    method: 'post',
+    path: '/check-passkey',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Get if user have an passkey sign in option',
+    summary: 'Check if passkey enabled',
     description: 'Check if the user have an passkey sign in option',
     request: {
-      params: z.object({ email: z.string() }),
+      body: {
+        content: {
+          'application/json': {
+            schema: emailBodySchema,
+          },
+        },
+      },
     },
     responses: {
       200: {
-        description: 'Passkey state of user',
+        description: 'State of the user`s passkey option',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,
@@ -276,8 +282,8 @@ class AuthRoutesConfig {
     path: '/verify-passkey',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Verify users passkey',
-    description: 'Verify users passkey',
+    summary: 'Verify user`s passkey',
+    description: "Verify the user's passkey by checking the validity of the signature with the public key.",
     request: {
       body: {
         content: {
@@ -295,13 +301,12 @@ class AuthRoutesConfig {
     },
     responses: {
       200: {
-        description: 'Verify users passkey',
+        description: 'Passkey verified',
         headers: z.object({
           'Set-Cookie': cookieSchema,
         }),
         content: {
           'application/json': {
-            // schema: successWithDataSchema(userSchema.extend(signUpInfo.shape)),
             schema: successWithoutDataSchema,
           },
         },
@@ -400,7 +405,7 @@ class AuthRoutesConfig {
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Get challenge for passkey',
-    description: 'Challenge for passkey auth.',
+    description: 'Handing over the challenge, which results in a key pair, a private and a public key, being created on the device',
     security: [],
     responses: {
       200: {
@@ -420,8 +425,9 @@ class AuthRoutesConfig {
     path: '/passkey-registration',
     guard: isPublicAccess,
     tags: ['auth'],
-    summary: 'Get challenge for passkey',
-    description: 'Challenge for passkey auth.',
+    summary: 'Finalize passkey registration',
+    description:
+      'The server associates the public key and the credential ID with the user for future authentication flows and checks the validity of the operation by verifying the signed challenge with the public key.',
     security: [],
     request: {
       body: {

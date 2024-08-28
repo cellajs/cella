@@ -1,7 +1,7 @@
-import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { type GetUsersParams, getUsers, updateUser } from '~/api/users';
+import { updateUser } from '~/api/users';
 
 import type { usersQuerySchema } from 'backend/modules/users/schema';
 import type { config } from 'config';
@@ -33,47 +33,11 @@ import { UsersTableRoute } from '~/routes/system';
 import type { User } from '~/types';
 import DeleteUsers from '../delete-users';
 import { useColumns } from './columns';
+import { usersQueryOptions } from './helpers/query-options';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 
 const LIMIT = 100;
-
-export const usersQueryOptions = ({
-  q,
-  sort: initialSort,
-  order: initialOrder,
-  role,
-  limit = LIMIT,
-  rowsLength = 0,
-}: GetUsersParams & {
-  rowsLength?: number;
-}) => {
-  const sort = initialSort || 'createdAt';
-  const order = initialOrder || 'desc';
-
-  return infiniteQueryOptions({
-    queryKey: ['users', q, sort, order, role],
-    initialPageParam: 0,
-    refetchOnWindowFocus: false,
-    retry: 1,
-    queryFn: async ({ pageParam: page, signal }) =>
-      await getUsers(
-        {
-          page,
-          q,
-          sort,
-          order,
-          role,
-          // Fetch more items than the limit if some items were deleted
-          limit: limit + Math.max(page * limit - rowsLength, 0),
-          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
-          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
-        },
-        signal,
-      ),
-    getNextPageParam: (_lastPage, allPages) => allPages.length,
-  });
-};
 
 type SystemRoles = (typeof config.rolesByType.systemRoles)[number] | undefined;
 

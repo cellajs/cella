@@ -7,6 +7,7 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     NODE_ENV: z.union([z.literal('development'), z.literal('production')]),
     PORT: z.string().optional(),
+    SECRET_UNSUBSCRIBE_TOKEN: z.string(),
 
     NOVU_API_KEY: z.string().optional(),
     NOVU_SUB_ID: z.string().optional(),

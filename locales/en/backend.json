@@ -18,6 +18,8 @@
   "email.reset_password_text_2": "This link will expire in 3 hours. To get a new password reset link, visit:",
   "email.reset_password_text_1": "A password reset link has been requested for your Cella account. If this was you, you can set a new password here:",
   "email.hi": "Hi",
+  "email.support_email": "Reach out for support",
+  "email.inviter_email": "Message the inviter",
   "invalid.min_items": "Please add at least {{items_count}} {{item}} to the list.",
   "invalid.min_length_greater": "Must be greater than {{length}}",
   "invalid.min_length_greater_or_eq": "Must be greater or equal to {{length}}",

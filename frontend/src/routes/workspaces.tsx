@@ -8,7 +8,7 @@ import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
-import { workspaceQueryOptions } from '~/modules/workspaces/index';
+import { workspaceQueryOptions } from '~/modules/workspaces/helpers/quey-options';
 import { AppRoute } from '.';
 import { membersSearchSchema } from './organizations';
 
