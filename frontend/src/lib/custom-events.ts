@@ -12,6 +12,7 @@ interface CustomEventMap {
   updateUserCover: CustomEvent<string>;
   updateOrganizationCover: CustomEvent<string>;
   updateWorkspaceCover: CustomEvent<string>;
+
   taskTableCRUD: CustomEvent<{
     array: Task[] | { id: string }[];
     action: TaskQueryActions;

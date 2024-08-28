@@ -10,7 +10,14 @@
     // Set `sourceRoot` to  "/" to strip the build path prefix
     // from generated source code references.
     // This improves issue grouping in Sentry.
-    "sourceRoot": "/"
+    "sourceRoot": "/",
+
+    // Alias `~/*` imports to `./src/*`
+    "baseUrl": ".",
+
+    "paths": {
+      "~/*": ["./src/*"]
+    }
   },
   "include": ["src", "drizzle.config.ts", "env.ts", "emails"]
 }
