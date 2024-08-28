@@ -1,9 +1,9 @@
 import { config } from 'config';
-import { db } from '../../src/db/db';
-import { usersTable } from '../../src/db/schema/users';
+import { db } from '../../../src/db/db';
+import { usersTable } from '../../../src/db/schema/users';
 
 import { Argon2id } from 'oslo/password';
-import { generateUnsubscribeToken } from '../../src/lib/utils';
+import { generateUnsubscribeToken } from '../../../src/lib/utils';
 
 export const adminUser = {
   password: '12345678',

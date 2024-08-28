@@ -1,6 +1,6 @@
-import { dataSeed } from '../../seed/data/seed';
-import { organizationsSeed } from '../../seed/organizations/seed';
-import { userSeed } from '../../seed/user/seed';
+import { dataSeed } from '../../scripts/seeds/data/seed';
+import { organizationsSeed } from '../../scripts/seeds/organizations/seed';
+import { userSeed } from '../../scripts/seeds/user/seed';
 
 import { db } from '../db/db';
 import { organizationsTable } from '../db/schema/organizations';
