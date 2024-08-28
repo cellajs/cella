@@ -6,9 +6,9 @@
     "node": ">=20.14.0"
   },
   "scripts": {
-    "start": "pnpm run preview",
+    "start": "NODE_ENV=production pnpm run preview",
     "check:types": "tsc",
-    "dev": "vite --mode development && node --trace-warnings",
+    "dev": "NODE_ENV=development vite --mode development && node --trace-warnings",
     "build": "tsc && vite build",
     "build:dev": "tsc && NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000"
