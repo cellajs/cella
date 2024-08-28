@@ -18,6 +18,7 @@ import { labelsTable } from '../../db/schema/labels';
 import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
 import { organizationsTable } from '../../db/schema/organizations';
 import { projectsTable } from '../../db/schema/projects';
+import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { tasksTable } from '../../db/schema/tasks';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
 import { usersTable } from '../../db/schema/users';
@@ -317,8 +318,8 @@ const generalRoutes = app
       const table = entityTables.get(entityType);
       if (!table) continue;
 
-      // Build selection
-      const select = {
+      // Basic selection setup
+      const baseSelect = {
         id: table.id,
         slug: table.slug,
         name: table.name,
@@ -360,8 +361,24 @@ const generalRoutes = app
       $and.push($or.length > 1 ? or(...$or) : $or[0]);
       const $where = $and.length > 1 ? and(...$and) : $and[0];
 
-      // Build query
-      queries.push(db.select(select).from(table).where($where).limit(10));
+      // If type is 'project', perform left join to get projectId
+      if (entityType === 'project') {
+        const query = db
+          .select({
+            ...baseSelect,
+            parentId: projectsToWorkspacesTable.workspaceId,
+          })
+          .from(table)
+          .where($where)
+          .leftJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, table.id))
+          .limit(10);
+
+        // Build query
+        queries.push(query);
+      } else {
+        // Build query
+        queries.push(db.select(baseSelect).from(table).where($where).limit(10));
+      }
     }
 
     const results = await Promise.all(queries);

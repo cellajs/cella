@@ -19,6 +19,7 @@ export function Dialoger() {
   };
 
   const removeDialog = useCallback((dialog: DialogT | DialogToRemove) => {
+    DialogState.update(dialog.id, { open: false });
     setDialogs((dialogs) => dialogs.filter(({ id }) => id !== dialog.id));
     if (dialog.refocus && prevFocusedElement.current) {
       // Timeout is needed to prevent focus from being stolen by the dialog that was just removed
