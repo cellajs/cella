@@ -26,6 +26,7 @@ export default defineConfig(() => {
             if (
               id.includes('node_modules/recharts') ||
               id.includes('node_modules/@atlaskit/pragmatic-drag-and-drop') ||
+              id.includes('node_modules/@atlaskit/pragmatic-drag-and-drop-auto-scroll') ||
               id.includes('node_modules/@atlaskit/pragmatic-drag-and-drop-hitbox')
             )
               return 'recharts&pragmatic-dnd';

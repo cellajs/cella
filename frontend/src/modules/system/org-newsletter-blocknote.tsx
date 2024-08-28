@@ -1,4 +1,4 @@
-import { useCreateBlockNote } from '@blocknote/react';
+import { DragHandleButton, SideMenu, SideMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
 import DOMPurify from 'dompurify';
@@ -6,7 +6,6 @@ import { Suspense } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import '~/modules/common/blocknote/styles.css';
-import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 
 const BlockNote = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
   const editor = useCreateBlockNote();
@@ -26,9 +25,15 @@ const BlockNote = ({ value, onChange }: { value: string; onChange: (value: strin
         defaultValue={value}
         onChange={async () => onChange(await onBlockNoteChange())}
         sideMenu={false}
-        className="p-2 border rounded-lg"
+        className="pl-6 border rounded-lg"
       >
-        <CustomSlashMenu />
+        <SideMenuController
+          sideMenu={(props) => (
+            <SideMenu {...props}>
+              <DragHandleButton {...props} />
+            </SideMenu>
+          )}
+        />
       </BlockNoteView>
     </Suspense>
   );
