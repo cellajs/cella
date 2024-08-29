@@ -59,7 +59,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
     } catch (err) {
-      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
     }
   };
 
@@ -85,10 +85,10 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
   };
 
   return (
-    <Command className="relative rounded-lg max-h-[40vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
+    <Command className="relative rounded-lg max-h-[44vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <Input
         ref={inputRef}
-        className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden"
+        className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden min-h-10"
         placeholder={t('common:placeholder.assign')}
         value={searchValue}
         autoFocus={true}
@@ -151,7 +151,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
                   if (inputRef.current && !isMobile) inputRef.current.focus();
                 }}
               >
-                <span className="text-xs">{showAll ? t('common:hide') : t('common:show_all')}</span>
+                <span className="text-xs">{showAll ? t('common:show_less') : t('common:show_all')}</span>
               </CommandItem>
             )}
           </CommandGroup>
