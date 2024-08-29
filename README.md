@@ -84,7 +84,7 @@ Lastly, [seed](/backend/scripts/README.md) your db (with `dev` running) to sign 
 pnpm seed
 ```
 
-Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can be found at [localhost:4000/docs](http://localhost:4000/docs). Manage your local db with [local.drizzle.studio](http:local.drizzle.studio).
+Check it out at [localhost:3300](http://localhost:3300)! Generated API docs can be found at [localhost:4400/docs](http://localhost:4400/docs). Manage your local db with [local.drizzle.studio](http:local.drizzle.studio).
 
 
 <br />
