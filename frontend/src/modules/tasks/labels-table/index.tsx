@@ -46,7 +46,7 @@ const LabelsTable = ({ labels }: { labels: Label[] }) => {
   const isFiltered = !!query;
 
   const onSearch = (searchString: string) => {
-    setSelectedLabels([]);
+    if (selectedLabels.length > 0) setSelectedLabels([]);
     setQuery(searchString);
   };
 

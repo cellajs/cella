@@ -88,7 +88,7 @@ const OrganizationsTable = () => {
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
-    setSelectedRows(new Set<string>());
+    if (selectedRows.size > 0) setSelectedRows(new Set<string>());
     setQuery(searchString);
   };
   // Table selection
