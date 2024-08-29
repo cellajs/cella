@@ -1,5 +1,5 @@
+import type { UpdateUserParams } from '~/api/users';
 import { apiClient, handleResponse } from '.';
-import type { UpdateUserParams } from './users';
 
 const client = apiClient.me;
 

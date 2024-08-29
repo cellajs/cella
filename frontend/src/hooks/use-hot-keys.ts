@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from './use-hot-keys-helpers';
+import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from '~/hooks/use-hot-keys-helpers';
 
 export function useHotkeys(
   hotkeys: HotkeyItem[],
