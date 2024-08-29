@@ -90,4 +90,4 @@ Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can 
 <br />
 <br />
 
-💙💛 Big thank you too [drizzle-orm](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router) & [shadcn](https://github.com/shadcn-ui/ui).
+💙💛 Big thank you to [drizzle](https://github.com/drizzle-team/drizzle-orm), [hono](https://github.com/honojs/hono), [tanstack-router](https://github.com/tanstack/router) & [electric](https://github.com/electric-sql/electric).
