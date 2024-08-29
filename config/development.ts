@@ -8,9 +8,9 @@ export default {
   // senderIsReceiver: true,
 
   domain: '',
-  frontendUrl: 'http://localhost:3300',
-  backendUrl: 'http://localhost:4400',
-  backendAuthUrl: 'http://localhost:4400/auth',
+  frontendUrl: 'http://localhost:3003',
+  backendUrl: 'http://localhost:4004',
+  backendAuthUrl: 'http://localhost:4004/auth',
   tusUrl: 'http://localhost:1080',
 
   // Hide chat widget in development
