@@ -5,7 +5,6 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
-import { impersonateSignIn } from '~/api/auth';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -14,15 +13,11 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-vi
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
-import { Button } from '~/modules/ui/button';
 import UpdateRow from '~/modules/users/users-table/update-row';
-import { getAndSetMe, getAndSetMenu } from '~/routes';
-import { useUserStore } from '~/store/user';
-import type { MeUser } from '~/types';
+import ImpersonateRow from './impersonate-row';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
   const columns: ColumnOrColumnGroup<User>[] = [
@@ -57,27 +52,22 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
             <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
           </Link>
-          {user.id !== row.id && (
-            <Button
-              variant="link"
-              size="micro"
-              onClick={async () => {
-                useUserStore.setState({ user: null as unknown as MeUser });
-                await impersonateSignIn(row.id);
-                navigate({ to: '/', replace: true });
-                await Promise.all([getAndSetMe(), getAndSetMenu()]);
-              }}
-            >
-              {t('common:impersonate')}
-            </Button>
-          )}
         </div>
       ),
+    },
+    {
+      key: 'impersonate',
+      name: '',
+      visible: true,
+      sortable: false,
+      width: 32,
+      renderCell: ({ row }) => <ImpersonateRow user={row} />,
     },
     {
       key: 'edit',
       name: '',
       visible: true,
+      sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => <UpdateRow user={row} tabIndex={tabIndex} callback={callback} />,
     },
