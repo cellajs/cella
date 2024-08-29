@@ -1,9 +1,10 @@
 import { useLocation } from '@tanstack/react-router';
 import { Check, XCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -30,6 +31,8 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
   const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const isMobile = useBreakpoints('max', 'sm');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const currentProject = projects.find((p) => p.id === projectId);
   const members = currentProject?.members || [];
@@ -84,6 +87,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
   return (
     <Command className="relative rounded-lg max-h-[40vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <Input
+        ref={inputRef}
         className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden"
         placeholder={t('common:placeholder.assign')}
         value={searchValue}
@@ -140,7 +144,13 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
               </CommandItem>
             ))}
             {showedMembers.length > 5 && !searchValue.length && (
-              <CommandItem className="flex items-center justify-center opacity-80 hover:opacity-100" onSelect={() => setShowAll(!showAll)}>
+              <CommandItem
+                className="flex items-center justify-center opacity-80 hover:opacity-100"
+                onSelect={() => {
+                  setShowAll(!showAll);
+                  if (inputRef.current && !isMobile) inputRef.current.focus();
+                }}
+              >
                 <span className="text-xs">{showAll ? t('common:hide') : t('common:show_all')}</span>
               </CommandItem>
             )}
