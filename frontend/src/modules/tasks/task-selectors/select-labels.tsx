@@ -70,7 +70,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
       return;
     } catch (err) {
-      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
     }
   };
 
@@ -124,7 +124,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
   }, [value]);
 
   return (
-    <Command className="relative rounded-lg max-h-[40vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
+    <Command className="relative rounded-lg max-h-[44vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
         ref={inputRef}
         autoFocus={true}
@@ -135,7 +135,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
           setSearchValue(searchValue.toLowerCase());
         }}
         clearValue={setSearchValue}
-        className="leading-normal"
+        className="leading-normal min-h-10"
         placeholder={showedLabels.length ? t('common:placeholder.search_labels') : t('common:create_label.text')}
       />
       {!isSearching && <Kbd value="L" className="max-sm:hidden absolute top-3 right-2.5" />}

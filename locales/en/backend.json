@@ -20,6 +20,7 @@
   "email.hi": "Hi",
   "email.support_email": "Reach out for support",
   "email.inviter_email": "Message the inviter",
+  "email.unsubscribe": "Unsubscribe",
   "invalid.min_items": "Please add at least {{items_count}} {{item}} to the list.",
   "invalid.min_length_greater": "Must be greater than {{length}}",
   "invalid.min_length_greater_or_eq": "Must be greater or equal to {{length}}",

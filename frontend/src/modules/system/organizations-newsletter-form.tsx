@@ -85,7 +85,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
             <FormItem>
               <FormLabel>{t('common:message')}</FormLabel>
               <FormControl>
-                <BlockNote onChange={onChange} value={value} />
+                <BlockNote onChange={onChange} className="min-h-20" value={value} />
               </FormControl>
               <FormMessage />
             </FormItem>
