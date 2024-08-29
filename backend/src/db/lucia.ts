@@ -42,7 +42,7 @@ const sessionCookieOptions: SessionCookieOptions = {
 export const auth = new Lucia(adapter, {
   sessionExpiresIn: new TimeSpan(4, 'w'), // Set session expiration to 4 weeks
   sessionCookie: sessionCookieOptions,
-  getUserAttributes({ hashedPassword, ...databaseUserAttributes }) {
+  getUserAttributes({ hashedPassword, unsubscribeToken, ...databaseUserAttributes }) {
     return databaseUserAttributes;
   },
   getSessionAttributes(databaseSessionAttributes) {
