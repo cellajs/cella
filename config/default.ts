@@ -67,7 +67,7 @@ export const config = {
     },
   },
 
-  sensitiveFields: ['hashedPassword', 'unsubscribeToken'],
+  sensitiveFields: ['hashedPassword', 'unsubscribeToken'] as const,
   // OAuth providers
   oauthProviderOptions: ['github', 'google', 'microsoft'] as const,
   enabledOauthProviders: ['github'] as const,

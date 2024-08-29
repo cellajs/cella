@@ -57,10 +57,10 @@ export const usersTableRelations = relations(usersTable, ({ many }) => ({
 
 export type UserModel = typeof usersTable.$inferSelect;
 export type InsertUserModel = typeof usersTable.$inferInsert;
-type SafeUserModel = Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
+type SafeUserModel = Omit<UserModel, (typeof config.sensitiveFields)[number]>;
 
-// TODO try to find better way
-const keys = Object.keys(usersTable).filter((k) => !config.sensitiveFields.includes(k)) as (keyof SafeUserModel)[];
+// TODO find a better way
+const keys = Object.keys(usersTable).filter((k) => !(config.sensitiveFields as unknown as string[]).includes(k)) as (keyof SafeUserModel)[];
 export const safeUserSelect = keys.reduce(
   (acc, k) => {
     acc[k] = usersTable[k];

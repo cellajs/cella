@@ -1,9 +1,10 @@
+import type { config } from 'config';
 import type { UserModel } from '../../../db/schema/users';
 
 type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 export const transformDatabaseUserWithCount = (
-  { hashedPassword, unsubscribeToken, ...user }: MakeOptional<UserModel, 'hashedPassword' | 'unsubscribeToken'>,
+  { hashedPassword, unsubscribeToken, ...user }: MakeOptional<UserModel, (typeof config.sensitiveFields)[number]>,
   memberships: number,
 ) => {
   return {
@@ -23,7 +24,7 @@ export const transformDatabaseUser = ({
   hashedPassword,
   unsubscribeToken,
   ...user
-}: MakeOptional<UserModel, 'hashedPassword' | 'unsubscribeToken'>) => {
+}: MakeOptional<UserModel, (typeof config.sensitiveFields)[number]>) => {
   return {
     ...user,
     lastSeenAt: user.lastSeenAt?.toISOString() ?? null,
