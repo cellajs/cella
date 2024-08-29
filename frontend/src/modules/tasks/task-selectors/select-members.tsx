@@ -24,7 +24,7 @@ interface AssignMembersProps {
   creationValueChange?: (users: AssignableMember[]) => void;
 }
 
-const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 240 }: AssignMembersProps) => {
+const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { focusedTaskId, projects } = useWorkspaceStore();

@@ -23,6 +23,7 @@
 
 p.bn-inline-content{
   font-size: 14px !important;
+  line-height: 1.2;
 }
 
 .bn-block-content {
@@ -92,7 +93,7 @@ p.bn-inline-content{
   padding: 8px;
 }
 
-.slash-menu-item-badge{
+.slash-menu-item-badge {
   font-size: 12px;
   align-items: center;
   display: flex;
@@ -101,8 +102,7 @@ p.bn-inline-content{
   padding: 2px 8px;
 }
 
-
-.slash-menu-separator{
+.slash-menu-separator {
   border: 0.5px solid hsl(240, 3.7%, 20%);
 }
 

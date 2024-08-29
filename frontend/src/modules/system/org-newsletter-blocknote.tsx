@@ -3,13 +3,20 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
 import DOMPurify from 'dompurify';
 import { Suspense } from 'react';
+import { cn } from '~/lib/utils';
 import { useThemeStore } from '~/store/theme';
 
 import '~/modules/common/blocknote/styles.css';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { CustomFormattingToolbar } from '../common/blocknote/custom-formatting-toolbar';
 
-const BlockNote = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
+interface BlockNoteProps {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}
+
+const BlockNote = ({ value, onChange, className = '' }: BlockNoteProps) => {
   const editor = useCreateBlockNote();
   const { mode } = useThemeStore();
   const onBlockNoteChange = async () => {
@@ -28,7 +35,7 @@ const BlockNote = ({ value, onChange }: { value: string; onChange: (value: strin
         onChange={async () => onChange(await onBlockNoteChange())}
         sideMenu={false}
         formattingToolbar={false}
-        className="p-2 border rounded-lg"
+        className={cn('p-2 border rounded-lg', className)}
       >
         <CustomSlashMenu />
         <CustomFormattingToolbar />
