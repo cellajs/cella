@@ -2,11 +2,11 @@ import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { getOrganization } from '~/api/organizations';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
+import JoinLeaveButton from '~/modules/organizations/join-leave-button';
 import { OrganizationRoute } from '~/routes/organizations';
-import { FocusViewContainer } from '../common/focus-view';
-import JoinLeaveButton from './join-leave-button';
 
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';

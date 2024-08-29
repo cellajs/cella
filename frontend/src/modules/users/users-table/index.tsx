@@ -28,12 +28,12 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
+import { useColumns } from '~/modules/users/users-table/columns';
+import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
 import { UsersTableRoute } from '~/routes/system';
 import type { User } from '~/types';
-import DeleteUsers from '../delete-users';
-import { useColumns } from './columns';
-import { usersQueryOptions } from './helpers/query-options';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 

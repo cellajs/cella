@@ -2,14 +2,14 @@ import { Trash2 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
+import { dialog } from '~/modules/common/dialoger/state';
 import { sheet } from '~/modules/common/sheeter/state';
+import DeleteProjects from '~/modules/projects/delete-projects';
+import UpdateProjectForm from '~/modules/projects/update-project-form';
+import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types';
-import { dialog } from '../common/dialoger/state';
-import { Button } from '../ui/button';
-import DeleteProjects from './delete-projects';
-import UpdateProjectForm from './update-project-form';
 
 export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();

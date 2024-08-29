@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { HorizontalStep } from './horizontal-step';
-import type { StepProps } from './types';
-import { useStepper } from './use-stepper';
-import { VerticalStep } from './vertical-step';
+import { HorizontalStep } from '~/modules/common/stepper/horizontal-step';
+import type { StepProps } from '~/modules/common/stepper/types';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
+import { VerticalStep } from '~/modules/common/stepper/vertical-step';
 
 // Props which shouldn't be passed to to the Step component from the user
 interface StepInternalConfig {

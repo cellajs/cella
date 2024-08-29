@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import useFocusById from '~/hooks/use-focus-by-id';
 import { AppAlert } from '~/modules/common/app-alert';
 import { dialog } from '~/modules/common/dialoger/state';
+import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import InviteEmailForm from '~/modules/users/invite-email-form';
+import InviteSearchForm from '~/modules/users/invite-search-form';
 import type { EntityPage } from '~/types';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import InviteEmailForm from './invite-email-form';
-import InviteSearchForm from './invite-search-form';
 
 interface InviteUsersProps {
   entity?: EntityPage;

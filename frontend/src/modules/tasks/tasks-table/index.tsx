@@ -16,15 +16,15 @@ import Export from '~/modules/common/data-table/export.tsx';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { sheet } from '~/modules/common/sheeter/state';
+import { sortAndGetCounts } from '~/modules/tasks/helpers';
+import { configureForExport } from '~/modules/tasks/helpers';
+import { useColumns } from '~/modules/tasks/tasks-table/columns';
+import TableHeader from '~/modules/tasks/tasks-table/header/table-header';
+import { TaskTableSearch } from '~/modules/tasks/tasks-table/header/table-search';
+import TaskSheet from '~/modules/tasks/tasks-table/task-sheet';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task, TaskTableCRUDEvent } from '~/types';
-import { sortAndGetCounts } from '../helpers';
-import { useColumns } from './columns';
-import TableHeader from './header/table-header';
-import { TaskTableSearch } from './header/table-search';
-import { configureForExport } from './helpers';
-import TaskSheet from './task-sheet';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 

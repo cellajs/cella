@@ -2,10 +2,10 @@ import i18next from 'i18next';
 import { toast } from 'sonner';
 import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
+import router from '~/lib/router';
 import { useAlertStore } from '~/store/alert';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types';
-import router from './router';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({

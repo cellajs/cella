@@ -3,11 +3,11 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import ContactForm from '~/modules/common/contact-form/contact-form';
+import { dialog } from '~/modules/common/dialoger/state';
 import Logo from '~/modules/common/logo';
+import UserLanguage from '~/modules/common/user-language';
 import UserTheme from '~/modules/common/user-theme';
-import { Button } from '../ui/button';
-import { dialog } from './dialoger/state';
-import UserLanguage from './user-language';
+import { Button } from '~/modules/ui/button';
 
 export interface FooterLinkProps {
   id: string;

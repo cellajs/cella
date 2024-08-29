@@ -1,8 +1,8 @@
 import { Search, XCircle } from 'lucide-react';
 import { useContext, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 import { Input } from '~/modules/ui/input';
-import { TableFilterBarContext } from './table-filter-bar';
 
 const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (value: string) => void }) => {
   const { t } = useTranslation();

@@ -9,11 +9,11 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
+import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { User } from '~/types';
-import { inNumbersArray } from '../helpers';
 
 type AssignableMember = Omit<User, 'counts'>;
 

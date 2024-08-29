@@ -10,10 +10,10 @@ import { DataTable } from '~/modules/common/data-table';
 import { FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { useColumns } from '~/modules/tasks/labels-table/columns';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { Label } from '~/types';
-import { useColumns } from './columns';
 
 interface LabelsParam {
   role?: 'secondary' | 'primary' | undefined;

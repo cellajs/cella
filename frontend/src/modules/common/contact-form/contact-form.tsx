@@ -12,13 +12,13 @@ import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
+import InputFormField from '~/modules/common/form-fields/input';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
-import InputFormField from '../form-fields/input';
 
-const ContactFormMap = lazy(() => import('./contact-form-map'));
+const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));
 
 // Main contact form map component
 const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {

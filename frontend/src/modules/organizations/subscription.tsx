@@ -2,8 +2,8 @@ import { type Paddle, initializePaddle } from '@paddle/paddle-js';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '~/modules/ui/button';
 import type { Organization } from '~/types';
-import { Button } from '../ui/button';
 
 const Subscription = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();

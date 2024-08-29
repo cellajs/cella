@@ -6,10 +6,10 @@ import { useTranslation } from 'react-i18next';
 import { useEffect, useRef } from 'react';
 import { getColorClass } from '~/lib/utils';
 import { cn } from '~/lib/utils';
+import { AppFooter } from '~/modules/common/app-footer';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { buttonVariants } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
-import { AppFooter } from '../app-footer';
-import { AvatarWrap } from '../avatar-wrap';
 
 type AccountButtonProps = {
   lucide: React.ElementType<LucideProps>;

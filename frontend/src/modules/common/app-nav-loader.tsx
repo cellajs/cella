@@ -2,8 +2,8 @@ import { useIsFetching } from '@tanstack/react-query';
 import { config } from 'config';
 import { Home } from 'lucide-react';
 import useMounted from '~/hooks/use-mounted';
+import Logo from '~/modules/common/logo';
 import { useNavigationStore } from '~/store/navigation';
-import Logo from './logo';
 
 const AppNavLoader = () => {
   const { hasWaited } = useMounted();

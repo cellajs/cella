@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { inviteMembers as baseInvite, removeMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
+import { organizationQueryOptions } from '~/modules/organizations/organization';
+import { Button } from '~/modules/ui/button';
+import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
-import { Button } from '../ui/button';
-import { Command, CommandGroup, CommandItem, CommandList } from '../ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { organizationQueryOptions } from './organization';
 
 interface Props {
   organization: Organization;

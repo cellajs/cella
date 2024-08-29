@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import { schemaWithMentions } from '~/modules/common/blocknote/mention';
-import { taskExpandable } from '../helpers';
+import { taskExpandable } from '~/modules/tasks/helpers';
 
 interface TaskBlockNoteProps {
   id: string;

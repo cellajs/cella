@@ -6,11 +6,11 @@ import { Shield, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
-import { AvatarWrap } from '../../common/avatar-wrap';
-import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
-import HeaderCell from '../../common/data-table/header-cell';
-import UpdateRow from './update-row';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import HeaderCell from '~/modules/common/data-table/header-cell';
+import UpdateRow from '~/modules/organizations/organizations-table/update-row';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();

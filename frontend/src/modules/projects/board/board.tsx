@@ -9,12 +9,12 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useMeasure } from '~/hooks/use-measure';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { BoardColumn } from '~/modules/projects/board/board-column';
+import BoardHeader from '~/modules/projects/board/header/board-header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, WorkspaceStoreProject } from '~/types';
-import { BoardColumn } from './board-column';
-import BoardHeader from './header/board-header';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';

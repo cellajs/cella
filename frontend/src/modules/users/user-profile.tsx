@@ -8,10 +8,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page-header';
+import ProjectsTable from '~/modules/projects/projects-table';
+import { Button } from '~/modules/ui/button';
 import { useUpdateUserMutation } from '~/modules/users/update-user-form';
 import { useUserStore } from '~/store/user';
-import ProjectsTable from '../projects/projects-table';
-import { Button } from '../ui/button';
 
 interface UserContextValue {
   user: Omit<User, 'counts'>;

@@ -4,9 +4,9 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
+import type { alertVariants } from '~/modules/ui/alert';
+import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
-import type { alertVariants } from '../ui/alert';
-import { Button } from '../ui/button';
 
 export type AppAlert = {
   className?: string;

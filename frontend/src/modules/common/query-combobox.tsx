@@ -7,12 +7,12 @@ import { useTranslation } from 'react-i18next';
 import { getSuggestions } from '~/api/general';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
-import { Badge } from '../ui/badge';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '../ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { ScrollArea } from '../ui/scroll-area';
-import { AvatarWrap } from './avatar-wrap';
-import ContentPlaceholder from './content-placeholder';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { Badge } from '~/modules/ui/badge';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import { ScrollArea } from '~/modules/ui/scroll-area';
 
 export function QueryCombobox({ onChange, value }: { value: string[]; onChange: (items: string[]) => void }) {
   const { t } = useTranslation();

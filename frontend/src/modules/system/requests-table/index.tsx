@@ -15,9 +15,9 @@ import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import { useColumns } from '~/modules/system/requests-table/columns';
 import { RequestsTableRoute } from '~/routes/system';
 import type { Request } from '~/types';
-import { useColumns } from './columns';
 
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';

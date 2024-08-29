@@ -8,17 +8,17 @@ import { useState } from 'react';
 import { impersonateSignIn } from '~/api/auth';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { Button } from '~/modules/ui/button';
+import UpdateRow from '~/modules/users/users-table/update-row';
 import { getAndSetMe, getAndSetMenu } from '~/routes';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types';
-import { AvatarWrap } from '../../common/avatar-wrap';
-import CheckboxColumn from '../../common/data-table/checkbox-column';
-import type { ColumnOrColumnGroup } from '../../common/data-table/columns-view';
-import HeaderCell from '../../common/data-table/header-cell';
-import UpdateRow from './update-row';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();

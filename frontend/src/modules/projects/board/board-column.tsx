@@ -13,6 +13,9 @@ import { dropdowner } from '~/modules/common/dropdowner/state';
 import FocusTrap from '~/modules/common/focus-trap';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
+import { BoardColumnHeader } from '~/modules/projects/board/board-column-header';
+import { ColumnSkeleton } from '~/modules/projects/board/column-skeleton';
+import { ProjectSettings } from '~/modules/projects/project-settings';
 import CreateTaskForm, { type TaskImpact, type TaskType } from '~/modules/tasks/create-task-form';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
@@ -28,9 +31,6 @@ import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { CustomEventEventById, Project, Task, TaskCRUDEvent, TaskChangeEvent, WorkspaceStoreProject } from '~/types';
-import { ProjectSettings } from '../project-settings';
-import { BoardColumnHeader } from './board-column-header';
-import { ColumnSkeleton } from './column-skeleton';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 

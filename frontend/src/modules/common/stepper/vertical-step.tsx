@@ -1,12 +1,12 @@
 import { cva } from 'class-variance-authority';
 import * as React from 'react';
 import { cn } from '~/lib/utils';
+import { StepButtonContainer } from '~/modules/common/stepper/step-button-container';
+import { StepIcon } from '~/modules/common/stepper/step-icon';
+import { StepLabel } from '~/modules/common/stepper/step-label';
+import type { StepSharedProps } from '~/modules/common/stepper/types';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
-import { StepButtonContainer } from './step-button-container';
-import { StepIcon } from './step-icon';
-import { StepLabel } from './step-label';
-import type { StepSharedProps } from './types';
-import { useStepper } from './use-stepper';
 
 type VerticalStepProps = StepSharedProps & {
   children?: React.ReactNode;

@@ -30,13 +30,13 @@ import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
+import { useColumns } from '~/modules/organizations/members-table/columns';
+import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import type { EntityPage, Member, Organization, Project } from '~/types';
-import { useColumns } from './columns';
-import { membersQueryOptions } from './helpers/query-options';
 
 const LIMIT = 40;
 

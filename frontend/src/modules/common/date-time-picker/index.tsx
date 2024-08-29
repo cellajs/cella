@@ -5,10 +5,10 @@ import * as React from 'react';
 
 import dayjs from 'dayjs';
 import { cn } from '~/lib/utils';
+import { TimePicker } from '~/modules/common/date-time-picker/time-picker';
 import { Button } from '~/modules/ui/button';
 import { Calendar } from '~/modules/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { TimePicker } from './time-picker';
 
 export function DateTimePicker() {
   const [date, setDate] = React.useState<Date>();

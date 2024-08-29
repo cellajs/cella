@@ -14,13 +14,13 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
+import InputFormField from '~/modules/common/form-fields/input';
+import SelectParentFormField from '~/modules/common/form-fields/select-parent';
+import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
+import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
-import InputFormField from '../common/form-fields/input';
-import SelectParentFormField from '../common/form-fields/select-parent';
-import { SlugFormField } from '../common/form-fields/slug';
-import UnsavedBadge from '../common/unsaved-badge';
 
 interface Props {
   workspace: Workspace;

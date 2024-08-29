@@ -8,8 +8,8 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { checkSlugAvailable } from '~/api/general';
+import InputFormField from '~/modules/common/form-fields/input';
 import { Button } from '~/modules/ui/button';
-import InputFormField from './input';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

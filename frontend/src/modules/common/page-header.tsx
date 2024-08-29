@@ -5,8 +5,8 @@ import { useRef } from 'react';
 import { useGetEntity } from '~/hooks/use-get-entity-minimum-info';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { PageCover } from '~/modules/common/page-cover';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
-import { PageCover } from './page-cover';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {

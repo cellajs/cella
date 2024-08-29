@@ -2,10 +2,10 @@ import { config } from 'config';
 import { toast } from 'sonner';
 import { updateSelf } from '~/api/me';
 import { i18n } from '~/lib/i18n';
+import CountryFlag from '~/modules/common/country-flag';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useUserStore } from '~/store/user';
-import CountryFlag from './country-flag';
 
 interface Props {
   size?: number;

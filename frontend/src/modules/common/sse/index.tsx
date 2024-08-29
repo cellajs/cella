@@ -1,6 +1,6 @@
+import { deleteMenuItem, updateMenuItem } from '~/modules/common/sse/helpers';
+import { useSSE } from '~/modules/common/sse/use-sse';
 import { useNavigationStore } from '~/store/navigation';
-import { deleteMenuItem, updateMenuItem } from './helpers';
-import { useSSE } from './use-sse';
 
 const SSE = () => {
   const updateEntity = (e: MessageEvent<string>) => {

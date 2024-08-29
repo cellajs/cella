@@ -9,13 +9,13 @@ import { config } from 'config';
 import { ArrowDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-// import Counters from './counters';
-// import FAQ from './faq';
-import Features from './features';
-import { Hero } from './hero';
-import Integrations from './integrations';
-// import Pricing from './pricing';
-import Why from './why';
+// import Counters from '~/modules/marketing/about/counters';
+// import FAQ from '~/modules/marketing/about/faq';
+import Features from '~/modules/marketing/about/features';
+import { Hero } from '~/modules/marketing/about/hero';
+import Integrations from '~/modules/marketing/about/integrations';
+// import Pricing from '~/modules/marketing/about/pricing';
+import Why from '~/modules/marketing/about/why';
 
 interface AboutSectionProps {
   title: string;

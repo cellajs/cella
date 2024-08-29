@@ -4,11 +4,11 @@ import type { User } from '~/types';
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
+import { DeleteForm } from '~/modules/common/delete-form';
+import { dialog } from '~/modules/common/dialoger/state';
 import { useAlertStore } from '~/store/alert';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import { DeleteForm } from '../common/delete-form';
-import { dialog } from '../common/dialoger/state';
 
 interface Props {
   callback?: (user: User) => void;

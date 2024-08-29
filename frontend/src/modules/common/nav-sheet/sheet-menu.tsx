@@ -11,15 +11,15 @@ import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
 import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { findRelatedItemsByType, isPageData } from '~/modules/common/nav-sheet/helpers';
+import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
+import { SheetMenuSearch } from '~/modules/common/nav-sheet/sheet-menu-search';
+import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
+import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Switch } from '~/modules/ui/switch';
+import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
 import type { UserMenuItem } from '~/types';
-import CreateOrganizationForm from '../../organizations/create-organization-form';
-import CreateWorkspaceForm from '../../workspaces/create-workspace-form';
-import ContentPlaceholder from '../content-placeholder';
-import { findRelatedItemsByType, isPageData } from './helpers';
-import { SheetMenuItem } from './sheet-menu-items';
-import { SheetMenuSearch } from './sheet-menu-search';
-import { MenuSection } from './sheet-menu-section';
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';

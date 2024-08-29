@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '~/store/theme';
 
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { useBreakpoints } from '../../../hooks/use-breakpoints';
 
 type FeatureProps = {
   icon: string;

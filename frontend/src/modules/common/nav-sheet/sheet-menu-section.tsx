@@ -2,13 +2,13 @@ import type React from 'react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { dialog } from '~/modules/common/dialoger/state';
+import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
+import { MenuSectionSticky } from '~/modules/common/nav-sheet/menu-section-sticky';
+import { SheetMenuItems } from '~/modules/common/nav-sheet/sheet-menu-items';
+import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenuItem } from '~/types';
-import { dialog } from '../dialoger/state';
-import { MenuArchiveToggle } from './menu-archive-toggle';
-import { MenuSectionSticky } from './menu-section-sticky';
-import { SheetMenuItems } from './sheet-menu-items';
-import { SheetMenuItemsOptions } from './sheet-menu-options';
 
 interface MenuSectionProps {
   data: UserMenuItem[];

@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { healthCheck } from '~/lib/health-check';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
+import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
-import { Button } from '../ui/button';
 
 export const DownAlert = () => {
   const { t } = useTranslation();

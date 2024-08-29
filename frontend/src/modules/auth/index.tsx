@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { CheckEmailForm } from './check-email-form';
-import { SignInForm } from './sign-in-form';
-import { SignUpForm } from './sign-up-form';
+import { CheckEmailForm } from '~/modules/auth/check-email-form';
+import { SignInForm } from '~/modules/auth/sign-in-form';
+import { SignUpForm } from '~/modules/auth/sign-up-form';
 
 import { Link, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
@@ -10,12 +10,12 @@ import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/api';
 import { checkToken } from '~/api/general';
 import { cn } from '~/lib/utils';
+import AuthPage from '~/modules/auth/auth-page';
+import OauthOptions from '~/modules/auth/oauth-options';
+import { WaitListForm } from '~/modules/common/wait-list-form';
+import { buttonVariants } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/authentication';
 import { useUserStore } from '~/store/user';
-import { WaitListForm } from '../common/wait-list-form';
-import { buttonVariants } from '../ui/button';
-import AuthPage from './auth-page';
-import OauthOptions from './oauth-options';
 
 export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitList';
 

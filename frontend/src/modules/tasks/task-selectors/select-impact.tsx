@@ -7,14 +7,14 @@ import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
+import type { TaskImpact } from '~/modules/tasks/create-task-form';
+import { inNumbersArray } from '~/modules/tasks/helpers';
+import { HighIcon } from '~/modules/tasks/task-selectors/impact-icons/high';
+import { LowIcon } from '~/modules/tasks/task-selectors/impact-icons/low';
+import { MediumIcon } from '~/modules/tasks/task-selectors/impact-icons/medium';
+import { NoneIcon } from '~/modules/tasks/task-selectors/impact-icons/none';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { TaskImpact } from '../create-task-form';
-import { inNumbersArray } from '../helpers';
-import { HighIcon } from './impact-icons/high';
-import { LowIcon } from './impact-icons/low';
-import { MediumIcon } from './impact-icons/medium';
-import { NoneIcon } from './impact-icons/none';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];

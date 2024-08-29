@@ -6,8 +6,8 @@ import { Suspense } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import '~/modules/common/blocknote/styles.css';
+import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { CustomFormattingToolbar } from '../common/blocknote/custom-formatting-toolbar';
 
 const BlockNote = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
   const editor = useCreateBlockNote();
