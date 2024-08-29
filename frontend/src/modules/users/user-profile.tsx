@@ -26,7 +26,7 @@ export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet
   const { mutate } = useUpdateUserMutation(currentUser.id);
   const [passedUser, setPassedUser] = useState(user);
 
-  const isSelf = currentUser.id === user.id;
+  const isSelf = currentUser.id === passedUser.id;
 
   const handleSettingCLick = () => {
     navigate({ to: '/user/settings', replace: true });
@@ -69,7 +69,7 @@ export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet
           }
         />
         <div className="container mb-12">
-          <ProjectsTable sheet={sheet} userId={isSelf ? undefined : user.id} />
+          <ProjectsTable sheet={sheet} userId={isSelf ? undefined : passedUser.id} />
         </div>
       </UserContext.Provider>
     </>
