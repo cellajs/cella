@@ -153,6 +153,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
     const { taskId, direction, projectId } = event.detail;
     if (projectId !== project.id) return;
     const currentFocusedIndex = showingTasks.findIndex((t) => t.id === taskId);
+    if (!showingTasks[currentFocusedIndex + direction]) return;
     const { id } = showingTasks[currentFocusedIndex + direction];
     const taskCard = document.getElementById(id);
     if (taskCard && document.activeElement !== taskCard) taskCard.focus();

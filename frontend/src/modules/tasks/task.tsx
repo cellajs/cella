@@ -293,7 +293,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isEditing, 
                   </Button>
 
                   <Button
-                    id="status"
+                    id={`status-${task.id}`}
                     onClick={() => updateStatus(task.status + 1)}
                     disabled={(task.status as TaskStatus) === 6}
                     variant="outlineGhost"
