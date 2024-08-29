@@ -1,11 +1,12 @@
 import { useLocation } from '@tanstack/react-router';
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History, Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type CreateLabelParams, createLabel, updateLabel } from '~/api/labels.ts';
 import { updateTask } from '~/api/tasks.ts';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { nanoid, recentlyUsed } from '~/lib/utils.ts';
@@ -33,7 +34,9 @@ interface SetLabelsProps {
 const SetLabels = ({ value, projectId, organizationId, creationValueChange, triggerWidth = 280 }: SetLabelsProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const isMobile = useBreakpoints('max', 'sm');
   const { changeColumn } = useWorkspaceUIStore();
+  const inputRef = useRef<HTMLInputElement>(null);
   const { focusedTaskId, workspace, labels, projects } = useWorkspaceStore();
   const callback = useMutateQueryData(['labels', projects.map((p) => p.id).join('_')]);
 
@@ -123,6 +126,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
   return (
     <Command className="relative rounded-lg max-h-[40vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
+        ref={inputRef}
         autoFocus={true}
         value={searchValue}
         onValueChange={(searchValue) => {
@@ -172,7 +176,13 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
           ))}
         </CommandGroup>
         {!isSearching && selectedLabels.length && creationValueChange === undefined ? (
-          <CommandItem className="flex justify-center text-xs m-1" onSelect={() => setIsRecent(!isRecent)}>
+          <CommandItem
+            className="flex justify-center text-xs m-1"
+            onSelect={() => {
+              setIsRecent(!isRecent);
+              if (inputRef.current && !isMobile) inputRef.current.focus();
+            }}
+          >
             {isRecent ? 'Show selected labels' : 'Show recent labels'}
           </CommandItem>
         ) : (

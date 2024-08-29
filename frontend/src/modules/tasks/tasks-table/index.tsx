@@ -21,7 +21,6 @@ import { useWorkspaceStore } from '~/store/workspace';
 import type { Task, TaskTableCRUDEvent } from '~/types';
 import { sortAndGetCounts } from '../helpers';
 import { useColumns } from './columns';
-import { SearchDropDown } from './header/search-drop-down';
 import TableHeader from './header/table-header';
 import { TaskTableSearch } from './header/table-search';
 import { configureForExport } from './helpers';
@@ -84,10 +83,8 @@ export default function TasksTable() {
   );
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'createdAt'));
-  const [selectedStatuses, setSelectedStatuses] = useState<number[]>(
-    typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || [],
-  );
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(search.projectId?.split('_') || []);
+  const [selectedStatuses] = useState<number[]>(typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || []);
+  const [selectedProjects] = useState<string[]>(search.projectId?.split('_') || []);
   const [columns, setColumns] = useColumns();
   // Search query options
   const tableSort = sortColumns[0]?.columnKey as TasksSearch['tableSort'];
@@ -191,14 +188,7 @@ export default function TasksTable() {
   return (
     <>
       <TableHeader>
-        <TaskTableSearch>
-          <SearchDropDown
-            selectedStatuses={selectedStatuses}
-            setSelectedStatuses={setSelectedStatuses}
-            selectedProjects={selectedProjects}
-            setSelectedProjects={setSelectedProjects}
-          />
-        </TaskTableSearch>
+        <TaskTableSearch />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         <Export
           className="max-lg:hidden"
