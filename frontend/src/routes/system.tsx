@@ -103,5 +103,9 @@ export const MetricsRoute = createRoute({
   validateSearch: requestSearchSchema,
   staticData: { pageTitle: 'Metrics', isAuth: true },
   getParentRoute: () => SystemPanelRoute,
-  component: () => <RequestsPerMinute />,
+  component: () => (
+    <Suspense>
+      <RequestsPerMinute />
+    </Suspense>
+  ),
 });
