@@ -4,7 +4,7 @@ import type { User } from 'lucia';
 import { coalesce, db } from '../../db/db';
 import { auth } from '../../db/lucia';
 import { membershipsTable } from '../../db/schema/memberships';
-import { usersTable } from '../../db/schema/users';
+import { safeUserSelect, usersTable } from '../../db/schema/users';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { getOrderColumn } from '../../lib/order-column';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -63,7 +63,7 @@ const usersRoutes = app
 
     const usersQuery = db
       .select({
-        user: usersTable,
+        user: safeUserSelect,
         counts: {
           memberships: coalesce(membershipCounts.count, 0),
         },

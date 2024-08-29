@@ -57,3 +57,8 @@ export const usersTableRelations = relations(usersTable, ({ many }) => ({
 
 export type UserModel = typeof usersTable.$inferSelect;
 export type InsertUserModel = typeof usersTable.$inferInsert;
+type SafeUserModel = Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
+
+// TODO try to find better way
+const keys = Object.keys(usersTable).filter((k) => !config.sensitiveFields.includes(k)) as (keyof SafeUserModel)[];
+export const safeUserSelect = keys.map((k) => ({ [k]: usersTable[k] })) as unknown as typeof usersTable;

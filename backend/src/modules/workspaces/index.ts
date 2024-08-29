@@ -5,7 +5,7 @@ import { workspacesTable } from '../../db/schema/workspaces';
 
 import { projectsTable } from '../../db/schema/projects';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
-import { usersTable } from '../../db/schema/users';
+import { safeUserSelect, usersTable } from '../../db/schema/users';
 import { type ErrorType, createError, errorResponse } from '../../lib/errors';
 import { sendSSEToUsers } from '../../lib/sse';
 import { logEvent } from '../../middlewares/logger/log-event';
@@ -112,7 +112,7 @@ const workspacesRoutes = app
       );
     const membersQuery = db
       .select({
-        user: usersTable,
+        user: safeUserSelect,
         membership: membershipsTable,
         counts: {
           memberships: membershipCount.memberships,

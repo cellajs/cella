@@ -21,7 +21,7 @@ import { projectsTable } from '../../db/schema/projects';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { tasksTable } from '../../db/schema/tasks';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
-import { usersTable } from '../../db/schema/users';
+import { safeUserSelect, usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
@@ -441,7 +441,7 @@ const generalRoutes = app
 
     const membersQuery = db
       .select({
-        user: usersTable,
+        user: safeUserSelect,
         membership: membershipsTable,
         counts: {
           memberships: membershipCount.memberships,
