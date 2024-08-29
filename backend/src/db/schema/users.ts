@@ -61,4 +61,10 @@ type SafeUserModel = Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
 
 // TODO try to find better way
 const keys = Object.keys(usersTable).filter((k) => !config.sensitiveFields.includes(k)) as (keyof SafeUserModel)[];
-export const safeUserSelect = keys.map((k) => ({ [k]: usersTable[k] })) as unknown as typeof usersTable;
+export const safeUserSelect = keys.reduce(
+  (acc, k) => {
+    acc[k] = usersTable[k];
+    return acc;
+  },
+  {} as Record<string, (typeof usersTable)[keyof typeof usersTable]>,
+) as unknown as typeof usersTable;
