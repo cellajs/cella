@@ -207,7 +207,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isEditing, 
                   </Button>
                 )}
               </div>
-              <div className="flex flex-col grow gap-2 mt-0.5">
+              <div className="flex flex-col grow gap-2">
                 <TaskDescription mode={mode} task={task} isExpanded={isExpanded} isEditing={isEditing} />
               </div>
             </div>
