@@ -115,6 +115,30 @@ class TaskRoutesConfig {
     },
   });
 
+  public getTaskByProjectId = createRouteConfig({
+    method: 'get',
+    path: '/by-project/{id}',
+    guard: [isAuthenticated],
+    tags: ['tasks'],
+    summary: 'Get first task of the project',
+    description: 'Get first task in project by project id.',
+    request: {
+      params: productParamSchema,
+      query: z.object({ showAccepted: z.enum(['true', 'false']).optional() }),
+    },
+    responses: {
+      200: {
+        description: 'Task',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(simpleTaskSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
   public getRelativeTaskOrder = createRouteConfig({
     method: 'post',
     path: '/relative',

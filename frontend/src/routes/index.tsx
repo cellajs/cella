@@ -19,13 +19,13 @@ import { onError } from '~/lib/query-client';
 import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
 import UnsubscribePage from '~/modules/common/unsubscribe-page';
-import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from './authentication';
-import { HomeAliasRoute, HomeRoute, WelcomeRoute } from './home';
-import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from './marketing';
-import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from './organizations';
-import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from './system';
-import { UserProfileRoute, UserSettingsRoute } from './users';
-import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from './workspaces'; //WorkspaceMembersRoute,
+import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailRouteWithToken } from '~/routes/authentication';
+import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
+import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
+import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';
+import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from '~/routes/system';
+import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
+import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from '~/routes/workspaces'; //WorkspaceMembersRoute,
 
 // Lazy load main App component, which is behind authentication
 const App = lazy(() => import('~/modules/common/app'));

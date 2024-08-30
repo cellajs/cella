@@ -24,7 +24,7 @@ const main = async () => {
     {
       fetch: app.fetch,
       hostname: '0.0.0.0',
-      port: Number(env.PORT ?? '4000'),
+      port: Number(env.PORT ?? '4004'),
     },
     (info) => {
       console.info(`Listening on http://${info.address}:${info.port}`);

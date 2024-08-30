@@ -35,12 +35,10 @@ type CustomEventsWithData = {
     : never]: CustomEventMap[K] extends CustomEvent<infer DetailData> ? DetailData : never;
 };
 
-export function dispatchCustomEvent(eventName: Exclude<keyof CustomEventMap, keyof CustomEventsWithData>): void;
-export function dispatchCustomEvent<EventName extends keyof CustomEventsWithData>(
+// dispatch custom function
+export function dispatchCustomEvent<EventName extends keyof CustomEventMap>(
   eventName: EventName,
-  eventData: CustomEventsWithData[EventName],
-): void;
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export function dispatchCustomEvent(eventName: string, eventData?: any): void {
+  eventData: EventName extends keyof CustomEventsWithData ? CustomEventsWithData[EventName] : never,
+): void {
   window.dispatchEvent(new CustomEvent(eventName, { detail: eventData }));
 }

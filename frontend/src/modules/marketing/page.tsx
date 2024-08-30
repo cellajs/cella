@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { MarketingFooter } from './footer';
-import { MarketingNav } from './nav';
+import { MarketingFooter } from '~/modules/marketing/footer';
+import { MarketingNav } from '~/modules/marketing/nav';
 
 export interface MarketingPageProps {
   title: string;

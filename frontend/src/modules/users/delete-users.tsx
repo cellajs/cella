@@ -3,8 +3,8 @@ import type { User } from '~/types';
 
 import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
-import { DeleteForm } from '../common/delete-form';
-import { dialog } from '../common/dialoger/state';
+import { DeleteForm } from '~/modules/common/delete-form';
+import { dialog } from '~/modules/common/dialoger/state';
 
 interface Props {
   users: User[];

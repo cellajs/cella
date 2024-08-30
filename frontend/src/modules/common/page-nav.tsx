@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { cn, nanoid } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import StickyBox from './sticky-box';
+import StickyBox from '~/modules/common/sticky-box';
 
 export type PageNavTab = {
   id: string;

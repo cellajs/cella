@@ -8,10 +8,10 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { cn } from '~/lib/utils';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
+import type { TaskType } from '~/modules/tasks/create-task-form';
+import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { TaskType } from '../create-task-form';
-import { inNumbersArray } from '../helpers';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];
@@ -45,7 +45,7 @@ export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypePr
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
     } catch (err) {
-      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
     }
   };
 

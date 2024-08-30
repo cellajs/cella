@@ -7,13 +7,13 @@ import { useTranslation } from 'react-i18next';
 
 import { useRef } from 'react';
 import { useInView } from 'react-intersection-observer';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { Checkbox } from '~/modules/ui/checkbox';
-import type { ColumnOrColumnGroup } from './columns-view';
-import './style.css';
+import '~/modules/common/data-table/style.css';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
+import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
-import ContentPlaceholder from '../content-placeholder';
-import Spinner from '../spinner';
-import { DataTableSkeleton } from './table-skeleton';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];

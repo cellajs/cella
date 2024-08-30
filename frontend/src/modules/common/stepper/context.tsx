@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { StepperProps } from './types';
+import type { StepperProps } from '~/modules/common/stepper/types';
 
 interface StepperContextValue extends StepperProps {
   clickable?: boolean;

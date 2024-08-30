@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import router from '~/lib/router';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { type Theme, useThemeStore } from '~/store/theme';
-import { TooltipButton } from '../tooltip-button';
 
 interface Props<R> {
   filename: string;

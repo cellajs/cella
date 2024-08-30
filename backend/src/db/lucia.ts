@@ -7,7 +7,7 @@ import { env } from '../../env';
 import authRoutesConfig from '../modules/auth/routes';
 import { db } from './db';
 import { sessionsTable } from './schema/sessions';
-import { type UserModel, usersTable } from './schema/users';
+import { type UnsafeUserModel, usersTable } from './schema/users';
 
 export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', {
   redirectURI: config.backendAuthUrl + authRoutesConfig.githubSignInCallback.path,
@@ -42,7 +42,7 @@ const sessionCookieOptions: SessionCookieOptions = {
 export const auth = new Lucia(adapter, {
   sessionExpiresIn: new TimeSpan(4, 'w'), // Set session expiration to 4 weeks
   sessionCookie: sessionCookieOptions,
-  getUserAttributes({ hashedPassword, ...databaseUserAttributes }) {
+  getUserAttributes({ hashedPassword, unsubscribeToken, ...databaseUserAttributes }) {
     return databaseUserAttributes;
   },
   getSessionAttributes(databaseSessionAttributes) {
@@ -55,7 +55,7 @@ export type Auth = typeof auth;
 declare module 'lucia' {
   interface Register {
     Lucia: typeof auth;
-    DatabaseUserAttributes: UserModel;
+    DatabaseUserAttributes: UnsafeUserModel;
     DatabaseSessionAttributes: { type: 'regular' | 'impersonation'; adminUserId: null | string };
   }
 }

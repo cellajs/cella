@@ -7,15 +7,15 @@ import { sheet } from '~/modules/common/sheeter/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import AddProjects from '~/modules/projects/add-project';
+import WorkspaceActions from '~/modules/projects/board/header/board-header-actions';
 import BoardSearch from '~/modules/projects/board/header/board-search';
 import DisplayOptions from '~/modules/projects/board/header/display-options';
+import TaskSelectedTableButtons from '~/modules/projects/board/header/selected-buttons';
 import LabelsTable from '~/modules/tasks/labels-table';
 import { Button } from '~/modules/ui/button';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
-import WorkspaceActions from './board-header-actions';
-import TaskSelectedTableButtons from './selected-buttons';
 
 const BoardHeader = () => {
   const { t } = useTranslation();

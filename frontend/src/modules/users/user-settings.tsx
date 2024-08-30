@@ -15,14 +15,14 @@ import { toast } from 'sonner';
 import { getChallenge, sendResetPasswordEmail, setPasskey } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
+import { oauthProviders } from '~/modules/auth/oauth-options';
+import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { AsideNav } from '~/modules/common/aside-nav';
 import StickyBox from '~/modules/common/sticky-box';
+import { Badge } from '~/modules/ui/badge';
+import DeleteSelf from '~/modules/users/delete-self';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
-import { oauthProviders } from '../auth/oauth-options';
-import { AsideAnchor } from '../common/aside-anchor';
-import { Badge } from '../ui/badge';
-import DeleteSelf from './delete-self';
 
 export type Session = {
   id: string;

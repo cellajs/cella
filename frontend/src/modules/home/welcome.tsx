@@ -3,9 +3,9 @@ import { config } from 'config';
 import { useState } from 'react';
 import type { OnboardingStates } from '~/modules/home/onboarding';
 import Onboarding from '~/modules/home/onboarding';
+import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
 import { useNavigationStore } from '~/store/navigation';
-import { OnboardingCompleted } from './onboarding/completed';
 
 const Welcome = () => {
   const navigate = useNavigate();

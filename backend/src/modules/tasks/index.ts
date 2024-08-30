@@ -1,4 +1,4 @@
-import { type SQL, and, asc, desc, eq, gt, ilike, inArray, isNull, lt } from 'drizzle-orm';
+import { type SQL, and, asc, desc, eq, gt, gte, ilike, inArray, isNull, lt, ne, sql } from 'drizzle-orm';
 import { db } from '../../db/db';
 
 import type { z } from 'zod';
@@ -148,6 +148,31 @@ const tasksRoutes = app
     if (!id) return errorResponse(ctx, 404, 'not_found', 'warn');
 
     const [task] = await db.select().from(tasksTable).where(eq(tasksTable.id, id));
+
+    return ctx.json(
+      {
+        success: true,
+        data: task,
+      },
+      200,
+    );
+  })
+  /*
+   * Get first task of the project by project id
+   */
+  .openapi(taskRoutesConfig.getTaskByProjectId, async (ctx) => {
+    const id = ctx.req.param('id');
+    const { showAccepted } = ctx.req.valid('query');
+    if (!id) return errorResponse(ctx, 400, 'not_found', 'warn');
+
+    const filters = [eq(tasksTable.projectId, id), isNull(tasksTable.parentId), gte(tasksTable.modifiedAt, sql`NOW() - INTERVAL '30 DAYS'`)];
+    if (showAccepted !== 'true') filters.push(ne(tasksTable.status, 6));
+    const [task] = await db
+      .select()
+      .from(tasksTable)
+      .where(and(...filters))
+      .orderBy(desc(tasksTable.status), desc(tasksTable.order))
+      .limit(1);
 
     return ctx.json(
       {

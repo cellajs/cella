@@ -2,8 +2,8 @@ import { type UploadResult, Uppy, type UppyOptions } from '@uppy/core';
 
 import Tus from '@uppy/tus';
 import { config } from 'config';
-import { getUploadToken } from '../api/general';
-import type { UploadParams, UploadType } from '../types';
+import { getUploadToken } from '~/api/general';
+import type { UploadParams, UploadType } from '~/types';
 
 import '@uppy/core/dist/style.min.css';
 

@@ -1,18 +1,19 @@
 import { useLocation } from '@tanstack/react-router';
 import { Check, XCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
+import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { User } from '~/types';
-import { inNumbersArray } from '../helpers';
 
 type AssignableMember = Omit<User, 'counts'>;
 
@@ -23,13 +24,15 @@ interface AssignMembersProps {
   creationValueChange?: (users: AssignableMember[]) => void;
 }
 
-const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 240 }: AssignMembersProps) => {
+const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { focusedTaskId, projects } = useWorkspaceStore();
   const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const isMobile = useBreakpoints('max', 'sm');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const currentProject = projects.find((p) => p.id === projectId);
   const members = currentProject?.members || [];
@@ -56,7 +59,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
     } catch (err) {
-      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
     }
   };
 
@@ -82,9 +85,10 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
   };
 
   return (
-    <Command className="relative rounded-lg max-h-[40vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
+    <Command className="relative rounded-lg max-h-[44vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <Input
-        className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden"
+        ref={inputRef}
+        className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden min-h-10"
         placeholder={t('common:placeholder.assign')}
         value={searchValue}
         autoFocus={true}
@@ -140,8 +144,14 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 2
               </CommandItem>
             ))}
             {showedMembers.length > 5 && !searchValue.length && (
-              <CommandItem className="flex items-center justify-center opacity-80 hover:opacity-100" onSelect={() => setShowAll(!showAll)}>
-                <span className="text-xs">{showAll ? t('common:hide') : t('common:show_all')}</span>
+              <CommandItem
+                className="flex items-center justify-center opacity-80 hover:opacity-100"
+                onSelect={() => {
+                  setShowAll(!showAll);
+                  if (inputRef.current && !isMobile) inputRef.current.focus();
+                }}
+              >
+                <span className="text-xs">{showAll ? t('common:show_less') : t('common:show_all')}</span>
               </CommandItem>
             )}
           </CommandGroup>

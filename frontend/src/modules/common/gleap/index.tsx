@@ -2,7 +2,7 @@ import { config } from 'config';
 import Gleap from 'gleap';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types';
-import './style.css';
+import '~/modules/common/gleap/style.css';
 
 declare global {
   interface Window {

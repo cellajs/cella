@@ -6,14 +6,14 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
 import { toast } from 'sonner';
+import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { AsideNav } from '~/modules/common/aside-nav';
+import { dialog } from '~/modules/common/dialoger/state';
 import StickyBox from '~/modules/common/sticky-box';
+import DeleteOrganizations from '~/modules/organizations/delete-organizations';
+import Subscription from '~/modules/organizations/subscription';
+import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
 import type { Organization } from '~/types';
-import { AsideAnchor } from '../common/aside-anchor';
-import { dialog } from '../common/dialoger/state';
-import DeleteOrganizations from './delete-organizations';
-import Subscription from './subscription';
-import UpdateOrganizationForm from './update-organization-form';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

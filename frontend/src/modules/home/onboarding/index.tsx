@@ -4,15 +4,15 @@ import { useTranslation } from 'react-i18next';
 import useMounted from '~/hooks/use-mounted';
 import { cn } from '~/lib/utils';
 import { Step, type StepItem, Stepper } from '~/modules/common/stepper';
+import StepperFooter from '~/modules/home/onboarding/footer';
+import { OnboardingStart } from '~/modules/home/onboarding/start';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
+import InviteUsers from '~/modules/users/invite-users';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
-import InviteUsers from '../../users/invite-users';
-import StepperFooter from './footer';
-import { OnboardingStart } from './start';
 
 export const onDefaultBoardingSteps: StepItem[] = [
   { id: 'profile', label: 'Tune your profile', optional: true },

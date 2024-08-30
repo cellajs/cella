@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import { schemaWithMentions } from '~/modules/common/blocknote/mention';
-import { taskExpandable } from '../helpers';
+import { taskExpandable } from '~/modules/tasks/helpers';
 
 interface TaskBlockNoteProps {
   id: string;
@@ -48,7 +48,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
         const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
         dispatchCustomEvent(eventName, { array: [{ ...updatedTask, expandable }], action });
       } catch (err) {
-        toast.error(t('common:error.update_resources', { resources: t('common:todo') }));
+        toast.error(t('common:error.update_resource', { resources: t('common:todo') }));
       }
     },
     [pathname],

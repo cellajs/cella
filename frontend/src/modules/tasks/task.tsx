@@ -4,15 +4,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '~/lib/utils.ts';
+import { impacts } from '~/modules/tasks/task-selectors/select-impact.tsx';
+import { type TaskStatus, statusVariants, taskStatuses } from '~/modules/tasks/task-selectors/select-status.tsx';
+import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type.tsx';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import { impacts } from './task-selectors/select-impact.tsx';
-import { type TaskStatus, statusVariants, taskStatuses } from './task-selectors/select-status.tsx';
-import { taskTypes } from './task-selectors/select-task-type.tsx';
 
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
+import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected.tsx';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
-import { NotSelected } from './task-selectors/impact-icons/not-selected.tsx';
 
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -27,11 +27,11 @@ import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { getDraggableItemData } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
+import TaskDescription from '~/modules/tasks/task-content.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import type { Mode } from '~/store/theme.ts';
 import type { DraggableItemData, Task } from '~/types';
-import TaskDescription from './task-content.tsx';
 
 type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
@@ -88,7 +88,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isEditing, 
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
     } catch (err) {
-      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
     }
   };
 
@@ -207,7 +207,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isEditing, 
                   </Button>
                 )}
               </div>
-              <div className="flex flex-col grow gap-2 mt-0.5">
+              <div className="flex flex-col grow gap-2">
                 <TaskDescription mode={mode} task={task} isExpanded={isExpanded} isEditing={isEditing} />
               </div>
             </div>
@@ -293,7 +293,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isEditing, 
                   </Button>
 
                   <Button
-                    id="status"
+                    id={`status-${task.id}`}
                     onClick={() => updateStatus(task.status + 1)}
                     disabled={(task.status as TaskStatus) === 6}
                     variant="outlineGhost"

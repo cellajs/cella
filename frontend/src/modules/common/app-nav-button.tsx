@@ -1,15 +1,15 @@
 import { config } from 'config';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme';
 import { useUserStore } from '~/store/user';
-import { AvatarWrap } from './avatar-wrap';
 
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '~/lib/utils';
-import type { NavItem } from './app-nav';
-import AppNavLoader from './app-nav-loader';
-import { TooltipButton } from './tooltip-button';
+import type { NavItem } from '~/modules/common/app-nav';
+import AppNavLoader from '~/modules/common/app-nav-loader';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 
 interface NavButtonProps {
   navItem: NavItem;

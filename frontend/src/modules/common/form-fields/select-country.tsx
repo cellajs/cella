@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import countries from '~/json/countries.json';
+import CountryFlag from '~/modules/common/country-flag';
 import Combobox from '~/modules/ui/combobox';
-import CountryFlag from '../country-flag';
 
 const SelectCountry = ({ onChange }: { onChange: (value: string) => void }) => {
   const { t } = useTranslation();

@@ -7,13 +7,11 @@ import type { UserModel } from '../../../db/schema/users';
 import type { WorkspaceModel } from '../../../db/schema/workspaces';
 import { logEvent } from '../../../middlewares/logger/log-event';
 
-type UserWithoutPassword = Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
-
 interface Props {
-  user: UserWithoutPassword;
+  user: UserModel;
   role: MembershipModel['role'];
   entity: OrganizationModel | WorkspaceModel | ProjectModel;
-  createdBy?: UserWithoutPassword['id'];
+  createdBy?: UserModel['id'];
   memberships?: MembershipModel[];
 }
 

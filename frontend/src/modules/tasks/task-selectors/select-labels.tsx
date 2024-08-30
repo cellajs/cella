@@ -1,21 +1,22 @@
 import { useLocation } from '@tanstack/react-router';
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History, Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type CreateLabelParams, createLabel, updateLabel } from '~/api/labels.ts';
 import { updateTask } from '~/api/tasks.ts';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { dispatchCustomEvent } from '~/lib/custom-events.ts';
 import { nanoid, recentlyUsed } from '~/lib/utils.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
+import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command.tsx';
 import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Label } from '~/types';
-import { inNumbersArray } from '../helpers';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -33,7 +34,9 @@ interface SetLabelsProps {
 const SetLabels = ({ value, projectId, organizationId, creationValueChange, triggerWidth = 280 }: SetLabelsProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  const isMobile = useBreakpoints('max', 'sm');
   const { changeColumn } = useWorkspaceUIStore();
+  const inputRef = useRef<HTMLInputElement>(null);
   const { focusedTaskId, workspace, labels, projects } = useWorkspaceStore();
   const callback = useMutateQueryData(['labels', projects.map((p) => p.id).join('_')]);
 
@@ -67,7 +70,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
       return;
     } catch (err) {
-      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
     }
   };
 
@@ -121,8 +124,9 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
   }, [value]);
 
   return (
-    <Command className="relative rounded-lg max-h-[40vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
+    <Command className="relative rounded-lg max-h-[44vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
+        ref={inputRef}
         autoFocus={true}
         value={searchValue}
         onValueChange={(searchValue) => {
@@ -131,7 +135,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
           setSearchValue(searchValue.toLowerCase());
         }}
         clearValue={setSearchValue}
-        className="leading-normal"
+        className="leading-normal min-h-10"
         placeholder={showedLabels.length ? t('common:placeholder.search_labels') : t('common:create_label.text')}
       />
       {!isSearching && <Kbd value="L" className="max-sm:hidden absolute top-3 right-2.5" />}
@@ -172,7 +176,13 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
           ))}
         </CommandGroup>
         {!isSearching && selectedLabels.length && creationValueChange === undefined ? (
-          <CommandItem className="flex justify-center text-xs m-1" onSelect={() => setIsRecent(!isRecent)}>
+          <CommandItem
+            className="flex justify-center text-xs m-1"
+            onSelect={() => {
+              setIsRecent(!isRecent);
+              if (inputRef.current && !isMobile) inputRef.current.focus();
+            }}
+          >
             {isRecent ? 'Show selected labels' : 'Show recent labels'}
           </CommandItem>
         ) : (

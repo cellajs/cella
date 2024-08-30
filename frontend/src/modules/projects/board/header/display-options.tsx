@@ -2,8 +2,8 @@ import { useLocation, useNavigate, useParams } from '@tanstack/react-router';
 import { Grid2X2, Rows4, SquareKanban } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
-import { TooltipButton } from '../../../common/tooltip-button';
-import { ToggleGroup, ToggleGroupItem } from '../../../ui/toggle-group';
+import { TooltipButton } from '~/modules/common/tooltip-button';
+import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
 interface Props {
   className?: string;

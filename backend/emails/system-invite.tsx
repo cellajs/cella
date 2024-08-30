@@ -11,8 +11,8 @@ import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
 
 interface Props {
-  targetUser?: Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
-  user: Omit<UserModel, 'hashedPassword' | 'unsubscribeToken'>;
+  targetUser?: UserModel;
+  user: UserModel;
   token: string;
 }
 

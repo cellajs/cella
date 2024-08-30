@@ -2,11 +2,11 @@
 
 import * as React from 'react';
 import { cn } from '~/lib/utils';
-import { StepperProvider } from './context';
-import { Step } from './step';
-import type { StepItem, StepProps, StepperProps } from './types';
-import { useMediaQuery } from './use-media-query';
-import { useStepper } from './use-stepper';
+import { StepperProvider } from '~/modules/common/stepper/context';
+import { Step } from '~/modules/common/stepper/step';
+import type { StepItem, StepProps, StepperProps } from '~/modules/common/stepper/types';
+import { useMediaQuery } from '~/modules/common/stepper/use-media-query';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 
 const VARIABLE_SIZES = {
   sm: '2.25rem',

@@ -14,7 +14,7 @@ import '@uppy/dashboard/dist/style.min.css';
 import '@uppy/image-editor/dist/style.css';
 import '@uppy/screen-capture/dist/style.css';
 import '@uppy/webcam/dist/style.css';
-import './uppy.css';
+import '~/modules/common/upload/uppy.css';
 
 interface UploadUppyProps {
   uploadType: UploadType;

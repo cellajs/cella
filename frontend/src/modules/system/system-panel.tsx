@@ -1,9 +1,9 @@
 import { Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageNav } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, UsersTableRoute } from '~/routes/system';
-import { FocusViewContainer } from '../common/focus-view';
 
 const SystemPanel = () => {
   const { t } = useTranslation();

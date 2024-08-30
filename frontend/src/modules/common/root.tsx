@@ -3,10 +3,10 @@ import { config } from 'config';
 import { Suspense } from 'react';
 
 import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
+import { DownAlert } from '~/modules/common/down-alert';
 import ReloadPrompt from '~/modules/common/reload-prompt';
 import { Toaster } from '~/modules/ui/sonner';
 import { TooltipProvider } from '~/modules/ui/tooltip';
-import { DownAlert } from './down-alert';
 
 function Root() {
   // Lazy load

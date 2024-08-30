@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import CreateSubTaskForm from '~/modules/tasks/create-sub-task-form';
+import SubTask from '~/modules/tasks/sub-task';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types';
-import CreateSubTaskForm from './create-sub-task-form';
-import SubTask from './sub-task';
 import '@blocknote/shadcn/style.css';
 
 interface Props {

@@ -60,6 +60,17 @@ export const getTask = async (id: string) => {
   return json.data;
 };
 
+// Get  first task by project ID
+export const getTaskByProjectId = async (id: string, showAccepted?: boolean) => {
+  const response = await client['by-project'][':id'].$get({
+    param: { id },
+    query: { showAccepted: showAccepted !== undefined ? showAccepted.toString() : showAccepted },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
 // Get a task by its ID
 export const getRelativeTaskOrder = async (info: {
   edge: Edge;

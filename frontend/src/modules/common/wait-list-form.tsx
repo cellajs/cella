@@ -9,11 +9,11 @@ import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
+import { dialog } from '~/modules/common/dialoger/state';
+import { LegalText } from '~/modules/marketing/legals';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { LegalText } from '../marketing/legals';
-import { dialog } from './dialoger/state';
 
 const formSchema = createRequestSchema;
 

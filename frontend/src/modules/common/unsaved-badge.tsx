@@ -1,6 +1,6 @@
 import { SquarePen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Badge } from '../ui/badge';
+import { Badge } from '~/modules/ui/badge';
 
 function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
   const { t } = useTranslation();

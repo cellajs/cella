@@ -21,7 +21,7 @@ import { projectsTable } from '../../db/schema/projects';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { tasksTable } from '../../db/schema/tasks';
 import { type TokenModel, tokensTable } from '../../db/schema/tokens';
-import { usersTable } from '../../db/schema/users';
+import { safeUserSelect, usersTable } from '../../db/schema/users';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { entityTables, resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
@@ -441,7 +441,7 @@ const generalRoutes = app
 
     const membersQuery = db
       .select({
-        user: usersTable,
+        user: safeUserSelect,
         membership: membershipsTable,
         counts: {
           memberships: membershipCount.memberships,
@@ -506,7 +506,7 @@ const generalRoutes = app
 
     if (!isValid) return errorResponse(ctx, 400, 'Token verification failed', 'warn', 'user');
 
-    await db.update(usersTable).set({ newsletter: true }).where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
 
     const redirectUrl = `${config.frontendUrl}/newsletter-unsubscribe`;
     return ctx.redirect(redirectUrl, 302);

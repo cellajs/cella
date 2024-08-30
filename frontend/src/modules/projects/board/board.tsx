@@ -2,19 +2,19 @@ import { useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
 import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getTask } from '~/api/tasks';
+import { getTask, getTaskByProjectId } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useMeasure } from '~/hooks/use-measure';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { BoardColumn } from '~/modules/projects/board/board-column';
+import BoardHeader from '~/modules/projects/board/header/board-header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, WorkspaceStoreProject } from '~/types';
-import { BoardColumn } from './board-column';
-import BoardHeader from './header/board-header';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -25,6 +25,7 @@ import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
 import { isSubTaskData } from '~/modules/tasks/sub-task';
 import { isTaskData } from '~/modules/tasks/task';
 import { useNavigationStore } from '~/store/navigation';
+import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
@@ -89,6 +90,7 @@ export default function Board() {
   const { menu } = useNavigationStore();
   const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const isDesktopLayout = useBreakpoints('min', 'sm');
+  const { workspaces } = useWorkspaceUIStore();
 
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
@@ -112,24 +114,31 @@ export default function Board() {
 
   const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
     if (!projects.length) return;
-    const focusedTask = await getTask(focusedTaskId ? focusedTaskId : projects[0].id);
 
-    if (!focusedTask) return;
+    const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === projects[0].id);
+    let newFocusedTask: { projectId: string; id: string } | undefined;
+    if (focusedTaskId) newFocusedTask = await getTask(focusedTaskId);
+    else newFocusedTask = await getTaskByProjectId(projects[0].id, projectSettings?.expandAccepted);
 
+    if (!newFocusedTask) return;
     const direction = event.key === 'ArrowDown' ? 1 : -1;
 
     dispatchCustomEvent('taskChange', {
-      taskId: focusedTask.id,
-      projectId: focusedTask.projectId,
-      direction,
+      taskId: newFocusedTask.id,
+      projectId: newFocusedTask.projectId,
+      direction: focusedTaskId ? direction : 0,
     });
   };
 
   const handleHorizontalArrowKeyDown = async (event: KeyboardEvent) => {
-    const focusedTask = await getTask(focusedTaskId ? focusedTaskId : projects[0].id);
+    if (!projects.length) return;
+    const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === projects[0].id);
+    let newFocusedTask: { projectId: string } | undefined;
+    if (focusedTaskId) newFocusedTask = await getTask(focusedTaskId);
+    else newFocusedTask = await getTaskByProjectId(projects[0].id, projectSettings?.expandAccepted);
 
-    if (!focusedTask) return;
-    const currentProjectIndex = projects.findIndex((p) => p.id === focusedTask.projectId);
+    if (!newFocusedTask) return;
+    const currentProjectIndex = projects.findIndex((p) => p.id === newFocusedTask.projectId);
 
     const nextProjectIndex = event.key === 'ArrowRight' ? currentProjectIndex + 1 : currentProjectIndex - 1;
     const nextProject = projects[nextProjectIndex];

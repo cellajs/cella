@@ -22,7 +22,9 @@
 }
 
 p.bn-inline-content{
-  font-size: 14px !important;
+  font-size: 0.888rem !important;
+  line-height: 1.3;
+  min-height: 1.3rem;
 }
 
 .bn-block-content {
@@ -92,7 +94,7 @@ p.bn-inline-content{
   padding: 8px;
 }
 
-.slash-menu-item-badge{
+.slash-menu-item-badge {
   font-size: 12px;
   align-items: center;
   display: flex;
@@ -101,8 +103,7 @@ p.bn-inline-content{
   padding: 2px 8px;
 }
 
-
-.slash-menu-separator{
+.slash-menu-separator {
   border: 0.5px solid hsl(240, 3.7%, 20%);
 }
 

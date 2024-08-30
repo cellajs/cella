@@ -1,6 +1,6 @@
 import type { ContextEntity } from 'backend/types/common';
 import { motion } from 'framer-motion';
-import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
+import { Archive, ArchiveRestore, Bell, BellOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -24,7 +24,7 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
   const callback = useMutateWorkSpaceQueryData(['workspaces', parentItemSlug ? parentItemSlug : item.slug]);
-  const { mutate: updateMembership } = useMutation({
+  const { mutate: updateMembership, status } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
       return baseUpdateMembership(values);
     },
@@ -65,13 +65,18 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
         ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
         ${!isItemArchived && 'ring-1 cursor-grab'} `}
     >
-      <AvatarWrap
-        className={`${parentItemSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${isItemArchived && 'opacity-70'}`}
-        type={itemType}
-        id={item.id}
-        name={item.name}
-        url={item.thumbnailUrl}
-      />
+      {status === 'pending' ? (
+        <Loader2 className="text-muted-foreground h-8 w-8 mx-3 my-2 animate-spin" />
+      ) : (
+        <AvatarWrap
+          className={`${parentItemSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${isItemArchived && 'opacity-70'}`}
+          type={itemType}
+          id={item.id}
+          name={item.name}
+          url={item.thumbnailUrl}
+        />
+      )}
+
       <div className="truncate grow py-2 pl-1 text-left">
         <div className={`truncate ${parentItemSlug ? 'text-sm' : 'text-base mb-1'} leading-5 ${isItemArchived && 'opacity-70'}`}>{item.name}</div>
         <div className="flex items-center gap-4 transition-opacity delay-500">

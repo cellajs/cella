@@ -1,8 +1,12 @@
-import type { UserModel } from '../../../db/schema/users';
+import type { config } from 'config';
+import type { UnsafeUserModel } from '../../../db/schema/users';
 
 type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-export const transformDatabaseUserWithCount = ({ hashedPassword, ...user }: MakeOptional<UserModel, 'hashedPassword'>, memberships: number) => {
+export const transformDatabaseUserWithCount = (
+  { hashedPassword, unsubscribeToken, ...user }: MakeOptional<UnsafeUserModel, (typeof config.sensitiveFields)[number]>,
+  memberships: number,
+) => {
   return {
     ...user,
     lastSeenAt: user.lastSeenAt?.toISOString() ?? null,
@@ -16,7 +20,11 @@ export const transformDatabaseUserWithCount = ({ hashedPassword, ...user }: Make
   };
 };
 
-export const transformDatabaseUser = ({ hashedPassword, ...user }: MakeOptional<UserModel, 'hashedPassword'>) => {
+export const transformDatabaseUser = ({
+  hashedPassword,
+  unsubscribeToken,
+  ...user
+}: MakeOptional<UnsafeUserModel, (typeof config.sensitiveFields)[number]>) => {
   return {
     ...user,
     lastSeenAt: user.lastSeenAt?.toISOString() ?? null,

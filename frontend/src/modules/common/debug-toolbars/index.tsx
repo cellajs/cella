@@ -1,9 +1,9 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import useMounted from '~/hooks/use-mounted';
+import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { Button } from '../../ui/button';
-import './style.css';
+import '~/modules/common/debug-toolbars/style.css';
 import { queryClient } from '~/lib/router';
 
 interface DebugItem {

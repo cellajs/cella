@@ -1,6 +1,6 @@
 import { cva } from 'class-variance-authority';
 import { cn } from '~/lib/utils';
-import { useStepper } from './use-stepper';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 
 interface StepLabelProps {
   isCurrentStep?: boolean;

@@ -4,10 +4,10 @@ import { AppContent } from '~/modules/common/app-content';
 import AppNav from '~/modules/common/app-nav';
 import { Dialoger } from '~/modules/common/dialoger';
 import { DropDowner } from '~/modules/common/dropdowner';
+import ErrorNotice from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter';
 import SSE from '~/modules/common/sse';
-import ErrorNotice from './error-notice';
-import { SSEProvider } from './sse/provider';
+import { SSEProvider } from '~/modules/common/sse/provider';
 
 const App = () => {
   return (

@@ -2,10 +2,10 @@ import { SlidersHorizontal } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useMemo, useState } from 'react';
 import type { ColumnOrColumnGroup as BaseColumnOrColumnGroup } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { TooltipButton } from '../tooltip-button';
 
 export type ColumnOrColumnGroup<TData> = BaseColumnOrColumnGroup<TData> & {
   key: string;

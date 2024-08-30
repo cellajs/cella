@@ -11,10 +11,10 @@ import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { sheet } from '~/modules/common/sheeter/state';
+import BlockNote from '~/modules/system/org-newsletter-blocknote';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import BlockNote from './org-newsletter-blocknote';
 
 interface NewsletterFormProps {
   organizationIds: string[];
@@ -85,7 +85,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
             <FormItem>
               <FormLabel>{t('common:message')}</FormLabel>
               <FormControl>
-                <BlockNote onChange={onChange} value={value} />
+                <BlockNote onChange={onChange} className="min-h-20" value={value} />
               </FormControl>
               <FormMessage />
             </FormItem>

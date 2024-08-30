@@ -2,6 +2,7 @@ import { errorResponses, successWithDataSchema, successWithErrorsSchema, success
 import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
+import checkUserPermissions from './middlewares/userPermissionsCheck';
 
 import { createProjectBodySchema, createProjectQuerySchema, getProjectsQuerySchema, projectSchema, updateProjectBodySchema } from './schema';
 
@@ -64,7 +65,7 @@ class ProjectRoutesConfig {
   public getProjects = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, checkUserPermissions],
     tags: ['projects'],
     summary: 'Get list of projects',
     description: 'Get list of projects.',

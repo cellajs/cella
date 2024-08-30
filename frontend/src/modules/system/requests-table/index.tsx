@@ -1,31 +1,34 @@
 import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
+import { Handshake, Trash, XSquare } from 'lucide-react';
 import { useMemo, useState } from 'react';
-
-import type { getRequestsQuerySchema } from 'backend/modules/requests/schema';
-import { config } from 'config';
-import { Bird } from 'lucide-react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type GetRequestsParams, getRequests } from '~/api/requests';
 import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import { RequestsTableRoute } from '~/routes/system';
-import type { Request } from '~/types';
-import { useColumns } from './columns';
-
 import ColumnsView from '~/modules/common/data-table/columns-view';
-import Export from '~/modules/common/data-table/export';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
+import { Badge } from '~/modules/ui/badge';
+import { Button } from '~/modules/ui/button';
 
+import type { getRequestsQuerySchema } from 'backend/modules/requests/schema';
+import { config } from 'config';
+import { Bird } from 'lucide-react';
+import { type GetRequestsParams, getRequests } from '~/api/requests';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { RequestsTableRoute } from '~/routes/system';
+import type { Request } from '~/types';
+
+import Export from '~/modules/common/data-table/export';
+import { useColumns } from '~/modules/system/requests-table/columns';
 type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
 export const requestsQueryOptions = ({
@@ -70,6 +73,8 @@ const RequestsTable = () => {
   const { t } = useTranslation();
   const [rows, setRows] = useState<Request[]>([]);
   const [query, setQuery] = useState<RequestsSearch['q']>(search.q);
+
+  const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
@@ -87,8 +92,15 @@ const RequestsTable = () => {
   const totalCount = queryResult.data?.pages[0].total;
 
   const onSearch = (searchString: string) => {
+    if (selectedRows.size > 0) setSelectedRows(new Set<string>());
+
     setQuery(searchString);
   };
+
+  // Table selection
+  const selectedRequests = useMemo(() => {
+    return rows.filter((row) => selectedRows.has(row.id));
+  }, [selectedRows, rows]);
 
   // Build columns
   const [columns, setColumns] = useColumns();
@@ -113,6 +125,7 @@ const RequestsTable = () => {
 
   const onResetFilters = () => {
     setQuery('');
+    setSelectedRows(new Set<string>());
   };
 
   return (
@@ -120,7 +133,45 @@ const RequestsTable = () => {
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
-            <TableCount count={totalCount} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            {selectedRequests.length > 0 && (
+              <>
+                <div className="relative inline-flex items-center gap-2">
+                  <Badge className="px-1 py-0 min-w-5 flex justify-center  animate-in zoom-in">{selectedRequests.length}</Badge>
+                  <Button asChild variant="success" onClick={() => console.log('invited')}>
+                    <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="req-filter-bar-button-invite">
+                      <motion.span layoutId="req-filter-bar-icon-successes">
+                        <Handshake size={16} />
+                      </motion.span>
+                      <span className="ml-1 max-xs:hidden">{t('common:accept')}</span>
+                    </motion.button>
+                  </Button>
+
+                  <Button asChild variant="destructive" onClick={() => console.log('declined')}>
+                    <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="req-filter-bar-button-delete">
+                      <motion.span layoutId="req-filter-bar-icon-delete">
+                        <Trash size={16} />
+                      </motion.span>
+                      <span className="ml-1 max-xs:hidden">{t('common:delete')}</span>
+                    </motion.button>
+                  </Button>
+                </div>
+                <Button asChild variant="ghost" onClick={() => setSelectedRows(new Set<string>())}>
+                  <motion.button
+                    transition={{
+                      bounce: 0,
+                      duration: 0.2,
+                    }}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: -20, opacity: 0 }}
+                  >
+                    <XSquare size={16} />
+                    <span className="ml-1">{t('common:clear')}</span>{' '}
+                  </motion.button>
+                </Button>
+              </>
+            )}
+            {selectedRequests.length === 0 && <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
 
           <div className="sm:grow" />
@@ -157,6 +208,8 @@ const RequestsTable = () => {
           onRowsChange,
           fetchMore: queryResult.fetchNextPage,
           sortColumns,
+          selectedRows,
+          onSelectedRowsChange: setSelectedRows,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:requests').toLowerCase() })} />,
         }}

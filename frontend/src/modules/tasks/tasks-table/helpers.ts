@@ -1,6 +1,6 @@
+import { impacts } from '~/modules/tasks/task-selectors/select-impact';
+import { taskStatuses } from '~/modules/tasks/task-selectors/select-status';
 import type { Project, Task } from '~/types';
-import { impacts } from '../task-selectors/select-impact';
-import { taskStatuses } from '../task-selectors/select-status';
 
 export const configureForExport = (tasks: Task[], projects: Omit<Project, 'counts'>[]) => {
   return tasks.map((task) => {

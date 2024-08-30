@@ -9,8 +9,8 @@ import { type GetProjectsParams, getProjects } from '~/api/projects';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
+import { useColumns } from '~/modules/projects/projects-table/columns';
 import type { Project } from '~/types';
-import { useColumns } from './columns';
 
 import { Trash, XSquare } from 'lucide-react';
 import { toast } from 'sonner';
@@ -20,9 +20,9 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
+import DeleteProjects from '~/modules/projects/delete-projects';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import DeleteProjects from '../delete-projects';
 
 export type ProjectsSearch = z.infer<typeof getProjectsQuerySchema>;
 
@@ -82,7 +82,7 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
 
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
-    setSelectedRows(new Set<string>());
+    if (selectedRows.size > 0) setSelectedRows(new Set<string>());
     setQuery(searchString);
   };
 

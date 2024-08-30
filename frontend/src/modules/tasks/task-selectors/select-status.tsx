@@ -8,17 +8,17 @@ import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
+import { inNumbersArray } from '~/modules/tasks/helpers';
+import { AcceptedIcon } from '~/modules/tasks/task-selectors/status-icons/accepted';
+import { DeliveredIcon } from '~/modules/tasks/task-selectors/status-icons/delivered';
+import { FinishedIcon } from '~/modules/tasks/task-selectors/status-icons/finished';
+import { IcedIcon } from '~/modules/tasks/task-selectors/status-icons/iced';
+import { ReviewedIcon } from '~/modules/tasks/task-selectors/status-icons/reviewed';
+import { StartedIcon } from '~/modules/tasks/task-selectors/status-icons/started';
+import { UnstartedIcon } from '~/modules/tasks/task-selectors/status-icons/unstarted';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
-import { inNumbersArray } from '../helpers';
-import { AcceptedIcon } from './status-icons/accepted';
-import { DeliveredIcon } from './status-icons/delivered';
-import { FinishedIcon } from './status-icons/finished';
-import { IcedIcon } from './status-icons/iced';
-import { ReviewedIcon } from './status-icons/reviewed';
-import { StartedIcon } from './status-icons/started';
-import { UnstartedIcon } from './status-icons/unstarted';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
@@ -100,7 +100,7 @@ const SelectStatus = ({
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
     } catch (err) {
-      toast.error(t('common:error.update_resources', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
     }
   };
 

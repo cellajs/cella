@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ComplexOptionElement } from '~/modules/common/nav-sheet/sheet-menu-options/complex-item';
 import { useNavigationStore } from '~/store/navigation';
 import type { UserMenuItem } from '~/types';
-import { ComplexOptionElement } from './complex-item';
 
 export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuItem[]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();

@@ -6,16 +6,17 @@ import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
+import { labelsQueryOptions, workspaceQueryOptions } from '~/modules/workspaces/helpers/quey-options';
 import { useUpdateWorkspaceMutation } from '~/modules/workspaces/update-workspace-form';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import { labelsQueryOptions, workspaceQueryOptions } from './helpers/quey-options';
 
 const WorkspacePage = () => {
   const { t } = useTranslation();
   const { showPageHeader, setWorkspace, setProjects, setLabels, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
+
   const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
   const [workspace, setQueryWorkspace] = useState(workspaceQuery.data.workspace);
   const projects = workspaceQuery.data.projects;

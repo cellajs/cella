@@ -12,9 +12,9 @@ import { acceptInvite as baseAcceptInvite } from '~/api/general';
 import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { cn } from '~/lib/utils';
-import AuthPage from '../auth/auth-page';
-import { Button, buttonVariants } from '../ui/button';
-import Spinner from './spinner';
+import AuthPage from '~/modules/auth/auth-page';
+import Spinner from '~/modules/common/spinner';
+import { Button, buttonVariants } from '~/modules/ui/button';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 

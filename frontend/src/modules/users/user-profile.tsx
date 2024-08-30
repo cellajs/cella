@@ -8,10 +8,10 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page-header';
+import ProjectsTable from '~/modules/projects/projects-table';
+import { Button } from '~/modules/ui/button';
 import { useUpdateUserMutation } from '~/modules/users/update-user-form';
 import { useUserStore } from '~/store/user';
-import ProjectsTable from '../projects/projects-table';
-import { Button } from '../ui/button';
 
 interface UserContextValue {
   user: Omit<User, 'counts'>;
@@ -26,7 +26,7 @@ export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet
   const { mutate } = useUpdateUserMutation(currentUser.id);
   const [passedUser, setPassedUser] = useState(user);
 
-  const isSelf = currentUser.id === user.id;
+  const isSelf = currentUser.id === passedUser.id;
 
   const handleSettingCLick = () => {
     navigate({ to: '/user/settings', replace: true });
@@ -69,7 +69,7 @@ export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet
           }
         />
         <div className="container mb-12">
-          <ProjectsTable sheet={sheet} userId={isSelf ? undefined : user.id} />
+          <ProjectsTable sheet={sheet} userId={isSelf ? undefined : passedUser.id} />
         </div>
       </UserContext.Provider>
     </>

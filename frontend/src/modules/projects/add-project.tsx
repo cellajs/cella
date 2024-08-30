@@ -3,10 +3,10 @@ import { ChevronRight, Shrub, SquareMousePointer } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useFocusById from '~/hooks/use-focus-by-id';
+import { dialog } from '~/modules/common/dialoger/state';
+import { CreateProjectForm } from '~/modules/projects/create-project-form';
+import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import type { Organization, Workspace } from '~/types';
-import { dialog } from '../common/dialoger/state';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { CreateProjectForm } from './create-project-form';
 
 interface AddProjectsProps {
   workspace: Workspace;

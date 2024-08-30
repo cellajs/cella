@@ -60,7 +60,7 @@ const SubTask = ({
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask' });
     } catch (err) {
-      toast.error(t('common:error.update_resources', { resources: t('common:todo') }));
+      toast.error(t('common:error.update_resource', { resources: t('common:todo') }));
     }
   };
 

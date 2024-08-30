@@ -1,6 +1,6 @@
 import type { Control } from 'react-hook-form';
+import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
 import { FormControl, FormField, FormItem, FormLabel } from '~/modules/ui/form';
-import { UploadAvatar } from '../upload/upload-avatar';
 
 interface Props {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

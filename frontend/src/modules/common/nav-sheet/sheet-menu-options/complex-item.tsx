@@ -3,12 +3,12 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useEffect, useRef, useState } from 'react';
 import { getDraggableItemData } from '~/lib/utils';
+import { DropIndicator } from '~/modules/common/drop-indicator';
+import { isPageData } from '~/modules/common/nav-sheet/helpers';
+import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
+import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
+import { ItemOption } from '~/modules/common/nav-sheet/sheet-menu-options/item-option';
 import type { UserMenuItem } from '~/types';
-import { DropIndicator } from '../../drop-indicator';
-import { isPageData } from '../helpers';
-import { MenuArchiveToggle } from '../menu-archive-toggle';
-import { SheetMenuItemsOptions } from './index';
-import { ItemOption } from './item-option';
 
 interface ComplexOptionElementProps {
   item: UserMenuItem;

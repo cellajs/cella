@@ -30,14 +30,14 @@ import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
+import { useColumns } from '~/modules/organizations/organizations-table/columns';
+import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types';
-import { useColumns } from './columns';
-import { organizationsQueryOptions } from './helpers/query-options';
 
 type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
@@ -88,7 +88,7 @@ const OrganizationsTable = () => {
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
-    setSelectedRows(new Set<string>());
+    if (selectedRows.size > 0) setSelectedRows(new Set<string>());
     setQuery(searchString);
   };
   // Table selection
