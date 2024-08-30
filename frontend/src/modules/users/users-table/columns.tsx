@@ -61,7 +61,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row }) => <ImpersonateRow user={row} />,
+      renderCell: ({ row, tabIndex }) => <ImpersonateRow user={row} tabIndex={tabIndex} />,
     },
     {
       key: 'edit',

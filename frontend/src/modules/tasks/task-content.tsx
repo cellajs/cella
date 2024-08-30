@@ -28,7 +28,7 @@ const TaskContent = ({ task, mode, isExpanded }: Props) => {
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
             dangerouslySetInnerHTML={{ __html: task.summary }}
             data-color-scheme={mode}
-            className="bn-container bn-shadcn text-[#F8FAFC]"
+            className="bn-container bn-shadcn"
           />
 
           {(task.expandable || task.subTasks.length > 0) && (
