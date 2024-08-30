@@ -3,6 +3,7 @@ import { config } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { authThroughPasskey, getChallenge, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/auth';
 import { acceptInvite } from '~/api/general';
 import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
@@ -63,7 +64,10 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
     };
 
     const success = await authThroughPasskey(credentialData);
-    if (success) navigate({ to: config.defaultRedirectPath, replace: true });
+    if (success) {
+      toast.success(t('common:success.passkey_sign_in'));
+      navigate({ to: config.defaultRedirectPath, replace: true });
+    } else toast.error(t('common:error.passkey_sign_in'));
   }
 
   const invertClass = mode === 'dark' ? 'invert' : '';
