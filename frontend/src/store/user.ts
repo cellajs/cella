@@ -40,6 +40,7 @@ export const useUserStore = create<UserState>()(
               name: user.name,
               id: user.id,
               slug: user.slug,
+              passkey: state.user.passkey,
             },
           }));
 
@@ -55,7 +56,7 @@ export const useUserStore = create<UserState>()(
         setUser: (user) => {
           set((state) => {
             state.user = user;
-            state.lastUser = { email: user.email, name: user.name, id: user.id, slug: user.slug };
+            state.lastUser = { email: user.email, name: user.name, id: user.id, slug: user.slug, passkey: user.passkey };
           });
 
           i18n.changeLanguage(user.language || 'en');

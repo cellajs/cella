@@ -102,7 +102,7 @@ const UserSettings = () => {
     setTimeout(() => {
       setDisabledResetPassword(false);
     }, 60000);
-    toast.success(t('common:success.send_reset_password_email', { email: user.email }));
+    toast.success(t('common:success.reset_password_email', { email: user.email }));
   };
 
   const openDeleteDialog = () => {
@@ -123,10 +123,11 @@ const UserSettings = () => {
   const deletePasskey = async () => {
     const result = await baseRemovePasskey();
     if (result) {
-      toast.success('Passkey removed successfully.');
+      toast.success(t('common:success.passkey_removed'));
       setUser({ ...user, passkey: false });
-    } else toast.error('Removing of passkey failed.');
+    } else toast.error(t('common:error.passkey_remove_failed'));
   };
+
   const registerPasskey = async () => {
     const { challengeBase64 } = await getChallenge();
 
@@ -139,7 +140,7 @@ const UserSettings = () => {
         user: {
           id: new TextEncoder().encode(user.id),
           name: user.name,
-          displayName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'No name provided',
+          displayName: user.firstName || user.name || 'No name provided',
         },
         challenge: base64UrlDecode(challengeBase64),
         pubKeyCredParams: [{ type: 'public-key', alg: -257 }],
@@ -160,9 +161,9 @@ const UserSettings = () => {
 
     const result = await setPasskey(credentialData);
     if (result) {
-      toast.success('Passkey created successfully.');
+      toast.success(t('common:success.passkey_added'));
       setUser({ ...user, passkey: true });
-    } else toast.error('Creation of passkey failed.');
+    } else toast.error(t('common:error.passkey_add_failed'));
   };
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
@@ -293,13 +294,13 @@ const UserSettings = () => {
               </div>
 
               <p className="font-semibold">{t('common:reset_password')}</p>
-              <p className="font-light text-muted-foreground mb-4">{t('common:reset_password.description')}</p>
+              <p className="font-light text-muted-foreground mb-4">{t('common:reset_password_email.text')}</p>
               <div>
                 <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
                   <Send size={16} className="mr-2" />
                   {t('common:send_reset_link')}
                 </Button>
-                {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:reset_password.retry_text')}</p>}
+                {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
               </div>
             </CardContent>
           </Card>

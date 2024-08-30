@@ -56,7 +56,12 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    return ctx.json({ success: !!user }, 200);
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+
+    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const hasPasskey = !!passkey.length;
+
+    return ctx.json({ success: true, data: { hasPasskey } }, 200);
   })
   /*
    * Sign up with email and password
@@ -259,16 +264,6 @@ const authRoutes = app
     await setSessionCookie(ctx, user.id, 'password_reset');
 
     return ctx.json({ success: true }, 200);
-  })
-  /*
-   * Have user a passkey
-   */
-  .openapi(authRoutesConfig.getUserHavePasskey, async (ctx) => {
-    const { email } = ctx.req.valid('json');
-
-    const userWithPassKey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, email));
-
-    return ctx.json({ success: !!userWithPassKey.length }, 200);
   })
   /*
    * Sign in with email and password

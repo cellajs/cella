@@ -1,9 +1,9 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { KeySquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Fingerprint } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { authThroughPasskey, checkUserPasskey, getChallenge, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/auth';
+import { authThroughPasskey, getChallenge, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/auth';
 import { acceptInvite } from '~/api/general';
 import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
@@ -28,16 +28,16 @@ export const oauthProviders: OauthProvider[] = [
 interface OauthOptionsProps {
   actionType: Step;
   email: string;
+  hasPasskey?: boolean;
 }
 
-const OauthOptions = ({ email, actionType = 'signIn' }: OauthOptionsProps) => {
+const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptionsProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { mode } = useThemeStore();
   const { token }: { token: string } = useParams({ strict: false });
 
   const [loading, setLoading] = useState(false);
-  const [hasPasskey, setHasPasskey] = useState(false);
 
   async function passkeyAuth() {
     const { challengeBase64 } = await getChallenge();
@@ -77,13 +77,6 @@ const OauthOptions = ({ email, actionType = 'signIn' }: OauthOptionsProps) => {
 
   const redirectQuery = redirect ? `?redirect=${redirect}` : '';
 
-  useEffect(() => {
-    if (!email.length) return;
-    (async () => {
-      setHasPasskey(await checkUserPasskey(email));
-    })();
-  }, [email]);
-
   return (
     <>
       <div className="relative flex justify-center text-xs uppercase">
@@ -92,8 +85,8 @@ const OauthOptions = ({ email, actionType = 'signIn' }: OauthOptionsProps) => {
 
       <div className="flex flex-col space-y-2">
         {hasPasskey && actionType === 'signIn' && (
-          <Button type="button" onClick={passkeyAuth} variant="outline" className="w-full gap-1.5">
-            <KeySquare size={16} />
+          <Button type="button" onClick={passkeyAuth} variant="plain" className="w-full gap-1.5">
+            <Fingerprint size={16} />
             {t('common:passkey_sign_in')}
           </Button>
         )}

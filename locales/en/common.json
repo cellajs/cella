@@ -324,8 +324,8 @@
   "reset": "Reset",
   "reset_password": "Reset password",
   "reset_passkey": "Reset passkey",
-  "reset_password.retry_text": "Wait 1 minute before sending another reset link.",
-  "reset_password.description": "Reset your password by sending a reset link to your email address.",
+  "retry_reset_password.text": "Wait 1 minute before sending another reset link.",
+  "reset_password_email.text": "Reset your password by sending a reset link to your email address.",
   "reset_password.text": "Enter your email address to receive a link to reset your password.",
   "restore": "Restore",
   "revert_handle": "Revert to current handle",
@@ -379,7 +379,7 @@
   "success.password_reset": "Your password has been reset",
   "success.reset_link_sent": "Reset link sent",
   "success.restore_resource": "{{resource}} has been restored.",
-  "success.send_reset_password_email": "An email has been sent to {{email}}",
+  "success.reset_password_email": "A reset email has been sent to {{email}}",
   "success.session_terminated": "Sessions {{id}} has been terminate",
   "success.sessions_terminated": "All sessions have been terminated",
   "success.signed_out": "You have been signed out",
@@ -466,5 +466,9 @@
   "already_connected_to": "Already connected to",
   "unsubscribe_text": "We have updated your account settings so you will no longer receive newsletter at {{email}}. You can opt back in to receiving the newslettter by changing your settings anytime.",
   "unsubscribe_title": "Unsubscribed successfully",
-  "passkey_registered": "Passkey successfully registered"
+  "passkey_registered": "Passkey successfully registered",
+  "success.passkey_added": "Passkey created and added successfully.",
+  "error.passkey_add_failed": "Registering passkey failed. Try again later.",
+  "success.passkey_removed": "Passkey removed.",
+  "error.passkey_remove_failed": "Removing passkey failed. Try again later."
 }
