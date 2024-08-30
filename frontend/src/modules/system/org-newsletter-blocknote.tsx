@@ -2,13 +2,14 @@ import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
 import DOMPurify from 'dompurify';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { cn } from '~/lib/utils';
 import { useThemeStore } from '~/store/theme';
 
 import '~/modules/common/blocknote/styles.css';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
+import { triggerFocus } from '../common/blocknote/helpers';
 
 interface BlockNoteProps {
   value: string;
@@ -19,6 +20,7 @@ interface BlockNoteProps {
 const BlockNote = ({ value, onChange, className = '' }: BlockNoteProps) => {
   const editor = useCreateBlockNote();
   const { mode } = useThemeStore();
+  const initial = useRef(true);
   const onBlockNoteChange = async () => {
     // Converts the editor's contents from Block objects to HTML
     const html = await editor.blocksToHTMLLossy(editor.document);
@@ -26,9 +28,21 @@ const BlockNote = ({ value, onChange, className = '' }: BlockNoteProps) => {
     return cleanHtml;
   };
 
+  useEffect(() => {
+    if (!initial.current || value === undefined || value === '') return;
+    const blockUpdate = async (html: string) => {
+      const blocks = await editor.tryParseHTMLToBlocks(html);
+      editor.replaceBlocks(editor.document, blocks);
+      triggerFocus('blocknote-org-letter');
+      initial.current = false;
+    };
+    blockUpdate(value);
+  }, [value]);
+
   return (
     <Suspense>
       <BlockNoteView
+        id={'blocknote-org-letter'}
         data-color-scheme={mode}
         editor={editor}
         defaultValue={value}
