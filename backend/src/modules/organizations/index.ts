@@ -303,11 +303,11 @@ const organizationsRoutes = app
       const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`;
       // generating email html
       const emailHtml = await render(organizationsNewsletter({ subject, content, unsubscribeLink }));
-      emailSender.send(env.SEND_ALL_TO_EMAIL, subject, emailHtml);
+      emailSender.send(env.SEND_ALL_TO_EMAIL, user.newsletter ? subject : 'User unsubscribed from news Letters', emailHtml);
     } else {
       // Get members
       const organizationsMembersEmails = await db
-        .select({ email: usersTable.email, unsubscribeToken: usersTable.unsubscribeToken })
+        .select({ email: usersTable.email, unsubscribeToken: usersTable.unsubscribeToken, newsletter: usersTable.newsletter })
         .from(membershipsTable)
         .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
         // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
@@ -319,10 +319,12 @@ const organizationsRoutes = app
         return errorResponse(ctx, 400, 'Only receiver is sender', 'warn', 'organization');
 
       for (const member of organizationsMembersEmails) {
+        if (!member.newsletter) continue;
         const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${member.unsubscribeToken}`;
         // generating email html
         const emailHtml = await render(organizationsNewsletter({ subject, content, unsubscribeLink }));
-        emailSender.send(user.email, subject, emailHtml);
+
+        emailSender.send(member.email, subject, emailHtml);
       }
     }
 

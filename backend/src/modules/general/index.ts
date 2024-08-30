@@ -506,7 +506,7 @@ const generalRoutes = app
 
     if (!isValid) return errorResponse(ctx, 400, 'Token verification failed', 'warn', 'user');
 
-    await db.update(usersTable).set({ newsletter: true }).where(eq(usersTable.id, user.id));
+    await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
 
     const redirectUrl = `${config.frontendUrl}/newsletter-unsubscribe`;
     return ctx.redirect(redirectUrl, 302);
