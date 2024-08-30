@@ -34,9 +34,7 @@ export type Session = {
 const tabs = [
   { id: 'general', label: 'common:general' },
   { id: 'sessions', label: 'common:sessions' },
-  { id: 'passkey', label: 'common:passkey' },
-  { id: 'oauth', label: 'common:oauth' },
-  { id: 'reset-password', label: 'common:reset_password' },
+  { id: 'authentication', label: 'common:authentication' },
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 
@@ -227,44 +225,37 @@ const UserSettings = () => {
           </Card>
         </AsideAnchor>
 
-        <AsideAnchor id="passkey">
+        <AsideAnchor id="authentication">
           <Card className="mx-auto sm:w-full">
-            <div className="flex justify-between items-center ">
-              <CardHeader>
-                <CardTitle>{user.passkey ? t('common:already_have_passkey') : t('common:register_passkey')}</CardTitle>
-                <CardDescription>{t('common:register_passkey_text')}</CardDescription>
-              </CardHeader>
+            <CardHeader>
+              <CardTitle>{t('common:authentication')}</CardTitle>
+              <CardDescription>{t('common:authentication.text')}</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm">
+              <p className="font-semibold">{t('common:passkey')}</p>
+              <p className="font-light text-muted-foreground mb-4">{t('common:passkey.text')}</p>
               {user.passkey && (
-                <div className="flex items-center p-6">
+                <div className="flex items-center gap-2 mb-6">
                   <Check size={18} className="text-success" />
+                  {t('common:passkey_registered')}
                 </div>
               )}
-            </div>
-            <CardContent>
-              <div className="flex flex-col justify-center gap-2">
-                <Button key="setPasskey" type="button" variant="outline" onClick={() => registerPasskey()}>
+              <div className="flex max-sm:flex-col gap-2 mb-6">
+                <Button key="setPasskey" type="button" variant="plain" onClick={() => registerPasskey()}>
                   <KeyRound className="w-4 h-4 mr-2" />
                   {user.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>
                 {user.passkey && (
-                  <Button key="deletePasskey" type="button" variant="outline" onClick={() => deletePasskey()}>
+                  <Button key="deletePasskey" type="button" variant="ghost" onClick={() => deletePasskey()}>
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {t('common:remove_passkey')}
+                    <span>{t('common:remove')}</span>
                   </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </AsideAnchor>
 
-        <AsideAnchor id="oauth">
-          <Card className="mx-auto sm:w-full">
-            <CardHeader>
-              <CardTitle>{t('common:oauth')}</CardTitle>
-              <CardDescription>{t('common:oauth.text')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-2">
+              <p className="font-semibold">{t('common:oauth')}</p>
+              <p className="font-light text-muted-foreground mb-4">{t('common:oauth.text')}</p>
+              <div className="flex max-sm:flex-col gap-2 mb-6">
                 {config.enabledOauthProviders.map((id) => {
                   const option = oauthProviders.find((provider) => provider.id === id);
                   if (!option) return;
@@ -300,22 +291,16 @@ const UserSettings = () => {
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
-        </AsideAnchor>
 
-        <AsideAnchor id="reset-password">
-          <Card className="mx-auto sm:w-full">
-            <CardHeader>
-              <CardTitle>{t('common:reset_password')}</CardTitle>
-              <CardDescription>{t('common:reset_password.description')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full sm:w-auto" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
-                <Send size={16} className="mr-2" />
-                {t('common:send_reset_link')}
-              </Button>
-              {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:reset_password.retry_text')}</p>}
+              <p className="font-semibold">{t('common:reset_password')}</p>
+              <p className="font-light text-muted-foreground mb-4">{t('common:reset_password.description')}</p>
+              <div>
+                <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
+                  <Send size={16} className="mr-2" />
+                  {t('common:send_reset_link')}
+                </Button>
+                {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:reset_password.retry_text')}</p>}
+              </div>
             </CardContent>
           </Card>
         </AsideAnchor>
