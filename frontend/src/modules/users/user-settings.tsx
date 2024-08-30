@@ -34,6 +34,7 @@ export type Session = {
 const tabs = [
   { id: 'general', label: 'common:general' },
   { id: 'sessions', label: 'common:sessions' },
+  { id: 'passkey', label: 'common:passkey' },
   { id: 'oauth', label: 'common:oauth' },
   { id: 'reset-password', label: 'common:reset_password' },
   { id: 'delete-account', label: 'common:delete_account' },
