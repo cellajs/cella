@@ -68,27 +68,69 @@ const coseToPem = async (coseKeyBuffer: ArrayBuffer) => {
 
   const kty = coseKey.get(1); // Key Type
   const alg = coseKey.get(3); // Algorithm
-  const n = coseKey.get(-1); // Modulus
-  const e = coseKey.get(-2); // Exponent
 
-  // Check if kty is 3 (RSA)
-  if (kty !== 3) throw new Error('Unsupported key type');
+  // Handle different key types
+  switch (kty) {
+    case 3: {
+      // RSA
+      const n = coseKey.get(-1); // Modulus
+      const e = coseKey.get(-2); // Exponent
 
-  if (!n || !e) throw new Error('Invalid RSA COSE key');
+      if (!n || !e) throw new Error('Invalid RSA COSE key');
 
-  // Convert to JWK format
-  const jwk = {
-    kty: 'RSA',
-    alg: alg === -257 ? 'RS256' : 'ES256', // it's either -257 or -7
-    n: n.toString('base64url'),
-    e: e.toString('base64url'),
-  };
+      const rsaJwk = {
+        kty: 'RSA',
+        alg: alg === -257 ? 'RS256' : 'ES256', // RS256 or ES256
+        n: Buffer.from(n).toString('base64url'),
+        e: Buffer.from(e).toString('base64url'),
+      };
 
-  // Import JWK and export SPKI
-  const key = await jose.importJWK(jwk, jwk.alg);
-  const pemKey = await jose.exportSPKI(key as KeyLike);
+      // Import JWK and export SPKI
+      const rsaKey = await jose.importJWK(rsaJwk, rsaJwk.alg);
+      return await jose.exportSPKI(rsaKey as KeyLike);
+    }
 
-  return pemKey;
+    case 2: {
+      // EC2 (Elliptic Curve)
+      const crv = coseKey.get(-1); // Curve
+      const x = coseKey.get(-2); // x-coordinate
+      const y = coseKey.get(-3); // y-coordinate
+
+      if (!crv || !x || !y) throw new Error('Invalid EC2 COSE key');
+
+      const ec2Jwk = {
+        kty: 'EC',
+        alg: alg === -7 ? 'ES256' : 'ES512', // ES256 or ES512
+        crv: 'P-256', // Adjust based on crv value if needed
+        x: Buffer.from(x).toString('base64url'),
+        y: Buffer.from(y).toString('base64url'),
+      };
+
+      const ec2Key = await jose.importJWK(ec2Jwk, ec2Jwk.alg);
+      return await jose.exportSPKI(ec2Key as KeyLike);
+    }
+
+    case 1: {
+      // OKP (Octet Key Pair)
+      const crvOkp = coseKey.get(-1); // Curve
+      const xOkp = coseKey.get(-2); // x-coordinate
+
+      if (!crvOkp || !xOkp) throw new Error('Invalid OKP COSE key');
+
+      const okpJwk = {
+        kty: 'OKP',
+        alg: 'EdDSA',
+        crv: 'Ed25519',
+        x: Buffer.from(xOkp).toString('base64url'),
+      };
+
+      const okpKey = await jose.importJWK(okpJwk, okpJwk.alg);
+      return await jose.exportSPKI(okpKey as KeyLike);
+    }
+
+    default:
+      throw new Error(`Unsupported key type: ${kty}`);
+  }
 };
 
 export const parsePromMetrics = (text: string): Record<string, string | number>[] => {
