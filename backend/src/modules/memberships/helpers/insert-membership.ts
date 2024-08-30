@@ -1,4 +1,3 @@
-import type { config } from 'config';
 import { eq } from 'drizzle-orm';
 import { db } from '../../../db/db';
 import { type MembershipModel, membershipsTable } from '../../../db/schema/memberships';
@@ -8,13 +7,11 @@ import type { UserModel } from '../../../db/schema/users';
 import type { WorkspaceModel } from '../../../db/schema/workspaces';
 import { logEvent } from '../../../middlewares/logger/log-event';
 
-type UserWithoutSensitiveFields = Omit<UserModel, (typeof config.sensitiveFields)[number]>;
-
 interface Props {
-  user: UserWithoutSensitiveFields;
+  user: UserModel;
   role: MembershipModel['role'];
   entity: OrganizationModel | WorkspaceModel | ProjectModel;
-  createdBy?: UserWithoutSensitiveFields['id'];
+  createdBy?: UserModel['id'];
   memberships?: MembershipModel[];
 }
 

@@ -7,7 +7,7 @@ import { env } from '../../env';
 import authRoutesConfig from '../modules/auth/routes';
 import { db } from './db';
 import { sessionsTable } from './schema/sessions';
-import { type UserModel, usersTable } from './schema/users';
+import { type UnsafeUserModel, usersTable } from './schema/users';
 
 export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', {
   redirectURI: config.backendAuthUrl + authRoutesConfig.githubSignInCallback.path,
@@ -55,7 +55,7 @@ export type Auth = typeof auth;
 declare module 'lucia' {
   interface Register {
     Lucia: typeof auth;
-    DatabaseUserAttributes: UserModel;
+    DatabaseUserAttributes: UnsafeUserModel;
     DatabaseSessionAttributes: { type: 'regular' | 'impersonation'; adminUserId: null | string };
   }
 }

@@ -55,12 +55,12 @@ export const usersTableRelations = relations(usersTable, ({ many }) => ({
   organizations: many(membershipsTable),
 }));
 
-export type UserModel = typeof usersTable.$inferSelect;
+export type UnsafeUserModel = typeof usersTable.$inferSelect;
 export type InsertUserModel = typeof usersTable.$inferInsert;
-type SafeUserModel = Omit<UserModel, (typeof config.sensitiveFields)[number]>;
+export type UserModel = Omit<UnsafeUserModel, (typeof config.sensitiveFields)[number]>;
 
 // TODO find a better way
-const keys = Object.keys(usersTable).filter((k) => !(config.sensitiveFields as unknown as string[]).includes(k)) as (keyof SafeUserModel)[];
+const keys = Object.keys(usersTable).filter((k) => !(config.sensitiveFields as unknown as string[]).includes(k)) as (keyof UserModel)[];
 export const safeUserSelect = keys.reduce(
   (acc, k) => {
     acc[k] = usersTable[k];

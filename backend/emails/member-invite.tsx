@@ -13,8 +13,8 @@ import { Footer } from './components/footer';
 
 interface Props {
   organization: OrganizationModel;
-  targetUser?: Omit<UserModel, (typeof config.sensitiveFields)[number]>;
-  user: Omit<UserModel, (typeof config.sensitiveFields)[number]>;
+  targetUser?: UserModel;
+  user: UserModel;
   token: string;
 }
 

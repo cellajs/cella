@@ -11,8 +11,8 @@ import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
 
 interface Props {
-  targetUser?: Omit<UserModel, (typeof config.sensitiveFields)[number]>;
-  user: Omit<UserModel, (typeof config.sensitiveFields)[number]>;
+  targetUser?: UserModel;
+  user: UserModel;
   token: string;
 }
 
