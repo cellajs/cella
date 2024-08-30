@@ -36,6 +36,7 @@ p.bn-inline-content{
   word-break: break-word !important;
   padding: 0px !important;
   background: transparent !important;
+  height: 100%;
 }
 
 .bn-container[data-color-scheme="light"] {

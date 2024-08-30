@@ -100,7 +100,7 @@ const SelectStatus = ({
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
     }
   };
 

@@ -70,7 +70,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
       return;
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
     }
   };
 
