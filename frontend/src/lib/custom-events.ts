@@ -5,14 +5,12 @@ interface CustomEventMap {
   taskChange: CustomEvent<{ taskId: string; direction: number; projectId: string }>;
   taskCardClick: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
   toggleCard: CustomEvent<string>;
-  toggleTaskEditing: CustomEvent<{ state: boolean; id: string }>;
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
   searchDropDownClose: Event;
   updateUserCover: CustomEvent<string>;
   updateOrganizationCover: CustomEvent<string>;
   updateWorkspaceCover: CustomEvent<string>;
-
   taskTableCRUD: CustomEvent<{
     array: Task[] | { id: string }[];
     action: TaskQueryActions;

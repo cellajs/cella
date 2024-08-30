@@ -97,18 +97,25 @@ const coseToPem = async (coseKeyBuffer: ArrayBuffer) => {
 
     case 2: {
       // EC2 (Elliptic Curve) key type
-      const curve = coseKey.get(-1);
+      const curveNum = coseKey.get(-1);
       // extract coordinates
       const x = coseKey.get(-2);
       const y = coseKey.get(-3);
 
-      if (!curve || !x || !y) throw new Error('Invalid EC2 COSE key');
+      if (!curveNum || !x || !y) throw new Error('Invalid EC2 COSE key');
+
+      // Map the numeric curve identifier to the appropriate string for JWK
+      const curveMap: Record<number, string> = {
+        1: 'P-256', // corresponds to ES256
+        2: 'P-384', // corresponds to ES384
+        3: 'P-521', // corresponds to ES512
+      };
 
       // convert JWK format
       const ec2Jwk = {
         kty: 'EC',
         alg: algorithm === -7 ? 'ES256' : 'ES512', // Determine the algorithm (ES256 or ES512)
-        crv: curve,
+        crv: curveMap[curveNum],
         // Convert coordinates to base64url
         x: Buffer.from(x).toString('base64url'),
         y: Buffer.from(y).toString('base64url'),

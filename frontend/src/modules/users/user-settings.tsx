@@ -143,7 +143,10 @@ const UserSettings = () => {
           displayName: user.firstName || user.name || 'No name provided',
         },
         challenge: base64UrlDecode(challengeBase64),
-        pubKeyCredParams: [{ type: 'public-key', alg: -257 }],
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 }, // ES256
+          { type: 'public-key', alg: -257 }, // RS256
+        ],
         authenticatorSelection: { userVerification: 'required' },
         attestation: 'none',
       },
