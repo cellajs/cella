@@ -64,8 +64,8 @@ class TaskRoutesConfig {
             schema: successWithPaginationSchema(fullTaskSchema),
           },
         },
-        ...errorResponses,
       },
+      ...errorResponses,
     },
   });
 
@@ -87,8 +87,8 @@ class TaskRoutesConfig {
             schema: successWithDataSchema(z.number()),
           },
         },
-        ...errorResponses,
       },
+      ...errorResponses,
     },
   });
 

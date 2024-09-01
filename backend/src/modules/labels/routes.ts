@@ -55,8 +55,8 @@ class LabelsRoutesConfig {
             schema: successWithPaginationSchema(labelSchema),
           },
         },
-        ...errorResponses,
       },
+      ...errorResponses,
     },
   });
 
