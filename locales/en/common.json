@@ -468,6 +468,7 @@
   "unsubscribe_title": "Unsubscribed successfully",
   "passkey_registered": "Passkey successfully registered",
   "success.passkey_added": "Passkey created and added successfully.",
+  "success.delete_label": "Label has been deleted.",
   "error.passkey_add_failed": "Registering passkey failed. Try again later.",
   "success.passkey_removed": "Passkey removed.",
   "error.passkey_remove_failed": "Removing passkey failed. Try again later.",

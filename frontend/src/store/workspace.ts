@@ -6,11 +6,9 @@ import type { Workspace, WorkspaceStoreProject } from '~/types';
 
 interface WorkspaceState {
   workspace: Workspace;
-  setWorkspace: (workspace: Workspace) => void;
   projects: WorkspaceStoreProject[];
-  setProjects: (projects: WorkspaceStoreProject[]) => void;
   labels: Label[];
-  setLabels: (labels: Label[]) => void;
+  setWorkspace: (workspace: Workspace, projects: WorkspaceStoreProject[] | undefined, labels: Label[] | undefined) => void;
   selectedTasks: string[];
   setSelectedTasks: (tasks: string[]) => void;
   searchQuery: string;
@@ -31,19 +29,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       searchQuery: '',
       focusedTaskId: null,
       showPageHeader: false,
-      setWorkspace: (workspace) => {
+      setWorkspace: (workspace, projects, labels) => {
         set((state) => {
           state.workspace = workspace;
-        });
-      },
-      setProjects: (projects) => {
-        set((state) => {
-          state.projects = projects;
-        });
-      },
-      setLabels: (labels) => {
-        set((state) => {
-          state.labels = labels;
+          if (projects) state.projects = projects;
+          if (labels) state.labels = labels;
         });
       },
       setSelectedTasks: (tasks) => {

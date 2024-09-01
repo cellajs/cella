@@ -51,17 +51,9 @@ const labelsRoutes = app
     );
 
     const labels = await db.select().from(labelsQuery.as('labels')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const data = { items: labels, total: labels.length };
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          items: labels,
-          total: labels.length,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Update labels

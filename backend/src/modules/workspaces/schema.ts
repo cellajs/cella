@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { labelsTable } from '../../db/schema/labels';
 import { projectsTable } from '../../db/schema/projects';
 import { workspacesTable } from '../../db/schema/workspaces';
 import { idSchema, imageUrlSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
@@ -29,6 +30,11 @@ export const workspaceWithProjectSchema = z.object({
       membership: membershipInfoSchema.nullable(),
       workspaceId: z.string().nullish(),
       members: z.array(membersSchema),
+    }),
+  ),
+  labels: z.array(
+    z.object({
+      ...createSelectSchema(labelsTable).shape,
     }),
   ),
 });

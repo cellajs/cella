@@ -3,6 +3,7 @@ import { db } from '../../db/db';
 import { membershipsTable } from '../../db/schema/memberships';
 import { workspacesTable } from '../../db/schema/workspaces';
 
+import { labelsTable } from '../../db/schema/labels';
 import { projectsTable } from '../../db/schema/projects';
 import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
 import { safeUserSelect, usersTable } from '../../db/schema/users';
@@ -60,7 +61,7 @@ const workspacesRoutes = app
     );
   })
   /*
-   * Get workspace by id or slug with related projects & members
+   * Get workspace by id or slug with related projects, members and labels
    */
   .openapi(workspaceRoutesConfig.getWorkspace, async (ctx) => {
     const workspace = ctx.get('workspace');
@@ -135,12 +136,25 @@ const workspacesRoutes = app
       };
     });
 
+    const labelsQuery = db
+      .select()
+      .from(labelsTable)
+      .where(
+        inArray(
+          labelsTable.projectId,
+          projects.map((p) => p.id),
+        ),
+      );
+
+    const labels = await db.select().from(labelsQuery.as('labels'));
+
     return ctx.json(
       {
         success: true,
         data: {
           workspace: { ...workspace, membership: toMembershipInfo(membership) },
           projects: projectsWithMembers,
+          labels,
         },
       },
       200,

@@ -233,7 +233,7 @@ export const useColumns = () => {
             to="/user/$idOrSlug"
             tabIndex={tabIndex}
             params={{ idOrSlug: user.id }}
-            className="flex space-x-2 items-center outline-0 ring-0 group truncate"
+            className="flex space-x-2 items-center outline-0 ring-0 group truncate w-full"
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
