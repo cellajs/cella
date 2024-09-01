@@ -315,7 +315,8 @@ class GeneralRoutesConfig {
     path: '/entity-info/{idOrSlug}',
     guard: isAuthenticated,
     tags: ['general'],
-    summary: 'Get minimal entity info(id, entity, slug, name, thumbnailUrl, bannerUrl)',
+    summary: 'Get entity info',
+    description: 'Get minimal entity info by id or slug.',
     request: {
       params: entityParamSchema,
       query: z.object({ entityType: contextEntityTypeSchema }),

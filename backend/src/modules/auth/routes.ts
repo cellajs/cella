@@ -60,7 +60,7 @@ class AuthRoutesConfig {
     middleware: [authRateLimiter],
     tags: ['auth'],
     summary: 'Check if email exists',
-    description: 'Check if email address exists in the database.',
+    description: 'Check if user with email address exists and whether user has a passkey.',
     security: [],
     request: {
       body: {
