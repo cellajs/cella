@@ -51,7 +51,7 @@ const tasksRoutes = app
     const { q, tableSort, order, offset, limit, projectId, status } = ctx.req.valid('query');
 
     const tasksFilters: SQL[] = [inArray(tasksTable.projectId, projectId.split('_'))];
-    if (q) tasksFilters.push(ilike(tasksTable.description, `%${q}%`));
+    if (q) tasksFilters.push(ilike(tasksTable.keywords, `%${q}%`));
     if (status) tasksFilters.push(inArray(tasksTable.status, status.split('_').map(Number)));
 
     const tasksQuery = db

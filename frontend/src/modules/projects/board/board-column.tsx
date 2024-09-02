@@ -85,7 +85,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   const tasks = useMemo(() => {
     const respTasks = tasksQuery.data?.items || [];
     if (!searchQuery.length) return respTasks;
-    return respTasks.filter((t) => t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    return respTasks.filter((t) => t.keywords.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [tasksQuery.data, searchQuery]);
 
   const {
