@@ -1,7 +1,7 @@
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
-import { Suspense, useCallback, useEffect, useRef } from 'react';
+import { Suspense, useCallback, useEffect } from 'react';
 import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
@@ -29,8 +29,8 @@ interface TaskBlockNoteProps {
 
 export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = false, className = '' }: TaskBlockNoteProps) => {
   const { t } = useTranslation();
-  const initial = useRef(true);
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
+
   const { pathname } = useLocation();
   const { projects } = useWorkspaceStore();
   const currentProject = projects.find((p) => p.id === projectId);
@@ -48,7 +48,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
         const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
         dispatchCustomEvent(eventName, { array: [{ ...updatedTask, expandable }], action });
       } catch (err) {
-        toast.error(t('common:error.update_resource', { resources: t('common:todo') }));
+        toast.error(t('common:error.update_resource', { resource: t('common:todo') }));
       }
     },
     [pathname],
@@ -65,23 +65,13 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (onChange) onChange(cleanDescription, cleanSummary);
     else handleUpdateHTML(cleanDescription, cleanSummary);
-    dispatchCustomEvent('toggleTaskEditing', { id, state: false });
   };
 
   useEffect(() => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    // Select all <p class="bn-inline-content"></p> elements
-    const emptyPElements = doc.querySelectorAll('p.bn-inline-content');
-    // Check if there is exactly one <p> element and it is empty
-    const contentEmpty = emptyPElements.length === 1 && emptyPElements[0].textContent === '';
-
-    if (!initial.current && html !== undefined && contentEmpty && html !== '') return;
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
       editor.replaceBlocks(editor.document, blocks);
       triggerFocus(subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`);
-      initial.current = false;
     };
     blockUpdate(html);
   }, [html]);
@@ -96,7 +86,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
       <BlockNoteView
         id={subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`}
         onChange={() => {
-          if (!onChange) return;
+          if (!onChange || editor.document[0].content?.toString() === '') return;
           updateData();
         }}
         onBlur={updateData}

@@ -27,11 +27,11 @@ import { errorResponse } from '../../lib/errors';
 import { i18n } from '../../lib/i18n';
 import { emailSender } from '../../lib/mailer';
 import { nanoid } from '../../lib/nanoid';
-import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from '../../lib/utils';
 import { logEvent } from '../../middlewares/logger/log-event';
 import { CustomHono } from '../../types/common';
 import generalRouteConfig from '../general/routes';
 import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
+import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
@@ -56,7 +56,12 @@ const authRoutes = app
 
     const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
-    return ctx.json({ success: !!user }, 200);
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
+
+    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const hasPasskey = !!passkey.length;
+
+    return ctx.json({ success: true, data: { hasPasskey } }, 200);
   })
   /*
    * Sign up with email and password
@@ -259,16 +264,6 @@ const authRoutes = app
     await setSessionCookie(ctx, user.id, 'password_reset');
 
     return ctx.json({ success: true }, 200);
-  })
-  /*
-   * Have user a passkey
-   */
-  .openapi(authRoutesConfig.getUserHavePasskey, async (ctx) => {
-    const { email } = ctx.req.valid('json');
-
-    const userWithPassKey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, email));
-
-    return ctx.json({ success: !!userWithPassKey.length }, 200);
   })
   /*
    * Sign in with email and password
@@ -824,8 +819,12 @@ const authRoutes = app
     const userVerified = (flags & 0x04) !== 0;
     if (!userPresent || !userVerified) return errorResponse(ctx, 400, 'User presence or verification failed', 'warn', undefined);
 
-    const isValid = verifyPassKeyPublic(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
-    if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
+    try {
+      const isValid = await verifyPassKeyPublic(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
+      if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
+    } catch (error) {
+      return errorResponse(ctx, 500, (error as Error).message ?? 'Passkey verification error', 'error', undefined);
+    }
 
     // Extract the counter
     // Optionally do we need update the counter in the database

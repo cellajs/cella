@@ -61,14 +61,13 @@ interface TaskProps {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
-  isEditing: boolean;
   isSelected: boolean;
   isFocused: boolean;
   handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void;
   isSheet?: boolean;
 }
 
-export function TaskCard({ style, task, mode, isSelected, isFocused, isEditing, isExpanded, isSheet, handleTaskActionClick }: TaskProps) {
+export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded, isSheet, handleTaskActionClick }: TaskProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const taskRef = useRef<HTMLDivElement>(null);
@@ -88,7 +87,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isEditing, 
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resources: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
     }
   };
 
@@ -208,7 +207,7 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isEditing, 
                 )}
               </div>
               <div className="flex flex-col grow gap-2">
-                <TaskDescription mode={mode} task={task} isExpanded={isExpanded} isEditing={isEditing} />
+                <TaskDescription mode={mode} task={task} isExpanded={isExpanded} />
               </div>
             </div>
             <div className="flex flex-col gap-2">

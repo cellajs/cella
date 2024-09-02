@@ -26,8 +26,10 @@ export type TokenData = Awaited<ReturnType<typeof checkToken>> & {
 const SignIn = () => {
   const { t } = useTranslation();
   const { lastUser } = useUserStore();
+
   const [step, setStep] = useState<Step>('check');
   const [email, setEmail] = useState('');
+  const [hasPasskey, setHasPasskey] = useState(false);
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -50,11 +52,12 @@ const SignIn = () => {
   }, [token]);
 
   useEffect(() => {
-    if (lastUser?.email && !token) handleCheckEmail('signIn', lastUser.email);
+    if (lastUser?.email && !token) handleCheckEmail('signIn', lastUser.email, !!lastUser.passkey);
   }, [lastUser]);
 
-  const handleCheckEmail = (step: string, email: string) => {
+  const handleCheckEmail = (step: string, email: string, hasPasskey: boolean) => {
     setEmail(email);
+    setHasPasskey(hasPasskey);
     setStep(step as Step);
   };
 
@@ -76,7 +79,7 @@ const SignIn = () => {
               <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text', { appName: config.name })}</h2>
             </>
           )}
-          {step !== 'inviteOnly' && step !== 'waitList' && <OauthOptions email={email} actionType={step} />}
+          {step !== 'inviteOnly' && step !== 'waitList' && <OauthOptions email={email} actionType={step} hasPasskey={hasPasskey} />}
         </>
       ) : (
         <>

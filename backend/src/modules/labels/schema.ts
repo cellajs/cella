@@ -5,7 +5,7 @@ import { labelsTable } from '../../db/schema/labels';
 import { paginationQuerySchema } from '../../lib/common-schemas';
 
 export const labelSchema = z.object({
-  ...createSelectSchema(labelsTable).omit({ lastUsed: true }).shape,
+  ...createSelectSchema(labelsTable).omit({ lastUsed: true, entity: true }).shape,
   lastUsed: z.string(),
 });
 

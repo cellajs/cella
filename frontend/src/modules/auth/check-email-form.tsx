@@ -19,7 +19,7 @@ const formSchema = emailBodySchema;
 
 interface CheckEmailProps {
   tokenData: TokenData | null;
-  setStep: (step: string, email: string) => void;
+  setStep: (step: string, email: string, hasPasskey: boolean) => void;
 }
 
 export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
@@ -32,16 +32,14 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
 
   const { mutate: checkEmail, isPending } = useMutation({
     mutationFn: baseCheckEmail,
-    onSuccess: (success) => {
-      // Depending on config, we have different steps
-      let nextStep = success ? 'signIn' : 'inviteOnly';
-      if (config.has.signUp) {
-        nextStep = success ? 'signIn' : 'signUp';
-      } else if (config.has.waitList) {
-        nextStep = success ? 'signIn' : 'waitList';
+    onSuccess: (hasPasskey) => {
+      setStep('signIn', form.getValues('email'), hasPasskey);
+    },
+    onError: (error) => {
+      const nextStep = config.has.signUp ? 'signUp' : config.has.waitList ? 'waitList' : 'inviteOnly';
+      if (error.status === 404) {
+        return setStep(nextStep, form.getValues('email'), false);
       }
-
-      setStep(nextStep, form.getValues('email'));
     },
   });
 

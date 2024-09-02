@@ -21,20 +21,20 @@ const openAPITags = [
   {
     name: 'workspaces',
     description:
-      'App-specific entity (will be split from template). Workspace functions for end-users to personalize how they interact with their projects and the content in each project. Only the creator has access and no other members are possible.',
+      'App-specific context entity. Workspace functions for end-users to personalize how they interact with their projects and the content in each project. Only the creator has access and no other members are possible.',
   },
   {
     name: 'projects',
     description:
-      'App-specific entity (will be split from template). Projects - like organizations - can have multiple members and are the primary entity in relation to the content-related resources: tasks, labels and attachments. Because a project can be in multiple workspaces, a relations table is maintained.',
+      'App-specific context entity. Projects - like organizations - can have multiple members and are the primary entity in relation to the content-related resources: tasks, labels and attachments. Because a project can be in multiple workspaces, a relations table is maintained.',
   },
   {
     name: 'tasks',
-    description: 'App-specific. Tasks content-related resource of project. Also contain task related info and can include subtasks.',
+    description: 'App-specific product entity. Tasks are added to a project and can also contain subtasks.',
   },
   {
     name: 'labels',
-    description: 'App-specific. Labels content-related resource of project. That is using inside the tasks.',
+    description: 'App-specific product entity. Labels are given to tasks and are listed as part of on or more projects.',
   },
 ];
 
@@ -58,11 +58,13 @@ const docs = (app: CustomHono) => {
       description: `
       (ATTENTION: PRERELEASE!) This API documentation is split in modules. Each module relates to a module in the backend codebase. Each module should be at least loosely-coupled, but ideally entirely decoupled. The documentation is based upon zod schemas that are converted to openapi specs using hono middleware: zod-openapi.
 
-      API differentiates between three types of resources: 
+      API differentiates between two types of resource: entities and resources. Entities are the main data objects, the other tables are secondary. They all have an entity column.
 
-      1) page-related resources are called an 'entity' (ie organization or user)
-      2) a subclass are 'contextual entities' (ie organization, not user)
-      3) remaining data objects are simply content-related 'resources'.
+
+      Entities can be split into three categories:
+      1) Contextual entities (ie organization, workspace, project)
+      2) Product entities (ie task, label)
+      3) All entities (ie user, organization, workspace, project, task, label)
 
       - SSE stream is not included in this API documentation
       - API design is flat, not nested

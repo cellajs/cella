@@ -40,12 +40,10 @@ function BoardDesktop({
   workspaceId,
   projects,
   expandedTasks,
-  editingTasks,
   columnTaskCreate,
   toggleCreateForm,
 }: {
   expandedTasks: Record<string, boolean>;
-  editingTasks: Record<string, boolean>;
   projects: WorkspaceStoreProject[];
   workspaceId: string;
   columnTaskCreate: Record<string, boolean>;
@@ -65,7 +63,6 @@ function BoardDesktop({
               <Fragment key={project.id}>
                 <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
                   <BoardColumn
-                    editingTasks={editingTasks}
                     expandedTasks={expandedTasks}
                     createForm={isFormOpen}
                     toggleCreateForm={toggleCreateForm}
@@ -94,7 +91,6 @@ export default function Board() {
 
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
-  const [editingTasks, setEditingTasks] = useState<Record<string, boolean>>({});
   const { project, q } = useSearch({
     from: WorkspaceBoardRoute.id,
   });
@@ -166,21 +162,12 @@ export default function Board() {
     }));
   };
 
-  const setTaskEditing = (taskId: string, isEditing: boolean) => {
-    setEditingTasks((prevState) => {
-      const newState = { ...prevState };
-      newState[taskId] = isEditing;
-      return newState;
-    });
-  };
-
   const handleEscKeyPress = () => {
     if (focusedTaskId && expandedTasks[focusedTaskId]) setTaskExpanded(focusedTaskId, false);
   };
 
   const handleEnterKeyPress = () => {
     if (!focusedTaskId) return;
-    setTaskEditing(focusedTaskId, true);
     setTaskExpanded(focusedTaskId, true);
   };
 
@@ -198,17 +185,12 @@ export default function Board() {
     const { taskId, clickTarget } = event.detail;
 
     if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(taskId);
-    if (focusedTaskId === taskId) {
-      setTaskEditing(taskId, true);
-      setTaskExpanded(taskId, true);
-      return;
-    }
+    if (focusedTaskId === taskId) return setTaskExpanded(taskId, true);
 
     const taskCard = document.getElementById(taskId);
     if (taskCard && document.activeElement !== taskCard) taskCard.focus();
 
     setFocusedTaskId(taskId);
-    setTaskEditing(taskId, true);
     setTaskExpanded(taskId, true);
   };
 
@@ -221,7 +203,6 @@ export default function Board() {
   useEventListener('taskCardClick', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('toggleCard', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
-  useEventListener('toggleTaskEditing', (e) => setTaskEditing(e.detail.id, e.detail.state));
 
   useEffect(() => {
     if (q?.length) setSearchQuery(q);
@@ -319,7 +300,6 @@ export default function Board() {
           {isDesktopLayout ? (
             <BoardDesktop
               expandedTasks={expandedTasks}
-              editingTasks={editingTasks}
               columnTaskCreate={columnTaskCreate}
               toggleCreateForm={toggleCreateTaskForm}
               projects={projects}
@@ -328,7 +308,6 @@ export default function Board() {
           ) : (
             <BoardColumn
               expandedTasks={expandedTasks}
-              editingTasks={editingTasks}
               createForm={columnTaskCreate[mobileDeviceProject.id] || false}
               toggleCreateForm={toggleCreateTaskForm}
               project={mobileDeviceProject}

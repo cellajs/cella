@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successWithoutDataSchema } from '../../lib/common-responses';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '../../lib/common-responses';
 import { cookieSchema, passwordSchema } from '../../lib/common-schemas';
 import { createRouteConfig } from '../../lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
@@ -60,7 +60,7 @@ class AuthRoutesConfig {
     middleware: [authRateLimiter],
     tags: ['auth'],
     summary: 'Check if email exists',
-    description: 'Check if email address exists in the database.',
+    description: 'Check if user with email address exists and whether user has a passkey.',
     security: [],
     request: {
       body: {
@@ -76,7 +76,7 @@ class AuthRoutesConfig {
         description: 'Email exists',
         content: {
           'application/json': {
-            schema: successWithoutDataSchema,
+            schema: successWithDataSchema(z.object({ hasPasskey: z.boolean() })),
           },
         },
       },
@@ -238,35 +238,6 @@ class AuthRoutesConfig {
     responses: {
       200: {
         description: 'Password reset successfully',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getUserHavePasskey = createRouteConfig({
-    method: 'post',
-    path: '/check-passkey',
-    guard: isPublicAccess,
-    tags: ['auth'],
-    summary: 'Check if passkey enabled',
-    description: 'Check if the user have an passkey sign in option',
-    request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: emailBodySchema,
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: 'State of the user`s passkey option',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,

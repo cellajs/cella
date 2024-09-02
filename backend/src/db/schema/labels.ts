@@ -8,6 +8,9 @@ export const labelsTable = pgTable('labels', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   name: varchar('name').notNull(),
   color: varchar('color'),
+  entity: varchar('entity', { enum: ['label'] })
+    .notNull()
+    .default('label'),
   organizationId: varchar('organization_id')
     .notNull()
     .references(() => organizationsTable.id, {

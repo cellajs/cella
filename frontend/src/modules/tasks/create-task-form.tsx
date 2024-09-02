@@ -155,9 +155,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
   const isDirty = () => {
+    const type = form.getValues('type');
+    const assignedTo = form.getValues('assignedTo');
+    const status = form.getValues('status');
+    const labels = form.getValues('labels');
+    const impact = form.getValues('impact');
+    if (assignedTo.length || labels.length || status !== 1 || impact || type !== 'feature') return true;
     const { dirtyFields } = form.formState;
     const fieldsKeys = Object.keys(dirtyFields);
-    if (fieldsKeys.length === 0) return false;
     if (fieldsKeys.includes('description') && fieldsKeys.length === 1) {
       const description = form.getValues('description');
       const parser = new DOMParser();

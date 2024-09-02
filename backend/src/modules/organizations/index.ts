@@ -303,7 +303,7 @@ const organizationsRoutes = app
       const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`;
       // generating email html
       const emailHtml = await render(organizationsNewsletter({ subject, content, unsubscribeLink }));
-      emailSender.send(env.SEND_ALL_TO_EMAIL, user.newsletter ? subject : 'User unsubscribed from news Letters', emailHtml);
+      emailSender.send(env.SEND_ALL_TO_EMAIL, user.newsletter ? subject : 'User unsubscribed from newsletter', emailHtml);
     } else {
       // Get members
       const organizationsMembersEmails = await db

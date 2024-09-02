@@ -23,6 +23,7 @@ import { Badge } from '~/modules/ui/badge';
 import DeleteSelf from '~/modules/users/delete-self';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
+import HelpText from '../common/help-text';
 
 export type Session = {
   id: string;
@@ -34,8 +35,7 @@ export type Session = {
 const tabs = [
   { id: 'general', label: 'common:general' },
   { id: 'sessions', label: 'common:sessions' },
-  { id: 'oauth', label: 'common:oauth' },
-  { id: 'reset-password', label: 'common:reset_password' },
+  { id: 'authentication', label: 'common:authentication' },
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 
@@ -103,7 +103,7 @@ const UserSettings = () => {
     setTimeout(() => {
       setDisabledResetPassword(false);
     }, 60000);
-    toast.success(t('common:success.send_reset_password_email', { email: user.email }));
+    toast.success(t('common:success.reset_password_email', { email: user.email }));
   };
 
   const openDeleteDialog = () => {
@@ -124,10 +124,11 @@ const UserSettings = () => {
   const deletePasskey = async () => {
     const result = await baseRemovePasskey();
     if (result) {
-      toast.success('Passkey removed successfully.');
+      toast.success(t('common:success.passkey_removed'));
       setUser({ ...user, passkey: false });
-    } else toast.error('Removing of passkey failed.');
+    } else toast.error(t('common:error.passkey_remove_failed'));
   };
+
   const registerPasskey = async () => {
     const { challengeBase64 } = await getChallenge();
 
@@ -140,10 +141,13 @@ const UserSettings = () => {
         user: {
           id: new TextEncoder().encode(user.id),
           name: user.name,
-          displayName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : 'No name provided',
+          displayName: user.firstName || user.name || 'No name provided',
         },
         challenge: base64UrlDecode(challengeBase64),
-        pubKeyCredParams: [{ type: 'public-key', alg: -257 }],
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 }, // ES256
+          { type: 'public-key', alg: -257 }, // RS256
+        ],
         authenticatorSelection: { userVerification: 'required' },
         attestation: 'none',
       },
@@ -161,9 +165,9 @@ const UserSettings = () => {
 
     const result = await setPasskey(credentialData);
     if (result) {
-      toast.success('Passkey created successfully.');
+      toast.success(t('common:success.passkey_added'));
       setUser({ ...user, passkey: true });
-    } else toast.error('Creation of passkey failed.');
+    } else toast.error(t('common:error.passkey_add_failed'));
   };
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
@@ -226,44 +230,41 @@ const UserSettings = () => {
           </Card>
         </AsideAnchor>
 
-        <AsideAnchor id="passkey">
+        <AsideAnchor id="authentication">
           <Card className="mx-auto sm:w-full">
-            <div className="flex justify-between items-center ">
-              <CardHeader>
-                <CardTitle>{user.passkey ? t('common:already_have_passkey') : t('common:register_passkey')}</CardTitle>
-                <CardDescription>{t('common:register_passkey_text')}</CardDescription>
-              </CardHeader>
+            <CardHeader>
+              <CardTitle>{t('common:authentication')}</CardTitle>
+              <CardDescription>{t('common:authentication.text')}</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm">
+              <HelpText content={t('common:passkey.text')}>
+                <p className="font-semibold">{t('common:passkey')}</p>
+              </HelpText>
+
               {user.passkey && (
-                <div className="flex items-center p-6">
+                <div className="flex items-center gap-2 mb-6">
                   <Check size={18} className="text-success" />
+                  <span>{t('common:passkey_registered')}</span>
                 </div>
               )}
-            </div>
-            <CardContent>
-              <div className="flex flex-col justify-center gap-2">
-                <Button key="setPasskey" type="button" variant="outline" onClick={() => registerPasskey()}>
+              <div className="flex max-sm:flex-col gap-2 mb-6">
+                <Button key="setPasskey" type="button" variant="plain" onClick={() => registerPasskey()}>
                   <KeyRound className="w-4 h-4 mr-2" />
                   {user.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>
                 {user.passkey && (
-                  <Button key="deletePasskey" type="button" variant="outline" onClick={() => deletePasskey()}>
+                  <Button key="deletePasskey" type="button" variant="ghost" onClick={() => deletePasskey()}>
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {t('common:remove_passkey')}
+                    <span>{t('common:remove')}</span>
                   </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </AsideAnchor>
 
-        <AsideAnchor id="oauth">
-          <Card className="mx-auto sm:w-full">
-            <CardHeader>
-              <CardTitle>{t('common:oauth')}</CardTitle>
-              <CardDescription>{t('common:oauth.text')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-2">
+              <HelpText content={t('common:oauth.text')}>
+                <p className="font-semibold">{t('common:oauth')}</p>
+              </HelpText>
+
+              <div className="flex max-sm:flex-col gap-2 mb-6">
                 {config.enabledOauthProviders.map((id) => {
                   const option = oauthProviders.find((provider) => provider.id === id);
                   if (!option) return;
@@ -299,22 +300,17 @@ const UserSettings = () => {
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
-        </AsideAnchor>
 
-        <AsideAnchor id="reset-password">
-          <Card className="mx-auto sm:w-full">
-            <CardHeader>
-              <CardTitle>{t('common:reset_password')}</CardTitle>
-              <CardDescription>{t('common:reset_password.description')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full sm:w-auto" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
-                <Send size={16} className="mr-2" />
-                {t('common:send_reset_link')}
-              </Button>
-              {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:reset_password.retry_text')}</p>}
+              <HelpText content={t('common:reset_password_email.text')}>
+                <p className="font-semibold">{t('common:reset_password')}</p>{' '}
+              </HelpText>
+              <div>
+                <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
+                  <Send size={16} className="mr-2" />
+                  {t('common:send_reset_link')}
+                </Button>
+                {disabledResetPassword && <p className="text-sm text-gray-500 mt-2">{t('common:retry_reset_password.text')}</p>}
+              </div>
             </CardContent>
           </Card>
         </AsideAnchor>

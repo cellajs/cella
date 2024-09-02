@@ -4,7 +4,6 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { sheet } from '~/modules/common/sheeter/state';
-import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import AddProjects from '~/modules/projects/add-project';
 import WorkspaceActions from '~/modules/projects/board/header/board-header-actions';
@@ -21,7 +20,7 @@ const BoardHeader = () => {
   const { t } = useTranslation();
 
   const { setFocusView } = useNavigationStore();
-  const { workspace, selectedTasks, searchQuery, showPageHeader, togglePageHeader, labels } = useWorkspaceStore();
+  const { workspace, selectedTasks, searchQuery, showPageHeader, togglePageHeader } = useWorkspaceStore();
 
   const openSettingsSheet = () => {
     sheet.create(<WorkspaceSettings sheet workspace={workspace} />, {
@@ -33,7 +32,7 @@ const BoardHeader = () => {
   };
 
   const openLabelsSheet = () => {
-    sheet.create(<LabelsTable labels={labels} />, {
+    sheet.create(<LabelsTable />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:manage_labels'),
       // text: '',
@@ -56,7 +55,7 @@ const BoardHeader = () => {
   };
 
   return (
-    <StickyBox className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
+    <div className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
       {!selectedTasks.length && (
         <div className="flex gap-2">
           <TooltipButton toolTipContent={t('common:page_view')}>
@@ -83,7 +82,7 @@ const BoardHeader = () => {
       <WorkspaceActions createNewProject={handleAddProjects} openSettingsSheet={openSettingsSheet} openLabelsSheet={openLabelsSheet} />
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />
-    </StickyBox>
+    </div>
   );
 };
 

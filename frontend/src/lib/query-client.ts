@@ -35,8 +35,6 @@ export const onError = (error: Error) => {
     // Show toast
     toast.error(errorMessage || error.message);
 
-    console.log('API error aa:', error);
-
     // Set down alerts
     if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');
     else if (statusCode === 504) useAlertStore.getState().setDownAlert('offline');

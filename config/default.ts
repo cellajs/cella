@@ -87,12 +87,14 @@ export const config = {
     { value: 'nl', label: 'Nederlands' },
   ],
 
-  // App specific entity types
-  entityTypes: ['user', 'organization', 'workspace', 'project'] as const,
+  // All entity types
+  entityTypes: ['user', 'organization', 'workspace', 'project', 'task', 'label'] as const,
+
+  // Context entity types (memberships)
   contextEntityTypes: ['organization', 'workspace', 'project'] as const,
 
-  // App specific product types
-  productTypes: ['task'] as const,
+  // Product entity types (no memberships)
+  productEntityTypes: ['task'] as const,
 
   rolesByType: { systemRoles: ['user', 'admin'] as const, entityRoles: ['member', 'admin'] as const, allRoles: ['user', 'member', 'admin'] as const },
 

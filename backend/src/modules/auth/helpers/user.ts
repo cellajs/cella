@@ -46,10 +46,8 @@ export const handleCreateUser = async (
       })
       .returning();
 
-    console.log('USERBEENCREATED');
     // If a provider is passed, insert the oauth account
     if (options?.provider) {
-      console.log('INSERT USER');
       await insertOauthAccount(data.id, options.provider.id, options.provider.userId);
       // await setSessionCookie(ctx, data.id, options.provider.id.toLowerCase());
     }

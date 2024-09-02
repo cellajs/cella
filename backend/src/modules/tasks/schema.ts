@@ -7,8 +7,15 @@ import { paginationQuerySchema } from '../../lib/common-schemas';
 import { userSchema } from '../users/schema';
 
 export const createTaskSchema = z.object({
-  ...createSelectSchema(tasksTable).omit({ labels: true, assignedTo: true, modifiedAt: true, modifiedBy: true, parentId: true, createdAt: true })
-    .shape,
+  ...createSelectSchema(tasksTable).omit({
+    labels: true,
+    entity: true,
+    assignedTo: true,
+    modifiedAt: true,
+    modifiedBy: true,
+    parentId: true,
+    createdAt: true,
+  }).shape,
   labels: z.array(z.string()).optional(),
   assignedTo: z.array(z.string()).optional(),
   parentId: z.string().optional(),
