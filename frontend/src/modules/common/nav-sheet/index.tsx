@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useKeyPress } from '~/hooks/use-key-press';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
+import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
 import type { sheetVariants } from '~/modules/ui/sheet';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -42,14 +42,8 @@ const NavSheet = () => {
           className="fixed inset-0 z-[100] sm:z-[80] bg-background/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
         />
       )}
-      <SheetContent side={sheetSide} ref={containerRef} className={sheetClass}>
-        {/* `SheetContent` requires a `SheetTitle` for the component to be accessible for screen reader users. 
-         also deeded `SheetHeader` and `SheetDescription` to prevent warnings
-        */}
-        <SheetHeader className="hidden">
-          <SheetTitle />
-          <SheetDescription />
-        </SheetHeader>
+      <SheetContent aria-describedby={undefined} side={sheetSide} ref={containerRef} className={sheetClass}>
+        <SheetHiddenTitle>Navigation</SheetHiddenTitle>
         <ScrollArea className="h-full" id="nav-sheet">
           <div className="p-3 min-h-screen flex flex-col">{activeSheet?.sheet}</div>
         </ScrollArea>
