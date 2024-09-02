@@ -478,6 +478,7 @@
   "error.passkey_remove_failed": "Removing passkey failed. Try again later.",
   "success.passkey_sign_in": "Passkey successfully verified",
   "error.passkey_sign_in": "Passkey verification failed",
+  "error.impersonation_failed": "Impersonation failed",
   "success.impersonated": "Impersonation successful.",
   "success.stopped_impersonation": "Successfully stopped impersonating.",
   "use_count": "Tasks",
