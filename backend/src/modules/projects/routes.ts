@@ -80,8 +80,8 @@ class ProjectRoutesConfig {
             schema: successWithPaginationSchema(projectSchema),
           },
         },
-        ...errorResponses,
       },
+      ...errorResponses,
     },
   });
 

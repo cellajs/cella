@@ -14,6 +14,8 @@ import { SheetAccount } from '~/modules/common/nav-sheet/sheet-account';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { useNavigationStore } from '~/store/navigation';
 
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { impersonateSignOut } from '~/api/auth';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import useMounted from '~/hooks/use-mounted';
@@ -43,10 +45,11 @@ const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modul
 
 const AppNav = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { hasStarted } = useMounted();
   const isSmallScreen = useBreakpoints('max', 'xl');
-  const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
 
+  const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
   const focusedTaskId = useWorkspaceStore((state) => state.focusedTaskId);
   const currentSession = useUserStore((state) => {
@@ -57,6 +60,7 @@ const AppNav = () => {
     await impersonateSignOut();
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
     navigate({ to: '/', replace: true });
+    toast.success(t('common:success.stopped_impersonation'));
   };
 
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';

@@ -26,7 +26,7 @@ class LabelsRoutesConfig {
     },
     responses: {
       200: {
-        description: 'Label creation',
+        description: 'Label created',
         content: {
           'application/json': {
             schema: successWithDataSchema(labelSchema),
@@ -43,20 +43,20 @@ class LabelsRoutesConfig {
     guard: [isAuthenticated],
     tags: ['labels'],
     summary: 'Get list of labels',
-    description: 'Get list of labels that in requested project.',
+    description: 'Get list of labels in a project.',
     request: {
       query: getLabelsQuerySchema,
     },
     responses: {
       200: {
-        description: 'Task',
+        description: 'Label list',
         content: {
           'application/json': {
             schema: successWithPaginationSchema(labelSchema),
           },
         },
-        ...errorResponses,
       },
+      ...errorResponses,
     },
   });
 

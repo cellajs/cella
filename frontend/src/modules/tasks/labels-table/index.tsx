@@ -13,6 +13,7 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { useColumns } from '~/modules/tasks/labels-table/columns';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import { useWorkspaceStore } from '~/store/workspace';
 import type { Label } from '~/types';
 
 interface LabelsParam {
@@ -22,14 +23,16 @@ interface LabelsParam {
   order?: 'desc' | 'asc' | undefined;
 }
 
-const LabelsTable = ({ labels }: { labels: Label[] }) => {
+const LabelsTable = () => {
   const { t } = useTranslation();
 
   const [columns] = useColumns();
   const defaultSearch: LabelsParam = { sort: 'name', order: 'asc' };
-  const [search] = useState(defaultSearch);
+  const { labels } = useWorkspaceStore();
+
   const [rows, setRows] = useState<Label[]>(labels || []);
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+  const [search] = useState(defaultSearch);
 
   const [query, setQuery] = useState<LabelsParam['query']>('');
 

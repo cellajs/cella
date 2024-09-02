@@ -23,6 +23,7 @@ import { Badge } from '~/modules/ui/badge';
 import DeleteSelf from '~/modules/users/delete-self';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
+import HelpText from '../common/help-text';
 
 export type Session = {
   id: string;
@@ -236,12 +237,14 @@ const UserSettings = () => {
               <CardDescription>{t('common:authentication.text')}</CardDescription>
             </CardHeader>
             <CardContent className="text-sm">
-              <p className="font-semibold">{t('common:passkey')}</p>
-              <p className="font-light text-muted-foreground mb-4">{t('common:passkey.text')}</p>
+              <HelpText content={t('common:passkey.text')}>
+                <p className="font-semibold">{t('common:passkey')}</p>
+              </HelpText>
+
               {user.passkey && (
                 <div className="flex items-center gap-2 mb-6">
                   <Check size={18} className="text-success" />
-                  {t('common:passkey_registered')}
+                  <span>{t('common:passkey_registered')}</span>
                 </div>
               )}
               <div className="flex max-sm:flex-col gap-2 mb-6">
@@ -257,8 +260,10 @@ const UserSettings = () => {
                 )}
               </div>
 
-              <p className="font-semibold">{t('common:oauth')}</p>
-              <p className="font-light text-muted-foreground mb-4">{t('common:oauth.text')}</p>
+              <HelpText content={t('common:oauth.text')}>
+                <p className="font-semibold">{t('common:oauth')}</p>
+              </HelpText>
+
               <div className="flex max-sm:flex-col gap-2 mb-6">
                 {config.enabledOauthProviders.map((id) => {
                   const option = oauthProviders.find((provider) => provider.id === id);
@@ -296,8 +301,9 @@ const UserSettings = () => {
                 })}
               </div>
 
-              <p className="font-semibold">{t('common:reset_password')}</p>
-              <p className="font-light text-muted-foreground mb-4">{t('common:reset_password_email.text')}</p>
+              <HelpText content={t('common:reset_password_email.text')}>
+                <p className="font-semibold">{t('common:reset_password')}</p>{' '}
+              </HelpText>
               <div>
                 <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
                   <Send size={16} className="mr-2" />
