@@ -10,6 +10,9 @@ export const tasksTable = pgTable(
   {
     id: varchar('id').primaryKey().$defaultFn(nanoid),
     slug: varchar('slug').notNull(),
+    entity: varchar('entity', { enum: ['task'] })
+      .notNull()
+      .default('task'),
     description: varchar('description').notNull(),
     keywords: varchar('keywords').notNull(),
     expandable: boolean('expandable').default(false).notNull(),

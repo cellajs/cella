@@ -14,7 +14,7 @@ export type Entity = (typeof config.entityTypes)[number];
 
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
 
-export type Product = (typeof config.productTypes)[number];
+export type ProductEntity = (typeof config.productEntityTypes)[number];
 
 export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
 
