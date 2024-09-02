@@ -308,7 +308,7 @@ const generalRoutes = app
     }
 
     // Provide suggestions for all entities or narrow them down to a specific type if specified
-    const entityTypes = type ? [type] : config.entityTypes;
+    const entityTypes = type ? [type] : config.pageEntityTypes;
 
     // Array to hold queries for concurrent execution
     const queries = [];

@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
+import { config } from 'config';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/lib/common-responses';
-import { contextEntityTypeSchema, entityParamSchema, entityTypeSchema, slugSchema, tokenSchema } from '#/lib/common-schemas';
+import { contextEntityTypeSchema, entityParamSchema, slugSchema, tokenSchema } from '#/lib/common-schemas';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
@@ -271,7 +272,7 @@ class GeneralRoutesConfig {
     request: {
       query: z.object({
         q: z.string().optional(),
-        type: entityTypeSchema.optional(),
+        type: z.enum(config.pageEntityTypes).optional(),
       }),
     },
     responses: {

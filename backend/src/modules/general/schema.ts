@@ -49,7 +49,7 @@ export const entitySuggestionSchema = z.object({
   organizationId: idSchema,
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
-  entity: z.enum(config.entityTypes),
+  entity: z.enum(config.pageEntityTypes),
   parentId: z.string().optional(),
 });
 

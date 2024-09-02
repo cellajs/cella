@@ -90,11 +90,14 @@ export const config = {
   // All entity types
   entityTypes: ['user', 'organization', 'workspace', 'project', 'task', 'label'] as const,
 
+  // Page entity types (pages with memberships and users)
+  pageEntityTypes: ['user', 'organization', 'workspace', 'project'] as const,
+
   // Context entity types (memberships)
   contextEntityTypes: ['organization', 'workspace', 'project'] as const,
 
   // Product entity types (no memberships)
-  productEntityTypes: ['task'] as const,
+  productEntityTypes: ['task', 'label'] as const,
 
   rolesByType: { systemRoles: ['user', 'admin'] as const, entityRoles: ['member', 'admin'] as const, allRoles: ['user', 'member', 'admin'] as const },
 
