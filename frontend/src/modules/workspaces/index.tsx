@@ -13,7 +13,7 @@ import { useWorkspaceStore } from '~/store/workspace';
 
 const WorkspacePage = () => {
   const { t } = useTranslation();
-  const { showPageHeader, setWorkspace, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
+  const { showPageHeader, setSelectedTasks, setSearchQuery, setWorkspace } = useWorkspaceStore();
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
 
@@ -21,9 +21,8 @@ const WorkspacePage = () => {
   const workspace = workspaceData.workspace;
 
   //TODO  try find other solution other than useMutateWorkspaceQueryData hook
-  setWorkspace(workspace, workspaceData.projects, workspaceData.labels);
-
   const { mutate } = useUpdateWorkspaceMutation(workspace.id);
+
   useEventListener('updateWorkspaceCover', (e) => {
     const banner = { bannerUrl: e.detail };
     mutate(banner, {

@@ -9,6 +9,7 @@ import { noDirectAccess } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/quey-options';
+import { useWorkspaceStore } from '~/store/workspace';
 import { AppRoute } from '.';
 
 // Lazy-loaded components
@@ -28,7 +29,8 @@ export const WorkspaceRoute = createRoute({
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
-    await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    const workspaceData = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    useWorkspaceStore.setState({ workspace: workspaceData.workspace, projects: workspaceData.projects, labels: workspaceData.labels });
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
