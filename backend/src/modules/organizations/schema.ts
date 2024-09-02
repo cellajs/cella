@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { organizationsTable } from '../../db/schema/organizations';
+import { organizationsTable } from '#/db/schema/organizations';
 import {
   imageUrlSchema,
   membershipsCountSchema,
@@ -10,7 +10,7 @@ import {
   validDomainsSchema,
   validSlugSchema,
   validUrlSchema,
-} from '../../lib/common-schemas';
+} from '#/lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const organizationSchema = z.object({

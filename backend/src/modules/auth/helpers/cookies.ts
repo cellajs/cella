@@ -3,10 +3,10 @@ import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { setCookie as baseSetCookie } from 'hono/cookie';
 import type { User } from 'lucia';
-import { db } from '../../../db/db';
-import { auth } from '../../../db/lucia';
-import { usersTable } from '../../../db/schema/users';
-import { logEvent } from '../../../middlewares/logger/log-event';
+import { db } from '#/db/db';
+import { auth } from '#/db/lucia';
+import { usersTable } from '#/db/schema/users';
+import { logEvent } from '#/middlewares/logger/log-event';
 
 const isProduction = config.mode === 'production';
 

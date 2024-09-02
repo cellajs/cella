@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { auth } from '../../../db/lucia';
+import { auth } from '#/db/lucia';
 
 export const getPreparedSessions = async (userId: string, ctx: Context) => {
   const sessions = await auth.getUserSessions(userId);

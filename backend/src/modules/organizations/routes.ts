@@ -4,10 +4,10 @@ import {
   successWithErrorsSchema,
   successWithPaginationSchema,
   successWithoutDataSchema,
-} from '../../lib/common-responses';
-import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
-import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '../../middlewares/guard';
+} from '#/lib/common-responses';
+import { entityParamSchema, idsQuerySchema } from '#/lib/common-schemas';
+import { createRouteConfig } from '#/lib/route-config';
+import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '#/middlewares/guard';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,

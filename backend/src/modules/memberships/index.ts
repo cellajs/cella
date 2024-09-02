@@ -1,23 +1,23 @@
 import { and, desc, eq, inArray, or } from 'drizzle-orm';
-import { db } from '../../db/db';
-import { type MembershipModel, membershipsTable } from '../../db/schema/memberships';
+import { db } from '#/db/db';
+import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
+import { emailSender } from '#/lib/mailer';
 import { InviteMemberEmail } from '../../../emails/member-invite';
-import { emailSender } from '../../lib/mailer';
 
-import type { OrganizationModel } from '../../db/schema/organizations';
-import { type TokenModel, tokensTable } from '../../db/schema/tokens';
-import { type UserModel, safeUserSelect, usersTable } from '../../db/schema/users';
-import { resolveEntity } from '../../lib/entity';
-import { type ErrorType, createError, errorResponse } from '../../lib/errors';
-import permissionManager from '../../lib/permission-manager';
-import { sendSSEToUsers } from '../../lib/sse';
-import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import type { OrganizationModel } from '#/db/schema/organizations';
+import { type TokenModel, tokensTable } from '#/db/schema/tokens';
+import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
+import { resolveEntity } from '#/lib/entity';
+import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import permissionManager from '#/lib/permission-manager';
+import { sendSSEToUsers } from '#/lib/sse';
+import { logEvent } from '#/middlewares/logger/log-event';
+import { CustomHono } from '#/types/common';
 import { membershipsTableId, supportedEntityTypes, type supportedModelTypes } from './helpers/create-membership-config';
 import { insertMembership } from './helpers/insert-membership';
 import { toMembershipInfo } from './helpers/to-membership-info';

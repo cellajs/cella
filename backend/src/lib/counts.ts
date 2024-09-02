@@ -1,7 +1,7 @@
 import { count, eq, sql } from 'drizzle-orm';
-import { db } from '../db/db';
-import { membershipsTable } from '../db/schema/memberships';
-import type { Entity } from '../types/common';
+import { db } from '#/db/db';
+import { membershipsTable } from '#/db/schema/memberships';
+import type { Entity } from '#/types/common';
 
 const getQuery = (entity: Entity) => {
   let columnName: keyof typeof membershipsTable;

@@ -3,7 +3,7 @@ import { config } from 'config';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
-import { CustomHono } from '../types/common';
+import { CustomHono } from '#/types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
 import { observatoryMiddleware } from './observatory-middleware';

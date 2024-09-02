@@ -1,10 +1,10 @@
 import { relations } from 'drizzle-orm';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from '../../lib/nanoid';
+import { usersTable } from '#/db/schema/users';
+import { nanoid } from '#/lib/nanoid';
 import { membershipsTable } from './memberships';
 import { organizationsTable } from './organizations';
 import { projectsToWorkspacesTable } from './projects-to-workspaces';
-import { usersTable } from './users';
 
 export const projectsTable = pgTable('projects', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),

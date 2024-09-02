@@ -1,7 +1,7 @@
-import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '../../lib/common-responses';
-import { idsQuerySchema } from '../../lib/common-schemas';
-import { createRouteConfig } from '../../lib/route-config';
-import { isAuthenticated } from '../../middlewares/guard';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/lib/common-responses';
+import { idsQuerySchema } from '#/lib/common-schemas';
+import { createRouteConfig } from '#/lib/route-config';
+import { isAuthenticated } from '#/middlewares/guard';
 import { updateUserBodySchema, userSchema } from '../users/schema';
 import { meUserSchema, signUpInfo, userMenuSchema } from './schema';
 

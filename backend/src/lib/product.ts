@@ -1,6 +1,6 @@
 import { eq, inArray, or } from 'drizzle-orm';
-import { db } from '../db/db';
-import { tasksTable } from '../db/schema/tasks';
+import { db } from '#/db/db';
+import { tasksTable } from '#/db/schema/tasks';
 
 // Create a map to store tables for different product resource types
 export const productTables = new Map<string, typeof tasksTable>([['task', tasksTable]]);

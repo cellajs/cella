@@ -1,23 +1,23 @@
 import { and, count, desc, eq } from 'drizzle-orm';
 
-import { db } from '../../db/db';
-import { auth } from '../../db/lucia';
-import { membershipsTable } from '../../db/schema/memberships';
-import { organizationsTable } from '../../db/schema/organizations';
-import { projectsTable } from '../../db/schema/projects';
-import { usersTable } from '../../db/schema/users';
-import { workspacesTable } from '../../db/schema/workspaces';
-import { type ErrorType, createError, errorResponse } from '../../lib/errors';
-import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import { db } from '#/db/db';
+import { auth } from '#/db/lucia';
+import { membershipsTable } from '#/db/schema/memberships';
+import { organizationsTable } from '#/db/schema/organizations';
+import { projectsTable } from '#/db/schema/projects';
+import { usersTable } from '#/db/schema/users';
+import { workspacesTable } from '#/db/schema/workspaces';
+import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { logEvent } from '#/middlewares/logger/log-event';
+import { CustomHono } from '#/types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
-import { oauthAccountsTable } from '../../db/schema/oauth-accounts';
-import { passkeysTable } from '../../db/schema/passkeys';
-import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
+import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
+import { passkeysTable } from '#/db/schema/passkeys';
+import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { getPreparedSessions } from './helpers/get-sessions';
 

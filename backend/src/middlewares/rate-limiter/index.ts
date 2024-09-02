@@ -1,10 +1,10 @@
 import type { MiddlewareHandler } from 'hono';
 
 import { type IRateLimiterPostgresOptions, RateLimiterPostgres, RateLimiterRes } from 'rate-limiter-flexible';
-import { errorResponse } from '../../lib/errors';
+import { errorResponse } from '#/lib/errors';
 
-import { queryClient } from '../../db/db';
-import type { Env } from '../../types/common';
+import { queryClient } from '#/db/db';
+import type { Env } from '#/types/common';
 
 type RateLimiterMode = 'success' | 'fail' | 'limit';
 

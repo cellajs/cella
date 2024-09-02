@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '../../lib/common-responses';
-import { idsQuerySchema, productParamSchema } from '../../lib/common-schemas';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/lib/common-responses';
+import { idsQuerySchema, productParamSchema } from '#/lib/common-schemas';
 
-import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated } from '../../middlewares/guard';
+import { createRouteConfig } from '#/lib/route-config';
+import { isAllowedTo, isAuthenticated } from '#/middlewares/guard';
 
 import {
   createTaskSchema,

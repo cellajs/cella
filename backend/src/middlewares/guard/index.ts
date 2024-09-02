@@ -1,12 +1,10 @@
 import type { Context, MiddlewareHandler } from 'hono';
-import { errorResponse } from '../../lib/errors';
+import { errorResponse } from '#/lib/errors';
 import isAllowedTo from './is-allowed-to';
 import isAuthenticated from './is-authenticated';
 import splitByAllowance from './split-by-allowance';
 
-export { isAuthenticated };
-export { isAllowedTo };
-export { splitByAllowance };
+export { isAllowedTo, isAuthenticated, splitByAllowance };
 
 export const isSystemAdmin: MiddlewareHandler = async (ctx: Context, next) => {
   // Extract user

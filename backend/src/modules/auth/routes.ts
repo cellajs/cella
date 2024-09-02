@@ -1,11 +1,11 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '../../lib/common-responses';
-import { cookieSchema, passwordSchema } from '../../lib/common-schemas';
-import { createRouteConfig } from '../../lib/route-config';
-import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
-import { authRateLimiter } from '../../middlewares/rate-limiter';
-import { signInRateLimiter } from '../../middlewares/rate-limiter/sign-in';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/lib/common-responses';
+import { cookieSchema, passwordSchema } from '#/lib/common-schemas';
+import { createRouteConfig } from '#/lib/route-config';
+import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
+import { authRateLimiter } from '#/middlewares/rate-limiter';
+import { signInRateLimiter } from '#/middlewares/rate-limiter/sign-in';
 import { authBodySchema, emailBodySchema } from './schema';
 
 class AuthRoutesConfig {

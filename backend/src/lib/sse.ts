@@ -1,4 +1,4 @@
-import { streams } from '../modules/general';
+import { streams } from '#/modules/general';
 
 const sendSSE = (userId: string, eventName: string, data: Record<string, unknown>): void => {
   const stream = streams.get(userId);

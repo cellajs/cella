@@ -1,7 +1,7 @@
 import { ChatProviderIdEnum, Novu } from '@novu/node';
 import { config } from 'config';
+import { logEvent } from '#/middlewares/logger/log-event';
 import { env } from '../../env';
-import { logEvent } from '../middlewares/logger/log-event';
 
 export const sendSlackNotification = async (requestFor: string, email: string) => {
   try {

@@ -1,4 +1,4 @@
-import type { MembershipModel } from '../../../db/schema/memberships';
+import type { MembershipModel } from '#/db/schema/memberships';
 import type { membershipInfoType } from '../schema';
 
 /**

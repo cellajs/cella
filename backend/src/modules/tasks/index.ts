@@ -1,14 +1,14 @@
 import { type SQL, and, asc, desc, eq, gt, gte, ilike, inArray, isNull, lt, ne, sql } from 'drizzle-orm';
-import { db } from '../../db/db';
+import { db } from '#/db/db';
 
 import type { z } from 'zod';
-import { labelsTable } from '../../db/schema/labels';
-import { tasksTable } from '../../db/schema/tasks';
-import { usersTable } from '../../db/schema/users';
-import { errorResponse } from '../../lib/errors';
-import { getOrderColumn } from '../../lib/order-column';
-import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import { labelsTable } from '#/db/schema/labels';
+import { tasksTable } from '#/db/schema/tasks';
+import { usersTable } from '#/db/schema/users';
+import { errorResponse } from '#/lib/errors';
+import { getOrderColumn } from '#/lib/order-column';
+import { logEvent } from '#/middlewares/logger/log-event';
+import { CustomHono } from '#/types/common';
 import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import taskRoutesConfig from './routes';
 import type { subTaskSchema } from './schema';

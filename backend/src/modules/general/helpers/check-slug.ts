@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { resolveEntity } from '../../../lib/entity';
+import { resolveEntity } from '#/lib/entity';
 
 // Check if a slug is available in any of the entities
 export const checkSlugAvailable = async (slug: string) => {

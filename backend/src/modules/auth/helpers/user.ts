@@ -1,11 +1,11 @@
 import { config } from 'config';
 import type { Context } from 'hono';
-import { db } from '../../../db/db';
-import { type InsertUserModel, usersTable } from '../../../db/schema/users';
-import { errorResponse } from '../../../lib/errors';
-import { generateUnsubscribeToken } from '../../../lib/utils';
-import { logEvent } from '../../../middlewares/logger/log-event';
-import type { OauthProviderOptions } from '../../../types/common';
+import { db } from '#/db/db';
+import { type InsertUserModel, usersTable } from '#/db/schema/users';
+import { errorResponse } from '#/lib/errors';
+import { generateUnsubscribeToken } from '#/lib/utils';
+import { logEvent } from '#/middlewares/logger/log-event';
+import type { OauthProviderOptions } from '#/types/common';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { setSessionCookie } from './cookies';
 import { insertOauthAccount } from './oauth';

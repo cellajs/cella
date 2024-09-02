@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
-import { db } from '../../db/db';
-import { membershipsTable } from '../../db/schema/memberships';
-import { resolveEntity } from '../../lib/entity';
-import { errorResponse } from '../../lib/errors';
-import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
-import { resolveProduct } from '../../lib/product';
-import type { ContextEntity, Entity, Env, ProductEntity } from '../../types/common';
+import { db } from '#/db/db';
+import { membershipsTable } from '#/db/schema/memberships';
+import { resolveEntity } from '#/lib/entity';
+import { errorResponse } from '#/lib/errors';
+import permissionManager, { HierarchicalEntity } from '#/lib/permission-manager';
+import { resolveProduct } from '#/lib/product';
+import type { ContextEntity, Entity, Env, ProductEntity } from '#/types/common';
 import { logEvent } from '../logger/log-event';
 
 export type PermissionAction = 'create' | 'update' | 'read' | 'write';

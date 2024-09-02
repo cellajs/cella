@@ -1,10 +1,10 @@
 import { config } from 'config';
 import { relations } from 'drizzle-orm';
 import { boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from '../../lib/nanoid';
+import { usersTable } from '#/db/schema/users';
+import { nanoid } from '#/lib/nanoid';
 import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
-import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
 
 const roleEnum = config.rolesByType.entityRoles;

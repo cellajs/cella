@@ -1,6 +1,6 @@
-import { membershipsTable } from '../../../db/schema/memberships';
-import type { OrganizationModel } from '../../../db/schema/organizations';
-import type { ProjectModel } from '../../../db/schema/projects';
+import { membershipsTable } from '#/db/schema/memberships';
+import type { OrganizationModel } from '#/db/schema/organizations';
+import type { ProjectModel } from '#/db/schema/projects';
 
 /**
  * This file provides an abstraction layer for supporting different entities

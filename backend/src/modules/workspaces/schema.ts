@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { labelsTable } from '../../db/schema/labels';
-import { projectsTable } from '../../db/schema/projects';
-import { workspacesTable } from '../../db/schema/workspaces';
-import { idSchema, imageUrlSchema, nameSchema, validSlugSchema } from '../../lib/common-schemas';
+import { labelsTable } from '#/db/schema/labels';
+import { projectsTable } from '#/db/schema/projects';
+import { workspacesTable } from '#/db/schema/workspaces';
+import { idSchema, imageUrlSchema, nameSchema, validSlugSchema } from '#/lib/common-schemas';
 import { membersSchema } from '../general/schema';
 import { membershipInfoSchema } from '../memberships/schema';
 

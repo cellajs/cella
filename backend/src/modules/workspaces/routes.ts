@@ -1,7 +1,7 @@
-import { errorResponses, successWithDataSchema, successWithErrorsSchema } from '../../lib/common-responses';
-import { entityParamSchema, idsQuerySchema } from '../../lib/common-schemas';
-import { createRouteConfig } from '../../lib/route-config';
-import { isAllowedTo, isAuthenticated, splitByAllowance } from '../../middlewares/guard';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema } from '#/lib/common-responses';
+import { entityParamSchema, idsQuerySchema } from '#/lib/common-schemas';
+import { createRouteConfig } from '#/lib/route-config';
+import { isAllowedTo, isAuthenticated, splitByAllowance } from '#/middlewares/guard';
 
 import { createWorkspaceBodySchema, updateWorkspaceBodySchema, workspaceSchema, workspaceWithProjectSchema } from './schema';
 

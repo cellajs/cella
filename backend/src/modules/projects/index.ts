@@ -1,15 +1,15 @@
 import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
-import { db } from '../../db/db';
-import { membershipsTable } from '../../db/schema/memberships';
-import { projectsTable } from '../../db/schema/projects';
-import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
+import { db } from '#/db/db';
+import { membershipsTable } from '#/db/schema/memberships';
+import { projectsTable } from '#/db/schema/projects';
+import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 
-import { counts } from '../../lib/counts';
-import { type ErrorType, createError, errorResponse } from '../../lib/errors';
-import { getOrderColumn } from '../../lib/order-column';
-import { sendSSEToUsers } from '../../lib/sse';
-import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import { counts } from '#/lib/counts';
+import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { getOrderColumn } from '#/lib/order-column';
+import { sendSSEToUsers } from '#/lib/sse';
+import { logEvent } from '#/middlewares/logger/log-event';
+import { CustomHono } from '#/types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';

@@ -1,8 +1,8 @@
 import type { MiddlewareHandler } from 'hono';
-import { auth as luciaAuth } from '../../db/lucia';
-import { errorResponse } from '../../lib/errors';
-import { i18n } from '../../lib/i18n';
-import { removeSessionCookie } from '../../modules/auth/helpers/cookies';
+import { auth as luciaAuth } from '#/db/lucia';
+import { errorResponse } from '#/lib/errors';
+import { i18n } from '#/lib/i18n';
+import { removeSessionCookie } from '#/modules/auth/helpers/cookies';
 
 const isAuthenticated: MiddlewareHandler = async (ctx, next) => {
   const cookieHeader = ctx.req.raw.headers.get('Cookie');

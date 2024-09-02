@@ -4,10 +4,10 @@ import { eq } from 'drizzle-orm';
 import JSZip from 'jszip';
 import { nanoid } from 'nanoid';
 import papaparse from 'papaparse';
-import { db } from '../../../src/db/db';
-import { labelsTable } from '../../../src/db/schema/labels';
-import { projectsTable } from '../../../src/db/schema/projects';
-import { tasksTable } from '../../../src/db/schema/tasks';
+import { db } from '#/db/db';
+import { labelsTable } from '#/db/schema/labels';
+import { projectsTable } from '#/db/schema/projects';
+import { tasksTable } from '#/db/schema/tasks';
 import { extractKeywords, getLabels, getSubTask, getTaskLabels } from './helper';
 import type { PivotalTask, Subtask } from './type';
 

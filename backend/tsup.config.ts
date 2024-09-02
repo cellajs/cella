@@ -11,7 +11,7 @@ export default defineConfig({
   minify: false,
   esbuildOptions(options) {
     options.alias = {
-      '~': './src',
+      '#': './src',
     };
     options.platform = 'node'; // Ensure the platform is set to Node.js
     options.mainFields = ['module', 'main']; // Prioritize ESM entry points

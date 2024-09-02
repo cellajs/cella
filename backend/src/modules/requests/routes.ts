@@ -1,7 +1,7 @@
-import { errorResponses, successWithDataSchema, successWithPaginationSchema } from '../../lib/common-responses';
-import { createRouteConfig } from '../../lib/route-config';
-import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
-import { authRateLimiter } from '../../middlewares/rate-limiter';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema } from '#/lib/common-responses';
+import { createRouteConfig } from '#/lib/route-config';
+import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
+import { authRateLimiter } from '#/middlewares/rate-limiter';
 import { createRequestSchema, getRequestsQuerySchema, requestsInfoSchema, requestsSchema } from './schema';
 
 class RequestsRoutesConfig {

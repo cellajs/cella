@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
-import { tokensTable } from '../../db/schema/tokens';
+import { tokensTable } from '#/db/schema/tokens';
 import {
   contextEntityTypeSchema,
   idOrSlugSchema,
@@ -12,7 +12,7 @@ import {
   paginationQuerySchema,
   passwordSchema,
   slugSchema,
-} from '../../lib/common-schemas';
+} from '#/lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 

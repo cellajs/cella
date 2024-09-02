@@ -5,6 +5,7 @@
   "engines": {
     "node": ">=20.14.0"
   },
+
   "scripts": {
     "start": "tsx dist/index.js",
     "dev": "pnpm run studio & tsup --watch --onSuccess \"tsx dist/index.js\"",
@@ -100,6 +101,9 @@
   },
   "babel": {
     "presets": ["@babel/preset-typescript"]
+  },
+  "imports": {
+    "#/*": ["./dist/src/*"]
   },
   "exports": {
     "./*": "./src/*.ts"
