@@ -1,7 +1,7 @@
-import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { Bird, Trash, XSquare } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -13,7 +13,8 @@ import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
-import { FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import TableCount from '~/modules/common/data-table/table-count';
+import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { useColumns } from '~/modules/tasks/labels-table/columns';
@@ -64,7 +65,7 @@ type LabelsSearch = z.infer<typeof labelsSearchSchema>;
 const LabelsTable = () => {
   const { t } = useTranslation();
   const [columns] = useColumns();
-  const { projects, labels } = useWorkspaceStore();
+  const { projects } = useWorkspaceStore();
 
   const search = useSearch({ strict: false });
 
@@ -78,7 +79,7 @@ const LabelsTable = () => {
   const sort = sortColumns[0]?.columnKey as LabelsSearch['labelsSort'];
   const order = sortColumns[0]?.direction.toLowerCase() as LabelsSearch['order'];
 
-  const queryResult = useSuspenseInfiniteQuery(
+  const queryResult = useInfiniteQuery(
     labelsQueryOptions({ q, sort, order, projectId: projects.map((p) => p.id).join('_'), rowsLength: rows.length }),
   );
 
@@ -96,6 +97,8 @@ const LabelsTable = () => {
   // Map (updated) query data to rows
   useMapQueryDataToRows<Label>({ queryResult, setSelectedRows, setRows, selectedRows });
 
+  // Total count
+  const totalCount = queryResult.data?.pages[0].total;
   // Table selection
   const selectedLabels = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
@@ -105,7 +108,7 @@ const LabelsTable = () => {
     setRows(changedRows);
   };
 
-  const isFiltered = !!query;
+  const isFiltered = !!q;
 
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
@@ -124,40 +127,30 @@ const LabelsTable = () => {
     });
   };
 
-  const filteredLabels = useMemo(() => {
-    if (!query) return labels;
-    return labels.filter((label) => label.name.toLowerCase().includes(query.toLowerCase()));
-  }, [query, labels]);
-
-  useEffect(() => {
-    const rows = filteredLabels.map((label) => label);
-    if (rows) setRows(rows);
-  }, [filteredLabels]);
-
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className={'flex pt-2 w-full max-sm:justify-between gap-2'}>
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={false}>
-          {/* {!selectedLabels.length && !searchQuery.length && (
-          <FilterBarActions />
-        )} */}
-          {!!selectedLabels.length && (
-            <div className="inline-flex align-center items-center gap-2">
-              <TooltipButton toolTipContent={t('common:remove_task')}>
-                <Button variant="destructive" className="relative" onClick={removeLabel}>
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedLabels.length}</Badge>
-                  <Trash size={16} />
-                  <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
-                </Button>
-              </TooltipButton>
-              <TooltipButton toolTipContent={t('common:clear_selection')}>
-                <Button variant="ghost" className="relative" onClick={() => setSelectedRows(new Set<string>())}>
-                  <XSquare size={16} />
-                  <span className="ml-1 max-xs:hidden">{t('common:clear')}</span>
-                </Button>
-              </TooltipButton>
-            </div>
-          )}
+        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+          <FilterBarActions className="w-full">
+            {selectedLabels.length > 0 && (
+              <div className="inline-flex align-center items-center gap-2">
+                <TooltipButton toolTipContent={t('common:remove_task')}>
+                  <Button variant="destructive" className="relative" onClick={removeLabel}>
+                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedLabels.length}</Badge>
+                    <Trash size={16} />
+                    <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+                  </Button>
+                </TooltipButton>
+                <TooltipButton toolTipContent={t('common:clear_selection')}>
+                  <Button variant="ghost" className="relative" onClick={() => setSelectedRows(new Set<string>())}>
+                    <XSquare size={16} />
+                    <span className="ml-1 max-xs:hidden">{t('common:clear')}</span>
+                  </Button>
+                </TooltipButton>
+              </div>
+            )}
+            <TableCount count={totalCount} type="label" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+          </FilterBarActions>
           <FilterBarContent className="w-full">
             <TableSearch value={query || ''} setQuery={onSearch} />
           </FilterBarContent>
