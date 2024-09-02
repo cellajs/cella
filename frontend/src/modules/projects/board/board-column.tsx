@@ -7,6 +7,7 @@ import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
+import type { CustomEventEventById, TaskCRUDEvent, TaskChangeEvent } from '~/lib/custom-events/types';
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -30,7 +31,7 @@ import { WorkspaceRoute } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import type { CustomEventEventById, Project, Task, TaskCRUDEvent, TaskChangeEvent, WorkspaceStoreProject } from '~/types';
+import type { Project, Task, WorkspaceStoreProject } from '~/types';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 

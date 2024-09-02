@@ -8,7 +8,7 @@ import AssignMembers from '~/modules/tasks/task-selectors/select-members';
 import SelectStatus, { type TaskStatus } from '~/modules/tasks/task-selectors/select-status';
 import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type';
 import { useThemeStore } from '~/store/theme';
-import type { Task, TaskQueryActions } from '~/types';
+import type { Task } from '~/types';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -16,7 +16,8 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
-import { isSubTaskData } from '~/modules/tasks/sub-task';
+import type { TaskQueryActions } from '~/lib/custom-events/types';
+import { isSubTaskData } from '~/lib/drag-and-drop';
 
 const TaskSheet = ({
   task,
@@ -45,7 +46,7 @@ const TaskSheet = ({
     return combine(
       monitorForElements({
         canMonitor({ source }) {
-          return source.data.type === 'subTask';
+          return isSubTaskData(source.data);
         },
         async onDrop({ location, source }) {
           const { t } = useTranslation();

@@ -14,7 +14,7 @@ import BoardHeader from '~/modules/projects/board/header/board-header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, WorkspaceStoreProject } from '~/types';
+import type { WorkspaceStoreProject } from '~/types';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -22,8 +22,8 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { toast } from 'sonner';
 import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
-import { isSubTaskData } from '~/modules/tasks/sub-task';
-import { isTaskData } from '~/modules/tasks/task';
+import type { TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
+import { isSubTaskData, isTaskData } from '~/lib/drag-and-drop';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
@@ -212,7 +212,7 @@ export default function Board() {
     return combine(
       monitorForElements({
         canMonitor({ source }) {
-          return source.data.type === 'task' || source.data.type === 'subTask';
+          return isTaskData(source.data) || isSubTaskData(source.data);
         },
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];

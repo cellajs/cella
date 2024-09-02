@@ -1,3 +1,4 @@
+import '@blocknote/shadcn/style.css';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -7,7 +8,6 @@ import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types';
-import '@blocknote/shadcn/style.css';
 
 interface Props {
   task: Task;

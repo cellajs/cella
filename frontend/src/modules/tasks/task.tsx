@@ -23,20 +23,15 @@ import { useLocation } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks.ts';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
-import { getDraggableItemData } from '~/lib/utils';
+import { dispatchCustomEvent } from '~/lib/custom-events';
+import { getDraggableItemData, isTaskData } from '~/lib/drag-and-drop';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
 import TaskDescription from '~/modules/tasks/task-content.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import type { Mode } from '~/store/theme.ts';
-import type { DraggableItemData, Task } from '~/types';
-
-type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
-export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
-};
+import type { Task } from '~/types';
 
 const variants = cva('task-card', {
   variants: {

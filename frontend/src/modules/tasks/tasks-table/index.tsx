@@ -9,6 +9,7 @@ import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useMutateInfiniteTaskQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import type { TaskTableCRUDEvent } from '~/lib/custom-events/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -16,15 +17,14 @@ import Export from '~/modules/common/data-table/export.tsx';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { sheet } from '~/modules/common/sheeter/state';
-import { sortAndGetCounts } from '~/modules/tasks/helpers';
-import { configureForExport } from '~/modules/tasks/helpers';
+import { configureForExport, sortAndGetCounts } from '~/modules/tasks/helpers';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
 import TableHeader from '~/modules/tasks/tasks-table/header/table-header';
 import { TaskTableSearch } from '~/modules/tasks/tasks-table/header/table-search';
 import TaskSheet from '~/modules/tasks/tasks-table/task-sheet';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task, TaskTableCRUDEvent } from '~/types';
+import type { Task } from '~/types';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 

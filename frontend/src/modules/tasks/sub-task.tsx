@@ -9,21 +9,16 @@ import { ChevronUp, Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { deleteTasks } from '~/api/tasks';
-import { updateTask } from '~/api/tasks';
+import { deleteTasks, updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { cn, getDraggableItemData } from '~/lib/utils';
+import { getDraggableItemData, isSubTaskData } from '~/lib/drag-and-drop';
+import { cn } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
-import type { SubTask as BaseSubTask, DraggableItemData } from '~/types';
-
-type TaskDraggableItemData = DraggableItemData<BaseSubTask> & { type: 'subTask' };
-export const isSubTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'subTask';
-};
+import type { SubTask as BaseSubTask } from '~/types';
 
 const SubTask = ({
   task,
@@ -85,7 +80,7 @@ const SubTask = ({
         element,
         canDrop({ source }) {
           const data = source.data;
-          return isSubTaskData(data) && data.item.id !== task.id && data.type === 'subTask';
+          return isSubTaskData(data) && data.item.id !== task.id;
         },
         getIsSticky: () => true,
 

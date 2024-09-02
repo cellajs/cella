@@ -2,9 +2,8 @@ import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/prag
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useEffect, useRef, useState } from 'react';
-import { getDraggableItemData } from '~/lib/utils';
+import { getDraggableItemData, isPageData } from '~/lib/drag-and-drop';
 import { DropIndicator } from '~/modules/common/drop-indicator';
-import { isPageData } from '~/modules/common/nav-sheet/helpers';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
 import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
 import { ItemOption } from '~/modules/common/nav-sheet/sheet-menu-options/item-option';

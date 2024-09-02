@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
-import { labelsTable } from '../../db/schema/labels';
 import { tasksTable } from '../../db/schema/tasks';
 import { paginationQuerySchema } from '../../lib/common-schemas';
+import { labelSchema } from '../labels/schema';
 import { userSchema } from '../users/schema';
 
 export const createTaskSchema = z.object({
@@ -50,7 +50,7 @@ const taskSchema = z.object({
     parentId: true,
     createdAt: true,
   }).shape,
-  labels: z.array(z.object({ ...createSelectSchema(labelsTable).shape })),
+  labels: z.array(labelSchema),
   assignedTo: z.array(userSchema.omit({ counts: true })),
   createdAt: z.string(),
   parentId: z.string().nullable(),

@@ -27,7 +27,7 @@ const menuItemSchema = z.object({
   organizationId: z.string().optional(),
 });
 
-const menuItemsSchema = z.array(
+export const menuItemsSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
     submenu: z.array(menuItemSchema).optional(),

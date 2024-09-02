@@ -1,5 +1,4 @@
 import { redirect } from '@tanstack/react-router';
-import type { Entity } from 'backend/types/common';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
@@ -11,7 +10,7 @@ import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import { useNavigationStore } from '~/store/navigation';
-import type { DraggableItemData, UserMenuItem } from '~/types';
+import type { UserMenuItem } from '~/types';
 
 dayjs.extend(isBetween);
 dayjs.extend(calendar);
@@ -117,16 +116,6 @@ export const translationExists = (key: string) => {
 export const noDirectAccess = (pathname: string, param: string, redirectLocation: string) => {
   if (!pathname.endsWith(param)) return;
   throw redirect({ to: pathname + redirectLocation, replace: true });
-};
-
-// creating item data for DnD
-export const getDraggableItemData = <T>(
-  item: T,
-  itemOrder: number,
-  type: 'task' | 'menuItem' | 'subTask',
-  itemType: Entity,
-): DraggableItemData<T> => {
-  return { dragItem: true, item, order: itemOrder, type, itemType: itemType };
 };
 
 // adding new item on local store user's menu

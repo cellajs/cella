@@ -2,24 +2,19 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useNavigationStore } from '~/store/navigation';
 
+import type { workspaceWithProjectSchema } from 'backend/modules/workspaces/schema';
+import type { z } from 'zod';
 import { getMinimumEntityInfo } from '~/api/general';
-import type { ContextEntity, UserMenu, UserMenuItem, WorkspaceQuery, WorkspaceStoreProject } from '~/types';
+import type { ContextEntity, MinimumEntityItem, UserMenu, UserMenuItem, WorkspaceStoreProject } from '~/types';
 
-export type EntityItem = {
-  id: string;
-  entity: ContextEntity;
-  slug: string;
-  name: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
-};
+type WorkspaceQuery = z.infer<typeof workspaceWithProjectSchema>;
 
 const findItem = (
-  items: (EntityItem & {
-    submenu?: EntityItem[];
+  items: (MinimumEntityItem & {
+    submenu?: MinimumEntityItem[];
   })[],
   idOrSlug: string,
-): EntityItem | null => {
+): MinimumEntityItem | null => {
   if (!items) return null;
   for (const item of items) {
     if (item.id === idOrSlug || item.slug === idOrSlug)
@@ -39,7 +34,7 @@ const findItem = (
 export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
   const { menu } = useNavigationStore();
   const queryClient = useQueryClient();
-  const [entity, setEntity] = useState({} as EntityItem);
+  const [entity, setEntity] = useState({} as MinimumEntityItem);
 
   useEffect(() => {
     const getEntity = async () => {
