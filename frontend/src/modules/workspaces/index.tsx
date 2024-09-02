@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useLocation, useParams } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -17,11 +17,11 @@ const WorkspacePage = () => {
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
 
-  const workspaceQuery = useSuspenseQuery(workspaceQueryOptions(idOrSlug));
-  const [workspace, setQueryWorkspace] = useState(workspaceQuery.data.workspace);
+  const workspaceData = useSuspenseQuery(workspaceQueryOptions(idOrSlug)).data;
+  const workspace = workspaceData.workspace;
 
   //TODO  try find other solution other than useMutateWorkspaceQueryData hook
-  setWorkspace(workspace, workspaceQuery.data.projects, workspaceQuery.data.labels);
+  setWorkspace(workspace, workspaceData.projects, workspaceData.labels);
 
   const { mutate } = useUpdateWorkspaceMutation(workspace.id);
   useEventListener('updateWorkspaceCover', (e) => {
@@ -29,9 +29,6 @@ const WorkspacePage = () => {
     mutate(banner, {
       onSuccess: () => {
         toast.success(t('common:success.upload_cover'));
-        setQueryWorkspace((prev) => {
-          return { ...prev, ...banner };
-        });
         setWorkspace({ ...workspace, ...banner }, undefined, undefined);
       },
       onError: () => toast.error(t('common:error.image_upload_failed')),
