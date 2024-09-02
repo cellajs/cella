@@ -6,7 +6,7 @@ import { resolveEntity } from '../../lib/entity';
 import { errorResponse } from '../../lib/errors';
 import permissionManager, { HierarchicalEntity } from '../../lib/permission-manager';
 import { resolveProduct } from '../../lib/product';
-import type { ContextEntity, Env, Product } from '../../types/common';
+import type { ContextEntity, Entity, Env, ProductEntity } from '../../types/common';
 import { logEvent } from '../logger/log-event';
 
 export type PermissionAction = 'create' | 'update' | 'read' | 'write';
@@ -20,7 +20,7 @@ export type PermissionAction = 'create' | 'update' | 'read' | 'write';
 
 const isAllowedTo =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    (action: PermissionAction, type: ContextEntity | Product): MiddlewareHandler<Env, any> =>
+    (action: PermissionAction, type: ContextEntity | ProductEntity): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
       const user = ctx.get('user');
@@ -65,7 +65,7 @@ const isAllowedTo =
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function getEntityContext(ctx: any, entityType: ContextEntity | Product) {
+async function getEntityContext(ctx: any, entityType: Entity) {
   // Check if entity is configured; if not, return early
   if (!HierarchicalEntity.instanceMap.has(entityType)) {
     return;
@@ -98,7 +98,7 @@ async function getEntityContext(ctx: any, entityType: ContextEntity | Product) {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: Prevent assignable errors
-async function createEntityContext(entityType: ContextEntity | Product, ctx: any) {
+async function createEntityContext(entityType: Entity, ctx: any) {
   const entity = HierarchicalEntity.instanceMap.get(entityType);
 
   // Return early if entity is not available
