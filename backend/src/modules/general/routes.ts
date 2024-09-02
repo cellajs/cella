@@ -293,7 +293,7 @@ class GeneralRoutesConfig {
     guard: [isAuthenticated],
     tags: ['general'],
     summary: 'Get list of members',
-    description: 'Get members of an entity by id or slug. It returns members (users) with their role.',
+    description: 'Get members of a context entity by id or slug. It returns members (users) with their membership.',
     request: {
       query: membersQuerySchema,
     },
