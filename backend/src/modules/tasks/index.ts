@@ -48,7 +48,7 @@ const tasksRoutes = app
    * Get list of tasks
    */
   .openapi(taskRoutesConfig.getTasks, async (ctx) => {
-    const { q, tableSort, order, offset, limit, projectId, status } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, projectId, status } = ctx.req.valid('query');
 
     const tasksFilters: SQL[] = [inArray(tasksTable.projectId, projectId.split('_'))];
     if (q) tasksFilters.push(ilike(tasksTable.keywords, `%${q}%`));
@@ -68,7 +68,7 @@ const tasksRoutes = app
         createdBy: tasksTable.createdBy,
         modifiedAt: tasksTable.modifiedAt,
       },
-      tableSort,
+      sort,
       tasksTable.createdAt,
       order,
     );

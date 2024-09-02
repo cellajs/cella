@@ -82,7 +82,7 @@ export const fullTaskSchema = z.object({
 export const getTasksQuerySchema = paginationQuerySchema.merge(
   z.object({
     q: z.string().optional(),
-    tableSort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
+    sort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
     order: z.enum(['asc', 'desc']).default('asc').optional(),
     projectId: z.string(),
     status: z.string().optional(),

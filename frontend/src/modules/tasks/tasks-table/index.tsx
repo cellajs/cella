@@ -30,7 +30,7 @@ type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
 const tasksQueryOptions = ({
   q,
-  tableSort: initialSort,
+  sort: initialSort,
   order: initialOrder,
   limit = 2000,
   projectId,
@@ -39,11 +39,11 @@ const tasksQueryOptions = ({
 }: GetTasksParams & {
   rowsLength?: number;
 }) => {
-  const tableSort = initialSort || 'createdAt';
+  const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['tasks', projectId, status, q, tableSort, order],
+    queryKey: ['tasks', projectId, status, q, sort, order],
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
@@ -52,7 +52,7 @@ const tasksQueryOptions = ({
         {
           page,
           q,
-          tableSort,
+          sort,
           order,
           // Fetch more items than the limit if some items were deleted
           limit: limit + Math.max(page * limit - rowsLength, 0),
@@ -87,7 +87,7 @@ export default function TasksTable() {
   const [selectedProjects] = useState<string[]>(search.projectId?.split('_') || []);
   const [columns, setColumns] = useColumns();
   // Search query options
-  const tableSort = sortColumns[0]?.columnKey as TasksSearch['tableSort'];
+  const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
   const isFiltered = !!searchQuery || selectedStatuses.length > 0 || selectedProjects.length > 0;
@@ -95,21 +95,21 @@ export default function TasksTable() {
   const filters = useMemo(
     () => ({
       q: searchQuery,
-      tableSort,
+      sort,
       order,
       projectId: selectedProjects,
       status: selectedStatuses,
     }),
-    [searchQuery, tableSort, order, selectedStatuses, selectedProjects],
+    [searchQuery, sort, order, selectedStatuses, selectedProjects],
   );
 
-  useSaveInSearchParams(filters, { tableSort: 'createdAt', order: 'desc' });
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Query tasks
   const tasksQuery = useInfiniteQuery(
     tasksQueryOptions({
       q: searchQuery,
-      tableSort,
+      sort,
       order,
       projectId: search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
       status: selectedStatuses.join('_'),
@@ -121,7 +121,7 @@ export default function TasksTable() {
     search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
     selectedStatuses.join('_'),
     searchQuery,
-    tableSort,
+    sort,
     order,
   ]);
 

@@ -55,7 +55,7 @@ export const OrganizationMembersRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <MembersTable entity={organization} route={OrganizationMembersRoute.id} />
+        <MembersTable entity={organization} />
       </Suspense>
     );
   },

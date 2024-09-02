@@ -27,7 +27,6 @@ import SelectStatus, { type TaskStatus } from '~/modules/tasks/task-selectors/se
 import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { WorkspaceRoute } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
@@ -113,7 +112,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
       {
         id: 'members',
         label: 'common:members',
-        element: <MembersTable entity={project as unknown as Project} route={WorkspaceRoute.id} isSheet />,
+        element: <MembersTable entity={project as unknown as Project} isSheet />,
       },
     ];
 

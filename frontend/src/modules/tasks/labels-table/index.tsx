@@ -75,7 +75,7 @@ const LabelsTable = () => {
 
   // Search query options
   const q = useDebounce(query, 200);
-  const sort = sortColumns[0]?.columnKey as LabelsSearch['labelsSort'];
+  const sort = sortColumns[0]?.columnKey as LabelsSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as LabelsSearch['order'];
 
   const queryResult = useInfiniteQuery(
