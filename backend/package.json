@@ -47,7 +47,7 @@
     "@opentelemetry/sdk-trace-node": "^1.26.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
     "@paddle/paddle-node-sdk": "^1.5.0",
-    "@scalar/hono-api-reference": "0.5.143",
+    "@scalar/hono-api-reference": "^0.5.143",
     "@sendgrid/mail": "^8.1.3",
     "@sentry/cli": "^2.34.1",
     "@t3-oss/env-core": "^0.11.1",
