@@ -1,4 +1,4 @@
-import { Dot } from 'lucide-react';
+import { Dot, StickyNote } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dateShort } from '~/lib/utils';
@@ -26,7 +26,7 @@ export const useColumns = () => {
       key: 'color',
       name: t('common:color'),
       visible: true,
-      minWidth: 40,
+      width: 100,
       sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <Dot className="rounded-md" size={22} style={badgeStyle(row.color)} strokeWidth={0} />,
@@ -35,10 +35,15 @@ export const useColumns = () => {
       key: 'useCount',
       name: t('common:use_count'),
       visible: true,
-      minWidth: 20,
+      width: 100,
       sortable: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => row.useCount.toString(),
+      renderCell: ({ row }) => (
+        <>
+          <StickyNote className="mr-2 opacity-50" size={16} />
+          {row.useCount.toString()}
+        </>
+      ),
     },
     {
       key: 'lastUsed',
