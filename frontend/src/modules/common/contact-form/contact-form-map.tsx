@@ -2,10 +2,12 @@ import { APIProvider, AdvancedMarker, ControlPosition, Map as GMap, InfoWindow, 
 import { config } from 'config';
 import { Minus, Plus, X } from 'lucide-react';
 import { useState } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme';
 import Logo from '/static/logo/logo-icon-only.svg';
+import ErrorNotice from '../error-notice';
 
 type MapConfig = {
   id: string;
@@ -89,22 +91,24 @@ const ContactFormMap = () => {
 
   if (config.company.coordinates && config.googleMapsKey)
     return (
-      <div className="w-full h-full md:pb-12 md:px-4 overflow-hidden">
-        <APIProvider apiKey={config.googleMapsKey} libraries={['marker']}>
-          <GMap
-            mapId={mapConfig.mapId || null}
-            mapTypeId={mapConfig.mapTypeId}
-            gestureHandling={'greedy'}
-            disableDefaultUI
-            defaultCenter={config.company.coordinates}
-            zoom={zoom}
-            defaultZoom={config.company.mapZoom}
-          >
-            <MarkerWithInfowindow position={config.company.coordinates} />
-            <CustomZoomControl controlPosition={ControlPosition.LEFT_BOTTOM} zoom={zoom} onZoomChange={(zoom) => setZoom(zoom)} />
-          </GMap>
-        </APIProvider>
-      </div>
+      <ErrorBoundary fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} resetErrorBoundary={resetErrorBoundary} />}>
+        <div className="w-full h-full md:pb-12 md:px-4 overflow-hidden">
+          <APIProvider apiKey={config.googleMapsKey} libraries={['marker']}>
+            <GMap
+              mapId={mapConfig.mapId || null}
+              mapTypeId={mapConfig.mapTypeId}
+              gestureHandling={'greedy'}
+              disableDefaultUI
+              defaultCenter={config.company.coordinates}
+              zoom={zoom}
+              defaultZoom={config.company.mapZoom}
+            >
+              <MarkerWithInfowindow position={config.company.coordinates} />
+              <CustomZoomControl controlPosition={ControlPosition.LEFT_BOTTOM} zoom={zoom} onZoomChange={(zoom) => setZoom(zoom)} />
+            </GMap>
+          </APIProvider>
+        </div>
+      </ErrorBoundary>
     );
 };
 export default ContactFormMap;

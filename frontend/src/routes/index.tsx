@@ -26,6 +26,7 @@ import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute 
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from '~/routes/system';
 import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from '~/routes/workspaces'; //WorkspaceMembersRoute,
+import type { ErrorType } from '#/lib/errors';
 
 // Lazy load main App component, which is behind authentication
 const App = lazy(() => import('~/modules/common/app'));
@@ -33,7 +34,7 @@ const App = lazy(() => import('~/modules/common/app'));
 export const getAndSetMe = async () => {
   const user = await getSelf();
   const currentSession = user.sessions.find((s) => s.isCurrent);
-  // if it's an impersonation session don't change the last user
+  // if impersonation session don't change the last user
   if (currentSession?.type === 'impersonation') useUserStore.getState().setUserWithoutSetLastUser(user);
   else useUserStore.getState().setUser(user);
 
@@ -49,6 +50,7 @@ export const getAndSetMenu = async () => {
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
+  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
 });
 
 export const PublicRoute = createRoute({

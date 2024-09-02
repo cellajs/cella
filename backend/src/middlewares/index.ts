@@ -26,16 +26,15 @@ app.get('/ping', (c) => c.text('pong'));
 // Logger
 app.use('*', logger(logEvent as unknown as Parameters<typeof logger>[0]));
 
+const corsOptions = {
+  origin: config.frontendUrl,
+  credentials: true,
+  allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
+  allowHeaders: [],
+};
+
 // CORS
-app.use(
-  '*',
-  cors({
-    origin: config.frontendUrl,
-    credentials: true,
-    allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
-    allowHeaders: [],
-  }),
-);
+app.use('*', cors(corsOptions));
 
 // CSRF protection
 app.use('*', csrf({ origin: config.frontendUrl }));
