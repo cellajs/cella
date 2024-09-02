@@ -9,7 +9,6 @@ import type { z } from 'zod';
 import { type GetLabelsParams, deleteLabels, getLabels } from '~/api/labels';
 import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
@@ -82,17 +81,6 @@ const LabelsTable = () => {
   const queryResult = useInfiniteQuery(
     labelsQueryOptions({ q, sort, order, projectId: projects.map((p) => p.id).join('_'), rowsLength: rows.length }),
   );
-
-  // Save filters in search params
-  const filters = useMemo(
-    () => ({
-      q,
-      labelsSort: sort,
-      order,
-    }),
-    [q, order, sort],
-  );
-  useSaveInSearchParams(filters, { sort: 'name', order: 'desc' });
 
   // Map (updated) query data to rows
   useMapQueryDataToRows<Label>({ queryResult, setSelectedRows, setRows, selectedRows });
