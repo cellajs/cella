@@ -36,13 +36,12 @@ const BoardHeader = () => {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:manage_labels'),
       // text: '',
-      id: 'workspace-settings',
+      id: 'workspace-preview-labels',
     });
   };
 
   const handleAddProjects = () => {
     dialog(<AddProjects dialog workspace={workspace} />, {
-      //callback={(project) => callback([project], 'create')} dialog
       className: 'md:max-w-4xl',
       id: 'add-projects',
       title: t('common:add_projects'),

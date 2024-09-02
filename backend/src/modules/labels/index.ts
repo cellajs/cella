@@ -44,6 +44,8 @@ const labelsRoutes = app
     const orderColumn = getOrderColumn(
       {
         name: labelsTable.name,
+        lastUsed: labelsTable.lastUsed,
+        useCount: labelsTable.useCount,
       },
       sort,
       labelsTable.name,

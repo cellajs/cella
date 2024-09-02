@@ -475,5 +475,7 @@
   "success.passkey_sign_in": "Passkey successfully verified",
   "error.passkey_sign_in": "Passkey verification failed",
   "success.impersonated": "Impersonation successful.",
-  "success.stopped_impersonation": "Successfully stopped impersonating."
+  "success.stopped_impersonation": "Successfully stopped impersonating.",
+  "use_count": "Use count",
+  "last_used": "Lsat used"
 }

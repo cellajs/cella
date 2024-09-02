@@ -17,7 +17,7 @@ export const getLabelsQuerySchema = paginationQuerySchema.merge(
   z.object({
     projectId: z.string(),
     q: z.string().optional(),
-    sort: z.enum(['name']).default('name').optional(),
+    sort: z.enum(['name', 'useCount', 'lastUsed']).default('name').optional(),
     order: z.enum(['asc', 'desc']).default('asc').optional(),
   }),
 );

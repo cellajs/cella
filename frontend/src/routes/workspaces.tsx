@@ -9,18 +9,25 @@ import { noDirectAccess } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/quey-options';
-import { membersSearchSchema } from '~/routes/organizations';
 import { AppRoute } from '.';
+import { membersSearchSchema } from './organizations';
 
 // Lazy-loaded components
 const Workspace = lazy(() => import('~/modules/workspaces'));
 const Board = lazy(() => import('~/modules/projects/board/board'));
 const TasksTable = lazy(() => import('~/modules/tasks/tasks-table'));
 
+export const labelsSearchSchema = z.object({
+  q: z.string().optional(),
+  labelsSort: z.enum(['name', 'useCount', 'lastUsed']).default('name').optional(),
+  order: z.enum(['asc', 'desc']).default('asc').optional(),
+});
+
 export const WorkspaceRoute = createRoute({
   path: 'workspaces/$idOrSlug',
   validateSearch: z.object({
     ...membersSearchSchema.shape,
+    ...labelsSearchSchema.shape,
     projectSettings: z.enum(['general', 'members']).default('general').optional(),
   }),
   staticData: { pageTitle: 'Workspace', isAuth: true },

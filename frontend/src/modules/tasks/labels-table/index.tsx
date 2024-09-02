@@ -1,46 +1,105 @@
-import { Bird } from 'lucide-react';
-import { Trash, XSquare } from 'lucide-react';
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useSearch } from '@tanstack/react-router';
+import { Bird, Trash, XSquare } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { deleteLabels } from '~/api/labels';
+import type { z } from 'zod';
+import { type GetLabelsParams, deleteLabels, getLabels } from '~/api/labels';
+import { useDebounce } from '~/hooks/use-debounce';
+import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
+import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { useColumns } from '~/modules/tasks/labels-table/columns';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import type { labelsSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Label } from '~/types';
 
-interface LabelsParam {
-  role?: 'secondary' | 'primary' | undefined;
-  query?: string | undefined;
-  sort?: 'name' | undefined;
-  order?: 'desc' | 'asc' | undefined;
-}
+export const labelsQueryOptions = ({
+  q,
+  projectId,
+  sort: initialSort,
+  order: initialOrder,
+  limit = 20,
+  rowsLength = 0,
+}: GetLabelsParams & {
+  rowsLength?: number;
+}) => {
+  const sort = initialSort || 'name';
+  const order = initialOrder || 'desc';
+
+  return infiniteQueryOptions({
+    queryKey: ['labels', q, sort, order, projectId],
+    initialPageParam: 0,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    queryFn: async ({ pageParam: page, signal }) =>
+      await getLabels(
+        {
+          page,
+          q,
+          sort,
+          order,
+          projectId,
+          limit: limit + Math.max(page * limit - rowsLength, 0),
+          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
+          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+        },
+        signal,
+      ),
+    getNextPageParam: (_lastPage, allPages) => allPages.length,
+  });
+};
+
+type LabelsSearch = z.infer<typeof labelsSearchSchema>;
 
 const LabelsTable = () => {
   const { t } = useTranslation();
-
   const [columns] = useColumns();
-  const defaultSearch: LabelsParam = { sort: 'name', order: 'asc' };
-  const { labels } = useWorkspaceStore();
+  const { projects, labels } = useWorkspaceStore();
 
-  const [rows, setRows] = useState<Label[]>(labels || []);
-  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
-  const [search] = useState(defaultSearch);
+  const search = useSearch({ strict: false });
 
-  const [query, setQuery] = useState<LabelsParam['query']>('');
+  const [rows, setRows] = useState<Label[]>([]);
+  const [query, setQuery] = useState<LabelsSearch['q']>('');
+  const [selectedRows, setSelectedRows] = useState(new Set<string>());
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'name'));
 
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(
-    search.sort && search.order
-      ? [{ columnKey: search.sort, direction: search.order === 'asc' ? 'ASC' : 'DESC' }]
-      : [{ columnKey: 'name', direction: 'ASC' }],
+  // Search query options
+  const q = useDebounce(query, 200);
+  const sort = sortColumns[0]?.columnKey as LabelsSearch['labelsSort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as LabelsSearch['order'];
+
+  const queryResult = useSuspenseInfiniteQuery(
+    labelsQueryOptions({ q, sort, order, projectId: projects.map((p) => p.id).join('_'), rowsLength: rows.length }),
   );
+
+  // Save filters in search params
+  const filters = useMemo(
+    () => ({
+      q,
+      labelsSort: sort,
+      order,
+    }),
+    [q, order, sort],
+  );
+  useSaveInSearchParams(filters, { sort: 'name', order: 'desc' });
+
+  // Map (updated) query data to rows
+  useMapQueryDataToRows<Label>({ queryResult, setSelectedRows, setRows, selectedRows });
+
+  // Table selection
+  const selectedLabels = useMemo(() => {
+    return rows.filter((row) => selectedRows.has(row.id));
+  }, [selectedRows, rows]);
 
   const onRowsChange = (changedRows: Label[]) => {
     setRows(changedRows);
@@ -49,23 +108,19 @@ const LabelsTable = () => {
   const isFiltered = !!query;
 
   const onSearch = (searchString: string) => {
-    if (selectedLabels.length > 0) setSelectedLabels([]);
+    if (selectedRows.size > 0) setSelectedRows(new Set<string>());
     setQuery(searchString);
   };
 
   const onResetFilters = () => {
     setQuery('');
-    setSelectedLabels([]);
-  };
-
-  const handleSelectedRowsChange = (selectedRows: Set<string>) => {
-    setSelectedLabels(Array.from(selectedRows));
+    setSelectedRows(new Set<string>());
   };
 
   const removeLabel = () => {
-    deleteLabels(selectedLabels).then(() => {
-      toast.success(t(`common:success.delete_${selectedLabels.length > 1 ? 'labels' : 'label'}`));
-      setSelectedLabels([]);
+    deleteLabels(selectedLabels.map((l) => l.id)).then(() => {
+      toast.success(t(`common:success.delete_${selectedRows.size > 1 ? 'labels' : 'label'}`));
+      setSelectedRows(new Set<string>());
     });
   };
 
@@ -96,7 +151,7 @@ const LabelsTable = () => {
                 </Button>
               </TooltipButton>
               <TooltipButton toolTipContent={t('common:clear_selection')}>
-                <Button variant="ghost" className="relative" onClick={() => setSelectedLabels([])}>
+                <Button variant="ghost" className="relative" onClick={() => setSelectedRows(new Set<string>())}>
                   <XSquare size={16} />
                   <span className="ml-1 max-xs:hidden">{t('common:clear')}</span>
                 </Button>
@@ -116,11 +171,11 @@ const LabelsTable = () => {
           rowKeyGetter: (row) => row.id,
           enableVirtualization: false,
           overflowNoRows: true,
-          limit: 22,
+          limit: 20,
           isFiltered,
-          selectedRows: new Set<string>(selectedLabels),
+          selectedRows: selectedRows,
           onRowsChange,
-          onSelectedRowsChange: handleSelectedRowsChange,
+          onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
           NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })} />,
