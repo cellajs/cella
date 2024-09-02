@@ -92,6 +92,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
         onBlur={updateData}
         editor={editor}
         data-color-scheme={mode}
+        theme={mode}
         className={className}
         sideMenu={false}
         emojiPicker={false}
