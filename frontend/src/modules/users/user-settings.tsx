@@ -1,4 +1,4 @@
-import { Check, KeyRound, Send, Trash2, Zap, ZapOff } from 'lucide-react';
+import { Check, KeyRound, Monitor, Send, Smartphone, Trash2, ZapOff } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { getChallenge, sendResetPasswordEmail, setPasskey } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
+import { arrayBufferToBase64Url, base64UrlDecode, dateShort } from '~/lib/utils';
 import { oauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { AsideNav } from '~/modules/common/aside-nav';
@@ -23,14 +23,9 @@ import { Badge } from '~/modules/ui/badge';
 import DeleteSelf from '~/modules/users/delete-self';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
+import type { Session } from '~/types';
 import HelpText from '../common/help-text';
-
-export type Session = {
-  id: string;
-  type: string;
-  current: boolean;
-  impersonation: boolean;
-};
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -49,29 +44,29 @@ const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps)
   const { t } = useTranslation();
 
   return (
-    <div key={session.id} className="flex items-center py-2 px-3 gap-2 border rounded-md">
-      <Zap size={16} />
-      <div className="grow shrink truncate">
-        <div className="font-semibold">
-          {t('common:session')} {session.current && <Badge variant="secondary">current</Badge>}
-        </div>
+    <div className="flex items-center w-full gap-3 min-h-[40px] p-3">
+      {session.deviceType === 'desktop' ? <Monitor size={24} /> : <Smartphone size={24} />}
+      <div className="text-start">
+        <div className="font-semibold">{session.deviceName || t('common:unknown_device')}</div>
         <p className="font-light text-sm truncate">
-          {session.type}
-          <span className="mx-2 max-md:hidden">&#183;</span>
-          <span className="opacity-50 max-md:hidden">{session.id}</span>
+          <span className="opacity-50 max-md:hidden">{session.deviceOs}</span>
         </p>
       </div>
-      {!session.current && (
+      {session.isCurrent && (
+        <Badge variant="plain" className="uppercase text-[10px] py-0">
+          current
+        </Badge>
+      )}
+      {!session.isCurrent && (
         <Button
-          variant="plain"
+          variant="destructive"
           size="sm"
-          className="w-auto font-light text-sm"
+          className="text-sm ml-auto hidden group-hover:block"
           disabled={isPending}
           onClick={() => {
             deleteMySessions([session.id]);
           }}
         >
-          <ZapOff size={14} className="mr-2" />
           {t('common:terminate')}
         </Button>
       )}
@@ -84,8 +79,8 @@ const UserSettings = () => {
   const { mode } = useThemeStore();
   const { t } = useTranslation();
 
-  const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.current), [user.sessions]);
-  const sessions = Array.from(user.sessions).sort((a) => (a.current ? -1 : 1));
+  const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.isCurrent), [user.sessions]);
+  const sessions = Array.from(user.sessions).sort((a) => (a.isCurrent ? -1 : 1));
 
   const { mutate: deleteMySessions, isPending } = useMutation({
     mutationFn: baseTerminateMySessions,
@@ -198,7 +193,6 @@ const UserSettings = () => {
           <Card className="mx-auto sm:w-full">
             <CardHeader>
               <CardTitle>{t('common:sessions')}</CardTitle>
-
               <CardDescription>{t('common:sessions.text')}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -217,14 +211,40 @@ const UserSettings = () => {
                 </Button>
               )}
               <div className="flex flex-col mt-4 gap-2">
-                <ExpandableList
-                  items={sessions}
-                  renderItem={(session) => (
-                    <SessionTile session={session} key={session.id} deleteMySessions={deleteMySessions} isPending={isPending} />
-                  )}
-                  initialDisplayCount={3}
-                  expandText="common:more_sessions"
-                />
+                <Accordion type="single" collapsible className="space-y-1">
+                  <ExpandableList
+                    items={sessions}
+                    renderItem={(session) => (
+                      <AccordionItem value={session.id} className="border group rounded-md">
+                        <AccordionTrigger className="hover:no-underline p-0 pr-3">
+                          <SessionTile session={session} key={session.id} deleteMySessions={deleteMySessions} isPending={isPending} />
+                        </AccordionTrigger>
+                        <AccordionContent className="p-3 pt-0">
+                          {session.browser && (
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold">{t('common:browser')}</p>
+                              <p className="text-sm">{session.browser}</p>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{t('common:auth_strategy')}</p>
+                            <p className="text-sm">{session.authStrategy}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{t('common:created_at')}</p>
+                            <p className="text-sm">{dateShort(session.createdAt)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{t('common:expires_at')}</p>
+                            <p className="text-sm">{dateShort(session.expiresAt)}</p>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                    initialDisplayCount={3}
+                    expandText="common:more_sessions"
+                  />
+                </Accordion>
               </div>
             </CardContent>
           </Card>

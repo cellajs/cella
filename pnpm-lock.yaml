@@ -31,10 +31,10 @@ importers:
     dependencies:
       '@cellajs/imado':
         specifier: ^0.1.3
-        version: 0.1.3(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(yaml@2.5.0)
+        version: 0.1.3(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(yaml@2.5.0)
       '@cellajs/permission-manager':
         specifier: ^0.1.0
-        version: 0.1.0(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(yaml@2.5.0)
+        version: 0.1.0(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(yaml@2.5.0)
       '@commander-js/extra-typings':
         specifier: ^12.1.0
         version: 12.1.0(commander@12.1.0)
@@ -170,6 +170,9 @@ importers:
       slugify:
         specifier: ^1.6.6
         version: 1.6.6
+      ua-parser-js:
+        specifier: ^1.0.38
+        version: 1.0.38
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -198,6 +201,9 @@ importers:
       '@types/react':
         specifier: ^18.3.5
         version: 18.3.5
+      '@types/ua-parser-js':
+        specifier: ^0.7.39
+        version: 0.7.39
       chalk:
         specifier: ^5.3.0
         version: 5.3.0
@@ -218,7 +224,7 @@ importers:
         version: 5.4.1
       tsup:
         specifier: ^8.2.4
-        version: 8.2.4(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.0)
+        version: 8.2.4(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.0)
       tsx:
         specifier: ^4.19.0
         version: 4.19.0
@@ -409,7 +415,7 @@ importers:
         version: 8.2.0(react@18.3.1)
       emblor:
         specifier: ^1.4.6
-        version: 1.4.6(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/react-dom@18.3.0)(@types/react@18.3.5)(postcss@8.4.42)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
+        version: 1.4.6(@swc/core@1.7.14)(@types/react-dom@18.3.0)(@types/react@18.3.5)(postcss@8.4.42)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4)
       framer-motion:
         specifier: ^11.3.31
         version: 11.3.31(@emotion/is-prop-valid@1.3.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -595,7 +601,7 @@ importers:
     dependencies:
       '@cellajs/imado':
         specifier: ^0.1.3
-        version: 0.1.3(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(yaml@2.5.0)
+        version: 0.1.3(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(yaml@2.5.0)
       '@t3-oss/env-core':
         specifier: ^0.11.0
         version: 0.11.0(typescript@5.5.4)(zod@3.23.8)
@@ -614,7 +620,7 @@ importers:
     devDependencies:
       tsup:
         specifier: ^8.2.4
-        version: 8.2.4(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(typescript@5.5.4)(yaml@2.5.0)
+        version: 8.2.4(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(typescript@5.5.4)(yaml@2.5.0)
       typescript:
         specifier: ^5.5.4
         version: 5.5.4
@@ -2633,6 +2639,7 @@ packages:
 
   '@evilmartians/lefthook@1.7.14':
     resolution: {integrity: sha512-0FPRdmd7hIZXjTQKQjLnmqxx4xGRIM1oGN9pJ4PyI14tOqEAwstmLIbauqQpTVTj3MAPeylsQVXh9RGaq/F2/A==}
+    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -4825,9 +4832,6 @@ packages:
   '@swc/counter@0.1.3':
     resolution: {integrity: sha512-e2BR4lsJkkRlKZ/qCHPw9ZaSxc0MVUd7gtbtaB7aMvHeJVYe8sOB8DBZkP2DtISHGSku9sCK6T6cnY0CtXrOCQ==}
 
-  '@swc/helpers@0.5.12':
-    resolution: {integrity: sha512-KMZNXiGibsW9kvZAO1Pam2JPTDBm+KSHMMHWdsyI/1DbIZjT2A6Gy3hblVXUMEDvUAKq+e0vL0X0o54owWji7g==}
-
   '@swc/types@0.1.12':
     resolution: {integrity: sha512-wBJA+SdtkbFhHjTMYH+dEH1y4VpfGdAc2Kw/LK09i9bXd/K6j6PkDcFCEzb6iVfZMkPRrl/q0e3toqTAJdkIVA==}
 
@@ -5171,6 +5175,9 @@ packages:
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
+
+  '@types/ua-parser-js@0.7.39':
+    resolution: {integrity: sha512-P/oDfpofrdtF5xw433SPALpdSchtJmY7nsJItf8h3KXqOslkbySh8zq4dSWXH2oTjRvJ5PczVEoCZPow6GicLg==}
 
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
@@ -9472,6 +9479,9 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  ua-parser-js@1.0.38:
+    resolution: {integrity: sha512-Aq5ppTOfvrCMgAPneW1HfWj66Xi7XL+/mIy996R1/CLS/rcyJQm6QZdsKrUeivDFQ+Oc9Wyuwor8Ze8peEoUoQ==}
+
   uc.micro@2.1.0:
     resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
 
@@ -11496,14 +11506,14 @@ snapshots:
       - supports-color
       - ts-node
 
-  '@cellajs/imado@0.1.3(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(yaml@2.5.0)':
+  '@cellajs/imado@0.1.3(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(yaml@2.5.0)':
     dependencies:
       '@aws-sdk/client-s3': 3.637.0
       '@aws-sdk/cloudfront-signer': 3.621.0
       '@tus/file-store': 1.4.0
       '@tus/s3-store': 1.5.0
       jsonwebtoken: 9.0.2
-      tsup: 8.2.4(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(typescript@5.5.4)(yaml@2.5.0)
+      tsup: 8.2.4(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(typescript@5.5.4)(yaml@2.5.0)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@microsoft/api-extractor'
@@ -11515,14 +11525,14 @@ snapshots:
       - tsx
       - yaml
 
-  '@cellajs/imado@0.1.3(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(yaml@2.5.0)':
+  '@cellajs/imado@0.1.3(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(yaml@2.5.0)':
     dependencies:
       '@aws-sdk/client-s3': 3.637.0
       '@aws-sdk/cloudfront-signer': 3.621.0
       '@tus/file-store': 1.4.0
       '@tus/s3-store': 1.5.0
       jsonwebtoken: 9.0.2
-      tsup: 8.2.4(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.0)
+      tsup: 8.2.4(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.0)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@microsoft/api-extractor'
@@ -11534,9 +11544,9 @@ snapshots:
       - tsx
       - yaml
 
-  '@cellajs/permission-manager@0.1.0(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(yaml@2.5.0)':
+  '@cellajs/permission-manager@0.1.0(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(yaml@2.5.0)':
     dependencies:
-      tsup: 8.2.4(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.0)
+      tsup: 8.2.4(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.0)
       typescript: 5.5.4
     transitivePeerDependencies:
       - '@microsoft/api-extractor'
@@ -14931,7 +14941,7 @@ snapshots:
   '@swc/core-win32-x64-msvc@1.7.14':
     optional: true
 
-  '@swc/core@1.7.14(@swc/helpers@0.5.12)':
+  '@swc/core@1.7.14':
     dependencies:
       '@swc/counter': 0.1.3
       '@swc/types': 0.1.12
@@ -14946,15 +14956,9 @@ snapshots:
       '@swc/core-win32-arm64-msvc': 1.7.14
       '@swc/core-win32-ia32-msvc': 1.7.14
       '@swc/core-win32-x64-msvc': 1.7.14
-      '@swc/helpers': 0.5.12
     optional: true
 
   '@swc/counter@0.1.3':
-    optional: true
-
-  '@swc/helpers@0.5.12':
-    dependencies:
-      tslib: 2.7.0
     optional: true
 
   '@swc/types@0.1.12':
@@ -15319,6 +15323,8 @@ snapshots:
   '@types/stack-trace@0.0.33': {}
 
   '@types/trusted-types@2.0.7': {}
+
+  '@types/ua-parser-js@0.7.39': {}
 
   '@types/unist@2.0.11': {}
 
@@ -16440,7 +16446,7 @@ snapshots:
 
   embla-carousel@8.2.0: {}
 
-  emblor@1.4.6(@swc/core@1.7.14(@swc/helpers@0.5.12))(@types/react-dom@18.3.0)(@types/react@18.3.5)(postcss@8.4.42)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4):
+  emblor@1.4.6(@swc/core@1.7.14)(@types/react-dom@18.3.0)(@types/react@18.3.5)(postcss@8.4.42)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.5.4):
     dependencies:
       '@radix-ui/react-dialog': 1.0.4(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-popover': 1.1.1(@types/react-dom@18.3.0)(@types/react@18.3.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -16452,7 +16458,7 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-easy-sort: 1.6.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tailwind-merge: 2.5.2
-      tsup: 6.7.0(@swc/core@1.7.14(@swc/helpers@0.5.12))(postcss@8.4.42)(typescript@5.5.4)
+      tsup: 6.7.0(@swc/core@1.7.14)(postcss@8.4.42)(typescript@5.5.4)
     transitivePeerDependencies:
       - '@swc/core'
       - '@types/react'
@@ -20402,7 +20408,7 @@ snapshots:
 
   tslib@2.7.0: {}
 
-  tsup@6.7.0(@swc/core@1.7.14(@swc/helpers@0.5.12))(postcss@8.4.42)(typescript@5.5.4):
+  tsup@6.7.0(@swc/core@1.7.14)(postcss@8.4.42)(typescript@5.5.4):
     dependencies:
       bundle-require: 4.2.1(esbuild@0.17.19)
       cac: 6.7.14
@@ -20419,14 +20425,14 @@ snapshots:
       sucrase: 3.35.0
       tree-kill: 1.2.2
     optionalDependencies:
-      '@swc/core': 1.7.14(@swc/helpers@0.5.12)
+      '@swc/core': 1.7.14
       postcss: 8.4.42
       typescript: 5.5.4
     transitivePeerDependencies:
       - supports-color
       - ts-node
 
-  tsup@8.2.4(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(typescript@5.5.4)(yaml@2.5.0):
+  tsup@8.2.4(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.17.0)(typescript@5.5.4)(yaml@2.5.0):
     dependencies:
       bundle-require: 5.0.0(esbuild@0.23.1)
       cac: 6.7.14
@@ -20445,7 +20451,7 @@ snapshots:
       sucrase: 3.35.0
       tree-kill: 1.2.2
     optionalDependencies:
-      '@swc/core': 1.7.14(@swc/helpers@0.5.12)
+      '@swc/core': 1.7.14
       postcss: 8.4.42
       typescript: 5.5.4
     transitivePeerDependencies:
@@ -20454,7 +20460,7 @@ snapshots:
       - tsx
       - yaml
 
-  tsup@8.2.4(@swc/core@1.7.14(@swc/helpers@0.5.12))(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.0):
+  tsup@8.2.4(@swc/core@1.7.14)(jiti@1.21.6)(postcss@8.4.42)(tsx@4.19.0)(typescript@5.5.4)(yaml@2.5.0):
     dependencies:
       bundle-require: 5.0.0(esbuild@0.23.1)
       cac: 6.7.14
@@ -20473,7 +20479,7 @@ snapshots:
       sucrase: 3.35.0
       tree-kill: 1.2.2
     optionalDependencies:
-      '@swc/core': 1.7.14(@swc/helpers@0.5.12)
+      '@swc/core': 1.7.14
       postcss: 8.4.42
       typescript: 5.5.4
     transitivePeerDependencies:
@@ -20576,6 +20582,8 @@ snapshots:
       is-typedarray: 1.0.0
 
   typescript@5.5.4: {}
+
+  ua-parser-js@1.0.38: {}
 
   uc.micro@2.1.0: {}
 

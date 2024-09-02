@@ -6,9 +6,7 @@ export const getPreparedSessions = async (userId: string, ctx: Context) => {
   const currentSessionId = auth.readSessionCookie(ctx.req.raw.headers.get('Cookie') ?? '');
   const preparedSessions = sessions.map((session) => ({
     ...session,
-    type: 'DESKTOP' as const,
-    current: session.id === currentSessionId,
-    impersonation: session.type === 'impersonation',
+    isCurrent: session.id === currentSessionId,
   }));
 
   return preparedSessions;

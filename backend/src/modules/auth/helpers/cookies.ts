@@ -3,12 +3,37 @@ import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { setCookie as baseSetCookie } from 'hono/cookie';
 import type { User } from 'lucia';
+import uaParser from 'ua-parser-js';
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
 import { usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 
 const isProduction = config.mode === 'production';
+
+const getDevice = (ctx: Context) => {
+  const parsedUserAgent = uaParser(ctx.req.header('User-Agent'));
+  const name =
+    parsedUserAgent.device.model && parsedUserAgent.device.vendor
+      ? `${parsedUserAgent.device.vendor} ${parsedUserAgent.device.model}`
+      : parsedUserAgent.device.model || parsedUserAgent.device.vendor || null;
+  const type: 'desktop' | 'mobile' =
+    parsedUserAgent.device.type && ['wearable', 'mobile'].includes(parsedUserAgent.device.type) ? 'mobile' : 'desktop';
+  const os =
+    parsedUserAgent.os.name && parsedUserAgent.os.version
+      ? `${parsedUserAgent.os.name} ${parsedUserAgent.os.version}`
+      : parsedUserAgent.os.name || null;
+  const browser =
+    parsedUserAgent.browser.name && parsedUserAgent.browser.version
+      ? `${parsedUserAgent.browser.name} ${parsedUserAgent.browser.version}`
+      : parsedUserAgent.browser.name || null;
+
+  return { name, type, os, browser };
+};
+
+const isAuthStrategy = (strategy: string): strategy is 'github' | 'google' | 'microsoft' | 'password' | 'passkey' =>
+  ['github', 'google', 'microsoft', 'password', 'passkey'].includes(strategy);
+const getAuthStrategy = (strategy: string) => (isAuthStrategy(strategy) ? strategy : null);
 
 export const setCookie = (ctx: Context, name: string, value: string) =>
   baseSetCookie(ctx, name, value, {
@@ -21,7 +46,19 @@ export const setCookie = (ctx: Context, name: string, value: string) =>
   });
 
 export const setSessionCookie = async (ctx: Context, userId: User['id'], strategy: string) => {
-  const session = await auth.createSession(userId, { type: 'regular', adminUserId: null });
+  const device = getDevice(ctx);
+  const authStrategy = getAuthStrategy(strategy);
+
+  const session = await auth.createSession(userId, {
+    type: 'regular',
+    adminUserId: null,
+    deviceName: device.name,
+    deviceType: device.type,
+    deviceOs: device.os,
+    browser: device.browser,
+    authStrategy,
+    createdAt: new Date(),
+  });
   const sessionCookie = auth.createSessionCookie(session.id);
 
   const lastSignInAt = new Date();
@@ -33,7 +70,18 @@ export const setSessionCookie = async (ctx: Context, userId: User['id'], strateg
 };
 
 export const setImpersonationSessionCookie = async (ctx: Context, userId: User['id'], adminUserId: User['id']) => {
-  const session = await auth.createSession(userId, { type: 'impersonation', adminUserId });
+  const device = getDevice(ctx);
+
+  const session = await auth.createSession(userId, {
+    type: 'impersonation',
+    adminUserId,
+    deviceName: device.name,
+    deviceType: device.type,
+    deviceOs: device.os,
+    browser: device.browser,
+    authStrategy: null,
+    createdAt: new Date(),
+  });
   const sessionCookie = auth.createSessionCookie(session.id);
 
   logEvent('Admin impersonation signed in', { user: userId, strategy: 'impersonation' });
