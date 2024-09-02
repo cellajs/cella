@@ -55,14 +55,18 @@ export const parseAndValidatePasskeyAttestation = (clientDataJSON: string, attes
 };
 
 export const verifyPassKeyPublic = async (passedPublicKey: string, verifyData: Buffer, signature: string) => {
-  // Verify the signature
-  const publicKeyBuffer = base64UrlDecode(passedPublicKey);
-  const publicKey = await coseToPem(publicKeyBuffer);
-  const verify = createVerify('SHA256');
-  verify.update(verifyData);
-  verify.end();
-  const signatureBuffer = base64UrlDecode(signature);
-  return verify.verify(publicKey, signatureBuffer);
+  try {
+    // Verify the signature
+    const publicKeyBuffer = base64UrlDecode(passedPublicKey);
+    const publicKey = await coseToPem(publicKeyBuffer);
+    const verify = createVerify('SHA256');
+    verify.update(verifyData);
+    verify.end();
+    const signatureBuffer = base64UrlDecode(signature);
+    return verify.verify(publicKey, signatureBuffer);
+  } catch (err) {
+    throw new Error('key conversation failed');
+  }
 };
 
 const coseToPem = async (coseKeyBuffer: ArrayBuffer) => {

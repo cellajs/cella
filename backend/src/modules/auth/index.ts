@@ -819,8 +819,12 @@ const authRoutes = app
     const userVerified = (flags & 0x04) !== 0;
     if (!userPresent || !userVerified) return errorResponse(ctx, 400, 'User presence or verification failed', 'warn', undefined);
 
-    const isValid = verifyPassKeyPublic(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
-    if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
+    try {
+      const isValid = await verifyPassKeyPublic(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
+      if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
+    } catch (error) {
+      return errorResponse(ctx, 500, (error as Error).message ?? 'Passkey verification error', 'error', undefined);
+    }
 
     // Extract the counter
     // Optionally do we need update the counter in the database

@@ -63,11 +63,15 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
       email,
     };
 
-    const success = await authThroughPasskey(credentialData);
-    if (success) {
-      toast.success(t('common:success.passkey_sign_in'));
-      navigate({ to: config.defaultRedirectPath, replace: true });
-    } else toast.error(t('common:error.passkey_sign_in'));
+    try {
+      const success = await authThroughPasskey(credentialData);
+      if (success) {
+        toast.success(t('common:success.passkey_sign_in'));
+        navigate({ to: config.defaultRedirectPath, replace: true });
+      } else toast.error(t('common:error.passkey_sign_in'));
+    } catch (err) {
+      toast.error(t('common:error.passkey_sign_in'));
+    }
   }
 
   const invertClass = mode === 'dark' ? 'invert' : '';
