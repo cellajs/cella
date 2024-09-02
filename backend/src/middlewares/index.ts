@@ -18,21 +18,13 @@ app.use('*', secureHeaders());
 app.use('*', observatoryMiddleware);
 
 // Sentry
-app.use(
-  '*',
-  sentry({
-    dsn: config.sentryDsn,
-  }),
-);
+app.use('*', sentry({ dsn: config.sentryDsn }));
 
 // Health check for render.com
 app.get('/ping', (c) => c.text('pong'));
 
 // Logger
 app.use('*', logger(logEvent as unknown as Parameters<typeof logger>[0]));
-
-// Check if the user is a bot
-// app.use('*', checkIsBot);
 
 // CORS
 app.use(
@@ -46,13 +38,9 @@ app.use(
 );
 
 // CSRF protection
-app.use(
-  '*',
-  csrf({
-    origin: config.frontendUrl,
-  }),
-);
+app.use('*', csrf({ origin: config.frontendUrl }));
 
 // Rate limiter
 app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));
+
 export default app;

@@ -36,7 +36,7 @@ export const SheetAccount = () => {
   const isSystemAdmin = user.role === 'admin';
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
   const bgClass = user.bannerUrl ? 'bg-background' : getColorClass(user.id);
-  const bannerClass = `relative transition-all duration-300 hover:bg-opacity-80 hover:-mx-8 -mx-4 -mt-4 bg-cover bg-center h-24 ${bgClass}`;
+  const bannerClass = `relative transition-all duration-300 hover:bg-opacity-50 hover:-mx-8 -mx-4 -mt-4 bg-cover bg-center h-24 ${bgClass} bg-opacity-80`;
 
   useEffect(() => {
     const firstRow = buttonWrapper.current?.querySelector('#btn-profile') as HTMLElement;

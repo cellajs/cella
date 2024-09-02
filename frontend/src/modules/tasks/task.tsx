@@ -86,8 +86,6 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
     }
   };
 
-  // console.log('rerender');
-
   const dragEnd = () => {
     setClosestEdge(null);
     setDragOver(false);
