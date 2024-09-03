@@ -1,9 +1,27 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createEnv } from '@t3-oss/env-core';
-import 'dotenv/config';
+import { config as dotenvConfig } from 'dotenv';
 import { z } from 'zod';
+
+// Check if .env file exists
+const isEnvFileExists = existsSync('.env');
+if (!isEnvFileExists) {
+  const isExampleEnvFileExists = existsSync('.env.example');
+  if (!isExampleEnvFileExists) {
+    throw new Error('Please create a .env file');
+  }
+  const exampleEnvFile = readFileSync('.env.example');
+  writeFileSync('.env', exampleEnvFile);
+  console.log('Created .env file');
+}
+dotenvConfig();
 
 export const env = createEnv({
   server: {
+    PGLITE: z
+      .string()
+      .optional()
+      .transform((v) => v === 'true'),
     DATABASE_URL: z.string().url(),
     NODE_ENV: z.union([z.literal('development'), z.literal('production')]),
     PORT: z.string().optional(),

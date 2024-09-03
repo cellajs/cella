@@ -7,7 +7,7 @@ export default defineConfig({
   clean: true,
   dts: false,
   format: ['esm'],
-  target: 'es2020',
+  target: 'esnext',
   minify: false,
   esbuildOptions(options) {
     options.alias = {
