@@ -23,7 +23,7 @@ const BoardHeader = () => {
   const { workspace, selectedTasks, searchQuery, showPageHeader, togglePageHeader } = useWorkspaceStore();
 
   const openSettingsSheet = () => {
-    sheet.create(<WorkspaceSettings sheet workspace={workspace} />, {
+    sheet.create(<WorkspaceSettings sheet />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:workspace_settings'),
       text: t('common:workspace_settings.text'),

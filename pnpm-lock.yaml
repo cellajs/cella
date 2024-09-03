@@ -40,13 +40,13 @@ importers:
         version: 12.1.0(commander@12.1.0)
       '@hono/node-server':
         specifier: ^1.12.2
-        version: 1.12.2(hono@4.5.10)
+        version: 1.12.2(hono@4.5.11)
       '@hono/sentry':
         specifier: ^1.2.0
-        version: 1.2.0(hono@4.5.10)
+        version: 1.2.0(hono@4.5.11)
       '@hono/zod-openapi':
         specifier: 0.16.0
-        version: 0.16.0(hono@4.5.10)(zod@3.23.8)
+        version: 0.16.0(hono@4.5.11)(zod@3.23.8)
       '@logtail/node':
         specifier: ^0.5.0
         version: 0.5.0
@@ -81,8 +81,8 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0
       '@scalar/hono-api-reference':
-        specifier: ^0.5.143
-        version: 0.5.143(hono@4.5.10)
+        specifier: ^0.5.144
+        version: 0.5.144(hono@4.5.11)
       '@sendgrid/mail':
         specifier: ^8.1.3
         version: 8.1.3
@@ -114,8 +114,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
       hono:
-        specifier: 4.5.10
-        version: 4.5.10
+        specifier: 4.5.11
+        version: 4.5.11
       i18next:
         specifier: ^23.14.0
         version: 23.14.0
@@ -426,8 +426,8 @@ importers:
         specifier: ^13.9.1
         version: 13.9.1
       hono:
-        specifier: 4.5.10
-        version: 4.5.10
+        specifier: 4.5.11
+        version: 4.5.11
       i18next:
         specifier: ^23.14.0
         version: 23.14.0
@@ -2642,7 +2642,6 @@ packages:
 
   '@evilmartians/lefthook@1.7.14':
     resolution: {integrity: sha512-0FPRdmd7hIZXjTQKQjLnmqxx4xGRIM1oGN9pJ4PyI14tOqEAwstmLIbauqQpTVTj3MAPeylsQVXh9RGaq/F2/A==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -4409,22 +4408,22 @@ packages:
   '@rrweb/types@2.0.0-alpha.16':
     resolution: {integrity: sha512-E6cACNVsm+NUhn7dzocQoKyXI7BHrHRRm5Ab23yrAzEQ2caWocCEYJhqDlc4KRVJBkQfXZfyWm8+2d0uggFuZg==}
 
-  '@scalar/hono-api-reference@0.5.143':
-    resolution: {integrity: sha512-Rojp75Ma2HB2uUsmOQqsB6mJG8ydg1FB8ful3W8rhrahNZv76zK/wXmNl9B9OsK6AFIf8a7/kZuXMrAoHfHBSA==}
+  '@scalar/hono-api-reference@0.5.144':
+    resolution: {integrity: sha512-ZeboJSlH8ZvdUjVGOZ1XEXKCvyls/s2MS+3Qif8EuTPGi6BG7hjYlcIk74perMc+zZfJl0b61aeaHlqqQ+El+A==}
     engines: {node: '>=18'}
     peerDependencies:
       hono: ^4.0.0
 
-  '@scalar/openapi-types@0.0.1':
-    resolution: {integrity: sha512-qMcUrhe+JRXlI9VGWcY/xGHkGplHdZ5UdGFXJ0q9e20gFVk2HMApE98Mo2iUp42Gff0xHIcNHaEQKAhdfW3R2Q==}
+  '@scalar/openapi-types@0.1.0':
+    resolution: {integrity: sha512-UxyIkRqC2rbvQJhenA+KdgAbLNUPjqI5CHhZmTuxiv7De9ZJLRVTQCa0JxNqSJ/b51VKpqZ/pDLvjbQpxGFWcA==}
     engines: {node: '>=18'}
 
   '@scalar/themes@0.9.28':
     resolution: {integrity: sha512-2pFGnjSBL2daPA5roRNRDy8xAHpeTI5QYpfyTj88iIaYT68EVnDUheUA2i3vRB705FCGEbDR0xKD7poTSfAYng==}
     engines: {node: '>=18'}
 
-  '@scalar/types@0.0.5':
-    resolution: {integrity: sha512-aRPKMt6tXUn+jN/YReJ1CCyjM5rAwJYRJrW+XP4YzlCQf6d4N2dOTmkC2GLEu4iPvhy1Pig6Bnbl7fLiPiKEYg==}
+  '@scalar/types@0.0.6':
+    resolution: {integrity: sha512-MeL08EQO+lA8rJwS8Efch7KYs15G3Bm4XtNmJPRS1Ae85exWXkVS73TDlIyNBfk4eV+COs3tbBBLaUHpxUlRbQ==}
     engines: {node: '>=18'}
 
   '@selderee/plugin-htmlparser2@0.11.0':
@@ -6818,8 +6817,8 @@ packages:
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
-  hono@4.5.10:
-    resolution: {integrity: sha512-az6tdU1U8o/l0v8O37FIQuc+ER/TeD9vHt/qs8JnBDgMxw6Zu5L2AixUyHeXZNcu87r7iYo8Ey85R7IogOINKA==}
+  hono@4.5.11:
+    resolution: {integrity: sha512-62FcjLPtjAFwISVBUshryl+vbHOjg8rE4uIK/dxyR8GpLztunZpwFmfEvmJCUI7xoGh/Sr3CGCDPCmYxVw7wUQ==}
     engines: {node: '>=16.0.0'}
 
   hookable@5.5.3:
@@ -12325,25 +12324,25 @@ snapshots:
       protobufjs: 7.4.0
       yargs: 17.7.2
 
-  '@hono/node-server@1.12.2(hono@4.5.10)':
+  '@hono/node-server@1.12.2(hono@4.5.11)':
     dependencies:
-      hono: 4.5.10
+      hono: 4.5.11
 
-  '@hono/sentry@1.2.0(hono@4.5.10)':
+  '@hono/sentry@1.2.0(hono@4.5.11)':
     dependencies:
-      hono: 4.5.10
+      hono: 4.5.11
       toucan-js: 4.0.0
 
-  '@hono/zod-openapi@0.16.0(hono@4.5.10)(zod@3.23.8)':
+  '@hono/zod-openapi@0.16.0(hono@4.5.11)(zod@3.23.8)':
     dependencies:
       '@asteasolutions/zod-to-openapi': 7.1.1(zod@3.23.8)
-      '@hono/zod-validator': 0.2.2(hono@4.5.10)(zod@3.23.8)
-      hono: 4.5.10
+      '@hono/zod-validator': 0.2.2(hono@4.5.11)(zod@3.23.8)
+      hono: 4.5.11
       zod: 3.23.8
 
-  '@hono/zod-validator@0.2.2(hono@4.5.10)(zod@3.23.8)':
+  '@hono/zod-validator@0.2.2(hono@4.5.11)(zod@3.23.8)':
     dependencies:
-      hono: 4.5.10
+      hono: 4.5.11
       zod: 3.23.8
 
   '@hookform/resolvers@3.9.0(react-hook-form@7.53.0(react@18.3.1))':
@@ -12513,14 +12512,14 @@ snapshots:
       '@axiomhq/js': 1.0.0-rc.3
       '@babel/core': 7.24.6
       '@babel/types': 7.24.6
-      '@hono/node-server': 1.12.2(hono@4.5.10)
+      '@hono/node-server': 1.12.2(hono@4.5.11)
       '@million/install': 0.0.18
       '@rollup/pluginutils': 5.1.0(rollup@2.79.1)
       '@rrweb/types': 2.0.0-alpha.16
       babel-plugin-syntax-hermes-parser: 0.21.1
       ci-info: 4.0.0
       esbuild: 0.20.2
-      hono: 4.5.10
+      hono: 4.5.11
       isomorphic-fetch: 3.0.0
       nanoid: 5.0.7
       pako: 2.1.0
@@ -14403,18 +14402,18 @@ snapshots:
     dependencies:
       rrweb-snapshot: 2.0.0-alpha.17
 
-  '@scalar/hono-api-reference@0.5.143(hono@4.5.10)':
+  '@scalar/hono-api-reference@0.5.144(hono@4.5.11)':
     dependencies:
-      '@scalar/types': 0.0.5
-      hono: 4.5.10
+      '@scalar/types': 0.0.6
+      hono: 4.5.11
 
-  '@scalar/openapi-types@0.0.1': {}
+  '@scalar/openapi-types@0.1.0': {}
 
   '@scalar/themes@0.9.28': {}
 
-  '@scalar/types@0.0.5':
+  '@scalar/types@0.0.6':
     dependencies:
-      '@scalar/openapi-types': 0.0.1
+      '@scalar/openapi-types': 0.1.0
       '@scalar/themes': 0.9.28
       '@unhead/schema': 1.10.0
 
@@ -17339,7 +17338,7 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono@4.5.10: {}
+  hono@4.5.11: {}
 
   hookable@5.5.3: {}
 
