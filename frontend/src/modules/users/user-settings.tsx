@@ -169,7 +169,7 @@ const UserSettings = () => {
   const invertClass = mode === 'dark' ? 'invert' : '';
 
   return (
-    <div className="container md:flex md:flex-row my-4 md:my-8 mx-auto gap-4">
+    <div className="container md:flex md:flex-row mt-4 md:mt-8 mx-auto gap-4 mb-[50vh]">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-2">
         <StickyBox className="z-10 max-md:!block">
           <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />

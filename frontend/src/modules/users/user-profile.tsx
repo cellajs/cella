@@ -68,7 +68,7 @@ export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet
             </>
           }
         />
-        <div className="container mb-12">
+        <div className="container mb-[50vh]">
           <ProjectsTable sheet={sheet} userId={isSelf ? undefined : passedUser.id} />
         </div>
       </UserContext.Provider>
