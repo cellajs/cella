@@ -74,7 +74,7 @@ const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps)
   );
 };
 
-const UserSettings = () => {
+const UserSettingsPage = () => {
   const { user, setUser } = useUserStore();
   const { mode } = useThemeStore();
   const { t } = useTranslation();
@@ -354,4 +354,4 @@ const UserSettings = () => {
   );
 };
 
-export default UserSettings;
+export default UserSettingsPage;

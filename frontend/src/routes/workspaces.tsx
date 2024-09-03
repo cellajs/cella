@@ -13,7 +13,7 @@ import { useWorkspaceStore } from '~/store/workspace';
 import { AppRoute } from '.';
 
 // Lazy-loaded components
-const Workspace = lazy(() => import('~/modules/workspaces'));
+const WorkspacePage = lazy(() => import('~/modules/workspaces/workspace-page'));
 const Board = lazy(() => import('~/modules/projects/board/board'));
 const TasksTable = lazy(() => import('~/modules/tasks/tasks-table'));
 
@@ -36,7 +36,7 @@ export const WorkspaceRoute = createRoute({
   component: () => {
     return (
       <Suspense>
-        <Workspace />
+        <WorkspacePage />
       </Suspense>
     );
   },

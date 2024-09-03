@@ -19,7 +19,7 @@ interface UserContextValue {
 
 export const UserContext = createContext({} as UserContextValue);
 
-export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
+const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user: currentUser } = useUserStore();
@@ -75,3 +75,5 @@ export const UserProfile = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet
     </>
   );
 };
+
+export default UserProfilePage;
