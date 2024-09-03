@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { createContext, useState } from 'react';
+import { createContext } from 'react';
 
 import type { User } from '~/types';
 
@@ -22,11 +22,11 @@ export const UserContext = createContext({} as UserContextValue);
 const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user: currentUser } = useUserStore();
-  const { mutate } = useUpdateUserMutation(currentUser.id);
-  const [passedUser, setPassedUser] = useState(user);
+  const { user: currentUser, setUser } = useUserStore();
 
-  const isSelf = currentUser.id === passedUser.id;
+  const isSelf = currentUser.id === user.id;
+
+  const { mutate } = useUpdateUserMutation(currentUser.id);
 
   const handleSettingCLick = () => {
     navigate({ to: '/user/settings', replace: true });
@@ -37,9 +37,7 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
     mutate(banner, {
       onSuccess: () => {
         toast.success(t('common:success.upload_cover'));
-        setPassedUser((prev) => {
-          return { ...prev, ...banner };
-        });
+        if (isSelf) setUser({ ...currentUser, ...banner });
       },
       onError: () => toast.error(t('common:error.image_upload_failed')),
     });
@@ -47,14 +45,14 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
 
   return (
     <>
-      <UserContext.Provider value={{ user: passedUser }}>
+      <UserContext.Provider value={{ user: user }}>
         <PageHeader
-          id={passedUser.id}
-          title={passedUser.name}
+          id={user.id}
+          title={user.name}
           type="user"
           disableScroll={true}
-          thumbnailUrl={passedUser.thumbnailUrl}
-          bannerUrl={passedUser.bannerUrl}
+          thumbnailUrl={user.thumbnailUrl}
+          bannerUrl={user.bannerUrl}
           panel={
             <>
               {isSelf && (
@@ -69,7 +67,7 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
           }
         />
         <div className="container mb-[50vh]">
-          <ProjectsTable sheet={sheet} userId={isSelf ? undefined : passedUser.id} />
+          <ProjectsTable sheet={sheet} userId={isSelf ? undefined : user.id} />
         </div>
       </UserContext.Provider>
     </>

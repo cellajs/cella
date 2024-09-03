@@ -33,10 +33,11 @@ const OrganizationPage = () => {
 
   const { mutate } = useUpdateOrganizationMutation(organization.id);
   useEventListener('updateOrganizationCover', (e) => {
-    mutate(
-      { bannerUrl: e.detail },
-      { onSuccess: () => toast.success(t('common:success.upload_cover')), onError: () => toast.error(t('common:error.image_upload_failed')) },
-    );
+    const banner = { bannerUrl: e.detail };
+    mutate(banner, {
+      onSuccess: () => toast.success(t('common:success.upload_cover')),
+      onError: () => toast.error(t('common:error.image_upload_failed')),
+    });
   });
 
   return (

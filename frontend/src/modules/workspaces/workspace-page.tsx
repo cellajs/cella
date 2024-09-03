@@ -13,7 +13,7 @@ import { useWorkspaceStore } from '~/store/workspace';
 
 const WorkspacePage = () => {
   const { t } = useTranslation();
-  const { showPageHeader, setSelectedTasks, setSearchQuery, setWorkspace } = useWorkspaceStore();
+  const { showPageHeader, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
   const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
 
@@ -26,10 +26,7 @@ const WorkspacePage = () => {
   useEventListener('updateWorkspaceCover', (e) => {
     const banner = { bannerUrl: e.detail };
     mutate(banner, {
-      onSuccess: () => {
-        toast.success(t('common:success.upload_cover'));
-        setWorkspace({ ...workspace, ...banner }, undefined, undefined);
-      },
+      onSuccess: () => toast.success(t('common:success.upload_cover')),
       onError: () => toast.error(t('common:error.image_upload_failed')),
     });
   });

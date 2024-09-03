@@ -1,6 +1,6 @@
 import type { Entity } from 'backend/types/common';
 import { Upload } from 'lucide-react';
-import { Suspense, memo } from 'react';
+import { Suspense, memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -24,6 +24,10 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const { menu } = useNavigationStore();
+
+  const [coverUrl, setCoverUrl] = useState(url);
+
+  // TODO is this best way to get entity and role?
   const [entity] = Object.values(menu)
     .flat()
     .filter((el) => el.id === id);
@@ -34,10 +38,11 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   const bannerHeight = url ? 'h-[20vw] min-h-40 sm:min-w-52' : 'h-32'; // : 'h-14';
   const bannerClass = url ? 'bg-background' : getColorClass(id);
 
-  const setUrl = (url: string) => {
-    if (type === 'organization') dispatchCustomEvent('updateOrganizationCover', url);
-    if (type === 'user') dispatchCustomEvent('updateUserCover', url);
-    if (type === 'workspace') dispatchCustomEvent('updateWorkspaceCover', url);
+  const setUrl = (newUrl: string) => {
+    setCoverUrl(newUrl);
+    if (type === 'organization') dispatchCustomEvent('updateOrganizationCover', newUrl);
+    if (type === 'user') dispatchCustomEvent('updateUserCover', newUrl);
+    if (type === 'workspace') dispatchCustomEvent('updateWorkspaceCover', newUrl);
   };
 
   // Open the upload dialog
@@ -76,7 +81,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
     );
   };
   return (
-    <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={url ? { backgroundImage: `url(${url})` } : {}}>
+    <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}>
       {(isAdmin || isSelf) && (
         <Button
           variant="secondary"
