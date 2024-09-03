@@ -1,7 +1,7 @@
 import { count, eq, sql } from 'drizzle-orm';
-import { db } from '../db/db';
-import { membershipsTable } from '../db/schema/memberships';
-import type { Entity } from '../types/common';
+import { db } from '#/db/db';
+import { membershipsTable } from '#/db/schema/memberships';
+import type { Entity } from '#/types/common';
 
 const getQuery = (entity: Entity) => {
   let columnName: keyof typeof membershipsTable;
@@ -37,12 +37,13 @@ export async function counts(entity: Entity, id?: string | undefined) {
   const query = getQuery(entity);
 
   if (id) {
-    const [{ admins, members }] = await db.select().from(query).where(eq(query.id, id));
+    const [memberships] = await db.select().from(query).where(eq(query.id, id));
+
     return {
       memberships: {
-        admins,
-        members,
-        total: members,
+        admins: memberships?.admins || 0,
+        members: memberships?.members || 0,
+        total: memberships?.members || 0,
       },
     };
   }

@@ -18,16 +18,23 @@ interface Props {
 const ImpersonateRow = ({ user, tabIndex }: Props) => {
   const currentUser = useUserStore((state) => state.user);
   const { t } = useTranslation();
-
   const navigate = useNavigate();
+
   const impersonateClick = async () => {
-    useUserStore.setState({ user: null as unknown as MeUser });
-    await impersonateSignIn(user.id);
-    navigate({ to: '/', replace: true });
-    toast.success(t('common:success.impersonated'));
-    await Promise.all([getAndSetMe(), getAndSetMenu()]);
+    try {
+      useUserStore.setState({ user: null as unknown as MeUser });
+      await impersonateSignIn(user.id);
+      await Promise.all([getAndSetMe(), getAndSetMenu()]);
+      toast.success(t('common:success.impersonated'));
+      navigate({ to: '/', replace: true });
+    } catch (error) {
+      toast.error(t('common:error.impersonation_failed'));
+      console.error(error);
+    }
   };
-  if (user.id === currentUser.id) return null;
+
+  if (user.id === currentUser?.id) return null;
+
   return (
     <Button variant="cell" size="icon" tabIndex={tabIndex} className="w-full h-full" onClick={impersonateClick}>
       <VenetianMask size={16} />

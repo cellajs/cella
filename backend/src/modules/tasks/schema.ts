@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
-import { labelsTable } from '../../db/schema/labels';
-import { tasksTable } from '../../db/schema/tasks';
-import { paginationQuerySchema } from '../../lib/common-schemas';
+import { tasksTable } from '#/db/schema/tasks';
+import { paginationQuerySchema } from '#/lib/common-schemas';
+import { labelSchema } from '../labels/schema';
 import { userSchema } from '../users/schema';
 
 export const createTaskSchema = z.object({
@@ -50,7 +50,7 @@ const taskSchema = z.object({
     parentId: true,
     createdAt: true,
   }).shape,
-  labels: z.array(z.object({ ...createSelectSchema(labelsTable).shape })),
+  labels: z.array(labelSchema),
   assignedTo: z.array(userSchema.omit({ counts: true })),
   createdAt: z.string(),
   parentId: z.string().nullable(),
@@ -82,24 +82,9 @@ export const fullTaskSchema = z.object({
 export const getTasksQuerySchema = paginationQuerySchema.merge(
   z.object({
     q: z.string().optional(),
-    tableSort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
+    sort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
     order: z.enum(['asc', 'desc']).default('asc').optional(),
     projectId: z.string(),
     status: z.string().optional(),
   }),
 );
-
-export const getNewOrderQuerySchema = z.object({
-  oldStatus: z.string(),
-  newStatus: z.string(),
-  projectId: z.string(),
-});
-
-export const relativeQuerySchema = z.object({
-  edge: z.enum(['top', 'right', 'bottom', 'left']),
-  currentOrder: z.number(),
-  projectId: z.string(),
-  sourceId: z.string(),
-  parentId: z.string().optional(),
-  status: z.number().optional(),
-});

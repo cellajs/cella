@@ -4,10 +4,10 @@ import { eq } from 'drizzle-orm';
 import JSZip from 'jszip';
 import { nanoid } from 'nanoid';
 import papaparse from 'papaparse';
-import { db } from '../../../src/db/db';
-import { labelsTable } from '../../../src/db/schema/labels';
-import { projectsTable } from '../../../src/db/schema/projects';
-import { tasksTable } from '../../../src/db/schema/tasks';
+import { db } from '#/db/db';
+import { labelsTable } from '#/db/schema/labels';
+import { projectsTable } from '#/db/schema/projects';
+import { tasksTable } from '#/db/schema/tasks';
 import { extractKeywords, getLabels, getSubTask, getTaskLabels } from './helper';
 import type { PivotalTask, Subtask } from './type';
 
@@ -66,7 +66,9 @@ zip.loadAsync(data).then(async (zip) => {
     return {
       id: taskId,
       slug: task.Id,
-      summary: `<p class="bn-inline-content">${task.Title}</p>` || '<p class="bn-inline-content">No title</p>',
+      summary:
+        `<div class="bn-block-content"><p class="bn-inline-content">${task.Title}</p></div>` ||
+        '<div class="bn-block-content"><p class="bn-inline-content">No title</p></div>',
       type: (task.Type || 'chore') as 'feature' | 'bug' | 'chore',
       createdBy: 'pivotal',
       organizationId: project.organizationId,
@@ -74,7 +76,7 @@ zip.loadAsync(data).then(async (zip) => {
       expandable: true,
       keywords: extractKeywords(task.Description.length ? task.Description : task.Title),
       impact: ['0', '1', '2', '3'].includes(task.Estimate) ? +task.Estimate : 0,
-      description: `<p class="bn-inline-content">${task.Title}</p><p class="bn-inline-content">${task.Description}</p>`,
+      description: `<div class="bn-block-content"><p class="bn-inline-content">${task.Title}</p></div><div class="bn-block-content"><p class="bn-inline-content">${task.Description}</p></div>`,
       labels: labelsIds,
       status:
         task['Current State'] === 'accepted'

@@ -3,10 +3,10 @@ import { GitHub, Google, MicrosoftEntraId } from 'arctic';
 import { config } from 'config';
 import { Lucia, type SessionCookieOptions, TimeSpan } from 'lucia';
 
+import { db } from '#/db/db';
+import authRoutesConfig from '#/modules/auth/routes';
 import { env } from '../../env';
-import authRoutesConfig from '../modules/auth/routes';
-import { db } from './db';
-import { sessionsTable } from './schema/sessions';
+import { type SessionModel, sessionsTable } from './schema/sessions';
 import { type UnsafeUserModel, usersTable } from './schema/users';
 
 export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', {
@@ -46,7 +46,7 @@ export const auth = new Lucia(adapter, {
     return databaseUserAttributes;
   },
   getSessionAttributes(databaseSessionAttributes) {
-    return { type: databaseSessionAttributes.type, adminUserId: databaseSessionAttributes.adminUserId };
+    return databaseSessionAttributes;
   },
 });
 
@@ -56,6 +56,6 @@ declare module 'lucia' {
   interface Register {
     Lucia: typeof auth;
     DatabaseUserAttributes: UnsafeUserModel;
-    DatabaseSessionAttributes: { type: 'regular' | 'impersonation'; adminUserId: null | string };
+    DatabaseSessionAttributes: Omit<SessionModel, 'id' | 'userId' | 'expiresAt'>;
   }
 }

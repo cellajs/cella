@@ -122,7 +122,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
             )}
           </CardFooter>
         </Card>
-        {isRootLevel && <AppFooter />}
+        {isRootLevel && <AppFooter className="items-center" />}
       </div>
     </div>
   );

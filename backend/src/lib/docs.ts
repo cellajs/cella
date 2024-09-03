@@ -1,6 +1,6 @@
 import { apiReference } from '@scalar/hono-api-reference';
 import { config } from 'config';
-import type { CustomHono } from '../types/common';
+import type { CustomHono } from '#/types/common';
 
 const openAPITags = [
   { name: 'me', description: 'Current user endpoints. They are split from `users` due to a different authorization flow.' },

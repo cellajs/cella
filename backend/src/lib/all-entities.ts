@@ -1,12 +1,12 @@
 // import { type AnyColumn, type SQL, type SQLWrapper, and, count, eq, ilike } from 'drizzle-orm';
-// import { membershipsTable } from '../db/schema/memberships';
-// import { db } from '../db/db';
+// import { membershipsTable } from '#/db/schema/memberships';
+// import { db } from '#/db/db';
 // import type { PgColumn, PgTableWithColumns } from 'drizzle-orm/pg-core';
 // import { getOrderColumn } from './order-column';
 // import { counts } from './counts';
-// import type { Entity } from '../types/common';
-// import { projectsTable } from '../db/schema/projects';
-// import { organizationsTable } from '../db/schema/organizations';
+// import type { Entity } from '#/types/common';
+// import { projectsTable } from '#/db/schema/projects';
+// import { organizationsTable } from '#/db/schema/organizations';
 
 // export const getAllEntities = async (
 //   entity: Exclude<Entity, 'user'>,

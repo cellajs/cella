@@ -9,7 +9,7 @@ export const getSubTask = (task: PivotalTask, taskId: string, organizationId: st
       subtasks.push({
         id: nanoid(),
         slug: `${task.Id}_${i}`,
-        summary: `<p class="bn-inline-content">${task[taskKey]}</p>`,
+        summary: `<div class="bn-block-content"><p class="bn-inline-content">${task[taskKey]}</p></div>`,
         type: 'chore' as const,
         keywords: extractKeywords(task[taskKey]),
         parentId: taskId,
@@ -17,7 +17,7 @@ export const getSubTask = (task: PivotalTask, taskId: string, organizationId: st
         organizationId: organizationId,
         projectId: projectId,
         impact: 0,
-        description: `<p class="bn-inline-content">${task[taskKey]}</p>`,
+        description: `<div class="bn-block-content"><p class="bn-inline-content">${task[taskKey]}</p></div>`,
         status: task[statusKey] === 'completed' ? 6 : 0,
         order: i,
         createdAt: new Date(),

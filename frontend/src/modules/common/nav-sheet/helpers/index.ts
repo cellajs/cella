@@ -1,6 +1,4 @@
-import type { ContextEntity, DraggableItemData, UserMenu, UserMenuItem } from '~/types';
-
-type PageDraggableItemData = DraggableItemData<UserMenuItem>;
+import type { ContextEntity, UserMenu, UserMenuItem } from '~/types';
 
 const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntity) => {
   const menuList = data
@@ -19,8 +17,4 @@ export const findRelatedItemsByType = (data: UserMenu, entityType: ContextEntity
   const subItemsMenu = flatData.flatMap((el) => el.submenu || []);
   const subItems = sortAndFilterMenu(subItemsMenu, entityType);
   return subItems.length ? subItems : [];
-};
-
-export const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'menuItem';
 };

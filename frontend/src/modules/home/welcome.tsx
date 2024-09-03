@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { OnboardingStates } from '~/modules/home/onboarding';
 import Onboarding from '~/modules/home/onboarding';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
-import { Dialog, DialogContent } from '~/modules/ui/dialog';
+import { Dialog, DialogContent, DialogHiddenTitle } from '~/modules/ui/dialog';
 import { useNavigationStore } from '~/store/navigation';
 
 const Welcome = () => {
@@ -19,7 +19,11 @@ const Welcome = () => {
   return (
     <>
       <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
-        <DialogContent className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto">
+        <DialogContent
+          aria-describedby={undefined}
+          className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto"
+        >
+          <DialogHiddenTitle>Welcome</DialogHiddenTitle>
           <Onboarding onboarding={onboarding} setOnboarding={setOnboarding} />
         </DialogContent>
       </Dialog>

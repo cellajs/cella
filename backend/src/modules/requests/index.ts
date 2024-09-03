@@ -1,10 +1,10 @@
 import { type SQL, count, ilike } from 'drizzle-orm';
 
-import { db } from '../../db/db';
-import { requestsTable } from '../../db/schema/requests';
-import { sendSlackNotification } from '../../lib/notification';
-import { getOrderColumn } from '../../lib/order-column';
-import { CustomHono } from '../../types/common';
+import { db } from '#/db/db';
+import { requestsTable } from '#/db/schema/requests';
+import { sendSlackNotification } from '#/lib/notification';
+import { getOrderColumn } from '#/lib/order-column';
+import { CustomHono } from '#/types/common';
 import requestsRoutesConfig from './routes';
 
 const app = new CustomHono();

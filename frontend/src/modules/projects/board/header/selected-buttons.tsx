@@ -3,7 +3,7 @@ import { Trash, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { deleteTasks } from '~/api/tasks';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';

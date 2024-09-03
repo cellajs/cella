@@ -1,10 +1,11 @@
-import type { RequestProp } from '~/types';
 import { apiClient, handleResponse } from '.';
 
 const client = apiClient.requests;
 
+type CreateRequestProp = Parameters<(typeof client)['$post']>['0']['json'];
+
 // Request access or request info
-export const createRequest = async (requestInfo: RequestProp) => {
+export const createRequest = async (requestInfo: CreateRequestProp) => {
   const response = await client.$post({
     json: requestInfo,
   });

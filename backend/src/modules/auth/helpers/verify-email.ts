@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { logEvent } from '../../../middlewares/logger/log-event';
+import { logEvent } from '#/middlewares/logger/log-event';
 import authRoutesConfig from '../routes';
 
 export const sendVerificationEmail = (email: string) => {

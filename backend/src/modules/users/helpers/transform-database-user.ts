@@ -1,5 +1,5 @@
 import type { config } from 'config';
-import type { UnsafeUserModel } from '../../../db/schema/users';
+import type { UnsafeUserModel } from '#/db/schema/users';
 
 type MakeOptional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 

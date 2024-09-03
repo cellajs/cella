@@ -1,6 +1,7 @@
 import { type InfiniteData, type QueryKey, useQueryClient } from '@tanstack/react-query';
+import type { TaskQueryActions } from '~/lib/custom-events/types';
 import { queryClient } from '~/lib/router';
-import type { Membership, Project, SubTask, Task, TaskQueryActions, Workspace, WorkspaceStoreProject } from '~/types';
+import type { Membership, Project, SubTask, Task, Workspace, WorkspaceStoreProject } from '~/types';
 
 interface Item {
   id: string;

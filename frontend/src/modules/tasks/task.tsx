@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Tag, UserX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { queryClient } from '~/lib/router';
 import { cn } from '~/lib/utils.ts';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact.tsx';
 import { type TaskStatus, statusVariants, taskStatuses } from '~/modules/tasks/task-selectors/select-status.tsx';
@@ -22,21 +23,17 @@ import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/externa
 import { useLocation } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks.ts';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
-import { getDraggableItemData } from '~/lib/utils';
+import { updateTask } from '~/api/tasks.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events';
+import { getDraggableItemData, isTaskData } from '~/lib/drag-and-drop';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
+import { getNewStatusTaskOrder } from '~/modules/tasks/helpers';
 import TaskDescription from '~/modules/tasks/task-content.tsx';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { Checkbox } from '~/modules/ui/checkbox.tsx';
 import type { Mode } from '~/store/theme.ts';
-import type { DraggableItemData, Task } from '~/types';
-
-type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
-export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
-};
+import type { Task } from '~/types';
 
 const variants = cva('task-card', {
   variants: {
@@ -82,7 +79,8 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
 
   const updateStatus = async (newStatus: number) => {
     try {
-      const newOrder = await getChangeStatusTaskOrder(task.status, newStatus, task.projectId);
+      const { items: tasks } = queryClient.getQueryData(['boardTasks', task.projectId]) as { items: Task[] };
+      const newOrder = getNewStatusTaskOrder(task.status, newStatus, tasks);
       const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
@@ -90,8 +88,6 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
       toast.error(t('common:error.update_resource', { resource: t('common:task') }));
     }
   };
-
-  // console.log('rerender');
 
   const dragEnd = () => {
     setClosestEdge(null);

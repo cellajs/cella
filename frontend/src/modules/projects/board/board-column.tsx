@@ -7,6 +7,7 @@ import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
+import type { CustomEventEventById, TaskCRUDEvent, TaskChangeEvent } from '~/lib/custom-events/types';
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -26,11 +27,10 @@ import SelectStatus, { type TaskStatus } from '~/modules/tasks/task-selectors/se
 import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { WorkspaceRoute } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import type { CustomEventEventById, Project, Task, TaskCRUDEvent, TaskChangeEvent, WorkspaceStoreProject } from '~/types';
+import type { Project, Task, WorkspaceStoreProject } from '~/types';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -84,7 +84,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   const tasks = useMemo(() => {
     const respTasks = tasksQuery.data?.items || [];
     if (!searchQuery.length) return respTasks;
-    return respTasks.filter((t) => t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    return respTasks.filter((t) => t.keywords.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [tasksQuery.data, searchQuery]);
 
   const {
@@ -112,7 +112,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
       {
         id: 'members',
         label: 'common:members',
-        element: <MembersTable entity={project as unknown as Project} route={WorkspaceRoute.id} isSheet />,
+        element: <MembersTable entity={project as unknown as Project} isSheet />,
       },
     ];
 

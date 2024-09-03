@@ -1,19 +1,19 @@
 import { faker } from '@faker-js/faker';
 
-import { db } from '~/db/db';
-import { nanoid } from '../../../src/lib/nanoid';
+import { db } from '#/db/db';
+import { nanoid } from '#/lib/nanoid';
 
 import { Command } from '@commander-js/extra-typings';
 import { and, eq } from 'drizzle-orm';
 import { UniqueEnforcer } from 'enforce-unique';
 import slugify from 'slugify';
-import { type InsertLabelModel, labelsTable } from '../../../src/db/schema/labels';
-import { type InsertMembershipModel, membershipsTable } from '../../../src/db/schema/memberships';
-import { organizationsTable } from '../../../src/db/schema/organizations';
-import { type InsertProjectModel, projectsTable } from '../../../src/db/schema/projects';
-import { projectsToWorkspacesTable } from '../../../src/db/schema/projects-to-workspaces';
-import { type InsertTaskModel, tasksTable } from '../../../src/db/schema/tasks';
-import { type InsertWorkspaceModel, workspacesTable } from '../../../src/db/schema/workspaces';
+import { type InsertLabelModel, labelsTable } from '#/db/schema/labels';
+import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
+import { organizationsTable } from '#/db/schema/organizations';
+import { type InsertProjectModel, projectsTable } from '#/db/schema/projects';
+import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
+import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
+import { type InsertWorkspaceModel, workspacesTable } from '#/db/schema/workspaces';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 import { extractKeywords } from './helpers';
@@ -179,7 +179,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
                 id: nanoid(),
                 organizationId: organization.id,
                 projectId: project.id,
-                summary: `<p class="bn-inline-content">${subTaskName}</p>`,
+                summary: `<div class="bn-block-content"><p class="bn-inline-content">${subTaskName}</p></div>`,
                 keywords: extractKeywords(subTaskDescription),
                 expandable: true,
                 parentId: mainTaskId,
@@ -189,7 +189,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
                 status: Math.random() < 0.5 ? 1 : 6,
                 impact: 0,
                 type: 'chore',
-                description: `<p class="bn-inline-content">${subTaskName}</p><p class="bn-inline-content">${subTaskDescription}</p>`,
+                description: `<div class="bn-block-content"><p class="bn-inline-content">${subTaskName}</p></div><div class="bn-block-content"><p class="bn-inline-content">${subTaskDescription}</p></div>`,
                 createdAt: faker.date.past(),
                 createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
                 modifiedAt: faker.date.past(),
@@ -202,7 +202,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             id: mainTaskId,
             organizationId: organization.id,
             projectId: project.id,
-            summary: `<p class="bn-inline-content">${name}</p>`,
+            summary: `<div class="bn-block-content"><p class="bn-inline-content">${name}</p></div>`,
             keywords: extractKeywords(taskDescription),
             expandable: true,
             slug: faker.helpers.slugify(name).toLowerCase(),
@@ -212,7 +212,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
             // random integer between 0 and 3
             impact: Math.floor(Math.random() * 4),
-            description: `<p class="bn-inline-content">${name}</p><p class="bn-inline-content">${taskDescription}</p>`,
+            description: `<div class="bn-block-content"><p class="bn-inline-content">${name}</p></div><div class="bn-block-content"><p class="bn-inline-content">${taskDescription}</p></div>`,
             createdAt: faker.date.past(),
             createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
             modifiedAt: faker.date.past(),

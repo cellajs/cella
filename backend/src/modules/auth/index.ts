@@ -6,29 +6,29 @@ import { VerificationEmail } from '../../../emails/email-verification';
 import { ResetPasswordEmail } from '../../../emails/reset-password';
 
 import { Argon2id } from 'oslo/password';
-import { auth } from '../../db/lucia';
+import { auth } from '#/db/lucia';
 
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import { deleteCookie, getCookie } from 'hono/cookie';
 
 import slugify from 'slugify';
-import { githubAuth, googleAuth, microsoftAuth } from '../../db/lucia';
+import { githubAuth, googleAuth, microsoftAuth } from '#/db/lucia';
 
 import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
 
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
 import type { z } from 'zod';
-import { db } from '../../db/db';
-import { passkeysTable } from '../../db/schema/passkeys';
-import { tokensTable } from '../../db/schema/tokens';
-import { usersTable } from '../../db/schema/users';
-import { errorResponse } from '../../lib/errors';
-import { i18n } from '../../lib/i18n';
-import { emailSender } from '../../lib/mailer';
-import { nanoid } from '../../lib/nanoid';
-import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import { db } from '#/db/db';
+import { passkeysTable } from '#/db/schema/passkeys';
+import { tokensTable } from '#/db/schema/tokens';
+import { usersTable } from '#/db/schema/users';
+import { errorResponse } from '#/lib/errors';
+import { i18n } from '#/lib/i18n';
+import { emailSender } from '#/lib/mailer';
+import { nanoid } from '#/lib/nanoid';
+import { logEvent } from '#/middlewares/logger/log-event';
+import { CustomHono } from '#/types/common';
 import generalRouteConfig from '../general/routes';
 import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
 import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';

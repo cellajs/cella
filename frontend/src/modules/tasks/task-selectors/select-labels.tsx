@@ -8,7 +8,7 @@ import { type CreateLabelParams, createLabel, updateLabel } from '~/api/labels.t
 import { updateTask } from '~/api/tasks.ts';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { nanoid, recentlyUsed } from '~/lib/utils.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { inNumbersArray } from '~/modules/tasks/helpers';

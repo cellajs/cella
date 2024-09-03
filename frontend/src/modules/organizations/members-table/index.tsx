@@ -44,13 +44,12 @@ type MemberSearch = z.infer<typeof membersQuerySchema>;
 
 interface MembersTableProps {
   entity: Project | Organization;
-  route: '/layout/$idOrSlug/members' | '/layout/workspaces/$idOrSlug';
   isSheet?: boolean;
 }
 
-const MembersTable = ({ route, entity, isSheet = false }: MembersTableProps) => {
+const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
-  const search = useSearch({ from: route });
+  const search = useSearch({ from: '/layout/$idOrSlug/members' });
   const containerRef = useRef(null);
   const navigate = useNavigate();
   const entityType = entity.entity;

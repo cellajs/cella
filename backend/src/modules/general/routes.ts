@@ -1,9 +1,10 @@
 import { z } from '@hono/zod-openapi';
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '../../lib/common-responses';
-import { contextEntityTypeSchema, entityParamSchema, entityTypeSchema, slugSchema, tokenSchema } from '../../lib/common-schemas';
-import { createRouteConfig } from '../../lib/route-config';
-import { isAuthenticated, isPublicAccess, isSystemAdmin } from '../../middlewares/guard';
-import { authRateLimiter, rateLimiter } from '../../middlewares/rate-limiter';
+import { config } from 'config';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/lib/common-responses';
+import { contextEntityTypeSchema, entityParamSchema, slugSchema, tokenSchema } from '#/lib/common-schemas';
+import { createRouteConfig } from '#/lib/route-config';
+import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
+import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
 import { userUnsubscribeQuerySchema } from '../users/schema';
 import {
   acceptInviteBodySchema,
@@ -271,7 +272,7 @@ class GeneralRoutesConfig {
     request: {
       query: z.object({
         q: z.string().optional(),
-        type: entityTypeSchema.optional(),
+        type: z.enum(config.pageEntityTypes).optional(),
       }),
     },
     responses: {
@@ -293,7 +294,7 @@ class GeneralRoutesConfig {
     guard: [isAuthenticated],
     tags: ['general'],
     summary: 'Get list of members',
-    description: 'Get members of an entity by id or slug. It returns members (users) with their role.',
+    description: 'Get members of a context entity by id or slug. It returns members (users) with their membership.',
     request: {
       query: membersQuerySchema,
     },

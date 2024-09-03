@@ -4,10 +4,10 @@ import type { z } from 'zod';
 
 import type { config } from 'config';
 import type { Schema } from 'hono';
-import type { MembershipModel } from '../db/schema/memberships';
-import type { OrganizationModel } from '../db/schema/organizations';
-import type { ProjectModel } from '../db/schema/projects';
-import type { WorkspaceModel } from '../db/schema/workspaces';
+import type { MembershipModel } from '#/db/schema/memberships';
+import type { OrganizationModel } from '#/db/schema/organizations';
+import type { ProjectModel } from '#/db/schema/projects';
+import type { WorkspaceModel } from '#/db/schema/workspaces';
 import type { failWithErrorSchema } from '../lib/common-schemas';
 
 export type Entity = (typeof config.entityTypes)[number];

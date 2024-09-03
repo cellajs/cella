@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { usersTable } from '#/db/schema/users';
 import { organizationsTable } from './organizations';
-import { usersTable } from './users';
 
 const tokenTypeEnum = ['email_verification', 'password_reset', 'system_invitation', 'organization_invitation'] as const;
 const roleEnum = config.rolesByType.allRoles;

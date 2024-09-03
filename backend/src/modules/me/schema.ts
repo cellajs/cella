@@ -1,15 +1,31 @@
 import { z } from 'zod';
 
 import { config } from 'config';
-import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '../../lib/common-schemas';
+import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
+export const sessionSchema = z.object({
+  id: idSchema,
+  createdAt: z.string(),
+  deviceName: z.string().nullish(),
+  userId: idSchema,
+  deviceType: z.enum(['desktop', 'mobile']),
+  deviceOs: z.string().nullish(),
+  browser: z.string().nullish(),
+  authStrategy: z.enum(['github', 'google', 'microsoft', 'password', 'passkey']).nullish(),
+  type: z.enum(['regular', 'impersonation']),
+  expiresAt: z.string(),
+  adminUserId: idSchema.nullish(),
+});
+
 export const signUpInfo = z.object({ oauth: z.array(z.enum(['github', 'google', 'microsoft'])), passkey: z.boolean() });
 export const meUserSchema = userSchema.extend({
-  sessions: z.array(
-    z.object({ id: z.string(), type: z.enum(['MOBILE', 'DESKTOP']), current: z.boolean(), expiresAt: z.string(), impersonation: z.boolean() }),
-  ),
+  sessions: sessionSchema
+    .extend({
+      isCurrent: z.boolean(),
+    })
+    .array(),
   ...signUpInfo.shape,
 });
 
@@ -27,7 +43,7 @@ const menuItemSchema = z.object({
   organizationId: z.string().optional(),
 });
 
-const menuItemsSchema = z.array(
+export const menuItemsSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
     submenu: z.array(menuItemSchema).optional(),

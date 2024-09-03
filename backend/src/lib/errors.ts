@@ -1,8 +1,8 @@
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
-import { logEvent, logtail } from '../middlewares/logger/log-event';
-import type { Entity } from '../types/common';
+import { logEvent, logtail } from '#/middlewares/logger/log-event';
+import type { Entity } from '#/types/common';
 import type { errorSchema } from './common-schemas';
 import { i18n } from './i18n';
 

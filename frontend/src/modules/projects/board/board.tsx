@@ -2,7 +2,7 @@ import { useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
 import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getTask, getTaskByProjectId } from '~/api/tasks';
+import { getTask } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -14,16 +14,18 @@ import BoardHeader from '~/modules/projects/board/header/board-header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, WorkspaceStoreProject } from '~/types';
+import type { Task, WorkspaceStoreProject } from '~/types';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { toast } from 'sonner';
-import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
+import { updateTask } from '~/api/tasks';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
-import { isSubTaskData } from '~/modules/tasks/sub-task';
-import { isTaskData } from '~/modules/tasks/task';
+import type { TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
+import { isSubTaskData, isTaskData } from '~/lib/drag-and-drop';
+import { queryClient } from '~/lib/router';
+import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
@@ -114,8 +116,11 @@ export default function Board() {
     const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === projects[0].id);
     let newFocusedTask: { projectId: string; id: string } | undefined;
     if (focusedTaskId) newFocusedTask = await getTask(focusedTaskId);
-    else newFocusedTask = await getTaskByProjectId(projects[0].id, projectSettings?.expandAccepted);
-
+    else {
+      const { items: tasks } = queryClient.getQueryData(['boardTasks', projects[0].id]) as { items: Task[] };
+      const { sortedTasks } = sortAndGetCounts(tasks, projectSettings?.expandAccepted || false, false);
+      newFocusedTask = sortedTasks[0];
+    }
     if (!newFocusedTask) return;
     const direction = event.key === 'ArrowDown' ? 1 : -1;
 
@@ -131,7 +136,11 @@ export default function Board() {
     const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === projects[0].id);
     let newFocusedTask: { projectId: string } | undefined;
     if (focusedTaskId) newFocusedTask = await getTask(focusedTaskId);
-    else newFocusedTask = await getTaskByProjectId(projects[0].id, projectSettings?.expandAccepted);
+    else {
+      const { items: tasks } = queryClient.getQueryData(['boardTasks', projects[0].id]) as { items: Task[] };
+      const { sortedTasks } = sortAndGetCounts(tasks, projectSettings?.expandAccepted || false, false);
+      newFocusedTask = sortedTasks[0];
+    }
 
     if (!newFocusedTask) return;
     const currentProjectIndex = projects.findIndex((p) => p.id === newFocusedTask.projectId);
@@ -212,7 +221,7 @@ export default function Board() {
     return combine(
       monitorForElements({
         canMonitor({ source }) {
-          return source.data.type === 'task' || source.data.type === 'subTask';
+          return isTaskData(source.data) || isSubTaskData(source.data);
         },
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
@@ -226,19 +235,16 @@ export default function Board() {
           const isTask = isTaskData(sourceData) && isTaskData(targetData);
           const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
 
+          if (!isTask && !isSubTask) return;
+
+          const { items: tasks } = queryClient.getQueryData(['boardTasks', sourceData.item.projectId]) as { items: Task[] };
+          const mainCallback = useMutateTasksQueryData(['boardTasks', sourceData.item.projectId]);
           if (isTask) {
-            const mainCallback = useMutateTasksQueryData(['boardTasks', sourceData.item.projectId]);
-            const newOrder: number = await getRelativeTaskOrder({
-              edge,
-              currentOrder: targetData.order,
-              sourceId: sourceData.item.id,
-              projectId: targetData.item.projectId,
-              status: sourceData.item.status,
-            });
+            const newOrder: number = getRelativeTaskOrder(edge, tasks, targetData.order, sourceData.item.id, undefined, sourceData.item.status);
+
             try {
               if (sourceData.item.projectId !== targetData.item.projectId) {
                 const updatedTask = await updateTask(sourceData.item.id, 'projectId', targetData.item.projectId, newOrder);
-
                 const targetProjectCallback = useMutateTasksQueryData(['boardTasks', targetData.item.projectId]);
                 mainCallback([updatedTask], 'delete');
                 targetProjectCallback([updatedTask], 'create');
@@ -252,14 +258,7 @@ export default function Board() {
           }
 
           if (isSubTask) {
-            const mainCallback = useMutateTasksQueryData(['boardTasks', sourceData.item.projectId]);
-            const newOrder: number = await getRelativeTaskOrder({
-              edge,
-              currentOrder: targetData.order,
-              sourceId: sourceData.item.id,
-              projectId: targetData.item.projectId,
-              parentId: targetData.item.parentId ?? undefined,
-            });
+            const newOrder = getRelativeTaskOrder(edge, tasks, targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
             try {
               const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
               mainCallback([updatedTask], 'updateSubTask');
@@ -285,7 +284,7 @@ export default function Board() {
               <Redo
                 size={200}
                 strokeWidth={0.2}
-                className="max-md:hidden absolute scale-x-0 scale-y-75 -rotate-180 text-primary top-4 left-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/workspace:opacity-100 group-hover/workspace:scale-x-100 group-hover/workspace:translate-y-0 group-hover/workspace:rotate-[-130deg]"
+                className="max-md:hidden absolute scale-x-0 scale-y-75 -rotate-180 text-primary top-4 right-44 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/workspace:opacity-100 group-hover/workspace:scale-x-100 group-hover/workspace:translate-y-0 group-hover/workspace:rotate-[-130deg]"
               />
               <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/workspace:opacity-100">
                 <span>{t('common:click')}</span>

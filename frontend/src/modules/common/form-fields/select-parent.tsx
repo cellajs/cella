@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { type EntityItem, useGetEntity } from '~/hooks/use-get-entity-minimum-info';
+import { useGetEntity } from '~/hooks/use-get-entity-minimum-info';
 import Combobox from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity } from '~/types';
+import type { ContextEntity, MinimumEntityItem } from '~/types';
 
 interface Props {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -19,7 +19,7 @@ interface Props {
   disabled?: boolean;
 }
 
-const convertItemToOption = (item: EntityItem) => {
+const convertItemToOption = (item: MinimumEntityItem) => {
   return {
     value: item.id,
     label: item.name,

@@ -9,6 +9,7 @@ import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useMutateInfiniteTaskQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import type { TaskTableCRUDEvent } from '~/lib/custom-events/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -16,21 +17,20 @@ import Export from '~/modules/common/data-table/export.tsx';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { sheet } from '~/modules/common/sheeter/state';
-import { sortAndGetCounts } from '~/modules/tasks/helpers';
-import { configureForExport } from '~/modules/tasks/helpers';
+import { configureForExport, sortAndGetCounts } from '~/modules/tasks/helpers';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
 import TableHeader from '~/modules/tasks/tasks-table/header/table-header';
 import { TaskTableSearch } from '~/modules/tasks/tasks-table/header/table-search';
 import TaskSheet from '~/modules/tasks/tasks-table/task-sheet';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task, TaskTableCRUDEvent } from '~/types';
+import type { Task } from '~/types';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
 const tasksQueryOptions = ({
   q,
-  tableSort: initialSort,
+  sort: initialSort,
   order: initialOrder,
   limit = 2000,
   projectId,
@@ -39,11 +39,11 @@ const tasksQueryOptions = ({
 }: GetTasksParams & {
   rowsLength?: number;
 }) => {
-  const tableSort = initialSort || 'createdAt';
+  const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['tasks', projectId, status, q, tableSort, order],
+    queryKey: ['tasks', projectId, status, q, sort, order],
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
@@ -52,7 +52,7 @@ const tasksQueryOptions = ({
         {
           page,
           q,
-          tableSort,
+          sort,
           order,
           // Fetch more items than the limit if some items were deleted
           limit: limit + Math.max(page * limit - rowsLength, 0),
@@ -87,7 +87,7 @@ export default function TasksTable() {
   const [selectedProjects] = useState<string[]>(search.projectId?.split('_') || []);
   const [columns, setColumns] = useColumns();
   // Search query options
-  const tableSort = sortColumns[0]?.columnKey as TasksSearch['tableSort'];
+  const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
   const isFiltered = !!searchQuery || selectedStatuses.length > 0 || selectedProjects.length > 0;
@@ -95,21 +95,21 @@ export default function TasksTable() {
   const filters = useMemo(
     () => ({
       q: searchQuery,
-      tableSort,
+      sort,
       order,
       projectId: selectedProjects,
       status: selectedStatuses,
     }),
-    [searchQuery, tableSort, order, selectedStatuses, selectedProjects],
+    [searchQuery, sort, order, selectedStatuses, selectedProjects],
   );
 
-  useSaveInSearchParams(filters, { tableSort: 'createdAt', order: 'desc' });
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Query tasks
   const tasksQuery = useInfiniteQuery(
     tasksQueryOptions({
       q: searchQuery,
-      tableSort,
+      sort,
       order,
       projectId: search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
       status: selectedStatuses.join('_'),
@@ -121,7 +121,7 @@ export default function TasksTable() {
     search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
     selectedStatuses.join('_'),
     searchQuery,
-    tableSort,
+    sort,
     order,
   ]);
 

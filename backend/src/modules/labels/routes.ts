@@ -1,8 +1,8 @@
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '../../lib/common-responses';
-import { idsQuerySchema, productParamSchema } from '../../lib/common-schemas';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/lib/common-responses';
+import { idsQuerySchema, productParamSchema } from '#/lib/common-schemas';
 
-import { createRouteConfig } from '../../lib/route-config';
-import { isAuthenticated } from '../../middlewares/guard';
+import { createRouteConfig } from '#/lib/route-config';
+import { isAuthenticated } from '#/middlewares/guard';
 
 import { getLabelsQuerySchema, labelSchema, updateLabelSchema } from './schema';
 

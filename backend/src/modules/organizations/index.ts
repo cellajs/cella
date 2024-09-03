@@ -1,20 +1,20 @@
 import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
-import { db } from '../../db/db';
-import { membershipsTable } from '../../db/schema/memberships';
-import { organizationsTable } from '../../db/schema/organizations';
+import { db } from '#/db/db';
+import { membershipsTable } from '#/db/schema/memberships';
+import { organizationsTable } from '#/db/schema/organizations';
 
 import { config } from 'config';
 import { render } from 'jsx-email';
+import { usersTable } from '#/db/schema/users';
+import { counts } from '#/lib/counts';
+import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { emailSender } from '#/lib/mailer';
+import { getOrderColumn } from '#/lib/order-column';
+import { sendSSEToUsers } from '#/lib/sse';
+import { logEvent } from '#/middlewares/logger/log-event';
+import { CustomHono } from '#/types/common';
 import organizationsNewsletter from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
-import { usersTable } from '../../db/schema/users';
-import { counts } from '../../lib/counts';
-import { type ErrorType, createError, errorResponse } from '../../lib/errors';
-import { emailSender } from '../../lib/mailer';
-import { getOrderColumn } from '../../lib/order-column';
-import { sendSSEToUsers } from '../../lib/sse';
-import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
@@ -205,10 +205,10 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
     if (memberships.length > 0) {
-      memberships.map((member) =>
-        sendSSEToUsers([member.id], 'update_entity', {
+      memberships.map((membership) =>
+        sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedOrganization,
-          membership: toMembershipInfo(memberships.find((m) => m.id === member.id)),
+          membership: toMembershipInfo(memberships.find((m) => m.id === membership.id)),
         }),
       );
     }

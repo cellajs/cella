@@ -2,10 +2,10 @@ import { dataSeed } from '../../scripts/seeds/data/seed';
 import { organizationsSeed } from '../../scripts/seeds/organizations/seed';
 import { userSeed } from '../../scripts/seeds/user/seed';
 
-import { db } from '../db/db';
-import { organizationsTable } from '../db/schema/organizations';
-import { tasksTable } from '../db/schema/tasks';
-import { usersTable } from '../db/schema/users';
+import { db } from '#/db/db';
+import { organizationsTable } from '#/db/schema/organizations';
+import { tasksTable } from '#/db/schema/tasks';
+import { usersTable } from '#/db/schema/users';
 
 export const resetDb = async () => {
   await deleteTables();

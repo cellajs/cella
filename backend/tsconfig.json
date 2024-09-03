@@ -12,11 +12,11 @@
     // This improves issue grouping in Sentry.
     "sourceRoot": "/",
 
-    // Alias `~/*` imports to `./src/*`
+    // Alias `#/*` imports to `./src/*`
     "baseUrl": ".",
 
     "paths": {
-      "~/*": ["./src/*"]
+      "#/*": ["./src/*"]
     }
   },
   "include": ["src", "drizzle.config.ts", "env.ts", "emails"]

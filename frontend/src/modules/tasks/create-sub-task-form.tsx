@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { nanoid } from '~/lib/utils.ts';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from '~/modules/tasks/helpers';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote.tsx';

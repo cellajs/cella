@@ -1,4 +1,5 @@
 import * as SheetPrimitive from '@radix-ui/react-dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
@@ -77,6 +78,14 @@ const SheetTitle = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Title
 );
 SheetTitle.displayName = SheetPrimitive.Title.displayName;
 
+const SheetHiddenTitle = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Title>, React.ComponentPropsWithoutRef<typeof SheetPrimitive.Title>>(
+  ({ ...props }, ref) => (
+    <VisuallyHidden.Root>
+      <SheetPrimitive.Title ref={ref} {...props} />
+    </VisuallyHidden.Root>
+  ),
+);
+
 const SheetDescription = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>
@@ -85,4 +94,16 @@ const SheetDescription = React.forwardRef<
 ));
 SheetDescription.displayName = SheetPrimitive.Description.displayName;
 
-export { Sheet, SheetPortal, SheetOverlay, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription };
+export {
+  Sheet,
+  SheetPortal,
+  SheetOverlay,
+  SheetTrigger,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetFooter,
+  SheetTitle,
+  SheetDescription,
+  SheetHiddenTitle,
+};

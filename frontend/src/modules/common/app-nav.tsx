@@ -53,7 +53,7 @@ const AppNav = () => {
   const { theme } = useThemeStore();
   const focusedTaskId = useWorkspaceStore((state) => state.focusedTaskId);
   const currentSession = useUserStore((state) => {
-    if (state.user) return state.user.sessions.find((s) => s.current);
+    if (state.user) return state.user.sessions.find((s) => s.isCurrent);
   });
 
   const stopImpersonation = async () => {
@@ -145,7 +145,7 @@ const AppNav = () => {
               </Fragment>
             );
           })}
-          {currentSession?.impersonation && (
+          {currentSession?.type === 'impersonation' && (
             <Fragment>
               <li className={cn('sm:grow-0', 'flex justify-start')}>
                 <NavButton navItem={{ id: 'stop_impersonation', icon: UserX }} onClick={stopImpersonation} isActive={false} />

@@ -7,11 +7,12 @@ import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
-import Organization, { organizationQueryOptions } from '~/modules/organizations/organization';
+import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import type { Organization as OrganizationType } from '~/types';
 import { AppRoute } from '.';
 
 //Lazy-loaded components
+const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
@@ -29,7 +30,7 @@ export const OrganizationRoute = createRoute({
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
     <Suspense>
-      <Organization />
+      <OrganizationPage />
     </Suspense>
   ),
 });
@@ -55,7 +56,7 @@ export const OrganizationMembersRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <MembersTable entity={organization} route={OrganizationMembersRoute.id} />
+        <MembersTable entity={organization} />
       </Suspense>
     );
   },

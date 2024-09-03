@@ -1,9 +1,9 @@
 import { relations } from 'drizzle-orm';
 import { type AnyPgColumn, boolean, doublePrecision, index, integer, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from '../../lib/nanoid';
+import { usersTable } from '#/db/schema/users';
+import { nanoid } from '#/lib/nanoid';
 import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
-import { usersTable } from './users';
 
 export const tasksTable = pgTable(
   'tasks',

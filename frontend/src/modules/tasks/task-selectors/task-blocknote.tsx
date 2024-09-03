@@ -8,13 +8,13 @@ import router from '~/lib/router';
 import type { Mode } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 
-import '~/modules/common/blocknote/styles.css';
 import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import { schemaWithMentions } from '~/modules/common/blocknote/mention';
+import '~/modules/common/blocknote/styles.css';
 import { taskExpandable } from '~/modules/tasks/helpers';
 
 interface TaskBlockNoteProps {
@@ -92,6 +92,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
         onBlur={updateData}
         editor={editor}
         data-color-scheme={mode}
+        theme={mode}
         className={className}
         sideMenu={false}
         emojiPicker={false}

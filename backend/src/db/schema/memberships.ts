@@ -1,10 +1,10 @@
 import { config } from 'config';
 import { relations } from 'drizzle-orm';
 import { boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from '../../lib/nanoid';
+import { usersTable } from '#/db/schema/users';
+import { nanoid } from '#/lib/nanoid';
 import { organizationsTable } from './organizations';
 import { projectsTable } from './projects';
-import { usersTable } from './users';
 import { workspacesTable } from './workspaces';
 
 const roleEnum = config.rolesByType.entityRoles;
@@ -12,10 +12,14 @@ const roleEnum = config.rolesByType.entityRoles;
 export const membershipsTable = pgTable('memberships', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
   type: varchar('type', { enum: config.contextEntityTypes }).notNull(),
-  organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  organizationId: varchar('organization_id')
+    .notNull()
+    .references(() => organizationsTable.id, { onDelete: 'cascade' }),
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
-  userId: varchar('user_id').references(() => usersTable.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id')
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar('role', { enum: roleEnum }).notNull().default('member'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by').references(() => usersTable.id, {

@@ -1,6 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
-import type { NonEmptyArray } from '../types/common';
+import type { NonEmptyArray } from '#/types/common';
 
 export type RouteOptions = Parameters<typeof createRoute>[0] & {
   guard: MiddlewareHandler | NonEmptyArray<MiddlewareHandler>;

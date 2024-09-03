@@ -11,7 +11,7 @@ import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure';
-import { dispatchCustomEvent } from '~/lib/custom-events.ts';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { cn, nanoid } from '~/lib/utils.ts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state.ts';

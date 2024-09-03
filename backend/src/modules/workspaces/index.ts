@@ -1,16 +1,16 @@
 import { and, asc, count, eq, inArray } from 'drizzle-orm';
-import { db } from '../../db/db';
-import { membershipsTable } from '../../db/schema/memberships';
-import { workspacesTable } from '../../db/schema/workspaces';
+import { db } from '#/db/db';
+import { membershipsTable } from '#/db/schema/memberships';
+import { workspacesTable } from '#/db/schema/workspaces';
 
-import { labelsTable } from '../../db/schema/labels';
-import { projectsTable } from '../../db/schema/projects';
-import { projectsToWorkspacesTable } from '../../db/schema/projects-to-workspaces';
-import { safeUserSelect, usersTable } from '../../db/schema/users';
-import { type ErrorType, createError, errorResponse } from '../../lib/errors';
-import { sendSSEToUsers } from '../../lib/sse';
-import { logEvent } from '../../middlewares/logger/log-event';
-import { CustomHono } from '../../types/common';
+import { labelsTable } from '#/db/schema/labels';
+import { projectsTable } from '#/db/schema/projects';
+import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
+import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { sendSSEToUsers } from '#/lib/sse';
+import { logEvent } from '#/middlewares/logger/log-event';
+import { CustomHono } from '#/types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
@@ -197,10 +197,10 @@ const workspacesRoutes = app
       .where(and(eq(membershipsTable.type, 'workspace'), eq(membershipsTable.workspaceId, workspace.id)));
 
     if (memberships.length > 0) {
-      memberships.map((member) =>
-        sendSSEToUsers([member.id], 'update_entity', {
+      memberships.map((membership) =>
+        sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedWorkspace,
-          membership: toMembershipInfo(memberships.find((m) => m.id === member.id)),
+          membership: toMembershipInfo(memberships.find((m) => m.id === membership.id)),
         }),
       );
     }

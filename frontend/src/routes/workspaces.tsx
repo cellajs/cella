@@ -8,57 +8,60 @@ import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
-import { workspaceQueryOptions } from '~/modules/workspaces/helpers/quey-options';
-import { membersSearchSchema } from '~/routes/organizations';
+import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
+import { useWorkspaceStore } from '~/store/workspace';
 import { AppRoute } from '.';
 
 // Lazy-loaded components
-const Workspace = lazy(() => import('~/modules/workspaces'));
+const WorkspacePage = lazy(() => import('~/modules/workspaces/workspace-page'));
 const Board = lazy(() => import('~/modules/projects/board/board'));
 const TasksTable = lazy(() => import('~/modules/tasks/tasks-table'));
 
+export const labelsSearchSchema = z.object({
+  q: z.string().optional(),
+  sort: z.enum(['name', 'useCount', 'lastUsed']).default('name').optional(),
+  order: z.enum(['asc', 'desc']).default('asc').optional(),
+});
+
 export const WorkspaceRoute = createRoute({
   path: 'workspaces/$idOrSlug',
-  validateSearch: z.object({
-    ...membersSearchSchema.shape,
-    projectSettings: z.enum(['general', 'members']).default('general').optional(),
-  }),
   staticData: { pageTitle: 'Workspace', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
-    await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    const workspaceData = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
+    useWorkspaceStore.setState({ workspace: workspaceData.workspace, projects: workspaceData.projects, labels: workspaceData.labels });
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
     return (
       <Suspense>
-        <Workspace />
+        <WorkspacePage />
       </Suspense>
     );
   },
 });
 
+export const tasksSearchSchema = z.object({
+  q: z.string().optional(),
+  sort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
+  order: z.enum(['asc', 'desc']).default('asc').optional(),
+  projectId: z.string().optional(),
+  status: z.number().or(z.string()).optional(),
+  taskIdPreview: z.string().optional(),
+  userIdPreview: z.string().optional(),
+});
+
 export const WorkspaceBoardRoute = createRoute({
   path: '/board',
   staticData: { pageTitle: 'Board', isAuth: true },
-  validateSearch: z.object({ project: z.string().optional() }),
+  validateSearch: z.object({ project: z.string().optional(), q: z.string().optional() }),
   getParentRoute: () => WorkspaceRoute,
   component: () => (
     <Suspense>
       <Board />
     </Suspense>
   ),
-});
-
-export const tasksSearchSchema = z.object({
-  q: z.string().optional(),
-  tableSort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
-  order: z.enum(['asc', 'desc']).default('asc').optional(),
-  projectId: z.string().optional(),
-  status: z.number().or(z.string()).optional(),
-  taskIdPreview: z.string().optional(),
-  userIdPreview: z.string().optional(),
 });
 
 export const WorkspaceTableRoute = createRoute({
