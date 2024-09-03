@@ -3,6 +3,7 @@ import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
 import pg from 'pg';
 import { env } from '#/../env';
 
+import { config } from 'config';
 import { sql } from 'drizzle-orm';
 
 export const queryClient = env.PGLITE
@@ -15,7 +16,7 @@ export const queryClient = env.PGLITE
     });
 
 const dbConfig = {
-  logger: true,
+  logger: config.debug,
 };
 export const db = queryClient instanceof pg.Pool ? pgDrizzle(queryClient, dbConfig) : pgliteDrizzle(queryClient, dbConfig);
 
