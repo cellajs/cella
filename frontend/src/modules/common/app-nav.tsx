@@ -1,8 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Home, type LucideProps, Menu, Search, User, UserX } from 'lucide-react';
-import { Fragment, lazy, useEffect } from 'react';
-import { Suspense } from 'react';
+import { Fragment, Suspense, lazy, useEffect } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';

@@ -54,7 +54,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
     [],
   );
 
-  const form = useFormWithDraft<FormValues>('invite-users', formOptions);
+  const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, formOptions);
 
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
