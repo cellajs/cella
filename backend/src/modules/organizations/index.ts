@@ -205,10 +205,10 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
     if (memberships.length > 0) {
-      memberships.map((member) =>
-        sendSSEToUsers([member.id], 'update_entity', {
+      memberships.map((membership) =>
+        sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedOrganization,
-          membership: toMembershipInfo(memberships.find((m) => m.id === member.id)),
+          membership: toMembershipInfo(memberships.find((m) => m.id === membership.id)),
         }),
       );
     }

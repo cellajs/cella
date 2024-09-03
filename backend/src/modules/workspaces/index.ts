@@ -197,10 +197,10 @@ const workspacesRoutes = app
       .where(and(eq(membershipsTable.type, 'workspace'), eq(membershipsTable.workspaceId, workspace.id)));
 
     if (memberships.length > 0) {
-      memberships.map((member) =>
-        sendSSEToUsers([member.id], 'update_entity', {
+      memberships.map((membership) =>
+        sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedWorkspace,
-          membership: toMembershipInfo(memberships.find((m) => m.id === member.id)),
+          membership: toMembershipInfo(memberships.find((m) => m.id === membership.id)),
         }),
       );
     }
