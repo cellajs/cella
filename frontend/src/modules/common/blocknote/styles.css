@@ -27,7 +27,7 @@ p.bn-inline-content{
   padding: 0;
 }
 
-.bn-block-outer, .bn-default-styles {
+.bn-shadcn .bn-block-outer, .bn-shadcn .bn-default-styles {
   font-size: 0.888rem;
   line-height: 1.3;
 }

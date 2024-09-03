@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
-import { workspaceQueryOptions } from '~/modules/workspaces/helpers/quey-options';
+import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import { useUpdateWorkspaceMutation } from '~/modules/workspaces/update-workspace-form';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
