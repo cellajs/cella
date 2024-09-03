@@ -1,4 +1,4 @@
-import { type SQL, and, asc, desc, eq, gt, gte, ilike, inArray, isNull, lt, ne, sql } from 'drizzle-orm';
+import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 
 import type { z } from 'zod';
@@ -117,30 +117,6 @@ const tasksRoutes = app
     );
   })
   /*
-   * Get new task order on status change
-   */
-  .openapi(taskRoutesConfig.getNewTaskOrder, async (ctx) => {
-    const { oldStatus, newStatus, projectId } = ctx.req.valid('query');
-
-    const direction = +newStatus - +oldStatus;
-
-    const [task] = await db
-      .select()
-      .from(tasksTable)
-      .where(and(eq(tasksTable.projectId, projectId), eq(tasksTable.status, Number(newStatus)), isNull(tasksTable.parentId)))
-      .orderBy(direction > 0 ? asc(tasksTable.order) : desc(tasksTable.order));
-
-    const newOrder = task ? (direction > 0 ? task.order / 2 : task.order + 1) : 1;
-
-    return ctx.json(
-      {
-        success: true,
-        data: newOrder,
-      },
-      200,
-    );
-  })
-  /*
    * Get task by id
    */
   .openapi(taskRoutesConfig.getTask, async (ctx) => {
@@ -153,72 +129,6 @@ const tasksRoutes = app
       {
         success: true,
         data: task,
-      },
-      200,
-    );
-  })
-  /*
-   * Get first task of the project by project id
-   */
-  .openapi(taskRoutesConfig.getTaskByProjectId, async (ctx) => {
-    const id = ctx.req.param('id');
-    const { showAccepted } = ctx.req.valid('query');
-    if (!id) return errorResponse(ctx, 400, 'not_found', 'warn');
-
-    const filters = [eq(tasksTable.projectId, id), isNull(tasksTable.parentId), gte(tasksTable.modifiedAt, sql`NOW() - INTERVAL '30 DAYS'`)];
-    if (showAccepted !== 'true') filters.push(ne(tasksTable.status, 6));
-    const [task] = await db
-      .select()
-      .from(tasksTable)
-      .where(and(...filters))
-      .orderBy(desc(tasksTable.status), desc(tasksTable.order))
-      .limit(1);
-
-    return ctx.json(
-      {
-        success: true,
-        data: task,
-      },
-      200,
-    );
-  })
-  /*
-   * Get relative task order
-   */
-  .openapi(taskRoutesConfig.getRelativeTaskOrder, async (ctx) => {
-    const { edge, currentOrder, sourceId, projectId, status, parentId } = ctx.req.valid('json');
-
-    const filter = [eq(tasksTable.projectId, projectId)];
-    if (status) filter.push(eq(tasksTable.status, status));
-    if (parentId) {
-      filter.push(eq(tasksTable.parentId, parentId));
-      filter.push(edge === 'top' ? lt(tasksTable.order, currentOrder) : gt(tasksTable.order, currentOrder));
-    } else filter.push(edge === 'top' ? gt(tasksTable.order, currentOrder) : lt(tasksTable.order, currentOrder));
-
-    const controlEdge = parentId ? 'bottom' : 'top';
-
-    const [relativeTask] = await db
-      .select()
-      .from(tasksTable)
-      .where(and(...filter))
-      .orderBy(edge === controlEdge ? asc(tasksTable.order) : desc(tasksTable.order))
-      .limit(1);
-
-    let newOrder: number;
-
-    if (!relativeTask || relativeTask.order === currentOrder) {
-      if (parentId) newOrder = edge === 'top' ? currentOrder / 2 : currentOrder + 1;
-      else newOrder = edge === 'top' ? currentOrder + 1 : currentOrder / 2;
-    } else if (relativeTask.id === sourceId) {
-      newOrder = relativeTask.order;
-    } else {
-      newOrder = (relativeTask.order + currentOrder) / 2;
-    }
-
-    return ctx.json(
-      {
-        success: true,
-        data: newOrder,
       },
       200,
     );

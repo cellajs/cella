@@ -1,7 +1,29 @@
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import { recentlyUsed } from '~/lib/utils.ts';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact';
 import { taskStatuses } from '~/modules/tasks/task-selectors/select-status';
 import type { Project, SubTask, Task } from '~/types';
+
+export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, id: string, parentId?: string, status?: number) => {
+  let filteredTasks: Task[] | SubTask[] = [];
+
+  if (parentId) filteredTasks = tasks.find((t) => t.id === parentId)?.subTasks || [];
+  if (status) filteredTasks = tasks.filter((t) => t.status === status).sort((a, b) => b.order - a.order);
+  const relativeTask = filteredTasks.find((t) =>
+    parentId ? (edge === 'top' ? t.order < order : t.order > order) : edge === 'top' ? t.order > order : t.order < order,
+  );
+  let newOrder: number;
+
+  if (!relativeTask || relativeTask.order === order) {
+    if (parentId) newOrder = edge === 'top' ? order / 2 : order + 1;
+    else newOrder = edge === 'top' ? order + 1 : order / 2;
+  } else if (relativeTask.id === id) {
+    newOrder = relativeTask.order;
+  } else {
+    newOrder = (relativeTask.order + order) / 2;
+  }
+  return newOrder;
+};
 
 // To sort Tasks by its status & order
 const sortTaskOrder = (task1: Pick<Task, 'status' | 'order'>, task2: Pick<Task, 'status' | 'order'>, reverse?: boolean) => {
@@ -10,6 +32,15 @@ const sortTaskOrder = (task1: Pick<Task, 'status' | 'order'>, task2: Pick<Task, 
   if (task1.order !== null && task2.order !== null) return reverse ? task1.order - task2.order : task2.order - task1.order;
   // order is null
   return 0;
+};
+
+// return task order for task status
+export const getNewStatusTaskOrder = (oldStatus: number, newStatus: number, tasks: Task[]) => {
+  const direction = newStatus - oldStatus;
+  const [task] = tasks
+    .filter((t) => t.status === newStatus && (t.status !== 6 || recentlyUsed(t.modifiedAt, 30)))
+    .sort((a, b) => sortTaskOrder(a, b, direction > 0));
+  return task ? (direction > 0 ? task.order / 2 : task.order + 1) : 1;
 };
 
 // return task order for new created Tasks

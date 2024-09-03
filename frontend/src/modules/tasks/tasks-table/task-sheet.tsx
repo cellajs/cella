@@ -15,9 +15,11 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { getRelativeTaskOrder, updateTask } from '~/api/tasks';
+import { updateTask } from '~/api/tasks';
 import type { TaskQueryActions } from '~/lib/custom-events/types';
 import { isSubTaskData } from '~/lib/drag-and-drop';
+import { queryClient } from '~/lib/router';
+import { getRelativeTaskOrder } from '~/modules/tasks/helpers';
 
 const TaskSheet = ({
   task,
@@ -58,13 +60,8 @@ const TaskSheet = ({
           const edge: Edge | null = extractClosestEdge(targetData);
           const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
           if (!edge || !isSubTask) return;
-          const newOrder: number = await getRelativeTaskOrder({
-            edge,
-            currentOrder: targetData.order,
-            sourceId: sourceData.item.id,
-            projectId: targetData.item.projectId,
-            parentId: targetData.item.parentId ?? undefined,
-          });
+          const { items: tasks } = queryClient.getQueryData(['tasks', sourceData.item.projectId]) as { items: Task[] };
+          const newOrder: number = getRelativeTaskOrder(edge, tasks, targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
           try {
             const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
             callback?.([updatedTask], 'updateSubTask');

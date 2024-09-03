@@ -88,18 +88,3 @@ export const getTasksQuerySchema = paginationQuerySchema.merge(
     status: z.string().optional(),
   }),
 );
-
-export const getNewOrderQuerySchema = z.object({
-  oldStatus: z.string(),
-  newStatus: z.string(),
-  projectId: z.string(),
-});
-
-export const relativeQuerySchema = z.object({
-  edge: z.enum(['top', 'right', 'bottom', 'left']),
-  currentOrder: z.number(),
-  projectId: z.string(),
-  sourceId: z.string(),
-  parentId: z.string().optional(),
-  status: z.number().optional(),
-});

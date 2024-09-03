@@ -1,19 +1,10 @@
-import { z } from 'zod';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/lib/common-responses';
 import { idsQuerySchema, productParamSchema } from '#/lib/common-schemas';
 
 import { createRouteConfig } from '#/lib/route-config';
 import { isAllowedTo, isAuthenticated } from '#/middlewares/guard';
 
-import {
-  createTaskSchema,
-  fullTaskSchema,
-  getNewOrderQuerySchema,
-  getTasksQuerySchema,
-  relativeQuerySchema,
-  simpleTaskSchema,
-  updateTaskSchema,
-} from './schema';
+import { createTaskSchema, fullTaskSchema, getTasksQuerySchema, simpleTaskSchema, updateTaskSchema } from './schema';
 
 class TaskRoutesConfig {
   public createTask = createRouteConfig({
@@ -69,29 +60,6 @@ class TaskRoutesConfig {
     },
   });
 
-  public getNewTaskOrder = createRouteConfig({
-    method: 'get',
-    path: '/new-order',
-    guard: [isAuthenticated, isAllowedTo('update', 'task')],
-    tags: ['tasks'],
-    summary: 'Get new order',
-    description: 'Get new task order on status change ',
-    request: {
-      query: getNewOrderQuerySchema,
-    },
-    responses: {
-      200: {
-        description: 'Task',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(z.number()),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
   public getTask = createRouteConfig({
     method: 'get',
     path: '/{id}',
@@ -108,60 +76,6 @@ class TaskRoutesConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(simpleTaskSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getTaskByProjectId = createRouteConfig({
-    method: 'get',
-    path: '/by-project/{id}',
-    guard: [isAuthenticated],
-    tags: ['tasks'],
-    summary: 'Get first task of the project',
-    description: 'Get first task in project by project id.',
-    request: {
-      params: productParamSchema,
-      query: z.object({ showAccepted: z.enum(['true', 'false']).optional() }),
-    },
-    responses: {
-      200: {
-        description: 'Task',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(simpleTaskSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getRelativeTaskOrder = createRouteConfig({
-    method: 'post',
-    path: '/relative',
-    guard: [isAuthenticated, isAllowedTo('read', 'task')],
-    tags: ['tasks'],
-    summary: 'Get relative task',
-    description: 'Get relative task by main task order position and edge of trigger',
-    request: {
-      body: {
-        required: true,
-        content: {
-          'application/json': {
-            schema: relativeQuerySchema,
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Task',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(z.number()),
           },
         },
       },

@@ -4,11 +4,12 @@ import { Check, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { getChangeStatusTaskOrder, updateTask } from '~/api/tasks';
+import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
-import { inNumbersArray } from '~/modules/tasks/helpers';
+import { getNewStatusTaskOrder, inNumbersArray } from '~/modules/tasks/helpers';
 import { AcceptedIcon } from '~/modules/tasks/task-selectors/status-icons/accepted';
 import { DeliveredIcon } from '~/modules/tasks/task-selectors/status-icons/delivered';
 import { FinishedIcon } from '~/modules/tasks/task-selectors/status-icons/finished';
@@ -19,6 +20,7 @@ import { UnstartedIcon } from '~/modules/tasks/task-selectors/status-icons/unsta
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
+import type { Task } from '~/types';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
@@ -95,7 +97,8 @@ const SelectStatus = ({
     if (creationValueChange) creationValueChange(newStatus);
     if (!focusedTaskId) return;
     try {
-      const newOrder = await getChangeStatusTaskOrder(taskStatus, newStatus, projectId);
+      const { items: tasks } = queryClient.getQueryData(['boardTasks', projectId]) as { items: Task[] };
+      const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
       const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });

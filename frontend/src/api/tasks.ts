@@ -1,4 +1,3 @@
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
 import { apiClient, handleResponse } from '.';
 
 const client = apiClient.tasks;
@@ -54,44 +53,6 @@ export const getTasksList = async (
 export const getTask = async (id: string) => {
   const response = await client[':id'].$get({
     param: { id },
-  });
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-// Get  first task by project ID
-export const getTaskByProjectId = async (id: string, showAccepted?: boolean) => {
-  const response = await client['by-project'][':id'].$get({
-    param: { id },
-    query: { showAccepted: showAccepted !== undefined ? showAccepted.toString() : showAccepted },
-  });
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-// Get a task by its ID
-export const getRelativeTaskOrder = async (info: {
-  edge: Edge;
-  currentOrder: number;
-  sourceId: string;
-  projectId: string;
-  parentId?: string;
-  status?: number;
-}) => {
-  const response = await client.relative.$post({
-    json: info,
-  });
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-// Get a New task order on status change
-export const getChangeStatusTaskOrder = async (oldStatus: number, newStatus: number, projectId: string) => {
-  const response = await client['new-order'].$get({
-    query: { oldStatus: oldStatus.toString(), newStatus: newStatus.toString(), projectId },
   });
 
   const json = await handleResponse(response);
