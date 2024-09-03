@@ -52,19 +52,6 @@ export const menuSections: SectionItem[] = [
   },
 ];
 
-// Set search results to empty array for each menu type
-export const initialSearchResults = menuSections
-  .filter((el) => !el.isSubmenu)
-  .reduce(
-    (acc, section) => {
-      acc[section.storageType] = [];
-      return acc;
-    },
-    {} as Record<string, UserMenuItem[]>,
-  );
-
-export type SearchResultsType = typeof initialSearchResults;
-
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
@@ -72,12 +59,12 @@ export const SheetMenu = memo(() => {
   const { keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [searchResults, setSearchResults] = useState<SearchResultsType>(initialSearchResults);
+  const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 
   const searchResultsListItems = useCallback(() => {
-    return Object.entries(searchResults).flatMap(([_, items]) => {
-      return items.length > 0 ? items.map((item: UserMenuItem) => <SheetMenuItem key={item.id} searchResults item={item} type={item.entity} />) : [];
-    });
+    return searchResults.length > 0
+      ? searchResults.map((item: UserMenuItem) => <SheetMenuItem key={item.id} searchResults item={item} type={item.entity} />)
+      : [];
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
@@ -97,10 +84,6 @@ export const SheetMenu = memo(() => {
         );
       });
   }, [menu]);
-
-  const handleSearchResultsChange = useCallback((results: SearchResultsType) => {
-    setSearchResults(results);
-  }, []);
 
   const callback = useMutateWorkSpaceQueryData(['workspaces', idOrSlug]);
 
@@ -142,8 +125,7 @@ export const SheetMenu = memo(() => {
 
   return (
     <>
-      <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSearchResultsChange={handleSearchResultsChange} />
-
+      <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
       {searchTerm && (
         <div className="search-results mt-6">
           {searchResultsListItems().length > 0 ? (
@@ -178,5 +160,3 @@ export const SheetMenu = memo(() => {
     </>
   );
 });
-
-SheetMenu.displayName = 'SheetMenu';
