@@ -3,7 +3,7 @@ import type { MiddlewareHandler } from 'hono';
 import { type IRateLimiterPostgresOptions, RateLimiterMemory, RateLimiterPostgres, RateLimiterRes } from 'rate-limiter-flexible';
 import { errorResponse } from '#/lib/errors';
 
-import { config } from 'config';
+import { env } from '#/../env';
 import { queryClient } from '#/db/db';
 import type { Env } from '#/types/common';
 
@@ -96,12 +96,12 @@ const defaultOptions = {
 };
 
 export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'> = defaultOptions) =>
-  config.mode === 'production'
-    ? new RateLimiterPostgres({
+  env.PGLITE
+    ? new RateLimiterMemory(options)
+    : new RateLimiterPostgres({
         ...options,
         storeClient: queryClient,
-      })
-    : new RateLimiterMemory(options);
+      });
 
 export const rateLimiter = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'> = defaultOptions, mode: RateLimiterMode = 'fail') =>
   rateLimiterMiddleware.call(getRateLimiterInstance(options), mode);

@@ -6,6 +6,7 @@
     "node": ">=20.14.0"
   },
   "scripts": {
+    "quick": "PGLITE=true tsx scripts/quick.ts && PGLITE=true pnpm dev",
     "start": "tsx dist/index.js",
     "dev": "pnpm run studio & tsup --watch --onSuccess \"tsx dist/index.js\"",
     "check:types": "tsc",

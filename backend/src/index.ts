@@ -1,8 +1,8 @@
 import { serve } from '@hono/node-server';
 import cron from 'node-cron';
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
+import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import { resetDb } from '#/cron/manage-db';
 import { db } from '#/db/db';
@@ -12,10 +12,9 @@ import app from './server';
 
 // Set i18n instance before starting server
 import './lib/i18n';
-import { config } from 'config';
 // import { sdk } from './tracing';
 
-const isNodePgDatabase = (_db: unknown): _db is NodePgDatabase => config.mode === 'production';
+const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
 
 const main = async () => {
   // Reset db every Sunday at midnight
@@ -26,10 +25,10 @@ const main = async () => {
     migrationsFolder: 'drizzle',
     migrationsSchema: 'drizzle-backend',
   };
-  if (isNodePgDatabase(db)) {
-    await pgMigrate(db, migrateConfig);
-  } else {
+  if (isPGliteDatabase(db)) {
     await pgliteMigrate(db, migrateConfig);
+  } else {
+    await pgMigrate(db, migrateConfig);
   }
 
   // Start server
