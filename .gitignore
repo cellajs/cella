@@ -28,11 +28,16 @@ dist-ssr
 !.env.example
 !.env.local
 
+# Cache
+*.tsbuildinfo
+.sentryclirc
+.million
+.db
+
 # Other
 .netlify
 .wrangler
 backend/files
 frontend/stats.html
 frontend/src/generated
-
 *.zip

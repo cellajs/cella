@@ -19,6 +19,9 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
+
+    // TODO Attempt to increase TS perf. keep?
+    // "incremental": true
   },
   "exclude": ["node_modules", "dist", "generated"]
 }

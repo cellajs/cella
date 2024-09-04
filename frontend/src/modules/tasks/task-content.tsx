@@ -19,7 +19,7 @@ const TaskContent = ({ task, mode, isExpanded }: Props) => {
   const { t } = useTranslation();
   const [createSubTask, setCreateSubTask] = useState(false);
 
-  const expandedStyle = 'min-h-16 w-full bg-transparent border-none mt-1';
+  const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none mt-1';
   return (
     <>
       {!isExpanded ? (

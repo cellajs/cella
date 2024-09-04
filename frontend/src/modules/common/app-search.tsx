@@ -139,7 +139,7 @@ export const AppSearch = () => {
                   </CommandEmpty>
                 )}
                 {searchValue.length === 0 && (
-                  <CommandEmpty className="h-full">
+                  <CommandEmpty className="h-full sm:h-[36vh]">
                     <ContentPlaceholder Icon={Search} title={t('common:global_search.text', { appName: config.name })} />
                   </CommandEmpty>
                 )}

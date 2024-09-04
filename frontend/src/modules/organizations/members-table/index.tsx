@@ -272,7 +272,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
             {selectedMembers.length === 0 && <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
           <div className="sm:grow" />
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
+          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
             <TableSearch value={query} setQuery={onSearch} />
             <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>

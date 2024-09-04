@@ -128,7 +128,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
       className: 'max-w-full lg:max-w-4xl',
       id: isAdmin ? 'edit-project' : 'project-members',
       title: t(`common:${isAdmin ? 'project_settings' : 'project_members'}`),
-      text: t(`common:${isAdmin ? 'project_settings.text' : 'project_members.text'}`),
+      text: isAdmin ? t('common:project_settings.text') : '',
     });
   };
 

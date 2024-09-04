@@ -483,6 +483,5 @@
   "success.stopped_impersonation": "Successfully stopped impersonating.",
   "use_count": "Tasks",
   "last_used": "Last used",
-  "project_members": "Project members",
-  "project_members.text": "Meet the project team"
+  "project_members": "Project members"
 }

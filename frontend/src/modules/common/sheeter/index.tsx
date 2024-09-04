@@ -58,7 +58,7 @@ export function Sheeter() {
       {currentSheets.map((sheet) => (
         <Sheet key={sheet.id} open={true} onOpenChange={onOpenChange(sheet.id)} modal>
           <SheetPortal>
-            <SheetContent className={`${sheet.className} items-start`}>
+            <SheetContent aria-describedby={undefined} className={`${sheet.className} items-start`}>
               <StickyBox className={`z-10 flex items-center justify-between bg-background py-4 ${sheet.title ? '' : 'hidden'}`}>
                 <SheetTitle>{sheet.title}</SheetTitle>
                 <SheetClose className="mr-1 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none">
