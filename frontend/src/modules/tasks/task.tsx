@@ -61,10 +61,11 @@ interface TaskProps {
   isSelected: boolean;
   isFocused: boolean;
   handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void;
+  tasks?: Task[];
   isSheet?: boolean;
 }
 
-export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded, isSheet, handleTaskActionClick }: TaskProps) {
+export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isExpanded, isSheet, handleTaskActionClick }: TaskProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const taskRef = useRef<HTMLDivElement>(null);
@@ -79,8 +80,8 @@ export function TaskCard({ style, task, mode, isSelected, isFocused, isExpanded,
 
   const updateStatus = async (newStatus: number) => {
     try {
-      const { items: tasks } = queryClient.getQueryData(['boardTasks', task.projectId]) as { items: Task[] };
-      const newOrder = getNewStatusTaskOrder(task.status, newStatus, tasks);
+      const query = queryClient.getQueryData(['boardTasks', task.projectId]) as { items: Task[] };
+      const newOrder = getNewStatusTaskOrder(task.status, newStatus, isSheet ? tasks ?? [] : query.items ?? []);
       const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });

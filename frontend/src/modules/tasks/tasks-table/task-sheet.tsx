@@ -73,7 +73,16 @@ const TaskSheet = ({
   }, [task]);
 
   return (
-    <TaskCard mode={mode} task={task} isExpanded={true} isSelected={false} isFocused={true} handleTaskActionClick={handleTaskActionClick} isSheet />
+    <TaskCard
+      mode={mode}
+      task={task}
+      tasks={tasks}
+      isExpanded={true}
+      isSelected={false}
+      isFocused={true}
+      handleTaskActionClick={handleTaskActionClick}
+      isSheet
+    />
   );
 };
 

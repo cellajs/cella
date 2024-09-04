@@ -34,6 +34,13 @@ export const taskStatuses = [
   { value: 6, action: 'accepted', status: 'accepted', icon: AcceptedIcon },
 ] as const;
 
+interface Query {
+  pages?: {
+    items: Task[];
+  }[];
+  items?: Task[];
+}
+
 type Status = {
   value: (typeof taskStatuses)[number]['value'];
   status: string;
@@ -101,17 +108,21 @@ const SelectStatus = ({
     if (creationValueChange) creationValueChange(newStatus);
     if (!focusedTaskId) return;
     try {
+      const isTable = pathname.includes('/table');
       const tableSearch = search as z.infer<typeof tasksSearchSchema>;
-      const queryKeys = pathname.includes('/table')
+      const queryKeys = !isTable
         ? ['boardTasks', projectId]
         : [
-            tableSearch.projectId ? tableSearch.projectId : projects.map((p) => p.id).join('_'),
-            tableSearch.status,
-            tableSearch.q,
+            'tasks',
+            tableSearch.projectId ?? projects.map((p) => p.id).join('_'),
+            tableSearch.status ?? '',
+            tableSearch.q ?? '',
             tableSearch.sort,
             tableSearch.order,
           ];
-      const { items: tasks } = queryClient.getQueryData(queryKeys) as { items: Task[] };
+
+      const query: Query | undefined = queryClient.getQueryData(queryKeys);
+      const tasks: Task[] = query ? (isTable ? query.pages?.[0]?.items || [] : query.items || []) : [];
       const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
       const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
