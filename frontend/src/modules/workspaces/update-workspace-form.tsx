@@ -122,7 +122,15 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}
           </Button>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
+          <Button
+            type="reset"
+            variant="secondary"
+            onClick={() => {
+              form.reset();
+              sheet.update('edit-workspace', { title: t('common:workspace_settings') });
+            }}
+            className={form.formState.isDirty ? '' : 'invisible'}
+          >
             {t('common:cancel')}
           </Button>
         </div>
