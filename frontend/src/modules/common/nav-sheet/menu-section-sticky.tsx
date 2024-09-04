@@ -30,13 +30,21 @@ export const MenuSectionSticky = ({ data, sectionType, isSectionVisible, createD
                   {t(`common:${sectionType}`)}
                 </motion.span>
                 {!isSectionVisible && (
-                  <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="inline-block px-2 py-1 text-xs font-light text-muted-foreground"
+                  >
                     {data.filter((i) => !i.membership.archived).length}
-                  </span>
+                  </motion.span>
                 )}
               </div>
 
-              <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
+              <motion.div initial={{ rotate: 0 }} animate={{ rotate: isSectionVisible ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                <ChevronDown size={16} className="opacity-50" />
+              </motion.div>
             </motion.button>
           </Button>
           <AnimatePresence mode="popLayout">
