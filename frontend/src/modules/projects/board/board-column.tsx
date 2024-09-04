@@ -105,9 +105,18 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     });
   };
 
-  const openSettingsSheet = () => {
+  const openConfigSheet = () => {
+    const isAdmin = project.membership?.role === 'admin';
     const projectTabs = [
-      { id: 'general', label: 'common:general', element: <ProjectSettings project={project as unknown as Project} sheet /> },
+      ...(isAdmin
+        ? [
+            {
+              id: 'general',
+              label: 'common:general',
+              element: <ProjectSettings project={project as unknown as Project} sheet />,
+            },
+          ]
+        : []),
       {
         id: 'members',
         label: 'common:members',
@@ -117,9 +126,9 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
 
     sheet.create(<SheetNav tabs={projectTabs} />, {
       className: 'max-w-full lg:max-w-4xl',
-      title: t('common:project_settings'),
-      text: t('common:project_settings.text'),
-      id: 'edit-project',
+      id: isAdmin ? 'edit-project' : 'project-members',
+      title: t(`common:${isAdmin ? 'project_settings' : 'project_members'}`),
+      text: t(`common:${isAdmin ? 'project_settings.text' : 'project_members.text'}`),
     });
   };
 
@@ -189,10 +198,11 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     <div ref={columnRef} className="flex flex-col h-full">
       <BoardColumnHeader
         id={project.id}
+        role={project.membership?.role || 'member'}
         thumbnailUrl={project.thumbnailUrl}
         name={project.name}
         createFormClick={handleTaskFormClick}
-        openSettings={openSettingsSheet}
+        openConfig={openConfigSheet}
         createFormOpen={createForm}
       />
       <div
