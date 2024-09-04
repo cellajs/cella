@@ -80,6 +80,16 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
           return Array.isArray(content) && (content as { text: string }[])[0]?.text.trim() !== '';
         })
       ) {
+        // Get the last block and modify its content so we remove last \n
+        const lastBlock = blocks[blocks.length - 1];
+        if (Array.isArray(lastBlock.content)) {
+          const lastBlockContent = lastBlock.content as { text: string }[];
+          if (lastBlockContent.length > 0) lastBlockContent[0].text = lastBlockContent[0].text.replace(/\n$/, ''); // Remove the last newline character
+          const updatedLastBlock = { ...lastBlock, content: lastBlockContent };
+          // Replace blocks with the updated last block
+          editor.replaceBlocks(editor.document, [...blocks.slice(0, -1), updatedLastBlock] as typeof editor.document);
+        }
+
         updateData();
         callback?.();
       }
