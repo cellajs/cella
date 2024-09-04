@@ -56,7 +56,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
 
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
-  const containerRef = useRef(null);
   const { mode } = useThemeStore();
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId, labels } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
@@ -205,18 +204,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
         {stickyBackground}
 
         <div className="h-full border-l border-r">
-          {createForm && (
-            <CreateTaskForm
-              projectId={project.id}
-              organizationId={project.organizationId}
-              tasks={showingTasks}
-              labels={projectLabels}
-              onCloseForm={() => toggleCreateForm(project.id)}
-            />
-          )}
-
-          <div ref={containerRef} />
-
           {tasksQuery.isLoading ? (
             <ColumnSkeleton />
           ) : (
@@ -224,6 +211,15 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
               {!!tasks.length && (
                 <ScrollArea id={project.id} className="h-full mx-[-.07rem]">
                   <ScrollBar />
+                  {createForm && (
+                    <CreateTaskForm
+                      projectId={project.id}
+                      organizationId={project.organizationId}
+                      tasks={showingTasks}
+                      labels={projectLabels}
+                      onCloseForm={() => toggleCreateForm(project.id)}
+                    />
+                  )}
                   <div className="flex flex-col flex-grow">
                     <Button
                       onClick={handleAcceptedClick}
