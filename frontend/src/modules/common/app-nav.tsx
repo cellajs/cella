@@ -15,7 +15,7 @@ import { useNavigationStore } from '~/store/navigation';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { impersonateSignOut } from '~/api/auth';
+import { impersonationStop } from '~/api/auth';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import useMounted from '~/hooks/use-mounted';
 import { NavButton } from '~/modules/common/app-nav-button';
@@ -56,7 +56,7 @@ const AppNav = () => {
   });
 
   const stopImpersonation = async () => {
-    await impersonateSignOut();
+    await impersonationStop();
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
     navigate({ to: '/', replace: true });
     toast.success(t('common:success.stopped_impersonation'));

@@ -11,7 +11,7 @@ import { authBodySchema, emailBodySchema } from './schema';
 class AuthRoutesConfig {
   public impersonationSignIn = createRouteConfig({
     method: 'get',
-    path: '/impersonation-sign-in',
+    path: '/impersonation/start',
     guard: [isAuthenticated, isSystemAdmin],
     tags: ['auth'],
     summary: 'Start impersonating',
@@ -35,7 +35,7 @@ class AuthRoutesConfig {
 
   public impersonationSignOut = createRouteConfig({
     method: 'get',
-    path: '/impersonation-sign-out',
+    path: '/impersonation/stop',
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Stop impersonating',
