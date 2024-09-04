@@ -50,8 +50,6 @@ export const CreateSubTaskForm = ({
     setFormState(false);
   }, [setFormState]);
 
-  useHotkeys([['Escape', handleHotKeysKeyPress]]);
-
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -129,6 +127,8 @@ export const CreateSubTaskForm = ({
     return true;
   };
 
+  useHotkeys([['Escape', handleHotKeysKeyPress]]);
+
   if (!formOpen)
     return (
       <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none bg-secondary/50" onClick={() => setFormState(true)}>
@@ -154,6 +154,7 @@ export const CreateSubTaskForm = ({
                       onChange(description);
                       form.setValue('summary', summary);
                     }}
+                    callback={form.handleSubmit(onSubmit)}
                     mode={mode}
                     subTask
                   />

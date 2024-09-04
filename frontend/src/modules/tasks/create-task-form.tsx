@@ -163,6 +163,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
     if (assignedTo.length || labels.length || status !== 1 || impact || type !== 'feature') return true;
     const { dirtyFields } = form.formState;
     const fieldsKeys = Object.keys(dirtyFields);
+    if (!fieldsKeys.length) return false;
     if (fieldsKeys.includes('description') && fieldsKeys.length === 1) {
       const description = form.getValues('description');
       const parser = new DOMParser();
@@ -199,6 +200,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                       onChange(description);
                       form.setValue('summary', summary);
                     }}
+                    callback={form.handleSubmit(onSubmit)}
                     mode={mode}
                   />
                 </FormControl>
@@ -413,66 +415,71 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex [&:not(.absolute)]:active:translate-y-[.07rem]">
+          <div className="inline-flex gap-2">
+            <div className="flex [&:not(.absolute)]:active:translate-y-[.07rem] ">
+              <Button
+                size={'xs'}
+                type="submit"
+                disabled={!isDirty()}
+                className={`grow ${isDirty() ? 'rounded-none rounded-l' : 'rounded'} [&:not(.absolute)]:active:translate-y-0`}
+              >
+                <span>
+                  {t('common:create')} {form.getValues('status') === 1 ? '' : ` & ${taskStatuses[form.getValues('status')].status}`}
+                </span>
+              </Button>
+              {isDirty() && (
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field: { onChange } }) => {
+                    return (
+                      <FormItem className="gap-0 w-8">
+                        <FormControl>
+                          <Button
+                            type="button"
+                            aria-label="Set status"
+                            variant={'default'}
+                            size="xs"
+                            className="relative rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
+                            onClick={(event) => {
+                              dropdowner(
+                                <SelectStatus
+                                  taskStatus={form.getValues('status') as TaskStatus}
+                                  projectId={projectId}
+                                  creationValueChange={onChange}
+                                />,
+                                {
+                                  id: `status-${defaultId}`,
+                                  trigger: event.currentTarget,
+                                },
+                              );
+                            }}
+                          >
+                            <ChevronDown size={16} />
+                          </Button>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+              )}
+            </div>
+
             <Button
               size={'xs'}
-              type="submit"
-              disabled={!isDirty()}
-              className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'} [&:not(.absolute)]:active:translate-y-0`}
+              type="reset"
+              variant="secondary"
+              className={isDirty() ? '' : 'hidden'}
+              aria-label="Cancel"
+              onClick={() => form.reset()}
             >
-              <span>
-                {t('common:create')} {form.getValues('status') === 1 ? '' : ` & ${taskStatuses[form.getValues('status')].status}`}
-              </span>
+              {t('common:cancel')}
             </Button>
-            {form.formState.isDirty && (
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field: { onChange } }) => {
-                  return (
-                    <FormItem className="gap-0 w-8">
-                      <FormControl>
-                        <Button
-                          type="button"
-                          aria-label="Set status"
-                          variant={'default'}
-                          size="xs"
-                          className="relative rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
-                          onClick={(event) => {
-                            dropdowner(
-                              <SelectStatus
-                                taskStatus={form.getValues('status') as TaskStatus}
-                                projectId={projectId}
-                                creationValueChange={onChange}
-                              />,
-                              {
-                                id: `status-${defaultId}`,
-                                trigger: event.currentTarget,
-                              },
-                            );
-                          }}
-                        >
-                          <ChevronDown size={16} />
-                        </Button>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            )}
+            <Button size={'xs'} type="button" variant="secondary" aria-label="close" onClick={handleCloseForm} className={isDirty() ? 'hidden' : ''}>
+              {t('common:close')}
+            </Button>
           </div>
-
-          <Button
-            size={'xs'}
-            type="reset"
-            variant="secondary"
-            className={isDirty() ? '' : 'invisible'}
-            aria-label="Cancel"
-            onClick={() => form.reset()}
-          >
-            {t('common:cancel')}
-          </Button>
         </div>
       </form>
     </Form>

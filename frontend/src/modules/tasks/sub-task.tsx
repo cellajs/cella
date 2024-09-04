@@ -133,6 +133,7 @@ const SubTask = ({
                 projectId={task.projectId}
                 html={task.description || ''}
                 mode={mode}
+                callback={() => setIsEditing(false)}
                 className="w-full bg-transparent border-none"
                 subTask
               />

@@ -25,9 +25,10 @@ interface TaskBlockNoteProps {
   className?: string;
   onChange?: (newContent: string, newSummary: string) => void;
   subTask?: boolean;
+  callback?: () => void;
 }
 
-export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = false, className = '' }: TaskBlockNoteProps) => {
+export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, subTask = false, className = '' }: TaskBlockNoteProps) => {
   const { t } = useTranslation();
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
 
@@ -59,12 +60,30 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
     if (editor.getSelection()) return;
 
     const descriptionHtml = await editor.blocksToFullHTML(editor.document);
-    const summary = editor.document[0];
-    const summaryHTML = await editor.blocksToFullHTML([summary]);
+    // find first block with text in it
+    const summary = editor.document.find((el) => Array.isArray(el.content) && (el.content as { text: string }[])[0]?.text.trim() !== '');
+    const summaryHTML = await editor.blocksToFullHTML([summary ?? editor.document[0]]);
     const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (onChange) onChange(cleanDescription, cleanSummary);
     else handleUpdateHTML(cleanDescription, cleanSummary);
+  };
+
+  const handleKeyDown = async (event: KeyboardEvent) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      const blocks = editor.document;
+      // to ensure that blocknote have description
+      if (
+        blocks?.some((block) => {
+          const content = block.content;
+          return Array.isArray(content) && (content as { text: string }[])[0]?.text.trim() !== '';
+        })
+      ) {
+        updateData();
+        callback?.();
+      }
+    }
   };
 
   useEffect(() => {
@@ -97,6 +116,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
           updateData();
         }}
         onBlur={updateData}
+        onKeyDown={(e) => handleKeyDown(e as unknown as KeyboardEvent)}
         editor={editor}
         data-color-scheme={mode}
         theme={mode}

@@ -52,7 +52,14 @@ const TaskContent = ({ task, mode, isExpanded }: Props) => {
         </div>
       ) : (
         <>
-          <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
+          <TaskBlockNote
+            id={task.id}
+            projectId={task.projectId}
+            html={task.description || ''}
+            mode={mode}
+            className={expandedStyle}
+            callback={() => dispatchCustomEvent('toggleCard', task.id)}
+          />
 
           <div className="-ml-10 -mr-1">
             <div className="flex flex-col">
