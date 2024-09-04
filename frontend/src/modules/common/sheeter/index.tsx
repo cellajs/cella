@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { dialog } from '~/modules/common/dialoger/state';
 import { type SheetAction, SheetObserver, type SheetT } from '~/modules/common/sheeter/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
@@ -12,6 +13,7 @@ export function Sheeter() {
   const prevFocusedElement = useRef<HTMLElement | null>(null);
   const navigate = useNavigate();
   const onOpenChange = (id: string) => (open: boolean) => {
+    if (dialog.haveOpenDialogs()) return;
     if (!open) {
       navigate({
         replace: true,
