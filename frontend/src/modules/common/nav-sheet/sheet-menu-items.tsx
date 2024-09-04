@@ -31,7 +31,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
       resetScroll={false}
       className={cn(
         `group ${
-          mainItemIdOrSlug ? 'h-12 relative menu-item-sub' : 'h-14'
+          mainItemIdOrSlug && !searchResults ? 'h-12 relative menu-item-sub' : 'h-14'
         } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 pr-2 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
         className,
         isActive && 'ring-primary/50 text-primary focus:ring-primary',
@@ -40,17 +40,19 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
       to={path}
     >
       <AvatarWrap
-        className={`${mainItemIdOrSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} z-[1] items-center`}
+        className={`${mainItemIdOrSlug && !searchResults ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} z-[1] items-center`}
         type={type}
         id={item.id}
         name={item.name}
         url={item.thumbnailUrl}
       />
       <div className="truncate py-2 flex flex-col justify-center text-left">
-        <div className={`truncate ${mainItemIdOrSlug ? 'max-sm:pt-1.5 text-sm sm:-mb-1 sm:-mt-0.5' : 'max-sm:pt-2.5 text-base'} leading-5`}>
+        <div
+          className={`truncate ${mainItemIdOrSlug && !searchResults ? 'max-sm:pt-1.5 text-sm sm:-mb-1 sm:-mt-0.5' : 'max-sm:pt-2.5 text-base'} leading-5`}
+        >
           {item.name}
         </div>
-        <div className={`max-sm:hidden text-muted-foreground ${mainItemIdOrSlug ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
+        <div className={`max-sm:hidden text-muted-foreground ${mainItemIdOrSlug && !searchResults ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type)}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {item.submenu

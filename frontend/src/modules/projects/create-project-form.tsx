@@ -63,7 +63,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
     onSuccess: (createdProject) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type}`) }));
-      // callback([createdProject], 'create');
       callback([{ ...createdProject, ...{ members: [user] } }], 'createProject');
       useNavigationStore.setState({
         menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),

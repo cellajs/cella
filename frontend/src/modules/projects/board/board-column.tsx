@@ -56,7 +56,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
 
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
-  const containerRef = useRef(null);
   const { mode } = useThemeStore();
   const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId, labels } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
@@ -106,9 +105,18 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     });
   };
 
-  const openSettingsSheet = () => {
+  const openConfigSheet = () => {
+    const isAdmin = project.membership?.role === 'admin';
     const projectTabs = [
-      { id: 'general', label: 'common:general', element: <ProjectSettings project={project as unknown as Project} sheet /> },
+      ...(isAdmin
+        ? [
+            {
+              id: 'general',
+              label: 'common:general',
+              element: <ProjectSettings project={project as unknown as Project} sheet />,
+            },
+          ]
+        : []),
       {
         id: 'members',
         label: 'common:members',
@@ -118,9 +126,9 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
 
     sheet.create(<SheetNav tabs={projectTabs} />, {
       className: 'max-w-full lg:max-w-4xl',
-      title: t('common:project_settings'),
-      text: t('common:project_settings.text'),
-      id: 'edit-project',
+      id: isAdmin ? 'edit-project' : 'project-members',
+      title: t(`common:${isAdmin ? 'project_settings' : 'project_members'}`),
+      text: t(`common:${isAdmin ? 'project_settings.text' : 'project_members.text'}`),
     });
   };
 
@@ -190,10 +198,11 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     <div ref={columnRef} className="flex flex-col h-full">
       <BoardColumnHeader
         id={project.id}
+        role={project.membership?.role || 'member'}
         thumbnailUrl={project.thumbnailUrl}
         name={project.name}
         createFormClick={handleTaskFormClick}
-        openSettings={openSettingsSheet}
+        openConfig={openConfigSheet}
         createFormOpen={createForm}
       />
       <div
@@ -205,18 +214,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
         {stickyBackground}
 
         <div className="h-full border-l border-r">
-          {createForm && (
-            <CreateTaskForm
-              projectId={project.id}
-              organizationId={project.organizationId}
-              tasks={showingTasks}
-              labels={projectLabels}
-              onCloseForm={() => toggleCreateForm(project.id)}
-            />
-          )}
-
-          <div ref={containerRef} />
-
           {tasksQuery.isLoading ? (
             <ColumnSkeleton />
           ) : (
@@ -224,6 +221,15 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
               {!!tasks.length && (
                 <ScrollArea id={project.id} className="h-full mx-[-.07rem]">
                   <ScrollBar />
+                  {createForm && (
+                    <CreateTaskForm
+                      projectId={project.id}
+                      organizationId={project.organizationId}
+                      tasks={showingTasks}
+                      labels={projectLabels}
+                      onCloseForm={() => toggleCreateForm(project.id)}
+                    />
+                  )}
                   <div className="flex flex-col flex-grow">
                     <Button
                       onClick={handleAcceptedClick}
@@ -242,7 +248,13 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                       )}
                     </Button>
                     {showingTasks.map((task) => (
-                      <motion.div key={task.id} variants={taskVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0 }}>
+                      <motion.div
+                        key={task.id}
+                        variants={taskVariants}
+                        initial={task.status === 6 || task.status === 0 ? 'hidden' : 'visible'}
+                        animate="visible"
+                        exit="exit"
+                      >
                         <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                           <TaskCard
                             task={task}

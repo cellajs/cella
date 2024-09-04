@@ -9,13 +9,14 @@ import type { UserMenuItem } from '~/types';
 
 interface MenuSectionStickyProp {
   sectionType: 'workspaces' | 'organizations';
+  optionsView: boolean;
   isSectionVisible: boolean;
   data: UserMenuItem[];
   toggleOptionsView: () => void;
   createDialog?: () => void;
 }
 
-export const MenuSectionSticky = ({ data, sectionType, isSectionVisible, createDialog, toggleOptionsView }: MenuSectionStickyProp) => {
+export const MenuSectionSticky = ({ data, sectionType, optionsView, isSectionVisible, createDialog, toggleOptionsView }: MenuSectionStickyProp) => {
   const { t } = useTranslation();
   const { toggleSection } = useNavigationStore();
 
@@ -30,19 +31,34 @@ export const MenuSectionSticky = ({ data, sectionType, isSectionVisible, createD
                   {t(`common:${sectionType}`)}
                 </motion.span>
                 {!isSectionVisible && (
-                  <span className="inline-block px-2 py-1 text-xs font-light text-muted-foreground">
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="inline-block px-2 py-1 text-xs font-light text-muted-foreground"
+                  >
                     {data.filter((i) => !i.membership.archived).length}
-                  </span>
+                  </motion.span>
                 )}
               </div>
 
-              <ChevronDown size={16} className={`transition-transform opacity-50 ${isSectionVisible ? 'rotate-180' : 'rotate-0'}`} />
+              <motion.div initial={{ rotate: 0 }} animate={{ rotate: isSectionVisible ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                <ChevronDown size={16} className="opacity-50" />
+              </motion.div>
             </motion.button>
           </Button>
           <AnimatePresence mode="popLayout">
             {isSectionVisible && (
               <TooltipButton toolTipContent={t('common:manage')} side="bottom" sideOffset={10}>
-                <Button disabled={!data.length} className="w-12 px-3" variant="secondary" size="icon" onClick={() => toggleOptionsView()} asChild>
+                <Button
+                  disabled={!data.length}
+                  className="w-12 px-3"
+                  variant={optionsView ? 'plain' : 'secondary'}
+                  size="icon"
+                  onClick={() => toggleOptionsView()}
+                  asChild
+                >
                   <motion.button
                     key={`sheet-menu-settings-${sectionType}`}
                     transition={{ bounce: 0, duration: 0.2 }}

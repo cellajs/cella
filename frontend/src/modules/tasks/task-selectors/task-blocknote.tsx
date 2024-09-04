@@ -70,8 +70,14 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
   useEffect(() => {
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
-      editor.replaceBlocks(editor.document, blocks);
-      triggerFocus(subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`);
+      const currentBlocks = editor.document.map((block) => block.content).join('');
+      const newBlocksContent = blocks.map((block) => block.content).join('');
+
+      // Only replace blocks if the content actually changes
+      if (currentBlocks !== newBlocksContent) {
+        editor.replaceBlocks(editor.document, blocks);
+        triggerFocus(subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`);
+      }
     };
     blockUpdate(html);
   }, [html]);
@@ -86,6 +92,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, subTask = f
       <BlockNoteView
         id={subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`}
         onChange={() => {
+          // to avoid update if content empty, so from draft shown
           if (!onChange || editor.document[0].content?.toString() === '') return;
           updateData();
         }}

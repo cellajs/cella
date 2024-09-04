@@ -63,7 +63,9 @@ export const SheetMenu = memo(() => {
 
   const searchResultsListItems = useCallback(() => {
     return searchResults.length > 0
-      ? searchResults.map((item: UserMenuItem) => <SheetMenuItem key={item.id} searchResults item={item} type={item.entity} />)
+      ? searchResults.map((item: UserMenuItem) => (
+          <SheetMenuItem key={item.id} searchResults mainItemIdOrSlug={item.parentSlug} item={item} type={item.entity} />
+        ))
       : [];
   }, [searchResults]);
 

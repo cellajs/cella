@@ -5,7 +5,7 @@ import { VenetianMask } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { impersonateSignIn } from '~/api/auth';
+import { impersonationStart } from '~/api/auth';
 import { Button } from '~/modules/ui/button';
 import { getAndSetMe, getAndSetMenu } from '~/routes';
 import { useUserStore } from '~/store/user';
@@ -23,7 +23,7 @@ const ImpersonateRow = ({ user, tabIndex }: Props) => {
   const impersonateClick = async () => {
     try {
       useUserStore.setState({ user: null as unknown as MeUser });
-      await impersonateSignIn(user.id);
+      await impersonationStart(user.id);
       await Promise.all([getAndSetMe(), getAndSetMenu()]);
       toast.success(t('common:success.impersonated'));
       navigate({ to: '/', replace: true });

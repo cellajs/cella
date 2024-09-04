@@ -18,7 +18,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure();
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(value);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -56,6 +56,10 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
   useEffect(() => {
     onChange(selected);
   }, [selected]);
+
+  useEffect(() => {
+    setSelected(value);
+  }, [value]);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

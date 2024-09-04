@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight, Minimize2, Plus, Settings } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Minimize2, Plus, Settings, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -11,13 +11,14 @@ import { useWorkspaceUIStore } from '~/store/workspace-ui';
 interface BoardColumnHeaderProps {
   id: string;
   name: string;
+  role: 'admin' | 'member';
   thumbnailUrl: string | null;
   createFormOpen: boolean;
-  openSettings: () => void;
+  openConfig: () => void;
   createFormClick: () => void;
 }
 
-export function BoardColumnHeader({ id, name, thumbnailUrl, createFormOpen, openSettings, createFormClick }: BoardColumnHeaderProps) {
+export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen, openConfig, createFormClick }: BoardColumnHeaderProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { changeColumn } = useWorkspaceUIStore();
@@ -56,9 +57,14 @@ export function BoardColumnHeader({ id, name, thumbnailUrl, createFormOpen, open
       <AvatarWrap className="h-8 w-8 text-xs" id={id} type="project" name={name} url={thumbnailUrl} />
       <div className="truncate leading-6">{name}</div>
       <div className="grow" />
-      <TooltipButton toolTipContent={t('common:project_settings')} side="bottom" sideOffset={13} className="max-sm:hidden">
-        <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={openSettings}>
-          <Settings size={16} />
+      <TooltipButton
+        toolTipContent={role === 'admin' ? t('common:project_settings') : t('common:project_members')}
+        side="bottom"
+        sideOffset={13}
+        className="max-sm:hidden"
+      >
+        <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={openConfig}>
+          {role === 'admin' ? <Settings size={16} /> : <Users size={16} />}
         </Button>
       </TooltipButton>
       <TooltipButton toolTipContent={t('common:minimize')} side="bottom" sideOffset={13} className="hidden">

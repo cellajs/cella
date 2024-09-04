@@ -18,18 +18,19 @@ import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import type { TaskQueryActions } from '~/lib/custom-events/types';
 import { isSubTaskData } from '~/lib/drag-and-drop';
-import { queryClient } from '~/lib/router';
 import { getRelativeTaskOrder } from '~/modules/tasks/helpers';
 
 const TaskSheet = ({
   task,
+  tasks,
   callback,
 }: {
   task: Task;
+  tasks: Task[];
   callback?: (task: Task[], action: TaskQueryActions) => void;
 }) => {
+  const { t } = useTranslation();
   const { mode } = useThemeStore();
-
   const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
     let component = <SelectTaskType currentType={task.type as TaskType} />;
 
@@ -51,7 +52,6 @@ const TaskSheet = ({
           return isSubTaskData(source.data);
         },
         async onDrop({ location, source }) {
-          const { t } = useTranslation();
           const target = location.current.dropTargets[0];
           if (!target) return;
           const sourceData = source.data;
@@ -60,7 +60,6 @@ const TaskSheet = ({
           const edge: Edge | null = extractClosestEdge(targetData);
           const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
           if (!edge || !isSubTask) return;
-          const { items: tasks } = queryClient.getQueryData(['tasks', sourceData.item.projectId]) as { items: Task[] };
           const newOrder: number = getRelativeTaskOrder(edge, tasks, targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
           try {
             const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
@@ -74,7 +73,16 @@ const TaskSheet = ({
   }, [task]);
 
   return (
-    <TaskCard mode={mode} task={task} isExpanded={true} isSelected={false} isFocused={true} handleTaskActionClick={handleTaskActionClick} isSheet />
+    <TaskCard
+      mode={mode}
+      task={task}
+      tasks={tasks}
+      isExpanded={true}
+      isSelected={false}
+      isFocused={true}
+      handleTaskActionClick={handleTaskActionClick}
+      isSheet
+    />
   );
 };
 

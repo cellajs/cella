@@ -1,9 +1,10 @@
-import { useLocation } from '@tanstack/react-router';
+import { useLocation, useSearch } from '@tanstack/react-router';
 import { cva } from 'class-variance-authority';
 import { Check, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import type { z } from 'zod';
 import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { queryClient } from '~/lib/router';
@@ -19,6 +20,7 @@ import { StartedIcon } from '~/modules/tasks/task-selectors/status-icons/started
 import { UnstartedIcon } from '~/modules/tasks/task-selectors/status-icons/unstarted';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
+import { WorkspaceRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types';
 
@@ -31,6 +33,13 @@ export const taskStatuses = [
   { value: 5, action: 'accept', status: 'reviewed', icon: ReviewedIcon },
   { value: 6, action: 'accepted', status: 'accepted', icon: AcceptedIcon },
 ] as const;
+
+interface Query {
+  pages?: {
+    items: Task[];
+  }[];
+  items?: Task[];
+}
 
 type Status = {
   value: (typeof taskStatuses)[number]['value'];
@@ -82,8 +91,10 @@ const SelectStatus = ({
   creationValueChange,
 }: { taskStatus: TaskStatus; projectId: string; creationValueChange?: (newValue: number) => void }) => {
   const { t } = useTranslation();
+
+  const search = useSearch({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
-  const { focusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId, projects } = useWorkspaceStore();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
 
@@ -97,7 +108,21 @@ const SelectStatus = ({
     if (creationValueChange) creationValueChange(newStatus);
     if (!focusedTaskId) return;
     try {
-      const { items: tasks } = queryClient.getQueryData(['boardTasks', projectId]) as { items: Task[] };
+      const isTable = pathname.includes('/table');
+      const tableSearch = search as z.infer<typeof tasksSearchSchema>;
+      const queryKeys = !isTable
+        ? ['boardTasks', projectId]
+        : [
+            'tasks',
+            tableSearch.projectId ?? projects.map((p) => p.id).join('_'),
+            tableSearch.status ?? '',
+            tableSearch.q ?? '',
+            tableSearch.sort,
+            tableSearch.order,
+          ];
+
+      const query: Query | undefined = queryClient.getQueryData(queryKeys);
+      const tasks: Task[] = query ? (isTable ? query.pages?.[0]?.items || [] : query.items || []) : [];
       const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
       const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';

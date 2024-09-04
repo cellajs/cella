@@ -12,6 +12,7 @@ import app from './server';
 
 // Set i18n instance before starting server
 import './lib/i18n';
+import { config } from 'config';
 // import { sdk } from './tracing';
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
@@ -39,7 +40,8 @@ const main = async () => {
       port: Number(env.PORT ?? '4004'),
     },
     (info) => {
-      console.info(`Listening on http://${info.address}:${info.port}`);
+      console.info(`${config.name} backend is available on http://${info.address}:${info.port}`);
+      console.info(`Read the docs on http://${info.address}:${info.port}/docs`);
       ascii();
     },
   );
