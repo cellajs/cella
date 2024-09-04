@@ -3,6 +3,7 @@ import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { ProjectModel } from '#/db/schema/projects';
+import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 import type { UserModel } from '#/db/schema/users';
 import type { WorkspaceModel } from '#/db/schema/workspaces';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -53,7 +54,22 @@ export const insertMembership = async ({ user, role, entity, createdBy = user.id
 
   // Insert
   const results = await db.insert(membershipsTable).values(newMembership).returning();
-
+  // if invite to project also add membership to project's workspace
+  if (entity.entity === 'project') {
+    const [{ workspaceId }] = await db
+      .select({ workspaceId: projectsToWorkspacesTable.workspaceId })
+      .from(projectsToWorkspacesTable)
+      .where(eq(projectsToWorkspacesTable.projectId, entity.id));
+    await db.insert(membershipsTable).values({
+      organizationId,
+      workspaceId,
+      type: 'workspace',
+      userId: user.id,
+      role: 'member',
+      createdBy,
+      order: 1,
+    });
+  }
   // Log
   logEvent(`User added to ${entity.entity}`, { user: user.id, id: entity.id });
 

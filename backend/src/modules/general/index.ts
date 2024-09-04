@@ -147,7 +147,7 @@ const generalRoutes = app
       organizationSlug: '',
     };
 
-    if (tokenRecord.type === 'organization_invitation' && tokenRecord.organizationId) {
+    if (tokenRecord.type === 'membership_invitation' && tokenRecord.organizationId) {
       const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
       data.organizationName = organization.name;
       data.organizationSlug = organization.slug;
@@ -224,7 +224,7 @@ const generalRoutes = app
       return ctx.json({ success: true }, 200);
     }
 
-    if (token.type === 'organization_invitation') {
+    if (token.type === 'membership_invitation') {
       if (!token.organizationId) {
         return errorResponse(ctx, 400, 'invalid_token', 'warn');
       }

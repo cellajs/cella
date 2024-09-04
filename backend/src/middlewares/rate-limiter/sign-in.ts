@@ -1,10 +1,9 @@
 import type { MiddlewareHandler } from 'hono';
 
-import { RateLimiterPostgres } from 'rate-limiter-flexible';
 import { errorResponse } from '#/lib/errors';
 
-import { queryClient } from '#/db/db';
 import type { Env } from '#/types/common';
+import { getRateLimiterInstance } from '.';
 
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
 
@@ -12,18 +11,14 @@ const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`
 const maxWrongAttemptsByIPperDay = 100;
 const maxConsecutiveFailsByUsernameAndIP = 5;
 
-const limiterSlowBruteByIP = new RateLimiterPostgres({
-  storeClient: queryClient,
-  tableName: 'rate_limits',
+const limiterSlowBruteByIP = getRateLimiterInstance({
   keyPrefix: 'login_fail_ip_per_day',
   points: maxWrongAttemptsByIPperDay,
   duration: 60 * 60 * 24,
   blockDuration: 60 * 60 * 24, // Block for 1 day, if 100 wrong attempts per day
 });
 
-const limiterConsecutiveFailsByUsernameAndIP = new RateLimiterPostgres({
-  storeClient: queryClient,
-  tableName: 'rate_limits',
+const limiterConsecutiveFailsByUsernameAndIP = getRateLimiterInstance({
   keyPrefix: 'login_fail_consecutive_username_and_ip',
   points: maxConsecutiveFailsByUsernameAndIP,
   duration: 60 * 60, // Store number for 1 hour since first fail

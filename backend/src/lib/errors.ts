@@ -51,7 +51,7 @@ export const createError = (
   if (err || ['warn', 'error'].includes(severity)) {
     const data = { ...error, eventData };
 
-    logtail[severity](message, undefined, data as unknown as EventData);
+    if (logtail) logtail[severity](message, undefined, data as unknown as EventData);
     console.error(err);
   }
   // Log significant events with additional data

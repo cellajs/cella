@@ -22,7 +22,6 @@ export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; 
         dialog
         projects={[project]}
         callback={(projects) => {
-          // callback(projects, 'delete');
           callback(projects, 'deleteProject');
           toast.success(t('common:success.delete_resource', { resource: t('common:project') }));
           sheet.remove('edit-project');

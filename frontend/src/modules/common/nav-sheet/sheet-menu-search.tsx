@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
-import { type SearchResultsType, initialSearchResults, menuSections } from '~/modules/common/nav-sheet/sheet-menu';
+import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
 import { Input } from '~/modules/ui/input';
 import type { UserMenu, UserMenuItem } from '~/types';
 
@@ -11,32 +11,29 @@ interface SheetMenuSearchProps {
   menu: UserMenu;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  onSearchResultsChange: (results: SearchResultsType) => void;
+  searchResultsChange: (results: UserMenuItem[]) => void;
 }
 
-export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, onSearchResultsChange }: SheetMenuSearchProps) => {
+export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, searchResultsChange }: SheetMenuSearchProps) => {
   const { t } = useTranslation();
   const { hasStarted } = useMounted();
   const isMobile = useBreakpoints('max', 'sm');
 
   useEffect(() => {
     const filterResults = () => {
-      if (!searchTerm.trim()) return initialSearchResults;
+      if (!searchTerm.trim()) return [];
 
       const lowerCaseTerm = searchTerm.toLowerCase();
-      return menuSections
-        .filter((el) => !el.isSubmenu)
-        .reduce(
-          (acc, section) => {
-            acc[section.storageType] = menu[section.storageType as keyof UserMenu].filter((page) => page.name.toLowerCase().includes(lowerCaseTerm));
-            return acc;
-          },
-          {} as Record<string, UserMenuItem[]>,
-        );
+      const filterItems = (items: UserMenuItem[]): UserMenuItem[] =>
+        items.flatMap((item) => {
+          const isMatch = item.name.toLowerCase().includes(lowerCaseTerm);
+          const filteredSubmenu = item.submenu ? filterItems(item.submenu) : [];
+          return isMatch ? [item, ...filteredSubmenu] : filteredSubmenu;
+        });
+      return menuSections.filter((el) => !el.isSubmenu).flatMap((section) => filterItems(menu[section.storageType as keyof UserMenu]));
     };
-
-    onSearchResultsChange(filterResults());
-  }, [searchTerm, menu, onSearchResultsChange]);
+    searchResultsChange(filterResults());
+  }, [searchTerm, menu]);
 
   return (
     <div className="relative">

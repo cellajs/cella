@@ -48,20 +48,22 @@
 <br>
 
 ## Installation
-
-#### Prerequisites
-- **Node:** Check node with `node -v`. Install Node 20.x or 22.x. (ie. [Volta](https://docs.volta.sh/guide/)).
-- **Docker:** Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/)
-
-<br>
-
-First step is to clone
+Make sure you have node installed with `node -v`. Install Node 20.x or 22.x. (ie. [Volta](https://docs.volta.sh/guide/)).
 
 ```bash
 git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
-Use `.env.example` to create `.env` files in `/backend` and (optionally) `/tus`. Install and run docker.
+### Quick start
+
+```bash
+pnpm install
+pnpm quick
+```
+
+### Full setup
+For a full setup - with Postgres instead of pglite - you need Docker. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
+
 
 ```bash
 pnpm install
@@ -72,10 +74,6 @@ Start all servers:
 
 ```bash
 pnpm dev
-```
-
-```bash
-pnpm generate
 ```
 
 Lastly, [seed](/backend/scripts/README.md) your db (with `dev` running) to sign in as [admin user](/backend/scripts/README.md).

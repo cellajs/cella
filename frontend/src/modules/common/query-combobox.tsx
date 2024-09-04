@@ -100,26 +100,26 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
             clearValue={setSearchQuery}
             placeholder={t('common:placeholder.type_name')}
           />
-          <ScrollArea className="max-h-[30vh] overflow-y-auto">
-            {isLoading && (
-              <CommandLoading>
-                <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
-              </CommandLoading>
-            )}
-            <CommandList className="px-1 h-full">
-              {!data || data.items.length === 0 ? (
-                <>
-                  {debouncedSearchQuery.length ? (
-                    <CommandEmpty className="h-full">
-                      <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
-                    </CommandEmpty>
-                  ) : (
-                    <CommandEmpty className="h-full">
-                      <ContentPlaceholder title={t('common:invite_members_search.text', { appName: config.name })} />
-                    </CommandEmpty>
-                  )}
-                </>
-              ) : (
+          {isLoading && (
+            <CommandLoading>
+              <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
+            </CommandLoading>
+          )}
+          <CommandList className="px-1 h-full">
+            {!data || data.items.length === 0 ? (
+              <>
+                {debouncedSearchQuery.length ? (
+                  <CommandEmpty className="h-full">
+                    <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
+                  </CommandEmpty>
+                ) : (
+                  <CommandEmpty className="h-full">
+                    <ContentPlaceholder title={t('common:invite_members_search.text', { appName: config.name })} />
+                  </CommandEmpty>
+                )}
+              </>
+            ) : (
+              <ScrollArea className="max-h-[30vh] overflow-y-auto">
                 <CommandGroup>
                   {data.items.map((user) => (
                     <CommandItem
@@ -137,9 +137,9 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
                     </CommandItem>
                   ))}
                 </CommandGroup>
-              )}
-            </CommandList>
-          </ScrollArea>
+              </ScrollArea>
+            )}
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

@@ -172,7 +172,7 @@ const membershipsRoutes = app
         const token = generateId(40);
         await db.insert(tokensTable).values({
           id: token,
-          type: 'organization_invitation',
+          type: 'membership_invitation',
           userId: targetUser?.id,
           email: email,
           role: (role as TokenModel['role']) || 'member',

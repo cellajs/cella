@@ -1,6 +1,5 @@
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { membersQuerySchema } from 'backend/modules/general/schema';
@@ -49,7 +48,7 @@ interface MembersTableProps {
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
-  const search = useSearch({ from: '/layout/$idOrSlug/members' });
+  const search = useSearch({ strict: false });
   const containerRef = useRef(null);
   const navigate = useNavigate();
   const entityType = entity.entity;
@@ -60,7 +59,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<MemberSearch['q']>(search.q);
-  const [role, setRole] = useState<MemberSearch['role']>(search.role);
+  const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
@@ -175,7 +174,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   const openInviteDialog = () => {
     dialog(<InviteUsers entity={entity as EntityPage} mode={null} dialog />, {
-      id: 'user-invite',
+      id: `user-invite-${entity.id}`,
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[120] max-w-4xl',
       container: containerRef.current,
