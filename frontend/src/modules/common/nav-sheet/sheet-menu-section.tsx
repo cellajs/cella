@@ -72,6 +72,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
         <MenuSectionSticky
           data={data}
           sectionType={sectionType}
+          optionsView={optionsView}
           isSectionVisible={isSectionVisible}
           toggleOptionsView={toggleOptionsView}
           createDialog={createDialog}
