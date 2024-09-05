@@ -1,6 +1,6 @@
 import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { projectsTable } from '#/db/schema/projects';
 import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 
@@ -147,14 +147,7 @@ const projectsRoutes = app
       projects = await db
         .select({
           project: projectsTable,
-          membership: {
-            id: membershipsTable.id,
-            role: membershipsTable.role,
-            archived: membershipsTable.archived,
-            muted: membershipsTable.muted,
-            order: membershipsTable.order,
-            userId: membershipsTable.userId,
-          },
+          membership: membershipSelect,
           workspaceId: projectsToWorkspacesTable.workspaceId,
           admins: countsQuery.admins,
           members: countsQuery.members,
@@ -225,14 +218,7 @@ const projectsRoutes = app
     }
 
     const memberships = await db
-      .select({
-        id: membershipsTable.id,
-        role: membershipsTable.role,
-        archived: membershipsTable.archived,
-        muted: membershipsTable.muted,
-        order: membershipsTable.order,
-        userId: membershipsTable.userId,
-      })
+      .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'project'), eq(membershipsTable.projectId, project.id)));
 

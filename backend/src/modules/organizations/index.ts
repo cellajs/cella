@@ -1,6 +1,6 @@
 import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 
 import { config } from 'config';
@@ -106,14 +106,7 @@ const organizationsRoutes = app
     const organizations = await db
       .select({
         organization: organizationsTable,
-        membership: {
-          id: membershipsTable.id,
-          role: membershipsTable.role,
-          archived: membershipsTable.archived,
-          muted: membershipsTable.muted,
-          order: membershipsTable.order,
-          userId: membershipsTable.userId,
-        },
+        membership: membershipSelect,
         admins: countsQuery.admins,
         members: countsQuery.members,
       })
@@ -207,14 +200,7 @@ const organizationsRoutes = app
       .returning();
 
     const memberships = await db
-      .select({
-        id: membershipsTable.id,
-        role: membershipsTable.role,
-        archived: membershipsTable.archived,
-        muted: membershipsTable.muted,
-        order: membershipsTable.order,
-        userId: membershipsTable.userId,
-      })
+      .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
@@ -249,14 +235,7 @@ const organizationsRoutes = app
     const organization = ctx.get('organization');
 
     const [membership] = await db
-      .select({
-        id: membershipsTable.id,
-        role: membershipsTable.role,
-        archived: membershipsTable.archived,
-        muted: membershipsTable.muted,
-        order: membershipsTable.order,
-        userId: membershipsTable.userId,
-      })
+      .select(membershipSelect)
       .from(membershipsTable)
       .where(
         and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),

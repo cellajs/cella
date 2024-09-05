@@ -53,5 +53,14 @@ export const membershipsTableRelations = relations(membershipsTable, ({ one }) =
   }),
 }));
 
+export const membershipSelect = {
+  id: membershipsTable.id,
+  role: membershipsTable.role,
+  archived: membershipsTable.archived,
+  muted: membershipsTable.muted,
+  order: membershipsTable.order,
+  userId: membershipsTable.userId,
+};
+
 export type MembershipModel = typeof membershipsTable.$inferSelect;
 export type InsertMembershipModel = typeof membershipsTable.$inferInsert;

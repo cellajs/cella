@@ -1,6 +1,6 @@
 import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { workspacesTable } from '#/db/schema/workspaces';
 
 import { labelsTable } from '#/db/schema/labels';
@@ -71,14 +71,7 @@ const workspacesRoutes = app
     const projectsWithMembership = await db
       .select({
         project: projectsTable,
-        membership: {
-          id: membershipsTable.id,
-          role: membershipsTable.role,
-          archived: membershipsTable.archived,
-          muted: membershipsTable.muted,
-          order: membershipsTable.order,
-          userId: membershipsTable.userId,
-        },
+        membership: membershipSelect,
       })
       .from(projectsTable)
       .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.workspaceId, workspace.id))
@@ -121,14 +114,7 @@ const workspacesRoutes = app
     const membersQuery = db
       .select({
         user: safeUserSelect,
-        membership: {
-          id: membershipsTable.id,
-          role: membershipsTable.role,
-          archived: membershipsTable.archived,
-          muted: membershipsTable.muted,
-          order: membershipsTable.order,
-          userId: membershipsTable.userId,
-        },
+        membership: membershipSelect,
         counts: {
           memberships: membershipCount.memberships,
         },
@@ -206,14 +192,7 @@ const workspacesRoutes = app
       .returning();
 
     const memberships = await db
-      .select({
-        id: membershipsTable.id,
-        role: membershipsTable.role,
-        archived: membershipsTable.archived,
-        muted: membershipsTable.muted,
-        order: membershipsTable.order,
-        userId: membershipsTable.userId,
-      })
+      .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'workspace'), eq(membershipsTable.workspaceId, workspace.id)));
 
