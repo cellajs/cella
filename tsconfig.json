@@ -21,7 +21,9 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Type checking */
-    "incremental": true
+    "incremental": true,
+    "declaration": true,
+    "composite": true
   },
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }
