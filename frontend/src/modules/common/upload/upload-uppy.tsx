@@ -1,5 +1,5 @@
 import Audio from '@uppy/audio';
-import type { Uppy, UppyOptions } from '@uppy/core';
+import type { Uppy, UppyFile, UppyOptions } from '@uppy/core';
 import ImageEditor from '@uppy/image-editor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
@@ -19,18 +19,23 @@ import '~/modules/common/upload/uppy.css';
 interface UploadUppyProps {
   uploadType: UploadType;
   isPublic: boolean;
-  setUrl: (url: string) => void;
   plugins?: ('webcam' | 'image-editor' | 'audio' | 'screen-capture')[];
   uppyOptions: UppyOptions<UppyMeta, UppyBody>;
   imageMode?: 'cover' | 'avatar';
   organizationId?: string;
+  callback?: (
+    result: {
+      file: UppyFile<UppyMeta, UppyBody>;
+      url: string;
+    }[],
+  ) => void;
 }
 
 // Here we init imadoUppy, an enriched Uppy instance that we use to upload files.
 // For more info in Imado, see: https://imado.eu/
 // For more info on Uppy and its APIs, see: https://uppy.io/docs/
 
-export const UploadUppy = ({ uploadType, isPublic, organizationId, setUrl, uppyOptions, plugins = [], imageMode }: UploadUppyProps) => {
+export const UploadUppy = ({ uploadType, isPublic, organizationId, uppyOptions, plugins = [], imageMode, callback }: UploadUppyProps) => {
   const [uppy, setUppy] = useState<Uppy | null>(null);
   const { mode } = useThemeStore();
 
@@ -39,11 +44,9 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, setUrl, uppyO
       const imadoUppy = await ImadoUppy(uploadType, uppyOptions, {
         public: isPublic,
         organizationId: organizationId,
-        completionHandler: (urls: URL[]) => {
-          if (urls.length > 0) {
-            const newImageUrl = urls[0].toString();
-            console.info('Upload completed:', newImageUrl);
-            setUrl(newImageUrl);
+        completionHandler: (result) => {
+          if (callback) {
+            callback(result);
           }
         },
       });
@@ -138,7 +141,7 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, setUrl, uppyO
     };
 
     initializeUppy();
-  }, [setUrl]);
+  }, []);
 
   return <>{uppy && <Dashboard uppy={uppy} width="100%" height="400px" theme={mode} proudlyDisplayPoweredByUppy={false} />}</>;
 };

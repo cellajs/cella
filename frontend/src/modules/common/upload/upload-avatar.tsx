@@ -40,8 +40,9 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
           }}
           plugins={['webcam', 'image-editor']}
           imageMode="avatar"
-          setUrl={(url) => {
-            setUrl(url);
+          callback={(result) => {
+            const url = result[0].url;
+            if (url) setUrl(url);
             dialog.remove(true, 'upload-image');
           }}
         />

@@ -1,4 +1,4 @@
-import { useCreateBlockNote } from '@blocknote/react';
+import { FilePanelController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
 import { Suspense, useCallback, useEffect } from 'react';
@@ -16,6 +16,7 @@ import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import { schemaWithMentions } from '~/modules/common/blocknote/mention';
 import '~/modules/common/blocknote/styles.css';
 import { taskExpandable } from '~/modules/tasks/helpers';
+import UppyFilePanel from './uppy-file-panel';
 
 interface TaskBlockNoteProps {
   id: string;
@@ -135,8 +136,11 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
         emojiPicker={false}
         formattingToolbar={false}
         slashMenu={false}
+        filePanel={false}
       >
         <BlockNoteForTaskContent editor={editor} members={currentProject?.members || []} />
+        {/* Replaces default file panel with Uppy one. */}
+        <FilePanelController filePanel={UppyFilePanel} />
       </BlockNoteView>
     </Suspense>
   );

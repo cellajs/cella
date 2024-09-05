@@ -1,3 +1,4 @@
+import attachmentsRoutes from '#/modules/attachments';
 import authRoutes from '#/modules/auth';
 import generalRoutes from '#/modules/general';
 import labelsRoutes from '#/modules/labels';
@@ -48,8 +49,10 @@ app
   .route('/', generalRoutes)
   .route('/', requestsRoutes)
   .route('/', membershipsRoutes)
-
-  // App-specific routes go here
+  .route('/', workspacesRoutes)
+  .route('/', projectsRoutes)
+  .route('/', tasksRoutes)
+  .route('/', attachmentsRoutes)
   .route('/', workspacesRoutes)
   .route('/', projectsRoutes)
   .route('/', tasksRoutes)
