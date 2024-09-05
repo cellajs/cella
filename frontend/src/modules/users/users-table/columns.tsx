@@ -3,7 +3,7 @@ import type { User } from '~/types';
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { UserRoundCheck } from 'lucide-react';
+import { ChevronDown, UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dateShort } from '~/lib/utils';
@@ -92,7 +92,12 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
       sortable: true,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => t(row.role),
+      renderCell: ({ row }) => (
+        <div className="inline-flex items-center gap-1 relative group h-full w-full">
+          {t(row.role)}
+          <ChevronDown size={16} className="transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+        </div>
+      ),
       width: 100,
       renderEditCell: ({ row, onRowChange }) =>
         renderSelect({
