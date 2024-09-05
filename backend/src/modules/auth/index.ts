@@ -48,6 +48,7 @@ type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
 // Authentication endpoints
 const authRoutes = app
+  .basePath('/auth')
   /*
    * Check if email exists
    */
@@ -833,4 +834,7 @@ const authRoutes = app
     await setSessionCookie(ctx, user.id, 'passkey');
     return ctx.json({ success: true }, 200);
   });
+
+export type AppAuthType = typeof authRoutes;
+
 export default authRoutes;

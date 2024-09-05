@@ -13,7 +13,6 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import workspaceRoutesConfig from './routes';
 
@@ -21,6 +20,7 @@ const app = new CustomHono();
 
 // Workspace endpoints
 const workspacesRoutes = app
+  .basePath('/workspaces')
   /*
    * Create workspace
    */
@@ -47,14 +47,14 @@ const workspacesRoutes = app
     logEvent('Workspace created', { workspace: workspace.id });
 
     // Insert membership
-    const [createdMembership] = await insertMembership({ user, role: 'admin', entity: workspace, memberships });
+    const createdMembership = await insertMembership({ user, role: 'admin', entity: workspace, memberships });
 
     return ctx.json(
       {
         success: true,
         data: {
           ...workspace,
-          membership: toMembershipInfo(createdMembership),
+          membership: createdMembership,
         },
       },
       200,
@@ -71,7 +71,14 @@ const workspacesRoutes = app
     const projectsWithMembership = await db
       .select({
         project: projectsTable,
-        membership: membershipsTable,
+        membership: {
+          id: membershipsTable.id,
+          role: membershipsTable.role,
+          archived: membershipsTable.archived,
+          muted: membershipsTable.muted,
+          order: membershipsTable.order,
+          userId: membershipsTable.userId,
+        },
       })
       .from(projectsTable)
       .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.workspaceId, workspace.id))
@@ -89,7 +96,7 @@ const workspacesRoutes = app
     const projects = projectsWithMembership.map(({ project, membership }) => {
       return {
         ...project,
-        membership: toMembershipInfo(membership),
+        membership,
         workspaceId: workspace.id,
       };
     });
@@ -114,7 +121,14 @@ const workspacesRoutes = app
     const membersQuery = db
       .select({
         user: safeUserSelect,
-        membership: membershipsTable,
+        membership: {
+          id: membershipsTable.id,
+          role: membershipsTable.role,
+          archived: membershipsTable.archived,
+          muted: membershipsTable.muted,
+          order: membershipsTable.order,
+          userId: membershipsTable.userId,
+        },
         counts: {
           memberships: membershipCount.memberships,
         },
@@ -125,7 +139,7 @@ const workspacesRoutes = app
 
     const members = (await membersQuery).map(({ user, membership, projectId, counts }) => ({
       ...transformDatabaseUserWithCount(user, counts.memberships),
-      membership: toMembershipInfo.required(membership),
+      membership,
       projectId,
     }));
 
@@ -152,7 +166,7 @@ const workspacesRoutes = app
       {
         success: true,
         data: {
-          workspace: { ...workspace, membership: toMembershipInfo(membership) },
+          workspace: { ...workspace, membership: membership ?? null },
           projects: projectsWithMembers,
           labels,
         },
@@ -192,7 +206,14 @@ const workspacesRoutes = app
       .returning();
 
     const memberships = await db
-      .select()
+      .select({
+        id: membershipsTable.id,
+        role: membershipsTable.role,
+        archived: membershipsTable.archived,
+        muted: membershipsTable.muted,
+        order: membershipsTable.order,
+        userId: membershipsTable.userId,
+      })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'workspace'), eq(membershipsTable.workspaceId, workspace.id)));
 
@@ -200,7 +221,7 @@ const workspacesRoutes = app
       memberships.map((membership) =>
         sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedWorkspace,
-          membership: toMembershipInfo(memberships.find((m) => m.id === membership.id)),
+          membership: memberships.find((m) => m.id === membership.id) ?? null,
         }),
       );
     }
@@ -212,7 +233,7 @@ const workspacesRoutes = app
         success: true,
         data: {
           ...updatedWorkspace,
-          membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
+          membership: memberships.find((m) => m.id === user.id) ?? null,
         },
       },
       200,
@@ -254,5 +275,7 @@ const workspacesRoutes = app
 
     return ctx.json({ success: true, errors: errors }, 200);
   });
+
+export type AppWorkspacesType = typeof workspacesRoutes;
 
 export default workspacesRoutes;

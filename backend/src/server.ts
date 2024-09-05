@@ -41,22 +41,21 @@ app.onError((err, ctx) => {
 });
 
 // Add routes for each module
-const routes = app
-  .route('/auth', authRoutes)
-  .route('/me', meRoutes)
-  .route('/users', usersRoutes)
-  .route('/organizations', organizationsRoutes)
+app
+  .route('/', authRoutes)
+  .route('/', meRoutes)
+  .route('/', usersRoutes)
+  .route('/', organizationsRoutes)
   .route('/', generalRoutes)
-  .route('/requests', requestsRoutes)
-  .route('/memberships', membershipsRoutes)
-
-  // App-specific routes go here
-  .route('/workspaces', workspacesRoutes)
-  .route('/projects', projectsRoutes)
-  .route('/tasks', tasksRoutes)
-  .route('/attachments', attachmentsRoutes)
-  .route('/labels', labelsRoutes);
+  .route('/', requestsRoutes)
+  .route('/', membershipsRoutes)
+  .route('/', workspacesRoutes)
+  .route('/', projectsRoutes)
+  .route('/', tasksRoutes)
+  .route('/', attachmentsRoutes)
+  .route('/', workspacesRoutes)
+  .route('/', projectsRoutes)
+  .route('/', tasksRoutes)
+  .route('/', labelsRoutes);
 
 export default app;
-
-export type AppType = typeof routes;

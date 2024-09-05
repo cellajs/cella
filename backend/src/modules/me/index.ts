@@ -18,13 +18,13 @@ import meRoutesConfig from './routes';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
-import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { getPreparedSessions } from './helpers/get-sessions';
 
 const app = new CustomHono();
 
 // Me (self) endpoints
 const meRoutes = app
+  .basePath('/me')
   /*
    * Get current user
    */
@@ -72,7 +72,14 @@ const meRoutes = app
     const organizationsWithMemberships = await db
       .select({
         organization: organizationsTable,
-        membership: membershipsTable,
+        membership: {
+          id: membershipsTable.id,
+          role: membershipsTable.role,
+          archived: membershipsTable.archived,
+          muted: membershipsTable.muted,
+          order: membershipsTable.order,
+          userId: membershipsTable.userId,
+        },
       })
       .from(organizationsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'organization')))
@@ -82,7 +89,14 @@ const meRoutes = app
     const workspacesWithMemberships = await db
       .select({
         workspace: workspacesTable,
-        membership: membershipsTable,
+        membership: {
+          id: membershipsTable.id,
+          role: membershipsTable.role,
+          archived: membershipsTable.archived,
+          muted: membershipsTable.muted,
+          order: membershipsTable.order,
+          userId: membershipsTable.userId,
+        },
       })
       .from(workspacesTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'workspace')))
@@ -92,7 +106,14 @@ const meRoutes = app
     const projectsWithMemberships = await db
       .select({
         project: projectsTable,
-        membership: membershipsTable,
+        membership: {
+          id: membershipsTable.id,
+          role: membershipsTable.role,
+          archived: membershipsTable.archived,
+          muted: membershipsTable.muted,
+          order: membershipsTable.order,
+          userId: membershipsTable.userId,
+        },
         workspace: projectsToWorkspacesTable,
       })
       .from(projectsTable)
@@ -110,7 +131,7 @@ const meRoutes = app
         name: organization.name,
         entity: organization.entity,
         thumbnailUrl: organization.thumbnailUrl,
-        membership: toMembershipInfo.required(membership),
+        membership,
       };
     });
 
@@ -123,7 +144,7 @@ const meRoutes = app
         name: project.name,
         entity: project.entity,
         organizationId: project.organizationId,
-        membership: toMembershipInfo.required(membership),
+        membership,
         parentId: workspace.workspaceId,
         parentSlug: workspacesWithMemberships.find((item) => item.workspace.id === workspace.workspaceId)?.workspace.slug,
       };
@@ -139,7 +160,7 @@ const meRoutes = app
         thumbnailUrl: workspace.thumbnailUrl,
         organizationId: workspace.organizationId,
         entity: workspace.entity,
-        membership: toMembershipInfo.required(membership),
+        membership,
         submenu: projects.filter((p) => p.parentId === workspace.id).sort((a, b) => a.membership.order - b.membership.order),
       };
     });
@@ -275,5 +296,9 @@ const meRoutes = app
 
     return ctx.json({ success: true }, 200);
   });
+
+// const route = app.route('/me', meRoutes);
+
+export type AppMeType = typeof meRoutes;
 
 export default meRoutes;

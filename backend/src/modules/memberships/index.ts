@@ -21,13 +21,13 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { membershipsTableId, supportedEntityTypes, type supportedModelTypes } from './helpers/create-membership-config';
 import { insertMembership } from './helpers/insert-membership';
-import { toMembershipInfo } from './helpers/to-membership-info';
 import membershipRouteConfig from './routes';
 
 const app = new CustomHono();
 
 // Membership endpoints
 const membershipsRoutes = app
+  .basePath('/memberships')
   /*
    * Invite members to an entity such as an organization
    */
@@ -44,7 +44,7 @@ const membershipsRoutes = app
     // Fetch organization, user memberships, and context from the database
     const [organization, memberships, context] = await Promise.all([
       resolveEntity('organization', organizationId) as Promise<OrganizationModel>,
-      db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)) as Promise<MembershipModel[]>,
+      db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
       resolveEntity(entityType, idOrSlug) as Promise<supportedModelTypes>,
     ]);
 
@@ -143,7 +143,7 @@ const membershipsRoutes = app
             const assignedRole = (role as MembershipModel['role']) || 'member';
 
             // Insert membership
-            await insertMembership({ user: existingUser, role: assignedRole, entity: context, memberships });
+            const createdMembership = await insertMembership({ user: existingUser, role: assignedRole, entity: context, memberships });
             // if invite to project also add membership to project's workspace
             if (context.entity === 'project') {
               const [{ workspaceId }] = await db
@@ -159,12 +159,13 @@ const membershipsRoutes = app
                 createdBy: user.id,
                 order: 1,
               });
+              // TODO add SSE to workspace membership 2 ??
             }
 
             // Send a Server-Sent Event (SSE) to the newly added user
             sendSSEToUsers([existingUser.id], 'update_entity', {
               ...context,
-              membership: toMembershipInfo(memberships.find((m) => m.userId === existingUser.id)),
+              membership: createdMembership,
             });
           }
 
@@ -392,5 +393,7 @@ const membershipsRoutes = app
       200,
     );
   });
+
+export type AppMembershipsType = typeof membershipsRoutes;
 
 export default membershipsRoutes;

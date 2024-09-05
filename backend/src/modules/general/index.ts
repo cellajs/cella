@@ -31,7 +31,6 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 import type { Suggestion } from './schema';
@@ -442,7 +441,14 @@ const generalRoutes = app
     const membersQuery = db
       .select({
         user: safeUserSelect,
-        membership: membershipsTable,
+        membership: {
+          id: membershipsTable.id,
+          role: membershipsTable.role,
+          archived: membershipsTable.archived,
+          muted: membershipsTable.muted,
+          order: membershipsTable.order,
+          userId: membershipsTable.userId,
+        },
         counts: {
           memberships: membershipCount.memberships,
         },
@@ -459,7 +465,7 @@ const generalRoutes = app
     const members = await Promise.all(
       result.map(async ({ user, membership, counts }) => ({
         ...user,
-        membership: toMembershipInfo.required(membership),
+        membership,
         counts,
       })),
     );
@@ -541,5 +547,7 @@ const generalRoutes = app
       }
     });
   });
+
+export type AppGeneralType = typeof generalRoutes;
 
 export default generalRoutes;

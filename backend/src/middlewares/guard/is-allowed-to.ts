@@ -37,7 +37,17 @@ const isAllowedTo =
       }
 
       // Fetch user's memberships from the database
-      const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+      const memberships = await db
+        .select({
+          id: membershipsTable.id,
+          role: membershipsTable.role,
+          archived: membershipsTable.archived,
+          muted: membershipsTable.muted,
+          order: membershipsTable.order,
+          userId: membershipsTable.userId,
+        })
+        .from(membershipsTable)
+        .where(eq(membershipsTable.userId, user.id));
 
       // Check if the user is allowed to perform the action in the given context
       const isAllowed = permissionManager.isPermissionAllowed(memberships, action, contextEntity);
