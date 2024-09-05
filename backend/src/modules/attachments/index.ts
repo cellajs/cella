@@ -9,6 +9,7 @@ const app = new CustomHono();
 
 // Attachment endpoints
 const attachmentsRoutes = app
+  .basePath('/attachments')
   /*
    * Create attachment
    */
@@ -27,5 +28,7 @@ const attachmentsRoutes = app
 
     return ctx.json({ success: true, data: createdAttachment }, 200);
   });
+
+export type AppAttachmentsType = typeof attachmentsRoutes;
 
 export default attachmentsRoutes;
