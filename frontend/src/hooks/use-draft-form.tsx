@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { type FieldValues, type Path, type UseFormProps, type UseFormReturn, useForm } from 'react-hook-form';
+import { type FieldPath, type FieldValues, type UseFormProps, type UseFormReturn, useForm } from 'react-hook-form';
 import { useDraftStore } from '~/store/draft';
 
 // This hook is used to create a form with unsaved draft support
@@ -7,7 +7,7 @@ export function useFormWithDraft<
   TFieldValues extends FieldValues = FieldValues,
   // biome-ignore lint/suspicious/noExplicitAny: any is required here
   TContext = any,
-  TTransformedValues extends FieldValues = TFieldValues,
+  TTransformedValues extends TFieldValues = TFieldValues,
 >(
   formId: string,
   props?: UseFormProps<TFieldValues, TContext>,
@@ -26,8 +26,8 @@ export function useFormWithDraft<
 
     if (values) {
       setUnsavedChanges(true);
-      for (const key in values) {
-        form.setValue(key as unknown as Path<TFieldValues>, values[key as keyof TFieldValues]);
+      for (const [key, value] of Object.entries(values)) {
+        form.setValue(key as FieldPath<TFieldValues>, value);
       }
     }
   }, [formId]);

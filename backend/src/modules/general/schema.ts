@@ -46,7 +46,7 @@ export const entitySuggestionSchema = z.object({
   slug: slugSchema,
   id: idSchema,
   name: nameSchema,
-  organizationId: idSchema,
+  organizationId: idSchema.optional(),
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
   entity: z.enum(config.pageEntityTypes),

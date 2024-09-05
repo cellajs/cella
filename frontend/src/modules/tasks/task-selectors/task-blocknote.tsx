@@ -1,7 +1,7 @@
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
-import { Suspense, useCallback, useEffect } from 'react';
+import { type KeyboardEventHandler, Suspense, useCallback, useEffect } from 'react';
 import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
@@ -69,7 +69,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
     else handleUpdateHTML(cleanDescription, cleanSummary);
   };
 
-  const handleKeyDown = async (event: KeyboardEvent) => {
+  const handleKeyDown: KeyboardEventHandler = async (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault();
       const blocks = editor.document;
@@ -126,7 +126,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
           updateData();
         }}
         onBlur={updateData}
-        onKeyDown={(e) => handleKeyDown(e as unknown as KeyboardEvent)}
+        onKeyDown={handleKeyDown}
         editor={editor}
         data-color-scheme={mode}
         theme={mode}

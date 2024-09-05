@@ -24,7 +24,7 @@ app.use('*', sentry({ dsn: config.sentryDsn }));
 app.get('/ping', (c) => c.text('pong'));
 
 // Logger
-app.use('*', logger(logEvent as unknown as Parameters<typeof logger>[0]));
+app.use('*', logger(logEvent));
 
 const corsOptions = {
   origin: config.frontendUrl,
