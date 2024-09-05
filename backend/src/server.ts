@@ -1,3 +1,4 @@
+import attachmentsRoutes from '#/modules/attachments';
 import authRoutes from '#/modules/auth';
 import generalRoutes from '#/modules/general';
 import labelsRoutes from '#/modules/labels';
@@ -53,6 +54,7 @@ const routes = app
   .route('/workspaces', workspacesRoutes)
   .route('/projects', projectsRoutes)
   .route('/tasks', tasksRoutes)
+  .route('/attachments', attachmentsRoutes)
   .route('/labels', labelsRoutes);
 
 export default app;
