@@ -28,6 +28,7 @@ import { updateTask } from '~/api/tasks.ts';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { getDraggableItemData, isTaskData } from '~/lib/drag-and-drop';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
 import { getNewStatusTaskOrder } from '~/modules/tasks/helpers';
 import TaskDescription from '~/modules/tasks/task-content.tsx';
@@ -61,12 +62,11 @@ interface TaskProps {
   isExpanded: boolean;
   isSelected: boolean;
   isFocused: boolean;
-  handleTaskActionClick: (task: Task, field: string, trigger: HTMLElement) => void;
   tasks?: Task[];
   isSheet?: boolean;
 }
 
-export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isExpanded, isSheet, handleTaskActionClick }: TaskProps) {
+export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isExpanded, isSheet }: TaskProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const taskRef = useRef<HTMLDivElement>(null);
@@ -185,7 +185,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
               <div className="flex flex-col gap-1">
                 <Button
                   id="type"
-                  onClick={(event) => handleTaskActionClick(task, 'type', event.currentTarget)}
+                  onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
                   aria-label="Set type"
                   variant="ghost"
                   size="xs"
@@ -221,7 +221,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
                 {task.type !== 'bug' && (
                   <Button
                     id="impact"
-                    onClick={(event) => handleTaskActionClick(task, 'impact', event.currentTarget)}
+                    onClick={(event) => handleTaskDropDownClick(task, 'impact', event.currentTarget)}
                     aria-label="Set impact"
                     variant="ghost"
                     size="xs"
@@ -237,7 +237,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
 
                 <Button
                   id="labels"
-                  onClick={(event) => handleTaskActionClick(task, 'labels', event.currentTarget)}
+                  onClick={(event) => handleTaskDropDownClick(task, 'labels', event.currentTarget)}
                   aria-label="Set labels"
                   variant="ghost"
                   size="xs"
@@ -282,7 +282,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
                 <div className="flex gap-1 ml-auto mr-1">
                   <Button
                     id="assignedTo"
-                    onClick={(event) => handleTaskActionClick(task, 'assignedTo', event.currentTarget)}
+                    onClick={(event) => handleTaskDropDownClick(task, 'assignedTo', event.currentTarget)}
                     aria-label="Assign"
                     variant="ghost"
                     size="xs"
@@ -316,7 +316,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
                     {t(taskStatuses[task.status as TaskStatus].action)}
                   </Button>
                   <Button
-                    onClick={(event) => handleTaskActionClick(task, `status-${task.id}`, event.currentTarget)}
+                    onClick={(event) => handleTaskDropDownClick(task, `status-${task.id}`, event.currentTarget)}
                     aria-label="Set status"
                     variant="outlineGhost"
                     size="xs"

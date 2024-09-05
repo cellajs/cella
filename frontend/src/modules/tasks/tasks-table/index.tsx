@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useMutateInfiniteTaskQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import type { TaskTableCRUDEvent } from '~/lib/custom-events/types';
@@ -16,6 +17,8 @@ import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export.tsx';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import { configureForExport, sortAndGetCounts } from '~/modules/tasks/helpers';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
@@ -157,6 +160,25 @@ export default function TasksTable() {
     callback(array, action);
   };
 
+  // Open on key press
+  const hotKeyPress = (field: string) => {
+    const focusedTask = rows.find((t) => t.id === focusedTaskId);
+    if (!focusedTask) return;
+    const taskCard = document.getElementById(focusedTask.id);
+    if (!taskCard) return;
+    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
+    const trigger = taskCard.querySelector(`#${field}`);
+    if (!trigger) return dropdowner.remove();
+    handleTaskDropDownClick(focusedTask, field, trigger as HTMLElement);
+  };
+
+  useHotkeys([
+    ['A', () => hotKeyPress('assignedTo')],
+    ['I', () => hotKeyPress('impact')],
+    ['L', () => hotKeyPress('labels')],
+    ['S', () => hotKeyPress(`status-${focusedTaskId}`)],
+    ['T', () => hotKeyPress('type')],
+  ]);
   useEventListener('openTaskCardPreview', (event) => handleOpenPreview(event.detail));
   useEventListener('taskTableCRUD', handleCRUD);
 

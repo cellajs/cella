@@ -25,6 +25,8 @@ import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
 import type { TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
 import { isSubTaskData, isTaskData } from '~/lib/drag-and-drop';
 import { queryClient } from '~/lib/router';
+import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
@@ -180,14 +182,36 @@ export default function Board() {
     setTaskExpanded(focusedTaskId, true);
   };
 
+  // Open on key press
+  const hotKeyPress = (field: string) => {
+    const queries = queryClient.getQueriesData({ queryKey: ['boardTasks'] });
+    const tasks = queries.flatMap((el) => {
+      const [, data] = el as [string[], { items: Task[] }];
+      return data.items;
+    });
+    const focusedTask = tasks.find((t) => t.id === focusedTaskId);
+    if (!focusedTask) return;
+    const taskCard = document.getElementById(focusedTask.id);
+    if (!taskCard) return;
+    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
+    const trigger = taskCard.querySelector(`#${field}`);
+    if (!trigger) return dropdowner.remove();
+    handleTaskDropDownClick(focusedTask, field, trigger as HTMLElement);
+  };
+
   useHotkeys([
     ['ArrowRight', handleHorizontalArrowKeyDown],
     ['ArrowLeft', handleHorizontalArrowKeyDown],
     ['ArrowDown', handleVerticalArrowKeyDown],
     ['ArrowUp', handleVerticalArrowKeyDown],
-    ['N', handleNKeyDown],
     ['Escape', handleEscKeyPress],
     ['Enter', handleEnterKeyPress],
+    ['N', handleNKeyDown],
+    ['A', () => hotKeyPress('assignedTo')],
+    ['I', () => hotKeyPress('impact')],
+    ['L', () => hotKeyPress('labels')],
+    ['S', () => hotKeyPress(`status-${focusedTaskId}`)],
+    ['T', () => hotKeyPress('type')],
   ]);
 
   const handleTaskClick = (event: TaskCardFocusEvent) => {

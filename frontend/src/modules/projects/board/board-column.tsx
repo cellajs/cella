@@ -5,32 +5,25 @@ import { lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
 import type { CustomEventEventById, TaskCRUDEvent, TaskChangeEvent } from '~/lib/custom-events/types';
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { dropdowner } from '~/modules/common/dropdowner/state';
 import FocusTrap from '~/modules/common/focus-trap';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import { BoardColumnHeader } from '~/modules/projects/board/board-column-header';
 import { ColumnSkeleton } from '~/modules/projects/board/column-skeleton';
 import { ProjectSettings } from '~/modules/projects/project-settings';
-import CreateTaskForm, { type TaskImpact, type TaskType } from '~/modules/tasks/create-task-form';
+import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
-import { SelectImpact } from '~/modules/tasks/task-selectors/select-impact';
-import SetLabels from '~/modules/tasks/task-selectors/select-labels';
-import AssignMembers from '~/modules/tasks/task-selectors/select-members';
-import SelectStatus, { type TaskStatus } from '~/modules/tasks/task-selectors/select-status';
-import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import type { Project, Task, WorkspaceStoreProject } from '~/types';
+import type { Project, WorkspaceStoreProject } from '~/types';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
@@ -69,16 +62,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   const tasksQuery = useSuspenseQuery(tasksQueryOptions({ projectId: project.id }));
 
   const callback = useMutateTasksQueryData(['boardTasks', project.id]);
-
-  const handleTaskActionClick = (task: Task, field: string, trigger: HTMLElement) => {
-    let component = <SelectTaskType currentType={task.type as TaskType} />;
-    if (field === 'impact') component = <SelectImpact value={task.impact as TaskImpact} />;
-    else if (field === 'labels') component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
-    else if (field === 'assignedTo') component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;
-    else if (field.includes('status')) component = <SelectStatus taskStatus={task.status as TaskStatus} projectId={task.projectId} />;
-
-    return dropdowner(component, { id: field, trigger, align: field.startsWith('status') || field === 'assignedTo' ? 'end' : 'start' });
-  };
 
   const tasks = useMemo(() => {
     const respTasks = tasksQuery.data?.items || [];
@@ -135,26 +118,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
   const handleTaskFormClick = () => {
     toggleCreateForm(project.id);
   };
-
-  // Open on key press
-  const hotKeyPress = (field: string) => {
-    const focusedTask = showingTasks.find((t) => t.id === focusedTaskId);
-    if (!focusedTask) return;
-    const taskCard = document.getElementById(focusedTask.id);
-    if (!taskCard) return;
-    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
-    const trigger = taskCard.querySelector(`#${field}`);
-    if (!trigger) return dropdowner.remove();
-    handleTaskActionClick(focusedTask, field, trigger as HTMLElement);
-  };
-
-  useHotkeys([
-    ['a', () => hotKeyPress('assignedTo')],
-    ['i', () => hotKeyPress('impact')],
-    ['l', () => hotKeyPress('labels')],
-    ['s', () => hotKeyPress(`status-${focusedTaskId}`)],
-    ['t', () => hotKeyPress('type')],
-  ]);
 
   const handleTaskChangeEventListener = (event: TaskChangeEvent) => {
     const { taskId, direction, projectId } = event.detail;
@@ -262,7 +225,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                               isExpanded={expandedTasks[task.id] ?? false}
                               isSelected={selectedTasks.includes(task.id)}
                               isFocused={task.id === focusedTaskId}
-                              handleTaskActionClick={handleTaskActionClick}
                               mode={mode}
                             />
                           </FocusTrap>
