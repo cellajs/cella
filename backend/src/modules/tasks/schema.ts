@@ -70,6 +70,7 @@ export const subTaskSchema = z.array(
       order: true,
       projectId: true,
       parentId: true,
+      entity: true,
     }).shape,
   }),
 );

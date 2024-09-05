@@ -2,6 +2,7 @@ import { redirect } from '@tanstack/react-router';
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
+import duration from 'dayjs/plugin/duration';
 import isBetween from 'dayjs/plugin/isBetween';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import i18next from 'i18next';
@@ -14,7 +15,31 @@ import type { UserMenuItem } from '~/types';
 
 dayjs.extend(isBetween);
 dayjs.extend(calendar);
+dayjs.extend(duration);
 dayjs.extend(relativeTime);
+
+export const dateVeryShort = (startDate: string, addStr?: string) => {
+  const start = dayjs(startDate);
+  const end = dayjs();
+
+  // Calculate years and months manually
+  const years = end.diff(start, 'year');
+  const startWithYears = start.add(years, 'year');
+
+  const months = end.diff(startWithYears, 'month');
+  const startWithMonths = startWithYears.add(months, 'month');
+
+  const days = end.diff(startWithMonths, 'day');
+  const hours = end.diff(startWithMonths, 'hour') % 24;
+  const minutes = end.diff(startWithMonths, 'minute') % 60;
+
+  // Format based on the duration
+  if (years >= 1) return `${years}y ${addStr ? addStr : ''}`;
+  if (months >= 1) return `${months}m ${addStr ? addStr : ''}`;
+  if (days >= 1) return `${days}d ${addStr ? addStr : ''}`;
+  if (hours >= 1) return `${hours}h ${addStr ? addStr : ''}`;
+  return minutes === 0 ? 'Just now' : `${minutes}min ${addStr ? addStr : ''}`;
+};
 
 // Format a date to a relative time
 export function dateShort(date?: string | null | Date) {

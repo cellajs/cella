@@ -66,7 +66,10 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
     const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (onChange) onChange(cleanDescription, cleanSummary);
-    else handleUpdateHTML(cleanDescription, cleanSummary);
+    else {
+      handleUpdateHTML(cleanDescription, cleanSummary);
+      dispatchCustomEvent('toggleTaskEditing', { id, state: false });
+    }
   };
 
   const handleKeyDown = async (event: KeyboardEvent) => {

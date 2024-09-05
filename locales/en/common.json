@@ -483,5 +483,6 @@
   "success.stopped_impersonation": "Successfully stopped impersonating.",
   "use_count": "Tasks",
   "last_used": "Last used",
-  "project_members": "Project members"
+  "project_members": "Project members",
+  "open_task_sheet": "Open as sheet"
 }

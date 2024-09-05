@@ -29,6 +29,7 @@ const MembersTable = lazy(() => import('~/modules/organizations/members-table'))
 
 interface BoardColumnProps {
   expandedTasks: Record<string, boolean>;
+  editingTasks: Record<string, boolean>;
   project: WorkspaceStoreProject;
   createForm: boolean;
   toggleCreateForm: (projectId: string) => void;
@@ -44,7 +45,7 @@ const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
   });
 };
 
-export function BoardColumn({ project, expandedTasks, createForm, toggleCreateForm }: BoardColumnProps) {
+export function BoardColumn({ project, expandedTasks, editingTasks, createForm, toggleCreateForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
   const columnRef = useRef<HTMLDivElement | null>(null);
@@ -222,6 +223,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                           <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                             <TaskCard
                               task={task}
+                              isEditing={editingTasks[task.id] ?? false}
                               isExpanded={expandedTasks[task.id] ?? false}
                               isSelected={selectedTasks.includes(task.id)}
                               isFocused={task.id === focusedTaskId}
