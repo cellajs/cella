@@ -17,7 +17,6 @@ import organizationsNewsletter from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import organizationRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -50,14 +49,14 @@ const organizationsRoutes = app
     logEvent('Organization created', { organization: createdOrganization.id });
 
     // Insert membership
-    const [createdMembership] = await insertMembership({ user, role: 'admin', entity: createdOrganization });
+    const createdMembership = await insertMembership({ user, role: 'admin', entity: createdOrganization });
 
     return ctx.json(
       {
         success: true,
         data: {
           ...createdOrganization,
-          membership: toMembershipInfo(createdMembership),
+          membership: createdMembership,
           counts: {
             memberships: {
               admins: 1,
@@ -106,7 +105,14 @@ const organizationsRoutes = app
     const organizations = await db
       .select({
         organization: organizationsTable,
-        membership: membershipsTable,
+        membership: {
+          id: membershipsTable.id,
+          role: membershipsTable.role,
+          archived: membershipsTable.archived,
+          muted: membershipsTable.muted,
+          order: membershipsTable.order,
+          userId: membershipsTable.userId,
+        },
         admins: countsQuery.admins,
         members: countsQuery.members,
       })
@@ -123,7 +129,7 @@ const organizationsRoutes = app
         data: {
           items: organizations.map(({ organization, membership, admins, members }) => ({
             ...organization,
-            membership: toMembershipInfo(membership),
+            membership,
             counts: {
               memberships: {
                 admins,
@@ -200,7 +206,14 @@ const organizationsRoutes = app
       .returning();
 
     const memberships = await db
-      .select()
+      .select({
+        id: membershipsTable.id,
+        role: membershipsTable.role,
+        archived: membershipsTable.archived,
+        muted: membershipsTable.muted,
+        order: membershipsTable.order,
+        userId: membershipsTable.userId,
+      })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
@@ -208,7 +221,7 @@ const organizationsRoutes = app
       memberships.map((membership) =>
         sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedOrganization,
-          membership: toMembershipInfo(memberships.find((m) => m.id === membership.id)),
+          membership: memberships.find((m) => m.id === membership.id) ?? null,
         }),
       );
     }
@@ -220,7 +233,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...updatedOrganization,
-          membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
+          membership: memberships.find((m) => m.id === user.id) ?? null,
           counts: await counts('organization', organization.id),
         },
       },
@@ -235,7 +248,14 @@ const organizationsRoutes = app
     const organization = ctx.get('organization');
 
     const [membership] = await db
-      .select()
+      .select({
+        id: membershipsTable.id,
+        role: membershipsTable.role,
+        archived: membershipsTable.archived,
+        muted: membershipsTable.muted,
+        order: membershipsTable.order,
+        userId: membershipsTable.userId,
+      })
       .from(membershipsTable)
       .where(
         and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
@@ -246,7 +266,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...organization,
-          membership: toMembershipInfo(membership),
+          membership,
           counts: await counts('organization', organization.id),
         },
       },

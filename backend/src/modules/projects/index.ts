@@ -12,7 +12,6 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import projectRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -48,7 +47,7 @@ const projectsRoutes = app
     logEvent('Project created', { project: project.id });
 
     // Insert membership
-    const [createdMembership] = await insertMembership({ user, role: 'admin', entity: project, memberships });
+    const createdMembership = await insertMembership({ user, role: 'admin', entity: project, memberships });
 
     // If project created in workspace, add project to it
     if (workspaceId) {
@@ -66,7 +65,7 @@ const projectsRoutes = app
       counts: {
         memberships: { admins: 1, members: 1, total: 1 },
       },
-      membership: toMembershipInfo(createdMembership),
+      membership: createdMembership,
     };
 
     return ctx.json({ success: true, data: createdProject }, 200);
@@ -77,7 +76,7 @@ const projectsRoutes = app
   .openapi(projectRoutesConfig.getProject, async (ctx) => {
     const project = ctx.get('project');
     const memberships = ctx.get('memberships');
-    const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project');
+    const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project') ?? null;
     const [projectToWorkspace] = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.projectId, project.id));
     return ctx.json(
       {
@@ -85,7 +84,7 @@ const projectsRoutes = app
         data: {
           ...project,
           workspaceId: projectToWorkspace.workspaceId,
-          membership: toMembershipInfo(membership),
+          membership,
           counts: await counts('project', project.id),
         },
       },
@@ -147,7 +146,14 @@ const projectsRoutes = app
       projects = await db
         .select({
           project: projectsTable,
-          membership: membershipsTable,
+          membership: {
+            id: membershipsTable.id,
+            role: membershipsTable.role,
+            archived: membershipsTable.archived,
+            muted: membershipsTable.muted,
+            order: membershipsTable.order,
+            userId: membershipsTable.userId,
+          },
           workspaceId: projectsToWorkspacesTable.workspaceId,
           admins: countsQuery.admins,
           members: countsQuery.members,
@@ -171,7 +177,7 @@ const projectsRoutes = app
         data: {
           items: projects.map(({ project, membership, workspaceId, admins, members }) => ({
             ...project,
-            membership: toMembershipInfo(membership),
+            membership,
             workspaceId,
             counts: {
               memberships: { admins, members },
@@ -218,7 +224,14 @@ const projectsRoutes = app
     }
 
     const memberships = await db
-      .select()
+      .select({
+        id: membershipsTable.id,
+        role: membershipsTable.role,
+        archived: membershipsTable.archived,
+        muted: membershipsTable.muted,
+        order: membershipsTable.order,
+        userId: membershipsTable.userId,
+      })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'project'), eq(membershipsTable.projectId, project.id)));
 
@@ -226,7 +239,7 @@ const projectsRoutes = app
       memberships.map((membership) =>
         sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedProject,
-          membership: toMembershipInfo(memberships.find((m) => m.id === membership.id)),
+          membership: memberships.find((m) => m.id === membership.id) ?? null,
         }),
       );
     }
@@ -239,7 +252,7 @@ const projectsRoutes = app
         data: {
           ...updatedProject,
           parentId: workspaceId,
-          membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
+          membership: memberships.find((m) => m.id === user.id) ?? null,
           counts: await counts('project', project.id),
         },
       },
