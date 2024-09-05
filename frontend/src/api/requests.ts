@@ -1,6 +1,10 @@
-import { apiClient, handleResponse } from '.';
+import type { AppRequestsType } from 'backend/modules/requests/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
+import { clientConfig, handleResponse } from '.';
 
-const client = apiClient.requests;
+// Create Hono clients to make requests to the backend
+export const client = hc<AppRequestsType>(config.backendUrl, clientConfig).requests;
 
 type CreateRequestProp = Parameters<(typeof client)['$post']>['0']['json'];
 

@@ -1,6 +1,10 @@
-import { apiClient, handleResponse } from '.';
+import type { AppTasksType } from 'backend/modules/tasks/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
+import { clientConfig, handleResponse } from '.';
 
-const client = apiClient.tasks;
+// Create Hono clients to make requests to the backend
+export const client = hc<AppTasksType>(config.backendUrl, clientConfig).tasks;
 
 type CreateTaskParams = Parameters<(typeof client)['$post']>['0']['json'];
 

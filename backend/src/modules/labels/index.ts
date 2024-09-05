@@ -12,6 +12,7 @@ const app = new CustomHono();
 
 // Labels endpoints
 const labelsRoutes = app
+  .basePath('/labels')
   /*
    * Create label
    */
@@ -83,5 +84,7 @@ const labelsRoutes = app
     await db.delete(labelsTable).where(inArray(labelsTable.id, idsArray));
     return ctx.json({ success: true }, 200);
   });
+
+export type AppLabelsType = typeof labelsRoutes;
 
 export default labelsRoutes;

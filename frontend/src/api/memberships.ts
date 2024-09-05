@@ -1,7 +1,11 @@
+import type { AppMembershipsType } from 'backend/modules/memberships/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
 import type { ContextEntity, Membership } from '~/types';
-import { apiClient, handleResponse } from '.';
+import { clientConfig, handleResponse } from '.';
 
-const client = apiClient.memberships;
+// Create Hono clients to make requests to the backend
+export const client = hc<AppMembershipsType>(config.backendUrl, clientConfig).memberships;
 
 export interface InviteMemberProps {
   emails: string[];

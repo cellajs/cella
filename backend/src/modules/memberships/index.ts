@@ -27,6 +27,7 @@ const app = new CustomHono();
 
 // Membership endpoints
 const membershipsRoutes = app
+  .basePath('/memberships')
   /*
    * Invite members to an entity such as an organization
    */
@@ -392,5 +393,7 @@ const membershipsRoutes = app
       200,
     );
   });
+
+export type AppMembershipsType = typeof membershipsRoutes;
 
 export default membershipsRoutes;

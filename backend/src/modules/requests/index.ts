@@ -11,6 +11,7 @@ const app = new CustomHono();
 
 // Requests endpoints
 const requestsRoutes = app
+  .basePath('/requests')
   /*
    *  Create request
    */
@@ -70,5 +71,7 @@ const requestsRoutes = app
 
     return ctx.json({ success: true, data: { items, total } }, 200);
   });
+
+export type AppRequestsType = typeof requestsRoutes;
 
 export default requestsRoutes;

@@ -18,6 +18,7 @@ const app = new CustomHono();
 
 // User endpoints
 const usersRoutes = app
+  .basePath('/users')
   /*
    * Get list of users
    */
@@ -250,5 +251,7 @@ const usersRoutes = app
       200,
     );
   });
+
+export type AppUsersType = typeof usersRoutes;
 
 export default usersRoutes;

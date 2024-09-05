@@ -1,9 +1,7 @@
 import type { ErrorType } from 'backend/lib/errors';
-import type { AppType } from 'backend/server';
 import type { Entity } from 'backend/types/common';
 
-import { config } from 'config';
-import { type ClientResponse, hc } from 'hono/client';
+import type { ClientResponse } from 'hono/client';
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
@@ -45,13 +43,10 @@ export const handleResponse = async <T extends Record<string, any>, U extends Cl
   throw new Error('Unknown error');
 };
 
-const clientConfig = {
+export const clientConfig = {
   fetch: (input: RequestInfo | URL, init?: RequestInit) =>
     fetch(input, {
       ...init,
       credentials: 'include',
     }),
 };
-
-// Create Hono clients to make requests to the backend
-export const apiClient = hc<AppType>(config.backendUrl, clientConfig);

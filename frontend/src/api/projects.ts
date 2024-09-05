@@ -1,6 +1,10 @@
-import { apiClient, handleResponse } from '.';
+import type { AppProjectsType } from 'backend/modules/projects/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
+import { clientConfig, handleResponse } from '.';
 
-const client = apiClient.projects;
+// Create Hono clients to make requests to the backend
+export const client = hc<AppProjectsType>(config.backendUrl, clientConfig).projects;
 
 export type CreateProjectParams = Parameters<(typeof client)['$post']>['0']['json'] & {
   organizationId: string;

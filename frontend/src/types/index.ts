@@ -11,7 +11,7 @@ import type { workspaceProjectSchema, workspaceSchema } from 'backend/modules/wo
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
 import type { z } from 'zod';
-import type { apiClient } from '~/api';
+import type { client } from '~/api/me';
 
 // Core types
 export type Entity = (typeof config.entityTypes)[number];
@@ -19,7 +19,7 @@ export type ContextEntity = (typeof config.contextEntityTypes)[number];
 
 type UsersOauth = (typeof config.oauthProviderOptions)[number][];
 export type User = z.infer<typeof userSchema>;
-export type Session = Extract<InferResponseType<(typeof apiClient)['me']['$get']>, { data: unknown }>['data']['sessions'][number];
+export type Session = Extract<InferResponseType<(typeof client)['$get']>, { data: unknown }>['data']['sessions'][number];
 export type MeUser = User & { sessions: Session[]; passkey: boolean; oauth: UsersOauth };
 export type UserMenu = z.infer<typeof userMenuSchema>;
 export type UserMenuItem = z.infer<typeof menuItemsSchema>[number];
