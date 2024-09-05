@@ -11,6 +11,7 @@ import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type.tsx';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap.tsx';
 import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected.tsx';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
@@ -70,6 +71,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
   const { pathname } = useLocation();
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
+  const isMobile = useBreakpoints('max', 'sm');
 
   const [dragging, setDragging] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -176,7 +178,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
           }),
         )}
       >
-        <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 pr-2 space-between flex flex-col relative">
+        <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 sm: pr-1 pr-2 space-between flex flex-col relative">
           {/* To prevent on expand animation */}
           <motion.div className="flex flex-col gap-1" layout transition={{ duration: 0 }}>
             <div className="flex gap-1 w-full">
@@ -207,7 +209,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
                 <TaskDescription mode={mode} task={task} isExpanded={isExpanded} />
               </div>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col sm: gap-1 gap-2">
               <div className="flex items-end justify-between gap-1">
                 {!isSheet && (
                   <Checkbox
@@ -239,32 +241,44 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
                   aria-label="Set labels"
                   variant="ghost"
                   size="xs"
-                  className="relative flex h-auto justify-start font-light py-0.5 min-h-8 min-w-8 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+                  className="relative flex h-auto justify-start font-light sm: px-0.5 py-0.5 min-h-8 min-w-8 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
                 >
                   <div className="flex truncate flex-wrap gap-[.07rem]">
                     {task.labels.length > 0 ? (
-                      task.labels.map(({ name, id }) => {
-                        return (
-                          <div
-                            key={id}
-                            className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full border px-0 bg-border"
+                      isMobile ? (
+                        <div className="inline-flex gap-0.5 items-center">
+                          <Badge
+                            variant="outline"
+                            key={task.labels[0].id}
+                            className="inline-block border-0 px-0 truncate font-xs text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
                           >
-                            <Badge
-                              variant="outline"
+                            {task.labels[0].name}
+                          </Badge>
+                          <Badge className="p-1 min-w-5 min-h-5 flex bg-accent justify-center">+{task.labels.length - 1}</Badge>
+                        </div>
+                      ) : (
+                        task.labels.map(({ name, id }) => {
+                          return (
+                            <div
                               key={id}
-                              className="inline-block border-0 max-w-32 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
+                              className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full border px-0 bg-border"
                             >
-                              {name}
-                            </Badge>
-                          </div>
-                        );
-                      })
+                              <Badge
+                                variant="outline"
+                                key={id}
+                                className="inline-block border-0 max-w-32 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
+                              >
+                                {name}
+                              </Badge>
+                            </div>
+                          );
+                        })
+                      )
                     ) : (
                       <Tag size={16} className="opacity-60" />
                     )}
                   </div>
                 </Button>
-
                 <div className="flex gap-1 ml-auto mr-1">
                   <Button
                     id="assignedTo"
@@ -275,7 +289,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEx
                     className="relative flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
                   >
                     {task.assignedTo.length > 0 ? (
-                      <AvatarGroup limit={3}>
+                      <AvatarGroup limit={isMobile ? 1 : 3}>
                         <AvatarGroupList>
                           {task.assignedTo.map((user) => (
                             <AvatarWrap type="user" key={user.id} id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
