@@ -20,6 +20,7 @@ const app = new CustomHono();
 
 // Workspace endpoints
 const workspacesRoutes = app
+  .basePath('/workspaces')
   /*
    * Create workspace
    */
@@ -274,5 +275,7 @@ const workspacesRoutes = app
 
     return ctx.json({ success: true, errors: errors }, 200);
   });
+
+export type AppWorkspacesType = typeof workspacesRoutes;
 
 export default workspacesRoutes;

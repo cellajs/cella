@@ -1,6 +1,10 @@
-import { apiClient, handleResponse } from '.';
+import type { AppOrganizationsType } from 'backend/modules/organizations/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
+import { clientConfig, handleResponse } from '.';
 
-const client = apiClient.organizations;
+// Create Hono clients to make requests to the backend
+export const client = hc<AppOrganizationsType>(config.backendUrl, clientConfig).organizations;
 
 export type CreateOrganizationParams = Parameters<(typeof client)['$post']>['0']['json'];
 

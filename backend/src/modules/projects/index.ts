@@ -18,6 +18,7 @@ const app = new CustomHono();
 
 // Project endpoints
 const projectsRoutes = app
+  .basePath('/projects')
   /*
    * Create project
    */
@@ -296,5 +297,7 @@ const projectsRoutes = app
 
     return ctx.json({ success: true, errors: errors }, 200);
   });
+
+export type AppProjectsType = typeof projectsRoutes;
 
 export default projectsRoutes;

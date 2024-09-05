@@ -1,7 +1,11 @@
+import type { AppMeType } from 'backend/modules/me/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
 import type { UpdateUserParams } from '~/api/users';
-import { apiClient, handleResponse } from '.';
+import { clientConfig, handleResponse } from '.';
 
-const client = apiClient.me;
+// Create Hono clients to make requests to the backend
+export const client = hc<AppMeType>(config.backendUrl, clientConfig).me;
 
 // Get current user
 export const getSelf = async () => {

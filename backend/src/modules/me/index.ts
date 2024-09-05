@@ -24,6 +24,7 @@ const app = new CustomHono();
 
 // Me (self) endpoints
 const meRoutes = app
+  .basePath('/me')
   /*
    * Get current user
    */
@@ -295,5 +296,9 @@ const meRoutes = app
 
     return ctx.json({ success: true }, 200);
   });
+
+// const route = app.route('/me', meRoutes);
+
+export type AppMeType = typeof meRoutes;
 
 export default meRoutes;

@@ -1,6 +1,10 @@
-import { apiClient, handleResponse } from '.';
+import type { AppWorkspacesType } from 'backend/modules/workspaces/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
+import { clientConfig, handleResponse } from '.';
 
-const client = apiClient.workspaces;
+// Create Hono clients to make requests to the backend
+export const client = hc<AppWorkspacesType>(config.backendUrl, clientConfig).workspaces;
 
 export type CreateWorkspaceParams = Parameters<(typeof client)['$post']>['0']['json'];
 

@@ -17,6 +17,7 @@ const app = new CustomHono();
 
 // Task endpoints
 const tasksRoutes = app
+  .basePath('/tasks')
   /*
    * Create task
    */
@@ -48,6 +49,7 @@ const tasksRoutes = app
    * Get list of tasks
    */
   .openapi(taskRoutesConfig.getTasks, async (ctx) => {
+    console.log('getTasks');
     const { q, sort, order, offset, limit, projectId, status } = ctx.req.valid('query');
 
     const tasksFilters: SQL[] = [inArray(tasksTable.projectId, projectId.split('_'))];
@@ -191,5 +193,7 @@ const tasksRoutes = app
 
     return ctx.json({ success: true }, 200);
   });
+
+export type AppTasksType = typeof tasksRoutes;
 
 export default tasksRoutes;
