@@ -150,10 +150,25 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
   };
 };
 
+function assertProjects(items: Item[]): asserts items is WorkspaceStoreProject[] {
+  if (!items.length) throw new Error('No items provided');
+  if (!('entity' in items[0])) throw new Error('Not a project');
+}
+
+function assertWorkspaces(items: Item[]): asserts items is Workspace[] {
+  if (!items.length) throw new Error('No items provided');
+  if (!('entity' in items[0])) throw new Error('Not a workspace');
+}
+
+function assertMemberships(items: Item[]): asserts items is Membership[] {
+  if (!items.length) throw new Error('No items provided');
+  if (!('entity' in items[0])) throw new Error('Not a membership');
+}
+
 export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   const queryClient = useQueryClient();
   return (
-    items: Workspace[] | Project[] | Membership[],
+    items: (Workspace | Project | Membership | WorkspaceStoreProject)[],
     action:
       | 'createProject'
       | 'updateProject'
@@ -170,46 +185,52 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
       if (!data) return data;
       switch (action) {
         case 'createProject':
+          assertProjects(items);
           return {
             ...data,
-            projects: [...(items as unknown as WorkspaceStoreProject[]), ...data.projects],
+            projects: [...items, ...data.projects],
           };
 
         case 'updateProject':
+          assertProjects(items);
           return {
             ...data,
             projects: data.projects.map((existingProject) => {
-              const updatedItem = (items as unknown as WorkspaceStoreProject[]).find((newProject) => existingProject.id === newProject.id);
+              const updatedItem = items.find((newProject) => existingProject.id === newProject.id);
               return updatedItem ? { ...updatedItem, ...{ members: existingProject.members } } : existingProject;
             }),
           };
 
         case 'deleteProject':
+          assertProjects(items);
           return {
             ...data,
             projects: data.projects.filter((existingProject) => !items.find((item) => item.id === existingProject.id)),
           };
 
         case 'updateWorkspace':
+          assertWorkspaces(items);
           return {
             ...data,
-            workspace: items[0] as Workspace,
+            workspace: items[0],
           };
 
         case 'updateWorkspaceMembership':
+          assertMemberships(items);
           return {
             ...data,
             workspace: {
               ...data.workspace,
               membership: {
                 ...data.workspace.membership,
-                ...(items[0] as Membership),
+                ...items[0],
               },
             },
           };
 
         case 'updateProjectMembership': {
-          const updatedMembership = items[0] as Membership;
+          assertMemberships(items);
+          const updatedMembership = items[0];
           const newProjects = data.projects.map((existing) => ({
             ...existing,
             membership: existing.membership?.id === updatedMembership.id ? { ...existing.membership, ...updatedMembership } : existing.membership,
@@ -222,6 +243,7 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
         }
 
         case 'updateMembers': {
+          assertMemberships(items);
           return {
             ...data,
             projects: {

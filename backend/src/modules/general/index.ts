@@ -33,7 +33,6 @@ import { CustomHono } from '#/types/common';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
-import type { Suggestion } from './schema';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -381,10 +380,7 @@ const generalRoutes = app
     }
 
     const results = await Promise.all(queries);
-    const items = [];
-
-    // @TODO: Tmp Typescript type solution
-    for (const entities of results as unknown as Array<Suggestion[]>) items.push(...entities.map((e) => e));
+    const items = results.flat();
 
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
   })
