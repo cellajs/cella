@@ -9,6 +9,7 @@ import type { UserMenuItem } from '~/types';
 
 interface MenuSectionStickyProp {
   sectionType: 'workspaces' | 'organizations';
+  sectionLabel: string;
   optionsView: boolean;
   isSectionVisible: boolean;
   data: UserMenuItem[];
@@ -16,7 +17,15 @@ interface MenuSectionStickyProp {
   createDialog?: () => void;
 }
 
-export const MenuSectionSticky = ({ data, sectionType, optionsView, isSectionVisible, createDialog, toggleOptionsView }: MenuSectionStickyProp) => {
+export const MenuSectionSticky = ({
+  data,
+  sectionType,
+  sectionLabel,
+  optionsView,
+  isSectionVisible,
+  createDialog,
+  toggleOptionsView,
+}: MenuSectionStickyProp) => {
   const { t } = useTranslation();
   const { toggleSection } = useNavigationStore();
 
@@ -28,7 +37,7 @@ export const MenuSectionSticky = ({ data, sectionType, optionsView, isSectionVis
             <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.15 }}>
               <div className="flex items-center">
                 <motion.span layout={'size'} className="flex items-center">
-                  {t(`common:${sectionType}`)}
+                  {t(sectionLabel)}
                 </motion.span>
                 {!isSectionVisible && (
                   <motion.span

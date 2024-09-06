@@ -257,7 +257,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
                           />
                           <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
                             <span>{t('common:click')}</span>
-                            <span className="text-primary">{`+${t('app:task')}`}</span>
+                            <span className="text-primary">{`+ ${t('app:task')}`}</span>
                             <span>{t('app:no_tasks.text')}</span>
                           </p>
                         </>

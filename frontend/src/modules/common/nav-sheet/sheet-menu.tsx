@@ -25,6 +25,7 @@ import type { UserMenuItem } from '~/types';
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
   type: ContextEntity;
+  label: string;
   createForm?: React.ReactNode;
   isSubmenu?: boolean;
   toPrefix?: boolean;
@@ -35,20 +36,23 @@ export type SectionItem = {
 export const menuSections: SectionItem[] = [
   {
     storageType: 'organizations',
+    type: 'organization',
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
-    type: 'organization',
+    label: 'common:organizations',
   },
   {
     storageType: 'workspaces',
+    type: 'workspace',
     isSubmenu: false,
     createForm: <CreateWorkspaceForm dialog />,
-    type: 'workspace',
+    label: 'app:workspaces',
   },
   {
     storageType: 'workspaces',
-    isSubmenu: true,
     type: 'project',
+    label: 'app:projects',
+    isSubmenu: true,
   },
 ];
 
@@ -79,6 +83,7 @@ export const SheetMenu = memo(() => {
           <MenuSection
             entityType={section.type}
             key={section.type}
+            sectionLabel={section.label}
             sectionType={section.storageType}
             createForm={section.createForm}
             data={menuSection}

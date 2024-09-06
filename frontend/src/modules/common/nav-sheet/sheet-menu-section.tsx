@@ -13,11 +13,12 @@ import type { ContextEntity, UserMenuItem } from '~/types';
 interface MenuSectionProps {
   data: UserMenuItem[];
   sectionType: 'workspaces' | 'organizations';
+  sectionLabel: string;
   entityType: ContextEntity;
   createForm: ReactNode;
 }
 
-export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuSectionProps) => {
+export const MenuSection = ({ data, sectionType, sectionLabel, entityType, createForm }: MenuSectionProps) => {
   const { t } = useTranslation();
 
   const [optionsView, setOptionsView] = useState(false);
@@ -71,6 +72,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
       {!parentItemId && (
         <MenuSectionSticky
           data={data}
+          sectionLabel={sectionLabel}
           sectionType={sectionType}
           optionsView={optionsView}
           isSectionVisible={isSectionVisible}

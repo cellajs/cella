@@ -20,7 +20,7 @@ export const TaskHeader = ({
   const isSubTask = task.parentId !== null;
   return (
     <StickyBox className="flex flex-row z-100 px-2 py-1 w-full justify-between border-b">
-      <div className="flex flex-row sm: gap-1 gap-2 items-center">
+      <div className="flex flex-row sm: gap-1 items-center">
         {!isSubTask && task.createdBy ? (
           <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
         ) : (
@@ -28,7 +28,7 @@ export const TaskHeader = ({
         )}
         <span className="text-sm text-center">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
       </div>
-      <div className="flex flex-row sm: gap-1 gap-2">
+      <div className="flex flex-row sm: gap-1">
         <TooltipButton toolTipContent={t('common:edit')} side="bottom" sideOffset={5} hideWhenDetached>
           <Button
             onClick={() => changeEditingState(!isEditing)}
