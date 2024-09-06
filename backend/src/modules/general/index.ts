@@ -176,8 +176,11 @@ const generalRoutes = app
 
       const emailHtml = await render(
         InviteSystemEmail({
-          user,
-          targetUser,
+          userName: targetUser?.name,
+          userThumbnailUrl: targetUser?.thumbnailUrl,
+          userLanguage: targetUser?.language || user.language,
+          inviteBy: user.name,
+          inviterEmail: user.email,
           token,
         }),
       );

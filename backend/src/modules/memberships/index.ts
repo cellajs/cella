@@ -199,7 +199,18 @@ const membershipsRoutes = app
         });
 
         // Render email template
-        const emailHtml = await render(InviteMemberEmail({ organization, targetUser, user, token }));
+        const emailHtml = await render(
+          InviteMemberEmail({
+            userName: targetUser?.name,
+            userLanguage: targetUser?.language || user.language,
+            userThumbnailUrl: targetUser?.thumbnailUrl,
+            inviteBy: user.name,
+            inviterEmail: user.email,
+            organizationName: organization.name,
+            organizationThumbnailUrl: organization.logoUrl || organization.thumbnailUrl,
+            token,
+          }),
+        );
 
         // Log event for user invitation
         logEvent('User invited to organization', { organization: organization.id });

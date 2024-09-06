@@ -1,25 +1,25 @@
 import { Section, Text } from 'jsx-email';
 
 import { config } from 'config';
-import type { i18n } from '../../backend/src/lib/i18n';
+import { i18n } from '../../backend/src/lib/i18n';
 
+import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
-import { Logo } from './components/logo';
-
-interface Props {
-  i18n: typeof i18n;
-  verificationLink: string;
-}
+import type { BasicTemplateType } from './types';
 
 const baseUrl = config.frontendUrl;
 
-export const VerificationEmail = ({ i18n, verificationLink = baseUrl }: Props) => {
+interface Props extends BasicTemplateType {
+  verificationLink: string;
+}
+
+export const VerificationEmail = ({ userLanguage, verificationLink = baseUrl }: Props) => {
   return (
     <EmailContainer
-      previewText={i18n.t('backend:email.please_verify_email')}
+      previewText={i18n.t('backend:email.please_verify_email', { appName: config.name, lng: userLanguage })}
       bodyStyle={{
         padding: '0.625rem 0',
       }}
@@ -30,7 +30,7 @@ export const VerificationEmail = ({ i18n, verificationLink = baseUrl }: Props) =
         lineHeight: '1.5',
       }}
     >
-      <Logo />
+      <AppLogo />
       <Section
         style={{
           borderRadius: '0.25rem',
@@ -41,8 +41,8 @@ export const VerificationEmail = ({ i18n, verificationLink = baseUrl }: Props) =
           marginTop: '2rem',
         }}
       >
-        <Text>{i18n.t('backend:email.verification_text_1')}</Text>
-        <EmailButton ButtonText={i18n.t('common:verify_my_email')} href={verificationLink} />
+        <Text>{i18n.t('backend:email.verification_text_1', { lng: userLanguage })}</Text>
+        <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng: userLanguage })} href={verificationLink} />
       </Section>
       <EmailReplyTo />
       <Footer />
