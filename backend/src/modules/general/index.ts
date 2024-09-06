@@ -15,7 +15,7 @@ import { db } from '#/db/db';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { register } from 'prom-client';
 import { labelsTable } from '#/db/schema/labels';
-import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
+import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { projectsTable } from '#/db/schema/projects';
 import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
@@ -437,14 +437,7 @@ const generalRoutes = app
     const membersQuery = db
       .select({
         user: safeUserSelect,
-        membership: {
-          id: membershipsTable.id,
-          role: membershipsTable.role,
-          archived: membershipsTable.archived,
-          muted: membershipsTable.muted,
-          order: membershipsTable.order,
-          userId: membershipsTable.userId,
-        },
+        membership: membershipSelect,
         counts: {
           memberships: membershipCount.memberships,
         },

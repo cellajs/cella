@@ -57,7 +57,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
         members.map((user) => user.id),
       );
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('common:task') }));
     }

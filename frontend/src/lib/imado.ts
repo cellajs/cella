@@ -1,4 +1,4 @@
-import { type UploadResult, Uppy, type UppyOptions } from '@uppy/core';
+import { type UploadResult, Uppy, type UppyFile, type UppyOptions } from '@uppy/core';
 
 import Tus from '@uppy/tus';
 import { config } from 'config';
@@ -16,7 +16,12 @@ export type UppyBody = {};
 const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
 
 interface ImadoUploadParams extends UploadParams {
-  completionHandler: (urls: URL[], result?: UploadResult<UppyMeta, UppyBody>) => void;
+  completionHandler: (
+    result: {
+      file: UppyFile<UppyMeta, UppyBody>;
+      url: string;
+    }[],
+  ) => void;
 }
 // ImadoUppy helps to create an Uppy instance that works with the Imado API
 export async function ImadoUppy(
@@ -57,14 +62,15 @@ export async function ImadoUppy(
       if (!useImadoAPI) console.warn('Imado API is disabled, files will not be uploaded to Imado.');
 
       if (result.successful && useImadoAPI) {
-        const urls = result.successful.map((file) => {
+        const res = result.successful.map((file) => {
           const uploadKey = file.uploadURL?.split('/').pop();
           // Sub can be user id, or user id w/ organization id
-          return new URL(`${rootUrl}/${sub}/${uploadKey}`);
+          const url = new URL(`${rootUrl}/${sub}/${uploadKey}`);
+          return { file, url: url.toString() };
         });
-        opts.completionHandler(urls, result);
+        opts.completionHandler(res);
       } else {
-        opts.completionHandler([], result);
+        opts.completionHandler([]);
       }
     });
 

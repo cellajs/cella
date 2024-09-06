@@ -12,6 +12,6 @@
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "vite.config.ts"],
-  "exclude": []
+  "include": ["src/**/*", "vite.config.ts", "../config/*", "../backend/*"],
+  "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

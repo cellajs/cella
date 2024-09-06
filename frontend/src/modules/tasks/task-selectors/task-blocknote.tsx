@@ -1,4 +1,4 @@
-import { useCreateBlockNote } from '@blocknote/react';
+import { FilePanelController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
 import { type KeyboardEventHandler, Suspense, useCallback, useEffect } from 'react';
@@ -16,6 +16,7 @@ import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import { schemaWithMentions } from '~/modules/common/blocknote/mention';
 import '~/modules/common/blocknote/styles.css';
 import { taskExpandable } from '~/modules/tasks/helpers';
+import UppyFilePanel from './uppy-file-panel';
 
 interface TaskBlockNoteProps {
   id: string;
@@ -47,7 +48,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
 
         const action = updatedTask.parentId ? 'updateSubTask' : 'update';
         const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-        dispatchCustomEvent(eventName, { array: [{ ...updatedTask, expandable }], action });
+        dispatchCustomEvent(eventName, { array: [{ ...updatedTask, expandable }], action, projectId: updatedTask.projectId });
       } catch (err) {
         toast.error(t('common:error.update_resource', { resource: t('common:todo') }));
       }
@@ -66,7 +67,11 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
     const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (onChange) onChange(cleanDescription, cleanSummary);
-    else handleUpdateHTML(cleanDescription, cleanSummary);
+    else {
+      handleUpdateHTML(cleanDescription, cleanSummary);
+      if (subTask) dispatchCustomEvent('toggleSubTaskEditing', { id, state: false });
+      else dispatchCustomEvent('toggleTaskEditing', { id, state: false });
+    }
   };
 
   const handleKeyDown: KeyboardEventHandler = async (event) => {
@@ -135,8 +140,11 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
         emojiPicker={false}
         formattingToolbar={false}
         slashMenu={false}
+        filePanel={false}
       >
         <BlockNoteForTaskContent editor={editor} members={currentProject?.members || []} />
+        {/* Replaces default file panel with Uppy one. */}
+        <FilePanelController filePanel={UppyFilePanel} />
       </BlockNoteView>
     </Suspense>
   );

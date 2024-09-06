@@ -5,6 +5,8 @@ export interface CustomEventMap {
   taskChange: CustomEvent<{ taskId: string; direction: number; projectId: string }>;
   taskCardClick: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
   toggleCard: CustomEvent<string>;
+  toggleTaskEditing: CustomEvent<{ state: boolean; id: string }>;
+  toggleSubTaskEditing: CustomEvent<{ state: boolean; id: string }>;
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
   searchDropDownClose: Event;
@@ -18,6 +20,7 @@ export interface CustomEventMap {
   taskCRUD: CustomEvent<{
     array: Task[] | { id: string }[];
     action: TaskQueryActions;
+    projectId: string;
   }>;
 }
 
@@ -42,6 +45,7 @@ export interface TaskCRUDEvent extends Event {
   detail: {
     array: Task[] | SubTask[] | { id: string }[];
     action: TaskQueryActions;
+    projectId: string;
   };
 }
 

@@ -67,7 +67,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       const labelIds = labels.map((l) => l.id);
       const updatedTask = await updateTask(focusedTaskId, 'labels', labelIds);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
       return;
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('common:task') }));

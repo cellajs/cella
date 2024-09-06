@@ -5,8 +5,7 @@ import { lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
-import type { CustomEventEventById, TaskCRUDEvent, TaskChangeEvent } from '~/lib/custom-events/types';
+import type { CustomEventEventById, TaskChangeEvent } from '~/lib/custom-events/types';
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import FocusTrap from '~/modules/common/focus-trap';
@@ -29,6 +28,7 @@ const MembersTable = lazy(() => import('~/modules/organizations/members-table'))
 
 interface BoardColumnProps {
   expandedTasks: Record<string, boolean>;
+  editingTasks: Record<string, boolean>;
   project: WorkspaceStoreProject;
   createForm: boolean;
   toggleCreateForm: (projectId: string) => void;
@@ -44,7 +44,7 @@ const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
   });
 };
 
-export function BoardColumn({ project, expandedTasks, createForm, toggleCreateForm }: BoardColumnProps) {
+export function BoardColumn({ project, expandedTasks, editingTasks, createForm, toggleCreateForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
   const columnRef = useRef<HTMLDivElement | null>(null);
@@ -60,8 +60,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
 
   // Query tasks
   const tasksQuery = useSuspenseQuery(tasksQueryOptions({ projectId: project.id }));
-
-  const callback = useMutateTasksQueryData(['boardTasks', project.id]);
 
   const tasks = useMemo(() => {
     const respTasks = tasksQuery.data?.items || [];
@@ -139,12 +137,6 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
     setFocusedTaskId(id);
   };
 
-  const handleCRUD = (event: TaskCRUDEvent) => {
-    const { array, action } = event.detail;
-    callback(array, action);
-  };
-
-  useEventListener('taskCRUD', handleCRUD);
   useEventListener('taskChange', handleTaskChangeEventListener);
   useEventListener('projectChange', handleProjectChangeEventListener);
 
@@ -222,6 +214,7 @@ export function BoardColumn({ project, expandedTasks, createForm, toggleCreateFo
                           <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                             <TaskCard
                               task={task}
+                              isEditing={editingTasks[task.id] ?? false}
                               isExpanded={expandedTasks[task.id] ?? false}
                               isSelected={selectedTasks.includes(task.id)}
                               isFocused={task.id === focusedTaskId}

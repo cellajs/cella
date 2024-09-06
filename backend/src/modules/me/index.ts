@@ -2,7 +2,7 @@ import { and, count, desc, eq } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { projectsTable } from '#/db/schema/projects';
 import { usersTable } from '#/db/schema/users';
@@ -72,14 +72,7 @@ const meRoutes = app
     const organizationsWithMemberships = await db
       .select({
         organization: organizationsTable,
-        membership: {
-          id: membershipsTable.id,
-          role: membershipsTable.role,
-          archived: membershipsTable.archived,
-          muted: membershipsTable.muted,
-          order: membershipsTable.order,
-          userId: membershipsTable.userId,
-        },
+        membership: membershipSelect,
       })
       .from(organizationsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'organization')))
@@ -89,14 +82,7 @@ const meRoutes = app
     const workspacesWithMemberships = await db
       .select({
         workspace: workspacesTable,
-        membership: {
-          id: membershipsTable.id,
-          role: membershipsTable.role,
-          archived: membershipsTable.archived,
-          muted: membershipsTable.muted,
-          order: membershipsTable.order,
-          userId: membershipsTable.userId,
-        },
+        membership: membershipSelect,
       })
       .from(workspacesTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'workspace')))
@@ -106,14 +92,7 @@ const meRoutes = app
     const projectsWithMemberships = await db
       .select({
         project: projectsTable,
-        membership: {
-          id: membershipsTable.id,
-          role: membershipsTable.role,
-          archived: membershipsTable.archived,
-          muted: membershipsTable.muted,
-          order: membershipsTable.order,
-          userId: membershipsTable.userId,
-        },
+        membership: membershipSelect,
         workspace: projectsToWorkspacesTable,
       })
       .from(projectsTable)

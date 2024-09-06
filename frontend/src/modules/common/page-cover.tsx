@@ -66,8 +66,9 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
           }}
           plugins={['webcam', 'image-editor']}
           imageMode="cover"
-          setUrl={(url) => {
-            setUrl(url);
+          callback={(result) => {
+            const url = result[0].url;
+            if (url) setUrl(url);
             dialog.remove(true, 'page-cover');
           }}
         />

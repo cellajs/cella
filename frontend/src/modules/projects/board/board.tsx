@@ -1,4 +1,4 @@
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
 import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,13 +22,16 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
-import type { TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
+import type { TaskCRUDEvent, TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
 import { isSubTaskData, isTaskData } from '~/lib/drag-and-drop';
 import { queryClient } from '~/lib/router';
 import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
 import { dropdowner } from '~/modules/common/dropdowner/state';
+import { sheet } from '~/modules/common/sheeter/state';
 import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
+import { TaskCard } from '~/modules/tasks/task';
 import { useNavigationStore } from '~/store/navigation';
+import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
 const PANEL_MIN_WIDTH = 300;
@@ -44,10 +47,12 @@ function BoardDesktop({
   workspaceId,
   projects,
   expandedTasks,
+  editingTasks,
   columnTaskCreate,
   toggleCreateForm,
 }: {
   expandedTasks: Record<string, boolean>;
+  editingTasks: Record<string, boolean>;
   projects: WorkspaceStoreProject[];
   workspaceId: string;
   columnTaskCreate: Record<string, boolean>;
@@ -68,6 +73,7 @@ function BoardDesktop({
                 <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
                   <BoardColumn
                     expandedTasks={expandedTasks}
+                    editingTasks={editingTasks}
                     createForm={isFormOpen}
                     toggleCreateForm={toggleCreateForm}
                     key={project.id}
@@ -88,6 +94,8 @@ function BoardDesktop({
 
 export default function Board() {
   const { t } = useTranslation();
+  const { mode } = useThemeStore();
+  const navigate = useNavigate();
   const { menu } = useNavigationStore();
   const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const isDesktopLayout = useBreakpoints('min', 'sm');
@@ -95,7 +103,8 @@ export default function Board() {
 
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
-  const { project, q } = useSearch({
+  const [editingTasks, setEditingTasks] = useState<Record<string, boolean>>({});
+  const { project, q, taskIdPreview } = useSearch({
     from: WorkspaceBoardRoute.id,
   });
 
@@ -104,6 +113,18 @@ export default function Board() {
     if (project) return projects.find((p) => p.slug === project) || projects[0];
     return projects[0];
   }, [project, projects]);
+
+  const queries = queryClient.getQueriesData({ queryKey: ['boardTasks'] });
+  const tasks = useMemo(() => {
+    return queries.flatMap((el) => {
+      const [, data] = el as [string[], undefined | { items: Task[] }];
+      return data?.items ?? [];
+    });
+  }, [queries]);
+  const [currentTask] = useMemo(() => {
+    const taskId = taskIdPreview ? taskIdPreview : focusedTaskId;
+    return tasks.filter((t) => t.id === taskId);
+  }, [tasks, focusedTaskId, taskIdPreview]);
 
   const toggleCreateTaskForm = (itemId: string) => {
     setColumnTaskCreate((prevState) => ({
@@ -172,31 +193,33 @@ export default function Board() {
       [taskId]: isExpanded,
     }));
   };
+  const setTaskEditing = (taskId: string, isEditing: boolean) => {
+    setEditingTasks((prevState) => ({
+      ...prevState,
+      [taskId]: isEditing,
+    }));
+  };
 
   const handleEscKeyPress = () => {
-    if (focusedTaskId && expandedTasks[focusedTaskId]) setTaskExpanded(focusedTaskId, false);
+    if (!focusedTaskId || !expandedTasks[focusedTaskId]) return;
+    setTaskExpanded(focusedTaskId, false);
   };
 
   const handleEnterKeyPress = () => {
     if (!focusedTaskId) return;
     setTaskExpanded(focusedTaskId, true);
+    if (expandedTasks[focusedTaskId]) setTaskEditing(focusedTaskId, true);
   };
 
   // Open on key press
   const hotKeyPress = (field: string) => {
-    const queries = queryClient.getQueriesData({ queryKey: ['boardTasks'] });
-    const tasks = queries.flatMap((el) => {
-      const [, data] = el as [string[], { items: Task[] }];
-      return data.items;
-    });
-    const focusedTask = tasks.find((t) => t.id === focusedTaskId);
-    if (!focusedTask) return;
-    const taskCard = document.getElementById(focusedTask.id);
+    if (!currentTask) return;
+    const taskCard = document.getElementById(currentTask.id);
     if (!taskCard) return;
     if (taskCard && document.activeElement !== taskCard) taskCard.focus();
     const trigger = taskCard.querySelector(`#${field}`);
     if (!trigger) return dropdowner.remove();
-    handleTaskDropDownClick(focusedTask, field, trigger as HTMLElement);
+    handleTaskDropDownClick(currentTask, field, trigger as HTMLElement);
   };
 
   useHotkeys([
@@ -233,19 +256,54 @@ export default function Board() {
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
+  const handleOpenTaskSheet = (taskId: string) => {
+    navigate({
+      replace: true,
+      resetScroll: false,
+      search: (prev) => ({
+        ...prev,
+        ...{ taskIdPreview: taskId },
+      }),
+    });
+    sheet.create(
+      <TaskCard mode={mode} task={currentTask} tasks={tasks} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />,
+      {
+        className: 'max-w-full lg:max-w-4xl',
+        title: <span className="pl-4">{t('common:task')}</span>,
+        id: `task-preview-${taskId}`,
+      },
+    );
+  };
+
+  const handleCRUD = (event: TaskCRUDEvent) => {
+    const { array, action, projectId } = event.detail;
+    const callback = useMutateTasksQueryData(['boardTasks', projectId]);
+    callback(array, action);
+    const { items: tasks } = queryClient.getQueryData(['boardTasks', projectId]) as { items: Task[] };
+    if (!tasks.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
+    const [sheetTask] = tasks.filter((t) => t.id === focusedTaskId);
+    sheet.update(`task-preview-${sheetTask.id}`, {
+      content: <TaskCard mode={mode} task={sheetTask} tasks={tasks} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />,
+    });
+  };
+
+  useEventListener('taskCRUD', handleCRUD);
   useEventListener('taskCardClick', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('toggleCard', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
+  useEventListener('openTaskCardPreview', (event) => handleOpenTaskSheet(event.detail));
+  useEventListener('toggleTaskEditing', (e) => setTaskEditing(e.detail.id, e.detail.state));
 
   useEffect(() => {
     if (q?.length) setSearchQuery(q);
+    if (taskIdPreview) handleOpenTaskSheet(taskIdPreview);
   }, []);
 
   useEffect(() => {
     return combine(
       monitorForElements({
         canMonitor({ source }) {
-          return isTaskData(source.data) || isSubTaskData(source.data);
+          return (isTaskData(source.data) || isSubTaskData(source.data)) && !sheet.getAll().length;
         },
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
@@ -323,6 +381,7 @@ export default function Board() {
           {isDesktopLayout ? (
             <BoardDesktop
               expandedTasks={expandedTasks}
+              editingTasks={editingTasks}
               columnTaskCreate={columnTaskCreate}
               toggleCreateForm={toggleCreateTaskForm}
               projects={projects}
@@ -331,6 +390,7 @@ export default function Board() {
           ) : (
             <BoardColumn
               expandedTasks={expandedTasks}
+              editingTasks={editingTasks}
               createForm={columnTaskCreate[mobileDeviceProject.id] || false}
               toggleCreateForm={toggleCreateTaskForm}
               project={mobileDeviceProject}

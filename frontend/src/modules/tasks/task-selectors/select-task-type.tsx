@@ -43,7 +43,7 @@ export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypePr
     try {
       const updatedTask = await updateTask(focusedTaskId, 'type', newType);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('common:task') }));
     }
