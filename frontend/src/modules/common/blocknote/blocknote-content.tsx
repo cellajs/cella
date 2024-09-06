@@ -1,10 +1,11 @@
 import { DragHandleButton, GridSuggestionMenuController, SideMenu, SideMenuController } from '@blocknote/react';
+import { getProjectMembers } from '~/api/projects';
+import { queryClient } from '~/lib/router';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { getMentionMenuItems, type schemaWithMentions } from '~/modules/common/blocknote/mention';
-import type { Member } from '~/types';
 
-export const BlockNoteForTaskContent = ({ editor, members }: { editor: typeof schemaWithMentions.BlockNoteEditor; members: Member[] }) => (
+export const BlockNoteForTaskContent = ({ editor, projectId }: { editor: typeof schemaWithMentions.BlockNoteEditor; projectId: string }) => (
   <>
     <CustomSlashMenu />
     <SideMenuController
@@ -16,12 +17,17 @@ export const BlockNoteForTaskContent = ({ editor, members }: { editor: typeof sc
     />
     <GridSuggestionMenuController
       triggerCharacter={'@'}
-      getItems={async () =>
-        getMentionMenuItems(members, editor).map((item) => ({
+      getItems={async () => {
+        const members = await queryClient.ensureQueryData({
+          queryKey: ['projects', projectId, 'members'],
+          queryFn: () => getProjectMembers(projectId),
+          staleTime: 1000 * 60 * 1, // 1 minute
+        });
+        return getMentionMenuItems(members, editor).map((item) => ({
           ...item,
           title: item.id,
-        }))
-      }
+        }));
+      }}
       columns={2}
       minQueryLength={0}
     />

@@ -1,8 +1,10 @@
+import { useQuery } from '@tanstack/react-query';
 import { useLocation } from '@tanstack/react-router';
 import { Check, XCircle } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { getProjectMembers } from '~/api/projects';
 import { updateTask } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -27,15 +29,20 @@ interface AssignMembersProps {
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { focusedTaskId, projects } = useWorkspaceStore();
+  const { focusedTaskId } = useWorkspaceStore();
   const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
   const isMobile = useBreakpoints('max', 'sm');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentProject = projects.find((p) => p.id === projectId);
-  const members = currentProject?.members || [];
+  // Get project members
+  const { data: members = [] } = useQuery({
+    queryKey: ['projects', projectId, 'members'],
+    queryFn: () => getProjectMembers(projectId),
+    staleTime: 1000 * 60 * 1, // 1 minute
+  });
+
   const sortedMembers = [...members].sort((a, b) => {
     const aSelected = selectedMembers.some((user) => user.id === a.id) ? 1 : 0;
     const bSelected = selectedMembers.some((user) => user.id === b.id) ? 1 : 0;

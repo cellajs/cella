@@ -5,7 +5,7 @@ import { useNavigationStore } from '~/store/navigation';
 import type { workspaceWithProjectSchema } from 'backend/modules/workspaces/schema';
 import type { z } from 'zod';
 import { getMinimumEntityInfo } from '~/api/general';
-import type { ContextEntity, MinimumEntityItem, UserMenu, UserMenuItem, WorkspaceStoreProject } from '~/types';
+import type { ContextEntity, MinimumEntityItem, Project, UserMenu, UserMenuItem } from '~/types';
 
 type WorkspaceQuery = z.infer<typeof workspaceWithProjectSchema>;
 
@@ -57,7 +57,7 @@ export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
         if ('workspace' in data) {
           arrayData = [data.workspace];
         } else if ('projects' in data) {
-          arrayData = data.projects as WorkspaceStoreProject[];
+          arrayData = data.projects as Project[];
         } else {
           arrayData = Array.isArray(data) ? data : [data];
         }

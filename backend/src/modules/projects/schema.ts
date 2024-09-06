@@ -14,6 +14,8 @@ export const projectSchema = z.object({
   counts: membershipsCountSchema,
 });
 
+export type ApiProject = z.infer<typeof projectSchema>;
+
 export const createProjectBodySchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,

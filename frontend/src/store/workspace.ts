@@ -2,13 +2,13 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { Label } from '~/types';
-import type { Workspace, WorkspaceStoreProject } from '~/types';
+import type { Project, Workspace } from '~/types';
 
 interface WorkspaceState {
   workspace: Workspace;
-  projects: WorkspaceStoreProject[];
+  projects: Project[];
   labels: Label[];
-  setWorkspace: (workspace: Workspace, projects: WorkspaceStoreProject[] | undefined, labels: Label[] | undefined) => void;
+  setWorkspace: (workspace: Workspace, projects: Project[] | undefined, labels: Label[] | undefined) => void;
   selectedTasks: string[];
   setSelectedTasks: (tasks: string[]) => void;
   searchQuery: string;

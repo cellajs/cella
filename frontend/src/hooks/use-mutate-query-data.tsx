@@ -1,7 +1,7 @@
 import { type InfiniteData, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import type { TaskQueryActions } from '~/lib/custom-events/types';
 import { queryClient } from '~/lib/router';
-import type { Membership, Project, SubTask, Task, Workspace, WorkspaceStoreProject } from '~/types';
+import type { Membership, Project, SubTask, Task, Workspace } from '~/types';
 
 interface Item {
   id: string;
@@ -150,7 +150,7 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
   };
 };
 
-function assertProjects(items: Item[]): asserts items is WorkspaceStoreProject[] {
+function assertProjects(items: Item[]): asserts items is Project[] {
   if (!items.length) throw new Error('No items provided');
   if (!('entity' in items[0])) throw new Error('Not a project');
 }
@@ -168,7 +168,7 @@ function assertMemberships(items: Item[]): asserts items is Membership[] {
 export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   const queryClient = useQueryClient();
   return (
-    items: (Workspace | Project | Membership | WorkspaceStoreProject)[],
+    items: (Workspace | Project | Membership)[],
     action:
       | 'createProject'
       | 'updateProject'
@@ -180,7 +180,7 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   ) => {
     queryClient.setQueryData<{
       workspace: Workspace;
-      projects: WorkspaceStoreProject[];
+      projects: Project[];
     }>(queryKey, (data) => {
       if (!data) return data;
       switch (action) {
@@ -197,7 +197,7 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
             ...data,
             projects: data.projects.map((existingProject) => {
               const updatedItem = items.find((newProject) => existingProject.id === newProject.id);
-              return updatedItem ? { ...updatedItem, ...{ members: existingProject.members } } : existingProject;
+              return updatedItem ? updatedItem : existingProject;
             }),
           };
 
