@@ -301,12 +301,17 @@ const organizationsRoutes = app
         .limit(1);
       const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`;
       // generating email html
-      const emailHtml = await render(organizationsNewsletter({ subject, content, unsubscribeLink }));
+      const emailHtml = await render(organizationsNewsletter({ userLanguage: user.language, subject, content, unsubscribeLink }));
       emailSender.send(env.SEND_ALL_TO_EMAIL, user.newsletter ? subject : 'User unsubscribed from newsletter', emailHtml);
     } else {
       // Get members
       const organizationsMembersEmails = await db
-        .select({ email: usersTable.email, unsubscribeToken: usersTable.unsubscribeToken, newsletter: usersTable.newsletter })
+        .select({
+          email: usersTable.email,
+          unsubscribeToken: usersTable.unsubscribeToken,
+          newsletter: usersTable.newsletter,
+          language: usersTable.language,
+        })
         .from(membershipsTable)
         .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
         // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
@@ -321,7 +326,7 @@ const organizationsRoutes = app
         if (!member.newsletter) continue;
         const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${member.unsubscribeToken}`;
         // generating email html
-        const emailHtml = await render(organizationsNewsletter({ subject, content, unsubscribeLink }));
+        const emailHtml = await render(organizationsNewsletter({ userLanguage: member.language, subject, content, unsubscribeLink }));
 
         emailSender.send(member.email, subject, emailHtml);
       }

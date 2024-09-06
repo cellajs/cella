@@ -66,7 +66,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
   };
 
@@ -96,7 +96,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
       <Input
         ref={inputRef}
         className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden min-h-10"
-        placeholder={t('common:placeholder.assign')}
+        placeholder={t('app:placeholder.assign')}
         value={searchValue}
         autoFocus={true}
         onChange={(e) => {

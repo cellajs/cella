@@ -1,6 +1,6 @@
 {
-  "email.reset_password_preview_text": "Reset uw Cella-wachtwoord",
+  "email.reset_password_preview_text": "Reset uw {{appName}}-wachtwoord",
   "email.reset_password_text_3": "Negeer deze e-mail als u uw wachtwoord niet wilt wijzigen of hier niet om heeft gevraagd.",
   "email.reset_password_text_2": "Deze link vervalt over 3 uur. Ga voor een nieuwe link voor het opnieuw instellen van uw wachtwoord naar:",
-  "email.reset_password_text_1": "Er is een link voor het opnieuw instellen van uw wachtwoord aangevraagd voor uw Cella-account. Als u dit was, kunt u hier een nieuw wachtwoord instellen:"
+  "email.reset_password_text_1": "Er is een link voor het opnieuw instellen van uw wachtwoord aangevraagd voor uw {{appName}}-account. Als u dit was, kunt u hier een nieuw wachtwoord instellen:"
 }

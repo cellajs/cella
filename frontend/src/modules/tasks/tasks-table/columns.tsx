@@ -40,7 +40,7 @@ export const useColumns = () => {
     CheckboxColumn,
     {
       key: 'summary',
-      name: t('common:summary'),
+      name: t('app:summary'),
       visible: true,
       minWidth: 280,
       sortable: false,
@@ -71,7 +71,7 @@ export const useColumns = () => {
     },
     {
       key: 'type',
-      name: t('common:type'),
+      name: t('app:type'),
       sortable: true,
       visible: !isMobile,
       cellClass: 'start',
@@ -85,7 +85,7 @@ export const useColumns = () => {
     },
     {
       key: 'impact',
-      name: t('common:impact'),
+      name: t('app:impact'),
       sortable: false,
       visible: !isMobile,
       width: 120,
@@ -109,7 +109,7 @@ export const useColumns = () => {
     },
     {
       key: 'status',
-      name: t('common:status'),
+      name: t('app:status'),
       sortable: true,
       visible: !isMobile,
       width: 140,
@@ -126,7 +126,7 @@ export const useColumns = () => {
     },
     {
       key: 'assignedTo',
-      name: t('common:assigned_to'),
+      name: t('app:assigned_to'),
       sortable: false,
       visible: false,
       width: 100,
@@ -147,7 +147,7 @@ export const useColumns = () => {
     },
     {
       key: 'labels',
-      name: t('common:labels'),
+      name: t('app:labels'),
       sortable: false,
       visible: false,
       width: 190,
@@ -168,7 +168,7 @@ export const useColumns = () => {
     },
     {
       key: 'subTasks',
-      name: t('common:todos'),
+      name: t('app:todos'),
       sortable: false,
       visible: false,
       width: 80,
@@ -188,7 +188,7 @@ export const useColumns = () => {
     },
     {
       key: 'projectId',
-      name: t('common:project'),
+      name: t('app:project'),
       sortable: true,
       visible: !isMobile,
       width: 180,

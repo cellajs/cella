@@ -31,10 +31,10 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
         <div className="flex items-center gap-2">
           {mode[0] ? (
             <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
-              {t('common:add_projects')}
+              {t('common:add_resource', t('app:projects').toLowerCase())}
             </button>
           ) : (
-            t('common:add_projects')
+            t('common:add_resource', t('app:projects').toLowerCase())
           )}
           <AnimatePresence>
             {mode[0] && (
@@ -70,7 +70,7 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
               <ToggleGroupItem size="tile" variant="tile" value="create" aria-label="Create project" className="h-auto" id="create-project-option">
                 <Shrub size={48} strokeWidth={1} />
                 <div className="flex flex-col p-4">
-                  <p className="font-light">{t('common:create_project.text')}</p>
+                  <p className="font-light">{t('app:create_project.text')}</p>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
                     <strong>{t('common:continue')}</strong>
                     <ChevronRight className="ml-1" size={16} />
@@ -80,7 +80,7 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
               <ToggleGroupItem size="tile" variant="tile" value="select" aria-label="Select project" className="h-auto">
                 <SquareMousePointer size={48} strokeWidth={1} />
                 <div className="flex flex-col p-4">
-                  <div className="font-light">{t('common:select_project.text')}</div>
+                  <div className="font-light">{t('app:select_project.text')}</div>
                   <div className="flex items-center flex-row mt-1 opacity-50 transition-opacity group-hover:opacity-100">
                     <strong>{t('common:continue')}</strong>
                     <ChevronRight className="ml-1" size={16} />

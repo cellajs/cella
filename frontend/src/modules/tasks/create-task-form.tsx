@@ -144,9 +144,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
 
     createTask(newTask)
       .then((resp) => {
-        if (!resp) toast.error(t('common:error.create_resource', { resource: t('common:task') }));
+        if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:task') }));
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:task') }));
+        toast.success(t('common:success.create_resource', { resource: t('app:task') }));
         handleCloseForm();
         dispatchCustomEvent('taskCRUD', {
           array: [resp],
@@ -154,7 +154,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
           projectId: projectId,
         });
       })
-      .catch(() => toast.error(t('common:error.create_resource', { resource: t('common:task') })));
+      .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:task') })));
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
@@ -276,7 +276,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                       ) : (
                         <>
                           <NotSelected className="size-4" aria-hidden="true" />
-                          {t('common:set_impact')}
+                          {t('app:set_impact')}
                         </>
                       )}
                     </Button>
@@ -342,7 +342,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                       </>
                     ) : (
                       <>
-                        <UserX className="h-4 w-4 opacity-50" /> {t('common:assign_to')}
+                        <UserX className="h-4 w-4 opacity-50" /> {t('app:assign_to')}
                       </>
                     )}
                   </Button>
@@ -406,7 +406,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                       ) : (
                         <>
                           <Tag size={16} className="opacity-50" />
-                          <span className="ml-2">{t('common:choose_labels')}</span>
+                          <span className="ml-2">{t('app:choose_labels')}</span>
                         </>
                       )}
                     </div>

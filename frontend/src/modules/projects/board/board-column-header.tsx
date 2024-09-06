@@ -58,7 +58,7 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen
       <div className="truncate leading-6">{name}</div>
       <div className="grow" />
       <TooltipButton
-        toolTipContent={role === 'admin' ? t('common:project_settings') : t('common:project_members')}
+        toolTipContent={role === 'admin' ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members')}
         side="bottom"
         sideOffset={13}
         className="max-sm:hidden"
@@ -86,7 +86,7 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen
       </Button>
       <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>
         <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />
-        <span className="ml-1">{t('common:task')}</span>
+        <span className="ml-1">{t('app:task')}</span>
       </Button>
     </div>
   );

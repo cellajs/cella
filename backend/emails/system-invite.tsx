@@ -3,30 +3,30 @@ import { Column, Img, Row, Section, Text } from 'jsx-email';
 import { config } from 'config';
 import { i18n } from '../../backend/src/lib/i18n';
 
-import type { UserModel } from '../../backend/src/db/schema/users';
+import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
+import Logo from './components/logo';
+import UserName from './components/user-name';
+import type { BasicTemplateType } from './types';
 
-interface Props {
-  targetUser?: UserModel;
-  user: UserModel;
+interface Props extends BasicTemplateType {
   token: string;
+  inviteBy: string;
+  inviterEmail: string;
 }
 
 const productionUrl = config.productionUrl;
 
-export const InviteSystemEmail = ({ user, targetUser, token }: Props) => {
-  const emailLanguage = targetUser?.language || config.defaultLanguage;
-  const i18nInstance = i18n.cloneInstance({ lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage });
-  const username = targetUser?.name || targetUser?.email || i18nInstance.t('common:unknown_name');
-  const userLogo = targetUser?.thumbnailUrl || `${productionUrl}/static/email/user.png`;
+export const InviteSystemEmail = ({ userName, userLanguage, userThumbnailUrl, inviteBy, inviterEmail, token }: Props) => {
+  const userLogo = userThumbnailUrl || `${productionUrl}/static/email/user.png`;
 
   return (
     <EmailContainer
-      previewText={i18nInstance.t('backend:email.invite_preview_text')}
+      previewText={i18n.t('backend:email.invite_preview_text', { appName: config.name, lng: userLanguage })}
       containerStyle={{
         marginTop: '2.5rem',
         marginBottom: '2.5rem',
@@ -38,7 +38,7 @@ export const InviteSystemEmail = ({ user, targetUser, token }: Props) => {
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
-              __html: i18nInstance.t('backend:email.invite_title'),
+              __html: i18n.t('backend:email.invite_title', { lng: userLanguage }),
             }}
           />
         }
@@ -52,54 +52,35 @@ export const InviteSystemEmail = ({ user, targetUser, token }: Props) => {
           padding: '1rem',
         }}
       >
-        <Text
-          style={{
-            fontSize: '1rem',
-            lineHeight: '1.5',
-            color: '#000000',
-          }}
-        >
+        <UserName userName={userName}>
+          <Text>{i18n.t('backend:email.hi', { lng: userLanguage })}</Text>
+        </UserName>
+        <UserName userName={inviteBy}>
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
-              __html: i18nInstance.t('backend:email.invite_description', {
-                username,
-                invitedBy: user.name || i18nInstance.t('common:unknown_inviter'),
-              }),
+              __html: i18n.t('backend:email.invite_description', { lng: userLanguage, appName: config.name }),
             }}
           />
-        </Text>
+        </UserName>
         <Row>
           <Column align="right">
-            <Img
-              style={{
-                borderRadius: '9999px',
-                margin: '0 0 0 5.625rem',
-              }}
-              src={userLogo}
-              width="64"
-              height="64"
-            />
+            <Logo logoSrc={userLogo} />
           </Column>
           <Column align="center">
             <Img src={`${productionUrl}/static/email/arrow.png`} width="12" height="9" alt="invited to" />
           </Column>
           <Column align="left">
-            <Img
-              src={`${productionUrl}/static/email/logo.png`}
-              height="37"
-              alt={config.name}
-              style={{
-                margin: '0 5.625rem 0 0',
-              }}
-            />
+            <AppLogo />
           </Column>
         </Row>
-        <EmailButton ButtonText={i18n.t('common:accept')} href={`${config.frontendUrl}/auth/invite/${token}`} />
-        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>{i18n.t('backend:email.invite_expire')}</Text>
+        <EmailButton ButtonText={i18n.t('common:accept', { lng: userLanguage })} href={`${config.frontendUrl}/auth/invite/${token}`} />
+        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>
+          {i18n.t('backend:email.invite_expire', { lng: userLanguage })}
+        </Text>
       </Section>
 
-      <EmailReplyTo email={user.email} />
+      <EmailReplyTo email={inviterEmail} />
       <Footer />
     </EmailContainer>
   );

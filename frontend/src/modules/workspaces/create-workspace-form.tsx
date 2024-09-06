@@ -62,7 +62,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     mutationFn: createWorkspace,
     onSuccess: (createdWorkspace) => {
       form.reset();
-      toast.success(t('common:success.create_resource', { resource: t('common:workspace') }));
+      toast.success(t('common:success.create_resource', { resource: t('app:workspace') }));
       callback?.(createdWorkspace);
       if (isDialog) dialog.remove();
 
@@ -101,9 +101,9 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
   if (!form.getValues('organizationId') && !menu.organizations.length)
     return (
       <Alert variant="plain" className="border-0 w-auto">
-        <AlertTitle>{t('common:organization_required')}</AlertTitle>
+        <AlertTitle>{t('common:resource_required', { resource: t('common:organization') })}</AlertTitle>
         <AlertDescription className="pr-8 font-light">
-          <p className="mb-2">{t('common:organization_required.text')}</p>
+          <p className="mb-2">{t('app:organization_required.text')}</p>
           <Button
             onClick={() => {
               dialog(<CreateOrganizationForm callback={organizationCreated} dialog />, {
@@ -126,8 +126,8 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
         <SlugFormField
           control={form.control}
           type="workspace"
-          label={t('common:workspace_handle')}
-          description={t('common:workspace_handle.text')}
+          label={t('common:resource_handle', { resource: t('app:workspace') })}
+          description={t('common:resource_handle.text', { resource: t('app:workspace').toLowerCase() })}
           nameValue={name}
         />
 

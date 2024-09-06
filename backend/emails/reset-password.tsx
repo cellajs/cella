@@ -1,29 +1,27 @@
 import { Link, Section, Text } from 'jsx-email';
 
 import { config } from 'config';
-import type { i18n } from '../../backend/src/lib/i18n';
+import { i18n } from '../../backend/src/lib/i18n';
 
+import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
-import { Logo } from './components/logo';
+import UserName from './components/user-name';
+import type { BasicTemplateType } from './types';
 
-interface Props {
-  i18n: typeof i18n;
-  username?: string;
+interface Props extends BasicTemplateType {
   resetPasswordLink: string;
 }
 
 const baseUrl = config.frontendUrl;
 const resetPasswordUrl = `${baseUrl}/auth/reset-password`;
 
-export const ResetPasswordEmail = ({ i18n, username, resetPasswordLink = baseUrl }: Props) => {
-  username = username || i18n.t('common:unknown_name');
-
+export const ResetPasswordEmail = ({ userName, userLanguage, resetPasswordLink = baseUrl }: Props) => {
   return (
     <EmailContainer
-      previewText={i18n.t('backend:email.please_verify_email')}
+      previewText={i18n.t('backend:email.please_verify_email', { appName: config.name, lng: userLanguage })}
       bodyStyle={{ padding: '0 0.625rem' }}
       containerStyle={{
         borderColor: '#f0f0f0',
@@ -32,7 +30,7 @@ export const ResetPasswordEmail = ({ i18n, username, resetPasswordLink = baseUrl
         width: '32rem',
       }}
     >
-      <Logo />
+      <AppLogo />
       <Section
         style={{
           borderRadius: '0.25rem',
@@ -43,15 +41,20 @@ export const ResetPasswordEmail = ({ i18n, username, resetPasswordLink = baseUrl
           marginTop: '2rem',
         }}
       >
+        <UserName userName={userName}>
+          <Text>{i18n.t('backend:email.hi', { lng: userLanguage })}</Text>
+        </UserName>
+        <div
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+          dangerouslySetInnerHTML={{
+            __html: i18n.t('backend:email.reset_password_text_1', { appName: config.name, lng: userLanguage }),
+          }}
+        />
+        <EmailButton ButtonText={i18n.t('common:reset_password', { lng: userLanguage })} href={resetPasswordLink} />
         <Text>
-          {i18n.t('backend:email.hi')} {username},
+          {i18n.t('backend:email.reset_password_text_2', { lng: userLanguage })} <Link href={resetPasswordUrl}>{resetPasswordUrl}</Link>
         </Text>
-        <Text>{i18n.t('backend:email.reset_password_text_1')}</Text>
-        <EmailButton ButtonText={i18n.t('common:reset_password')} href={resetPasswordLink} />
-        <Text>
-          {i18n.t('backend:email.reset_password_text_2')} <Link href={resetPasswordUrl}>{resetPasswordUrl}</Link>
-        </Text>
-        <Text>{i18n.t('backend:email.reset_password_text_3')}</Text>
+        <Text>{i18n.t('backend:email.reset_password_text_3', { lng: userLanguage })}</Text>
       </Section>
       <EmailReplyTo />
       <Footer />

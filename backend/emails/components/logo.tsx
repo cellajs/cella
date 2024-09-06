@@ -1,9 +1,17 @@
-import { Img, Section } from 'jsx-email';
+import { Img } from 'jsx-email';
 
-import { config } from 'config';
+export const Logo = ({ logoSrc }: { logoSrc?: string }) => {
+  return (
+    <Img
+      style={{
+        borderRadius: '9999px',
+        margin: '0 0 0 5.625rem',
+      }}
+      src={logoSrc}
+      width="64"
+      height="64"
+    />
+  );
+};
 
-export const Logo = () => (
-  <Section style={{ marginTop: '2rem' }}>
-    <Img src={`${config.productionUrl}/static/email/logo.png`} height="37" alt={config.name} style={{ margin: '0 auto' }} />
-  </Section>
-);
+export default Logo;

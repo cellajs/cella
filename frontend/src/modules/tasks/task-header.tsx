@@ -39,7 +39,7 @@ export const TaskHeader = ({
           >
             {isEditing ? (
               <>
-                {t('common:editing')}
+                {t('app:editing')}
                 <Pickaxe size={14} className="animate-bounce" />
               </>
             ) : (
@@ -51,7 +51,7 @@ export const TaskHeader = ({
           </Button>
         </TooltipButton>
         {!task.parentId && (
-          <TooltipButton toolTipContent={t('common:open_task_sheet')} side="bottom" sideOffset={5} hideWhenDetached>
+          <TooltipButton toolTipContent={t('app:open_task_sheet')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {
                 if (isEditing) changeEditingState(false);

@@ -158,7 +158,7 @@ export default function TasksTable() {
       <TaskCard mode={mode} task={currentTask} tasks={rows} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />,
       {
         className: 'max-w-full lg:max-w-4xl',
-        title: <span className="pl-4">{t('common:task')}</span>,
+        title: <span className="pl-4">{t('app:task')}</span>,
         id: `task-preview-${taskId}`,
       },
     );
@@ -237,7 +237,7 @@ export default function TasksTable() {
             const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
             callback([updatedTask], 'updateSubTask');
           } catch (err) {
-            toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
+            toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));
           }
         },
       }),
@@ -275,7 +275,7 @@ export default function TasksTable() {
           enableVirtualization: true,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('app:tasks').toLowerCase() })} />,
         }}
       />
     </>

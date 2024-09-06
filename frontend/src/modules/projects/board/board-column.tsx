@@ -108,8 +108,8 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
     sheet.create(<SheetNav tabs={projectTabs} />, {
       className: 'max-w-full lg:max-w-4xl',
       id: isAdmin ? 'edit-project' : 'project-members',
-      title: t(`common:${isAdmin ? 'project_settings' : 'project_members'}`),
-      text: isAdmin ? t('common:project_settings.text') : '',
+      title: isAdmin ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members'),
+      text: isAdmin ? t('common:resource_settings.text', { resource: t('app:project').toLowerCase() }) : '',
     });
   };
 
@@ -195,7 +195,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
                         className="flex relative justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-xs -mt-[.07rem]"
                       >
                         <span className="w-6 mr-1 text-center">{acceptedCount}</span>
-                        <span>{t('common:accepted').toLowerCase()}</span>
+                        <span>{t('app:accepted').toLowerCase()}</span>
                         {!!acceptedCount && (
                           <ChevronDown
                             size={16}
@@ -231,7 +231,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
                         className="flex relative justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-xs -mt-[.07rem]"
                       >
                         <span className="w-6 mr-1 text-center">{icedCount}</span>
-                        <span> {t('common:iced').toLowerCase()}</span>
+                        <span> {t('app:iced').toLowerCase()}</span>
                         {!!icedCount && (
                           <ChevronDown
                             size={16}
@@ -246,7 +246,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
                 {!tasks.length && !searchQuery && (
                   <ContentPlaceholder
                     Icon={Palmtree}
-                    title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })}
+                    title={t('common:no_resource_yet', { resource: t('app:tasks').toLowerCase() })}
                     text={
                       !createForm && (
                         <>
@@ -257,8 +257,8 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
                           />
                           <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
                             <span>{t('common:click')}</span>
-                            <span className="text-primary">{`+${t('common:task')}`}</span>
-                            <span>{t('common:no_tasks.text')}</span>
+                            <span className="text-primary">{`+${t('app:task')}`}</span>
+                            <span>{t('app:no_tasks.text')}</span>
                           </p>
                         </>
                       )
@@ -266,7 +266,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
                   />
                 )}
                 {!tasks.length && searchQuery && (
-                  <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:tasks').toLowerCase() })} />
+                  <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('app:tasks').toLowerCase() })} />
                 )}
               </div>
             </ScrollArea>

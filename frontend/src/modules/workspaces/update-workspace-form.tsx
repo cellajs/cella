@@ -71,7 +71,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
         if (isDialog) dialog.remove();
         if (isSheet) sheet.remove('edit-workspace');
         form.reset(updatedWorkspace);
-        toast.success(t('common:success.update_resource', { resource: t('common:workspace') }));
+        toast.success(t('common:success.update_resource', { resource: t('app:workspace') }));
       },
     });
   };
@@ -95,7 +95,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AvatarFormField
           control={form.control}
-          label={t('common:workspace_logo')}
+          label={t('common:resource_logo', { resource: t('qpp:workspace') })}
           type="workspace"
           name="thumbnailUrl"
           entity={workspace}
@@ -106,8 +106,8 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
         <SlugFormField
           control={form.control}
           type="workspace"
-          label={t('common:workspace_handle')}
-          description={t('common:workspace_handle.text')}
+          label={t('common:resource_handle', { resource: t('app:workspace') })}
+          description={t('common:resource_handle.text', { resource: t('app:workspace').toLowerCase() })}
           previousSlug={workspace.slug}
         />
         <SelectParentFormField
@@ -127,7 +127,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
             variant="secondary"
             onClick={() => {
               form.reset();
-              sheet.update('edit-workspace', { title: t('common:workspace_settings') });
+              sheet.update('edit-workspace', { title: t('common:resource_settings', { resource: t('app:workspace') }) });
             }}
             className={form.formState.isDirty ? '' : 'invisible'}
           >
