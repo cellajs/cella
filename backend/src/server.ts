@@ -1,19 +1,8 @@
-import attachmentsRoutes from '#/modules/attachments';
-import authRoutes from '#/modules/auth';
-import generalRoutes from '#/modules/general';
-import labelsRoutes from '#/modules/labels';
-import meRoutes from '#/modules/me';
-import membershipsRoutes from '#/modules/memberships';
-import organizationsRoutes from '#/modules/organizations';
-import projectsRoutes from '#/modules/projects';
-import requestsRoutes from '#/modules/requests';
-import tasksRoutes from '#/modules/tasks';
-import usersRoutes from '#/modules/users';
-import workspacesRoutes from '#/modules/workspaces';
 import defaultHook from './lib/default-hook';
 import docs from './lib/docs';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
+import routes from './routes';
 
 import { CustomHono } from '#/types/common';
 
@@ -40,22 +29,12 @@ app.onError((err, ctx) => {
   return errorResponse(ctx, 500, 'server_error', 'error', undefined, {}, err);
 });
 
-// Add routes for each module
-app
-  .route('/', authRoutes)
-  .route('/', meRoutes)
-  .route('/', usersRoutes)
-  .route('/', organizationsRoutes)
-  .route('/', generalRoutes)
-  .route('/', requestsRoutes)
-  .route('/', membershipsRoutes)
-  .route('/', workspacesRoutes)
-  .route('/', projectsRoutes)
-  .route('/', tasksRoutes)
-  .route('/', attachmentsRoutes)
-  .route('/', workspacesRoutes)
-  .route('/', projectsRoutes)
-  .route('/', tasksRoutes)
-  .route('/', labelsRoutes);
+// biome-ignore lint/suspicious/noExplicitAny: this is a generic function
+function addRoutes(app: CustomHono, routes: any[]) {
+  for (const route of routes) app.route('/', route);
+}
+
+// Add routes to the app
+addRoutes(app, routes);
 
 export default app;
