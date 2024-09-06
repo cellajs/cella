@@ -145,7 +145,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           <SlugFormField
             control={form.control}
             type="user"
-            label={t('common:user_handle')}
+            label={t('common:resource_handle', { resource: t('common:user') })}
             description={t('common:user_handle.text')}
             previousSlug={user.slug}
           />

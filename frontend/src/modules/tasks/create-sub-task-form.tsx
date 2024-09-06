@@ -100,14 +100,14 @@ export const CreateSubTaskForm = ({
 
     createTask(newSubTask)
       .then((resp) => {
-        if (!resp) toast.error(t('common:error.create_resource', { resource: t('common:todo') }));
+        if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:todo') }));
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:todo') }));
+        toast.success(t('common:success.create_resource', { resource: t('app:todo') }));
         const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
         dispatchCustomEvent(eventName, { array: [newSubTask], action: 'createSubTask', projectId: parentTask.projectId });
         setFormState(false);
       })
-      .catch(() => toast.error(t('common:error.create_resource', { resource: t('common:todo') })));
+      .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:todo') })));
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
@@ -133,7 +133,7 @@ export const CreateSubTaskForm = ({
     return (
       <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none bg-secondary/50" onClick={() => setFormState(true)}>
         <Plus size={16} />
-        <span className="ml-1 font-normal">{t('common:add_subtask')}</span>
+        <span className="ml-1 font-normal">{t('common:add_resource', t('app:todo').toLowerCase())}</span>
       </Button>
     );
   return (

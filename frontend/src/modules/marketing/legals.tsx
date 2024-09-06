@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { AsideNav } from '~/modules/common/aside-nav';
@@ -34,7 +35,7 @@ export const LegalsMenu = () => {
       <div className="container md:flex md:flex-row mt-4 md:mt-8 mx-auto gap-4">
         <div className="mx-auto md:min-w-48 md:w-[30%] md:mt-2">
           <StickyBox className="z-10 max-md:!block">
-            <SimpleHeader className="p-3" text={t('common:legal_text')} />
+            <SimpleHeader className="p-3" text={t('common:legal_text', { appName: config.name })} />
             <AsideNav tabs={tabs} className="py-2" />
           </StickyBox>
         </div>

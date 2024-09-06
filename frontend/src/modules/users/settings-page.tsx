@@ -106,7 +106,7 @@ const UserSettingsPage = () => {
       <DeleteSelf
         dialog
         callback={() => {
-          toast.success(t('common:success.delete_account'));
+          toast.success(t('common:success.delete_resource', { resource: t('common:account') }));
         }}
       />,
       {

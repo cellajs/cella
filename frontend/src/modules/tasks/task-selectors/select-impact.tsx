@@ -52,7 +52,7 @@ export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }:
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
   };
 
@@ -74,12 +74,12 @@ export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }:
         }}
         wrapClassName="max-sm:hidden"
         className="leading-normal"
-        placeholder={t('common:placeholder.impact')}
+        placeholder={t('app:placeholder.impact')}
       />
       {!isSearching && <Kbd value="I" className="max-sm:hidden absolute top-3 right-2.5" />}
       {isSearching && (
         <CommandEmpty className="flex justify-center items-center p-2 text-sm">
-          {t('common:no_resource_found', { resource: t('common:impact').toLowerCase() })}
+          {t('common:no_resource_found', { resource: t('app:impact').toLowerCase() })}
         </CommandEmpty>
       )}
       <CommandList>

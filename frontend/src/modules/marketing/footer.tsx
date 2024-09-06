@@ -100,7 +100,7 @@ export function MarketingFooter() {
             <FooterLinks />
             <div className="">
               <div className="font-display text-sm font-semibold tracking-wider text-white/50">{t('common:request_info')}</div>
-              <div className="mt-4 text-sm text-white/90">{t('common:request_info.text')}</div>
+              <div className="mt-4 text-sm text-white/90">{t('common:request_info.text', { appName: config.name })}</div>
               <NewsletterForm />
             </div>
           </div>

@@ -151,9 +151,9 @@ export const SheetMenu = memo(() => {
               </label>
             </div>
             <div className="max-sm:hidden flex items-center gap-4 ml-1">
-              <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:hide_projects')} />
+              <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('app:hide_projects')} />
               <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
-                {t('common:hide_projects')}
+                {t('app:hide_projects')}
               </label>
             </div>
           </div>

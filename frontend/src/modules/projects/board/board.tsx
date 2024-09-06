@@ -269,7 +269,7 @@ export default function Board() {
       <TaskCard mode={mode} task={currentTask} tasks={tasks} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />,
       {
         className: 'max-w-full lg:max-w-4xl',
-        title: <span className="pl-4">{t('common:task')}</span>,
+        title: <span className="pl-4">{t('app:task')}</span>,
         id: `task-preview-${taskId}`,
       },
     );
@@ -335,7 +335,7 @@ export default function Board() {
                 mainCallback([updatedTask], 'update');
               }
             } catch (err) {
-              toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
+              toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));
             }
           }
 
@@ -345,7 +345,7 @@ export default function Board() {
               const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
               mainCallback([updatedTask], 'updateSubTask');
             } catch (err) {
-              toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
+              toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));
             }
           }
         },
@@ -360,7 +360,7 @@ export default function Board() {
         <ContentPlaceholder
           className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"
           Icon={Bird}
-          title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })}
+          title={t('common:no_resource_yet', { resource: t('app:projects').toLowerCase() })}
           text={
             <>
               <Redo
@@ -371,7 +371,7 @@ export default function Board() {
               <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/workspace:opacity-100">
                 <span>{t('common:click')}</span>
                 <span className="text-primary">{`+ ${t('common:add')}`}</span>
-                <span>{t('common:no_projects.text')}</span>
+                <span>{t('app:no_projects.text')}</span>
               </p>
             </>
           }

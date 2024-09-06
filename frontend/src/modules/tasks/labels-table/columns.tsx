@@ -33,7 +33,7 @@ export const useColumns = () => {
     },
     {
       key: 'useCount',
-      name: t('common:use_count'),
+      name: t('app:use_count'),
       visible: true,
       width: 100,
       sortable: true,
@@ -47,7 +47,7 @@ export const useColumns = () => {
     },
     {
       key: 'lastUsed',
-      name: t('common:last_used'),
+      name: t('app:last_used'),
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,

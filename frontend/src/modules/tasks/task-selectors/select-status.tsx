@@ -128,7 +128,7 @@ const SelectStatus = ({
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
   };
 
@@ -153,7 +153,7 @@ const SelectStatus = ({
     <Command className="relative rounded-lg w-60">
       <Input
         className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden"
-        placeholder={t('common:placeholder.set_status')}
+        placeholder={t('app:placeholder.set_status')}
         value={searchValue}
         autoFocus={true}
         onChange={(e) => {
@@ -179,7 +179,7 @@ const SelectStatus = ({
       <CommandList>
         {!!searchValue.length && (
           <CommandEmpty className="flex justify-center items-center p-2 text-sm">
-            {t('common:no_resource_found', { resource: t('common:status').toLowerCase() })}
+            {t('common:no_resource_found', { resource: t('app:status').toLowerCase() })}
           </CommandEmpty>
         )}
         <CommandGroup>

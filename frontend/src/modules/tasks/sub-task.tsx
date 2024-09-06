@@ -42,8 +42,8 @@ const SubTask = ({
     deleteTasks([subTaskId]).then((resp) => {
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [{ id: subTaskId }], action: 'deleteSubTask', projectId: task.projectId });
-      if (resp) toast.success(t('common:success.delete_resources', { resources: t('common:todos') }));
-      else toast.error(t('common:error.delete_resources', { resources: t('common:todos') }));
+      if (resp) toast.success(t('common:success.delete_resources', { resources: t('app:todos') }));
+      else toast.error(t('common:error.delete_resources', { resources: t('app:todos') }));
     });
   };
 
@@ -58,7 +58,7 @@ const SubTask = ({
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask', projectId: task.projectId });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:todo') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
     }
   };
 
@@ -182,7 +182,7 @@ const SubTask = ({
           size="xs"
           className={`text-secondary-foreground cursor-pointer opacity-30 ${isExpanded && 'pt-2'}`}
         >
-          <span className="sr-only">{t('common:move_task')}</span>
+          <span className="sr-only">{t('app:move_task')}</span>
           <Trash size={16} />
         </Button>
         {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}

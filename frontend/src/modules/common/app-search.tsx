@@ -27,8 +27,8 @@ interface SuggestionSection {
 const suggestionSections: SuggestionSection[] = [
   { id: 'users', label: 'common:users', type: 'user' },
   { id: 'organizations', label: 'common:organizations', type: 'organization' },
-  { id: 'workspaces', label: 'common:workspaces', type: 'workspace' },
-  { id: 'projects', label: 'common:projects', type: 'project' },
+  { id: 'workspaces', label: 'app:workspaces', type: 'workspace' },
+  { id: 'projects', label: 'app:projects', type: 'project' },
 ];
 
 export const AppSearch = () => {

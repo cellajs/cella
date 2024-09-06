@@ -79,7 +79,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
         if (isDialog) dialog.remove();
         if (isSheet) sheet.remove();
         form.reset(updatedProject);
-        toast.success(t('common:success.update_resource', { resource: t('common:project') }));
+        toast.success(t('common:success.update_resource', { resource: t('app:project') }));
       },
     });
   };
@@ -103,7 +103,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AvatarFormField
           control={form.control}
-          label={t('common:project_logo')}
+          label={t('common:resource_logo', { resource: t('app:project') })}
           type="project"
           name="thumbnailUrl"
           entity={project}
@@ -114,15 +114,15 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
         <SlugFormField
           control={form.control}
           type="project"
-          label={t('common:project_handle')}
-          description={t('common:project_handle.text')}
+          label={t('common:resource_handle', { resource: t('app:project') })}
+          description={t('common:resource_handle.text', { resource: t('app:project').toLowerCase() })}
           previousSlug={project.slug}
         />
         <SelectParentFormField
           collection="workspaces"
           type="workspace"
           control={form.control}
-          label={t('common:workspace')}
+          label={t('app:workspace')}
           name="workspaceId"
           disabled
         />

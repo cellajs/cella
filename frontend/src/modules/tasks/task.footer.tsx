@@ -43,7 +43,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: task.projectId });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
   };
   return (

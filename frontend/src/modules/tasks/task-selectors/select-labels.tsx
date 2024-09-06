@@ -70,7 +70,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
       return;
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
   };
 
@@ -136,7 +136,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
         }}
         clearValue={setSearchValue}
         className="leading-normal min-h-10"
-        placeholder={showedLabels.length ? t('common:placeholder.search_labels') : t('common:create_label.text')}
+        placeholder={showedLabels.length ? t('app:placeholder.search_labels') : t('app:create_label.text')}
       />
       {!isSearching && <Kbd value="L" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
@@ -148,7 +148,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
           )}
           {labels.length === 0 && (
             <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
-              {t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })}
+              {t('common:no_resource_yet', { resource: t('app:labels').toLowerCase() })}
             </CommandEmpty>
           )}
           {showedLabels.map((label, index) => (
@@ -211,7 +211,7 @@ const CommandItemCreate = ({ searchValue, labels, onSelect }: CommandItemCreateP
   // BUG: whenever a space is appended, the Create-Button will not be shown.
   return (
     <CommandItem className="text-sm m-1 flex justify-center items-center" onSelect={onSelect}>
-      {t('common:create_resource', { resource: t('common:label').toLowerCase() })}
+      {t('common:create_resource', { resource: t('app:label').toLowerCase() })}
       <Badge className="ml-2 px-2 py-0 font-light flex" variant="plain">
         {searchValue}
       </Badge>

@@ -22,7 +22,7 @@ const TaskSelectedTableButtons = () => {
     deleteTasks(selectedTasks)
       .then((resp) => {
         if (resp) {
-          toast.success(t('common:success.delete_resources', { resources: t('common:tasks') }));
+          toast.success(t('common:success.delete_resources', { resources: t('app:tasks') }));
           const tasks = queries.flatMap((el) => {
             const [, data] = el as [string[], undefined | { items: Task[] }];
             return data?.items ?? [];
@@ -38,14 +38,14 @@ const TaskSelectedTableButtons = () => {
           }
           setSelectedTasks([]);
         }
-        if (!resp) toast.error(t('common:error.delete_resources', { resources: t('common:tasks') }));
+        if (!resp) toast.error(t('common:error.delete_resources', { resources: t('app:tasks') }));
       })
-      .catch(() => toast.error(t('common:error.delete_resources', { resources: t('common:tasks') })));
+      .catch(() => toast.error(t('common:error.delete_resources', { resources: t('app:tasks') })));
   };
 
   return (
     <div className="inline-flex align-center items-center gap-2">
-      <TooltipButton toolTipContent={t('common:remove_task')}>
+      <TooltipButton toolTipContent={t('app:remove_task')}>
         <Button variant="destructive" className="relative" onClick={onRemove}>
           <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 shadow-sm">{selectedTasks.length}</Badge>
           <Trash size={16} />
