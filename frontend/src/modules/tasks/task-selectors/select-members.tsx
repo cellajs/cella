@@ -1,10 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
 import { useLocation } from '@tanstack/react-router';
 import { Check, XCircle } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { getProjectMembers } from '~/api/projects';
 import { updateTask } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -29,21 +27,16 @@ interface AssignMembersProps {
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { focusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId, members } = useWorkspaceStore();
   const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
   const isMobile = useBreakpoints('max', 'sm');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Get project members
-  const { data: members = [] } = useQuery({
-    queryKey: ['projects', projectId, 'members'],
-    queryFn: () => getProjectMembers(projectId),
-    staleTime: 1000 * 60 * 1, // 1 minute
-  });
+  const projectMembers = members.filter((m) => m.membership.projectId === projectId);
 
-  const sortedMembers = [...members].sort((a, b) => {
+  const sortedMembers = [...projectMembers].sort((a, b) => {
     const aSelected = selectedMembers.some((user) => user.id === a.id) ? 1 : 0;
     const bSelected = selectedMembers.some((user) => user.id === b.id) ? 1 : 0;
     return bSelected - aSelected;
@@ -81,7 +74,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
       if (creationValueChange) return creationValueChange(updatedList);
       return changeAssignedTo(updatedList);
     }
-    const newUser = members.find((m) => m.id === id);
+    const newUser = projectMembers.find((m: { id: string }) => m.id === id);
     if (newUser) {
       const updatedList = [...selectedMembers, newUser];
       setSelectedMembers(updatedList);
@@ -102,7 +95,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
         onChange={(e) => {
           const searchValue = e.target.value;
           // If the user types a number, select status like useHotkeys
-          if (!showAll && inNumbersArray(6, searchValue)) return handleSelectClick(members[Number.parseInt(searchValue) - 1]?.id);
+          if (!showAll && inNumbersArray(6, searchValue)) return handleSelectClick(projectMembers[Number.parseInt(searchValue) - 1]?.id);
           setSearchValue(searchValue);
         }}
       />

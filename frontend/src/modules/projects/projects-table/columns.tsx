@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import { Shield, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -63,32 +62,6 @@ export const useColumns = (sheet?: boolean) => {
           },
         ]
       : []),
-    {
-      key: 'memberCount',
-      name: t('common:members'),
-      sortable: false,
-      visible: !isMobile,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <>
-          <UserRound className="mr-2 opacity-50" size={16} />
-          {row.counts.memberships.members}
-        </>
-      ),
-    },
-    {
-      key: 'adminCount',
-      name: t('common:admins'),
-      sortable: false,
-      visible: !isMobile,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <>
-          <Shield className="mr-2 opacity-50" size={16} />
-          {row.counts.memberships.admins}
-        </>
-      ),
-    },
   ];
 
   return useState<ColumnOrColumnGroup<Project>[]>(columns);

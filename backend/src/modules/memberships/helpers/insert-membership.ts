@@ -63,5 +63,8 @@ export const insertMembership = async ({ user, role, entity, createdBy = user.id
     muted: results.muted,
     order: results.order,
     userId: results.userId,
+    organizationId: results.organizationId,
+    workspaceId: results.workspaceId,
+    projectId: results.projectId,
   };
 };

@@ -6,6 +6,7 @@ import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
 import type { Mode } from '~/store/theme';
+import { useWorkspaceStore } from '~/store/workspace';
 
 import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +34,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
 
   const { pathname } = useLocation();
+  const { members } = useWorkspaceStore();
 
   const handleUpdateHTML = useCallback(
     async (newContent: string, newSummary: string) => {
@@ -139,7 +141,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
         slashMenu={false}
         filePanel={false}
       >
-        <BlockNoteForTaskContent editor={editor} projectId={projectId} />
+        <BlockNoteForTaskContent editor={editor} members={members.filter((m) => m.membership.projectId === projectId)} />
         {/* Replaces default file panel with Uppy one. */}
         <FilePanelController filePanel={UppyFilePanel} />
       </BlockNoteView>

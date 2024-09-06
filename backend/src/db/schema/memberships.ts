@@ -60,6 +60,9 @@ export const membershipSelect = {
   muted: membershipsTable.muted,
   order: membershipsTable.order,
   userId: membershipsTable.userId,
+  projectId: membershipsTable.projectId,
+  workspaceId: membershipsTable.workspaceId,
+  organizationId: membershipsTable.organizationId,
 };
 
 export type MembershipModel = typeof membershipsTable.$inferSelect;

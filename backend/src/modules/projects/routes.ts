@@ -2,7 +2,6 @@ import { errorResponses, successWithDataSchema, successWithErrorsSchema, success
 import { entityParamSchema, idsQuerySchema } from '#/lib/common-schemas';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '#/middlewares/guard';
-import { membersSchema } from '../general/schema';
 import checkUserPermissions from './middlewares/userPermissionsCheck';
 
 import { createProjectBodySchema, createProjectQuerySchema, getProjectsQuerySchema, projectSchema, updateProjectBodySchema } from './schema';
@@ -56,29 +55,6 @@ class ProjectRoutesConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(projectSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getProjectMembers = createRouteConfig({
-    method: 'get',
-    path: '/{idOrSlug}/members',
-    guard: [isAuthenticated, isAllowedTo('read', 'project')],
-    tags: ['projects'],
-    summary: 'Get project members',
-    description: 'Get project members by id or slug.',
-    request: {
-      params: entityParamSchema,
-    },
-    responses: {
-      200: {
-        description: 'Project members',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(membersSchema.array()),
           },
         },
       },

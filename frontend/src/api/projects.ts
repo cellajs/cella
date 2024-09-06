@@ -31,16 +31,6 @@ export const getProject = async (idOrSlug: string) => {
   return json.data;
 };
 
-// Get a list of members of a project
-export const getProjectMembers = async (idOrSlug: string) => {
-  const response = await client[':idOrSlug'].members.$get({
-    param: { idOrSlug },
-  });
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
 export type GetProjectsParams = Partial<
   Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit?: number;

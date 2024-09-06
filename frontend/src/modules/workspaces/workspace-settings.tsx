@@ -51,7 +51,7 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
             workspace={workspace}
             callback={(updatedWorkspace) => {
               callback([updatedWorkspace], 'updateWorkspace');
-              setWorkspace(updatedWorkspace, undefined, undefined);
+              setWorkspace(updatedWorkspace, undefined, undefined, undefined);
 
               if (idOrSlug !== updatedWorkspace.slug) {
                 navigate({

@@ -1,11 +1,9 @@
-import { type SQL, and, count, eq, getTableColumns, ilike, inArray } from 'drizzle-orm';
+import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { projectsTable } from '#/db/schema/projects';
 import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 
-import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { counts } from '#/lib/counts';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -63,9 +61,6 @@ const projectsRoutes = app
     const createdProject = {
       ...project,
       workspaceId,
-      counts: {
-        memberships: { admins: 1, members: 1, total: 1 },
-      },
       membership: createdMembership,
     };
 
@@ -86,43 +81,7 @@ const projectsRoutes = app
           ...project,
           workspaceId: projectToWorkspace.workspaceId,
           membership,
-          counts: await counts('project', project.id),
         },
-      },
-      200,
-    );
-  })
-  /*
-   * Get project members
-   */
-  .openapi(projectRoutesConfig.getProjectMembers, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('param');
-    const membershipCount = db
-      .select({
-        userId: membershipsTable.userId,
-        memberships: count().as('memberships'),
-      })
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.projectId, idOrSlug), eq(membershipsTable.type, 'project')))
-      .groupBy(membershipsTable.userId)
-      .as('membership_count');
-    const members = await db
-      .select({
-        ...getTableColumns(safeUserSelect),
-        membership: membershipSelect,
-        counts: {
-          memberships: membershipCount.memberships,
-        },
-      })
-      .from(usersTable)
-      .innerJoin(
-        membershipsTable,
-        and(eq(membershipsTable.projectId, idOrSlug), eq(usersTable.id, membershipsTable.userId), eq(membershipsTable.type, 'project')),
-      );
-    return ctx.json(
-      {
-        success: true,
-        data: members,
       },
       200,
     );
@@ -143,8 +102,6 @@ const projectsRoutes = app
       .from(projectsTable)
       .where(and(...projectsFilters));
 
-    const countsQuery = await counts('project');
-
     const memberships = db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)).as('memberships');
 
     const orderColumn = getOrderColumn(
@@ -159,7 +116,6 @@ const projectsRoutes = app
       order,
     );
 
-    // TODO: Remove any
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     let projects: Array<any>;
 
@@ -169,13 +125,10 @@ const projectsRoutes = app
           project: projectsTable,
           membership: membershipsTable,
           workspaceId: projectsToWorkspacesTable.workspaceId,
-          admins: countsQuery.admins,
-          members: countsQuery.members,
         })
         .from(projectsQuery.as('projects'))
         .innerJoin(memberships, eq(memberships.projectId, projectsTable.id))
         .leftJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id))
-        .leftJoin(countsQuery, eq(projectsTable.id, countsQuery.id))
         .orderBy(orderColumn)
         .limit(Number(limit))
         .offset(Number(offset));
@@ -185,15 +138,12 @@ const projectsRoutes = app
           project: projectsTable,
           membership: membershipSelect,
           workspaceId: projectsToWorkspacesTable.workspaceId,
-          admins: countsQuery.admins,
-          members: countsQuery.members,
         })
         .from(projectsToWorkspacesTable)
         .leftJoin(
           projectsTable,
           and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), eq(projectsToWorkspacesTable.workspaceId, workspaceId), ...projectsFilters),
         )
-        .leftJoin(countsQuery, eq(projectsTable.id, countsQuery.id))
         .leftJoin(memberships, and(eq(memberships.projectId, projectsTable.id)))
         .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId))
         .orderBy(orderColumn)
@@ -205,13 +155,10 @@ const projectsRoutes = app
       {
         success: true,
         data: {
-          items: projects.map(({ project, membership, workspaceId, admins, members }) => ({
+          items: projects.map(({ project, membership, workspaceId }) => ({
             ...project,
             membership,
             workspaceId,
-            counts: {
-              memberships: { admins, members, total: admins + members },
-            },
           })),
           total: projects.length,
         },
@@ -276,7 +223,6 @@ const projectsRoutes = app
           ...updatedProject,
           parentId: workspaceId,
           membership: memberships.find((m) => m.id === user.id) ?? null,
-          counts: await counts('project', project.id),
         },
       },
       200,
