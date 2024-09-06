@@ -1,4 +1,4 @@
-import { CircleUserRound, Link, Pencil, Pickaxe, X } from 'lucide-react';
+import { Link, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dateTwitterFormat } from '~/lib/utils';
@@ -19,39 +19,36 @@ export const TaskHeader = ({
   const { user } = useUserStore();
   const isSubTask = task.parentId !== null;
   return (
-    <StickyBox className="flex flex-row z-100 px-2 py-1 w-full justify-between border-b">
-      <div className="flex flex-row sm: gap-1 items-center">
-        {!isSubTask && task.createdBy ? (
-          <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
-        ) : (
-          <CircleUserRound size={16} />
+    <StickyBox enabled={false} className="flex flex-row z-100 w-full justify-between">
+      <div className="flex flex-row gap-2 w-full items-center px-1 py-1">
+        {!isSubTask && task.createdBy && (
+          <>
+            <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
+            <span className="text-sm text-center font-light">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
+          </>
         )}
-        <span className="text-sm text-center">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
-      </div>
-      <div className="flex flex-row sm: gap-1">
-        <TooltipButton toolTipContent={t('common:edit')} side="bottom" sideOffset={5} hideWhenDetached>
+        <div className="grow" />
+
+        <TooltipButton
+          disabled={isEditing}
+          toolTipContent={t('common:edit_resource', { resource: t('app:task').toLowerCase() })}
+          side="bottom"
+          sideOffset={5}
+          hideWhenDetached
+        >
           <Button
             onClick={() => changeEditingState(!isEditing)}
             aria-label="Edit"
             variant="ghost"
-            className="flex flex-row items-center gap-1"
+            className="flex flex-row items-center gap-1 font-light"
             size="xs"
           >
-            {isEditing ? (
-              <>
-                {t('app:editing')}
-                <Pickaxe size={14} className="animate-bounce" />
-              </>
-            ) : (
-              <>
-                {t('common:edit')}
-                <Pencil size={12} />
-              </>
-            )}
+            {isEditing ? <span className="italic">{t('app:editing')}</span> : t('common:edit')}
           </Button>
         </TooltipButton>
+
         {!task.parentId && (
-          <TooltipButton toolTipContent={t('app:open_task_sheet')} side="bottom" sideOffset={5} hideWhenDetached>
+          <TooltipButton toolTipContent={t('common:expand')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {
                 if (isEditing) changeEditingState(false);
@@ -60,7 +57,7 @@ export const TaskHeader = ({
               aria-label="OpenTaskSheet"
               variant="ghost"
               size="xs"
-              className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+              className="w-8 h-8"
             >
               <Link size={12} />
             </Button>
@@ -75,7 +72,7 @@ export const TaskHeader = ({
             aria-label="Collapse"
             variant="ghost"
             size="xs"
-            className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+            className="w-8 h-8"
           >
             <X size={14} />
           </Button>

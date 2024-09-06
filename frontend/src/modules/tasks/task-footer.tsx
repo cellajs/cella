@@ -157,7 +157,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
             statusVariants({ status: task.status as TaskStatus }),
           )}
         >
-          {t(taskStatuses[task.status as TaskStatus].action)}
+          {t(`app:${taskStatuses[task.status as TaskStatus].action}`)}
         </Button>
         <Button
           onClick={(event) => handleTaskDropDownClick(task, `status-${task.id}`, event.currentTarget)}

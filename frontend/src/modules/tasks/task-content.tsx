@@ -66,7 +66,7 @@ const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
             </div>
           )}
 
-          <div className="-mr-1">
+          <div className="-mx-1">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (
                 <SubTask mode={mode} key={task.id} task={task} />

@@ -119,7 +119,7 @@ export const useColumns = () => {
         return (
           <>
             <status.icon className={`size-4 mr-2 fill-current ${statusFillColors[row.status as TaskStatus]}`} aria-hidden="true" />
-            <span className={statusTextColors[row.status as TaskStatus]}>{t(status.status)}</span>
+            <span className={statusTextColors[row.status as TaskStatus]}>{t(`app:${status.status}`)}</span>
           </>
         );
       },
