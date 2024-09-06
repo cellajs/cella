@@ -484,5 +484,6 @@
   "use_count": "Tasks",
   "last_used": "Last used",
   "project_members": "Project members",
-  "open_task_sheet": "Open as sheet"
+  "open_task_sheet": "Open as sheet",
+  "editing": "Editing"
 }

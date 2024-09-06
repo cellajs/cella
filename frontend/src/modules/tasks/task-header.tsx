@@ -1,11 +1,12 @@
 import { CircleUserRound, Link, Pencil, Pickaxe, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { dateVeryShort } from '~/lib/utils';
+import { dateTwitterFormat } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
+import { useUserStore } from '~/store/user';
 import type { Task } from '~/types';
 
 export const TaskHeader = ({
@@ -15,6 +16,7 @@ export const TaskHeader = ({
   closeExpand,
 }: { task: Task; isEditing: boolean; changeEditingState: (state: boolean) => void; closeExpand: () => void }) => {
   const { t } = useTranslation();
+  const { user } = useUserStore();
   const isSubTask = task.parentId !== null;
   return (
     <StickyBox className="flex flex-row z-100 px-2 py-1 w-full justify-between border-b">
@@ -24,7 +26,7 @@ export const TaskHeader = ({
         ) : (
           <CircleUserRound size={16} />
         )}
-        <span className="text-sm text-center">{dateVeryShort(task.createdAt, 'ago')}</span>
+        <span className="text-sm text-center">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
       </div>
       <div className="flex flex-row sm: gap-1 gap-2">
         <TooltipButton toolTipContent={t('common:edit')} side="bottom" sideOffset={5} hideWhenDetached>

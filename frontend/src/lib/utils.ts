@@ -10,6 +10,7 @@ import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
+import locale from '~/../../locales';
 import { useNavigationStore } from '~/store/navigation';
 import type { UserMenuItem } from '~/types';
 
@@ -18,27 +19,44 @@ dayjs.extend(calendar);
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
-export const dateVeryShort = (startDate: string, addStr?: string) => {
+const second = 1e3;
+const minute = 6e4;
+const hour = 36e5;
+const day = 864e5;
+// const week = 6048e5;
+// const month = 2592e6;
+const year = 31536e6;
+
+export const dateTwitterFormat = (startDate: string, passedLoc: string, addStr?: string) => {
   const start = dayjs(startDate);
   const end = dayjs();
+  const diff = Math.abs(end.diff(start));
 
-  // Calculate years and months manually
-  const years = end.diff(start, 'year');
-  const startWithYears = start.add(years, 'year');
+  const loc = locale[passedLoc as keyof typeof locale] || locale.en;
+  let unit: keyof typeof loc;
+  let num: number | string;
 
-  const months = end.diff(startWithYears, 'month');
-  const startWithMonths = startWithYears.add(months, 'month');
+  if (diff <= second) {
+    unit = 'now';
+    num = ''; // No number needed for "now"
+  } else if (diff < minute) {
+    unit = 'seconds';
+    num = Math.floor(diff / second);
+  } else if (diff < hour) {
+    unit = 'minutes';
+    num = Math.floor(diff / minute);
+  } else if (diff < day) {
+    unit = 'hours';
+    num = Math.floor(diff / hour);
+  } else if (diff < year) {
+    return start.format('MMM D');
+  } else {
+    return start.format('MMM D, YYYY');
+  }
 
-  const days = end.diff(startWithMonths, 'day');
-  const hours = end.diff(startWithMonths, 'hour') % 24;
-  const minutes = end.diff(startWithMonths, 'minute') % 60;
-
-  // Format based on the duration
-  if (years >= 1) return `${years}y ${addStr ? addStr : ''}`;
-  if (months >= 1) return `${months}m ${addStr ? addStr : ''}`;
-  if (days >= 1) return `${days}d ${addStr ? addStr : ''}`;
-  if (hours >= 1) return `${hours}h ${addStr ? addStr : ''}`;
-  return minutes === 0 ? 'Just now' : `${minutes}min ${addStr ? addStr : ''}`;
+  if (unit === 'now') return loc[unit];
+  const result = loc[unit].replace('%d', num.toString());
+  return addStr ? `${result} ${addStr}` : result;
 };
 
 // Format a date to a relative time
