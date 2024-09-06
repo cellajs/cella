@@ -204,14 +204,12 @@ export default function TasksTable() {
   }, [rows, focusedTaskId]);
 
   useEffect(() => {
-    if (!rows.length || !search.taskIdPreview) return;
-    handleOpenPreview(search.taskIdPreview);
-  }, [rows]);
-
-  useEffect(() => {
-    if (!rows.length || !search.userIdPreview) return;
-    const task = rows.find((t) => t.createdBy?.id === search.userIdPreview);
-    if (task?.createdBy) openUserPreviewSheet(task.createdBy);
+    if (!rows.length) return;
+    if (search.taskIdPreview) return handleOpenPreview(search.taskIdPreview);
+    if (search.userIdPreview) {
+      const [{ createdBy }] = rows.filter((t) => t.createdBy?.id === search.userIdPreview);
+      if (createdBy) openUserPreviewSheet(createdBy);
+    }
   }, [rows]);
 
   useEffect(() => {

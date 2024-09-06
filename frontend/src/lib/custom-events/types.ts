@@ -20,6 +20,7 @@ export interface CustomEventMap {
   taskCRUD: CustomEvent<{
     array: Task[] | { id: string }[];
     action: TaskQueryActions;
+    projectId: string;
   }>;
 }
 
@@ -44,6 +45,7 @@ export interface TaskCRUDEvent extends Event {
   detail: {
     array: Task[] | SubTask[] | { id: string }[];
     action: TaskQueryActions;
+    projectId: string;
   };
 }
 

@@ -22,7 +22,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
-import type { TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
+import type { TaskCRUDEvent, TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
 import { isSubTaskData, isTaskData } from '~/lib/drag-and-drop';
 import { queryClient } from '~/lib/router';
 import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
@@ -104,7 +104,7 @@ export default function Board() {
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
   const [editingTasks, setEditingTasks] = useState<Record<string, boolean>>({});
-  const { project, q } = useSearch({
+  const { project, q, taskIdPreview } = useSearch({
     from: WorkspaceBoardRoute.id,
   });
 
@@ -122,8 +122,9 @@ export default function Board() {
     });
   }, [queries]);
   const [currentTask] = useMemo(() => {
-    return tasks.filter((t) => t.id === focusedTaskId);
-  }, [tasks, focusedTaskId]);
+    const taskId = taskIdPreview ? taskIdPreview : focusedTaskId;
+    return tasks.filter((t) => t.id === taskId);
+  }, [tasks, focusedTaskId, taskIdPreview]);
 
   const toggleCreateTaskForm = (itemId: string) => {
     setColumnTaskCreate((prevState) => ({
@@ -256,7 +257,6 @@ export default function Board() {
   };
 
   const handleOpenTaskSheet = (taskId: string) => {
-    console.log('🚀 ~ handleOpenTaskSheet ~ taskId:', taskId);
     navigate({
       replace: true,
       resetScroll: false,
@@ -275,23 +275,28 @@ export default function Board() {
     );
   };
 
+  const handleCRUD = (event: TaskCRUDEvent) => {
+    const { array, action, projectId } = event.detail;
+    const callback = useMutateTasksQueryData(['boardTasks', projectId]);
+    callback(array, action);
+    const { items: tasks } = queryClient.getQueryData(['boardTasks', projectId]) as { items: Task[] };
+    if (!tasks.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
+    const [sheetTask] = tasks.filter((t) => t.id === focusedTaskId);
+    sheet.update(`task-preview-${sheetTask.id}`, {
+      content: <TaskCard mode={mode} task={sheetTask} tasks={tasks} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />,
+    });
+  };
+
+  useEventListener('taskCRUD', handleCRUD);
   useEventListener('taskCardClick', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('toggleCard', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
   useEventListener('openTaskCardPreview', (event) => handleOpenTaskSheet(event.detail));
   useEventListener('toggleTaskEditing', (e) => setTaskEditing(e.detail.id, e.detail.state));
 
-  // useEffect(() => {
-  //   if (!tasks.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
-  //   sheet.update(`task-preview-${currentTask.id}`, {
-  //     content: (
-  //       <TaskCard mode={mode} task={currentTask} tasks={tasks} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />
-  //     ),
-  //   });
-  // }, [tasks, currentTask]);
-
   useEffect(() => {
     if (q?.length) setSearchQuery(q);
+    if (taskIdPreview) handleOpenTaskSheet(taskIdPreview);
   }, []);
 
   useEffect(() => {

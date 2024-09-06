@@ -126,7 +126,7 @@ const SelectStatus = ({
       const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
       const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('common:task') }));
     }

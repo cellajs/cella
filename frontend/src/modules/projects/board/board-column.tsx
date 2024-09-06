@@ -5,8 +5,7 @@ import { lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
-import type { CustomEventEventById, TaskCRUDEvent, TaskChangeEvent } from '~/lib/custom-events/types';
+import type { CustomEventEventById, TaskChangeEvent } from '~/lib/custom-events/types';
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import FocusTrap from '~/modules/common/focus-trap';
@@ -61,8 +60,6 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
 
   // Query tasks
   const tasksQuery = useSuspenseQuery(tasksQueryOptions({ projectId: project.id }));
-
-  const callback = useMutateTasksQueryData(['boardTasks', project.id]);
 
   const tasks = useMemo(() => {
     const respTasks = tasksQuery.data?.items || [];
@@ -140,12 +137,6 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
     setFocusedTaskId(id);
   };
 
-  const handleCRUD = (event: TaskCRUDEvent) => {
-    const { array, action } = event.detail;
-    callback(array, action);
-  };
-
-  useEventListener('taskCRUD', handleCRUD);
   useEventListener('taskChange', handleTaskChangeEventListener);
   useEventListener('projectChange', handleProjectChangeEventListener);
 
