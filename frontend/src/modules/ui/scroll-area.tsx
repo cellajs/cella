@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import { cn } from '~/lib/utils';
 
-const scrollbarVariants = cva('flex touch-none transition-colors', {
+const scrollbarVariants = cva('flex touch-none transition-colors z-20', {
   variants: {
     orientation: {
       vertical: 'vertical',

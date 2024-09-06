@@ -141,7 +141,7 @@
   "error.slug_exists": "Slug already exists",
   "error.token_invalid_request_new": "Token is invalid or expired. Please request a new one.",
   "error.too_many_requests": "Too many requests",
-  "error.try_again_later": "Error has been reported. Please try again later or please contact support.",
+  "error.try_again_later": "Error has been reported. Please try again later or contact support.",
   "error.unable_to_verify": "Unable to verify",
   "error.unauthorized": "Unauthorized",
   "error.unauthorized.text": "You could not be authenticated by {{appName}}.",

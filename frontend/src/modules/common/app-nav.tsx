@@ -68,7 +68,7 @@ const AppNav = () => {
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
       return dialog(<AppSearch />, {
-        className: 'sm:max-w-2xl p-0 border-0',
+        className: 'sm:max-w-2xl p-0 border-0 mb-4',
         drawerOnMobile: false,
         refocus: false,
         hideClose: true,

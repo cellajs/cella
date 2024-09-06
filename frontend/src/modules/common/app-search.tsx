@@ -126,7 +126,7 @@ export const AppSearch = () => {
           </CommandLoading>
         )}
         {
-          <CommandList className="px-1 h-full">
+          <CommandList className="h-full">
             {suggestions.total === 0 && (
               <>
                 {!!searchValue.length && (
@@ -153,7 +153,7 @@ export const AppSearch = () => {
                           <span className="underline-offset-4 truncate font-medium">{search}</span>
                         </div>
                         <div className="flex items-center">
-                          <span className="max-xs:hidden text-xs opacity-50 ml-3 mr-1">{index}</span>
+                          <span className="max-sm:hidden text-xs opacity-50 mx-3">{index}</span>
                           <button
                             type="button"
                             onClick={(event) => {
