@@ -262,7 +262,7 @@ const organizationsRoutes = app
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');
 
-    // Map errors of workspaces user is not allowed to delete
+    // Map errors of organizations user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
 
     // Get members
