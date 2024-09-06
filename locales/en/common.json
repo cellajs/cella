@@ -1,6 +1,6 @@
 {
   "about": "About",
-  "add_resource": "Add {{recourse}}",
+  "add_resource": "Add {{resource}}",
   "accept": "Accept",
   "accept_invitation": "Accept invitation",
   "accept_invite": "Accept invitation",

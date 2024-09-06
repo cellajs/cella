@@ -31,10 +31,10 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
         <div className="flex items-center gap-2">
           {mode[0] ? (
             <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
-              {t('common:add_resource', t('app:projects').toLowerCase())}
+              {t('common:add_resource', { resource: t('app:projects').toLowerCase() })}
             </button>
           ) : (
-            t('common:add_resource', t('app:projects').toLowerCase())
+            t('common:add_resource', { resource: t('app:projects').toLowerCase() })
           )}
           <AnimatePresence>
             {mode[0] && (

@@ -33,7 +33,7 @@ export const useColumns = () => {
     },
     {
       key: 'useCount',
-      name: t('app:use_count'),
+      name: t('app:tasks'),
       visible: true,
       width: 100,
       sortable: true,

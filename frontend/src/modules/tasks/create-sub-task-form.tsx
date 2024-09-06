@@ -133,7 +133,7 @@ export const CreateSubTaskForm = ({
     return (
       <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none bg-secondary/50" onClick={() => setFormState(true)}>
         <Plus size={16} />
-        <span className="ml-1 font-normal">{t('common:add_resource', t('app:todo').toLowerCase())}</span>
+        <span className="ml-1 font-normal">{t('common:add_resource', { resource: t('app:todo').toLowerCase() })}</span>
       </Button>
     );
   return (

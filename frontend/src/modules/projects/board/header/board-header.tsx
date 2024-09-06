@@ -44,7 +44,7 @@ const BoardHeader = () => {
     dialog(<AddProjects dialog workspace={workspace} />, {
       className: 'md:max-w-4xl',
       id: 'add-projects',
-      title: t('common:add_resource', t('app:projects').toLowerCase()),
+      title: t('common:add_resource', { resource: t('app:projects').toLowerCase() }),
     });
   };
 
@@ -71,7 +71,7 @@ const BoardHeader = () => {
       {!!selectedTasks.length && <TaskSelectedTableButtons />}
       <BoardSearch />
       {!searchQuery.length && (
-        <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_resource', t('app:project').toLowerCase())}>
+        <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_resource', { resource: t('app:project').toLowerCase() })}>
           <Button variant="plain" onClick={handleAddProjects}>
             <Plus size={16} />
             <span className="max-lg:hidden ml-1">{t('common:add')}</span>

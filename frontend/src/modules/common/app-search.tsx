@@ -15,6 +15,7 @@ import StickyBox from '~/modules/common/sticky-box';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useNavigationStore } from '~/store/navigation';
+import { Button } from '../ui/button';
 
 type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
@@ -148,21 +149,23 @@ export const AppSearch = () => {
                     <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-popover">{t('common:history')}</div>
                     {recentSearches.map((search, index) => (
                       <CommandItem key={search} onSelect={() => setSearchValue(search)} className="justify-between">
-                        <div className="flex space-x-2 items-center outline-0 ring-0 group">
+                        <div className="flex gap-2 items-center outline-0 ring-0 group">
                           <History className="h-5 w-5" />
                           <span className="underline-offset-4 truncate font-medium">{search}</span>
                         </div>
                         <div className="flex items-center">
                           <span className="max-sm:hidden text-xs opacity-50 mx-3">{index}</span>
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="p-0 h-6 w-6"
                             onClick={(event) => {
                               event.stopPropagation();
                               deleteItemFromList(search);
                             }}
                           >
                             <X className="h-5 w-5 opacity-70 hover:opacity-100" />
-                          </button>
+                          </Button>
                         </div>
                       </CommandItem>
                     ))}

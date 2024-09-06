@@ -34,7 +34,7 @@ const WorkspaceActions = ({ createNewProject, openLabelsSheet, openSettingsSheet
         <DropdownMenuContent className="min-w-48" align="end">
           <DropdownMenuItem onClick={() => createNewProject()} className="flex items-center gap-2">
             <Plus size={14} />
-            <span>{t('common:add_resource', t('app:project').toLowerCase())}</span>
+            <span>{t('common:add_resource', { resource: t('app:project').toLowerCase() })}</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => openLabelsSheet()} className="flex items-center gap-2">
             <Tag size={14} />
