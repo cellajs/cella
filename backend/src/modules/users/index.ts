@@ -18,7 +18,6 @@ const app = new CustomHono();
 
 // User endpoints
 const usersRoutes = app
-  .basePath('/users')
   /*
    * Get list of users
    */

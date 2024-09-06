@@ -24,7 +24,6 @@ const app = new CustomHono();
 
 // Me (self) endpoints
 const meRoutes = app
-  .basePath('/me')
   /*
    * Get current user
    */

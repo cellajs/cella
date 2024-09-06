@@ -4,18 +4,18 @@ import { hc } from 'hono/client';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppLabelsType>(config.backendUrl, clientConfig).labels;
+export const client = hc<AppLabelsType>(`${config.backendUrl}/labels`, clientConfig);
 
-export type CreateLabelParams = Parameters<(typeof client)['$post']>['0']['json'];
+export type CreateLabelParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Create a new label
 export const createLabel = async (label: CreateLabelParams) => {
-  const response = await client.$post({ json: label });
+  const response = await client.index.$post({ json: label });
   const json = await handleResponse(response);
   return json.success;
 };
 
-export type GetLabelsParams = Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
+export type GetLabelsParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
   limit?: number;
   offset?: number;
   page?: number;
@@ -26,7 +26,7 @@ export const getLabels = async (
   { q, sort = 'name', order = 'asc', page = 0, limit = 20, offset, projectId }: GetLabelsParams,
   signal?: AbortSignal,
 ) => {
-  const response = await client.$get(
+  const response = await client.index.$get(
     {
       query: {
         q,
@@ -67,7 +67,7 @@ export const updateLabel = async (id: string, useCount: number) => {
 
 // Delete labels
 export const deleteLabels = async (ids: string[]) => {
-  const response = await client.$delete({
+  const response = await client.index.$delete({
     query: { ids },
   });
   const json = await handleResponse(response);

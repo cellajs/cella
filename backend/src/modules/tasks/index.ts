@@ -17,7 +17,6 @@ const app = new CustomHono();
 
 // Task endpoints
 const tasksRoutes = app
-  .basePath('/tasks')
   /*
    * Create task
    */

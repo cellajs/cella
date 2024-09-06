@@ -23,7 +23,6 @@ const app = new CustomHono();
 
 // Organization endpoints
 const organizationsRoutes = app
-  .basePath('/organizations')
   /*
    * Create organization
    */

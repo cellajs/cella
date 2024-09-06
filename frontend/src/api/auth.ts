@@ -4,7 +4,7 @@ import { hc } from 'hono/client';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppAuthType>(config.backendUrl, clientConfig).auth;
+export const client = hc<AppAuthType>(`${config.backendUrl}/auth`, clientConfig);
 
 // Oath endpoints
 export const githubSignInUrl = client.github.$url().href;

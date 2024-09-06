@@ -11,7 +11,6 @@ const app = new CustomHono();
 
 // Requests endpoints
 const requestsRoutes = app
-  .basePath('/requests')
   /*
    *  Create request
    */

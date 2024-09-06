@@ -2,7 +2,7 @@ import defaultHook from './lib/default-hook';
 import docs from './lib/docs';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
-import routes from './routes';
+import routes, { type Route } from './routes';
 
 import { CustomHono } from '#/types/common';
 
@@ -29,9 +29,8 @@ app.onError((err, ctx) => {
   return errorResponse(ctx, 500, 'server_error', 'error', undefined, {}, err);
 });
 
-// biome-ignore lint/suspicious/noExplicitAny: this is a generic function
-function addRoutes(app: CustomHono, routes: any[]) {
-  for (const route of routes) app.route('/', route);
+function addRoutes(app: CustomHono, routes: Route[]) {
+  for (const route of routes) app.route(route.path, route.routes);
 }
 
 // Add routes to the app

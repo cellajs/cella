@@ -9,7 +9,6 @@ const app = new CustomHono();
 
 // Attachment endpoints
 const attachmentsRoutes = app
-  .basePath('/attachments')
   /*
    * Create attachment
    */

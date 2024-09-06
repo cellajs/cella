@@ -11,21 +11,63 @@ import tasksRoutes from '#/modules/tasks';
 import usersRoutes from '#/modules/users';
 import workspacesRoutes from '#/modules/workspaces';
 
+export type Route = {
+  path: string;
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  routes: any;
+};
+
 // Combine all routes from each module. The core modules are on top, followed by app-specific modules.
-const routes = [
-  authRoutes,
-  meRoutes,
-  usersRoutes,
-  organizationsRoutes,
-  generalRoutes,
-  requestsRoutes,
-  membershipsRoutes,
-  attachmentsRoutes,
+const routes: Route[] = [
+  {
+    path: '/auth',
+    routes: authRoutes,
+  },
+  {
+    path: '/me',
+    routes: meRoutes,
+  },
+  {
+    path: '/users',
+    routes: usersRoutes,
+  },
+  {
+    path: '/organizations',
+    routes: organizationsRoutes,
+  },
+  {
+    path: '/',
+    routes: generalRoutes,
+  },
+  {
+    path: '/requests',
+    routes: requestsRoutes,
+  },
+  {
+    path: '/memberships',
+    routes: membershipsRoutes,
+  },
+  {
+    path: '/attachments',
+    routes: attachmentsRoutes,
+  },
   // App-specific modules
-  workspacesRoutes,
-  projectsRoutes,
-  tasksRoutes,
-  labelsRoutes,
+  {
+    path: '/workspaces',
+    routes: workspacesRoutes,
+  },
+  {
+    path: '/projects',
+    routes: projectsRoutes,
+  },
+  {
+    path: '/tasks',
+    routes: tasksRoutes,
+  },
+  {
+    path: '/labels',
+    routes: labelsRoutes,
+  },
 ];
 
 export default routes;

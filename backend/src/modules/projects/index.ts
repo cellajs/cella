@@ -19,7 +19,6 @@ const app = new CustomHono();
 
 // Project endpoints
 const projectsRoutes = app
-  .basePath('/projects')
   /*
    * Create project
    */

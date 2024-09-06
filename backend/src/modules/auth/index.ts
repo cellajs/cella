@@ -48,7 +48,6 @@ type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
 
 // Authentication endpoints
 const authRoutes = app
-  .basePath('/auth')
   /*
    * Check if email exists
    */

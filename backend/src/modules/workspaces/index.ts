@@ -20,7 +20,6 @@ const app = new CustomHono();
 
 // Workspace endpoints
 const workspacesRoutes = app
-  .basePath('/workspaces')
   /*
    * Create workspace
    */

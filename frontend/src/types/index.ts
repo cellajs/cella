@@ -19,7 +19,7 @@ export type ContextEntity = (typeof config.contextEntityTypes)[number];
 
 type UsersOauth = (typeof config.oauthProviderOptions)[number][];
 export type User = z.infer<typeof userSchema>;
-export type Session = Extract<InferResponseType<(typeof client)['$get']>, { data: unknown }>['data']['sessions'][number];
+export type Session = Extract<InferResponseType<(typeof client.index)['$get']>, { data: unknown }>['data']['sessions'][number];
 export type MeUser = User & { sessions: Session[]; passkey: boolean; oauth: UsersOauth };
 export type UserMenu = z.infer<typeof userMenuSchema>;
 export type UserMenuItem = z.infer<typeof menuItemsSchema>[number];

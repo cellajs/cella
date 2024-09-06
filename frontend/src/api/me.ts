@@ -5,11 +5,11 @@ import type { UpdateUserParams } from '~/api/users';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppMeType>(config.backendUrl, clientConfig).me;
+export const client = hc<AppMeType>(`${config.backendUrl}/me`, clientConfig);
 
 // Get current user
 export const getSelf = async () => {
-  const response = await client.$get();
+  const response = await client.index.$get();
 
   const json = await handleResponse(response);
   return json.data;
@@ -25,7 +25,7 @@ export const getUserMenu = async () => {
 
 // Update self
 export const updateSelf = async (params: Omit<UpdateUserParams, 'role'>) => {
-  const response = await client.$put({
+  const response = await client.index.$put({
     json: params,
   });
 
@@ -35,7 +35,7 @@ export const updateSelf = async (params: Omit<UpdateUserParams, 'role'>) => {
 
 // Delete self
 export const deleteSelf = async () => {
-  const response = await client.$delete();
+  const response = await client.index.$delete();
   await handleResponse(response);
 };
 
