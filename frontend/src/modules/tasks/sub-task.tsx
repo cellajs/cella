@@ -113,9 +113,9 @@ const SubTask = ({
         layout
         transition={{ duration: 0 }}
         ref={subTaskRef}
-        className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'} bg-secondary/50`}
+        className={`relative flex items-start gap-1 p-1 mb-0.5 hover:bg-secondary/40 opacity-${dragging ? '30' : '100'} bg-secondary/25`}
       >
-        <div className={`flex flex-col gap-1 ${isExpanded && 'pt-2'}`}>
+        <div className="flex flex-col gap-1">
           <Checkbox
             className={cn(
               'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
@@ -133,7 +133,7 @@ const SubTask = ({
           onKeyDown={() => {}}
           className="flex flex-col grow min-h-7 justify-center gap-2 mx-1"
         >
-          <div className={!isExpanded ? 'inline-flex items-center mt-1' : 'flex flex-col items-start mt-1'}>
+          <div className={!isExpanded ? 'inline-flex items-center mt-1' : 'flex flex-col items-start'}>
             {!isExpanded ? (
               // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
               <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />

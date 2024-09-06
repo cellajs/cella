@@ -13,7 +13,6 @@ import { getNewStatusTaskOrder } from '~/modules/tasks/helpers';
 import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact';
 import { type TaskStatus, statusVariants, taskStatuses } from '~/modules/tasks/task-selectors/select-status';
-import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -47,7 +46,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
     }
   };
   return (
-    <div className="flex flex-row items-center gap-1 pl-2 ">
+    <div className="flex flex-row items-center gap-1 pl-1">
       {!isSheet && (
         <Checkbox
           className="group-hover/task:opacity-100 border-foreground/40 data-[state=checked]:border-primary group-[.is-focused]/task:opacity-100 opacity-80"
@@ -55,16 +54,6 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
           onCheckedChange={(checked) => dispatchCustomEvent('toggleSelectTask', { selected: !!checked, taskId: task.id })}
         />
       )}
-      <Button
-        id="type"
-        onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
-        aria-label="Set type"
-        variant="ghost"
-        size="xs"
-        className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
-      >
-        {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
-      </Button>
       {task.type !== 'bug' && (
         <Button
           id="impact"
@@ -123,7 +112,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
           <Tag size={16} className="opacity-60" />
         )}
       </Button>
-      <div className="flex gap-1 ml-auto mr-1">
+      <div className="flex gap-1 ml-auto">
         <Button
           id="assignedTo"
           onClick={(event) => handleTaskDropDownClick(task, 'assignedTo', event.currentTarget)}

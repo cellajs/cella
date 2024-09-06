@@ -20,7 +20,7 @@ const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
   const { t } = useTranslation();
   const [createSubTask, setCreateSubTask] = useState(false);
 
-  const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none mt-1 pl-6';
+  const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none pl-9';
   return (
     <div className="flex flex-col grow gap-2">
       {!isExpanded ? (
@@ -29,7 +29,7 @@ const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
             dangerouslySetInnerHTML={{ __html: task.summary }}
             data-color-scheme={mode}
-            className="bn-container bn-shadcn pl-6"
+            className="bn-container bn-shadcn pl-9"
           />
 
           {(task.expandable || task.subTasks.length > 0) && (
@@ -66,7 +66,7 @@ const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
             </div>
           )}
 
-          <div className="-mx-1">
+          <div className="-mx-2 w-[calc(100%+1.25rem)]">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (
                 <SubTask mode={mode} key={task.id} task={task} />

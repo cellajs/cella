@@ -142,7 +142,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
           }),
         )}
       >
-        <CardContent id={`${task.id}-content`} ref={taskDragRef} className="pl-1.5 pt-1 pb-2 sm: pr-1 pr-2 space-between flex flex-col relative">
+        <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-2 pr-3 space-between flex flex-col relative">
           {/* To prevent on expand animation */}
           <motion.div className="flex flex-col gap-1" layout transition={{ duration: 0 }}>
             {isExpanded && !isSheet && (
@@ -153,6 +153,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
                 closeExpand={() => dispatchCustomEvent('toggleCard', task.id)}
               />
             )}
+
             <TaskDescription mode={mode} task={task} isExpanded={isExpanded} isEditing={isEditing} />
             <TaskFooter task={task} tasks={tasks} isSheet={isSheet} isSelected={isSelected} isStatusDropdownOpen={isStatusDropdownOpen} />
           </motion.div>

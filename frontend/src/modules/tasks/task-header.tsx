@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dateTwitterFormat } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import type { Task } from '~/types';
@@ -20,11 +22,21 @@ export const TaskHeader = ({
   const isSubTask = task.parentId !== null;
   return (
     <StickyBox enabled={false} className="flex flex-row z-100 w-full justify-between">
-      <div className="flex flex-row gap-2 w-full items-center px-1 py-1">
+      <div className="flex flex-row gap-1 w-full items-center">
         {!isSubTask && task.createdBy && (
           <>
+            <Button
+              id="type"
+              onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
+              aria-label="Set type"
+              variant="ghost"
+              size="xs"
+              className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-1"
+            >
+              {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
+            </Button>
             <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
-            <span className="text-sm text-center font-light">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
+            <span className="ml-1 opacity-50 text-sm text-center font-light">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
           </>
         )}
         <div className="grow" />
