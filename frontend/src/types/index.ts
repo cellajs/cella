@@ -7,7 +7,7 @@ import type { projectSchema } from 'backend/modules/projects/schema';
 import type { requestsInfoSchema } from 'backend/modules/requests/schema';
 import type { fullTaskSchema, subTaskSchema } from 'backend/modules/tasks/schema';
 import type { userSchema } from 'backend/modules/users/schema';
-import type { workspaceProjectSchema, workspaceSchema } from 'backend/modules/workspaces/schema';
+import type { workspaceSchema } from 'backend/modules/workspaces/schema';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
 import type { z } from 'zod';
@@ -42,7 +42,6 @@ export type Member = z.infer<typeof membersSchema>;
 export type Membership = z.infer<typeof membershipSchema>;
 
 export type Workspace = z.infer<typeof workspaceSchema>;
-export type WorkspaceStoreProject = z.infer<typeof workspaceProjectSchema>;
 
 export type Project = z.infer<typeof projectSchema>;
 export type Task = z.infer<typeof fullTaskSchema>;

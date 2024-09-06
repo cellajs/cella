@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { workspacesTable } from '#/db/schema/workspaces';
@@ -6,14 +6,14 @@ import { workspacesTable } from '#/db/schema/workspaces';
 import { labelsTable } from '#/db/schema/labels';
 import { projectsTable } from '#/db/schema/projects';
 import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
-import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { usersTable } from '#/db/schema/users';
+import { counts } from '#/lib/counts';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import workspaceRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -68,10 +68,13 @@ const workspacesRoutes = app
     const memberships = ctx.get('memberships');
     const user = ctx.get('user');
     const membership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'workspace');
+    const countsQuery = await counts('project');
     const projectsWithMembership = await db
       .select({
         project: projectsTable,
         membership: membershipSelect,
+        admins: countsQuery.admins,
+        members: countsQuery.members,
       })
       .from(projectsTable)
       .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.workspaceId, workspace.id))
@@ -86,22 +89,20 @@ const workspacesRoutes = app
       .where(eq(projectsTable.id, projectsToWorkspacesTable.projectId))
       .orderBy(asc(membershipsTable.order));
 
-    const projects = projectsWithMembership.map(({ project, membership }) => {
+    const projects = projectsWithMembership.map(({ project, membership, admins, members }) => {
       return {
         ...project,
         membership,
         workspaceId: workspace.id,
+        counts: {
+          memberships: {
+            admins,
+            members,
+            total: admins + members,
+          },
+        },
       };
     });
-
-    const membershipCount = db
-      .select({
-        userId: membershipsTable.userId,
-        memberships: count().as('memberships'),
-      })
-      .from(membershipsTable)
-      .groupBy(membershipsTable.userId)
-      .as('membership_count');
 
     const membersFilters = [eq(usersTable.id, membershipsTable.userId), eq(membershipsTable.type, 'project')];
     if (projects.length)
@@ -111,30 +112,6 @@ const workspacesRoutes = app
           projects.map((p) => p.id),
         ),
       );
-    const membersQuery = db
-      .select({
-        user: safeUserSelect,
-        membership: membershipSelect,
-        counts: {
-          memberships: membershipCount.memberships,
-        },
-        projectId: membershipsTable.projectId,
-      })
-      .from(usersTable)
-      .innerJoin(membershipsTable, and(...membersFilters));
-
-    const members = (await membersQuery).map(({ user, membership, projectId, counts }) => ({
-      ...transformDatabaseUserWithCount(user, counts.memberships),
-      membership,
-      projectId,
-    }));
-
-    const projectsWithMembers = projects.map((p) => {
-      return {
-        ...p,
-        members: members.filter((m) => m.projectId === p.id),
-      };
-    });
 
     const labelsQuery = db
       .select()
@@ -153,7 +130,7 @@ const workspacesRoutes = app
         success: true,
         data: {
           workspace: { ...workspace, membership: membership ?? null },
-          projects: projectsWithMembers,
+          projects,
           labels,
         },
       },

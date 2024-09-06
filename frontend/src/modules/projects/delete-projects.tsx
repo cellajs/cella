@@ -3,11 +3,11 @@ import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import type { Project, WorkspaceStoreProject } from '~/types';
+import type { Project } from '~/types';
 
 interface Props {
-  projects: (Project | WorkspaceStoreProject)[];
-  callback?: (project: (Project | WorkspaceStoreProject)[]) => void;
+  projects: Project[];
+  callback?: (project: Project[]) => void;
   dialog?: boolean;
 }
 

@@ -9,9 +9,9 @@ import UpdateProjectForm from '~/modules/projects/update-project-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Project, WorkspaceStoreProject } from '~/types';
+import type { Project } from '~/types';
 
-export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project | WorkspaceStoreProject }) => {
+export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();
   const { workspace } = useWorkspaceStore();
   const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);

@@ -14,7 +14,7 @@ import BoardHeader from '~/modules/projects/board/header/board-header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task, WorkspaceStoreProject } from '~/types';
+import type { Project, Task } from '~/types';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -53,7 +53,7 @@ function BoardDesktop({
 }: {
   expandedTasks: Record<string, boolean>;
   editingTasks: Record<string, boolean>;
-  projects: WorkspaceStoreProject[];
+  projects: Project[];
   workspaceId: string;
   columnTaskCreate: Record<string, boolean>;
   toggleCreateForm: (projectId: string) => void;

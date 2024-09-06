@@ -21,11 +21,11 @@ import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
-import type { Project, WorkspaceStoreProject } from '~/types';
+import type { Project } from '~/types';
 
 interface Props {
-  project: Project | WorkspaceStoreProject;
-  callback?: (project: Project | WorkspaceStoreProject) => void;
+  project: Project;
+  callback?: (project: Project) => void;
   dialog?: boolean;
   sheet?: boolean;
 }
