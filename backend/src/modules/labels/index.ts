@@ -12,7 +12,6 @@ const app = new CustomHono();
 
 // Labels endpoints
 const labelsRoutes = app
-  // .basePath('/labels')
   /*
    * Create label
    */
