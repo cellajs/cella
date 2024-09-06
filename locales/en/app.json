@@ -1,4 +1,5 @@
 {
+  "accept": "Accept",
   "accepted": "Accepted",
   "assign_to": "Assign to",
   "assigned_to": "Assigned to",
@@ -13,6 +14,7 @@
   "delivered": "Delivered",
   "editing": "Editing",
   "finish": "Finish",
+  "unstarted": "Unstarted",
   "finished": "Finished",
   "hide_projects": "Hide projects",
   "iced": "Iced",

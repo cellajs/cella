@@ -192,7 +192,7 @@ const SelectStatus = ({
             >
               <div className="flex items-center">
                 <status.icon className={`size-4 mr-2 fill-current ${statusFillColors[status.value] || ''}`} />
-                <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''}`}>{t(status.status)}</span>
+                <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''}`}>{t(`app:${status.status}`)}</span>
               </div>
               <div className="flex items-center">
                 {selectedStatus.value === status.value && <Check size={16} className="text-success" />}

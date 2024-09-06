@@ -152,12 +152,12 @@ const SubTask = ({
                       projectId={task.projectId}
                       html={task.description || ''}
                       mode={mode}
-                      className="w-full p-2 pl-4 bg-transparent border-none"
+                      className="w-full pr-2 bg-transparent border-none"
                       subTask
                     />
                   </>
                 ) : (
-                  <div className={'w-full bg-transparent p-2 pl-4 border-none bn-container bn-shadcn'} data-color-scheme={mode}>
+                  <div className={'w-full bg-transparent pr-2 border-none bn-container bn-shadcn'} data-color-scheme={mode}>
                     <div
                       // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
                       dangerouslySetInnerHTML={{ __html: task.description }}
