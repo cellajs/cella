@@ -377,6 +377,7 @@
   "terms_of_use": "Terms of use",
   "timezone": "Timezone",
   "title": "Title",
+  "under_construction.text": "{{appName}} is a work in progress. We are building an issue/task tracker app with {{appName}}. Development of both {{appName}} and this app are happening in the same repo. The code will be split once {{appName}} is stable and ready for releases. Stable means {{appName}} has a stable API, automated tests and versioning. Contact us if you are interested in collaborating!",
   "unknown": "Unknown",
   "unknown_device": "Unknown device",
   "unknown_inviter": "Unknown inviter",
