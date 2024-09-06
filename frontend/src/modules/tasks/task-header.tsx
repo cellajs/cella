@@ -1,4 +1,4 @@
-import { Link, Pencil, Pickaxe, UserRound, X } from 'lucide-react';
+import { CircleUserRound, Link, Pencil, Pickaxe, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dateVeryShort } from '~/lib/utils';
@@ -8,22 +8,28 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import type { Task } from '~/types';
 
-export const TaskHeader = ({ task, isEditing }: { task: Task; isEditing: boolean }) => {
+export const TaskHeader = ({
+  task,
+  isEditing,
+  changeEditingState,
+  closeExpand,
+}: { task: Task; isEditing: boolean; changeEditingState: (state: boolean) => void; closeExpand: () => void }) => {
   const { t } = useTranslation();
+  const isSubTask = task.parentId !== null;
   return (
-    <StickyBox className="flex flex-row z-100 px-2 py-1  justify-between border-b">
+    <StickyBox className="flex flex-row z-100 px-2 py-1 w-full justify-between border-b">
       <div className="flex flex-row sm: gap-1 gap-2 items-center">
-        {task.createdBy ? (
+        {!isSubTask && task.createdBy ? (
           <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
         ) : (
-          <UserRound size={14} />
+          <CircleUserRound size={16} />
         )}
         <span className="text-sm text-center">{dateVeryShort(task.createdAt, 'ago')}</span>
       </div>
       <div className="flex flex-row sm: gap-1 gap-2">
         <TooltipButton toolTipContent={t('common:edit')} side="bottom" sideOffset={5} hideWhenDetached>
           <Button
-            onClick={() => dispatchCustomEvent('toggleTaskEditing', { id: task.id, state: !isEditing })}
+            onClick={() => changeEditingState(!isEditing)}
             aria-label="Edit"
             variant="ghost"
             className="flex flex-row items-center gap-1"
@@ -46,7 +52,7 @@ export const TaskHeader = ({ task, isEditing }: { task: Task; isEditing: boolean
           <TooltipButton toolTipContent={t('common:open_task_sheet')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {
-                if (isEditing) dispatchCustomEvent('toggleTaskEditing', { id: task.id, state: false });
+                if (isEditing) changeEditingState(false);
                 dispatchCustomEvent('openTaskCardPreview', task.id);
               }}
               aria-label="OpenTaskSheet"
@@ -61,8 +67,8 @@ export const TaskHeader = ({ task, isEditing }: { task: Task; isEditing: boolean
         <TooltipButton toolTipContent={t('common:close')} side="bottom" sideOffset={5} hideWhenDetached>
           <Button
             onClick={() => {
-              dispatchCustomEvent('toggleTaskEditing', { id: task.id, state: false });
-              dispatchCustomEvent('toggleCard', task.id);
+              closeExpand();
+              changeEditingState(false);
             }}
             aria-label="Collapse"
             variant="ghost"

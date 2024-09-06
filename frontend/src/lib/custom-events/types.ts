@@ -6,6 +6,7 @@ export interface CustomEventMap {
   taskCardClick: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
   toggleCard: CustomEvent<string>;
   toggleTaskEditing: CustomEvent<{ state: boolean; id: string }>;
+  toggleSubTaskEditing: CustomEvent<{ state: boolean; id: string }>;
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
   searchDropDownClose: Event;

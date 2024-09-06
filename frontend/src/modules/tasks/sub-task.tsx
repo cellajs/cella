@@ -5,20 +5,22 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { useLocation } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { ChevronUp, Trash } from 'lucide-react';
+import { Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { deleteTasks, updateTask } from '~/api/tasks';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { getDraggableItemData, isSubTaskData } from '~/lib/drag-and-drop';
 import { cn } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { TaskHeader } from '~/modules/tasks/task-header';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
-import type { SubTask as BaseSubTask } from '~/types';
+import type { SubTask as BaseSubTask, Task } from '~/types';
 
 const SubTask = ({
   task,
@@ -31,6 +33,7 @@ const SubTask = ({
 
   const { pathname } = useLocation();
   const subTaskRef = useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -58,6 +61,10 @@ const SubTask = ({
       toast.error(t('common:error.update_resource', { resource: t('common:todo') }));
     }
   };
+
+  useEventListener('toggleSubTaskEditing', (e) => {
+    if (task.id === e.detail.id) setIsEditing(e.detail.state);
+  });
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
@@ -108,7 +115,7 @@ const SubTask = ({
         ref={subTaskRef}
         className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'} bg-secondary/50`}
       >
-        <div className="flex flex-col gap-1">
+        <div className={`flex flex-col gap-1 ${isExpanded && 'pt-2'}`}>
           <Checkbox
             className={cn(
               'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
@@ -118,39 +125,63 @@ const SubTask = ({
             checked={task.status === 6}
             onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
           />
-
-          {isEditing && task.expandable && (
-            <Button onClick={() => setIsEditing(false)} aria-label="Collapse" variant="ghost" size="xs" className="bg-secondary/80">
-              <ChevronUp size={16} />
-            </Button>
-          )}
         </div>
-        <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
-          <div className={!isEditing ? 'inline-flex items-center mt-1' : 'flex flex-col items-start mt-1'}>
-            {isEditing ? (
-              <TaskBlockNote
-                id={task.id}
-                projectId={task.projectId}
-                html={task.description || ''}
-                mode={mode}
-                callback={() => setIsEditing(false)}
-                className="w-full bg-transparent border-none"
-                subTask
-              />
-            ) : (
+        <div
+          onClick={() => {
+            if (!isExpanded) setIsExpanded(true);
+          }}
+          onKeyDown={() => {}}
+          className="flex flex-col grow min-h-7 justify-center gap-2 mx-1"
+        >
+          <div className={!isExpanded ? 'inline-flex items-center mt-1' : 'flex flex-col items-start mt-1'}>
+            {!isExpanded ? (
               // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
-              // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-              <div onClick={() => setIsEditing(true)} dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
+              <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
+            ) : (
+              <>
+                <TaskHeader
+                  task={task as Task}
+                  isEditing={isEditing}
+                  changeEditingState={(state) => setIsEditing(state)}
+                  closeExpand={() => setIsExpanded(false)}
+                />
+                {isEditing ? (
+                  <>
+                    <TaskBlockNote
+                      id={task.id}
+                      projectId={task.projectId}
+                      html={task.description || ''}
+                      mode={mode}
+                      className="w-full p-2 pl-4 bg-transparent border-none"
+                      subTask
+                    />
+                  </>
+                ) : (
+                  <div className={'w-full bg-transparent p-2 pl-4 border-none bn-container bn-shadcn'} data-color-scheme={mode}>
+                    <div
+                      // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+                      dangerouslySetInnerHTML={{ __html: task.description }}
+                      onClick={() => setIsEditing(true)}
+                      onKeyDown={() => {}}
+                    />
+                  </div>
+                )}
+              </>
             )}
 
-            {task.expandable && !isEditing && (
-              <Button onClick={() => setIsEditing(true)} variant="link" size="micro" className="py-0">
+            {task.expandable && !isExpanded && (
+              <Button onClick={() => setIsExpanded(true)} variant="link" size="micro" className="py-0">
                 {t('common:more').toLowerCase()}
               </Button>
             )}
           </div>
         </div>
-        <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer opacity-30">
+        <Button
+          onClick={() => onRemove(task.id)}
+          variant="ghost"
+          size="xs"
+          className={`text-secondary-foreground cursor-pointer opacity-30 ${isExpanded && 'pt-2'}`}
+        >
           <span className="sr-only">{t('common:move_task')}</span>
           <Trash size={16} />
         </Button>

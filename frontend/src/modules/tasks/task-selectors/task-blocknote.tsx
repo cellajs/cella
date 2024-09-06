@@ -69,7 +69,8 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
     if (onChange) onChange(cleanDescription, cleanSummary);
     else {
       handleUpdateHTML(cleanDescription, cleanSummary);
-      dispatchCustomEvent('toggleTaskEditing', { id, state: false });
+      if (subTask) dispatchCustomEvent('toggleSubTaskEditing', { id, state: false });
+      else dispatchCustomEvent('toggleTaskEditing', { id, state: false });
     }
   };
 
