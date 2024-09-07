@@ -177,12 +177,7 @@ const SubTask = ({
             )}
           </div>
         </div>
-        <Button
-          onClick={() => onRemove(task.id)}
-          variant="ghost"
-          size="xs"
-          className={`text-secondary-foreground cursor-pointer opacity-30 ${isExpanded && 'pt-2'}`}
-        >
+        <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer opacity-30">
           <span className="sr-only">{t('app:move_task')}</span>
           <Trash size={16} />
         </Button>

@@ -19,8 +19,11 @@ import { TaskFooter } from '~/modules/tasks/task-footer';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import type { Mode } from '~/store/theme.ts';
 import type { Task } from '~/types';
+import { handleTaskDropDownClick } from '../common/dropdowner';
 import { isTaskData } from '../projects/board/board';
+import { Button } from '../ui/button';
 import type { TaskStatus } from './task-selectors/select-status';
+import { taskTypes } from './task-selectors/select-task-type';
 
 const variants = cva('task-card', {
   variants: {
@@ -154,8 +157,21 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
                 closeExpand={() => dispatchCustomEvent('toggleCard', task.id)}
               />
             )}
-
-            <TaskDescription mode={mode} task={task} isExpanded={isExpanded} isEditing={isEditing} />
+            <div className="flex flex-row gap-1 w-full">
+              {!isExpanded && (
+                <Button
+                  id="type"
+                  onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
+                  aria-label="Set type"
+                  variant="ghost"
+                  size="xs"
+                  className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
+                >
+                  {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
+                </Button>
+              )}
+              <TaskDescription mode={mode} task={task} isExpanded={isExpanded} isEditing={isEditing} />
+            </div>
             <TaskFooter task={task} tasks={tasks} isSheet={isSheet} isSelected={isSelected} isStatusDropdownOpen={isStatusDropdownOpen} />
           </motion.div>
         </CardContent>
