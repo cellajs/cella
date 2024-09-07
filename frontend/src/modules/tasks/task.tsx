@@ -13,17 +13,17 @@ import { motion } from 'framer-motion';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { getDraggableItemData } from '~/lib/drag-drop';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
+import { isTaskData } from '~/modules/projects/board/board';
 import TaskDescription from '~/modules/tasks/task-content.tsx';
 import { TaskFooter } from '~/modules/tasks/task-footer';
 import { TaskHeader } from '~/modules/tasks/task-header';
+import type { TaskStatus } from '~/modules/tasks/task-selectors/select-status';
+import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
+import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme.ts';
 import type { Task } from '~/types';
-import { handleTaskDropDownClick } from '../common/dropdowner';
-import { isTaskData } from '../projects/board/board';
-import { Button } from '../ui/button';
-import type { TaskStatus } from './task-selectors/select-status';
-import { taskTypes } from './task-selectors/select-task-type';
 
 const variants = cva('task-card', {
   variants: {

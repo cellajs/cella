@@ -5,8 +5,8 @@ import { dateShort } from '~/lib/utils';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import { badgeStyle } from '~/modules/tasks/task-selectors/select-labels';
 import type { Label } from '~/types';
-import { badgeStyle } from '../task-selectors/select-labels';
 
 export const useColumns = () => {
   const { t } = useTranslation();
