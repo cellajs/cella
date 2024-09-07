@@ -26,6 +26,7 @@ export type UserMenuItem = z.infer<typeof menuItemsSchema>[number];
 
 export type Organization = z.infer<typeof organizationSchema>;
 
+// Uppy and Imado upload types
 export enum UploadType {
   Personal,
   Organization,
@@ -34,6 +35,15 @@ export interface UploadParams {
   public: boolean;
   organizationId?: string;
 }
+
+// Drag and drop data
+export type DraggableItemData<T> = {
+  type: string;
+  item: T;
+  itemType: Entity;
+  dragItem: true;
+  order: number;
+};
 
 // App-specific
 export type Request = z.infer<typeof requestsInfoSchema>;

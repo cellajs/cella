@@ -11,7 +11,7 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { motion } from 'framer-motion';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { getDraggableItemData, isTaskData } from '~/lib/drag-and-drop';
+import { getDraggableItemData } from '~/lib/drag-drop';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
 import TaskDescription from '~/modules/tasks/task-content.tsx';
@@ -19,6 +19,7 @@ import { TaskFooter } from '~/modules/tasks/task-footer';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import type { Mode } from '~/store/theme.ts';
 import type { Task } from '~/types';
+import { isTaskData } from '../projects/board/board';
 import type { TaskStatus } from './task-selectors/select-status';
 
 const variants = cva('task-card', {

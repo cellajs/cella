@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import type { ContextEntity, UserMenu } from '~/types';
+import type { ContextEntity, DraggableItemData, UserMenu } from '~/types';
 
 import { useParams } from '@tanstack/react-router';
 import { useNavigationStore } from '~/store/navigation';
@@ -11,7 +11,6 @@ import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
 import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
-import { isPageData } from '~/lib/drag-and-drop';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
@@ -21,6 +20,12 @@ import CreateOrganizationForm from '~/modules/organizations/create-organization-
 import { Switch } from '~/modules/ui/switch';
 import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
 import type { UserMenuItem } from '~/types';
+
+export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
+
+export const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'menuItem';
+};
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';

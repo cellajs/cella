@@ -1,5 +1,6 @@
 import { redirect } from '@tanstack/react-router';
 import { type ClassValue, clsx } from 'clsx';
+import { config } from 'config';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
 import duration from 'dayjs/plugin/duration';
@@ -98,25 +99,12 @@ export function makeTransition(transition: () => void) {
   }
 }
 
-const colors = [
-  'bg-blue-300',
-  'bg-lime-300',
-  'bg-orange-300',
-  'bg-yellow-300',
-  'bg-green-300',
-  'bg-teal-300',
-  'bg-indigo-300',
-  'bg-purple-300',
-  'bg-pink-300',
-  'bg-red-300',
-];
-
 // Get a color class based on an id
 export const getColorClass = (id?: string) => {
   if (!id) return 'bg-gray-300';
 
   const index = generateNumber(id) || 0;
-  return colors[index];
+  return config.placeholderColors[index];
 };
 
 // Generate a number from a string (ie. to choose a color)
@@ -161,7 +149,7 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
   throw redirect({ to: pathname + redirectLocation, replace: true });
 };
 
-// adding new item on local store user's menu
+// Adding new item on local store user's menu
 export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 'workspaces') => {
   const menu = useNavigationStore.getState().menu;
 

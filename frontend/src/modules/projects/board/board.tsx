@@ -14,7 +14,7 @@ import BoardHeader from '~/modules/projects/board/header/board-header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Project, Task } from '~/types';
+import type { DraggableItemData, Project, SubTask, Task } from '~/types';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -23,7 +23,6 @@ import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
 import type { TaskCRUDEvent, TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
-import { isSubTaskData, isTaskData } from '~/lib/drag-and-drop';
 import { queryClient } from '~/lib/router';
 import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -37,6 +36,17 @@ import { useWorkspaceUIStore } from '~/store/workspace-ui';
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
 const EMPTY_SPACE_WIDTH = 300;
+
+// TODO can this be simplified or moved?
+export type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
+export type SubTaskDraggableItemData = DraggableItemData<SubTask> & { type: 'subTask' };
+
+export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
+};
+export const isSubTaskData = (data: Record<string | symbol, unknown>): data is SubTaskDraggableItemData => {
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'subTask';
+};
 
 function getScrollerWidth(containerWidth: number, projectsLength: number) {
   if (containerWidth === 0) return '100%';
