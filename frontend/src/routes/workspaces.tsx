@@ -30,7 +30,12 @@ export const WorkspaceRoute = createRoute({
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
     const workspaceData = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
-    useWorkspaceStore.setState({ workspace: workspaceData.workspace, projects: workspaceData.projects, labels: workspaceData.labels });
+    useWorkspaceStore.setState({
+      workspace: workspaceData.workspace,
+      projects: workspaceData.projects,
+      labels: workspaceData.labels,
+      members: workspaceData.members,
+    });
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
