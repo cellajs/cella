@@ -482,7 +482,7 @@ const generalRoutes = app
 
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
 
-    const redirectUrl = `${config.frontendUrl}/newsletter-unsubscribe`;
+    const redirectUrl = `${config.frontendUrl}/unsubscribe`;
     return ctx.redirect(redirectUrl, 302);
   })
   /*

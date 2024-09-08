@@ -54,7 +54,7 @@ export const VerifyEmailRoute = createRoute({
   component: () => <VerifyEmail />,
 });
 
-export const VerifyEmailRouteWithToken = createRoute({
+export const VerifyEmailWithTokenRoute = createRoute({
   path: '/auth/verify-email/$token',
   staticData: { pageTitle: 'Verify email', isAuth: false },
   getParentRoute: () => AuthRoute,

@@ -103,9 +103,9 @@ export const acceptInviteRoute = createRoute({
   component: () => <AcceptInvite />,
 });
 
-export const newsletterUnsubscribeRoute = createRoute({
-  path: '/newsletter-unsubscribe',
-  staticData: { pageTitle: 'Unsubscribe from newsletter', isAuth: false },
+export const UnsubscribeRoute = createRoute({
+  path: '/unsubscribe',
+  staticData: { pageTitle: 'Unsubscribe', isAuth: false },
   getParentRoute: () => PublicRoute,
   component: () => <UnsubscribePage />,
 });
