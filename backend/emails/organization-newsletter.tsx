@@ -11,7 +11,7 @@ interface Props extends BasicTemplateType {
   unsubscribeLink: string;
 }
 
-export const organizationsNewsletter = ({ userLanguage, content, subject, unsubscribeLink }: Props) => {
+export const organizationsNewsletter = ({ userLanguage: lng, content, subject, unsubscribeLink }: Props) => {
   return (
     <EmailContainer
       previewText={subject}
@@ -37,7 +37,7 @@ export const organizationsNewsletter = ({ userLanguage, content, subject, unsubs
         }}
         href={unsubscribeLink}
       >
-        {i18n.t('backend:email.unsubscribe', { lng: userLanguage })}
+        {i18n.t('backend:email.unsubscribe', { lng })}
       </Link>
       <Footer />
     </EmailContainer>

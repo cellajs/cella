@@ -24,7 +24,7 @@ export const sendSlackNotification = async (requestFor: string, email: string) =
     }
 
     // Send the notification
-    novu.trigger('cellaslack', {
+    novu.trigger(`${config.slug}-slack`, {
       to: {
         subscriberId: subscriber,
       },
