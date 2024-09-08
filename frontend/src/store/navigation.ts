@@ -5,7 +5,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { NavItem } from '~/modules/common/app-nav';
 import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
-import type { UserMenu } from '~/types/common';
+import type { UserMenu, UserMenuItem } from '~/types/common';
 
 type EntitySubList = Record<string, string[]>;
 export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: EntitySubList }>;
@@ -27,7 +27,7 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   setFocusView: (status: boolean) => void;
-  archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => void;
+  archiveStateToggle: (item: UserMenuItem, active: boolean, parentId?: string | null) => void;
   finishedOnboarding: boolean;
   setFinishedOnboarding: () => void;
   clearNavigationStore: () => void;
@@ -108,20 +108,21 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections = null;
             });
           },
-          archiveStateToggle: (itemId: string, active: boolean, parentId?: string | null) => {
+          archiveStateToggle: (item: UserMenuItem, active: boolean, parentId?: string | null) => {
             set((state) => {
               if (!parentId) {
                 for (const sectionKey of Object.keys(state.menu)) {
                   const section = state.menu[sectionKey as keyof UserMenu];
-                  const itemIndex = section.findIndex((item) => item.id === itemId);
+                  const itemIndex = section.findIndex((el) => el.id === item.id);
                   if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu][itemIndex].membership.archived = active;
                 }
               } else {
-                const section = state.menu.workspaces;
-                const workspace = section.find((item) => item.id === parentId);
-                if (!workspace || !workspace.submenu) return;
-                const itemIndex = workspace.submenu.findIndex((item) => item.id === itemId);
-                if (itemIndex && itemIndex !== -1) workspace.submenu[itemIndex].membership.archived = active;
+                const section = menuSections.find((el) => el.type === item.entity)?.storageType;
+                if (!section) return;
+                const parent = state.menu[section].find((item) => item.id === parentId);
+                if (!parent || !parent.submenu) return;
+                const itemIndex = parent.submenu.findIndex((el) => el.id === item.id);
+                if (itemIndex && itemIndex !== -1) parent.submenu[itemIndex].membership.archived = active;
               }
             });
           },

@@ -31,7 +31,7 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
     onSuccess: (updatedMembership) => {
       if (updatedMembership.archived !== isItemArchived) {
         const archived = updatedMembership.archived || !isItemArchived;
-        archiveStateToggle(item.id, archived, parentItemSlug ? parentItemSlug : null);
+        archiveStateToggle(item, archived, parentItemSlug ? parentItemSlug : null);
         toast.success(
           archived
             ? t('common:success.archived_resource', { resource: t(`common:${itemType}`) })
