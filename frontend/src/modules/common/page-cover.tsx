@@ -82,7 +82,10 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
     );
   };
   return (
-    <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}>
+    <div
+      className={`relative bg-cover bg-muted bg-center ${bannerHeight} ${bannerClass}`}
+      style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
+    >
       {(isAdmin || isSelf) && (
         <Button
           variant="secondary"

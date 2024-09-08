@@ -104,6 +104,7 @@ export const getColorClass = (id?: string) => {
   if (!id) return 'bg-gray-300';
 
   const index = generateNumber(id) || 0;
+
   return config.placeholderColors[index];
 };
 
