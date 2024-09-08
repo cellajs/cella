@@ -1,7 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import Home from '~/modules/home';
-import { AppRoute } from '.';
+import { AppRoute } from './general';
 
 const Welcome = lazy(() => import('~/modules/home/welcome'));
 

@@ -10,7 +10,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import { useWorkspaceStore } from '~/store/workspace';
-import { AppRoute } from '.';
+import { AppRoute } from './general';
 
 // Lazy-loaded components
 const WorkspacePage = lazy(() => import('~/modules/workspaces/workspace-page'));

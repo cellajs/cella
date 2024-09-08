@@ -6,7 +6,7 @@ import { Suspense, lazy } from 'react';
 import { getUser } from '~/api/users';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
-import { AppRoute } from '.';
+import { AppRoute } from './general';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 const UserSettingsPage = lazy(() => import('~/modules/users/settings-page'));

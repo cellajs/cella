@@ -5,8 +5,9 @@ import SignIn from '~/modules/auth';
 import ResetPassword from '~/modules/auth/reset-password';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
+import { getAndSetMe } from '~/modules/users/helpers';
 import { useUserStore } from '~/store/user';
-import { PublicRoute, getAndSetMe } from '.';
+import { PublicRoute } from './general';
 
 export const AuthRoute = createRoute({
   id: 'auth-layout',

@@ -21,7 +21,7 @@ import useMounted from '~/hooks/use-mounted';
 import { NavButton } from '~/modules/common/app-nav-button';
 import { AppSearch } from '~/modules/common/app-search';
 import { sheet } from '~/modules/common/sheeter/state';
-import { getAndSetMe, getAndSetMenu } from '~/routes';
+import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { useUserStore } from '~/store/user';
 import { useWorkspaceStore } from '~/store/workspace';
 
