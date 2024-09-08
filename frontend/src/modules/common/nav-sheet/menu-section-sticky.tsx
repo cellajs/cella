@@ -5,10 +5,11 @@ import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types';
+import type { UserMenuItem } from '~/types/common';
 
 interface MenuSectionStickyProp {
   sectionType: 'workspaces' | 'organizations';
+  sectionLabel: string;
   optionsView: boolean;
   isSectionVisible: boolean;
   data: UserMenuItem[];
@@ -16,7 +17,15 @@ interface MenuSectionStickyProp {
   createDialog?: () => void;
 }
 
-export const MenuSectionSticky = ({ data, sectionType, optionsView, isSectionVisible, createDialog, toggleOptionsView }: MenuSectionStickyProp) => {
+export const MenuSectionSticky = ({
+  data,
+  sectionType,
+  sectionLabel,
+  optionsView,
+  isSectionVisible,
+  createDialog,
+  toggleOptionsView,
+}: MenuSectionStickyProp) => {
   const { t } = useTranslation();
   const { toggleSection } = useNavigationStore();
 
@@ -28,7 +37,7 @@ export const MenuSectionSticky = ({ data, sectionType, optionsView, isSectionVis
             <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.15 }}>
               <div className="flex items-center">
                 <motion.span layout={'size'} className="flex items-center">
-                  {t(`common:${sectionType}`)}
+                  {t(sectionLabel)}
                 </motion.span>
                 {!isSectionVisible && (
                   <motion.span
@@ -50,7 +59,7 @@ export const MenuSectionSticky = ({ data, sectionType, optionsView, isSectionVis
           </Button>
           <AnimatePresence mode="popLayout">
             {isSectionVisible && (
-              <TooltipButton toolTipContent={t('common:manage')} side="bottom" sideOffset={10}>
+              <TooltipButton toolTipContent={t('common:manage_content')} side="bottom" sideOffset={10}>
                 <Button
                   disabled={!data.length}
                   className="w-12 px-3"

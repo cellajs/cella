@@ -35,7 +35,8 @@ import RemoveMembersForm from '~/modules/organizations/members-table/remove-memb
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
-import type { EntityPage, Member, Organization, Project } from '~/types';
+import type { Project } from '~/types/app';
+import type { EntityPage, Member, Organization } from '~/types/common';
 
 const LIMIT = 40;
 
@@ -272,7 +273,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
             {selectedMembers.length === 0 && <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
           <div className="sm:grow" />
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
+          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
             <TableSearch value={query} setQuery={onSearch} />
             <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>

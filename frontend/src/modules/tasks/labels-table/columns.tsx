@@ -5,7 +5,7 @@ import { dateShort } from '~/lib/utils';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import type { Label } from '~/types';
+import type { Label } from '~/types/app';
 import { badgeStyle } from '../task-selectors/select-labels';
 
 export const useColumns = () => {
@@ -33,7 +33,7 @@ export const useColumns = () => {
     },
     {
       key: 'useCount',
-      name: t('common:use_count'),
+      name: t('app:tasks'),
       visible: true,
       width: 100,
       sortable: true,
@@ -47,7 +47,7 @@ export const useColumns = () => {
     },
     {
       key: 'lastUsed',
-      name: t('common:last_used'),
+      name: t('app:last_used'),
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,

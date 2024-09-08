@@ -21,7 +21,8 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { UserMenuItem, Workspace } from '~/types';
+import type { Workspace } from '~/types/app';
+import type { UserMenuItem } from '~/types/common';
 
 interface CreateProjectFormProps {
   workspace: Workspace;
@@ -96,11 +97,11 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
         <SlugFormField
           control={form.control}
           type="project"
-          label={t('common:project_handle')}
-          description={t('common:project_handle.text')}
+          label={t('common:resource_handle', { resource: t('app:project') })}
+          description={t('common:resource_handle.text', { resource: t('app:project').toLowerCase() })}
           nameValue={name}
         />
-        <SelectParentFormField collection="workspaces" type={type} control={form.control} label={t('common:workspace')} name="workspaceId" disabled />
+        <SelectParentFormField collection="workspaces" type={type} control={form.control} label={t('app:workspace')} name="workspaceId" disabled />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:create')}

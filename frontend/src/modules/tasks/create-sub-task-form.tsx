@@ -18,7 +18,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 const formSchema = z.object({
   id: z.string(),
@@ -49,8 +49,6 @@ export const CreateSubTaskForm = ({
   const handleHotKeysKeyPress = useCallback(() => {
     setFormState(false);
   }, [setFormState]);
-
-  useHotkeys([['Escape', handleHotKeysKeyPress]]);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -102,14 +100,14 @@ export const CreateSubTaskForm = ({
 
     createTask(newSubTask)
       .then((resp) => {
-        if (!resp) toast.error(t('common:error.create_resource', { resource: t('common:todo') }));
+        if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:todo') }));
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:todo') }));
+        toast.success(t('common:success.create_resource', { resource: t('app:todo') }));
         const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-        dispatchCustomEvent(eventName, { array: [newSubTask], action: 'createSubTask' });
+        dispatchCustomEvent(eventName, { array: [newSubTask], action: 'createSubTask', projectId: parentTask.projectId });
         setFormState(false);
       })
-      .catch(() => toast.error(t('common:error.create_resource', { resource: t('common:todo') })));
+      .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:todo') })));
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
@@ -129,16 +127,18 @@ export const CreateSubTaskForm = ({
     return true;
   };
 
+  useHotkeys([['Escape', handleHotKeysKeyPress]]);
+
   if (!formOpen)
     return (
-      <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none bg-secondary/50" onClick={() => setFormState(true)}>
+      <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none bg-secondary/25" onClick={() => setFormState(true)}>
         <Plus size={16} />
-        <span className="ml-1 font-normal">{t('common:add_subtask')}</span>
+        <span className="ml-1 font-normal">{t('common:add_resource', { resource: t('app:todo').toLowerCase() })}</span>
       </Button>
     );
   return (
     <Form {...form}>
-      <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary/50">
+      <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary/20">
         <FormField
           control={form.control}
           name="description"
@@ -154,8 +154,10 @@ export const CreateSubTaskForm = ({
                       onChange(description);
                       form.setValue('summary', summary);
                     }}
+                    callback={form.handleSubmit(onSubmit)}
                     mode={mode}
                     subTask
+                    className="pl-8"
                   />
                 </FormControl>
                 <FormMessage />

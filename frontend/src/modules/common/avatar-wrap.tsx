@@ -9,25 +9,23 @@ export interface AvatarWrapProps extends AvatarProps {
   type?: Entity;
   name?: string | null;
   url?: string | null;
-  backgroundColor?: string;
   className?: string;
 }
 
-const AvatarWrap = memo(({ type, id, name, url, className, backgroundColor, ...props }: AvatarWrapProps) => {
+const AvatarWrap = memo(({ type, id, name, url, className, ...props }: AvatarWrapProps) => {
   const avatarBackground = useMemo(() => getColorClass(id), [id]);
   return (
     <Avatar {...props} className={className}>
       {url ? (
-        <AvatarImage src={`${url}?width=100&format=avif`} draggable="false" className={type && type === 'user' ? 'rounded-full' : 'rounded-md'} />
+        <AvatarImage
+          src={`${url}?width=100&format=avif`}
+          draggable="false"
+          className={`bg-muted ${type && type === 'user' ? 'rounded-full' : 'rounded-md'}`}
+        />
       ) : (
-        <AvatarFallback
-          style={backgroundColor ? { background: backgroundColor } : {}}
-          className={cn(backgroundColor ? '' : avatarBackground, type && type === 'user' ? 'rounded-full' : 'rounded-md')}
-        >
+        <AvatarFallback className={cn('bg-muted', avatarBackground, type && type === 'user' ? 'rounded-full' : 'rounded-md')}>
           <span className="sr-only">{name}</span>
-          <div className={`${backgroundColor ? 'text-white/70' : 'text-black/50'} flex h-full items-center justify-center`}>
-            {name?.charAt(0).toUpperCase() || '-'}
-          </div>
+          <div className="text-black opacity-80 flex h-full items-center justify-center">{name?.charAt(0).toUpperCase() || '-'}</div>
         </AvatarFallback>
       )}
     </Avatar>

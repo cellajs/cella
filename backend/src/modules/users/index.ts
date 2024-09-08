@@ -251,4 +251,6 @@ const usersRoutes = app
     );
   });
 
+export type AppUsersType = typeof usersRoutes;
+
 export default usersRoutes;

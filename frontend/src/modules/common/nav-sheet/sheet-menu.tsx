@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import type { ContextEntity, UserMenu } from '~/types';
+import type { ContextEntity, DraggableItemData, UserMenu, UserMenuItem } from '~/types/common';
 
 import { useParams } from '@tanstack/react-router';
 import { useNavigationStore } from '~/store/navigation';
@@ -11,7 +11,6 @@ import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
 import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
-import { isPageData } from '~/lib/drag-and-drop';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
@@ -20,11 +19,17 @@ import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Switch } from '~/modules/ui/switch';
 import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
-import type { UserMenuItem } from '~/types';
+
+export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
+
+export const isPageData = (data: Record<string | symbol, unknown>): data is PageDraggableItemData => {
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'menuItem';
+};
 
 export type SectionItem = {
   storageType: 'organizations' | 'workspaces';
   type: ContextEntity;
+  label: string;
   createForm?: React.ReactNode;
   isSubmenu?: boolean;
   toPrefix?: boolean;
@@ -35,20 +40,23 @@ export type SectionItem = {
 export const menuSections: SectionItem[] = [
   {
     storageType: 'organizations',
+    type: 'organization',
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
-    type: 'organization',
+    label: 'common:organizations',
   },
   {
     storageType: 'workspaces',
+    type: 'workspace',
     isSubmenu: false,
     createForm: <CreateWorkspaceForm dialog />,
-    type: 'workspace',
+    label: 'app:workspaces',
   },
   {
     storageType: 'workspaces',
-    isSubmenu: true,
     type: 'project',
+    label: 'app:projects',
+    isSubmenu: true,
   },
 ];
 
@@ -79,6 +87,7 @@ export const SheetMenu = memo(() => {
           <MenuSection
             entityType={section.type}
             key={section.type}
+            sectionLabel={section.label}
             sectionType={section.storageType}
             createForm={section.createForm}
             data={menuSection}
@@ -151,9 +160,9 @@ export const SheetMenu = memo(() => {
               </label>
             </div>
             <div className="max-sm:hidden flex items-center gap-4 ml-1">
-              <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:hide_projects')} />
+              <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('app:hide_projects')} />
               <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
-                {t('common:hide_projects')}
+                {t('app:hide_projects')}
               </label>
             </div>
           </div>

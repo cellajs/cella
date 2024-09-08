@@ -3,6 +3,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
 import about from '../../../locales/en/about.json';
+import app from '../../../locales/en/app.json';
 import common from '../../../locales/en/common.json';
 
 import { config } from 'config';
@@ -11,9 +12,9 @@ export type { ParseKeys } from 'i18next';
 
 // Set up i18n with hybrid preload and lazy loading strategy
 const initOptions: InitOptions = {
-  resources: { en: { common, about } }, // Preload default ('en') translations
+  resources: { en: { common, app, about } }, // Preload default ('en') translations
   debug: config.debug,
-  ns: ['common', 'about'],
+  ns: ['common', 'app', 'about'],
   partialBundledLanguages: true,
   supportedLngs: config.languages.map((lng) => lng.value),
   load: 'languageOnly',

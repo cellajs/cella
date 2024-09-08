@@ -4,8 +4,8 @@ import { useNavigationStore } from '~/store/navigation';
 
 import type { workspaceWithProjectSchema } from 'backend/modules/workspaces/schema';
 import type { z } from 'zod';
-import { getMinimumEntityInfo } from '~/api/general';
-import type { ContextEntity, MinimumEntityItem, UserMenu, UserMenuItem, WorkspaceStoreProject } from '~/types';
+import type { Project } from '~/types/app';
+import type { ContextEntity, MinimumEntityItem, UserMenu, UserMenuItem } from '~/types/common';
 
 type WorkspaceQuery = z.infer<typeof workspaceWithProjectSchema>;
 
@@ -57,7 +57,7 @@ export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
         if ('workspace' in data) {
           arrayData = [data.workspace];
         } else if ('projects' in data) {
-          arrayData = data.projects as WorkspaceStoreProject[];
+          arrayData = data.projects as Project[];
         } else {
           arrayData = Array.isArray(data) ? data : [data];
         }
@@ -69,9 +69,7 @@ export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
         }
       }
 
-      // Step 3: Fetch from API if not found in menu or cache
-      const fetchedEntity = await getMinimumEntityInfo(idOrSlug, entityType);
-      setEntity(fetchedEntity);
+      // TODO: fall back to fetching entity using their respective API GET endpoints
     };
 
     getEntity();

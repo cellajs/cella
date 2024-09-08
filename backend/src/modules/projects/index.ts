@@ -1,10 +1,9 @@
 import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { projectsTable } from '#/db/schema/projects';
 import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 
-import { counts } from '#/lib/counts';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -12,7 +11,6 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import projectRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -48,7 +46,7 @@ const projectsRoutes = app
     logEvent('Project created', { project: project.id });
 
     // Insert membership
-    const [createdMembership] = await insertMembership({ user, role: 'admin', entity: project, memberships });
+    const createdMembership = await insertMembership({ user, role: 'admin', entity: project, memberships });
 
     // If project created in workspace, add project to it
     if (workspaceId) {
@@ -63,10 +61,7 @@ const projectsRoutes = app
     const createdProject = {
       ...project,
       workspaceId,
-      counts: {
-        memberships: { admins: 1, members: 1, total: 1 },
-      },
-      membership: toMembershipInfo(createdMembership),
+      membership: createdMembership,
     };
 
     return ctx.json({ success: true, data: createdProject }, 200);
@@ -77,7 +72,7 @@ const projectsRoutes = app
   .openapi(projectRoutesConfig.getProject, async (ctx) => {
     const project = ctx.get('project');
     const memberships = ctx.get('memberships');
-    const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project');
+    const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project') ?? null;
     const [projectToWorkspace] = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.projectId, project.id));
     return ctx.json(
       {
@@ -85,8 +80,7 @@ const projectsRoutes = app
         data: {
           ...project,
           workspaceId: projectToWorkspace.workspaceId,
-          membership: toMembershipInfo(membership),
-          counts: await counts('project', project.id),
+          membership,
         },
       },
       200,
@@ -107,8 +101,6 @@ const projectsRoutes = app
       .select()
       .from(projectsTable)
       .where(and(...projectsFilters));
-
-    const countsQuery = await counts('project');
 
     const memberships = db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)).as('memberships');
 
@@ -133,13 +125,10 @@ const projectsRoutes = app
           project: projectsTable,
           membership: membershipsTable,
           workspaceId: projectsToWorkspacesTable.workspaceId,
-          admins: countsQuery.admins,
-          members: countsQuery.members,
         })
         .from(projectsQuery.as('projects'))
         .innerJoin(memberships, eq(memberships.projectId, projectsTable.id))
         .leftJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id))
-        .leftJoin(countsQuery, eq(projectsTable.id, countsQuery.id))
         .orderBy(orderColumn)
         .limit(Number(limit))
         .offset(Number(offset));
@@ -147,17 +136,14 @@ const projectsRoutes = app
       projects = await db
         .select({
           project: projectsTable,
-          membership: membershipsTable,
+          membership: membershipSelect,
           workspaceId: projectsToWorkspacesTable.workspaceId,
-          admins: countsQuery.admins,
-          members: countsQuery.members,
         })
         .from(projectsToWorkspacesTable)
         .leftJoin(
           projectsTable,
           and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), eq(projectsToWorkspacesTable.workspaceId, workspaceId), ...projectsFilters),
         )
-        .leftJoin(countsQuery, eq(projectsTable.id, countsQuery.id))
         .leftJoin(memberships, and(eq(memberships.projectId, projectsTable.id)))
         .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId))
         .orderBy(orderColumn)
@@ -169,13 +155,10 @@ const projectsRoutes = app
       {
         success: true,
         data: {
-          items: projects.map(({ project, membership, workspaceId, admins, members }) => ({
+          items: projects.map(({ project, membership, workspaceId }) => ({
             ...project,
-            membership: toMembershipInfo(membership),
+            membership,
             workspaceId,
-            counts: {
-              memberships: { admins, members },
-            },
           })),
           total: projects.length,
         },
@@ -218,7 +201,7 @@ const projectsRoutes = app
     }
 
     const memberships = await db
-      .select()
+      .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'project'), eq(membershipsTable.projectId, project.id)));
 
@@ -226,7 +209,7 @@ const projectsRoutes = app
       memberships.map((membership) =>
         sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedProject,
-          membership: toMembershipInfo(memberships.find((m) => m.id === membership.id)),
+          membership: memberships.find((m) => m.id === membership.id) ?? null,
         }),
       );
     }
@@ -239,8 +222,7 @@ const projectsRoutes = app
         data: {
           ...updatedProject,
           parentId: workspaceId,
-          membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
-          counts: await counts('project', project.id),
+          membership: memberships.find((m) => m.id === user.id) ?? null,
         },
       },
       200,
@@ -283,5 +265,7 @@ const projectsRoutes = app
 
     return ctx.json({ success: true, errors: errors }, 200);
   });
+
+export type AppProjectsType = typeof projectsRoutes;
 
 export default projectsRoutes;

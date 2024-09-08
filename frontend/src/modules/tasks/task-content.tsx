@@ -7,28 +7,29 @@ import SubTask from '~/modules/tasks/sub-task';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 interface Props {
   task: Task;
   mode: Mode;
   isExpanded: boolean;
+  isEditing: boolean;
 }
 
-const TaskContent = ({ task, mode, isExpanded }: Props) => {
+const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
   const { t } = useTranslation();
   const [createSubTask, setCreateSubTask] = useState(false);
 
-  const expandedStyle = 'min-h-16 w-full bg-transparent border-none mt-1';
+  const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none pl-9';
   return (
-    <>
+    <div className="flex flex-col grow gap-2">
       {!isExpanded ? (
         <div className="mt-1 inline-flex">
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
             dangerouslySetInnerHTML={{ __html: task.summary }}
             data-color-scheme={mode}
-            className="bn-container bn-shadcn"
+            className="bn-container bn-shadcn pl-1"
           />
 
           {(task.expandable || task.subTasks.length > 0) && (
@@ -52,9 +53,20 @@ const TaskContent = ({ task, mode, isExpanded }: Props) => {
         </div>
       ) : (
         <>
-          <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
+          {isEditing ? (
+            <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
+          ) : (
+            <div className={`${expandedStyle} bn-container bn-shadcn`} data-color-scheme={mode}>
+              <div
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+                dangerouslySetInnerHTML={{ __html: task.description }}
+                onClick={() => dispatchCustomEvent('toggleTaskEditing', { id: task.id, state: true })}
+                onKeyDown={() => {}}
+              />
+            </div>
+          )}
 
-          <div className="-ml-10 -mr-1">
+          <div className="-mx-2 w-[calc(100%+1.25rem)]">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (
                 <SubTask mode={mode} key={task.id} task={task} />
@@ -65,7 +77,7 @@ const TaskContent = ({ task, mode, isExpanded }: Props) => {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 };
 

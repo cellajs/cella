@@ -25,6 +25,21 @@ export const config = {
 
   debug: false,
   maintenance: false,
+
+  apiVersion: 'v1',
+  apiDescription: `
+      (ATTENTION: PRERELEASE!) This API documentation is split in modules. Each module relates to a module in the backend codebase. Each module should be at least loosely-coupled, but ideally entirely decoupled. The documentation is based upon zod schemas that are converted to openapi specs using hono middleware: zod-openapi.
+
+      API differentiates between two types of resource: entities and resources. Entities are the main data objects, the other tables are secondary. They all have an entity column.
+
+      Entities can be split into three categories:
+      1) Contextual entities (ie organization, workspace, project)
+      2) Product entities (ie task, label)
+      3) All entities (ie user, organization, workspace, project, task, label)
+
+      - SSE stream is not included in this API documentation
+      - API design is flat, not nested`,
+
   // Payment with Paddle
   // paddleToken: 'live_ba8bb57b62089459e4f4fd1da8c',
   // paddlePriceIds: {
@@ -66,6 +81,20 @@ export const config = {
       '2xl': '1400px',
     },
   },
+
+  // Placeholder colors
+  placeholderColors: [
+    'bg-blue-300',
+    'bg-lime-300',
+    'bg-orange-300',
+    'bg-yellow-300',
+    'bg-green-300',
+    'bg-teal-300',
+    'bg-indigo-300',
+    'bg-purple-300',
+    'bg-pink-300',
+    'bg-red-300',
+  ],
 
   sensitiveFields: ['hashedPassword', 'unsubscribeToken'] as const,
   // OAuth providers

@@ -23,7 +23,7 @@ import { Badge } from '~/modules/ui/badge';
 import DeleteSelf from '~/modules/users/delete-self';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
-import type { Session } from '~/types';
+import type { Session } from '~/types/common';
 import HelpText from '../common/help-text';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
@@ -106,7 +106,7 @@ const UserSettingsPage = () => {
       <DeleteSelf
         dialog
         callback={() => {
-          toast.success(t('common:success.delete_account'));
+          toast.success(t('common:success.delete_resource', { resource: t('common:account') }));
         }}
       />,
       {

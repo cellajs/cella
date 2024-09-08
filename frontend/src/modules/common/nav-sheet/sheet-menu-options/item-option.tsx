@@ -10,7 +10,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types';
+import type { UserMenuItem } from '~/types/common';
 
 interface ItemOptionProps {
   item: UserMenuItem;

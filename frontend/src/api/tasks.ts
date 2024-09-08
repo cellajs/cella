@@ -1,17 +1,21 @@
-import { apiClient, handleResponse } from '.';
+import type { AppTasksType } from 'backend/modules/tasks/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
+import { clientConfig, handleResponse } from '.';
 
-const client = apiClient.tasks;
+// Create Hono clients to make requests to the backend
+export const client = hc<AppTasksType>(`${config.backendUrl}/tasks`, clientConfig);
 
-type CreateTaskParams = Parameters<(typeof client)['$post']>['0']['json'];
+type CreateTaskParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Create a new task
 export const createTask = async (task: CreateTaskParams) => {
-  const response = await client.$post({ json: task });
+  const response = await client.index.$post({ json: task });
   const json = await handleResponse(response);
   return json.data;
 };
 
-export type GetTasksParams = Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
+export type GetTasksParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
   limit?: number;
   offset?: number;
   page?: number;
@@ -22,7 +26,7 @@ export const getTasksList = async (
   { q, sort = 'createdAt', order = 'asc', page = 0, limit = 1000, offset, projectId, status }: GetTasksParams,
   signal?: AbortSignal,
 ) => {
-  const response = await client.$get(
+  const response = await client.index.$get(
     {
       query: {
         q,
@@ -59,6 +63,8 @@ export const getTask = async (id: string) => {
   return json.data;
 };
 
+export type UpdateTaskParams = Parameters<(typeof client)[':id']['$put']>['0']['json'];
+
 // Update task by its ID
 export const updateTask = async (id: string, key: string, data: string | string[] | number | null | boolean, order?: number | null) => {
   const newOrder = order || null;
@@ -77,7 +83,7 @@ export const updateTask = async (id: string, key: string, data: string | string[
 
 // Delete tasks
 export const deleteTasks = async (ids: string[]) => {
-  const response = await client.$delete({
+  const response = await client.index.$delete({
     query: { ids },
   });
   const json = await handleResponse(response);

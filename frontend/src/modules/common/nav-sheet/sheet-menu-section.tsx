@@ -8,16 +8,17 @@ import { MenuSectionSticky } from '~/modules/common/nav-sheet/menu-section-stick
 import { SheetMenuItems } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenuItem } from '~/types';
+import type { ContextEntity, UserMenuItem } from '~/types/common';
 
 interface MenuSectionProps {
   data: UserMenuItem[];
   sectionType: 'workspaces' | 'organizations';
+  sectionLabel: string;
   entityType: ContextEntity;
   createForm: ReactNode;
 }
 
-export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuSectionProps) => {
+export const MenuSection = ({ data, sectionType, sectionLabel, entityType, createForm }: MenuSectionProps) => {
   const { t } = useTranslation();
 
   const [optionsView, setOptionsView] = useState(false);
@@ -71,6 +72,7 @@ export const MenuSection = ({ data, sectionType, entityType, createForm }: MenuS
       {!parentItemId && (
         <MenuSectionSticky
           data={data}
+          sectionLabel={sectionLabel}
           sectionType={sectionType}
           optionsView={optionsView}
           isSectionVisible={isSectionVisible}

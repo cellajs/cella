@@ -1,7 +1,9 @@
 import { redirect } from '@tanstack/react-router';
 import { type ClassValue, clsx } from 'clsx';
+import { config } from 'config';
 import dayjs from 'dayjs';
 import calendar from 'dayjs/plugin/calendar';
+import duration from 'dayjs/plugin/duration';
 import isBetween from 'dayjs/plugin/isBetween';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import i18next from 'i18next';
@@ -9,12 +11,54 @@ import { customAlphabet } from 'nanoid';
 import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
+import locale from '~/../../locales';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types';
+import type { UserMenuItem } from '~/types/common';
 
 dayjs.extend(isBetween);
 dayjs.extend(calendar);
+dayjs.extend(duration);
 dayjs.extend(relativeTime);
+
+const second = 1e3;
+const minute = 6e4;
+const hour = 36e5;
+const day = 864e5;
+// const week = 6048e5;
+// const month = 2592e6;
+const year = 31536e6;
+
+export const dateTwitterFormat = (startDate: string, passedLoc: string, addStr?: string) => {
+  const start = dayjs(startDate);
+  const end = dayjs();
+  const diff = Math.abs(end.diff(start));
+
+  const loc = locale[passedLoc as keyof typeof locale] || locale.en;
+  let unit: keyof typeof loc;
+  let num: number | string;
+
+  if (diff <= second) {
+    unit = 'now';
+    num = ''; // No number needed for "now"
+  } else if (diff < minute) {
+    unit = 'seconds';
+    num = Math.floor(diff / second);
+  } else if (diff < hour) {
+    unit = 'minutes';
+    num = Math.floor(diff / minute);
+  } else if (diff < day) {
+    unit = 'hours';
+    num = Math.floor(diff / hour);
+  } else if (diff < year) {
+    return start.format('MMM D');
+  } else {
+    return start.format('MMM D, YYYY');
+  }
+
+  if (unit === 'now') return loc[unit];
+  const result = loc[unit].replace('%d', num.toString());
+  return addStr ? `${result} ${addStr}` : result;
+};
 
 // Format a date to a relative time
 export function dateShort(date?: string | null | Date) {
@@ -55,25 +99,13 @@ export function makeTransition(transition: () => void) {
   }
 }
 
-const colors = [
-  'bg-blue-300',
-  'bg-lime-300',
-  'bg-orange-300',
-  'bg-yellow-300',
-  'bg-green-300',
-  'bg-teal-300',
-  'bg-indigo-300',
-  'bg-purple-300',
-  'bg-pink-300',
-  'bg-red-300',
-];
-
 // Get a color class based on an id
 export const getColorClass = (id?: string) => {
   if (!id) return 'bg-gray-300';
 
   const index = generateNumber(id) || 0;
-  return colors[index];
+
+  return config.placeholderColors[index];
 };
 
 // Generate a number from a string (ie. to choose a color)
@@ -118,7 +150,7 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
   throw redirect({ to: pathname + redirectLocation, replace: true });
 };
 
-// adding new item on local store user's menu
+// Adding new item on local store user's menu
 export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 'workspaces') => {
   const menu = useNavigationStore.getState().menu;
 

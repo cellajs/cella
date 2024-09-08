@@ -5,7 +5,7 @@ import { lazyWithPreload } from 'react-lazy-with-preload';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { UploadType } from '~/types';
+import { UploadType } from '~/types/common';
 
 const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));
 
@@ -40,8 +40,9 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
           }}
           plugins={['webcam', 'image-editor']}
           imageMode="avatar"
-          setUrl={(url) => {
-            setUrl(url);
+          callback={(result) => {
+            const url = result[0].url;
+            if (url) setUrl(url);
             dialog.remove(true, 'upload-image');
           }}
         />

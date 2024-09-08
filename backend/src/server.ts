@@ -40,7 +40,7 @@ app.onError((err, ctx) => {
 });
 
 // Add routes for each module
-const routes = app
+app
   .route('/auth', authRoutes)
   .route('/me', meRoutes)
   .route('/users', usersRoutes)
@@ -56,5 +56,3 @@ const routes = app
   .route('/labels', labelsRoutes);
 
 export default app;
-
-export type AppType = typeof routes;

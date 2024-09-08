@@ -9,6 +9,7 @@ import {
   idSchema,
   imageUrlSchema,
   nameSchema,
+  pageEntityTypeSchema,
   paginationQuerySchema,
   passwordSchema,
   slugSchema,
@@ -46,10 +47,10 @@ export const entitySuggestionSchema = z.object({
   slug: slugSchema,
   id: idSchema,
   name: nameSchema,
-  organizationId: idSchema,
+  organizationId: idSchema.optional(),
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
-  entity: z.enum(config.pageEntityTypes),
+  entity: pageEntityTypeSchema,
   parentId: z.string().optional(),
 });
 
@@ -70,13 +71,4 @@ export const membersQuerySchema = paginationQuerySchema.extend({
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
   role: z.enum(config.rolesByType.entityRoles).default('member').optional(),
-});
-
-export const minEntityInfoSchema = z.object({
-  id: idSchema,
-  slug: slugSchema,
-  name: nameSchema,
-  thumbnailUrl: imageUrlSchema.nullable().optional(),
-  bannerUrl: imageUrlSchema.nullable().optional(),
-  entity: z.enum(config.contextEntityTypes),
 });

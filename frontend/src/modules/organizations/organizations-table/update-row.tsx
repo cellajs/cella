@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 
 import { Pencil } from 'lucide-react';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -29,7 +29,7 @@ const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
       {
         id: 'update-organization',
         className: 'max-w-full lg:max-w-4xl',
-        title: t('common:edit_organization'),
+        title: t('common:edit_resource', { resource: t('common:organization').toLowerCase() }),
       },
     );
   };

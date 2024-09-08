@@ -21,7 +21,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { labelsSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Label } from '~/types';
+import type { Label } from '~/types/app';
 
 export const labelsQueryOptions = ({
   q,
@@ -110,7 +110,7 @@ const LabelsTable = () => {
 
   const removeLabel = () => {
     deleteLabels(selectedLabels.map((l) => l.id)).then(() => {
-      toast.success(t(`common:success.delete_${selectedRows.size > 1 ? 'labels' : 'label'}`));
+      toast.success(t(`app:success.delete_${selectedRows.size > 1 ? 'labels' : 'label'}`));
       setSelectedRows(new Set<string>());
     });
   };
@@ -122,7 +122,7 @@ const LabelsTable = () => {
           <FilterBarActions className="w-full">
             {selectedLabels.length > 0 && (
               <div className="inline-flex align-center items-center gap-2">
-                <TooltipButton toolTipContent={t('common:remove_task')}>
+                <TooltipButton toolTipContent={t('app:remove_task')}>
                   <Button variant="destructive" className="relative" onClick={removeLabel}>
                     <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedLabels.length}</Badge>
                     <Trash size={16} />
@@ -159,7 +159,7 @@ const LabelsTable = () => {
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:labels').toLowerCase() })} />,
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('app:labels').toLowerCase() })} />,
         }}
       />
     </div>

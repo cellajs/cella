@@ -19,7 +19,7 @@ const WorkspaceActions = ({ createNewProject, openLabelsSheet, openSettingsSheet
           <Tag size={16} />
         </Button>
       </TooltipButton>
-      <TooltipButton className="max-md:hidden" toolTipContent={t('common:workspace_settings')}>
+      <TooltipButton className="max-md:hidden" toolTipContent={t('common:resource_settings', { resource: t('app:workspace') })}>
         <Button variant="outline" onClick={openSettingsSheet}>
           <Settings size={16} />
         </Button>
@@ -34,15 +34,15 @@ const WorkspaceActions = ({ createNewProject, openLabelsSheet, openSettingsSheet
         <DropdownMenuContent className="min-w-48" align="end">
           <DropdownMenuItem onClick={() => createNewProject()} className="flex items-center gap-2">
             <Plus size={14} />
-            <span>{t('common:add_project')}</span>
+            <span>{t('common:add_resource', { resource: t('app:project').toLowerCase() })}</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => openLabelsSheet()} className="flex items-center gap-2">
             <Tag size={14} />
-            <span>{t('common:manage_labels')}</span>
+            <span>{t('app:manage_labels')}</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => openSettingsSheet()} className="flex items-center gap-2">
             <Settings size={14} />
-            <span>{t('common:workspace_settings')}</span>
+            <span>{t('common:resource_settings', { resource: t('app:workspace') })}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

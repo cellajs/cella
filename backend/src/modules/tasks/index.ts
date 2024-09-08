@@ -192,4 +192,6 @@ const tasksRoutes = app
     return ctx.json({ success: true }, 200);
   });
 
+export type AppTasksType = typeof tasksRoutes;
+
 export default tasksRoutes;

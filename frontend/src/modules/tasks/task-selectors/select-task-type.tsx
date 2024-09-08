@@ -43,9 +43,9 @@ export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypePr
     try {
       const updatedTask = await updateTask(focusedTaskId, 'type', newType);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
   };
 
@@ -73,13 +73,13 @@ export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypePr
         }}
         wrapClassName="max-sm:hidden"
         className="leading-normal"
-        placeholder={t('common:placeholder.type')}
+        placeholder={t('app:placeholder.type')}
       />
       {!isSearching && <Kbd value="T" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
         {!!searchValue.length && (
           <CommandEmpty className="flex justify-center items-center p-2 text-sm">
-            {t('common:no_resource_found', { resource: t('common:type').toLowerCase() })}
+            {t('common:no_resource_found', { resource: t('app:type').toLowerCase() })}
           </CommandEmpty>
         )}
         <CommandGroup>

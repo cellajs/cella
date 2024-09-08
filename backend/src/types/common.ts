@@ -22,6 +22,7 @@ export type NonEmptyArray<T> = readonly [T, ...T[]];
 
 export type ErrorResponse = z.infer<typeof failWithErrorSchema>;
 
+// TODO find a way to make this generic for template, also make name more descriptive/specific. MiddlewareEnv? CommonEnv?
 export type Env = {
   Variables: {
     user: User;

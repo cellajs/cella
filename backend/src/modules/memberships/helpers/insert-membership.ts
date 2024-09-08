@@ -52,9 +52,19 @@ export const insertMembership = async ({ user, role, entity, createdBy = user.id
   }
 
   // Insert
-  const results = await db.insert(membershipsTable).values(newMembership).returning();
+  // TODO y can't use partial returning
+  const [results] = await db.insert(membershipsTable).values(newMembership).returning();
   // Log
   logEvent(`User added to ${entity.entity}`, { user: user.id, id: entity.id });
-
-  return results;
+  return {
+    id: results.id,
+    role: results.role,
+    archived: results.archived,
+    muted: results.muted,
+    order: results.order,
+    userId: results.userId,
+    organizationId: results.organizationId,
+    workspaceId: results.workspaceId,
+    projectId: results.projectId,
+  };
 };

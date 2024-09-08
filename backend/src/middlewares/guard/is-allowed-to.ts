@@ -1,19 +1,18 @@
 import { eq } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
 import { db } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import permissionManager, { HierarchicalEntity } from '#/lib/permission-manager';
-import { resolveProduct } from '#/lib/product';
 import type { ContextEntity, Entity, Env, ProductEntity } from '#/types/common';
 import { logEvent } from '../logger/log-event';
 
-export type PermissionAction = 'create' | 'update' | 'read' | 'write';
+export type PermissionAction = 'create' | 'update' | 'read' | 'delete';
 
 /**
  * Middleware to protect routes by checking user permissions.
- * @param action - The action to be performed (e.g. 'read', 'write').
+ * @param action - The action to be performed (e.g. 'read').
  * @param type - The type of the entity (e.g. 'user', 'organization') or product ('task').
  * @returns MiddlewareHandler to protect routes based on user permissions.
  */
@@ -30,14 +29,11 @@ const isAllowedTo =
 
       // Check if user or context is missing
       if (!contextEntity || !user) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', type, {
-          user: user?.id,
-          id: contextEntity?.id || '',
-        });
+        return errorResponse(ctx, 404, 'not_found', 'warn', type, { user: user?.id, id: contextEntity?.id || '' });
       }
 
       // Fetch user's memberships from the database
-      const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+      const memberships = await db.select(membershipSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
       // Check if the user is allowed to perform the action in the given context
       const isAllowed = permissionManager.isPermissionAllowed(memberships, action, contextEntity);
@@ -72,19 +68,11 @@ async function getEntityContext(ctx: any, entityType: Entity) {
   }
 
   // Extract entity id or slug from request params or query
-  const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(`${entityType}Id`);
-
-  // Extract product id or slug from request params or query
-  const id = ctx.req.param('id') || ctx.req.query(`${entityType}Id`);
+  const idOrSlug = ctx.req.param('idOrSlug') || ctx.req.query(`${entityType}Id` || ctx.req.param('id'));
 
   if (idOrSlug) {
     // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
     return await resolveEntity(entityType, idOrSlug);
-  }
-
-  if (id) {
-    // Handles resolve for direct entity operations (retrieval, update, deletion) based on unique identifier (ID or Slug).
-    return await resolveProduct(entityType, id);
   }
 
   // Generate a context using the lowest parent for entity operations, such as fetching or creating child entities

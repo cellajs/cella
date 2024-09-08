@@ -1,7 +1,8 @@
 import { type InfiniteData, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import type { TaskQueryActions } from '~/lib/custom-events/types';
 import { queryClient } from '~/lib/router';
-import type { Membership, Project, SubTask, Task, Workspace, WorkspaceStoreProject } from '~/types';
+import type { Project, SubTask, Task, Workspace } from '~/types/app';
+import type { Membership } from '~/types/common';
 
 interface Item {
   id: string;
@@ -150,10 +151,25 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
   };
 };
 
+function assertProjects(items: Item[]): asserts items is Project[] {
+  if (!items.length) throw new Error('No items provided');
+  if (!('entity' in items[0])) throw new Error('Not a project');
+}
+
+function assertWorkspaces(items: Item[]): asserts items is Workspace[] {
+  if (!items.length) throw new Error('No items provided');
+  if (!('entity' in items[0])) throw new Error('Not a workspace');
+}
+
+function assertMemberships(items: Item[]): asserts items is Membership[] {
+  if (!items.length) throw new Error('No items provided');
+  if (!('entity' in items[0])) throw new Error('Not a membership');
+}
+
 export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   const queryClient = useQueryClient();
   return (
-    items: Workspace[] | Project[] | Membership[],
+    items: (Workspace | Project | Membership)[],
     action:
       | 'createProject'
       | 'updateProject'
@@ -165,51 +181,57 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
   ) => {
     queryClient.setQueryData<{
       workspace: Workspace;
-      projects: WorkspaceStoreProject[];
+      projects: Project[];
     }>(queryKey, (data) => {
       if (!data) return data;
       switch (action) {
         case 'createProject':
+          assertProjects(items);
           return {
             ...data,
-            projects: [...(items as unknown as WorkspaceStoreProject[]), ...data.projects],
+            projects: [...items, ...data.projects],
           };
 
         case 'updateProject':
+          assertProjects(items);
           return {
             ...data,
             projects: data.projects.map((existingProject) => {
-              const updatedItem = (items as unknown as WorkspaceStoreProject[]).find((newProject) => existingProject.id === newProject.id);
-              return updatedItem ? { ...updatedItem, ...{ members: existingProject.members } } : existingProject;
+              const updatedItem = items.find((newProject) => existingProject.id === newProject.id);
+              return updatedItem ? updatedItem : existingProject;
             }),
           };
 
         case 'deleteProject':
+          assertProjects(items);
           return {
             ...data,
             projects: data.projects.filter((existingProject) => !items.find((item) => item.id === existingProject.id)),
           };
 
         case 'updateWorkspace':
+          assertWorkspaces(items);
           return {
             ...data,
-            workspace: items[0] as Workspace,
+            workspace: items[0],
           };
 
         case 'updateWorkspaceMembership':
+          assertMemberships(items);
           return {
             ...data,
             workspace: {
               ...data.workspace,
               membership: {
                 ...data.workspace.membership,
-                ...(items[0] as Membership),
+                ...items[0],
               },
             },
           };
 
         case 'updateProjectMembership': {
-          const updatedMembership = items[0] as Membership;
+          assertMemberships(items);
+          const updatedMembership = items[0];
           const newProjects = data.projects.map((existing) => ({
             ...existing,
             membership: existing.membership?.id === updatedMembership.id ? { ...existing.membership, ...updatedMembership } : existing.membership,
@@ -222,6 +244,7 @@ export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {
         }
 
         case 'updateMembers': {
+          assertMemberships(items);
           return {
             ...data,
             projects: {

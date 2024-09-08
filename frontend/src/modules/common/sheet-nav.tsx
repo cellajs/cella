@@ -18,27 +18,31 @@ export const SheetNav = ({ tabs }: Props) => {
 
   return (
     <div className="mb-20">
-      <nav className="flex gap-2 pb-4">
-        {tabs.map((tab) => (
-          <div key={tab.id} className="relative">
-            <Button
-              variant="none"
-              className={`hover:opacity-100 ${currentPage.id === tab.id ? 'opacity-100' : 'opacity-80'}`}
-              onClick={() => setCurrentPage(tab)}
-            >
-              {t(tab.label)}
-            </Button>
-            {currentPage.id === tab.id && (
-              <motion.div
-                key={nanoid()}
-                transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                className="h-1 bg-primary w-full absolute bottom-0 left-0"
-              />
-            )}
-          </div>
-        ))}
-      </nav>
-      <Suspense>{renderPage()}</Suspense>
+      {tabs.length > 1 && (
+        <nav className="flex gap-2 pb-4">
+          {tabs.map((tab) => (
+            <div key={tab.id} className="relative">
+              <Button
+                variant="none"
+                className={`hover:opacity-100 ${currentPage.id === tab.id ? 'opacity-100' : 'opacity-80'}`}
+                onClick={() => setCurrentPage(tab)}
+              >
+                {t(tab.label)}
+              </Button>
+              {currentPage.id === tab.id && (
+                <motion.div
+                  key={nanoid()}
+                  transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                  className="h-1 bg-primary w-full absolute bottom-0 left-0"
+                />
+              )}
+            </div>
+          ))}
+        </nav>
+      )}
+      <Suspense>
+        <div className="py-5">{renderPage()}</div>
+      </Suspense>
     </div>
   );
 };

@@ -9,7 +9,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import { UploadType } from '~/types';
+import { UploadType } from '~/types/common';
 
 // Lazy load the upload component
 const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));
@@ -66,8 +66,9 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
           }}
           plugins={['webcam', 'image-editor']}
           imageMode="cover"
-          setUrl={(url) => {
-            setUrl(url);
+          callback={(result) => {
+            const url = result[0].url;
+            if (url) setUrl(url);
             dialog.remove(true, 'page-cover');
           }}
         />
@@ -81,7 +82,10 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
     );
   };
   return (
-    <div className={`relative bg-cover bg-center ${bannerHeight} ${bannerClass}`} style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}>
+    <div
+      className={`relative bg-cover bg-muted bg-center ${bannerHeight} ${bannerClass}`}
+      style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
+    >
       {(isAdmin || isSelf) && (
         <Button
           variant="secondary"

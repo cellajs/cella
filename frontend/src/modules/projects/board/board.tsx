@@ -1,4 +1,4 @@
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
 import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,8 @@ import BoardHeader from '~/modules/projects/board/header/board-header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task, WorkspaceStoreProject } from '~/types';
+import type { Project, SubTask, Task } from '~/types/app';
+import type { DraggableItemData } from '~/types/common';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -22,16 +23,31 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
-import type { TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
-import { isSubTaskData, isTaskData } from '~/lib/drag-and-drop';
+import type { TaskCRUDEvent, TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
 import { queryClient } from '~/lib/router';
+import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/state';
+import { sheet } from '~/modules/common/sheeter/state';
 import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
+import { TaskCard } from '~/modules/tasks/task';
 import { useNavigationStore } from '~/store/navigation';
+import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
 const PANEL_MIN_WIDTH = 300;
 // Allow resizing of panels
 const EMPTY_SPACE_WIDTH = 300;
+
+// TODO can this be simplified or moved?
+export type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
+export type SubTaskDraggableItemData = DraggableItemData<SubTask> & { type: 'subTask' };
+
+export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
+};
+export const isSubTaskData = (data: Record<string | symbol, unknown>): data is SubTaskDraggableItemData => {
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'subTask';
+};
 
 function getScrollerWidth(containerWidth: number, projectsLength: number) {
   if (containerWidth === 0) return '100%';
@@ -42,11 +58,13 @@ function BoardDesktop({
   workspaceId,
   projects,
   expandedTasks,
+  editingTasks,
   columnTaskCreate,
   toggleCreateForm,
 }: {
   expandedTasks: Record<string, boolean>;
-  projects: WorkspaceStoreProject[];
+  editingTasks: Record<string, boolean>;
+  projects: Project[];
   workspaceId: string;
   columnTaskCreate: Record<string, boolean>;
   toggleCreateForm: (projectId: string) => void;
@@ -66,6 +84,7 @@ function BoardDesktop({
                 <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
                   <BoardColumn
                     expandedTasks={expandedTasks}
+                    editingTasks={editingTasks}
                     createForm={isFormOpen}
                     toggleCreateForm={toggleCreateForm}
                     key={project.id}
@@ -86,6 +105,8 @@ function BoardDesktop({
 
 export default function Board() {
   const { t } = useTranslation();
+  const { mode } = useThemeStore();
+  const navigate = useNavigate();
   const { menu } = useNavigationStore();
   const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const isDesktopLayout = useBreakpoints('min', 'sm');
@@ -93,7 +114,8 @@ export default function Board() {
 
   const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
-  const { project, q } = useSearch({
+  const [editingTasks, setEditingTasks] = useState<Record<string, boolean>>({});
+  const { project, q, taskIdPreview } = useSearch({
     from: WorkspaceBoardRoute.id,
   });
 
@@ -102,6 +124,18 @@ export default function Board() {
     if (project) return projects.find((p) => p.slug === project) || projects[0];
     return projects[0];
   }, [project, projects]);
+
+  const queries = queryClient.getQueriesData({ queryKey: ['boardTasks'] });
+  const tasks = useMemo(() => {
+    return queries.flatMap((el) => {
+      const [, data] = el as [string[], undefined | { items: Task[] }];
+      return data?.items ?? [];
+    });
+  }, [queries]);
+  const [currentTask] = useMemo(() => {
+    const taskId = taskIdPreview ? taskIdPreview : focusedTaskId;
+    return tasks.filter((t) => t.id === taskId);
+  }, [tasks, focusedTaskId, taskIdPreview]);
 
   const toggleCreateTaskForm = (itemId: string) => {
     setColumnTaskCreate((prevState) => ({
@@ -170,14 +204,33 @@ export default function Board() {
       [taskId]: isExpanded,
     }));
   };
+  const setTaskEditing = (taskId: string, isEditing: boolean) => {
+    setEditingTasks((prevState) => ({
+      ...prevState,
+      [taskId]: isEditing,
+    }));
+  };
 
   const handleEscKeyPress = () => {
-    if (focusedTaskId && expandedTasks[focusedTaskId]) setTaskExpanded(focusedTaskId, false);
+    if (!focusedTaskId || !expandedTasks[focusedTaskId]) return;
+    setTaskExpanded(focusedTaskId, false);
   };
 
   const handleEnterKeyPress = () => {
     if (!focusedTaskId) return;
     setTaskExpanded(focusedTaskId, true);
+    if (expandedTasks[focusedTaskId]) setTaskEditing(focusedTaskId, true);
+  };
+
+  // Open on key press
+  const hotKeyPress = (field: string) => {
+    if (!currentTask) return;
+    const taskCard = document.getElementById(currentTask.id);
+    if (!taskCard) return;
+    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
+    const trigger = taskCard.querySelector(`#${field}`);
+    if (!trigger) return dropdowner.remove();
+    handleTaskDropDownClick(currentTask, field, trigger as HTMLElement);
   };
 
   useHotkeys([
@@ -185,9 +238,14 @@ export default function Board() {
     ['ArrowLeft', handleHorizontalArrowKeyDown],
     ['ArrowDown', handleVerticalArrowKeyDown],
     ['ArrowUp', handleVerticalArrowKeyDown],
-    ['N', handleNKeyDown],
     ['Escape', handleEscKeyPress],
     ['Enter', handleEnterKeyPress],
+    ['N', handleNKeyDown],
+    ['A', () => hotKeyPress('assignedTo')],
+    ['I', () => hotKeyPress('impact')],
+    ['L', () => hotKeyPress('labels')],
+    ['S', () => hotKeyPress(`status-${focusedTaskId}`)],
+    ['T', () => hotKeyPress('type')],
   ]);
 
   const handleTaskClick = (event: TaskCardFocusEvent) => {
@@ -209,19 +267,54 @@ export default function Board() {
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
+  const handleOpenTaskSheet = (taskId: string) => {
+    navigate({
+      replace: true,
+      resetScroll: false,
+      search: (prev) => ({
+        ...prev,
+        ...{ taskIdPreview: taskId },
+      }),
+    });
+    sheet.create(
+      <TaskCard mode={mode} task={currentTask} tasks={tasks} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />,
+      {
+        className: 'max-w-full lg:max-w-4xl',
+        title: <span className="pl-4">{t('app:task')}</span>,
+        id: `task-preview-${taskId}`,
+      },
+    );
+  };
+
+  const handleCRUD = (event: TaskCRUDEvent) => {
+    const { array, action, projectId } = event.detail;
+    const callback = useMutateTasksQueryData(['boardTasks', projectId]);
+    callback(array, action);
+    const { items: tasks } = queryClient.getQueryData(['boardTasks', projectId]) as { items: Task[] };
+    if (!tasks.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
+    const [sheetTask] = tasks.filter((t) => t.id === focusedTaskId);
+    sheet.update(`task-preview-${sheetTask.id}`, {
+      content: <TaskCard mode={mode} task={sheetTask} tasks={tasks} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />,
+    });
+  };
+
+  useEventListener('taskCRUD', handleCRUD);
   useEventListener('taskCardClick', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('toggleCard', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
+  useEventListener('openTaskCardPreview', (event) => handleOpenTaskSheet(event.detail));
+  useEventListener('toggleTaskEditing', (e) => setTaskEditing(e.detail.id, e.detail.state));
 
   useEffect(() => {
     if (q?.length) setSearchQuery(q);
+    if (taskIdPreview) handleOpenTaskSheet(taskIdPreview);
   }, []);
 
   useEffect(() => {
     return combine(
       monitorForElements({
         canMonitor({ source }) {
-          return isTaskData(source.data) || isSubTaskData(source.data);
+          return (isTaskData(source.data) || isSubTaskData(source.data)) && !sheet.getAll().length;
         },
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
@@ -253,7 +346,7 @@ export default function Board() {
                 mainCallback([updatedTask], 'update');
               }
             } catch (err) {
-              toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
+              toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));
             }
           }
 
@@ -263,7 +356,7 @@ export default function Board() {
               const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
               mainCallback([updatedTask], 'updateSubTask');
             } catch (err) {
-              toast.error(t('common:error.reorder_resources', { resources: t('common:todo') }));
+              toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));
             }
           }
         },
@@ -278,7 +371,7 @@ export default function Board() {
         <ContentPlaceholder
           className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"
           Icon={Bird}
-          title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })}
+          title={t('common:no_resource_yet', { resource: t('app:projects').toLowerCase() })}
           text={
             <>
               <Redo
@@ -289,7 +382,7 @@ export default function Board() {
               <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/workspace:opacity-100">
                 <span>{t('common:click')}</span>
                 <span className="text-primary">{`+ ${t('common:add')}`}</span>
-                <span>{t('common:no_projects.text')}</span>
+                <span>{t('app:no_projects.text')}</span>
               </p>
             </>
           }
@@ -299,6 +392,7 @@ export default function Board() {
           {isDesktopLayout ? (
             <BoardDesktop
               expandedTasks={expandedTasks}
+              editingTasks={editingTasks}
               columnTaskCreate={columnTaskCreate}
               toggleCreateForm={toggleCreateTaskForm}
               projects={projects}
@@ -307,6 +401,7 @@ export default function Board() {
           ) : (
             <BoardColumn
               expandedTasks={expandedTasks}
+              editingTasks={editingTasks}
               createForm={columnTaskCreate[mobileDeviceProject.id] || false}
               toggleCreateForm={toggleCreateTaskForm}
               project={mobileDeviceProject}

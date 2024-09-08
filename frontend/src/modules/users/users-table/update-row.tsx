@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 import { Pencil } from 'lucide-react';
 
@@ -30,7 +30,7 @@ const UpdateRow = ({ user, callback, tabIndex }: Props) => {
       {
         id: 'update-user',
         className: 'max-w-full lg:max-w-4xl',
-        title: t('common:edit_user'),
+        title: t('common:edit_resource', { resource: t('common:user').toLowerCase() }),
       },
     );
   };

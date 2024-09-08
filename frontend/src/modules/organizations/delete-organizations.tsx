@@ -1,5 +1,5 @@
 import { deleteOrganizations as baseDeleteOrganizations } from '~/api/organizations';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 
 import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';

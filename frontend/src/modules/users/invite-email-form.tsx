@@ -19,7 +19,7 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { EntityPage } from '~/types';
+import type { EntityPage } from '~/types/common';
 
 interface Props {
   entity?: EntityPage;

@@ -22,7 +22,7 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
-import type { Organization, UserMenuItem } from '~/types';
+import type { Organization, UserMenuItem } from '~/types/common';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -105,8 +105,8 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
         <SlugFormField
           control={form.control}
           type="organization"
-          label={t('common:organization_handle')}
-          description={t('common:organization_handle.text')}
+          label={t('common:resource_handle', { resource: t('common:organization') })}
+          description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           nameValue={name}
         />
 

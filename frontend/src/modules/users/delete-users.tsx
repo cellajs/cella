@@ -1,5 +1,5 @@
 import { deleteUsers as baseDeleteUsers } from '~/api/users';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';

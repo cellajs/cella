@@ -13,7 +13,7 @@ import StickyBox from '~/modules/common/sticky-box';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import Subscription from '~/modules/organizations/subscription';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

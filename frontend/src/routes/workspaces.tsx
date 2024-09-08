@@ -55,7 +55,7 @@ export const tasksSearchSchema = z.object({
 export const WorkspaceBoardRoute = createRoute({
   path: '/board',
   staticData: { pageTitle: 'Board', isAuth: true },
-  validateSearch: z.object({ project: z.string().optional(), q: z.string().optional() }),
+  validateSearch: z.object({ project: z.string().optional(), q: z.string().optional(), taskIdPreview: z.string().optional() }),
   getParentRoute: () => WorkspaceRoute,
   component: () => (
     <Suspense>

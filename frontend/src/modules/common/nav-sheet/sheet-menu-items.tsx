@@ -5,7 +5,7 @@ import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenuItem } from '~/types';
+import type { ContextEntity, UserMenuItem } from '~/types/common';
 
 interface SheetMenuItemProps {
   item: UserMenuItem;
@@ -55,11 +55,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
         <div className={`max-sm:hidden text-muted-foreground ${mainItemIdOrSlug && !searchResults ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type)}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
-            {item.submenu
-              ? `${item.submenu?.length || 0} ${t('common:projects').toLowerCase()}`
-              : item.membership.role
-                ? t(item.membership.role)
-                : ''}
+            {item.submenu ? `${item.submenu?.length || 0} ${t('app:projects').toLowerCase()}` : item.membership.role ? t(item.membership.role) : ''}
           </span>
         </div>
       </div>

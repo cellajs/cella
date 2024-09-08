@@ -13,6 +13,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { queryClient } from '~/lib/router';
 import AcceptInvite from '~/modules/common/accept-invite';
 
+import type { ErrorType } from 'backend/lib/errors';
 import { Suspense, lazy } from 'react';
 import type { ApiError } from '~/api';
 import { onError } from '~/lib/query-client';
@@ -26,7 +27,6 @@ import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute 
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemPanelRoute, UsersTableRoute } from '~/routes/system';
 import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
 import { WorkspaceBoardRoute, WorkspaceOverviewRoute, WorkspaceRoute, WorkspaceTableRoute } from '~/routes/workspaces'; //WorkspaceMembersRoute,
-import type { ErrorType } from '#/lib/errors';
 
 // Lazy load main App component, which is behind authentication
 const App = lazy(() => import('~/modules/common/app'));

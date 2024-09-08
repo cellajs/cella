@@ -1,12 +1,19 @@
-import { GridSuggestionMenuController } from '@blocknote/react';
+import { DragHandleButton, GridSuggestionMenuController, SideMenu, SideMenuController } from '@blocknote/react';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { getMentionMenuItems, type schemaWithMentions } from '~/modules/common/blocknote/mention';
-import type { Member } from '~/types';
+import type { Member } from '~/types/common';
 
 export const BlockNoteForTaskContent = ({ editor, members }: { editor: typeof schemaWithMentions.BlockNoteEditor; members: Member[] }) => (
   <>
     <CustomSlashMenu />
+    <SideMenuController
+      sideMenu={(props) => (
+        <SideMenu {...props}>
+          <DragHandleButton dragHandleMenu={() => null} {...props} />
+        </SideMenu>
+      )}
+    />
     <GridSuggestionMenuController
       triggerCharacter={'@'}
       getItems={async () =>

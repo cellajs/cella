@@ -24,7 +24,6 @@ import { passkeysTable } from '#/db/schema/passkeys';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
-import { i18n } from '#/lib/i18n';
 import { emailSender } from '#/lib/mailer';
 import { nanoid } from '#/lib/nanoid';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -123,14 +122,10 @@ const authRoutes = app
       expiresAt: createDate(new TimeSpan(2, 'h')),
     });
 
-    const emailLanguage = user?.language || config.defaultLanguage;
-
     // generating email html
     const emailHtml = await render(
       VerificationEmail({
-        i18n: i18n.cloneInstance({
-          lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
-        }),
+        userLanguage: user?.language || config.defaultLanguage,
         verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
       }),
     );
@@ -214,14 +209,11 @@ const authRoutes = app
       expiresAt: createDate(new TimeSpan(2, 'h')),
     });
 
-    const emailLanguage = user?.language || config.defaultLanguage;
-
     // generating email html
     const emailHtml = await render(
       ResetPasswordEmail({
-        i18n: i18n.cloneInstance({
-          lng: i18n.languages.includes(emailLanguage) ? emailLanguage : config.defaultLanguage,
-        }),
+        userName: user.name,
+        userLanguage: user?.language || config.defaultLanguage,
         resetPasswordLink: `${config.frontendUrl}/auth/reset-password/${token}`,
       }),
     );
@@ -833,4 +825,7 @@ const authRoutes = app
     await setSessionCookie(ctx, user.id, 'passkey');
     return ctx.json({ success: true }, 200);
   });
+
+export type AppAuthType = typeof authRoutes;
+
 export default authRoutes;

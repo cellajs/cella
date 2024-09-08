@@ -71,4 +71,6 @@ const requestsRoutes = app
     return ctx.json({ success: true, data: { items, total } }, 200);
   });
 
+export type AppRequestsType = typeof requestsRoutes;
+
 export default requestsRoutes;

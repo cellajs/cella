@@ -1,9 +1,9 @@
 import { Heading } from 'jsx-email';
-import { Logo } from './logo';
+import { AppLogo } from './app-logo';
 
 export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNode }) => (
   <>
-    <Logo />
+    <AppLogo />
     <Heading
       style={{
         margin: '1.875rem 0',

@@ -10,7 +10,7 @@ import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useColumns } from '~/modules/projects/projects-table/columns';
-import type { Project } from '~/types';
+import type { Project } from '~/types/app';
 
 import { Trash, XSquare } from 'lucide-react';
 import { toast } from 'sonner';
@@ -118,14 +118,14 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
         projects={selectedProjects}
         callback={(projects) => {
           callback(projects, 'delete');
-          toast.success(t('common:success.delete_resources', { resources: t('common:projects') }));
+          toast.success(t('common:success.delete_resources', { resources: t('app:projects') }));
         }}
       />,
       {
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('common:confirm.delete_resources', { resources: t('common:projects').toLowerCase() }),
+        text: t('common:confirm.delete_resources', { resources: t('app:projects').toLowerCase() }),
       },
     );
   };
@@ -178,7 +178,7 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
           enableVirtualization: false,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:projects').toLowerCase() })} />,
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('app:projects').toLowerCase() })} />,
         }}
       />
     </div>

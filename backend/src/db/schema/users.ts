@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { relations } from 'drizzle-orm';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { omitKeys } from '#/lib/omit';
 import { membershipsTable } from './memberships';
 
 const roleEnum = config.rolesByType.systemRoles;
@@ -55,16 +56,8 @@ export const usersTableRelations = relations(usersTable, ({ many }) => ({
   organizations: many(membershipsTable),
 }));
 
+export const safeUserSelect = omitKeys(usersTable, config.sensitiveFields);
+
 export type UnsafeUserModel = typeof usersTable.$inferSelect;
 export type InsertUserModel = typeof usersTable.$inferInsert;
 export type UserModel = Omit<UnsafeUserModel, (typeof config.sensitiveFields)[number]>;
-
-// TODO find a better way
-const keys = Object.keys(usersTable).filter((k) => !(config.sensitiveFields as unknown as string[]).includes(k)) as (keyof UserModel)[];
-export const safeUserSelect = keys.reduce(
-  (acc, k) => {
-    acc[k] = usersTable[k];
-    return acc;
-  },
-  {} as Record<string, (typeof usersTable)[keyof typeof usersTable]>,
-) as unknown as typeof usersTable;

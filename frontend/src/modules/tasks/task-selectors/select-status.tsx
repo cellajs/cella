@@ -22,7 +22,7 @@ import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~
 import { Input } from '~/modules/ui/input';
 import { WorkspaceRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },
@@ -126,9 +126,9 @@ const SelectStatus = ({
       const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
       const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
   };
 
@@ -153,7 +153,7 @@ const SelectStatus = ({
     <Command className="relative rounded-lg w-60">
       <Input
         className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden"
-        placeholder={t('common:placeholder.set_status')}
+        placeholder={t('app:placeholder.set_status')}
         value={searchValue}
         autoFocus={true}
         onChange={(e) => {
@@ -179,7 +179,7 @@ const SelectStatus = ({
       <CommandList>
         {!!searchValue.length && (
           <CommandEmpty className="flex justify-center items-center p-2 text-sm">
-            {t('common:no_resource_found', { resource: t('common:status').toLowerCase() })}
+            {t('common:no_resource_found', { resource: t('app:status').toLowerCase() })}
           </CommandEmpty>
         )}
         <CommandGroup>
@@ -192,7 +192,7 @@ const SelectStatus = ({
             >
               <div className="flex items-center">
                 <status.icon className={`size-4 mr-2 fill-current ${statusFillColors[status.value] || ''}`} />
-                <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''}`}>{t(status.status)}</span>
+                <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''}`}>{t(`app:${status.status}`)}</span>
               </div>
               <div className="flex items-center">
                 {selectedStatus.value === status.value && <Check size={16} className="text-success" />}

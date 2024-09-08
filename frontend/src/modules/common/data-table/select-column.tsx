@@ -3,7 +3,7 @@ import type { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
 
-import type { Member, User } from '~/types';
+import type { Member, User } from '~/types/common';
 
 export const renderSelect = <TRow extends User | Member>({
   row,

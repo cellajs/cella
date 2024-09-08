@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { createContext } from 'react';
 
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 import { UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

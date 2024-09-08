@@ -18,7 +18,12 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Type checking */
+    "incremental": true,
+    "declaration": true,
+    "composite": true
   },
-  "exclude": ["node_modules", "dist", "generated"]
+  "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

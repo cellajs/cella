@@ -13,7 +13,7 @@ import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 type AssignableMember = Omit<User, 'counts'>;
 
@@ -27,16 +27,16 @@ interface AssignMembersProps {
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { focusedTaskId, projects } = useWorkspaceStore();
+  const { focusedTaskId, members } = useWorkspaceStore();
   const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
   const isMobile = useBreakpoints('max', 'sm');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentProject = projects.find((p) => p.id === projectId);
-  const members = currentProject?.members || [];
-  const sortedMembers = [...members].sort((a, b) => {
+  const projectMembers = members.filter((m) => m.membership.projectId === projectId);
+
+  const sortedMembers = [...projectMembers].sort((a, b) => {
     const aSelected = selectedMembers.some((user) => user.id === a.id) ? 1 : 0;
     const bSelected = selectedMembers.some((user) => user.id === b.id) ? 1 : 0;
     return bSelected - aSelected;
@@ -57,9 +57,9 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
         members.map((user) => user.id),
       );
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update' });
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:task') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
   };
 
@@ -74,7 +74,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
       if (creationValueChange) return creationValueChange(updatedList);
       return changeAssignedTo(updatedList);
     }
-    const newUser = members.find((m) => m.id === id);
+    const newUser = projectMembers.find((m: { id: string }) => m.id === id);
     if (newUser) {
       const updatedList = [...selectedMembers, newUser];
       setSelectedMembers(updatedList);
@@ -89,13 +89,13 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
       <Input
         ref={inputRef}
         className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden min-h-10"
-        placeholder={t('common:placeholder.assign')}
+        placeholder={t('app:placeholder.assign')}
         value={searchValue}
         autoFocus={true}
         onChange={(e) => {
           const searchValue = e.target.value;
           // If the user types a number, select status like useHotkeys
-          if (!showAll && inNumbersArray(6, searchValue)) return handleSelectClick(members[Number.parseInt(searchValue) - 1]?.id);
+          if (!showAll && inNumbersArray(6, searchValue)) return handleSelectClick(projectMembers[Number.parseInt(searchValue) - 1]?.id);
           setSearchValue(searchValue);
         }}
       />

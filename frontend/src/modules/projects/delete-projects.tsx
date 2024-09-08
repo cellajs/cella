@@ -3,7 +3,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import type { Project } from '~/types';
+import type { Project } from '~/types/app';
 
 interface Props {
   projects: Project[];

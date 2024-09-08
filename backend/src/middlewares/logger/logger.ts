@@ -20,7 +20,7 @@ const time = (start: number) => {
   return humanize([delta < 1000 ? `${delta}ms` : `${Math.round(delta / 1000)}s`]);
 };
 
-type PrintFunc = (str: string, ...rest: string[]) => void;
+type PrintFunc = (str: string) => void;
 
 function log(fn: PrintFunc, prefix: string, logId: string, method: string, path: string, status = 0, elapsed?: string, user?: string, org?: string) {
   const out =

@@ -2,7 +2,7 @@ import { removeMembers as baseRemoveMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import type { ContextEntity, Member } from '~/types';
+import type { ContextEntity, Member } from '~/types/common';
 
 interface Props {
   entityId: string;

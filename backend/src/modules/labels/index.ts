@@ -84,4 +84,6 @@ const labelsRoutes = app
     return ctx.json({ success: true }, 200);
   });
 
+export type AppLabelsType = typeof labelsRoutes;
+
 export default labelsRoutes;

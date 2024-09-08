@@ -4,8 +4,9 @@ import { updateOrganizationBodySchema } from 'backend/modules/organizations/sche
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 
+import { config } from 'config';
 import { useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -123,7 +124,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AvatarFormField
           control={form.control}
-          label={t('common:organization_logo')}
+          label={t('common:resource_logo', { resource: t('common:organization') })}
           type="organization"
           name="thumbnailUrl"
           entity={organization}
@@ -134,12 +135,16 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         <SlugFormField
           control={form.control}
           type="organization"
-          label={t('common:organization_handle')}
-          description={t('common:organization_handle.text')}
+          label={t('common:resource_handle', { resource: t('common:organization') })}
+          description={t('common:resource_handle.text', { resource: t('common:organization').toLowerCase() })}
           previousSlug={organization.slug}
         />
         <InputFormField control={form.control} name="shortName" label={t('common:short_name')} required />
-        <DomainsFormField control={form.control} label={t('common:email_domains')} description={t('common:email_domains.text')} />
+        <DomainsFormField
+          control={form.control}
+          label={t('common:email_domains')}
+          description={t('common:email_domains.text', { domain: config.domain })}
+        />
         <InputFormField
           control={form.control}
           type="email"

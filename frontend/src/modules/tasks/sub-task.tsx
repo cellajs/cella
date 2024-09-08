@@ -5,20 +5,23 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { useLocation } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { ChevronUp, Trash } from 'lucide-react';
+import { Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { deleteTasks, updateTask } from '~/api/tasks';
+import { useEventListener } from '~/hooks/use-event-listener';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { getDraggableItemData, isSubTaskData } from '~/lib/drag-and-drop';
+import { getDraggableItemData } from '~/lib/drag-drop';
 import { cn } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { TaskHeader } from '~/modules/tasks/task-header';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
-import type { SubTask as BaseSubTask } from '~/types';
+import type { SubTask as BaseSubTask, Task } from '~/types/app';
+import { isSubTaskData } from '../projects/board/board';
 
 const SubTask = ({
   task,
@@ -31,6 +34,7 @@ const SubTask = ({
 
   const { pathname } = useLocation();
   const subTaskRef = useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -38,9 +42,9 @@ const SubTask = ({
   const onRemove = (subTaskId: string) => {
     deleteTasks([subTaskId]).then((resp) => {
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [{ id: subTaskId }], action: 'deleteSubTask' });
-      if (resp) toast.success(t('common:success.delete_resources', { resources: t('common:todos') }));
-      else toast.error(t('common:error.delete_resources', { resources: t('common:todos') }));
+      dispatchCustomEvent(eventName, { array: [{ id: subTaskId }], action: 'deleteSubTask', projectId: task.projectId });
+      if (resp) toast.success(t('common:success.delete_resources', { resources: t('app:todos') }));
+      else toast.error(t('common:error.delete_resources', { resources: t('app:todos') }));
     });
   };
 
@@ -53,11 +57,15 @@ const SubTask = ({
     try {
       const updatedTask = await updateTask(task.id, 'status', newStatus);
       const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask' });
+      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask', projectId: task.projectId });
     } catch (err) {
-      toast.error(t('common:error.update_resource', { resource: t('common:todo') }));
+      toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
     }
   };
+
+  useEventListener('toggleSubTaskEditing', (e) => {
+    if (task.id === e.detail.id) setIsEditing(e.detail.state);
+  });
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
@@ -106,7 +114,7 @@ const SubTask = ({
         layout
         transition={{ duration: 0 }}
         ref={subTaskRef}
-        className={`relative flex items-start gap-1 p-1 border-b-2 hover:bg-secondary/80 border-background opacity-${dragging ? '30' : '100'} bg-secondary/50`}
+        className={`relative flex items-start gap-1 p-1 mb-0.5 hover:bg-secondary/40 opacity-${dragging ? '30' : '100'} bg-secondary/25`}
       >
         <div className="flex flex-col gap-1">
           <Checkbox
@@ -118,39 +126,59 @@ const SubTask = ({
             checked={task.status === 6}
             onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
           />
-
-          {isEditing && task.expandable && (
-            <Button onClick={() => setIsEditing(false)} aria-label="Collapse" variant="ghost" size="xs" className="bg-secondary/80">
-              <ChevronUp size={16} />
-            </Button>
-          )}
         </div>
-        <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
-          <div className={!isEditing ? 'inline-flex items-center mt-1' : 'flex flex-col items-start mt-1'}>
-            {isEditing ? (
-              <TaskBlockNote
-                id={task.id}
-                projectId={task.projectId}
-                html={task.description || ''}
-                mode={mode}
-                className="w-full bg-transparent border-none"
-                subTask
-              />
-            ) : (
+        <div
+          onClick={() => {
+            if (!isExpanded) setIsExpanded(true);
+          }}
+          onKeyDown={() => {}}
+          className="flex flex-col grow min-h-7 justify-center gap-2 mx-1"
+        >
+          <div className={!isExpanded ? 'inline-flex items-center mt-1' : 'flex flex-col items-start'}>
+            {!isExpanded ? (
               // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
-              // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-              <div onClick={() => setIsEditing(true)} dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
+              <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
+            ) : (
+              <>
+                <TaskHeader
+                  task={task as Task}
+                  isEditing={isEditing}
+                  changeEditingState={(state) => setIsEditing(state)}
+                  closeExpand={() => setIsExpanded(false)}
+                />
+                {isEditing ? (
+                  <>
+                    <TaskBlockNote
+                      id={task.id}
+                      projectId={task.projectId}
+                      html={task.description || ''}
+                      mode={mode}
+                      className="w-full pr-2 bg-transparent border-none"
+                      subTask
+                    />
+                  </>
+                ) : (
+                  <div className={'w-full bg-transparent pr-2 border-none bn-container bn-shadcn'} data-color-scheme={mode}>
+                    <div
+                      // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+                      dangerouslySetInnerHTML={{ __html: task.description }}
+                      onClick={() => setIsEditing(true)}
+                      onKeyDown={() => {}}
+                    />
+                  </div>
+                )}
+              </>
             )}
 
-            {task.expandable && !isEditing && (
-              <Button onClick={() => setIsEditing(true)} variant="link" size="micro" className="py-0">
+            {task.expandable && !isExpanded && (
+              <Button onClick={() => setIsExpanded(true)} variant="link" size="micro" className="py-0">
                 {t('common:more').toLowerCase()}
               </Button>
             )}
           </div>
         </div>
         <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer opacity-30">
-          <span className="sr-only">{t('common:move_task')}</span>
+          <span className="sr-only">{t('app:move_task')}</span>
           <Trash size={16} />
         </Button>
         {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}

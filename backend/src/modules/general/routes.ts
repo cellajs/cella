@@ -1,7 +1,6 @@
 import { z } from '@hono/zod-openapi';
-import { config } from 'config';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/lib/common-responses';
-import { contextEntityTypeSchema, entityParamSchema, slugSchema, tokenSchema } from '#/lib/common-schemas';
+import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/lib/common-schemas';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
@@ -12,7 +11,6 @@ import {
   inviteBodySchema,
   membersQuerySchema,
   membersSchema,
-  minEntityInfoSchema,
   publicCountsSchema,
   suggestionsSchema,
 } from './schema';
@@ -268,11 +266,11 @@ class GeneralRoutesConfig {
     guard: isAuthenticated,
     tags: ['general'],
     summary: 'Get list of suggestions',
-    description: 'Get search suggestions for all entities, such as users and organizations.',
+    description: 'Get search suggestions for page entities such as users and organizations. It returns suggestions to which the user has access.',
     request: {
       query: z.object({
         q: z.string().optional(),
-        type: z.enum(config.pageEntityTypes).optional(),
+        type: pageEntityTypeSchema.optional(),
       }),
     },
     responses: {
@@ -304,30 +302,6 @@ class GeneralRoutesConfig {
         content: {
           'application/json': {
             schema: successWithPaginationSchema(membersSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getMinimumEntityInfo = createRouteConfig({
-    method: 'get',
-    path: '/entity-info/{idOrSlug}',
-    guard: isAuthenticated,
-    tags: ['general'],
-    summary: 'Get entity info',
-    description: 'Get minimal entity info by id or slug.',
-    request: {
-      params: entityParamSchema,
-      query: z.object({ entityType: contextEntityTypeSchema }),
-    },
-    responses: {
-      200: {
-        description: 'Entity info',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(minEntityInfoSchema),
           },
         },
       },

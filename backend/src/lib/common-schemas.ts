@@ -6,19 +6,15 @@ export const passwordSchema = z.string().min(8).max(100);
 export const cookieSchema = z.string();
 
 export const entityTypeSchema = z.enum(config.entityTypes);
+export const pageEntityTypeSchema = z.enum(config.pageEntityTypes);
 export const contextEntityTypeSchema = z.enum(config.contextEntityTypes);
-
 export const productTypeSchema = z.enum(config.productEntityTypes);
 
 export const idSchema = z.string();
-
 export const slugSchema = z.string();
-
 export const idOrSlugSchema = idSchema.or(slugSchema);
 
-export const tokenSchema = z.object({
-  token: z.string(),
-});
+export const tokenSchema = z.object({ token: z.string() });
 
 export const errorSchema = z.object({
   message: z.string(),

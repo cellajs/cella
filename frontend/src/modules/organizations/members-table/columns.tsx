@@ -1,8 +1,9 @@
-import type { Member } from '~/types';
+import type { Member } from '~/types/common';
 
 import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import type { TFunction } from 'i18next';
+import { ChevronDown } from 'lucide-react';
 import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
@@ -63,7 +64,12 @@ export const useColumns = (
       sortable: true,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => t(row.membership.role),
+      renderCell: ({ row }) => (
+        <div className="inline-flex items-center gap-1 relative group h-full w-full">
+          {t(row.membership.role)}
+          <ChevronDown size={16} className="transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
+        </div>
+      ),
       width: 100,
       ...(isAdmin && {
         renderEditCell: ({ row, onRowChange }) =>

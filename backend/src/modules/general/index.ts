@@ -15,7 +15,7 @@ import { db } from '#/db/db';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { register } from 'prom-client';
 import { labelsTable } from '#/db/schema/labels';
-import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
+import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { projectsTable } from '#/db/schema/projects';
 import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
@@ -31,10 +31,8 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
-import type { Suggestion } from './schema';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -177,8 +175,11 @@ const generalRoutes = app
 
       const emailHtml = await render(
         InviteSystemEmail({
-          user,
-          targetUser,
+          userName: targetUser?.name,
+          userThumbnailUrl: targetUser?.thumbnailUrl,
+          userLanguage: targetUser?.language || user.language,
+          inviteBy: user.name,
+          inviterEmail: user.email,
           token,
         }),
       );
@@ -315,7 +316,7 @@ const generalRoutes = app
 
     // Build queries
     for (const entityType of entityTypes) {
-      const table = entityTables.get(entityType);
+      const table = entityTables.get(entityType) as typeof usersTable | typeof organizationsTable | typeof workspacesTable | typeof projectsTable;
       if (!table) continue;
 
       // Basic selection setup
@@ -382,10 +383,7 @@ const generalRoutes = app
     }
 
     const results = await Promise.all(queries);
-    const items = [];
-
-    // @TODO: Tmp Typescript type solution
-    for (const entities of results as unknown as Array<Suggestion[]>) items.push(...entities.map((e) => e));
+    const items = results.flat();
 
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
   })
@@ -442,7 +440,7 @@ const generalRoutes = app
     const membersQuery = db
       .select({
         user: safeUserSelect,
-        membership: membershipsTable,
+        membership: membershipSelect,
         counts: {
           memberships: membershipCount.memberships,
         },
@@ -459,36 +457,12 @@ const generalRoutes = app
     const members = await Promise.all(
       result.map(async ({ user, membership, counts }) => ({
         ...user,
-        membership: toMembershipInfo.required(membership),
+        membership,
         counts,
       })),
     );
 
     return ctx.json({ success: true, data: { items: members, total } }, 200);
-  })
-  /*
-   *  Get Minimum entity info
-   */
-  .openapi(generalRouteConfig.getMinimumEntityInfo, async (ctx) => {
-    const idOrSlug = ctx.req.param('idOrSlug');
-    const { entityType } = ctx.req.valid('query');
-
-    const { id, slug, name, thumbnailUrl, bannerUrl } = await resolveEntity(entityType, idOrSlug);
-
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          id,
-          slug,
-          name,
-          thumbnailUrl,
-          bannerUrl,
-          entity: entityType,
-        },
-      },
-      200,
-    );
   })
   /*
    * Unsubscribe a user by token
@@ -541,5 +515,7 @@ const generalRoutes = app
       }
     });
   });
+
+export type AppGeneralType = typeof generalRoutes;
 
 export default generalRoutes;

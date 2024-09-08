@@ -1,12 +1,16 @@
-import { apiClient, handleResponse } from '.';
+import type { AppWorkspacesType } from 'backend/modules/workspaces/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
+import { clientConfig, handleResponse } from '.';
 
-const client = apiClient.workspaces;
+// Create Hono clients to make requests to the backend
+export const client = hc<AppWorkspacesType>(`${config.backendUrl}/workspaces`, clientConfig);
 
-export type CreateWorkspaceParams = Parameters<(typeof client)['$post']>['0']['json'];
+export type CreateWorkspaceParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Create new workspace
 export const createWorkspace = async ({ ...rest }: CreateWorkspaceParams) => {
-  const response = await client.$post({
+  const response = await client.index.$post({
     json: rest,
   });
 
@@ -39,7 +43,7 @@ export const updateWorkspace = async (idOrSlug: string, params: UpdateWorkspaceP
 
 // Delete workspaces
 export const deleteWorkspaces = async (ids: string[]) => {
-  const response = await client.$delete({
+  const response = await client.index.$delete({
     query: { ids },
   });
 

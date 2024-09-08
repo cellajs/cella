@@ -1,12 +1,17 @@
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { Bird } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import type { z } from 'zod';
-import { type GetTasksParams, getTasksList } from '~/api/tasks';
+import { type GetTasksParams, getTasksList, updateTask } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useMutateInfiniteTaskQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import type { TaskTableCRUDEvent } from '~/lib/custom-events/types';
@@ -16,15 +21,19 @@ import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export.tsx';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import { handleTaskDropDownClick } from '~/modules/common/dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
-import { configureForExport, sortAndGetCounts } from '~/modules/tasks/helpers';
+import { isSubTaskData } from '~/modules/projects/board/board';
+import { configureForExport, getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
+import { TaskCard } from '~/modules/tasks/task';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
 import TableHeader from '~/modules/tasks/tasks-table/header/table-header';
 import { TaskTableSearch } from '~/modules/tasks/tasks-table/header/table-search';
-import TaskSheet from '~/modules/tasks/tasks-table/task-sheet';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
+import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -69,6 +78,7 @@ const tasksQueryOptions = ({
 
 export default function TasksTable() {
   const { t } = useTranslation();
+  const { mode } = useThemeStore();
   const search = useSearch({ from: WorkspaceTableRoute.id });
   const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId } = useWorkspaceStore(
     ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId }) => ({
@@ -144,11 +154,14 @@ export default function TasksTable() {
   const handleOpenPreview = (taskId: string) => {
     const relativeTasks = rows.filter((t) => t.id === taskId || t.parentId === taskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
-    sheet.create(<TaskSheet task={currentTask} tasks={rows} callback={callback} />, {
-      className: 'max-w-full lg:max-w-4xl',
-      title: <span className="pl-4">{t('common:task')}</span>,
-      id: `task-preview-${taskId}`,
-    });
+    sheet.create(
+      <TaskCard mode={mode} task={currentTask} tasks={rows} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />,
+      {
+        className: 'max-w-full lg:max-w-4xl',
+        title: <span className="pl-4">{t('app:task')}</span>,
+        id: `task-preview-${taskId}`,
+      },
+    );
     setFocusedTaskId(taskId);
   };
 
@@ -157,33 +170,79 @@ export default function TasksTable() {
     callback(array, action);
   };
 
+  // Open on key press
+  const hotKeyPress = (field: string) => {
+    const focusedTask = rows.find((t) => t.id === focusedTaskId);
+    if (!focusedTask) return;
+    const taskCard = document.getElementById(focusedTask.id);
+    if (!taskCard) return;
+    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
+    const trigger = taskCard.querySelector(`#${field}`);
+    if (!trigger) return dropdowner.remove();
+    handleTaskDropDownClick(focusedTask, field, trigger as HTMLElement);
+  };
+
+  useHotkeys([
+    ['A', () => hotKeyPress('assignedTo')],
+    ['I', () => hotKeyPress('impact')],
+    ['L', () => hotKeyPress('labels')],
+    ['S', () => hotKeyPress(`status-${focusedTaskId}`)],
+    ['T', () => hotKeyPress('type')],
+  ]);
   useEventListener('openTaskCardPreview', (event) => handleOpenPreview(event.detail));
   useEventListener('taskTableCRUD', handleCRUD);
 
   useEffect(() => {
-    if (!rows.length || !sheet.get(`preview-${focusedTaskId}`)) return;
+    if (!rows.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
     const relativeTasks = rows.filter((t) => t.id === focusedTaskId || t.parentId === focusedTaskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === focusedTaskId);
     sheet.update(`task-preview-${currentTask.id}`, {
-      content: <TaskSheet task={currentTask} tasks={rows} callback={callback} />,
+      content: (
+        <TaskCard mode={mode} task={currentTask} tasks={rows} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />
+      ),
     });
   }, [rows, focusedTaskId]);
 
   useEffect(() => {
-    if (!rows.length || !search.taskIdPreview) return;
-    handleOpenPreview(search.taskIdPreview);
-  }, [rows]);
-
-  useEffect(() => {
-    if (!rows.length || !search.userIdPreview) return;
-    const task = rows.find((t) => t.createdBy?.id === search.userIdPreview);
-    if (task?.createdBy) openUserPreviewSheet(task.createdBy);
+    if (!rows.length) return;
+    if (search.taskIdPreview) return handleOpenPreview(search.taskIdPreview);
+    if (search.userIdPreview) {
+      const [{ createdBy }] = rows.filter((t) => t.createdBy?.id === search.userIdPreview);
+      if (createdBy) openUserPreviewSheet(createdBy);
+    }
   }, [rows]);
 
   useEffect(() => {
     if (search.q?.length) setSearchQuery(search.q);
     setFocusedTaskId(null);
   }, []);
+
+  useEffect(() => {
+    return combine(
+      monitorForElements({
+        canMonitor({ source }) {
+          return isSubTaskData(source.data) && sheet.getAll().length;
+        },
+        async onDrop({ location, source }) {
+          const target = location.current.dropTargets[0];
+          if (!target) return;
+          const sourceData = source.data;
+          const targetData = target.data;
+
+          const edge: Edge | null = extractClosestEdge(targetData);
+          const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
+          if (!edge || !isSubTask) return;
+          const newOrder: number = getRelativeTaskOrder(edge, rows, targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
+          try {
+            const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+            callback([updatedTask], 'updateSubTask');
+          } catch (err) {
+            toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));
+          }
+        },
+      }),
+    );
+  }, [rows]);
 
   return (
     <>
@@ -216,7 +275,7 @@ export default function TasksTable() {
           enableVirtualization: true,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:tasks').toLowerCase() })} />,
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('app:tasks').toLowerCase() })} />,
         }}
       />
     </>

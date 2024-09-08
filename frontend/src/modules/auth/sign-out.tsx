@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { signOut } from '~/api/auth';
 import { useDraftStore } from '~/store/draft';
 import { useUserStore } from '~/store/user';
-import type { MeUser } from '~/types';
+import type { MeUser } from '~/types/common';
 
 export const signOutUser = async () => {
   useUserStore.setState({ user: null as unknown as MeUser });

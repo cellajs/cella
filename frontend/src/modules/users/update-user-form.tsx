@@ -5,7 +5,7 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 import { updateSelf } from '~/api/me';
 import { type UpdateUserParams, updateUser } from '~/api/users';
@@ -145,7 +145,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           <SlugFormField
             control={form.control}
             type="user"
-            label={t('common:user_handle')}
+            label={t('common:resource_handle', { resource: t('common:user') })}
             description={t('common:user_handle.text')}
             previousSlug={user.slug}
           />

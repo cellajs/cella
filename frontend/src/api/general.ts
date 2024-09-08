@@ -1,11 +1,16 @@
-import type { Entity } from 'backend/types/common';
+import type { AppGeneralType } from 'backend/modules/general/index';
+import { config } from 'config';
+import { hc } from 'hono/client';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
-import { type ContextEntity, type UploadParams, UploadType, type User } from '~/types';
-import { apiClient, handleResponse } from '.';
+import { type ContextEntity, type Entity, type UploadParams, UploadType, type User } from '~/types/common';
+import { clientConfig, handleResponse } from '.';
+
+// Create Hono clients to make requests to the backend
+export const client = hc<AppGeneralType>(config.backendUrl, clientConfig);
 
 // Get public counts for about page
 export const getPublicCounts = async () => {
-  const response = await apiClient.public.counts.$get();
+  const response = await client.public.counts.$get();
 
   const json = await handleResponse(response);
   return json.data;
@@ -24,7 +29,7 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
     organizationId: id,
   };
 
-  const response = await apiClient['upload-token'].$get({ query: preparedQuery });
+  const response = await client['upload-token'].$get({ query: preparedQuery });
 
   const json = await handleResponse(response);
   return json.data;
@@ -37,7 +42,7 @@ export interface SystemInviteProps {
 
 // Invite users
 export const invite = async (values: SystemInviteProps) => {
-  const response = await apiClient.invite.$post({
+  const response = await client.invite.$post({
     json: values,
   });
 
@@ -46,7 +51,7 @@ export const invite = async (values: SystemInviteProps) => {
 
 // Check if slug is available
 export const checkSlugAvailable = async (params: { slug: string }) => {
-  const response = await apiClient['check-slug'].$post({
+  const response = await client['check-slug'].$post({
     json: params,
   });
 
@@ -56,7 +61,7 @@ export const checkSlugAvailable = async (params: { slug: string }) => {
 
 // Check token validation
 export const checkToken = async (token: string) => {
-  const response = await apiClient['check-token'].$post({
+  const response = await client['check-token'].$post({
     json: { token },
   });
 
@@ -66,7 +71,7 @@ export const checkToken = async (token: string) => {
 
 // Get suggestions
 export const getSuggestions = async (query: string, type?: Entity | undefined) => {
-  const response = await apiClient.suggestions.$get({
+  const response = await client.suggestions.$get({
     query: { q: query, type },
   });
 
@@ -82,7 +87,7 @@ interface AcceptInviteProps {
 
 // Accept an invitation
 export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps) => {
-  const response = await apiClient.invite[':token'].$post({
+  const response = await client.invite[':token'].$post({
     param: { token },
     json: { password, oauth },
   });
@@ -96,7 +101,7 @@ type RequiredGetMembersParams = {
   entityType: ContextEntity;
 };
 
-type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof apiClient.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
+type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof client.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
   limit?: number;
   offset?: number;
   page?: number;
@@ -110,7 +115,7 @@ export const getMembers = async (
   { idOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50, offset }: GetMembersParams,
   signal?: AbortSignal,
 ) => {
-  const response = await apiClient.members.$get(
+  const response = await client.members.$get(
     {
       query: {
         idOrSlug,
@@ -140,18 +145,7 @@ export const getMembers = async (
 
 // Get metrics
 export const getMetrics = async () => {
-  const response = await apiClient.metrics.$get();
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-// Check minimum entity info
-export const getMinimumEntityInfo = async (idOrSlug: string, entityType: ContextEntity) => {
-  const response = await apiClient['entity-info'][':idOrSlug'].$get({
-    param: { idOrSlug },
-    query: { entityType },
-  });
-
+  const response = await client.metrics.$get();
   const json = await handleResponse(response);
   return json.data;
 };

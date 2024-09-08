@@ -33,7 +33,7 @@ import InviteUsers from '~/modules/users/invite-users';
 import { useColumns } from '~/modules/users/users-table/columns';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
 import { UsersTableRoute } from '~/routes/system';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 
@@ -219,7 +219,7 @@ const UsersTable = () => {
 
           <div className="sm:grow" />
 
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-top max-sm:fade-in max-sm:duration-300">
+          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
             <TableSearch value={query} setQuery={onSearch} />
             <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>

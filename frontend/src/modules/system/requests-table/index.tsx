@@ -25,7 +25,7 @@ import { Bird } from 'lucide-react';
 import { type GetRequestsParams, getRequests } from '~/api/requests';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { RequestsTableRoute } from '~/routes/system';
-import type { Request } from '~/types';
+import type { Request } from '~/types/common';
 
 import Export from '~/modules/common/data-table/export';
 import { useColumns } from '~/modules/system/requests-table/columns';

@@ -31,7 +31,8 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import type { Label, Member, Task } from '~/types/index.ts';
+import type { Label, Task } from '~/types/app';
+import type { Member } from '~/types/common';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
@@ -144,13 +145,17 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
 
     createTask(newTask)
       .then((resp) => {
-        if (!resp) toast.error(t('common:error.create_resource', { resource: t('common:task') }));
+        if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:task') }));
         form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('common:task') }));
+        toast.success(t('common:success.create_resource', { resource: t('app:task') }));
         handleCloseForm();
-        dispatchCustomEvent('taskCRUD', { array: [resp], action: 'create' });
+        dispatchCustomEvent('taskCRUD', {
+          array: [resp],
+          action: 'create',
+          projectId: projectId,
+        });
       })
-      .catch(() => toast.error(t('common:error.create_resource', { resource: t('common:task') })));
+      .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:task') })));
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
@@ -163,6 +168,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
     if (assignedTo.length || labels.length || status !== 1 || impact || type !== 'feature') return true;
     const { dirtyFields } = form.formState;
     const fieldsKeys = Object.keys(dirtyFields);
+    if (!fieldsKeys.length) return false;
     if (fieldsKeys.includes('description') && fieldsKeys.length === 1) {
       const description = form.getValues('description');
       const parser = new DOMParser();
@@ -192,13 +198,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                 <FormControl>
                   <TaskBlockNote
                     id={defaultId}
-                    className="min-h-16"
+                    className="min-h-16 [&>.bn-editor]:min-h-16"
                     projectId={projectId}
                     html={value}
                     onChange={(description, summary) => {
                       onChange(description);
                       form.setValue('summary', summary);
                     }}
+                    callback={form.handleSubmit(onSubmit)}
                     mode={mode}
                   />
                 </FormControl>
@@ -270,7 +277,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                       ) : (
                         <>
                           <NotSelected className="size-4" aria-hidden="true" />
-                          {t('common:set_impact')}
+                          {t('app:set_impact')}
                         </>
                       )}
                     </Button>
@@ -336,7 +343,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                       </>
                     ) : (
                       <>
-                        <UserX className="h-4 w-4 opacity-50" /> {t('common:assign_to')}
+                        <UserX className="h-4 w-4 opacity-50" /> {t('app:assign_to')}
                       </>
                     )}
                   </Button>
@@ -400,7 +407,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                       ) : (
                         <>
                           <Tag size={16} className="opacity-50" />
-                          <span className="ml-2">{t('common:choose_labels')}</span>
+                          <span className="ml-2">{t('app:choose_labels')}</span>
                         </>
                       )}
                     </div>
@@ -413,66 +420,71 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex [&:not(.absolute)]:active:translate-y-[.07rem]">
+          <div className="inline-flex gap-2">
+            <div className="flex [&:not(.absolute)]:active:translate-y-[.07rem] ">
+              <Button
+                size={'xs'}
+                type="submit"
+                disabled={!isDirty()}
+                className={`grow ${isDirty() ? 'rounded-none rounded-l' : 'rounded'} [&:not(.absolute)]:active:translate-y-0`}
+              >
+                <span>
+                  {t('common:create')} {form.getValues('status') === 1 ? '' : ` & ${taskStatuses[form.getValues('status')].status}`}
+                </span>
+              </Button>
+              {isDirty() && (
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field: { onChange } }) => {
+                    return (
+                      <FormItem className="gap-0 w-8">
+                        <FormControl>
+                          <Button
+                            type="button"
+                            aria-label="Set status"
+                            variant={'default'}
+                            size="xs"
+                            className="relative rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
+                            onClick={(event) => {
+                              dropdowner(
+                                <SelectStatus
+                                  taskStatus={form.getValues('status') as TaskStatus}
+                                  projectId={projectId}
+                                  creationValueChange={onChange}
+                                />,
+                                {
+                                  id: `status-${defaultId}`,
+                                  trigger: event.currentTarget,
+                                },
+                              );
+                            }}
+                          >
+                            <ChevronDown size={16} />
+                          </Button>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+              )}
+            </div>
+
             <Button
               size={'xs'}
-              type="submit"
-              disabled={!isDirty()}
-              className={`grow ${form.formState.isDirty ? 'rounded-none rounded-l' : 'rounded'} [&:not(.absolute)]:active:translate-y-0`}
+              type="reset"
+              variant="secondary"
+              className={isDirty() ? '' : 'hidden'}
+              aria-label="Cancel"
+              onClick={() => form.reset()}
             >
-              <span>
-                {t('common:create')} {form.getValues('status') === 1 ? '' : ` & ${taskStatuses[form.getValues('status')].status}`}
-              </span>
+              {t('common:cancel')}
             </Button>
-            {form.formState.isDirty && (
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field: { onChange } }) => {
-                  return (
-                    <FormItem className="gap-0 w-8">
-                      <FormControl>
-                        <Button
-                          type="button"
-                          aria-label="Set status"
-                          variant={'default'}
-                          size="xs"
-                          className="relative rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
-                          onClick={(event) => {
-                            dropdowner(
-                              <SelectStatus
-                                taskStatus={form.getValues('status') as TaskStatus}
-                                projectId={projectId}
-                                creationValueChange={onChange}
-                              />,
-                              {
-                                id: `status-${defaultId}`,
-                                trigger: event.currentTarget,
-                              },
-                            );
-                          }}
-                        >
-                          <ChevronDown size={16} />
-                        </Button>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            )}
+            <Button size={'xs'} type="button" variant="secondary" aria-label="close" onClick={handleCloseForm} className={isDirty() ? 'hidden' : ''}>
+              {t('common:close')}
+            </Button>
           </div>
-
-          <Button
-            size={'xs'}
-            type="reset"
-            variant="secondary"
-            className={isDirty() ? '' : 'invisible'}
-            aria-label="Cancel"
-            onClick={() => form.reset()}
-          >
-            {t('common:cancel')}
-          </Button>
         </div>
       </form>
     </Form>

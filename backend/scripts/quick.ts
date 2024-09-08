@@ -11,7 +11,7 @@ await migrate(db, { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-back
 const res = await db.execute(sql`SELECT * FROM users`);
 
 if (res.rows.length > 0) {
-  console.log('Database is already seeded');
+  console.info('Database is already seeded');
   process.exit(0);
 }
 

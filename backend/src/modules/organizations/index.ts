@@ -1,6 +1,6 @@
 import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 
 import { config } from 'config';
@@ -17,7 +17,6 @@ import organizationsNewsletter from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { toMembershipInfo } from '../memberships/helpers/to-membership-info';
 import organizationRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -50,14 +49,14 @@ const organizationsRoutes = app
     logEvent('Organization created', { organization: createdOrganization.id });
 
     // Insert membership
-    const [createdMembership] = await insertMembership({ user, role: 'admin', entity: createdOrganization });
+    const createdMembership = await insertMembership({ user, role: 'admin', entity: createdOrganization });
 
     return ctx.json(
       {
         success: true,
         data: {
           ...createdOrganization,
-          membership: toMembershipInfo(createdMembership),
+          membership: createdMembership,
           counts: {
             memberships: {
               admins: 1,
@@ -106,7 +105,7 @@ const organizationsRoutes = app
     const organizations = await db
       .select({
         organization: organizationsTable,
-        membership: membershipsTable,
+        membership: membershipSelect,
         admins: countsQuery.admins,
         members: countsQuery.members,
       })
@@ -123,7 +122,7 @@ const organizationsRoutes = app
         data: {
           items: organizations.map(({ organization, membership, admins, members }) => ({
             ...organization,
-            membership: toMembershipInfo(membership),
+            membership,
             counts: {
               memberships: {
                 admins,
@@ -200,7 +199,7 @@ const organizationsRoutes = app
       .returning();
 
     const memberships = await db
-      .select()
+      .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
@@ -208,7 +207,7 @@ const organizationsRoutes = app
       memberships.map((membership) =>
         sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedOrganization,
-          membership: toMembershipInfo(memberships.find((m) => m.id === membership.id)),
+          membership: memberships.find((m) => m.id === membership.id) ?? null,
         }),
       );
     }
@@ -220,7 +219,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...updatedOrganization,
-          membership: toMembershipInfo(memberships.find((m) => m.id === user.id)),
+          membership: memberships.find((m) => m.id === user.id) ?? null,
           counts: await counts('organization', organization.id),
         },
       },
@@ -235,7 +234,7 @@ const organizationsRoutes = app
     const organization = ctx.get('organization');
 
     const [membership] = await db
-      .select()
+      .select(membershipSelect)
       .from(membershipsTable)
       .where(
         and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
@@ -246,7 +245,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...organization,
-          membership: toMembershipInfo(membership),
+          membership,
           counts: await counts('organization', organization.id),
         },
       },
@@ -262,7 +261,7 @@ const organizationsRoutes = app
     const allowedIds = ctx.get('allowedIds');
     const disallowedIds = ctx.get('disallowedIds');
 
-    // Map errors of workspaces user is not allowed to delete
+    // Map errors of organizations user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
 
     // Get members
@@ -302,12 +301,17 @@ const organizationsRoutes = app
         .limit(1);
       const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`;
       // generating email html
-      const emailHtml = await render(organizationsNewsletter({ subject, content, unsubscribeLink }));
+      const emailHtml = await render(organizationsNewsletter({ userLanguage: user.language, subject, content, unsubscribeLink }));
       emailSender.send(env.SEND_ALL_TO_EMAIL, user.newsletter ? subject : 'User unsubscribed from newsletter', emailHtml);
     } else {
       // Get members
       const organizationsMembersEmails = await db
-        .select({ email: usersTable.email, unsubscribeToken: usersTable.unsubscribeToken, newsletter: usersTable.newsletter })
+        .select({
+          email: usersTable.email,
+          unsubscribeToken: usersTable.unsubscribeToken,
+          newsletter: usersTable.newsletter,
+          language: usersTable.language,
+        })
         .from(membershipsTable)
         .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
         // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
@@ -322,7 +326,7 @@ const organizationsRoutes = app
         if (!member.newsletter) continue;
         const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${member.unsubscribeToken}`;
         // generating email html
-        const emailHtml = await render(organizationsNewsletter({ subject, content, unsubscribeLink }));
+        const emailHtml = await render(organizationsNewsletter({ userLanguage: member.language, subject, content, unsubscribeLink }));
 
         emailSender.send(member.email, subject, emailHtml);
       }
@@ -330,5 +334,7 @@ const organizationsRoutes = app
 
     return ctx.json({ success: true }, 200);
   });
+
+export type AppOrganizationsType = typeof organizationsRoutes;
 
 export default organizationsRoutes;

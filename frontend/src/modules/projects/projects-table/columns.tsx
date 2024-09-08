@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import { Shield, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -8,7 +7,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import type { Project } from '~/types';
+import type { Project } from '~/types/app';
 
 export const useColumns = (sheet?: boolean) => {
   const { t } = useTranslation();
@@ -63,32 +62,6 @@ export const useColumns = (sheet?: boolean) => {
           },
         ]
       : []),
-    {
-      key: 'memberCount',
-      name: t('common:members'),
-      sortable: false,
-      visible: !isMobile,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <>
-          <UserRound className="mr-2 opacity-50" size={16} />
-          {row.counts.memberships.members}
-        </>
-      ),
-    },
-    {
-      key: 'adminCount',
-      name: t('common:admins'),
-      sortable: false,
-      visible: !isMobile,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <>
-          <Shield className="mr-2 opacity-50" size={16} />
-          {row.counts.memberships.admins}
-        </>
-      ),
-    },
   ];
 
   return useState<ColumnOrColumnGroup<Project>[]>(columns);

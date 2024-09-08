@@ -37,7 +37,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 
 type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 

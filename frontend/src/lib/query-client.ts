@@ -5,7 +5,7 @@ import { i18n } from '~/lib/i18n';
 import router from '~/lib/router';
 import { useAlertStore } from '~/store/alert';
 import { useUserStore } from '~/store/user';
-import type { MeUser } from '~/types';
+import type { MeUser } from '~/types/common';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
