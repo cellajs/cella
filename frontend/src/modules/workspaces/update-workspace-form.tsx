@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import type { Workspace } from '~/types';
+import type { Workspace } from '~/types/app';
 
 import { updateWorkspaceBodySchema } from 'backend/modules/workspaces/schema';
 import { useEffect } from 'react';

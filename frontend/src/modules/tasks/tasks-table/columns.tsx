@@ -18,7 +18,7 @@ import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 export const useColumns = () => {
   const { t } = useTranslation();

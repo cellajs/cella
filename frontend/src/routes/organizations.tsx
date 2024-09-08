@@ -8,7 +8,7 @@ import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
-import type { Organization as OrganizationType } from '~/types';
+import type { Organization as OrganizationType } from '~/types/common';
 import { AppRoute } from '.';
 
 //Lazy-loaded components

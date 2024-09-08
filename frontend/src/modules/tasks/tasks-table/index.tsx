@@ -33,7 +33,7 @@ import { TaskTableSearch } from '~/modules/tasks/tasks-table/header/table-search
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 

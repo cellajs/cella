@@ -9,7 +9,7 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 export const TaskHeader = ({
   task,

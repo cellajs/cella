@@ -7,7 +7,7 @@ import { DropIndicator } from '~/modules/common/drop-indicator';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
 import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
 import { ItemOption } from '~/modules/common/nav-sheet/sheet-menu-options/item-option';
-import type { UserMenuItem } from '~/types';
+import type { UserMenuItem } from '~/types/common';
 import { isPageData } from '../sheet-menu';
 
 interface ComplexOptionElementProps {

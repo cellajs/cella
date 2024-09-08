@@ -5,7 +5,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
 import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
 import { Input } from '~/modules/ui/input';
-import type { UserMenu, UserMenuItem } from '~/types';
+import type { UserMenu, UserMenuItem } from '~/types/common';
 
 interface SheetMenuSearchProps {
   menu: UserMenu;

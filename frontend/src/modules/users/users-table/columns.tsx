@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';

@@ -1,5 +1,5 @@
 import { deleteSelf as baseDeleteSelf } from '~/api/me';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 import { useNavigate } from '@tanstack/react-router';
 import { useMutation } from '~/hooks/use-mutations';

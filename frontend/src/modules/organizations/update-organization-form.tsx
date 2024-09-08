@@ -4,7 +4,7 @@ import { updateOrganizationBodySchema } from 'backend/modules/organizations/sche
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 
 import { config } from 'config';
 import { useEffect } from 'react';

@@ -16,7 +16,7 @@ import { Badge } from '~/modules/ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command.tsx';
 import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
-import type { Label } from '~/types';
+import type { Label } from '~/types/app';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};

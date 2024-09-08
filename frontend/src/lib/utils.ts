@@ -13,7 +13,7 @@ import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import locale from '~/../../locales';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types';
+import type { UserMenuItem } from '~/types/common';
 
 dayjs.extend(isBetween);
 dayjs.extend(calendar);

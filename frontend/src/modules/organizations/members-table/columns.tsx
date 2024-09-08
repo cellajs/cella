@@ -1,4 +1,4 @@
-import type { Member } from '~/types';
+import type { Member } from '~/types/common';
 
 import { Link } from '@tanstack/react-router';
 import { config } from 'config';

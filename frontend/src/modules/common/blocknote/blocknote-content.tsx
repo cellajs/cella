@@ -2,7 +2,7 @@ import { DragHandleButton, GridSuggestionMenuController, SideMenu, SideMenuContr
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { getMentionMenuItems, type schemaWithMentions } from '~/modules/common/blocknote/mention';
-import type { Member } from '~/types';
+import type { Member } from '~/types/common';
 
 export const BlockNoteForTaskContent = ({ editor, members }: { editor: typeof schemaWithMentions.BlockNoteEditor; members: Member[] }) => (
   <>

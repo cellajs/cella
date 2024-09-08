@@ -5,7 +5,7 @@ import { lazyWithPreload } from 'react-lazy-with-preload';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { UploadType } from '~/types';
+import { UploadType } from '~/types/common';
 
 const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));
 

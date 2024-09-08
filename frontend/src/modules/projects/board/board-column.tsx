@@ -22,7 +22,7 @@ import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import type { Project } from '~/types';
+import type { Project } from '~/types/app';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 

@@ -8,7 +8,7 @@ import AssignMembers from '~/modules/tasks/task-selectors/select-members';
 import SelectStatus, { type TaskStatus } from '~/modules/tasks/task-selectors/select-status';
 import { SelectTaskType } from '~/modules/tasks/task-selectors/select-task-type';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 export const handleTaskDropDownClick = (task: Task, field: string, trigger: HTMLElement) => {
   let component = <SelectTaskType currentType={task.type as TaskType} />;

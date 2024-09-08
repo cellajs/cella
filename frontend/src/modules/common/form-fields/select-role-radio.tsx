@@ -2,7 +2,7 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
-import type { ContextEntity } from '~/types';
+import type { ContextEntity } from '~/types/common';
 
 interface SelectRoleProps {
   entityType?: ContextEntity;

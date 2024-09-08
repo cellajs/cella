@@ -33,7 +33,7 @@ import InviteUsers from '~/modules/users/invite-users';
 import { useColumns } from '~/modules/users/users-table/columns';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
 import { UsersTableRoute } from '~/routes/system';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 

@@ -12,7 +12,7 @@ import InviteUsers from '~/modules/users/invite-users';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 
 export const onDefaultBoardingSteps: StepItem[] = [
   { id: 'profile', label: 'Tune your profile', optional: true },

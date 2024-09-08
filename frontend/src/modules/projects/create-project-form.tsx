@@ -21,7 +21,8 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { UserMenuItem, Workspace } from '~/types';
+import type { Workspace } from '~/types/app';
+import type { UserMenuItem } from '~/types/common';
 
 interface CreateProjectFormProps {
   workspace: Workspace;

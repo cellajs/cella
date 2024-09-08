@@ -23,7 +23,8 @@ import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
-import type { Organization, UserMenuItem, Workspace } from '~/types';
+import type { Workspace } from '~/types/app';
+import type { Organization, UserMenuItem } from '~/types/common';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;

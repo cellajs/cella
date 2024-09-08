@@ -7,7 +7,7 @@ import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { useEffect, useState } from 'react';
 import { ImadoUppy, type UppyBody, type UppyMeta } from '~/lib/imado';
 import { useThemeStore } from '~/store/theme';
-import type { UploadType } from '~/types';
+import type { UploadType } from '~/types/common';
 
 import '@uppy/audio/dist/style.css';
 import '@uppy/dashboard/dist/style.min.css';

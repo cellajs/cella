@@ -10,7 +10,7 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { useUserStore } from '~/store/user';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 
 interface Props {
   organization: Organization;

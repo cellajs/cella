@@ -18,7 +18,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 const formSchema = z.object({
   id: z.string(),

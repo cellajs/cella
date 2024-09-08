@@ -7,7 +7,7 @@ import { createWorkspace } from '~/api/workspaces';
 import { addMenuItem } from '~/lib/utils';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types';
+import type { UserMenuItem } from '~/types/common';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();

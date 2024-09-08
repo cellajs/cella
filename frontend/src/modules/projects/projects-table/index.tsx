@@ -10,7 +10,7 @@ import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { useColumns } from '~/modules/projects/projects-table/columns';
-import type { Project } from '~/types';
+import type { Project } from '~/types/app';
 
 import { Trash, XSquare } from 'lucide-react';
 import { toast } from 'sonner';

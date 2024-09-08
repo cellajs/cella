@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 
 import { Link } from '@tanstack/react-router';
 import { Shield, UserRound } from 'lucide-react';

@@ -1,4 +1,4 @@
-import type { ContextEntity, UserMenu, UserMenuItem } from '~/types';
+import type { ContextEntity, UserMenu, UserMenuItem } from '~/types/common';
 
 const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntity) => {
   const menuList = data

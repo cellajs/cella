@@ -7,7 +7,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import type { Project } from '~/types';
+import type { Project } from '~/types/app';
 
 export const useColumns = (sheet?: boolean) => {
   const { t } = useTranslation();

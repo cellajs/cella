@@ -1,4 +1,4 @@
-import type { DraggableItemData, Entity } from '~/types';
+import type { DraggableItemData, Entity } from '~/types/common';
 
 // creating item data for draggable items
 export const getDraggableItemData = <T>(

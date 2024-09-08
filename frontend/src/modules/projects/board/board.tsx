@@ -14,7 +14,8 @@ import BoardHeader from '~/modules/projects/board/header/board-header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { DraggableItemData, Project, SubTask, Task } from '~/types';
+import type { Project, SubTask, Task } from '~/types/app';
+import type { DraggableItemData } from '~/types/common';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';

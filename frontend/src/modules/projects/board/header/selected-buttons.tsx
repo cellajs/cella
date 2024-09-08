@@ -9,7 +9,7 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 const TaskSelectedTableButtons = () => {
   const { t } = useTranslation();

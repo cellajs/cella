@@ -4,7 +4,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { config } from 'config';
 import { immer } from 'zustand/middleware/immer';
 import { i18n } from '~/lib/i18n';
-import type { MeUser, User } from '~/types';
+import type { MeUser, User } from '~/types/common';
 
 type PartialUser = Partial<MeUser>;
 

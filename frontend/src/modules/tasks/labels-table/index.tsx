@@ -21,7 +21,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { labelsSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Label } from '~/types';
+import type { Label } from '~/types/app';
 
 export const labelsQueryOptions = ({
   q,

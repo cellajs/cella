@@ -5,7 +5,7 @@ import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenuItem } from '~/types';
+import type { ContextEntity, UserMenuItem } from '~/types/common';
 
 interface SheetMenuItemProps {
   item: UserMenuItem;

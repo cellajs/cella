@@ -17,7 +17,7 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 interface TasksFooterProps {
   task: Task;

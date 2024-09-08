@@ -8,7 +8,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import InviteEmailForm from '~/modules/users/invite-email-form';
 import InviteSearchForm from '~/modules/users/invite-search-form';
-import type { EntityPage } from '~/types';
+import type { EntityPage } from '~/types/common';
 
 interface InviteUsersProps {
   entity?: EntityPage;

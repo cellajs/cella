@@ -9,7 +9,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import { UploadType } from '~/types';
+import { UploadType } from '~/types/common';
 
 // Lazy load the upload component
 const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));

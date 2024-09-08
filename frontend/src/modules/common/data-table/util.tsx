@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 

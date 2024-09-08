@@ -5,7 +5,7 @@ import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types';
+import type { UserMenuItem } from '~/types/common';
 
 interface MenuSectionStickyProp {
   sectionType: 'workspaces' | 'organizations';

@@ -31,7 +31,8 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
-import type { Label, Member, Task } from '~/types/index.ts';
+import type { Label, Task } from '~/types/app';
+import type { Member } from '~/types/common';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;

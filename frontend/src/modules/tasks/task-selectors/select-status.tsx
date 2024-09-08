@@ -22,7 +22,7 @@ import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~
 import { Input } from '~/modules/ui/input';
 import { WorkspaceRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 export const taskStatuses = [
   { value: 0, action: 'iced', status: 'iced', icon: IcedIcon },

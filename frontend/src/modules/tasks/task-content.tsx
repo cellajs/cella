@@ -7,7 +7,7 @@ import SubTask from '~/modules/tasks/sub-task';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
-import type { Task } from '~/types';
+import type { Task } from '~/types/app';
 
 interface Props {
   task: Task;

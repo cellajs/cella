@@ -7,7 +7,7 @@ import { useStepper } from '~/modules/common/stepper';
 import { SkipOrganizationCreation } from '~/modules/home/onboarding/skipOrganizationCreation';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { Organization } from '~/types';
+import type { Organization } from '~/types/common';
 import { type OnboardingStates, onDefaultBoardingSteps } from '.';
 
 interface StepperFooterProps {

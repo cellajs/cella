@@ -1,4 +1,4 @@
-import type { SubTask, Task } from '~/types';
+import type { SubTask, Task } from '~/types/app';
 
 export interface CustomEventMap {
   projectChange: CustomEvent<string>;

@@ -1,4 +1,4 @@
-import type { MeUser, User } from '~/types';
+import type { MeUser, User } from '~/types/common';
 
 import { VenetianMask } from 'lucide-react';
 

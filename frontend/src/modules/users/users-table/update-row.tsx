@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import UpdateUserForm from '~/modules/users/update-user-form';
-import type { User } from '~/types';
+import type { User } from '~/types/common';
 
 import { Pencil } from 'lucide-react';
 

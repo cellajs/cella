@@ -1,13 +1,9 @@
 import type { membersSchema } from 'backend/modules/general/schema';
-import type { labelSchema } from 'backend/modules/labels/schema';
 import type { menuItemsSchema, userMenuSchema } from 'backend/modules/me/schema';
 import type { membershipSchema } from 'backend/modules/memberships/schema';
 import type { organizationSchema } from 'backend/modules/organizations/schema';
-import type { projectSchema } from 'backend/modules/projects/schema';
 import type { requestsInfoSchema } from 'backend/modules/requests/schema';
-import type { fullTaskSchema, subTaskSchema } from 'backend/modules/tasks/schema';
 import type { userSchema } from 'backend/modules/users/schema';
-import type { workspaceSchema } from 'backend/modules/workspaces/schema';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
 import type { z } from 'zod';
@@ -26,6 +22,24 @@ export type UserMenuItem = z.infer<typeof menuItemsSchema>[number];
 
 export type Organization = z.infer<typeof organizationSchema>;
 
+export type Member = z.infer<typeof membersSchema>;
+export type Membership = z.infer<typeof membershipSchema>;
+
+export type Request = z.infer<typeof requestsInfoSchema>;
+
+export type MinimumEntityItem = {
+  id: string;
+  entity: ContextEntity;
+  slug: string;
+  name: string;
+  thumbnailUrl?: string | null;
+  bannerUrl?: string | null;
+};
+
+export type EntityPage = MinimumEntityItem & {
+  organizationId?: string | null;
+};
+
 // Uppy and Imado upload types
 export enum UploadType {
   Personal,
@@ -43,29 +57,4 @@ export type DraggableItemData<T> = {
   itemType: Entity;
   dragItem: true;
   order: number;
-};
-
-// App-specific
-export type Request = z.infer<typeof requestsInfoSchema>;
-
-export type Member = z.infer<typeof membersSchema>;
-export type Membership = z.infer<typeof membershipSchema>;
-
-export type Workspace = z.infer<typeof workspaceSchema>;
-
-export type Project = z.infer<typeof projectSchema>;
-export type Task = z.infer<typeof fullTaskSchema>;
-export type SubTask = z.infer<typeof subTaskSchema>[number];
-export type Label = z.infer<typeof labelSchema>;
-
-export type MinimumEntityItem = {
-  id: string;
-  entity: ContextEntity;
-  slug: string;
-  name: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
-};
-export type EntityPage = MinimumEntityItem & {
-  organizationId?: string | null;
 };

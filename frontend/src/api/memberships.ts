@@ -1,7 +1,7 @@
 import type { AppMembershipsType } from 'backend/modules/memberships/index';
 import { config } from 'config';
 import { hc } from 'hono/client';
-import type { ContextEntity, Membership } from '~/types';
+import type { ContextEntity, Membership } from '~/types/common';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend

@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import type { ContextEntity, DraggableItemData, UserMenu } from '~/types';
+import type { ContextEntity, DraggableItemData, UserMenu, UserMenuItem } from '~/types/common';
 
 import { useParams } from '@tanstack/react-router';
 import { useNavigationStore } from '~/store/navigation';
@@ -19,7 +19,6 @@ import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Switch } from '~/modules/ui/switch';
 import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
-import type { UserMenuItem } from '~/types';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
 

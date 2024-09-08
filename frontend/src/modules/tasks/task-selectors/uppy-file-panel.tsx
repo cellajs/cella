@@ -2,7 +2,7 @@ import type { PartialBlock } from '@blocknote/core';
 import { type FilePanelProps, useBlockNoteEditor } from '@blocknote/react';
 import UploadUppy from '~/modules/common/upload/upload-uppy';
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
-import { UploadType } from '~/types';
+import { UploadType } from '~/types/common';
 
 const UppyFilePanel = (props: FilePanelProps) => {
   const { block } = props;

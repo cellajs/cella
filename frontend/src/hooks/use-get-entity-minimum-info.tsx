@@ -5,7 +5,8 @@ import { useNavigationStore } from '~/store/navigation';
 import type { workspaceWithProjectSchema } from 'backend/modules/workspaces/schema';
 import type { z } from 'zod';
 import { getMinimumEntityInfo } from '~/api/general';
-import type { ContextEntity, MinimumEntityItem, Project, UserMenu, UserMenuItem } from '~/types';
+import type { Project } from '~/types/app';
+import type { ContextEntity, MinimumEntityItem, UserMenu, UserMenuItem } from '~/types/common';
 
 type WorkspaceQuery = z.infer<typeof workspaceWithProjectSchema>;
 

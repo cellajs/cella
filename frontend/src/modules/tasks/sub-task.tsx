@@ -15,13 +15,13 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { getDraggableItemData } from '~/lib/drag-drop';
 import { cn } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
-import { isSubTaskData } from '~/modules/projects/board/board';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
-import type { SubTask as BaseSubTask, Task } from '~/types';
+import type { SubTask as BaseSubTask, Task } from '~/types/app';
+import { isSubTaskData } from '../projects/board/board';
 
 const SubTask = ({
   task,

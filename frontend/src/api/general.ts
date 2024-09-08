@@ -1,9 +1,8 @@
 import type { AppGeneralType } from 'backend/modules/general/index';
-import type { Entity } from 'backend/types/common';
 import { config } from 'config';
 import { hc } from 'hono/client';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
-import { type ContextEntity, type UploadParams, UploadType, type User } from '~/types';
+import { type ContextEntity, type Entity, type UploadParams, UploadType, type User } from '~/types/common';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend

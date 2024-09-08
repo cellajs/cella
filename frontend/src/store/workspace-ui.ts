@@ -2,7 +2,7 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { Label } from '~/types';
+import type { Label } from '~/types/app';
 
 type Column = {
   columnId: string;
