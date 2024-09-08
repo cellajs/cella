@@ -12,7 +12,7 @@ if (!isEnvFileExists) {
   }
   const exampleEnvFile = readFileSync('.env.example');
   writeFileSync('.env', exampleEnvFile);
-  console.log('Created .env file');
+  console.info('Created .env file');
 }
 dotenvConfig();
 

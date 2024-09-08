@@ -4,7 +4,6 @@ import { useNavigationStore } from '~/store/navigation';
 
 import type { workspaceWithProjectSchema } from 'backend/modules/workspaces/schema';
 import type { z } from 'zod';
-import { getMinimumEntityInfo } from '~/api/general';
 import type { Project } from '~/types/app';
 import type { ContextEntity, MinimumEntityItem, UserMenu, UserMenuItem } from '~/types/common';
 
@@ -70,9 +69,7 @@ export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
         }
       }
 
-      // Step 3: Fetch from API if not found in menu or cache
-      const fetchedEntity = await getMinimumEntityInfo(idOrSlug, entityType);
-      setEntity(fetchedEntity);
+      // TODO: fall back to fetching entity using their respective API GET endpoints
     };
 
     getEntity();

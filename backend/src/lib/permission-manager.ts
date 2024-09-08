@@ -12,7 +12,7 @@ import {
 } from '@cellajs/permission-manager';
 
 /**
- * Define hierarchical structure for contexts with roles.
+ * Define hierarchical structure for contexts with roles, and for products without roles.
  */
 const organization = new Context('organization', ['admin', 'member']);
 new Context('workspace', ['admin', 'member'], new Set([organization]));
@@ -69,6 +69,7 @@ class AdaptedMembershipAdapter extends MembershipAdapter {
       ancestors: {
         organization: m.organizationId,
         workspace: m.workspaceId,
+        project: m.projectId,
       },
     }));
   }
@@ -87,8 +88,7 @@ class AdaptedSubjectAdapter extends SubjectAdapter {
   // biome-ignore lint/suspicious/noExplicitAny: The format of the subject can vary depending on the subject.
   adapt(s: any): Subject {
     return {
-      // TODO: Temporarily retain parent checks... Remove logic once migration is complete and 'entity' property is added to all subjects.
-      name: s.entity || 'task',
+      name: s.entity,
       key: s.id,
       ancestors: {
         organization: s.organizationId,

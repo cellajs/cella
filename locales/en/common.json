@@ -122,7 +122,7 @@
   "error.reported_try_later": "An error has been reported. Please try again later.",
   "error.reported_try_or_contact": "An error has been reported. Please try again later and contact support if the problem persists.",
   "error.resource_forbidden": "Forbidden",
-  "error.resource_forbidden.text": "You do not have enough permission for this {{resource}}.",
+  "error.resource_forbidden.text": "You do not have enough permission to access this {{resource}}.",
   "error.resource_not_found": "{{resource}} not found ",
   "error.resource_not_found.text": "This {{resource}} does not exist or has been deleted.",
   "error.route_not_found": "Route not found",

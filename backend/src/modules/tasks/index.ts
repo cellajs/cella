@@ -48,7 +48,6 @@ const tasksRoutes = app
    * Get list of tasks
    */
   .openapi(taskRoutesConfig.getTasks, async (ctx) => {
-    console.log('getTasks');
     const { q, sort, order, offset, limit, projectId, status } = ctx.req.valid('query');
 
     const tasksFilters: SQL[] = [inArray(tasksTable.projectId, projectId.split('_'))];

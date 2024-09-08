@@ -316,7 +316,7 @@ const generalRoutes = app
 
     // Build queries
     for (const entityType of entityTypes) {
-      const table = entityTables.get(entityType);
+      const table = entityTables.get(entityType) as typeof usersTable | typeof organizationsTable | typeof workspacesTable | typeof projectsTable;
       if (!table) continue;
 
       // Basic selection setup
@@ -463,30 +463,6 @@ const generalRoutes = app
     );
 
     return ctx.json({ success: true, data: { items: members, total } }, 200);
-  })
-  /*
-   *  Get Minimum entity info
-   */
-  .openapi(generalRouteConfig.getMinimumEntityInfo, async (ctx) => {
-    const idOrSlug = ctx.req.param('idOrSlug');
-    const { entityType } = ctx.req.valid('query');
-
-    const { id, slug, name, thumbnailUrl, bannerUrl } = await resolveEntity(entityType, idOrSlug);
-
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          id,
-          slug,
-          name,
-          thumbnailUrl,
-          bannerUrl,
-          entity: entityType,
-        },
-      },
-      200,
-    );
   })
   /*
    * Unsubscribe a user by token
