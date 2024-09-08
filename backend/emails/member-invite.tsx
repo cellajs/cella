@@ -3,12 +3,12 @@ import { Column, Img, Row, Section, Text } from 'jsx-email';
 import { config } from 'config';
 import { i18n } from '../../backend/src/lib/i18n';
 
+import Avatar from './components/avatar';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
-import Logo from './components/logo';
 import { UserName } from './components/user-name';
 import type { BasicTemplateType } from './types';
 
@@ -21,10 +21,11 @@ interface Props extends BasicTemplateType {
 }
 
 const productionUrl = config.productionUrl;
+const appName = config.name;
 
 export const InviteMemberEmail = ({
   userName,
-  userLanguage,
+  userLanguage: lng,
   userThumbnailUrl,
   inviteBy,
   organizationName,
@@ -32,12 +33,11 @@ export const InviteMemberEmail = ({
   organizationThumbnailUrl,
   token,
 }: Props) => {
-  const orgName = organizationName || i18n.t('common:unknown_organization');
-  const orgLogo = organizationThumbnailUrl || `${productionUrl}/static/email/org.png`;
+  const orgName = organizationName || i18n.t('common:unknown_organization', { lng });
 
   return (
     <EmailContainer
-      previewText={i18n.t('backend:email.invite_in_organization_preview_text', { lng: userLanguage, orgName, appName: config.name })}
+      previewText={i18n.t('backend:email.invite_in_organization_preview_text', { lng, orgName, appName })}
       containerStyle={{
         marginTop: '2.5rem',
         marginBottom: '2.5rem',
@@ -49,7 +49,7 @@ export const InviteMemberEmail = ({
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.invite_to_organization_title', { lng: userLanguage, orgName: orgName }),
+              __html: i18n.t('backend:email.invite_to_organization_title', { lng, orgName }),
             }}
           />
         }
@@ -64,31 +64,29 @@ export const InviteMemberEmail = ({
         }}
       >
         <UserName userName={userName}>
-          <Text>{i18n.t('backend:email.hi', { lng: userLanguage })}</Text>
+          <Text>{i18n.t('backend:email.hi', { lng })}</Text>
         </UserName>
         <UserName userName={inviteBy}>
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.invite_to_organization_description', { lng: userLanguage, orgName, appName: config.name }),
+              __html: i18n.t('backend:email.invite_to_organization_description', { lng, orgName, appName }),
             }}
           />
         </UserName>
         <Row>
           <Column align="right">
-            <Logo logoSrc={userThumbnailUrl || `${productionUrl}/static/email/user.png`} />
+            <Avatar url={userThumbnailUrl} type="user" />
           </Column>
           <Column align="center">
             <Img src={`${productionUrl}/static/email/arrow.png`} width="12" height="9" alt="invited to" />
           </Column>
           <Column align="left">
-            <Logo logoSrc={orgLogo} />
+            <Avatar url={organizationThumbnailUrl} type="organization" />
           </Column>
         </Row>
-        <EmailButton ButtonText={i18n.t('common:accept', { lng: userLanguage })} href={`${config.frontendUrl}/auth/invite/${token}`} />
-        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>
-          {i18n.t('backend:email.invite_expire', { lng: userLanguage })}
-        </Text>
+        <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={`${config.frontendUrl}/auth/invite/${token}`} />
+        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>{i18n.t('backend:email.invite_expire', { lng })}</Text>
       </Section>
       <EmailReplyTo email={inviterEmail} />
       <Footer />

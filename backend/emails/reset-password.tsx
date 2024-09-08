@@ -17,11 +17,12 @@ interface Props extends BasicTemplateType {
 
 const baseUrl = config.frontendUrl;
 const resetPasswordUrl = `${baseUrl}/auth/reset-password`;
+const appName = config.name;
 
-export const ResetPasswordEmail = ({ userName, userLanguage, resetPasswordLink = baseUrl }: Props) => {
+export const ResetPasswordEmail = ({ userName, userLanguage: lng, resetPasswordLink = baseUrl }: Props) => {
   return (
     <EmailContainer
-      previewText={i18n.t('backend:email.please_verify_email', { appName: config.name, lng: userLanguage })}
+      previewText={i18n.t('backend:email.please_verify_email', { appName, lng })}
       bodyStyle={{ padding: '0 0.625rem' }}
       containerStyle={{
         borderColor: '#f0f0f0',
@@ -42,19 +43,19 @@ export const ResetPasswordEmail = ({ userName, userLanguage, resetPasswordLink =
         }}
       >
         <UserName userName={userName}>
-          <Text>{i18n.t('backend:email.hi', { lng: userLanguage })}</Text>
+          <Text>{i18n.t('backend:email.hi', { lng })}</Text>
         </UserName>
         <div
           // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
           dangerouslySetInnerHTML={{
-            __html: i18n.t('backend:email.reset_password_text_1', { appName: config.name, lng: userLanguage }),
+            __html: i18n.t('backend:email.reset_password_text_1', { appName, lng }),
           }}
         />
-        <EmailButton ButtonText={i18n.t('common:reset_password', { lng: userLanguage })} href={resetPasswordLink} />
+        <EmailButton ButtonText={i18n.t('common:reset_password', { lng })} href={resetPasswordLink} />
         <Text>
-          {i18n.t('backend:email.reset_password_text_2', { lng: userLanguage })} <Link href={resetPasswordUrl}>{resetPasswordUrl}</Link>
+          {i18n.t('backend:email.reset_password_text_2', { lng })} <Link href={resetPasswordUrl}>{resetPasswordUrl}</Link>
         </Text>
-        <Text>{i18n.t('backend:email.reset_password_text_3', { lng: userLanguage })}</Text>
+        <Text>{i18n.t('backend:email.reset_password_text_3', { lng })}</Text>
       </Section>
       <EmailReplyTo />
       <Footer />

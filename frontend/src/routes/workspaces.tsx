@@ -10,7 +10,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import { useWorkspaceStore } from '~/store/workspace';
-import { AppRoute } from '.';
+import { AppRoute } from './general';
 
 // Lazy-loaded components
 const WorkspacePage = lazy(() => import('~/modules/workspaces/workspace-page'));
@@ -30,7 +30,12 @@ export const WorkspaceRoute = createRoute({
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {
     const workspaceData = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
-    useWorkspaceStore.setState({ workspace: workspaceData.workspace, projects: workspaceData.projects, labels: workspaceData.labels });
+    useWorkspaceStore.setState({
+      workspace: workspaceData.workspace,
+      projects: workspaceData.projects,
+      labels: workspaceData.labels,
+      members: workspaceData.members,
+    });
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {

@@ -12,7 +12,7 @@ import { organizationsQueryOptions } from '~/modules/organizations/organizations
 import { requestsQueryOptions } from '~/modules/system/requests-table';
 import SystemPanel from '~/modules/system/system-panel';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
-import { AppRoute } from '.';
+import { AppRoute } from './general';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));

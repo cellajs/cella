@@ -9,7 +9,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import type { Organization as OrganizationType } from '~/types/common';
-import { AppRoute } from '.';
+import { AppRoute } from './general';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));

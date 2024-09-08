@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { impersonationStart } from '~/api/auth';
 import { Button } from '~/modules/ui/button';
-import { getAndSetMe, getAndSetMenu } from '~/routes';
+import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { useUserStore } from '~/store/user';
 
 interface Props {
