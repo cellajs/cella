@@ -14,7 +14,7 @@ const WorkspaceActions = ({ createNewProject, openLabelsSheet, openSettingsSheet
   const { t } = useTranslation();
   return (
     <>
-      <TooltipButton className="max-md:hidden" toolTipContent={t('common:manage_labels')}>
+      <TooltipButton className="max-md:hidden" toolTipContent={t('app:manage_labels')}>
         <Button variant="outline" onClick={openLabelsSheet}>
           <Tag size={16} />
         </Button>

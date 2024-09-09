@@ -198,7 +198,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                 <FormControl>
                   <TaskBlockNote
                     id={defaultId}
-                    className="min-h-16 [&>.bn-editor]:min-h-16"
+                    className="pl-4 min-h-16 [&>.bn-editor]:min-h-16"
                     projectId={projectId}
                     html={value}
                     onChange={(description, summary) => {
