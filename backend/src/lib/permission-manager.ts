@@ -6,7 +6,6 @@ import {
   type Membership,
   MembershipAdapter,
   PermissionManager,
-  Product,
   type Subject,
   SubjectAdapter,
 } from '@cellajs/permission-manager';
@@ -14,11 +13,7 @@ import {
 /**
  * Define hierarchical structure for contexts with roles, and for products without roles.
  */
-const organization = new Context('organization', ['admin', 'member']);
-new Context('workspace', ['admin', 'member'], new Set([organization]));
-const project = new Context('project', ['admin', 'member'], new Set([organization]));
-
-new Product('task', new Set([project]));
+new Context('organization', ['admin', 'member']);
 
 /**
  * Initialize the PermissionManager and configure access policies.
@@ -26,26 +21,11 @@ new Product('task', new Set([project]));
 const permissionManager = new PermissionManager('permissionManager');
 
 permissionManager.accessPolicies.configureAccessPolicies(({ subject, contexts }: AccessPolicyConfiguration) => {
-  // Configure actions based on the subject (organization or workspace)
+  // Configure actions based on the subject (ie. organization)
   switch (subject.name) {
     case 'organization':
       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
       contexts.organization.member({ create: 0, read: 1, update: 0, delete: 0 });
-      break;
-    case 'workspace':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.workspace.admin({ create: 0, read: 1, update: 1, delete: 1 });
-      contexts.workspace.member({ create: 0, read: 1, update: 0, delete: 0 });
-      break;
-    case 'project':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.project.admin({ create: 0, read: 1, update: 1, delete: 1 });
-      contexts.project.member({ create: 0, read: 1, update: 0, delete: 0 });
-      break;
-    case 'task':
-      contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.project.admin({ create: 1, read: 1, update: 1, delete: 1 });
-      contexts.project.member({ create: 1, read: 1, update: 1, delete: 1 });
       break;
   }
 });
@@ -68,8 +48,6 @@ class AdaptedMembershipAdapter extends MembershipAdapter {
       roleName: m.role,
       ancestors: {
         organization: m.organizationId,
-        workspace: m.workspaceId,
-        project: m.projectId,
       },
     }));
   }
@@ -92,8 +70,6 @@ class AdaptedSubjectAdapter extends SubjectAdapter {
       key: s.id,
       ancestors: {
         organization: s.organizationId,
-        workspace: s.workspaceId,
-        project: s.projectId,
       },
     };
   }

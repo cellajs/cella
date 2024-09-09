@@ -1,21 +1,12 @@
 import { eq, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
-import { projectsTable } from '#/db/schema/projects';
-import { tasksTable } from '#/db/schema/tasks';
 import { usersTable } from '#/db/schema/users';
-import { workspacesTable } from '#/db/schema/workspaces';
 
-// Create a map to store tables for different resource types
-export const entityTables = new Map<
-  string,
-  typeof usersTable | typeof organizationsTable | typeof workspacesTable | typeof projectsTable | typeof tasksTable
->([
+// TODO:generics issue: Create a map to store tables for different resource types
+export const entityTables = new Map<string, typeof usersTable | typeof organizationsTable>([
   ['user', usersTable],
   ['organization', organizationsTable],
-  ['workspace', workspacesTable],
-  ['project', projectsTable],
-  ['task', tasksTable],
 ]);
 
 /**

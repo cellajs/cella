@@ -8,7 +8,7 @@ export const cookieSchema = z.string();
 export const entityTypeSchema = z.enum(config.entityTypes);
 export const pageEntityTypeSchema = z.enum(config.pageEntityTypes);
 export const contextEntityTypeSchema = z.enum(config.contextEntityTypes);
-export const productTypeSchema = z.enum(config.productEntityTypes);
+// export const productTypeSchema = z.enum(config.productEntityTypes);
 
 export const idSchema = z.string();
 export const slugSchema = z.string();

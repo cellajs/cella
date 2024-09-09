@@ -4,7 +4,6 @@ import { SheetAccount } from '~/modules/common/nav-sheet/sheet-account';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
 
 import { config } from 'config';
 import type { NavItem } from '~/modules/common/app-nav';
@@ -27,20 +26,7 @@ export const menuSections: SectionItem[] = [
     isSubmenu: false,
     createForm: <CreateOrganizationForm dialog />,
     label: 'common:organizations',
-  },
-  {
-    storageType: 'workspaces',
-    type: 'workspace',
-    isSubmenu: false,
-    createForm: <CreateWorkspaceForm dialog />,
-    label: 'app:workspaces',
-  },
-  {
-    storageType: 'workspaces',
-    type: 'project',
-    label: 'app:projects',
-    isSubmenu: true,
-  },
+  }
 ];
 
 // Here you set default footer links

@@ -10,7 +10,6 @@ import { emailSender } from '#/lib/mailer';
 import { InviteMemberEmail } from '../../../emails/member-invite';
 
 import type { OrganizationModel } from '#/db/schema/organizations';
-import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
@@ -143,23 +142,6 @@ const membershipsRoutes = app
 
             // Insert membership
             const createdMembership = await insertMembership({ user: existingUser, role: assignedRole, entity: context, memberships });
-            // if invite to project also add membership to project's workspace
-            if (context.entity === 'project') {
-              const [{ workspaceId }] = await db
-                .select({ workspaceId: projectsToWorkspacesTable.workspaceId })
-                .from(projectsToWorkspacesTable)
-                .where(eq(projectsToWorkspacesTable.projectId, context.id));
-              await db.insert(membershipsTable).values({
-                organizationId,
-                workspaceId,
-                type: 'workspace',
-                userId: existingUser.id,
-                role: 'member',
-                createdBy: user.id,
-                order: 1,
-              });
-              // TODO add SSE to workspace membership 2 ??
-            }
 
             // Send a Server-Sent Event (SSE) to the newly added user
             sendSSEToUsers([existingUser.id], 'update_entity', {
@@ -248,14 +230,8 @@ const membershipsRoutes = app
 
     const errors: ErrorType[] = [];
 
-    const where = and(
-      eq(membershipsTable.type, entityType),
-      or(
-        eq(membershipsTable.organizationId, membershipContext.id),
-        eq(membershipsTable.workspaceId, membershipContext.id),
-        eq(membershipsTable.projectId, membershipContext.id),
-      ),
-    );
+    // TODO:generics issue
+    const where = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable.organizationId, membershipContext.id)));
 
     // Get the user membership
     const [currentUserMembership] = (await db
@@ -342,11 +318,8 @@ const membershipsRoutes = app
       orderToUpdate = lastOrderMembership.order === ceilOrder ? ceilOrder + 1 : ceilOrder;
     }
 
-    // TODO: Refactor
-    const membershipContext = await resolveEntity(
-      updatedType,
-      membershipToUpdate.projectId || membershipToUpdate.workspaceId || membershipToUpdate.organizationId || '',
-    );
+    // TODO:generics issue
+    const membershipContext = await resolveEntity(updatedType, membershipToUpdate.organizationId || '');
 
     // Check if user has permission to someone elses membership
     if (user.id !== membershipToUpdate.userId) {
@@ -373,19 +346,11 @@ const membershipsRoutes = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
+    // TODO:generics issue
     const allMembers = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.type, updatedType),
-          or(
-            eq(membershipsTable.organizationId, membershipContext.id),
-            eq(membershipsTable.workspaceId, membershipContext.id),
-            eq(membershipsTable.projectId, membershipContext.id),
-          ),
-        ),
-      );
+      .where(and(eq(membershipsTable.type, updatedType), or(eq(membershipsTable.organizationId, membershipContext.id))));
 
     const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
     sendSSEToUsers(membersIds, 'update_entity', {

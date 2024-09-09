@@ -13,7 +13,7 @@ import { flushSync } from 'react-dom';
 import { twMerge } from 'tailwind-merge';
 import locale from '~/../../locales';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types/common';
+import type { UserMenu, UserMenuItem } from '~/types/common';
 
 dayjs.extend(isBetween);
 dayjs.extend(calendar);
@@ -151,7 +151,7 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
 };
 
 // Adding new item on local store user's menu
-export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 'workspaces') => {
+export const addMenuItem = (newEntity: UserMenuItem, storage: keyof UserMenu) => {
   const menu = useNavigationStore.getState().menu;
 
   const add = (items: UserMenuItem[]): UserMenuItem[] => {

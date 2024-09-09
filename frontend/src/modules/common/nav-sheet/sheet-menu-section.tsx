@@ -8,11 +8,11 @@ import { MenuSectionSticky } from '~/modules/common/nav-sheet/menu-section-stick
 import { SheetMenuItems } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenuItem } from '~/types/common';
+import type { ContextEntity, UserMenu, UserMenuItem } from '~/types/common';
 
 interface MenuSectionProps {
   data: UserMenuItem[];
-  sectionType: 'workspaces' | 'organizations';
+  sectionType: keyof UserMenu;
   sectionLabel: string;
   entityType: ContextEntity;
   createForm: ReactNode;

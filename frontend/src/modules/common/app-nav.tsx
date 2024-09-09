@@ -22,7 +22,6 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { navItems } from '~/nav-config';
 import { useUserStore } from '~/store/user';
-import { useWorkspaceStore } from '~/store/workspace';
 
 export type NavItem = {
   id: string;
@@ -42,7 +41,7 @@ const AppNav = () => {
 
   const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
-  const focusedTaskId = useWorkspaceStore((state) => state.focusedTaskId);
+
   const currentSession = useUserStore((state) => {
     if (state.user) return state.user.sessions.find((s) => s.isCurrent);
   });
@@ -77,7 +76,6 @@ const AppNav = () => {
   };
 
   const buttonsClick = (index: number) => {
-    if (index === 3 && focusedTaskId) return;
     if (sheet.getAll().length) return;
     if (dialog.haveOpenDialogs()) return;
     navButtonClick(navItems[index]);

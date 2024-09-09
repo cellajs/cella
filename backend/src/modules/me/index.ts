@@ -4,9 +4,7 @@ import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { projectsTable } from '#/db/schema/projects';
 import { usersTable } from '#/db/schema/users';
-import { workspacesTable } from '#/db/schema/workspaces';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -17,7 +15,6 @@ import meRoutesConfig from './routes';
 
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 import { getPreparedSessions } from './helpers/get-sessions';
 
 const app = new CustomHono();
@@ -63,7 +60,7 @@ const meRoutes = app
     );
   })
   /*
-   * Get current user menu
+   * TODO:generics issue. Get current user menu
    */
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = ctx.get('user');
@@ -78,28 +75,7 @@ const meRoutes = app
       .orderBy(desc(organizationsTable.createdAt))
       .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
 
-    const workspacesWithMemberships = await db
-      .select({
-        workspace: workspacesTable,
-        membership: membershipSelect,
-      })
-      .from(workspacesTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'workspace')))
-      .orderBy(desc(workspacesTable.createdAt))
-      .innerJoin(membershipsTable, eq(membershipsTable.workspaceId, workspacesTable.id));
-
-    const projectsWithMemberships = await db
-      .select({
-        project: projectsTable,
-        membership: membershipSelect,
-        workspace: projectsToWorkspacesTable,
-      })
-      .from(projectsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'project')))
-      .orderBy(desc(projectsTable.createdAt))
-      .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id))
-      .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id));
-
+  
     const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
       return {
         slug: organization.slug,
@@ -113,42 +89,11 @@ const meRoutes = app
       };
     });
 
-    const projects = projectsWithMemberships.map(({ project, membership, workspace }) => {
-      return {
-        slug: project.slug,
-        id: project.id,
-        createdAt: project.createdAt,
-        modifiedAt: project.modifiedAt,
-        name: project.name,
-        entity: project.entity,
-        organizationId: project.organizationId,
-        membership,
-        parentId: workspace.workspaceId,
-        parentSlug: workspacesWithMemberships.find((item) => item.workspace.id === workspace.workspaceId)?.workspace.slug,
-      };
-    });
-
-    const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
-      return {
-        slug: workspace.slug,
-        id: workspace.id,
-        createdAt: workspace.createdAt,
-        modifiedAt: workspace.modifiedAt,
-        name: workspace.name,
-        thumbnailUrl: workspace.thumbnailUrl,
-        organizationId: workspace.organizationId,
-        entity: workspace.entity,
-        membership,
-        submenu: projects.filter((p) => p.parentId === workspace.id).sort((a, b) => a.membership.order - b.membership.order),
-      };
-    });
-
     return ctx.json(
       {
         success: true,
         data: {
           organizations: organizations.sort((a, b) => a.membership.order - b.membership.order),
-          workspaces: workspaces.sort((a, b) => a.membership.order - b.membership.order),
         },
       },
       200,

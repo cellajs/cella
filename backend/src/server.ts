@@ -1,14 +1,10 @@
 import authRoutes from '#/modules/auth';
 import generalRoutes from '#/modules/general';
-import labelsRoutes from '#/modules/labels';
 import meRoutes from '#/modules/me';
 import membershipsRoutes from '#/modules/memberships';
 import organizationsRoutes from '#/modules/organizations';
-import projectsRoutes from '#/modules/projects';
 import requestsRoutes from '#/modules/requests';
-import tasksRoutes from '#/modules/tasks';
 import usersRoutes from '#/modules/users';
-import workspacesRoutes from '#/modules/workspaces';
 import defaultHook from './lib/default-hook';
 import docs from './lib/docs';
 import { errorResponse } from './lib/errors';
@@ -40,6 +36,7 @@ app.onError((err, ctx) => {
 });
 
 // Add routes for each module
+//TODO:generics, find a way to put this in a separate routes.ts file
 app
   .route('/auth', authRoutes)
   .route('/me', meRoutes)
@@ -47,12 +44,6 @@ app
   .route('/organizations', organizationsRoutes)
   .route('/', generalRoutes)
   .route('/requests', requestsRoutes)
-  .route('/memberships', membershipsRoutes)
-
-  // App-specific routes go here
-  .route('/workspaces', workspacesRoutes)
-  .route('/projects', projectsRoutes)
-  .route('/tasks', tasksRoutes)
-  .route('/labels', labelsRoutes);
+  .route('/memberships', membershipsRoutes);
 
 export default app;
