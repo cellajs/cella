@@ -8,6 +8,7 @@ import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
+import { baseEntityRoutes } from '~/nav-config';
 import type { Organization as OrganizationType } from '~/types/common';
 import { AppRoute } from './general';
 
@@ -20,7 +21,7 @@ const OrganizationSettings = lazy(() => import('~/modules/organizations/organiza
 export const membersSearchSchema = membersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export const OrganizationRoute = createRoute({
-  path: '$idOrSlug',
+  path: baseEntityRoutes.organization,
   staticData: { pageTitle: 'Organization', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
   getParentRoute: () => AppRoute,

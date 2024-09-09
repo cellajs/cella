@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { createContext } from 'react';
+import { Suspense, createContext, lazy } from 'react';
 
 import type { User } from '~/types/common';
 
@@ -16,9 +16,11 @@ interface UserContextValue {
   user: Omit<User, 'counts'>;
 }
 
+const PageContent = lazy(() => import('~/modules/users/profile-page-content'));
+
 export const UserContext = createContext({} as UserContextValue);
 
-const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
+const UserProfilePage = ({ user }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user: currentUser, setUser } = useUserStore();
@@ -69,9 +71,9 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
             </>
           }
         />
-
-        {/* // TODO:generics issue: need a dynamic import solution for contents, perhaps using router */}
-        <div className="container mb-[50vh]">Profile page content in {sheet ? 'sheet' : 'page'}</div>
+        <Suspense>
+          <PageContent />
+        </Suspense>
       </UserContext.Provider>
     </>
   );
