@@ -28,7 +28,7 @@ import { CustomHono } from '#/types/common';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
-import { EntityTables, entityTables } from '#/entity-config';
+import { type EntityTables, entityTables } from '#/entity-config';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
@@ -51,7 +51,7 @@ const generalRoutes = app
     return ctx.json({ success: true, data: requestsPerMinute }, 200);
   })
   /*
-   * TODO:generics issue. Get public counts
+   * Get public counts
    */
   .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
     const countEntries = await Promise.all(
