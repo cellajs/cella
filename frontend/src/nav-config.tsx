@@ -6,8 +6,10 @@ import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
 
+import { config } from 'config';
 import type { NavItem } from '~/modules/common/app-nav';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
+import type { FooterLinkProps } from './modules/common/app-footer';
 
 // Here you declare main navigation items
 export const navItems: NavItem[] = [
@@ -39,4 +41,11 @@ export const menuSections: SectionItem[] = [
     label: 'app:projects',
     isSubmenu: true,
   },
+];
+
+// Here you set default footer links
+export const defaultFooterLinks: FooterLinkProps[] = [
+  { id: 'about', href: '/about' },
+  { id: 'docs', href: `${config.backendUrl}/docs` },
+  { id: 'legal', href: '/legal' },
 ];
