@@ -116,6 +116,8 @@ export const config = {
     { value: 'nl', label: 'Nederlands' },
   ],
 
+  quickScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'],
+
   // All entity types
   entityTypes: ['user', 'organization', 'workspace', 'project', 'task', 'label'] as const,
 
@@ -128,7 +130,11 @@ export const config = {
   // Product entity types (no memberships)
   productEntityTypes: ['task', 'label'] as const,
 
-  rolesByType: { systemRoles: ['user', 'admin'] as const, entityRoles: ['member', 'admin'] as const, allRoles: ['user', 'member', 'admin'] as const },
+  rolesByType: {
+    systemRoles: ['user', 'admin'] as const,
+    entityRoles: ['member', 'admin'] as const,
+    allRoles: ['user', 'member', 'admin'] as const,
+  },
 
   // Company details
   company: {
