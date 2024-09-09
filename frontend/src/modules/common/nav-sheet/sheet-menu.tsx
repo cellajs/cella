@@ -1,11 +1,17 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ContextEntity, DraggableItemData, UserMenu, UserMenuItem } from '~/types/common';
 
+import { useParams } from '@tanstack/react-router';
 import { useNavigationStore } from '~/store/navigation';
 
+import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { updateMembership } from '~/api/memberships';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuSearch } from '~/modules/common/nav-sheet/sheet-menu-search';
 import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
@@ -31,6 +37,7 @@ export type SectionItem = {
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
+  const { idOrSlug } = useParams({ strict: false });
   const { keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -61,6 +68,41 @@ export const SheetMenu = memo(() => {
           />
         );
       });
+  }, [menu]);
+
+  // monitoring drop event
+  useEffect(() => {
+    return combine(
+      monitorForElements({
+        canMonitor({ source }) {
+          return isPageData(source.data);
+        },
+        async onDrop({ source, location }) {
+          const target = location.current.dropTargets[0];
+          if (!target) return;
+
+          const sourceData = source.data;
+          const targetData = target.data;
+          if (!isPageData(targetData) || !isPageData(sourceData)) return;
+
+          const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
+          const neededItems = findRelatedItemsByType(menu, sourceData.item.entity);
+          const targetItemIndex = neededItems.findIndex((i) => i.id === targetData.item.id);
+          const relativeItemIndex = closestEdgeOfTarget === 'top' ? targetItemIndex - 1 : targetItemIndex + 1;
+
+          const relativeItem = neededItems[relativeItemIndex];
+          let newOrder: number;
+
+          if (relativeItem === undefined || relativeItem.membership.order === targetData.order) {
+            newOrder = closestEdgeOfTarget === 'top' ? targetData.order / 2 : targetData.order + 1;
+          } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
+          else newOrder = (relativeItem.membership.order + targetData.order) / 2;
+
+          const updatedItem = await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
+          const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
+        },
+      }),
+    );
   }, [menu]);
 
   return (
