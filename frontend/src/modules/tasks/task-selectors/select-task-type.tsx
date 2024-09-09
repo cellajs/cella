@@ -30,7 +30,7 @@ export interface SelectTaskTypeProps {
   className?: string;
 }
 
-export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) => {
+const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
@@ -111,3 +111,5 @@ export const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypePr
     </Command>
   );
 };
+
+export default SelectTaskType;

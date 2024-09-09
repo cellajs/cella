@@ -18,7 +18,7 @@ import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from '~/modules/tasks/helpers';
 import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected';
-import { SelectImpact, impacts } from '~/modules/tasks/task-selectors/select-impact';
+import SelectImpact, { impacts } from '~/modules/tasks/task-selectors/select-impact';
 import SetLabels from '~/modules/tasks/task-selectors/select-labels';
 import AssignMembers from '~/modules/tasks/task-selectors/select-members';
 import SelectStatus, { type TaskStatus, taskStatuses } from '~/modules/tasks/task-selectors/select-status';

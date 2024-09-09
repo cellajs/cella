@@ -36,7 +36,7 @@ interface SelectImpactProps {
   creationValueChange?: (newValue: TaskImpact) => void;
 }
 
-export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
+const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
@@ -112,3 +112,5 @@ export const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }:
     </Command>
   );
 };
+
+export default SelectImpact;
