@@ -52,4 +52,5 @@ export const menuItemsSchema = z.array(
 
 export const userMenuSchema = z.object({
   organizations: menuItemsSchema,
+  workspaces: menuItemsSchema,
 });

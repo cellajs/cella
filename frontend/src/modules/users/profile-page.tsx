@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page-header';
+import ProjectsTable from '~/modules/projects/projects-table';
 import { Button } from '~/modules/ui/button';
 import { useUpdateUserMutation } from '~/modules/users/update-user-form';
 import { useUserStore } from '~/store/user';
@@ -65,12 +66,8 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
             </>
           }
         />
-
-        {/* // TODO:generics issue: need a dynamic import solution for contents, perhaps using router */}
         <div className="container mb-[50vh]">
-
-          Profile page content in {sheet ? 'sheet' : 'page'}
-
+          <ProjectsTable sheet={sheet} userId={isSelf ? undefined : user.id} />
         </div>
       </UserContext.Provider>
     </>

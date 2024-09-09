@@ -1,7 +1,7 @@
 import { errorResponses, successWithDataSchema } from '#/lib/common-responses';
 
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated } from '#/middlewares/guard';
+import { isAllowedTo, isAuthenticated } from '#/middlewares/guard';
 
 import { attachmentSchema, createAttachmentSchema } from './schema';
 
@@ -9,7 +9,7 @@ class AttachmentRoutesConfig {
   public createAttachment = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, isAllowedTo('create', 'task')],
     tags: ['attachments'],
     summary: 'Create new attachment',
     description: 'Create a new attachment in a task.',

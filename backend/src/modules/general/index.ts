@@ -14,10 +14,15 @@ import { db } from '#/db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { register } from 'prom-client';
+import { labelsTable } from '#/db/schema/labels';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
+import { projectsTable } from '#/db/schema/projects';
+import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
+import { tasksTable } from '#/db/schema/tasks';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { workspacesTable } from '#/db/schema/workspaces';
 import { entityTables, resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
@@ -49,17 +54,25 @@ const generalRoutes = app
     return ctx.json({ success: true, data: requestsPerMinute }, 200);
   })
   /*
-   * TODO:generics issue. Get public counts
+   * Get public counts
    */
   .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
-    const [users, organizations] = await Promise.all([
+    const [users, organizations, workspaces, projects, tasks, labels] = await Promise.all([
       db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(usersTable),
       db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(organizationsTable),
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(workspacesTable),
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(projectsTable),
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(tasksTable),
+      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(labelsTable),
     ]);
 
     const data = {
       users: users[0].total,
       organizations: organizations[0].total,
+      workspaces: workspaces[0].total,
+      projects: projects[0].total,
+      tasks: tasks[0].total,
+      labels: labels[0].total,
     };
 
     return ctx.json({ success: true, data }, 200);
@@ -301,9 +314,9 @@ const generalRoutes = app
     // Array to hold queries for concurrent execution
     const queries = [];
 
-    // TODO:generics issue: Build queries
+    // Build queries
     for (const entityType of entityTypes) {
-      const table = entityTables.get(entityType) as typeof usersTable | typeof organizationsTable;
+      const table = entityTables.get(entityType) as typeof usersTable | typeof organizationsTable | typeof workspacesTable | typeof projectsTable;
       if (!table) continue;
 
       // Basic selection setup
@@ -325,7 +338,9 @@ const generalRoutes = app
       const $and = [];
 
       if (organizationIds.length) {
-        if (entityType === 'organization') {
+        if ('organizationId' in table) {
+          $and.push(inArray(table.organizationId, organizationIds));
+        } else if (entityType === 'organization') {
           $and.push(inArray(table.id, organizationIds));
         } else if (entityType === 'user') {
           // Filter users based on their memberships in specified organizations
@@ -347,8 +362,24 @@ const generalRoutes = app
       $and.push($or.length > 1 ? or(...$or) : $or[0]);
       const $where = $and.length > 1 ? and(...$and) : $and[0];
 
-      // Build query
-      queries.push(db.select(baseSelect).from(table).where($where).limit(10));
+      // If type is 'project', perform left join to get projectId
+      if (entityType === 'project') {
+        const query = db
+          .select({
+            ...baseSelect,
+            parentId: projectsToWorkspacesTable.workspaceId,
+          })
+          .from(table)
+          .where($where)
+          .leftJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, table.id))
+          .limit(10);
+
+        // Build query
+        queries.push(query);
+      } else {
+        // Build query
+        queries.push(db.select(baseSelect).from(table).where($where).limit(10));
+      }
     }
 
     const results = await Promise.all(queries);
@@ -370,7 +401,7 @@ const generalRoutes = app
 
     // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
     const membersFilters = [
-      eq(membershipsTable.organizationId, entity.id),
+      eq(entityType === 'organization' ? membershipsTable.organizationId : membershipsTable.projectId, entity.id),
       eq(membershipsTable.type, entityType),
     ];
 

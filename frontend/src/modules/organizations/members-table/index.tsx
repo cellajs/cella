@@ -35,16 +35,15 @@ import RemoveMembersForm from '~/modules/organizations/members-table/remove-memb
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
+import type { Project } from '~/types/app';
 import type { EntityPage, Member, Organization } from '~/types/common';
 
 const LIMIT = 40;
 
 type MemberSearch = z.infer<typeof membersQuerySchema>;
 
-
-// TODO:generics issue: entity hardcoded
 interface MembersTableProps {
-  entity: Organization;
+  entity: Project | Organization;
   isSheet?: boolean;
 }
 

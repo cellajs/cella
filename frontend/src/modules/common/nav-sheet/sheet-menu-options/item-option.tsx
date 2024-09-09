@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
@@ -22,6 +23,7 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
   const [isItemArchived, setItemArchived] = useState(item.membership.archived);
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
   const archiveStateToggle = useNavigationStore((state) => state.archiveStateToggle);
+  const callback = useMutateWorkSpaceQueryData(['workspaces', parentItemSlug ? parentItemSlug : item.slug]);
   const { mutate: updateMembership, status } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
       return baseUpdateMembership(values);
@@ -46,6 +48,7 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
         );
         setItemMuted(muted);
       }
+      callback([updatedMembership], parentItemSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
     },
   });
 

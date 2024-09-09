@@ -1,5 +1,6 @@
 import { membershipsTable } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
+import type { ProjectModel } from '#/db/schema/projects';
 
 /**
  * This file provides an abstraction layer for supporting different entities
@@ -9,9 +10,9 @@ import type { OrganizationModel } from '#/db/schema/organizations';
  */
 
 /**
- * TODO:generics issue: Supported types for membership context.
+ * Supported types for membership context.
  */
-export type supportedModelTypes = OrganizationModel;
+export type supportedModelTypes = OrganizationModel | ProjectModel;
 
 /**
  * Array of supported entity types.
@@ -20,9 +21,10 @@ export const supportedEntityTypes = ['project', 'organization'];
 
 /**
  * Get the memberships table ID based on the context.
- * @param _context The context for which the memberships table ID is needed.
+ * @param context The context for which the memberships table ID is needed.
  * @returns The ID of the memberships table column corresponding to the context.
  */
-export const membershipsTableId = (_context: supportedModelTypes) => {
+export const membershipsTableId = (context: supportedModelTypes) => {
+  if (context.entity === 'project') return membershipsTable.projectId;
   return membershipsTable.organizationId;
 };

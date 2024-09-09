@@ -2,7 +2,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useNavigationStore } from '~/store/navigation';
 
+import type { workspaceWithProjectSchema } from 'backend/modules/workspaces/schema';
+import type { z } from 'zod';
+import type { Project } from '~/types/app';
 import type { ContextEntity, MinimumEntityItem, UserMenu, UserMenuItem } from '~/types/common';
+
+type WorkspaceQuery = z.infer<typeof workspaceWithProjectSchema>;
 
 const findItem = (
   items: (MinimumEntityItem & {
@@ -44,13 +49,18 @@ export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
       }
 
       // Step 2: Check cache
-      const queriesData = queryClient.getQueriesData<UserMenuItem[] | UserMenuItem>({});
+      const queriesData = queryClient.getQueriesData<WorkspaceQuery | UserMenuItem[] | UserMenuItem>({});
       for (const query of queriesData) {
         const [[queryKey], data] = query;
         if (!data || !keys.includes(queryKey as keyof UserMenu)) continue;
         let arrayData = [];
-
-        arrayData = Array.isArray(data) ? data : [data];
+        if ('workspace' in data) {
+          arrayData = [data.workspace];
+        } else if ('projects' in data) {
+          arrayData = data.projects as Project[];
+        } else {
+          arrayData = Array.isArray(data) ? data : [data];
+        }
 
         const foundInCache = findItem(arrayData, idOrSlug);
         if (foundInCache) {

@@ -6,10 +6,12 @@ import type { Entity } from '#/types/common';
 const getQuery = (entity: Entity) => {
   let columnName: keyof typeof membershipsTable;
 
-  // TODO:generics issue
   switch (entity) {
     case 'organization':
       columnName = 'organizationId';
+      break;
+    case 'project':
+      columnName = 'projectId';
       break;
     default:
       throw new Error(`Invalid entity type: ${entity}`);

@@ -10,6 +10,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
@@ -70,6 +71,7 @@ export const SheetMenu = memo(() => {
       });
   }, [menu]);
 
+  const callback = useMutateWorkSpaceQueryData(['workspaces', idOrSlug]);
 
   // monitoring drop event
   useEffect(() => {
@@ -101,6 +103,7 @@ export const SheetMenu = memo(() => {
 
           const updatedItem = await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
           const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
+          if (idOrSlug === slug) callback([updatedItem], sourceData.item.parentSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
         },
       }),
     );

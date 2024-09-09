@@ -41,6 +41,8 @@ export const membershipInfoSchema = z.object({
   archived: membershipTableSchema.shape.archived,
   muted: membershipTableSchema.shape.muted,
   order: membershipTableSchema.shape.order,
+  projectId: membershipTableSchema.shape.projectId.nullable(),
+  workspaceId: membershipTableSchema.shape.workspaceId.nullable(),
   organizationId: membershipTableSchema.shape.organizationId.nullable(),
 });
 

@@ -33,9 +33,9 @@ export const config = {
       API differentiates between two types of resource: entities and resources. Entities are the main data objects, the other tables are secondary. They all have an entity column.
 
       Entities can be split into three categories:
-      1) Contextual entities (ie organization)
-      2) Product entities (ie ..)
-      3) All entities (ie user, organization)
+      1) Contextual entities (ie organization, workspace, project)
+      2) Product entities (ie task, label)
+      3) All entities (ie user, organization, workspace, project, task, label)
 
       - SSE stream is not included in this API documentation
       - API design is flat, not nested`,
@@ -117,16 +117,16 @@ export const config = {
   ],
 
   // All entity types
-  entityTypes: ['user', 'organization'] as const,
+  entityTypes: ['user', 'organization', 'workspace', 'project', 'task', 'label'] as const,
 
   // Page entity types (pages with memberships and users)
-  pageEntityTypes: ['user', 'organization'] as const,
+  pageEntityTypes: ['user', 'organization', 'workspace', 'project'] as const,
 
   // Context entity types (memberships)
-  contextEntityTypes: ['organization'] as const,
+  contextEntityTypes: ['organization', 'workspace', 'project'] as const,
 
   // Product entity types (no memberships)
-  productEntityTypes: [] as const,
+  productEntityTypes: ['task', 'label'] as const,
 
   rolesByType: { systemRoles: ['user', 'admin'] as const, entityRoles: ['member', 'admin'] as const, allRoles: ['user', 'member', 'admin'] as const },
 

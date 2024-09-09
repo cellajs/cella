@@ -25,7 +25,7 @@ const Counters = () => {
   const { data: countValues } = useQuery({
     queryKey: ['getPublicCounts'],
     queryFn: () => getPublicCounts(),
-    initialData: { users: 0, organizations: 0 },
+    initialData: { users: 0, organizations: 0, workspaces: 0, projects: 0, tasks: 0, labels: 0 },
   });
 
   return (
