@@ -70,7 +70,6 @@ export const SheetMenu = memo(() => {
       });
   }, [menu]);
 
-
   // monitoring drop event
   useEffect(() => {
     return combine(
@@ -126,17 +125,18 @@ export const SheetMenu = memo(() => {
           <div className="flex flex-col my-6 mx-2 gap-6">
             <div className="max-xl:hidden flex items-center gap-4 ml-1">
               <Switch size="xs" id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
-
               <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
                 {t('common:keep_menu_open')}
               </label>
             </div>
-            <div className="max-sm:hidden flex items-center gap-4 ml-1">
-              <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('app:hide_projects')} />
-              <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
-                {t('app:hide_projects')}
-              </label>
-            </div>
+            {menuSections.some((el) => el.isSubmenu) && (
+              <div className="max-sm:hidden flex items-center gap-4 ml-1">
+                <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
+                <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
+                  {t('common:nested_menu')}
+                </label>
+              </div>
+            )}
           </div>
         </>
       )}
