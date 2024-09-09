@@ -9,6 +9,7 @@ import { config } from 'config';
 import type { NavItem } from '~/modules/common/app-nav';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
 import type { FooterLinkProps } from './modules/common/app-footer';
+import type { SuggestionSection } from './modules/common/app-search';
 
 // Here you declare main navigation items
 export const navItems: NavItem[] = [
@@ -34,4 +35,10 @@ export const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'about', href: '/about' },
   { id: 'docs', href: `${config.backendUrl}/docs` },
   { id: 'legal', href: '/legal' },
+];
+
+// Set search suggestion sections
+export const suggestionSections: SuggestionSection[] = [
+  { id: 'users', label: 'common:users', type: 'user' },
+  { id: 'organizations', label: 'common:organizations', type: 'organization' },
 ];
