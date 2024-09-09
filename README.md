@@ -45,25 +45,47 @@
 - [Roadmap](/info/ROADMAP.md)
 - [Deployment](/info/DEPLOYMENT.md)
 
+
+## Requirements
+- Make sure you have node installed with `node -v`. Install Node 20.x or 22.x. (ie. [Volta](https://docs.volta.sh/guide/)).
+- Ideally you work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
+
 <br>
 
+## Fork & build your app! (EXPERIMENTAL)
+
+Want to use cella to build your next web app? Click the fork button. Then follow these steps in your project:
+
+```bash
+git remote add upstream git@github.com:cellajs/cella.git
+git fetch upstream
+git merge upstream/main
+```
+
+Then run your app:
+
+```bash
+pnpm install && pnpm quick
+```
+
+You now have an implementation read web app! But without any unique functionality. Read the [Quickstart](/info/QUICKSTART.md) for that.
+
+
 ## Installation
-Make sure you have node installed with `node -v`. Install Node 20.x or 22.x. (ie. [Volta](https://docs.volta.sh/guide/)).
+For those that simply want to try cella or participate in development:
 
 ```bash
 git clone git@github.com:cellajs/cella.git && cd cella
 ```
 
-### Quick start
+### A. Quick setup
 
 ```bash
-pnpm install
-pnpm quick
+pnpm install && pnpm quick
 ```
 
-### Full setup
-For a full setup - with Postgres instead of pglite - you need Docker. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
-
+### B. Full setup
+Or, for a full setup - with Postgres instead of pglite - you need Docker. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
 pnpm install
