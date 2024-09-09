@@ -38,7 +38,6 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   const bannerHeight = url ? 'h-[20vw] min-h-40 sm:min-w-52' : 'h-32'; // : 'h-14';
   const bannerClass = url ? 'bg-background' : getColorClass(id);
 
-  //TODO:generics issue
   const setUrl = (bannerUrl: string) => {
     setCoverUrl(bannerUrl);
     dispatchCustomEvent('updateCover', { bannerUrl, entity: type });
