@@ -116,6 +116,8 @@ export const config = {
     { value: 'nl', label: 'Nederlands' },
   ],
 
+  quickScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
+
   // All entity types
   entityTypes: ['user', 'organization'] as const,
 
