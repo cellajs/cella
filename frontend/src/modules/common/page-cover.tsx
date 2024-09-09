@@ -39,10 +39,9 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
   const bannerClass = url ? 'bg-background' : getColorClass(id);
 
   //TODO:generics issue
-  const setUrl = (newUrl: string) => {
-    setCoverUrl(newUrl);
-    if (type === 'organization') dispatchCustomEvent('updateOrganizationCover', newUrl);
-    if (type === 'user') dispatchCustomEvent('updateUserCover', newUrl);
+  const setUrl = (bannerUrl: string) => {
+    setCoverUrl(bannerUrl);
+    dispatchCustomEvent('updateCover', { bannerUrl, entity: type });
   };
 
   // Open the upload dialog
