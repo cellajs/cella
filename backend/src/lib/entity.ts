@@ -1,13 +1,6 @@
 import { eq, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { organizationsTable } from '#/db/schema/organizations';
-import { usersTable } from '#/db/schema/users';
-
-// TODO:generics issue: Create a map to store tables for different resource types
-export const entityTables = new Map<string, typeof usersTable | typeof organizationsTable>([
-  ['user', usersTable],
-  ['organization', organizationsTable],
-]);
+import { entityTables } from '#/entity-config';
 
 /**
  * Resolves entity based on ID or Slug and sets the context accordingly.

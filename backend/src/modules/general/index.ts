@@ -18,7 +18,7 @@ import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/s
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { entityTables, resolveEntity } from '#/lib/entity';
+import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { calculateRequestsPerMinute, parsePromMetrics, verifyUnsubscribeToken } from '#/lib/utils';
@@ -28,6 +28,7 @@ import { CustomHono } from '#/types/common';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
+import { EntityTables, entityTables } from '#/entity-config';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -303,7 +304,7 @@ const generalRoutes = app
 
     // TODO:generics issue: Build queries
     for (const entityType of entityTypes) {
-      const table = entityTables.get(entityType) as typeof usersTable | typeof organizationsTable;
+      const table = entityTables.get(entityType) as EntityTables;
       if (!table) continue;
 
       // Basic selection setup
