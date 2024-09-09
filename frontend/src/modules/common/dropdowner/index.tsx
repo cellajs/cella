@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { type DropDownT, type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
-//TODO:generics issue 
 export function DropDowner() {
   const [dropdowner, setDropdowner] = useState<DropDownT | null>(null);
 
