@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ContextEntity, DraggableItemData, UserMenu, UserMenuItem } from '~/types/common';
 
-import { useParams } from '@tanstack/react-router';
 import { useNavigationStore } from '~/store/navigation';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
@@ -37,7 +36,6 @@ export type SectionItem = {
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
-  const { idOrSlug } = useParams({ strict: false });
   const { keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -98,8 +96,7 @@ export const SheetMenu = memo(() => {
           } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
           else newOrder = (relativeItem.membership.order + targetData.order) / 2;
 
-          const updatedItem = await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
-          const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
+          await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
         },
       }),
     );
