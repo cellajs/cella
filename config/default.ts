@@ -19,13 +19,20 @@ export const config = {
   description: 'Intuitive TypeScript template to build local-first web apps. Implementation-ready. MIT licensed.',
   keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
 
-  supportEmail: 'flip@cellajs.com',
+  supportEmail: 'support@cellajs.com',
   notificationsEmail: 'notifications@cellajs.com',
   senderIsReceiver: false,
 
   debug: false,
   maintenance: false,
 
+  // Which scripts to run when seeding the database
+  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
+
+  // Which fields to omit from user object
+  sensitiveFields: ['hashedPassword', 'unsubscribeToken'] as const,
+
+  // API docs settings
   apiVersion: 'v1',
   apiDescription: `
       (ATTENTION: PRERELEASE!) This API documentation is split in modules. Each module relates to a module in the backend codebase. Each module should be at least loosely-coupled, but ideally entirely decoupled. The documentation is based upon zod schemas that are converted to openapi specs using hono middleware: zod-openapi.
@@ -96,7 +103,6 @@ export const config = {
     'bg-red-300',
   ],
 
-  sensitiveFields: ['hashedPassword', 'unsubscribeToken'] as const,
   // OAuth providers
   oauthProviderOptions: ['github', 'google', 'microsoft'] as const,
   enabledOauthProviders: ['github'] as const,

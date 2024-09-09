@@ -9,6 +9,7 @@ import { noDirectAccess } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
+import { baseEntityRoutes } from '~/nav-config';
 import { useWorkspaceStore } from '~/store/workspace';
 import { AppRoute } from './general';
 
@@ -24,7 +25,7 @@ export const labelsSearchSchema = z.object({
 });
 
 export const WorkspaceRoute = createRoute({
-  path: 'workspaces/$idOrSlug',
+  path: baseEntityRoutes.workspace,
   staticData: { pageTitle: 'Workspace', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,

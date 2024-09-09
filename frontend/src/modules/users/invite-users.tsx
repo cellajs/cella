@@ -28,7 +28,6 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
   const updateMode = (mode: string[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
     dialog.update(`user-invite-${entity?.id ?? 'no-id'}`, {
-      open: true,
       title: (
         <div className="flex items-center gap-2">
           {mode[0] ? (
@@ -55,7 +54,6 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
         </div>
       ),
     });
-    dialog.reset(`user-invite-${entity?.id ?? 'no-id'}`);
   };
 
   return (

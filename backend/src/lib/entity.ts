@@ -1,22 +1,6 @@
 import { eq, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { organizationsTable } from '#/db/schema/organizations';
-import { projectsTable } from '#/db/schema/projects';
-import { tasksTable } from '#/db/schema/tasks';
-import { usersTable } from '#/db/schema/users';
-import { workspacesTable } from '#/db/schema/workspaces';
-
-// Create a map to store tables for different resource types
-export const entityTables = new Map<
-  string,
-  typeof usersTable | typeof organizationsTable | typeof workspacesTable | typeof projectsTable | typeof tasksTable
->([
-  ['user', usersTable],
-  ['organization', organizationsTable],
-  ['workspace', workspacesTable],
-  ['project', projectsTable],
-  ['task', tasksTable],
-]);
+import { entityTables } from '#/entity-config';
 
 /**
  * Resolves entity based on ID or Slug and sets the context accordingly.

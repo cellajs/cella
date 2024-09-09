@@ -46,24 +46,36 @@ class Observer {
     this.subscribers = [];
     this.dialogs = [];
   }
+
   subscribe = (subscriber: (dialog: DialogT | DialogToRemove | DialogToReset) => void) => {
     this.subscribers.push(subscriber);
 
     return () => {
       const index = this.subscribers.indexOf(subscriber);
-      this.subscribers.splice(index, 1);
+      if (index > -1) {
+        this.subscribers.splice(index, 1);
+      }
     };
   };
 
-  publish = (data: DialogT) => {
+  publish = (data: DialogT | DialogToRemove | DialogToReset) => {
     for (const subscriber of this.subscribers) {
       subscriber(data);
     }
   };
 
   set = (data: DialogT) => {
+    // Check if dialog with the same id already exists
+    const existingDialogIndex = this.dialogs.findIndex((dialog) => dialog.id === data.id);
+
+    // If it exists, replace it, otherwise add it
+    if (existingDialogIndex > -1) {
+      this.dialogs[existingDialogIndex] = data;
+    } else {
+      this.dialogs = [...this.dialogs, data];
+    }
+
     this.publish(data);
-    this.dialogs = [...this.dialogs, data];
   };
 
   get = (id: number | string) => {
@@ -76,54 +88,32 @@ class Observer {
 
   remove = (refocus = true, id?: number | string) => {
     if (id) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id, remove: true, refocus });
-      }
-
+      this.publish({ id, remove: true, refocus });
+      this.dialogs = this.dialogs.filter((dialog) => dialog.id !== id);
       return;
     }
 
     // Remove all dialogs
-    for (const dialog of this.dialogs) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id: dialog.id, remove: true, refocus });
-      }
-    }
+    for (const dialog of this.dialogs) this.publish({ id: dialog.id, remove: true, refocus });
+    this.dialogs = [];
   };
 
-  //Update dialog
   update = (id: number | string, data: Partial<DialogT>) => {
     if (!id) return;
 
-    const existingDialog = this.dialogs.find((dialog) => dialog.id === id);
-    if (!existingDialog) return;
+    const existingDialogIndex = this.dialogs.findIndex((dialog) => dialog.id === id);
+    if (existingDialogIndex === -1) return;
 
-    const updatedDialog = { ...existingDialog, ...data };
-
-    for (const subscriber of this.subscribers) {
-      subscriber(updatedDialog);
-    }
-
-    this.dialogs = this.dialogs.map((dialog) => (dialog.id === id ? updatedDialog : dialog));
-    return;
+    const updatedDialog = { ...this.dialogs[existingDialogIndex], ...data };
+    this.dialogs[existingDialogIndex] = updatedDialog;
+    this.publish(updatedDialog);
   };
 
-  //Reset dialog
   reset = (id?: number | string) => {
-    if (id) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id, reset: true });
-      }
-
-      return;
-    }
+    if (id) return this.publish({ id, reset: true });
 
     // Reset all dialogs
-    for (const dialog of this.dialogs) {
-      for (const subscriber of this.subscribers) {
-        subscriber({ id: dialog.id, reset: true });
-      }
-    }
+    for (const dialog of this.dialogs) this.publish({ id: dialog.id, reset: true });
   };
 }
 

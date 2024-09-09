@@ -1,9 +1,10 @@
-import { Link, useParams, useSearch } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
+import { baseEntityRoutes } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenuItem } from '~/types/common';
 
@@ -17,14 +18,14 @@ interface SheetMenuItemProps {
 
 export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchResults }: SheetMenuItemProps) => {
   const { t } = useTranslation();
-  const idOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
-  const project = useSearch({ strict: false, select: (search) => search.project });
-  let path = '';
-  if (type === 'organization') path = `/${item.slug}`;
-  if (type === 'workspace') path = `/workspaces/${item.slug}`;
-  if (type === 'project') path = `/workspaces/${mainItemIdOrSlug}/board?project=${item.slug}`;
+  const currentIdOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
+  const isActive = currentIdOrSlug === item.slug;
 
-  const isActive = project ? project === item.slug : idOrSlug === item.slug;
+  // Construct the destination URL
+  const basePath = baseEntityRoutes[type];
+  const queryParams = mainItemIdOrSlug ? `?${type}=${item.slug}` : '';
+  const path = `${basePath}${queryParams}`;
+  const idOrSlug = mainItemIdOrSlug ?? item.slug;
 
   return (
     <Link
@@ -38,6 +39,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
       )}
       aria-label={item.name}
       to={path}
+      params={{ idOrSlug }}
     >
       <AvatarWrap
         className={`${mainItemIdOrSlug && !searchResults ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} z-[1] items-center`}

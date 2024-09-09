@@ -1,4 +1,5 @@
 import type { SubTask, Task } from '~/types/app';
+import type { Entity } from '~/types/common';
 
 export interface CustomEventMap {
   projectChange: CustomEvent<string>;
@@ -10,9 +11,7 @@ export interface CustomEventMap {
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
   searchDropDownClose: Event;
-  updateUserCover: CustomEvent<string>;
-  updateOrganizationCover: CustomEvent<string>;
-  updateWorkspaceCover: CustomEvent<string>;
+  updateCover: CustomEvent<{ bannerUrl: string; entity: Entity }>;
   taskTableCRUD: CustomEvent<{
     array: Task[] | { id: string }[];
     action: TaskQueryActions;

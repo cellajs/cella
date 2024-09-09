@@ -5,7 +5,7 @@ import { config } from 'config';
 const args = argv.slice(2);
 const addImagesFlag = args.includes('--addImages');
 
-for (const cmd of config.quickScripts) {
+for (const cmd of config.seedScripts) {
   try {
     // Conditionally append the --addImages flag if applicable
     const command = cmd.includes('seed:organizations') && addImagesFlag ? `${cmd} --addImages` : cmd;

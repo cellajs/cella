@@ -1,12 +1,12 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { createRoute } from '@tanstack/react-router';
-import { useParams } from '@tanstack/react-router';
+import { createRoute, useParams } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { Suspense, lazy } from 'react';
 import { getUser } from '~/api/users';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
-import { AppRoute } from './general';
+import { baseEntityRoutes } from '~/nav-config';
+import { AppRoute } from '~/routes/general';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 const UserSettingsPage = lazy(() => import('~/modules/users/settings-page'));
@@ -18,7 +18,7 @@ export const userQueryOptions = (idOrSlug: string) =>
   });
 
 export const UserProfileRoute = createRoute({
-  path: '/user/$idOrSlug',
+  path: baseEntityRoutes.user,
   staticData: { pageTitle: 'Profile', isAuth: true },
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => {

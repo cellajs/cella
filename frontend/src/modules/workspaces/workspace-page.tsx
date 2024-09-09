@@ -23,12 +23,16 @@ const WorkspacePage = () => {
   //TODO  try find other solution other than useMutateWorkspaceQueryData hook
   const { mutate } = useUpdateWorkspaceMutation(workspace.id);
 
-  useEventListener('updateWorkspaceCover', (e) => {
-    const banner = { bannerUrl: e.detail };
-    mutate(banner, {
-      onSuccess: () => toast.success(t('common:success.upload_cover')),
-      onError: () => toast.error(t('common:error.image_upload_failed')),
-    });
+  useEventListener('updateCover', (e) => {
+    const { bannerUrl, entity } = e.detail;
+    if (entity !== workspace.entity) return;
+    mutate(
+      { bannerUrl },
+      {
+        onSuccess: () => toast.success(t('common:success.upload_cover')),
+        onError: () => toast.error(t('common:error.image_upload_failed')),
+      },
+    );
   });
 
   useEffect(() => {

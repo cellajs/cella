@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { emailSender } from '#/lib/mailer';
 import { InviteSystemEmail } from '../../../emails/system-invite';
 
@@ -13,17 +13,15 @@ import { env } from '../../../env';
 import { db } from '#/db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { getTableConfig } from 'drizzle-orm/pg-core';
 import { register } from 'prom-client';
-import { labelsTable } from '#/db/schema/labels';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { projectsTable } from '#/db/schema/projects';
 import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
-import { tasksTable } from '#/db/schema/tasks';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { workspacesTable } from '#/db/schema/workspaces';
-import { entityTables, resolveEntity } from '#/lib/entity';
+import { type EntityTables, entityTables } from '#/entity-config';
+import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { calculateRequestsPerMinute, parsePromMetrics, verifyUnsubscribeToken } from '#/lib/utils';
@@ -57,23 +55,15 @@ const generalRoutes = app
    * Get public counts
    */
   .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
-    const [users, organizations, workspaces, projects, tasks, labels] = await Promise.all([
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(usersTable),
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(organizationsTable),
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(workspacesTable),
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(projectsTable),
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(tasksTable),
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(labelsTable),
-    ]);
+    const countEntries = await Promise.all(
+      Array.from(entityTables.values()).map(async (table) => {
+        const { name } = getTableConfig(table);
+        const [result] = await db.select({ total: count() }).from(table);
+        return [name, result.total];
+      }),
+    );
 
-    const data = {
-      users: users[0].total,
-      organizations: organizations[0].total,
-      workspaces: workspaces[0].total,
-      projects: projects[0].total,
-      tasks: tasks[0].total,
-      labels: labels[0].total,
-    };
+    const data = Object.fromEntries(countEntries);
 
     return ctx.json({ success: true, data }, 200);
   })
@@ -316,7 +306,7 @@ const generalRoutes = app
 
     // Build queries
     for (const entityType of entityTypes) {
-      const table = entityTables.get(entityType) as typeof usersTable | typeof organizationsTable | typeof workspacesTable | typeof projectsTable;
+      const table = entityTables.get(entityType) as EntityTables;
       if (!table) continue;
 
       // Basic selection setup
@@ -326,7 +316,6 @@ const generalRoutes = app
         name: table.name,
         entity: table.entity,
         ...('email' in table && { email: table.email }),
-        ...('organizationId' in table && { organizationId: table.organizationId }),
         ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
       };
 

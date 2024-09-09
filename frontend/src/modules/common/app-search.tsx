@@ -14,23 +14,17 @@ import { dialog } from '~/modules/common/dialoger/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { baseEntityRoutes, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { Button } from '../ui/button';
 
 type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
-interface SuggestionSection {
-  id: 'users' | 'organizations' | 'workspaces' | 'projects';
+export interface SuggestionSection {
+  id: string;
   label: string;
   type: Entity;
 }
-
-const suggestionSections: SuggestionSection[] = [
-  { id: 'users', label: 'common:users', type: 'user' },
-  { id: 'organizations', label: 'common:organizations', type: 'organization' },
-  { id: 'workspaces', label: 'app:workspaces', type: 'workspace' },
-  { id: 'projects', label: 'app:projects', type: 'project' },
-];
 
 export const AppSearch = () => {
   const { t } = useTranslation();
@@ -78,17 +72,16 @@ export const AppSearch = () => {
   });
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {
+    const { entity, parentId, slug } = suggestion;
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    let to = '/$idOrSlug';
-    let idOrSlug = suggestion.slug;
-    if (suggestion.entity === 'user') to = '/user/$idOrSlug';
-    if (suggestion.entity === 'project' && suggestion.parentId) {
-      to = `/workspaces/$idOrSlug/board?project=${suggestion.slug}`;
-      idOrSlug = suggestion.parentId;
-    }
-    if (suggestion.entity === 'workspace') to = '/workspaces/$idOrSlug';
+    // Construct the destination URL
+    const basePath = baseEntityRoutes[entity];
+    const queryParams = parentId ? `?${entity}=${slug}` : '';
+    const to = `${basePath}${queryParams}`;
+
+    const idOrSlug = parentId ?? slug;
 
     navigate({
       to,

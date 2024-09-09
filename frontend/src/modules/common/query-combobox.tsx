@@ -63,10 +63,9 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          ref={ref as React.LegacyRef<HTMLButtonElement>}
-          className="rounded-md w-full flex relative items-center flex-wrap gap-1 border border-input bg-background active:!translate-y-0 hover:transparent p-2"
+        <div
+          ref={ref as React.LegacyRef<HTMLDivElement>}
+          className="rounded-md w-full flex relative items-center flex-wrap gap-1 border border-input bg-background active:!translate-y-0 hover:transparent p-2 cursor-pointer"
         >
           {value?.length ? (
             value?.map((el) => (
@@ -93,7 +92,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
             <span className="text-sm ml-1">{t('common:search_users')}</span>
           )}
           <ChevronsUpDown className="absolute right-0 mx-2 h-4 w-4 shrink-0 opacity-50" />
-        </button>
+        </div>
       </PopoverTrigger>
 
       <PopoverContent align="start" style={{ width: `${bounds.left + bounds.right + 2}px` }} className={'p-0'}>
