@@ -42,7 +42,7 @@ class ProjectRoutesConfig {
   public getProject = createRouteConfig({
     method: 'get',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('read', 'project')],
+    guard: [isAuthenticated, checkUserPermissions, isAllowedTo('read', 'project')],
     tags: ['projects'],
     summary: 'Get project',
     description: 'Get project by id or slug.',

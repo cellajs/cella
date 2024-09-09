@@ -16,11 +16,11 @@ interface UserContextValue {
   user: Omit<User, 'counts'>;
 }
 
-const PageContent = lazy(() => import('~/modules/users/profile-page-content'));
+const ProjectsTable = lazy(() => import('~/modules/projects/projects-table'));
 
 export const UserContext = createContext({} as UserContextValue);
 
-const UserProfilePage = ({ user }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
+const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user: currentUser, setUser } = useUserStore();
@@ -72,7 +72,9 @@ const UserProfilePage = ({ user }: { user: Omit<User, 'counts'>; sheet?: boolean
           }
         />
         <Suspense>
-          <PageContent />
+          <div className="container">
+            <ProjectsTable userId={user.id} sheet={sheet} />
+          </div>
         </Suspense>
       </UserContext.Provider>
     </>
