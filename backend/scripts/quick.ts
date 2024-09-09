@@ -14,7 +14,7 @@ if (res.rows.length > 0) {
   process.exit(0);
 }
 
-for (const cmd of config.quickScripts) {
+for (const cmd of config.seedScripts) {
   try {
     execSync(cmd, { stdio: 'inherit' });
   } catch (error) {
