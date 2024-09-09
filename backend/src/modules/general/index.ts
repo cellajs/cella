@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { emailSender } from '#/lib/mailer';
 import { InviteSystemEmail } from '../../../emails/system-invite';
 
@@ -29,6 +29,7 @@ import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
 import { EntityTables, entityTables } from '#/entity-config';
+import { getTableConfig } from 'drizzle-orm/pg-core';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -53,15 +54,15 @@ const generalRoutes = app
    * TODO:generics issue. Get public counts
    */
   .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
-    const [users, organizations] = await Promise.all([
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(usersTable),
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(organizationsTable),
-    ]);
+    const countEntries = await Promise.all(
+      Array.from(entityTables.values()).map(async (table) => {
+        const { name } = getTableConfig(table);
+        const [result] = await db.select({ total: count() }).from(table);
+        return [name, result.total];
+      }),
+  );
 
-    const data = {
-      users: users[0].total,
-      organizations: organizations[0].total,
-    };
+    const data = Object.fromEntries(countEntries);
 
     return ctx.json({ success: true, data }, 200);
   })
@@ -314,7 +315,6 @@ const generalRoutes = app
         name: table.name,
         entity: table.entity,
         ...('email' in table && { email: table.email }),
-        ...('organizationId' in table && { organizationId: table.organizationId }),
         ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
       };
 
