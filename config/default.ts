@@ -27,7 +27,8 @@ export const config = {
   maintenance: false,
 
   // Which scripts to run when seeding the database
-  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
+
+  seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'],
 
   // Which fields to omit from user object
   sensitiveFields: ['hashedPassword', 'unsubscribeToken'] as const,
@@ -121,8 +122,6 @@ export const config = {
     { value: 'en', label: 'English' },
     { value: 'nl', label: 'Nederlands' },
   ],
-
-  quickScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'],
 
   // All entity types
   entityTypes: ['user', 'organization', 'workspace', 'project', 'task', 'label'] as const,
