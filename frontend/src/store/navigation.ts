@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { NavItem } from '~/modules/common/app-nav';
-import { menuSections } from '~/modules/common/nav-sheet/sheet-menu';
+import { menuSections } from '~/nav-config';
 import type { UserMenu, UserMenuItem } from '~/types/common';
 
 type EntitySubList = Record<string, string[]>;
