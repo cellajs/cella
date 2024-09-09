@@ -1,4 +1,4 @@
-import { Link, useParams, useSearch } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
@@ -18,13 +18,11 @@ interface SheetMenuItemProps {
 export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchResults }: SheetMenuItemProps) => {
   const { t } = useTranslation();
   const idOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
-  const project = useSearch({ strict: false, select: (search) => search.project });
   let path = '';
+  // TODO:generics issue
   if (type === 'organization') path = `/${item.slug}`;
-  if (type === 'workspace') path = `/workspaces/${item.slug}`;
-  if (type === 'project') path = `/workspaces/${mainItemIdOrSlug}/board?project=${item.slug}`;
 
-  const isActive = project ? project === item.slug : idOrSlug === item.slug;
+  const isActive = idOrSlug === item.slug;
 
   return (
     <Link

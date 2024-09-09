@@ -17,7 +17,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { arrayBufferToBase64Url, base64UrlDecode, dateShort } from '~/lib/utils';
 import { oauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
-import { AsideNav } from '~/modules/common/aside-nav';
+import { PageAside } from '~/modules/common/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { Badge } from '~/modules/ui/badge';
 import DeleteSelf from '~/modules/users/delete-self';
@@ -173,7 +173,7 @@ const UserSettingsPage = () => {
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-2">
         <StickyBox className="z-10 max-md:!block">
           <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />
-          <AsideNav tabs={tabs} className="py-2" />
+          <PageAside tabs={tabs} className="py-2" />
         </StickyBox>
       </div>
 

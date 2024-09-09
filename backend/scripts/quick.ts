@@ -3,7 +3,8 @@ import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { db } from '../src/db/db';
 
-const commands = ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'];
+// TODO:generics issue: move array to separate file?
+const commands = ['pnpm run seed:user', 'pnpm run seed:organizations'];
 
 // Migrate the database
 await migrate(db, { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' });

@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { Home, type LucideProps, Menu, Search, User, UserX } from 'lucide-react';
+import { type LucideProps, UserX } from 'lucide-react';
 import { Fragment, Suspense, lazy, useEffect } from 'react';
 import { useThemeStore } from '~/store/theme';
 
@@ -9,8 +9,6 @@ import router from '~/lib/router';
 import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { NavSheet } from '~/modules/common/nav-sheet';
-import { SheetAccount } from '~/modules/common/nav-sheet/sheet-account';
-import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { useNavigationStore } from '~/store/navigation';
 
 import { useTranslation } from 'react-i18next';
@@ -22,8 +20,8 @@ import { NavButton } from '~/modules/common/app-nav-button';
 import { AppSearch } from '~/modules/common/app-search';
 import { sheet } from '~/modules/common/sheeter/state';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import { navItems } from '~/nav-config';
 import { useUserStore } from '~/store/user';
-import { useWorkspaceStore } from '~/store/workspace';
 
 export type NavItem = {
   id: string;
@@ -32,13 +30,6 @@ export type NavItem = {
   href?: string;
   mirrorOnMobile?: boolean;
 };
-
-export const navItems: NavItem[] = [
-  { id: 'menu', sheet: <SheetMenu />, icon: Menu },
-  { id: 'home', icon: Home, href: '/' },
-  { id: 'search', icon: Search },
-  { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
-];
 
 const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
 
@@ -50,7 +41,7 @@ const AppNav = () => {
 
   const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
-  const focusedTaskId = useWorkspaceStore((state) => state.focusedTaskId);
+
   const currentSession = useUserStore((state) => {
     if (state.user) return state.user.sessions.find((s) => s.isCurrent);
   });
@@ -85,7 +76,6 @@ const AppNav = () => {
   };
 
   const buttonsClick = (index: number) => {
-    if (index === 3 && focusedTaskId) return;
     if (sheet.getAll().length) return;
     if (dialog.haveOpenDialogs()) return;
     navButtonClick(navItems[index]);

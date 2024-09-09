@@ -7,8 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 
 import { toast } from 'sonner';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
-import { AsideNav } from '~/modules/common/aside-nav';
 import { dialog } from '~/modules/common/dialoger/state';
+import { PageAside } from '~/modules/common/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import Subscription from '~/modules/organizations/subscription';
@@ -48,7 +48,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
     <div className="md:flex md:flex-row mx-auto gap-4 my-4">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] flex h-auto flex-col">
         <StickyBox offsetTop={60} className="md:mt-2 z-10 max-md:!block">
-          <AsideNav tabs={tabs} className="pb-2" />
+          <PageAside tabs={tabs} className="pb-2" />
         </StickyBox>
       </div>
 

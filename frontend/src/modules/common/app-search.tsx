@@ -20,7 +20,7 @@ import { Button } from '../ui/button';
 type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
 interface SuggestionSection {
-  id: 'users' | 'organizations' | 'workspaces' | 'projects';
+  id: string;
   label: string;
   type: Entity;
 }
@@ -28,8 +28,6 @@ interface SuggestionSection {
 const suggestionSections: SuggestionSection[] = [
   { id: 'users', label: 'common:users', type: 'user' },
   { id: 'organizations', label: 'common:organizations', type: 'organization' },
-  { id: 'workspaces', label: 'app:workspaces', type: 'workspace' },
-  { id: 'projects', label: 'app:projects', type: 'project' },
 ];
 
 export const AppSearch = () => {
@@ -81,14 +79,10 @@ export const AppSearch = () => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
+    // TODO:generics issue
     let to = '/$idOrSlug';
-    let idOrSlug = suggestion.slug;
+    const idOrSlug = suggestion.slug;
     if (suggestion.entity === 'user') to = '/user/$idOrSlug';
-    if (suggestion.entity === 'project' && suggestion.parentId) {
-      to = `/workspaces/$idOrSlug/board?project=${suggestion.slug}`;
-      idOrSlug = suggestion.parentId;
-    }
-    if (suggestion.entity === 'workspace') to = '/workspaces/$idOrSlug';
 
     navigate({
       to,

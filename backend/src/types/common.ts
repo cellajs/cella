@@ -6,8 +6,6 @@ import type { config } from 'config';
 import type { Schema } from 'hono';
 import type { MembershipModel } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
-import type { ProjectModel } from '#/db/schema/projects';
-import type { WorkspaceModel } from '#/db/schema/workspaces';
 import type { failWithErrorSchema } from '../lib/common-schemas';
 
 export type Entity = (typeof config.entityTypes)[number];
@@ -22,14 +20,12 @@ export type NonEmptyArray<T> = readonly [T, ...T[]];
 
 export type ErrorResponse = z.infer<typeof failWithErrorSchema>;
 
-// TODO find a way to make this generic for template, also make name more descriptive/specific. MiddlewareEnv? CommonEnv?
+// TODO:generics issue: find a way to make this generic for template, also make name more descriptive/specific. MiddlewareEnv? CommonEnv?
 export type Env = {
   Variables: {
     user: User;
     organization: OrganizationModel;
-    workspace: WorkspaceModel;
     memberships: [MembershipModel];
-    project: ProjectModel;
     allowedIds: Array<string>;
     disallowedIds: Array<string>;
   };

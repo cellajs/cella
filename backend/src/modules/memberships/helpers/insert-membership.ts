@@ -2,37 +2,30 @@ import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
-import type { ProjectModel } from '#/db/schema/projects';
 import type { UserModel } from '#/db/schema/users';
-import type { WorkspaceModel } from '#/db/schema/workspaces';
 import { logEvent } from '#/middlewares/logger/log-event';
 
+// TODO:generics issue
 interface Props {
   user: UserModel;
   role: MembershipModel['role'];
-  entity: OrganizationModel | WorkspaceModel | ProjectModel;
+  entity: OrganizationModel;
   createdBy?: UserModel['id'];
   memberships?: MembershipModel[];
 }
 
-// Helper function to insert a membership and give it proper order number
+// TODO:generics issue. Helper function to insert a membership and give it proper order number
 export const insertMembership = async ({ user, role, entity, createdBy = user.id, memberships }: Props) => {
-  const organizationId = entity.entity === 'organization' ? entity.id : entity.organizationId;
+  const organizationId = entity.id;
 
   const newMembership = {
     organizationId,
-    workspaceId: null as string | null,
-    projectId: null as string | null,
     type: entity.entity,
     userId: user.id,
     role,
     createdBy,
     order: 1,
   };
-
-  // Set workspaceId or projectId if entity is workspace or project
-  if (entity.entity === 'workspace') newMembership.workspaceId = entity.id;
-  else if (entity.entity === 'project') newMembership.projectId = entity.id;
 
   // Get user memberships
   let userMemberships = memberships;
@@ -64,7 +57,5 @@ export const insertMembership = async ({ user, role, entity, createdBy = user.id
     order: results.order,
     userId: results.userId,
     organizationId: results.organizationId,
-    workspaceId: results.workspaceId,
-    projectId: results.projectId,
   };
 };

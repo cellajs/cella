@@ -20,10 +20,6 @@ import { userSchema } from '../users/schema';
 export const publicCountsSchema = z.object({
   users: z.number(),
   organizations: z.number(),
-  workspaces: z.number(),
-  projects: z.number(),
-  tasks: z.number(),
-  labels: z.number(),
 });
 
 export const checkTokenSchema = z.object({

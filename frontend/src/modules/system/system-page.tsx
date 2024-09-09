@@ -5,7 +5,7 @@ import { PageNav } from '~/modules/common/page-nav';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, UsersTableRoute } from '~/routes/system';
 
-const SystemPanel = () => {
+const SystemPage = () => {
   const { t } = useTranslation();
 
   return (
@@ -28,4 +28,4 @@ const SystemPanel = () => {
   );
 };
 
-export default SystemPanel;
+export default SystemPage;

@@ -1,9 +1,20 @@
+import { menuSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types/common';
+import type { UserMenu, UserMenuItem } from '~/types/common';
+
+const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
+  const { menu } = useNavigationStore.getState();
+
+  return menuSections.reduce(
+    (acc, { storageType }) => {
+      if (menu[storageType]) acc[storageType] = transform(menu[storageType]);
+      return acc;
+    },
+    {} as Record<keyof UserMenu, UserMenuItem[]>,
+  );
+};
 
 export const updateMenuItem = (updatedEntity: UserMenuItem) => {
-  const menu = useNavigationStore.getState().menu;
-
   const update = (items: UserMenuItem[]): UserMenuItem[] => {
     return items.map((item) => {
       if (item.id === updatedEntity.id) {
@@ -25,29 +36,15 @@ export const updateMenuItem = (updatedEntity: UserMenuItem) => {
       return item;
     });
   };
-  return {
-    organizations: update(menu.organizations),
-    workspaces: update(menu.workspaces),
-  };
+
+  return useTransformOnMenuItems(update); // use update on every menu item by storage type from menu config
 };
 
 export const deleteMenuItem = (itemId: string) => {
-  const menu = useNavigationStore.getState().menu;
+  const remove = (items: UserMenuItem[]): UserMenuItem[] =>
+    items
+      .filter((item) => item.id !== itemId && item.organizationId !== itemId)
+      .map((item) => (item.submenu ? { ...item, submenu: remove(item.submenu) } : item));
 
-  const remove = (items: UserMenuItem[]): UserMenuItem[] => {
-    const updatedItems: UserMenuItem[] = [];
-    for (const item of items) {
-      if (item.id !== itemId && item.organizationId !== itemId) {
-        const updatedItem: UserMenuItem = { ...item };
-        if (item.submenu) updatedItem.submenu = remove(item.submenu);
-        updatedItems.push(updatedItem);
-      }
-    }
-    return updatedItems;
-  };
-
-  return {
-    organizations: remove(menu.organizations),
-    workspaces: remove(menu.workspaces),
-  };
+  return useTransformOnMenuItems(remove); // use remove on every menu item by storage type from menu config
 };

@@ -10,15 +10,13 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
-import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuSearch } from '~/modules/common/nav-sheet/sheet-menu-search';
 import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
-import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Switch } from '~/modules/ui/switch';
-import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
+import { menuSections } from '~/nav-config';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
 
@@ -27,7 +25,7 @@ export const isPageData = (data: Record<string | symbol, unknown>): data is Page
 };
 
 export type SectionItem = {
-  storageType: 'organizations' | 'workspaces';
+  storageType: keyof UserMenu;
   type: ContextEntity;
   label: string;
   createForm?: React.ReactNode;
@@ -35,30 +33,6 @@ export type SectionItem = {
   toPrefix?: boolean;
   icon?: React.ElementType<LucideProps>;
 };
-
-// Here you declare the menu sections
-export const menuSections: SectionItem[] = [
-  {
-    storageType: 'organizations',
-    type: 'organization',
-    isSubmenu: false,
-    createForm: <CreateOrganizationForm dialog />,
-    label: 'common:organizations',
-  },
-  {
-    storageType: 'workspaces',
-    type: 'workspace',
-    isSubmenu: false,
-    createForm: <CreateWorkspaceForm dialog />,
-    label: 'app:workspaces',
-  },
-  {
-    storageType: 'workspaces',
-    type: 'project',
-    label: 'app:projects',
-    isSubmenu: true,
-  },
-];
 
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
@@ -96,7 +70,6 @@ export const SheetMenu = memo(() => {
       });
   }, [menu]);
 
-  const callback = useMutateWorkSpaceQueryData(['workspaces', idOrSlug]);
 
   // monitoring drop event
   useEffect(() => {
@@ -128,7 +101,6 @@ export const SheetMenu = memo(() => {
 
           const updatedItem = await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
           const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
-          if (idOrSlug === slug) callback([updatedItem], sourceData.item.parentSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
         },
       }),
     );

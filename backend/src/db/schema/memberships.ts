@@ -4,8 +4,6 @@ import { boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-o
 import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/lib/nanoid';
 import { organizationsTable } from './organizations';
-import { projectsTable } from './projects';
-import { workspacesTable } from './workspaces';
 
 const roleEnum = config.rolesByType.entityRoles;
 
@@ -15,8 +13,6 @@ export const membershipsTable = pgTable('memberships', {
   organizationId: varchar('organization_id')
     .notNull()
     .references(() => organizationsTable.id, { onDelete: 'cascade' }),
-  workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
-  projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
   userId: varchar('user_id')
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
@@ -43,14 +39,6 @@ export const membershipsTableRelations = relations(membershipsTable, ({ one }) =
     fields: [membershipsTable.organizationId],
     references: [organizationsTable.id],
   }),
-  workspace: one(workspacesTable, {
-    fields: [membershipsTable.workspaceId],
-    references: [workspacesTable.id],
-  }),
-  project: one(projectsTable, {
-    fields: [membershipsTable.projectId],
-    references: [projectsTable.id],
-  }),
 }));
 
 export const membershipSelect = {
@@ -60,8 +48,6 @@ export const membershipSelect = {
   muted: membershipsTable.muted,
   order: membershipsTable.order,
   userId: membershipsTable.userId,
-  projectId: membershipsTable.projectId,
-  workspaceId: membershipsTable.workspaceId,
   organizationId: membershipsTable.organizationId,
 };
 

@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
-import { AsideNav } from '~/modules/common/aside-nav';
+import { PageAside } from '~/modules/common/page-aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import StickyBox from '~/modules/common/sticky-box';
 import PublicPage from '~/modules/marketing/page';
@@ -36,7 +36,7 @@ export const LegalsMenu = () => {
         <div className="mx-auto md:min-w-48 md:w-[30%] md:mt-2">
           <StickyBox className="z-10 max-md:!block">
             <SimpleHeader className="p-3" text={t('common:legal_text', { appName: config.name })} />
-            <AsideNav tabs={tabs} className="py-2" />
+            <PageAside tabs={tabs} className="py-2" />
           </StickyBox>
         </div>
         <div className="md:w-[70%] flex flex-col gap-8">
