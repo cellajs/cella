@@ -1,7 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ContextEntity, DraggableItemData, UserMenu, UserMenuItem } from '~/types/common';
 
-import { useParams } from '@tanstack/react-router';
 import { useNavigationStore } from '~/store/navigation';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
@@ -37,7 +36,6 @@ export type SectionItem = {
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
-  const { idOrSlug } = useParams({ strict: false });
   const { keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -70,7 +68,6 @@ export const SheetMenu = memo(() => {
       });
   }, [menu]);
 
-
   // monitoring drop event
   useEffect(() => {
     return combine(
@@ -99,8 +96,7 @@ export const SheetMenu = memo(() => {
           } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
           else newOrder = (relativeItem.membership.order + targetData.order) / 2;
 
-          const updatedItem = await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
-          const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
+          await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
         },
       }),
     );
@@ -126,17 +122,18 @@ export const SheetMenu = memo(() => {
           <div className="flex flex-col my-6 mx-2 gap-6">
             <div className="max-xl:hidden flex items-center gap-4 ml-1">
               <Switch size="xs" id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
-
               <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
                 {t('common:keep_menu_open')}
               </label>
             </div>
-            <div className="max-sm:hidden flex items-center gap-4 ml-1">
-              <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('app:hide_projects')} />
-              <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
-                {t('app:hide_projects')}
-              </label>
-            </div>
+            {menuSections.some((el) => el.isSubmenu) && (
+              <div className="max-sm:hidden flex items-center gap-4 ml-1">
+                <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
+                <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
+                  {t('common:nested_menu')}
+                </label>
+              </div>
+            )}
           </div>
         </>
       )}

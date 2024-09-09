@@ -32,12 +32,16 @@ const OrganizationPage = () => {
   const tabs = isAdmin ? organizationTabs : [organizationTabs[0]];
 
   const { mutate } = useUpdateOrganizationMutation(organization.id);
-  useEventListener('updateOrganizationCover', (e) => {
-    const banner = { bannerUrl: e.detail };
-    mutate(banner, {
-      onSuccess: () => toast.success(t('common:success.upload_cover')),
-      onError: () => toast.error(t('common:error.image_upload_failed')),
-    });
+  useEventListener('updateCover', (e) => {
+    const { bannerUrl, entity } = e.detail;
+    if (entity !== organization.entity) return;
+    mutate(
+      { bannerUrl },
+      {
+        onSuccess: () => toast.success(t('common:success.upload_cover')),
+        onError: () => toast.error(t('common:error.image_upload_failed')),
+      },
+    );
   });
 
   return (

@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { emailSender } from '#/lib/mailer';
 import { InviteSystemEmail } from '../../../emails/system-invite';
 
@@ -18,7 +18,7 @@ import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/s
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { entityTables, resolveEntity } from '#/lib/entity';
+import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { calculateRequestsPerMinute, parsePromMetrics, verifyUnsubscribeToken } from '#/lib/utils';
@@ -28,6 +28,8 @@ import { CustomHono } from '#/types/common';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
+import { type EntityTables, entityTables } from '#/entity-config';
+import { getTableConfig } from 'drizzle-orm/pg-core';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -49,18 +51,18 @@ const generalRoutes = app
     return ctx.json({ success: true, data: requestsPerMinute }, 200);
   })
   /*
-   * TODO:generics issue. Get public counts
+   * Get public counts
    */
   .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
-    const [users, organizations] = await Promise.all([
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(usersTable),
-      db.select({ total: sql<number>`count(*)`.mapWith(Number) }).from(organizationsTable),
-    ]);
+    const countEntries = await Promise.all(
+      Array.from(entityTables.values()).map(async (table) => {
+        const { name } = getTableConfig(table);
+        const [result] = await db.select({ total: count() }).from(table);
+        return [name, result.total];
+      }),
+  );
 
-    const data = {
-      users: users[0].total,
-      organizations: organizations[0].total,
-    };
+    const data = Object.fromEntries(countEntries);
 
     return ctx.json({ success: true, data }, 200);
   })
@@ -303,7 +305,7 @@ const generalRoutes = app
 
     // TODO:generics issue: Build queries
     for (const entityType of entityTypes) {
-      const table = entityTables.get(entityType) as typeof usersTable | typeof organizationsTable;
+      const table = entityTables.get(entityType) as EntityTables;
       if (!table) continue;
 
       // Basic selection setup
@@ -313,7 +315,6 @@ const generalRoutes = app
         name: table.name,
         entity: table.entity,
         ...('email' in table && { email: table.email }),
-        ...('organizationId' in table && { organizationId: table.organizationId }),
         ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
       };
 

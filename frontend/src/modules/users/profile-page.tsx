@@ -31,15 +31,19 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
     navigate({ to: '/user/settings', replace: true });
   };
 
-  useEventListener('updateUserCover', (e) => {
-    const banner = { bannerUrl: e.detail };
-    mutate(banner, {
-      onSuccess: () => {
-        toast.success(t('common:success.upload_cover'));
-        if (isSelf) setUser({ ...currentUser, ...banner });
+  useEventListener('updateCover', (e) => {
+    const { bannerUrl, entity } = e.detail;
+    if (entity !== user.entity) return;
+    mutate(
+      { bannerUrl },
+      {
+        onSuccess: () => {
+          toast.success(t('common:success.upload_cover'));
+          if (isSelf) setUser({ ...currentUser, ...{ bannerUrl } });
+        },
+        onError: () => toast.error(t('common:error.image_upload_failed')),
       },
-      onError: () => toast.error(t('common:error.image_upload_failed')),
-    });
+    );
   });
 
   return (
@@ -67,11 +71,7 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
         />
 
         {/* // TODO:generics issue: need a dynamic import solution for contents, perhaps using router */}
-        <div className="container mb-[50vh]">
-
-          Profile page content in {sheet ? 'sheet' : 'page'}
-
-        </div>
+        <div className="container mb-[50vh]">Profile page content in {sheet ? 'sheet' : 'page'}</div>
       </UserContext.Provider>
     </>
   );

@@ -18,7 +18,6 @@ export default defineConfig(() => {
     server: {
       host: '0.0.0.0',
       port: Number(frontendUrl.port),
-      open: true,
     },
     build: {
       rollupOptions: {},

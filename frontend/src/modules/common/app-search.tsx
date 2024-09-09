@@ -16,19 +16,15 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useNavigationStore } from '~/store/navigation';
 import { Button } from '../ui/button';
+import { suggestionSections } from '~/nav-config';
 
 type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
-interface SuggestionSection {
+export interface SuggestionSection {
   id: string;
   label: string;
   type: Entity;
 }
-
-const suggestionSections: SuggestionSection[] = [
-  { id: 'users', label: 'common:users', type: 'user' },
-  { id: 'organizations', label: 'common:organizations', type: 'organization' },
-];
 
 export const AppSearch = () => {
   const { t } = useTranslation();

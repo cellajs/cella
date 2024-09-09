@@ -1,8 +1,7 @@
+import type { Entity } from '~/types/common';
 
 export interface CustomEventMap {
-  updateUserCover: CustomEvent<string>;
-  updateOrganizationCover: CustomEvent<string>;
-  updateWorkspaceCover: CustomEvent<string>;
+  updateCover: CustomEvent<{ bannerUrl: string; entity: Entity }>;
 }
 
 export type CustomEventsWithData = {

@@ -10,7 +10,7 @@
   "email.invite_preview_text": "You have been invited to join {{appName}}",
   "email.invite_reply_to": "Reply to this email if you have any questions.",
   "email.invite_title": "You have been invited to join <strong>{{appName}}</strong>",
-  "email.invite_to_organization_description": "you have been invited to <strong>{{orgName}</strong> on <strong>{{appName}}</strong> by",
+  "email.invite_to_organization_description": "you have been invited to <strong>{{orgName}}</strong> on <strong>{{appName}}</strong> by",
   "email.invite_to_organization_title": "You have been invited to join <strong>{{orgName}}</strong>",
   "email.inviter_email": "Message the inviter",
   "email.please_verify_email": "Please verify your email for {{appName}}",

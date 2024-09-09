@@ -47,6 +47,7 @@ export const membershipSelect = {
   archived: membershipsTable.archived,
   muted: membershipsTable.muted,
   order: membershipsTable.order,
+  type: membershipsTable.type,
   userId: membershipsTable.userId,
   organizationId: membershipsTable.organizationId,
 };
