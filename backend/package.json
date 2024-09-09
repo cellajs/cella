@@ -101,10 +101,14 @@
     "typescript": "^5.5.4"
   },
   "babel": {
-    "presets": ["@babel/preset-typescript"]
+    "presets": [
+      "@babel/preset-typescript"
+    ]
   },
   "imports": {
-    "#/*": ["./dist/src/*"]
+    "#/*": [
+      "./dist/src/*"
+    ]
   },
   "exports": {
     "./*": "./src/*.ts"
