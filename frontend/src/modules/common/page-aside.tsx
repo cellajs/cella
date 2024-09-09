@@ -5,7 +5,7 @@ import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { cn } from '~/lib/utils';
 import { buttonVariants } from '~/modules/ui/button';
 
-interface AsideNavProps {
+interface PageAsideProps {
   className?: string;
   tabs: {
     id: string;
@@ -15,7 +15,7 @@ interface AsideNavProps {
   }[];
 }
 
-export const AsideNav = ({ tabs, className }: AsideNavProps) => {
+export const PageAside = ({ tabs, className }: PageAsideProps) => {
   const { t } = useTranslation();
   const sectionIds = tabs.map((tab) => tab.id);
   const { activeHash } = useScrollSpy({ sectionIds, autoUpdateHash: true });
