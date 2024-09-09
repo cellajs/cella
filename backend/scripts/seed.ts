@@ -4,7 +4,7 @@ import { argv } from 'node:process';
 const args = argv.slice(2);
 const addImagesFlag = args.includes('--addImages');
 
-// TODO: generic issue: move array to separate file
+// TODO:generics issue: move array to separate file
 const commands = [
   'pnpm run seed:user',
   `pnpm run seed:organizations ${addImagesFlag ? '--addImages' : ''}`,
