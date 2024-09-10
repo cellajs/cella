@@ -1,12 +1,9 @@
-import { and, count, desc, eq } from 'drizzle-orm';
+import { and, asc, count, eq } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
-import { projectsTable } from '#/db/schema/projects';
 import { usersTable } from '#/db/schema/users';
-import { workspacesTable } from '#/db/schema/workspaces';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -15,10 +12,13 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
+import type { config } from 'config';
+import type { z } from 'zod';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
+import { entityMenuSections, entityTables, relationTables } from '#/entity-config';
 import { getPreparedSessions } from './helpers/get-sessions';
+import type { menuItemsSchema, userMenuSchema } from './schema';
 
 const app = new CustomHono();
 
@@ -68,88 +68,84 @@ const meRoutes = app
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = ctx.get('user');
 
-    const organizationsWithMemberships = await db
-      .select({
-        organization: organizationsTable,
-        membership: membershipSelect,
-      })
-      .from(organizationsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'organization')))
-      .orderBy(desc(organizationsTable.createdAt))
-      .innerJoin(membershipsTable, eq(membershipsTable.organizationId, organizationsTable.id));
+    const fetchAndFormatEntities = async (
+      type: (typeof config.contextEntityTypes)[number],
+      subEntityType?: (typeof config.contextEntityTypes)[number],
+    ) => {
+      let formattedSubmenus: z.infer<typeof menuItemsSchema>;
+      const entityWithMemberships = await db
+        .select({
+          entity: entityTables[type],
+          membership: membershipSelect,
+        })
+        .from(entityTables[type])
+        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, type)))
+        .orderBy(asc(membershipsTable.order))
+        .innerJoin(membershipsTable, eq(membershipsTable[`${type}Id`], entityTables[type].id));
+      if (subEntityType && subEntityType in relationTables) {
+        const relationTable = relationTables[subEntityType as keyof typeof relationTables];
+        const submenuWithMemberships = await db
+          .select({
+            entity: entityTables[subEntityType],
+            membership: membershipSelect,
+            parent: relationTable,
+          })
+          .from(entityTables[subEntityType])
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, subEntityType)))
+          .orderBy(asc(membershipsTable.order))
+          .innerJoin(membershipsTable, eq(membershipsTable[`${subEntityType}Id`], entityTables[subEntityType].id))
+          .innerJoin(relationTable, eq(relationTable[`${subEntityType}Id`], entityTables[subEntityType].id));
 
-    const workspacesWithMemberships = await db
-      .select({
-        workspace: workspacesTable,
-        membership: membershipSelect,
-      })
-      .from(workspacesTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'workspace')))
-      .orderBy(desc(workspacesTable.createdAt))
-      .innerJoin(membershipsTable, eq(membershipsTable.workspaceId, workspacesTable.id));
-
-    const projectsWithMemberships = await db
-      .select({
-        project: projectsTable,
-        membership: membershipSelect,
-        workspace: projectsToWorkspacesTable,
-      })
-      .from(projectsTable)
-      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, 'project')))
-      .orderBy(desc(projectsTable.createdAt))
-      .innerJoin(membershipsTable, eq(membershipsTable.projectId, projectsTable.id))
-      .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id));
-
-    const organizations = organizationsWithMemberships.map(({ organization, membership }) => {
-      return {
-        slug: organization.slug,
-        id: organization.id,
-        createdAt: organization.createdAt,
-        modifiedAt: organization.modifiedAt,
-        name: organization.name,
-        entity: organization.entity,
-        thumbnailUrl: organization.thumbnailUrl,
+        // Format the fetched data
+        formattedSubmenus = submenuWithMemberships.map(({ entity, membership, parent }) => ({
+          slug: entity.slug,
+          id: entity.id,
+          createdAt: entity.createdAt.toDateString(),
+          modifiedAt: entity.modifiedAt?.toDateString() ?? null,
+          name: entity.name,
+          entity: entity.entity,
+          thumbnailUrl: entity.thumbnailUrl,
+          membership,
+          parentSlug: entityWithMemberships.find((i) => i.entity.id === parent[`${type}Id`])?.entity.slug,
+          parentId: parent[`${type}Id`],
+        }));
+      }
+      return entityWithMemberships.map(({ entity, membership }) => ({
+        slug: entity.slug,
+        id: entity.id,
+        createdAt: entity.createdAt.toDateString(),
+        modifiedAt: entity.modifiedAt?.toDateString() ?? null,
+        name: entity.name,
+        entity: entity.entity,
+        thumbnailUrl: entity.thumbnailUrl,
         membership,
-      };
-    });
-
-    const projects = projectsWithMemberships.map(({ project, membership, workspace }) => {
-      return {
-        slug: project.slug,
-        id: project.id,
-        createdAt: project.createdAt,
-        modifiedAt: project.modifiedAt,
-        name: project.name,
-        entity: project.entity,
-        organizationId: project.organizationId,
-        membership,
-        parentId: workspace.workspaceId,
-        parentSlug: workspacesWithMemberships.find((item) => item.workspace.id === workspace.workspaceId)?.workspace.slug,
-      };
-    });
-
-    const workspaces = workspacesWithMemberships.map(({ workspace, membership }) => {
-      return {
-        slug: workspace.slug,
-        id: workspace.id,
-        createdAt: workspace.createdAt,
-        modifiedAt: workspace.modifiedAt,
-        name: workspace.name,
-        thumbnailUrl: workspace.thumbnailUrl,
-        organizationId: workspace.organizationId,
-        entity: workspace.entity,
-        membership,
-        submenu: projects.filter((p) => p.parentId === workspace.id).sort((a, b) => a.membership.order - b.membership.order),
-      };
-    });
+        submenu: formattedSubmenus ? formattedSubmenus.filter((p) => p.parentId === entity.id) : [],
+      }));
+    };
+    const data = await entityMenuSections
+      .filter((el) => !el.isSubmenu)
+      .reduce(
+        async (accPromise, section) => {
+          const acc = await accPromise;
+          const submenu = entityMenuSections.find((el) => el.storageType === section.storageType && el.isSubmenu);
+          if (submenu) {
+            return {
+              ...acc,
+              [section.storageType]: await fetchAndFormatEntities(section.type, submenu.type),
+            };
+          }
+          return {
+            ...acc,
+            [section.storageType]: await fetchAndFormatEntities(section.type),
+          };
+        },
+        Promise.resolve({} as z.infer<typeof userMenuSchema>),
+      );
 
     return ctx.json(
       {
         success: true,
-        data: {
-          organizations: organizations.sort((a, b) => a.membership.order - b.membership.order),
-          workspaces: workspaces.sort((a, b) => a.membership.order - b.membership.order),
-        },
+        data,
       },
       200,
     );
