@@ -128,7 +128,7 @@ async function createEntityContext(entityType: Entity, ctx: any) {
 
       // If identifier is found, resolve the lowest ancestor
       if (lowestAncestorIdOrSlug) {
-        lowestAncestor = await resolveEntity(ancestor.name, lowestAncestorIdOrSlug);
+        lowestAncestor = await resolveEntity(ancestor.name as Entity, lowestAncestorIdOrSlug);
         if (lowestAncestor) {
           // Set the lowest ancestor as parent in context
           context[`${ancestor.name}Id`] = lowestAncestor.id;

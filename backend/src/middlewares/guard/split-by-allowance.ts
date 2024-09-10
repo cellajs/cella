@@ -16,7 +16,7 @@ import { logEvent } from '../logger/log-event';
  */
 const splitByAllowance =
   // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    (action: string, entityType: string): MiddlewareHandler<Env, any> =>
+    (action: string, entityType: Entity): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
       const user = ctx.get('user');
@@ -27,7 +27,7 @@ const splitByAllowance =
 
       // Check if ids are missing
       if (!rawIds || !ids.length) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', entityType.toUpperCase() as Entity, { user: user?.id });
+        return errorResponse(ctx, 404, 'not_found', 'warn', entityType, { user: user?.id });
       }
 
       // Resolve ids

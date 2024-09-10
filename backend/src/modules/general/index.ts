@@ -28,7 +28,7 @@ import { CustomHono } from '#/types/common';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
-import { type EntityTables, entityTables } from '#/entity-config';
+import { entityTables } from '#/entity-config';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
@@ -55,7 +55,7 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
     const countEntries = await Promise.all(
-      Array.from(entityTables.values()).map(async (table) => {
+      Object.values(entityTables).map(async (table) => {
         const { name } = getTableConfig(table);
         const [result] = await db.select({ total: count() }).from(table);
         return [name, result.total];
@@ -305,7 +305,7 @@ const generalRoutes = app
 
     // TODO:generics issue: Build queries
     for (const entityType of entityTypes) {
-      const table = entityTables.get(entityType) as EntityTables;
+      const table = entityTables[entityType];
       if (!table) continue;
 
       // Basic selection setup
