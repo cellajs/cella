@@ -141,7 +141,7 @@ const membershipsRoutes = app
             const assignedRole = (role as MembershipModel['role']) || 'member';
 
             // Insert membership
-            const createdMembership = await insertMembership({ user: existingUser, role: assignedRole, entity: context, memberships });
+            const createdMembership = await insertMembership({ user: existingUser, role: assignedRole, entity: context });
 
             // Send a Server-Sent Event (SSE) to the newly added user
             sendSSEToUsers([existingUser.id], 'update_entity', {
