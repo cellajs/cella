@@ -12,13 +12,12 @@ import { InviteMemberEmail } from '../../../emails/member-invite';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
-import { resolveEntity } from '#/lib/entity';
+import { resolveContextEntity, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import permissionManager from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
-import { membershipsTableId, supportedEntityTypes, type supportedModelTypes } from './helpers/create-membership-config';
 import { insertMembership } from './helpers/insert-membership';
 import membershipRouteConfig from './routes';
 
@@ -35,7 +34,7 @@ const membershipsRoutes = app
     const user = ctx.get('user');
 
     // Check params
-    if (!organizationId || !entityType || !supportedEntityTypes.includes(entityType) || !idOrSlug) {
+    if (!organizationId || !entityType || !config.contextEntityTypes.includes(entityType) || !idOrSlug) {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
 
@@ -43,7 +42,7 @@ const membershipsRoutes = app
     const [organization, memberships, context] = await Promise.all([
       resolveEntity('organization', organizationId) as Promise<OrganizationModel>,
       db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
-      resolveEntity(entityType, idOrSlug) as Promise<supportedModelTypes>,
+      resolveContextEntity(entityType, idOrSlug),
     ]);
 
     // Check if the user is allowed to perform an update action in the organization
@@ -69,7 +68,7 @@ const membershipsRoutes = app
       // Prepare conditions for fetching existing memberships
       const $where = [
         and(
-          eq(membershipsTableId(context), context.id),
+          eq(membershipsTable[`${context.entity}Id`], context.id),
           eq(membershipsTable.type, context.entity as MembershipModel['type']),
           inArray(
             membershipsTable.userId,
