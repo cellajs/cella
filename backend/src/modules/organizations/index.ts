@@ -6,7 +6,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
-import { counts } from '#/lib/counts';
+import { getMemberCounts } from '#/lib/counts';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
 import { getOrderColumn } from '#/lib/order-column';
@@ -100,7 +100,7 @@ const organizationsRoutes = app
       order,
     );
 
-    const countsQuery = await counts('organization');
+    const countsQuery = await getMemberCounts('organization', 'organizationId');
 
     const organizations = await db
       .select({
@@ -214,13 +214,17 @@ const organizationsRoutes = app
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
+    const memberCounts = await getMemberCounts('organization', 'organizationId', organization.id);
+
     return ctx.json(
       {
         success: true,
         data: {
           ...updatedOrganization,
           membership: memberships.find((m) => m.id === user.id) ?? null,
-          counts: await counts('organization', organization.id),
+          counts: {
+            memberships: memberCounts,
+          },
         },
       },
       200,
@@ -240,13 +244,17 @@ const organizationsRoutes = app
         and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
       );
 
+    const memberCounts = await getMemberCounts('organization', 'organizationId', organization.id);
+
     return ctx.json(
       {
         success: true,
         data: {
           ...organization,
           membership,
-          counts: await counts('organization', organization.id),
+          counts: {
+            memberships: memberCounts,
+          },
         },
       },
       200,
