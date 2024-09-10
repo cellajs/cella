@@ -1,7 +1,26 @@
 import { eq, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
-import type { Entity } from '#/types/common';
+import type { ContextEntity, Entity } from '#/types/common';
+
+/**
+ * Resolves context entity(those who have memberships) based on ID or Slug and sets the context accordingly.
+ * @param entityType - The type of the context entity(with membership).
+ * @param idOrSlug - The unique identifier (ID or Slug) of the entity.
+ */
+export const resolveContextEntity = async (entityType: ContextEntity, idOrSlug: string) => {
+  const table = entityTables[entityType];
+
+  // Return early if table is not available
+  if (!table) throw new Error(`Invalid entity: ${entityType}`);
+
+  const [entity] = await db
+    .select()
+    .from(table)
+    .where(or(eq(table.id, idOrSlug), eq(table.slug, idOrSlug)));
+
+  return entity;
+};
 
 /**
  * Resolves entity based on ID or Slug and sets the context accordingly.
