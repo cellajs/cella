@@ -1,25 +1,30 @@
-import { eq } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
-import type { OrganizationModel } from '#/db/schema/organizations';
-import type { ProjectModel } from '#/db/schema/projects';
+import { type InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
-import type { WorkspaceModel } from '#/db/schema/workspaces';
 import { logEvent } from '#/middlewares/logger/log-event';
+import type { BaseEntityModel, Entity } from '#/types/common';
+import { eq, max } from 'drizzle-orm';
 
-interface Props {
+interface Props<T> {
   user: UserModel;
   role: MembershipModel['role'];
-  entity: OrganizationModel | WorkspaceModel | ProjectModel;
+  entity: T;
   createdBy?: UserModel['id'];
-  memberships?: MembershipModel[];
 }
 
 // Helper function to insert a membership and give it proper order number
-export const insertMembership = async ({ user, role, entity, createdBy = user.id, memberships }: Props) => {
-  const organizationId = entity.entity === 'organization' ? entity.id : entity.organizationId;
+export const insertMembership = async <T extends BaseEntityModel<Exclude<Entity, 'user'>>>({ user, role, entity, createdBy = user.id }: Props<T>) => {
+  const organizationId = entity.id;
 
-  const newMembership = {
+  // Get the max order number
+  const [{ maxOrder }] = await db
+    .select({
+      maxOrder: max(membershipsTable.order),
+    })
+    .from(membershipsTable)
+    .where(eq(membershipsTable.userId, user.id));
+
+  const newMembership: InsertMembershipModel = {
     organizationId,
     workspaceId: null as string | null,
     projectId: null as string | null,
@@ -27,44 +32,22 @@ export const insertMembership = async ({ user, role, entity, createdBy = user.id
     userId: user.id,
     role,
     createdBy,
-    order: 1,
+    order: maxOrder ? maxOrder + 1 : 1,
   };
-
-  // Set workspaceId or projectId if entity is workspace or project
-  if (entity.entity === 'workspace') newMembership.workspaceId = entity.id;
-  else if (entity.entity === 'project') newMembership.projectId = entity.id;
-
-  // Get user memberships
-  let userMemberships = memberships;
-
-  if (!memberships) {
-    userMemberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
-  }
-
-  // Set order based on existing memberships for given entity type
-  if (userMemberships?.length) {
-    const membershipMaxOrder = userMemberships.reduce((max, current) => {
-      if (current.type === entity.entity && (!max || current.order > max.order)) return current;
-      return max;
-    });
-
-    newMembership.order = membershipMaxOrder.order + 1;
-  }
 
   // Insert
-  // TODO y can't use partial returning
-  const [results] = await db.insert(membershipsTable).values(newMembership).returning();
+  const [result] = await db.insert(membershipsTable).values(newMembership).returning({
+    id: membershipsTable.id,
+    role: membershipsTable.role,
+    archived: membershipsTable.archived,
+    muted: membershipsTable.muted,
+    order: membershipsTable.order,
+    userId: membershipsTable.userId,
+    organizationId: membershipsTable.organizationId,
+  });
+
   // Log
   logEvent(`User added to ${entity.entity}`, { user: user.id, id: entity.id });
-  return {
-    id: results.id,
-    role: results.role,
-    archived: results.archived,
-    muted: results.muted,
-    order: results.order,
-    userId: results.userId,
-    organizationId: results.organizationId,
-    workspaceId: results.workspaceId,
-    projectId: results.projectId,
-  };
+
+  return result;
 };

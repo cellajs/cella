@@ -13,14 +13,12 @@ import { env } from '../../../env';
 import { db } from '#/db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { getTableConfig } from 'drizzle-orm/pg-core';
 import { register } from 'prom-client';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { type EntityTables, entityTables } from '#/entity-config';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
@@ -31,6 +29,8 @@ import { CustomHono } from '#/types/common';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
+import { entityTables } from '#/entity-config';
+import { getTableConfig } from 'drizzle-orm/pg-core';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -56,7 +56,7 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
     const countEntries = await Promise.all(
-      Array.from(entityTables.values()).map(async (table) => {
+      Object.values(entityTables).map(async (table) => {
         const { name } = getTableConfig(table);
         const [result] = await db.select({ total: count() }).from(table);
         return [name, result.total];
@@ -306,7 +306,7 @@ const generalRoutes = app
 
     // Build queries
     for (const entityType of entityTypes) {
-      const table = entityTables.get(entityType) as EntityTables;
+      const table = entityTables[entityType];
       if (!table) continue;
 
       // Basic selection setup

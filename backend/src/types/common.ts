@@ -10,6 +10,11 @@ import type { ProjectModel } from '#/db/schema/projects';
 import type { WorkspaceModel } from '#/db/schema/workspaces';
 import type { failWithErrorSchema } from '../lib/common-schemas';
 
+export type BaseEntityModel<T extends Entity> = {
+  id: string;
+  entity: T;
+};
+
 export type Entity = (typeof config.entityTypes)[number];
 
 export type ContextEntity = (typeof config.contextEntityTypes)[number];

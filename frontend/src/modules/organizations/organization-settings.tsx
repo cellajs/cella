@@ -13,6 +13,7 @@ import StickyBox from '~/modules/common/sticky-box';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import Subscription from '~/modules/organizations/subscription';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
+import { OrganizationSettingsRoute } from '~/routes/organizations';
 import type { Organization } from '~/types/common';
 
 const tabs = [
@@ -24,7 +25,7 @@ const tabs = [
 const OrganizationSettings = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
+  const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
 
   const openDeleteDialog = () => {
     dialog(

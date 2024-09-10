@@ -10,7 +10,6 @@ import { emailSender } from '#/lib/mailer';
 import { InviteMemberEmail } from '../../../emails/member-invite';
 
 import type { OrganizationModel } from '#/db/schema/organizations';
-import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
 import { resolveEntity } from '#/lib/entity';
@@ -142,24 +141,7 @@ const membershipsRoutes = app
             const assignedRole = (role as MembershipModel['role']) || 'member';
 
             // Insert membership
-            const createdMembership = await insertMembership({ user: existingUser, role: assignedRole, entity: context, memberships });
-            // if invite to project also add membership to project's workspace
-            if (context.entity === 'project') {
-              const [{ workspaceId }] = await db
-                .select({ workspaceId: projectsToWorkspacesTable.workspaceId })
-                .from(projectsToWorkspacesTable)
-                .where(eq(projectsToWorkspacesTable.projectId, context.id));
-              await db.insert(membershipsTable).values({
-                organizationId,
-                workspaceId,
-                type: 'workspace',
-                userId: existingUser.id,
-                role: 'member',
-                createdBy: user.id,
-                order: 1,
-              });
-              // TODO add SSE to workspace membership 2 ??
-            }
+            const createdMembership = await insertMembership({ user: existingUser, role: assignedRole, entity: context });
 
             // Send a Server-Sent Event (SSE) to the newly added user
             sendSSEToUsers([existingUser.id], 'update_entity', {

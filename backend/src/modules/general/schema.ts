@@ -16,15 +16,9 @@ import {
 } from '#/lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
+import { createEntitiesSchema } from '#/lib/schema-utils';
 
-export const publicCountsSchema = z.object({
-  users: z.number(),
-  organizations: z.number(),
-  workspaces: z.number(),
-  projects: z.number(),
-  tasks: z.number(),
-  labels: z.number(),
-});
+export const publicCountsSchema = createEntitiesSchema(() => z.number());
 
 export const checkTokenSchema = z.object({
   type: createSelectSchema(tokensTable).shape.type,
