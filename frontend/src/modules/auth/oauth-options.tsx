@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
@@ -36,7 +36,9 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { mode } = useThemeStore();
-  const { token }: { token: string } = useParams({ strict: false });
+  const { token } = useSearch({
+    from: SignInRoute.id,
+  });
 
   const [loading, setLoading] = useState(false);
 

@@ -8,20 +8,20 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import type { ApiError } from '~/api';
-import { acceptInvite as baseAcceptInvite } from '~/api/general';
-import { checkToken as baseCheckToken } from '~/api/general';
+import { acceptInvite as baseAcceptInvite, checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
 import { cn } from '~/lib/utils';
 import AuthPage from '~/modules/auth/auth-page';
 import Spinner from '~/modules/common/spinner';
 import { Button, buttonVariants } from '~/modules/ui/button';
+import { acceptInviteRoute } from '~/routes/general';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 
 const AcceptInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { token }: { token: string } = useParams({ strict: false });
+  const { token } = useParams({ from: acceptInviteRoute.id });
 
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);

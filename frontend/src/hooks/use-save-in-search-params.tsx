@@ -7,6 +7,7 @@ const useSaveInSearchParams = (
   defaultValues?: Record<string, string | undefined>,
 ) => {
   const navigate = useNavigate();
+  //Strict false is needed because can be used at any route
   const params = useParams({
     strict: false,
   });
