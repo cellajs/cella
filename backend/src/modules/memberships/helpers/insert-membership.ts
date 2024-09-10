@@ -2,13 +2,8 @@ import { db } from '#/db/db';
 import { type InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { Entity } from '#/types/common';
+import type { BaseEntityModel, Entity } from '#/types/common';
 import { eq, max } from 'drizzle-orm';
-
-type BaseEntity = {
-  id: string;
-  entity: Exclude<Entity, 'user'>;
-};
 
 interface Props<T> {
   user: UserModel;
@@ -18,7 +13,7 @@ interface Props<T> {
 }
 
 // Helper function to insert a membership and give it proper order number
-export const insertMembership = async <T extends BaseEntity>({ user, role, entity, createdBy = user.id }: Props<T>) => {
+export const insertMembership = async <T extends BaseEntityModel<Exclude<Entity, 'user'>>>({ user, role, entity, createdBy = user.id }: Props<T>) => {
   const organizationId = entity.id;
 
   // Get the max order number
