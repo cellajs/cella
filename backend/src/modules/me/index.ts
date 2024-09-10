@@ -106,8 +106,8 @@ const meRoutes = app
           entity: entity.entity,
           thumbnailUrl: entity.thumbnailUrl,
           membership,
-          parentSlug: entityWithMemberships.find((i) => i.entity.id === parent.id)?.entity.slug,
-          parentId: parent.id,
+          parentSlug: entityWithMemberships.find((i) => i.entity.id === parent[`${type}Id`])?.entity.slug,
+          parentId: parent[`${type}Id`],
         }));
       }
       return entityWithMemberships.map(({ entity, membership }) => ({
