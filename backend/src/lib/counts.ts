@@ -1,11 +1,10 @@
 import { count, eq, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-import type { Entity } from '#/types/common';
+import type { ContextEntity } from '#/types/common';
 
-type MemberEntity = Exclude<Entity, 'user'>;
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
-const getQuery = (entity: MemberEntity, entityIdColumnName: EntityIdColumnNames) => {
+const getQuery = (entity: ContextEntity, entityIdColumnName: EntityIdColumnNames) => {
   const entityIdColumn = membershipsTable[entityIdColumnName];
 
   if (!entityIdColumn) {
@@ -26,11 +25,11 @@ const getQuery = (entity: MemberEntity, entityIdColumnName: EntityIdColumnNames)
 
 type MemberCounts = { admins: number; members: number; total: number };
 export function getMemberCounts<T extends string | undefined = undefined>(
-  entity: MemberEntity,
+  entity: ContextEntity,
   entityIdColumnName: EntityIdColumnNames,
   id?: T,
 ): T extends string ? Promise<MemberCounts> : Promise<ReturnType<typeof getQuery>>;
-export async function getMemberCounts(entity: MemberEntity, entityIdColumnName: EntityIdColumnNames, id?: string | undefined) {
+export async function getMemberCounts(entity: ContextEntity, entityIdColumnName: EntityIdColumnNames, id?: string | undefined) {
   const query = getQuery(entity, entityIdColumnName);
 
   if (id) {
