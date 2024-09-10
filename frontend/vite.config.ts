@@ -9,6 +9,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
+// import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
@@ -27,6 +28,7 @@ export default defineConfig(() => {
       exclude: [],
     },
     plugins: [
+      // TanStackRouterVite(),
       react(),
       config.sentSentrySourceMaps
         ? sentryVitePlugin({
@@ -60,7 +62,7 @@ export default defineConfig(() => {
       }),
       terser({
         compress: {
-          pure_funcs: ['console.debug'], // Remove console.debug
+          pure_funcs: ['console.debug'], // Removes console.debug
         },
       }),
       visualizer({ open: true, gzipSize: true }) as PluginOption,
