@@ -12,7 +12,7 @@ import { InviteMemberEmail } from '../../../emails/member-invite';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
-import { resolveContextEntity, resolveEntity } from '#/lib/entity';
+import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import permissionManager from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -42,7 +42,7 @@ const membershipsRoutes = app
     const [organization, memberships, context] = await Promise.all([
       resolveEntity('organization', organizationId) as Promise<OrganizationModel>,
       db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
-      resolveContextEntity(entityType, idOrSlug),
+      resolveEntity(entityType, idOrSlug),
     ]);
 
     // Check if the user is allowed to perform an update action in the organization

@@ -1,23 +1,23 @@
-import { and, asc, count, eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { CustomHono } from '#/types/common';
+import { type ContextEntity, CustomHono } from '#/types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
-import type { config } from 'config';
 import type { z } from 'zod';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { entityMenuSections, entityTables, relationTables } from '#/entity-config';
+import { entityMenuSections } from '#/entity-config';
 import { getPreparedSessions } from './helpers/get-sessions';
+import { getEntityQuery } from './helpers/get-user-menu';
 import type { menuItemsSchema, userMenuSchema } from './schema';
 
 const app = new CustomHono();
@@ -68,33 +68,11 @@ const meRoutes = app
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = ctx.get('user');
 
-    const fetchAndFormatEntities = async (
-      type: (typeof config.contextEntityTypes)[number],
-      subEntityType?: (typeof config.contextEntityTypes)[number],
-    ) => {
+    const fetchAndFormatEntities = async (type: ContextEntity, subEntityType?: ContextEntity) => {
       let formattedSubmenus: z.infer<typeof menuItemsSchema>;
-      const entityWithMemberships = await db
-        .select({
-          entity: entityTables[type],
-          membership: membershipSelect,
-        })
-        .from(entityTables[type])
-        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, type)))
-        .orderBy(asc(membershipsTable.order))
-        .innerJoin(membershipsTable, eq(membershipsTable[`${type}Id`], entityTables[type].id));
-      if (subEntityType && subEntityType in relationTables) {
-        const relationTable = relationTables[subEntityType as keyof typeof relationTables];
-        const submenuWithMemberships = await db
-          .select({
-            entity: entityTables[subEntityType],
-            membership: membershipSelect,
-            parent: relationTable,
-          })
-          .from(entityTables[subEntityType])
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, subEntityType)))
-          .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[`${subEntityType}Id`], entityTables[subEntityType].id))
-          .innerJoin(relationTable, eq(relationTable[`${subEntityType}Id`], entityTables[subEntityType].id));
+      const entityWithMemberships = await getEntityQuery(user.id, type);
+      if (subEntityType) {
+        const submenuWithMemberships = await getEntityQuery(user.id, subEntityType, true);
 
         // Format the fetched data
         formattedSubmenus = submenuWithMemberships.map(({ entity, membership, parent }) => ({
@@ -106,8 +84,8 @@ const meRoutes = app
           entity: entity.entity,
           thumbnailUrl: entity.thumbnailUrl,
           membership,
-          parentSlug: entityWithMemberships.find((i) => i.entity.id === parent[`${type}Id`])?.entity.slug,
-          parentId: parent[`${type}Id`],
+          parentSlug: entityWithMemberships.find((i) => i.entity.id === parent?.[`${type}Id`])?.entity.slug,
+          parentId: parent?.[`${type}Id`],
         }));
       }
       return entityWithMemberships.map(({ entity, membership }) => ({
