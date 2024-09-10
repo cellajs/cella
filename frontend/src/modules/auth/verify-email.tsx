@@ -9,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();
+  //Strict false is needed because the component is used in two places, one of which does not include parameters
   const { token }: { token: string } = useParams({ strict: false });
   const navigate = useNavigate();
 

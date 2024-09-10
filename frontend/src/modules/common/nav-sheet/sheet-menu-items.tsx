@@ -18,8 +18,9 @@ interface SheetMenuItemProps {
 
 export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchResults }: SheetMenuItemProps) => {
   const { t } = useTranslation();
+  //Strict false is needed because sheet menu can be open at any route
   const currentIdOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
-  const isActive = currentIdOrSlug === item.slug;
+  const isActive = currentIdOrSlug === item.slug || currentIdOrSlug === item.id;
 
   // Construct the destination URL
   const basePath = baseEntityRoutes[type];

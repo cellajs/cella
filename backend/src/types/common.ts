@@ -8,6 +8,11 @@ import type { MembershipModel } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { failWithErrorSchema } from '../lib/common-schemas';
 
+export type BaseEntityModel<T extends Entity> = {
+  id: string;
+  entity: T;
+};
+
 export type Entity = (typeof config.entityTypes)[number];
 
 export type ContextEntity = (typeof config.contextEntityTypes)[number];

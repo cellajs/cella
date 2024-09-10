@@ -1,14 +1,15 @@
 import { eq, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
+import type { Entity } from '#/types/common';
 
 /**
  * Resolves entity based on ID or Slug and sets the context accordingly.
  * @param entityType - The type of the entity.
  * @param idOrSlug - The unique identifier (ID or Slug) of the entity.
  */
-export const resolveEntity = async (entityType: string, idOrSlug: string) => {
-  const table = entityTables.get(entityType);
+export const resolveEntity = async (entityType: Entity, idOrSlug: string) => {
+  const table = entityTables[entityType];
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);
@@ -26,9 +27,9 @@ export const resolveEntity = async (entityType: string, idOrSlug: string) => {
  * @param entityType - The type of the entity.
  * @param ids - An array of unique identifiers (IDs) of the entities.
  */
-export const resolveEntities = async (entityType: string, ids: Array<string>) => {
+export const resolveEntities = async (entityType: Entity, ids: Array<string>) => {
   // Get the corresponding table for the entity type
-  const table = entityTables.get(entityType);
+  const table = entityTables[entityType];
 
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);
