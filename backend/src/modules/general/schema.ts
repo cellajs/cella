@@ -16,7 +16,7 @@ import {
 } from '#/lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
-import { createEntitiesSchema } from '#/lib/utils';
+import { createEntitiesSchema } from '#/lib/schema-utils';
 
 export const publicCountsSchema = createEntitiesSchema(() => z.number());
 
