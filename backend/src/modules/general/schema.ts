@@ -16,19 +16,9 @@ import {
 } from '#/lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
-import { type EntityTableNames, entityTables } from '#/entity-config';
-import { getTableConfig } from 'drizzle-orm/pg-core';
+import { createEntitiesSchema } from '#/lib/utils';
 
-export const publicCountsSchema = z.object(
-  Object.values(entityTables).reduce(
-    (acc, table) => {
-      const { name } = getTableConfig(table);
-      acc[name as EntityTableNames] = z.number();
-      return acc;
-    },
-    {} as Record<EntityTableNames, z.ZodNumber>,
-  ),
-);
+export const publicCountsSchema = createEntitiesSchema(() => z.number());
 
 export const checkTokenSchema = z.object({
   type: createSelectSchema(tokensTable).shape.type,
