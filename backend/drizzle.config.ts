@@ -1,7 +1,7 @@
 import { defineConfig } from 'drizzle-kit';
 import { env } from './env';
 
-const extendConfig = env.PGLITE ? { driver: 'pglite'} : {};
+const extendConfig = env.PGLITE ? { driver: 'pglite' } : {};
 
 export default defineConfig({
   schema: './src/db/schema/*',
