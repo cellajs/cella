@@ -134,8 +134,6 @@ const meRoutes = app
         },
         Promise.resolve({} as z.infer<typeof userMenuSchema>),
       );
-    console.log('🚀 ~ .openapi ~ data:', data);
-
     return ctx.json(
       {
         success: true,
