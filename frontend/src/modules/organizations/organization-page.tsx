@@ -26,12 +26,15 @@ export const organizationQueryOptions = (idOrSlug: string) =>
 const OrganizationPage = () => {
   const { t } = useTranslation();
   const { idOrSlug } = useParams({ from: OrganizationRoute.id });
+
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
+
   const isAdmin = organization.membership?.role === 'admin';
   const tabs = isAdmin ? organizationTabs : [organizationTabs[0]];
 
   const { mutate } = useUpdateOrganizationMutation(organization.id);
+
   useEventListener('updateCover', (e) => {
     const { bannerUrl, entity } = e.detail;
     if (entity !== organization.entity) return;
@@ -50,6 +53,7 @@ const OrganizationPage = () => {
         id={organization.id}
         title={organization.name}
         type="organization"
+        isAdmin={isAdmin}
         thumbnailUrl={organization.thumbnailUrl}
         bannerUrl={organization.bannerUrl}
         panel={

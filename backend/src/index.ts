@@ -13,6 +13,7 @@ import app from './routes';
 
 // Set i18n instance before starting server
 import './lib/i18n';
+import chalk from 'chalk';
 import { config } from 'config';
 // import { sdk } from './tracing';
 
@@ -43,10 +44,12 @@ const main = async () => {
       hostname: '0.0.0.0',
       port: Number(env.PORT ?? '4004'),
     },
-    (info) => {
-      console.info(`${config.name} backend is available on http://${info.address}:${info.port}`);
-      console.info(`Read the docs on http://${info.address}:${info.port}/docs`);
+    () => {
       ascii();
+      console.info(
+        `Open ${chalk.greenBright.bold(config.name)} on ${chalk.cyanBright(config.frontendUrl)}. Backend on ${chalk.cyanBright(config.backendUrl)}`,
+      );
+      console.info(`Read API docs on ${chalk.cyanBright(`${config.backendUrl}/docs`)}`);
     },
   );
 };

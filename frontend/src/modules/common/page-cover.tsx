@@ -7,8 +7,6 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { getColorClass } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
-import { useUserStore } from '~/store/user';
 import { UploadType } from '~/types/common';
 
 // Lazy load the upload component
@@ -17,23 +15,14 @@ const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-
 export interface PageCoverProps {
   id: string;
   type: Entity;
+  canUpdate: boolean;
   url?: string | null;
 }
 
-const PageCover = memo(({ type, id, url }: PageCoverProps) => {
+const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
   const { t } = useTranslation();
-  const { user } = useUserStore();
-  const { menu } = useNavigationStore();
 
   const [coverUrl, setCoverUrl] = useState(url);
-
-  // TODO is this best way to get entity and role?
-  const [entity] = Object.values(menu)
-    .flat()
-    .filter((el) => el.id === id);
-
-  const isSelf = id === user.id;
-  const isAdmin = entity ? entity.membership.role === 'admin' : false;
 
   const bannerHeight = url ? 'h-[20vw] min-h-40 sm:min-w-52' : 'h-32'; // : 'h-14';
   const bannerClass = url ? 'bg-background' : getColorClass(id);
@@ -84,7 +73,7 @@ const PageCover = memo(({ type, id, url }: PageCoverProps) => {
       className={`relative bg-cover bg-muted bg-center ${bannerHeight} ${bannerClass}`}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
-      {(isAdmin || isSelf) && (
+      {canUpdate && (
         <Button
           variant="secondary"
           size="sm"
