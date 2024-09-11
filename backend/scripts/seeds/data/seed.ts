@@ -3,17 +3,16 @@ import { faker } from '@faker-js/faker';
 import { db } from '#/db/db';
 import { nanoid } from '#/lib/nanoid';
 
-import { Command } from '@commander-js/extra-typings';
-import { and, eq } from 'drizzle-orm';
-import { UniqueEnforcer } from 'enforce-unique';
-import slugify from 'slugify';
 import { type InsertLabelModel, labelsTable } from '#/db/schema/labels';
 import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '#/db/schema/projects';
-import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
 import { type InsertWorkspaceModel, workspacesTable } from '#/db/schema/workspaces';
+import { Command } from '@commander-js/extra-typings';
+import { and, eq } from 'drizzle-orm';
+import { UniqueEnforcer } from 'enforce-unique';
+import slugify from 'slugify';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 import { extractKeywords } from './helpers';
@@ -119,6 +118,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
           createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
           modifiedAt: faker.date.past(),
           modifiedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
+          parentId: workspace.id,
         };
       });
 
@@ -127,11 +127,6 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
       for (const project of projects) {
         projectsCount++;
         if (progressCallback) progressCallback('projects', projectsCount, 'inserting');
-        //assign project to workspace
-        await db.insert(projectsToWorkspacesTable).values({
-          projectId: project.id,
-          workspaceId: workspace.id,
-        });
 
         const projectMemberships: InsertMembershipModel[] = membersGroup.map((user) => {
           return {

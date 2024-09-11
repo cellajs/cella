@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { projectsTable } from '#/db/schema/projects';
 import { idSchema, imageUrlSchema, nameSchema, paginationQuerySchema, validSlugSchema } from '#/lib/common-schemas';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const projectSchema = z.object({
@@ -27,7 +27,6 @@ export const getProjectsQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
     organizationId: idSchema.optional(),
-    workspaceId: idSchema.optional(),
     userId: idSchema.optional(),
   }),
 );
@@ -36,14 +35,8 @@ export const updateProjectBodySchema = createInsertSchema(projectsTable, {
   slug: validSlugSchema,
   name: nameSchema,
   thumbnailUrl: imageUrlSchema,
-})
-  .pick({
-    slug: true,
-    name: true,
-    thumbnailUrl: true,
-  })
-  .merge(
-    z.object({
-      workspaceId: idSchema.nullable(),
-    }),
-  );
+}).pick({
+  slug: true,
+  name: true,
+  thumbnailUrl: true,
+});

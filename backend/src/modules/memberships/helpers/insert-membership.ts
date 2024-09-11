@@ -1,9 +1,9 @@
-import { eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import type { BaseEntityModel, ContextEntity } from '#/types/common';
+import { eq, max } from 'drizzle-orm';
 
 interface Props<T> {
   user: UserModel;
@@ -43,6 +43,8 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
     muted: membershipsTable.muted,
     order: membershipsTable.order,
     userId: membershipsTable.userId,
+    projectId: membershipsTable.projectId,
+    workspaceId: membershipsTable.projectId,
     organizationId: membershipsTable.organizationId,
   });
 

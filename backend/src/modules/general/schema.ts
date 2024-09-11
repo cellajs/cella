@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-import { config } from 'config';
-import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '#/db/schema/tokens';
 import {
   contextEntityTypeSchema,
@@ -14,9 +12,11 @@ import {
   passwordSchema,
   slugSchema,
 } from '#/lib/common-schemas';
+import { createEntitiesSchema } from '#/lib/schema-utils';
+import { config } from 'config';
+import { createSelectSchema } from 'drizzle-zod';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
-import { createEntitiesSchema } from '#/lib/schema-utils';
 
 export const publicCountsSchema = createEntitiesSchema(() => z.number());
 
@@ -45,7 +45,7 @@ export const entitySuggestionSchema = z.object({
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
   entity: pageEntityTypeSchema,
-  parentId: z.string().optional(),
+  parentId: z.string().nullable().optional(),
 });
 
 export type Suggestion = z.infer<typeof entitySuggestionSchema>;

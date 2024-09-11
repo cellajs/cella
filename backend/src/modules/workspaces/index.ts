@@ -1,11 +1,10 @@
-import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { workspacesTable } from '#/db/schema/workspaces';
+import { and, asc, count, eq, inArray } from 'drizzle-orm';
 
 import { labelsTable } from '#/db/schema/labels';
 import { projectsTable } from '#/db/schema/projects';
-import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -26,7 +25,6 @@ const workspacesRoutes = app
   .openapi(workspaceRoutesConfig.createWorkspace, async (ctx) => {
     const { name, slug, organizationId } = ctx.req.valid('json');
     const user = ctx.get('user');
-    const memberships = ctx.get('memberships');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -46,7 +44,7 @@ const workspacesRoutes = app
     logEvent('Workspace created', { workspace: workspace.id });
 
     // Insert membership
-    const createdMembership = await insertMembership({ user, role: 'admin', entity: workspace, memberships });
+    const createdMembership = await insertMembership({ user, role: 'admin', entity: workspace });
 
     return ctx.json(
       {
@@ -73,16 +71,12 @@ const workspacesRoutes = app
         membership: membershipSelect,
       })
       .from(projectsTable)
-      .innerJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.workspaceId, workspace.id))
+      .innerJoin(workspacesTable, eq(workspacesTable.id, workspace.id))
       .innerJoin(
         membershipsTable,
-        and(
-          eq(membershipsTable.projectId, projectsToWorkspacesTable.projectId),
-          eq(membershipsTable.userId, user.id),
-          eq(membershipsTable.archived, false),
-        ),
+        and(eq(membershipsTable.projectId, projectsTable.id), eq(membershipsTable.userId, user.id), eq(membershipsTable.archived, false)),
       )
-      .where(eq(projectsTable.id, projectsToWorkspacesTable.projectId))
+      .where(eq(projectsTable.parentId, workspace.id))
       .orderBy(asc(membershipsTable.order));
 
     const projects = projectsWithMembership.map(({ project, membership }) => {

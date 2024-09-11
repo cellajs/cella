@@ -1,8 +1,7 @@
-import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { projectsTable } from '#/db/schema/projects';
-import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
+import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
@@ -25,7 +24,6 @@ const projectsRoutes = app
     const workspaceId = ctx.req.query('workspaceId');
 
     const user = ctx.get('user');
-    const memberships = ctx.get('memberships');
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -39,6 +37,7 @@ const projectsRoutes = app
         organizationId,
         name,
         slug,
+        parentId: workspaceId ?? null,
         createdBy: user.id,
       })
       .returning();
@@ -46,17 +45,7 @@ const projectsRoutes = app
     logEvent('Project created', { project: project.id });
 
     // Insert membership
-    const createdMembership = await insertMembership({ user, role: 'admin', entity: project, memberships });
-
-    // If project created in workspace, add project to it
-    if (workspaceId) {
-      await db.insert(projectsToWorkspacesTable).values({
-        projectId: project.id,
-        workspaceId: workspaceId,
-      });
-
-      logEvent('Project added to workspace', { project: project.id, workspace: workspaceId });
-    }
+    const createdMembership = await insertMembership({ user, role: 'admin', entity: project });
 
     const createdProject = {
       ...project,
@@ -73,13 +62,13 @@ const projectsRoutes = app
     const project = ctx.get('project');
     const memberships = ctx.get('memberships');
     const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project') ?? null;
-    const [projectToWorkspace] = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.projectId, project.id));
+
     return ctx.json(
       {
         success: true,
         data: {
           ...project,
-          workspaceId: projectToWorkspace.workspaceId,
+          workspaceId: project.parentId,
           membership,
         },
       },
@@ -90,7 +79,7 @@ const projectsRoutes = app
    * Get list of projects
    */
   .openapi(projectRoutesConfig.getProjects, async (ctx) => {
-    const { q, sort, order, offset, limit, workspaceId, organizationId } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, organizationId } = ctx.req.valid('query');
     const user = ctx.get('user');
 
     const projectsFilters: SQL[] = [];
@@ -116,49 +105,25 @@ const projectsRoutes = app
       order,
     );
 
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    let projects: Array<any>;
-
-    if (!workspaceId) {
-      projects = await db
-        .select({
-          project: projectsTable,
-          membership: membershipsTable,
-          workspaceId: projectsToWorkspacesTable.workspaceId,
-        })
-        .from(projectsQuery.as('projects'))
-        .innerJoin(memberships, eq(memberships.projectId, projectsTable.id))
-        .leftJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, projectsTable.id))
-        .orderBy(orderColumn)
-        .limit(Number(limit))
-        .offset(Number(offset));
-    } else {
-      projects = await db
-        .select({
-          project: projectsTable,
-          membership: membershipSelect,
-          workspaceId: projectsToWorkspacesTable.workspaceId,
-        })
-        .from(projectsToWorkspacesTable)
-        .leftJoin(
-          projectsTable,
-          and(eq(projectsToWorkspacesTable.projectId, projectsTable.id), eq(projectsToWorkspacesTable.workspaceId, workspaceId), ...projectsFilters),
-        )
-        .leftJoin(memberships, and(eq(memberships.projectId, projectsTable.id)))
-        .where(eq(projectsToWorkspacesTable.workspaceId, workspaceId))
-        .orderBy(orderColumn)
-        .limit(Number(limit))
-        .offset(Number(offset));
-    }
+    const projects = await db
+      .select({
+        project: projectsTable,
+        membership: membershipsTable,
+      })
+      .from(projectsQuery.as('projects'))
+      .innerJoin(memberships, eq(memberships.projectId, projectsTable.id))
+      .orderBy(orderColumn)
+      .limit(Number(limit))
+      .offset(Number(offset));
 
     return ctx.json(
       {
         success: true,
         data: {
-          items: projects.map(({ project, membership, workspaceId }) => ({
+          items: projects.map(({ project, membership }) => ({
             ...project,
             membership,
-            workspaceId,
+            workspaceId: project.parentId,
           })),
           total: projects.length,
         },
@@ -173,7 +138,7 @@ const projectsRoutes = app
     const user = ctx.get('user');
     const project = ctx.get('project');
 
-    const { name, thumbnailUrl, slug, workspaceId } = ctx.req.valid('json');
+    const { name, thumbnailUrl, slug } = ctx.req.valid('json');
 
     if (slug && slug !== project.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -191,14 +156,6 @@ const projectsRoutes = app
       })
       .where(eq(projectsTable.id, project.id))
       .returning();
-
-    const [workspaceRelation] = await db.select().from(projectsToWorkspacesTable).where(eq(projectsToWorkspacesTable.projectId, project.id));
-    if (workspaceId && workspaceRelation.workspaceId !== workspaceId) {
-      await db.update(projectsToWorkspacesTable).set({
-        projectId: project.id,
-        workspaceId,
-      });
-    }
 
     const memberships = await db
       .select(membershipSelect)
@@ -221,7 +178,7 @@ const projectsRoutes = app
         success: true,
         data: {
           ...updatedProject,
-          parentId: workspaceId,
+          parentId: updatedProject.parentId,
           membership: memberships.find((m) => m.id === user.id) ?? null,
         },
       },

@@ -1,4 +1,4 @@
-import { clearDb } from '../src/cron/manage-db';
+import { clearDb } from '#/cron/manage-db';
 
 clearDb()
   .catch((error) => {

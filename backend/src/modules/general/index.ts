@@ -1,5 +1,5 @@
-import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { emailSender } from '#/lib/mailer';
+import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { InviteSystemEmail } from '../../../emails/system-invite';
 
 import { config } from 'config';
@@ -12,13 +12,11 @@ import { env } from '../../../env';
 
 import { db } from '#/db/db';
 
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { register } from 'prom-client';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { projectsToWorkspacesTable } from '#/db/schema/projects-to-workspaces';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { entityTables } from '#/entity-config';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
@@ -26,11 +24,12 @@ import { calculateRequestsPerMinute, parsePromMetrics, verifyUnsubscribeToken } 
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { getTableConfig } from 'drizzle-orm/pg-core';
+import { register } from 'prom-client';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
-import { entityTables } from '#/entity-config';
-import { getTableConfig } from 'drizzle-orm/pg-core';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -317,6 +316,7 @@ const generalRoutes = app
         entity: table.entity,
         ...('email' in table && { email: table.email }),
         ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
+        ...('parentId' in table && { parentId: table.parentId }),
       };
 
       // Build search filters
@@ -351,24 +351,8 @@ const generalRoutes = app
       $and.push($or.length > 1 ? or(...$or) : $or[0]);
       const $where = $and.length > 1 ? and(...$and) : $and[0];
 
-      // If type is 'project', perform left join to get projectId
-      if (entityType === 'project') {
-        const query = db
-          .select({
-            ...baseSelect,
-            parentId: projectsToWorkspacesTable.workspaceId,
-          })
-          .from(table)
-          .where($where)
-          .leftJoin(projectsToWorkspacesTable, eq(projectsToWorkspacesTable.projectId, table.id))
-          .limit(10);
-
-        // Build query
-        queries.push(query);
-      } else {
-        // Build query
-        queries.push(db.select(baseSelect).from(table).where($where).limit(10));
-      }
+      // Build query
+      queries.push(db.select(baseSelect).from(table).where($where).limit(10));
     }
 
     const results = await Promise.all(queries);

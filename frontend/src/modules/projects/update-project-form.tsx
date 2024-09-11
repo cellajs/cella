@@ -59,7 +59,6 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
       slug: project.slug,
       name: project.name,
       thumbnailUrl: cleanUrl(project.thumbnailUrl),
-      workspaceId: project.workspaceId,
     },
   };
 
