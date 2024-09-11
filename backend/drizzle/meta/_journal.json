@@ -15,6 +15,13 @@
       "when": 1726039754756,
       "tag": "0001_funny_elektra",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1726075774519,
+      "tag": "0002_amusing_lady_vermin",
+      "breakpoints": true
     }
   ]
 }
