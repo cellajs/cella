@@ -1,5 +1,4 @@
 import defaultHook from './lib/default-hook';
-import docs from './lib/docs';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 
@@ -12,9 +11,6 @@ const baseApp = new CustomHono({
 
 // Add global middleware
 baseApp.route('/', middlewares);
-
-// Init OpenAPI docs
-docs(baseApp);
 
 // Not found handler
 baseApp.notFound((ctx) => {
