@@ -6,7 +6,7 @@ import { config } from 'config';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { render } from 'jsx-email';
-import { type User, generateId } from 'lucia';
+import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { env } from '../../../env';
 
@@ -19,6 +19,7 @@ import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/s
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { getUserBy } from '#/db/utils';
 import { entityTables } from '#/entity-config';
 import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
@@ -151,7 +152,7 @@ const generalRoutes = app
     const user = ctx.get('user');
 
     for (const email of emails) {
-      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
+      const targetUser = await getUserBy('email', email.toLowerCase());
 
       const token = generateId(40);
       await db.insert(tokensTable).values({
@@ -200,7 +201,7 @@ const generalRoutes = app
       return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
     }
 
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, token.email));
+    const user = await getUserBy('email', token.email);
 
     if (!user) {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
@@ -368,7 +369,7 @@ const generalRoutes = app
     // TODO use filter query helper to avoid code duplication. Also, this specific filter is missing name search?
     const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
 
-    const usersQuery = db.select().from(usersTable).where(filter).as('users');
+    const usersQuery = db.select().from(safeUserSelect).where(filter).as('users');
 
     // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
     const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];
@@ -432,8 +433,7 @@ const generalRoutes = app
 
     if (!token) return errorResponse(ctx, 400, 'No token provided', 'warn', 'user');
 
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.unsubscribeToken, token)).limit(1);
-
+    const user = await getUserBy('unsubscribeToken', token, 'unsafe');
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     const isValid = verifyUnsubscribeToken(user.email, token);
