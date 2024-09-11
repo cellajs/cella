@@ -68,10 +68,10 @@ const usersRoutes = app
           memberships: coalesce(membershipCounts.count, 0),
         },
       })
-      .from(usersTable)
+      .from(safeUserSelect)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(orderColumn)
-      .leftJoin(membershipCounts, eq(membershipCounts.userId, usersTable.id));
+      .leftJoin(membershipCounts, eq(membershipCounts.userId, safeUserSelect.id));
 
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
 
@@ -94,7 +94,7 @@ const usersRoutes = app
     const errors: ErrorType[] = [];
 
     // Get the users
-    const targets = await db.select().from(usersTable).where(inArray(usersTable.id, userIds));
+    const targets = await db.select().from(safeUserSelect).where(inArray(safeUserSelect.id, userIds));
 
     // Check if the users exist
     for (const id of userIds) {
@@ -158,8 +158,8 @@ const usersRoutes = app
 
     const [targetUser] = await db
       .select()
-      .from(usersTable)
-      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)));
+      .from(safeUserSelect)
+      .where(or(eq(safeUserSelect.id, idOrSlug), eq(safeUserSelect.slug, idOrSlug)));
 
     if (!targetUser) {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
@@ -193,8 +193,8 @@ const usersRoutes = app
     const user = ctx.get('user');
     const [targetUser] = await db
       .select()
-      .from(usersTable)
-      .where(or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug)));
+      .from(safeUserSelect)
+      .where(or(eq(safeUserSelect.id, idOrSlug), eq(safeUserSelect.slug, idOrSlug)));
 
     if (!targetUser) {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
