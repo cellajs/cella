@@ -69,31 +69,30 @@ const meRoutes = app
     const user = ctx.get('user');
     const fetchAndFormatEntities = async (type: ContextEntity, subEntityType?: ContextEntity) => {
       let formattedSubmenus: z.infer<typeof menuItemsSchema>;
-      const mainTable = subEntityType ? entityTables[subEntityType] : entityTables[type];
-      const parentTable = entityTables[type];
-      const operatingType = subEntityType ? subEntityType : type;
+      const mainTable = entityTables[type];
       const entity = await db
         .select({
           entity: mainTable,
           membership: membershipSelect,
         })
         .from(mainTable)
-        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, operatingType)))
+        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, type)))
         .orderBy(asc(membershipsTable.order))
-        .innerJoin(membershipsTable, eq(membershipsTable[`${operatingType}Id`], mainTable.id));
+        .innerJoin(membershipsTable, eq(membershipsTable[`${type}Id`], mainTable.id));
 
-      if (subEntityType && 'parentId' in mainTable) {
+      if (subEntityType && 'parentId' in entityTables[subEntityType]) {
+        const subTable = entityTables[subEntityType];
         const subEntity = await db
           .select({
-            entity: mainTable,
+            entity: subTable,
             membership: membershipSelect,
-            parent: parentTable,
+            parent: mainTable,
           })
-          .from(mainTable)
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, operatingType)))
+          .from(subTable)
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, subEntityType)))
           .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[`${operatingType}Id`], mainTable.id))
-          .innerJoin(parentTable, eq(parentTable.id, mainTable.parentId as PgColumn));
+          .innerJoin(membershipsTable, eq(membershipsTable[`${subEntityType}Id`], subTable.id))
+          .innerJoin(mainTable, eq(mainTable.id, subTable.parentId as PgColumn));
 
         formattedSubmenus = subEntity.map(({ entity, membership, parent }) => ({
           slug: entity.slug,
@@ -135,6 +134,7 @@ const meRoutes = app
         },
         Promise.resolve({} as z.infer<typeof userMenuSchema>),
       );
+    console.log('🚀 ~ .openapi ~ data:', data);
 
     return ctx.json(
       {

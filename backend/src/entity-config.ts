@@ -1,6 +1,8 @@
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
+import { labelsTable } from './db/schema/labels';
 import { projectsTable } from './db/schema/projects';
+import { tasksTable } from './db/schema/tasks';
 import { workspacesTable } from './db/schema/workspaces';
 
 export type EntityTables = typeof usersTable | typeof organizationsTable | typeof workspacesTable | typeof projectsTable;
@@ -12,6 +14,8 @@ export const entityTables = {
   organization: organizationsTable,
   workspace: workspacesTable,
   project: projectsTable,
+  label: labelsTable,
+  task: tasksTable,
 } as const;
 
 export const entityMenuSections = [

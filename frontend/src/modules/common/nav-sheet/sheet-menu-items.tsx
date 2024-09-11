@@ -11,7 +11,7 @@ import type { ContextEntity, UserMenuItem } from '~/types/common';
 interface SheetMenuItemProps {
   item: UserMenuItem;
   type: ContextEntity;
-  mainItemIdOrSlug?: string;
+  mainItemIdOrSlug?: string | null;
   className?: string;
   searchResults?: boolean;
 }

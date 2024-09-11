@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { config } from 'config';
 import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/lib/common-schemas';
+import { config } from 'config';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
@@ -38,7 +38,7 @@ export const menuItemSchema = z.object({
   thumbnailUrl: imageUrlSchema.nullish(),
   entity: z.enum(config.contextEntityTypes),
   membership: membershipInfoSchema,
-  parentId: z.string().optional(),
+  parentId: z.string().nullable().optional(),
   parentSlug: z.string().optional(),
   organizationId: z.string().optional(),
 });

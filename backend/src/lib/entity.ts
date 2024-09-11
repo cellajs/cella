@@ -1,7 +1,7 @@
-import { eq, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
 import type { Entity } from '#/types/common';
+import { eq, inArray, or } from 'drizzle-orm';
 
 /**
  * Resolves entity based on ID or Slug and sets the context accordingly.
@@ -14,10 +14,13 @@ export const resolveEntity = async <T extends Entity>(entityType: T, idOrSlug: s
   // Return early if table is not available
   if (!table) throw new Error(`Invalid entity: ${entityType}`);
 
+  const $where = [eq(table.id, idOrSlug)];
+  if ('slug' in table) $where.push(eq(table.slug, idOrSlug));
+
   const [entity] = await db
     .select()
     .from(table)
-    .where(or(eq(table.id, idOrSlug), eq(table.slug, idOrSlug)));
+    .where(or(...$where));
 
   return entity as (typeof entityTables)[T]['$inferSelect'];
 };
