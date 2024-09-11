@@ -1,15 +1,13 @@
 import { count, eq, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-import type { Entity } from '#/types/common';
+import type { ContextEntity } from '#/types/common';
 
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
-const getQuery = (entity: Entity, entityIdColumnName: EntityIdColumnNames) => {
+const getQuery = (entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames) => {
   const entityIdColumn = membershipsTable[entityIdColumnName];
 
-  if (!entityIdColumn) {
-    throw new Error(`Invalid entity ID column name: ${entityIdColumnName}`);
-  }
+  if (!entityIdColumn) throw new Error(`Invalid entity ID column name: ${entityIdColumnName}`);
 
   const query = db
     .select({
@@ -20,18 +18,16 @@ const getQuery = (entity: Entity, entityIdColumnName: EntityIdColumnNames) => {
     .from(membershipsTable)
     .groupBy(entityIdColumn);
 
-  if (entity !== 'user') {
-    return query.where(eq(membershipsTable.type, entity)).as('counts');
-  }
+  if (entity) return query.where(eq(membershipsTable.type, entity)).as('counts');
 
   return query.as('counts');
 };
 
 type MemberCounts = { admins: number; members: number; total: number };
 // Overload signatures
-export function memberCountsQuery(entity: Entity, entityIdColumnName: EntityIdColumnNames): ReturnType<typeof getQuery>;
-export function memberCountsQuery(entity: Entity, entityIdColumnName: EntityIdColumnNames, id: string): Promise<MemberCounts>;
-export function memberCountsQuery(entity: Entity, entityIdColumnName: EntityIdColumnNames, id?: string | undefined) {
+export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames): ReturnType<typeof getQuery>;
+export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames, id: string): Promise<MemberCounts>;
+export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames, id?: string) {
   const query = getQuery(entity, entityIdColumnName);
 
   if (id) {
