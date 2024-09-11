@@ -8,6 +8,7 @@ import { resetDb } from '#/cron/manage-db';
 import { db } from '#/db/db';
 import ascii from '#/lib/ascii';
 import { env } from '../env';
+import docs from './lib/docs';
 import app from './routes';
 
 // Set i18n instance before starting server
@@ -16,6 +17,9 @@ import { config } from 'config';
 // import { sdk } from './tracing';
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
+
+// Init OpenAPI docs
+docs(app);
 
 const main = async () => {
   // Reset db every Sunday at midnight
