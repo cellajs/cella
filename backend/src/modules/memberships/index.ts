@@ -316,8 +316,7 @@ const membershipsRoutes = app
       orderToUpdate = lastOrderMembership.order === ceilOrder ? ceilOrder + 1 : ceilOrder;
     }
 
-    // TODO:generics issue
-    const membershipContext = await resolveEntity(updatedType, membershipToUpdate.organizationId || '');
+    const membershipContext = await resolveEntity(updatedType, membershipToUpdate[`${updatedType}Id`]);
 
     // Check if user has permission to someone elses membership
     if (user.id !== membershipToUpdate.userId) {
@@ -344,13 +343,13 @@ const membershipsRoutes = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    // TODO:generics issue
     const allMembers = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, updatedType), or(eq(membershipsTable.organizationId, membershipContext.id))));
+      .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable[`${updatedType}Id`], membershipContext.id)));
 
     const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
+
     sendSSEToUsers(membersIds, 'update_entity', {
       ...membershipContext,
       membership: updatedMembership,
