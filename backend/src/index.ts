@@ -8,7 +8,7 @@ import { resetDb } from '#/cron/manage-db';
 import { db } from '#/db/db';
 import ascii from '#/lib/ascii';
 import { env } from '../env';
-import app from './server';
+import app from './routes';
 
 // Set i18n instance before starting server
 import './lib/i18n';

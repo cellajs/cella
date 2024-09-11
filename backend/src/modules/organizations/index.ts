@@ -100,7 +100,7 @@ const organizationsRoutes = app
       order,
     );
 
-    const countsQuery = memberCountsQuery('organizationId', 'organization');
+    const countsQuery = memberCountsQuery('organization', 'organizationId');
 
     const organizations = await db
       .select({
@@ -209,7 +209,7 @@ const organizationsRoutes = app
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
-    const memberCounts = await memberCountsQuery('organizationId', 'organization', organization.id);
+    const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
     return ctx.json(
       {
@@ -239,7 +239,7 @@ const organizationsRoutes = app
         and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
       );
 
-    const memberCounts = await memberCountsQuery('organizationId', 'organization', organization.id);
+    const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
     return ctx.json(
       {

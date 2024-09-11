@@ -4,12 +4,10 @@ import type { ContextEntity } from '#/types/common';
 import { count, eq, sql } from 'drizzle-orm';
 
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
-const getQuery = (entityIdColumnName: EntityIdColumnNames, entity?: ContextEntity) => {
+const getQuery = (entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames) => {
   const entityIdColumn = membershipsTable[entityIdColumnName];
 
-  if (!entityIdColumn) {
-    throw new Error(`Invalid entity ID column name: ${entityIdColumnName}`);
-  }
+  if (!entityIdColumn) throw new Error(`Invalid entity ID column name: ${entityIdColumnName}`);
 
   const query = db
     .select({
@@ -27,10 +25,10 @@ const getQuery = (entityIdColumnName: EntityIdColumnNames, entity?: ContextEntit
 
 type MemberCounts = { admins: number; members: number; total: number };
 // Overload signatures
-export function memberCountsQuery(entityIdColumnName: EntityIdColumnNames, entity?: ContextEntity): ReturnType<typeof getQuery>;
-export function memberCountsQuery(entityIdColumnName: EntityIdColumnNames, entity?: ContextEntity, id?: string): Promise<MemberCounts>;
-export function memberCountsQuery(entityIdColumnName: EntityIdColumnNames, entity?: ContextEntity, id?: string) {
-  const query = getQuery(entityIdColumnName, entity);
+export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames): ReturnType<typeof getQuery>;
+export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames, id: string): Promise<MemberCounts>;
+export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames, id?: string) {
+  const query = getQuery(entity, entityIdColumnName);
 
   if (id) {
     return db

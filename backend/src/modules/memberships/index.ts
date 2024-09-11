@@ -343,14 +343,7 @@ const membershipsRoutes = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    const allMembers = await db
-      .select({ id: membershipsTable.userId })
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable[`${updatedType}Id`], membershipContext.id)));
-
-    const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
-
-    sendSSEToUsers(membersIds, 'update_entity', {
+    sendSSEToUsers([membershipToUpdate.userId], 'update_entity', {
       ...membershipContext,
       membership: updatedMembership,
     });
