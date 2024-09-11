@@ -1,12 +1,12 @@
-import { and, desc, eq, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
+import { and, desc, eq, inArray, or } from 'drizzle-orm';
 
+import { emailSender } from '#/lib/mailer';
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
-import { emailSender } from '#/lib/mailer';
 import { InviteMemberEmail } from '../../../emails/member-invite';
 
 import type { OrganizationModel } from '#/db/schema/organizations';
@@ -229,26 +229,19 @@ const membershipsRoutes = app
 
     const errors: ErrorType[] = [];
 
-    const where = and(
-      eq(membershipsTable.type, entityType),
-      or(
-        eq(membershipsTable.organizationId, membershipContext.id),
-        eq(membershipsTable.workspaceId, membershipContext.id),
-        eq(membershipsTable.projectId, membershipContext.id),
-      ),
-    );
+    const filters = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable[`${entityType}Id`], membershipContext.id)));
 
     // Get the user membership
     const [currentUserMembership] = (await db
       .select()
       .from(membershipsTable)
-      .where(and(where, eq(membershipsTable.userId, user.id)))) as (MembershipModel | undefined)[];
+      .where(and(filters, eq(membershipsTable.userId, user.id)))) as (MembershipModel | undefined)[];
 
     // Get the memberships
     const targets = await db
       .select()
       .from(membershipsTable)
-      .where(and(inArray(membershipsTable.userId, memberToDeleteIds), where));
+      .where(and(inArray(membershipsTable.userId, memberToDeleteIds), filters));
 
     // Check if the memberships exist
     for (const id of memberToDeleteIds) {
@@ -323,11 +316,7 @@ const membershipsRoutes = app
       orderToUpdate = lastOrderMembership.order === ceilOrder ? ceilOrder + 1 : ceilOrder;
     }
 
-    // TODO: Refactor
-    const membershipContext = await resolveEntity(
-      updatedType,
-      membershipToUpdate.projectId || membershipToUpdate.workspaceId || membershipToUpdate.organizationId || '',
-    );
+    const membershipContext = await resolveEntity(updatedType, membershipToUpdate[`${updatedType}Id`] || '');
 
     // Check if user has permission to someone elses membership
     if (user.id !== membershipToUpdate.userId) {
@@ -357,18 +346,10 @@ const membershipsRoutes = app
     const allMembers = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
-      .where(
-        and(
-          eq(membershipsTable.type, updatedType),
-          or(
-            eq(membershipsTable.organizationId, membershipContext.id),
-            eq(membershipsTable.workspaceId, membershipContext.id),
-            eq(membershipsTable.projectId, membershipContext.id),
-          ),
-        ),
-      );
+      .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable[`${updatedType}Id`], membershipContext.id)));
 
     const membersIds = allMembers.map((member) => member.id).filter(Boolean) as string[];
+
     sendSSEToUsers(membersIds, 'update_entity', {
       ...membershipContext,
       membership: updatedMembership,

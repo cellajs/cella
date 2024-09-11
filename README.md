@@ -25,14 +25,15 @@
 > [!CAUTION]
 > Raak is an implementation project based upon cella. Cella is in prerelease.
 
-
 #### Contents
+
 - [Installation](#installation)
 - [Architecture](/info/ARCHITECTURE.md)
 - [Roadmap](/info/ROADMAP.md)
 - [Deployment](/info/DEPLOYMENT.md)
 
 ## Requirements
+
 - Make sure you have node installed with `node -v`. Install Node 20.x or 22.x. (ie. [Volta](https://docs.volta.sh/guide/)).
 - Ideally you work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
 

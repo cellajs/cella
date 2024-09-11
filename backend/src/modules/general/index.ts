@@ -17,13 +17,14 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
+import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { calculateRequestsPerMinute, parsePromMetrics, verifyUnsubscribeToken } from '#/lib/utils';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { CustomHono } from '#/types/common';
+import { type ContextEntity, CustomHono } from '#/types/common';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { register } from 'prom-client';
@@ -303,7 +304,6 @@ const generalRoutes = app
     // Array to hold queries for concurrent execution
     const queries = [];
 
-    // Build queries
     for (const entityType of entityTypes) {
       const table = entityTables[entityType];
       if (!table) continue;
@@ -325,27 +325,26 @@ const generalRoutes = app
 
       // Build organization filters
       const $and = [];
-
       if (organizationIds.length) {
-        if ('organizationId' in table) {
-          $and.push(inArray(table.organizationId, organizationIds));
-        } else if (entityType === 'organization') {
-          $and.push(inArray(table.id, organizationIds));
-        } else if (entityType === 'user') {
-          // Filter users based on their memberships in specified organizations
-          const userMemberships = await db
-            .select({ userId: membershipsTable.userId })
-            .from(membershipsTable)
-            .where(and(inArray(membershipsTable.organizationId, organizationIds), eq(membershipsTable.type, 'organization')));
-
-          if (!userMemberships.length) continue;
-          $and.push(
-            inArray(
-              table.id,
-              userMemberships.map((el) => String(el.userId)),
-            ),
-          );
+        const $membershipAnd = [inArray(membershipsTable.organizationId, organizationIds)];
+        if (config.contextEntityTypes.includes(entityType as ContextEntity)) {
+          $membershipAnd.push(eq(membershipsTable.type, entityType as ContextEntity));
         }
+
+        const memberships = await db
+          .select()
+          .from(membershipsTable)
+          .where(and(...$membershipAnd));
+
+        const uniqueValuesSet = new Set<string>();
+
+        for (const member of memberships) {
+          const id = member[`${entityType}Id`];
+          if (id) uniqueValuesSet.add(id);
+        }
+
+        const uniqueValuesArray = Array.from(uniqueValuesSet);
+        $and.push(inArray(table.id, uniqueValuesArray));
       }
 
       $and.push($or.length > 1 ? or(...$or) : $or[0]);
@@ -373,10 +372,7 @@ const generalRoutes = app
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
     // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
-    const membersFilters = [
-      eq(entityType === 'organization' ? membershipsTable.organizationId : membershipsTable.projectId, entity.id),
-      eq(membershipsTable.type, entityType),
-    ];
+    const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];
 
     if (role) membersFilters.push(eq(membershipsTable.role, role as MembershipModel['role']));
 
@@ -386,15 +382,7 @@ const generalRoutes = app
       .where(and(...membersFilters))
       .as('memberships');
 
-    // TODO: use count helper?
-    const membershipCount = db
-      .select({
-        userId: membershipsTable.userId,
-        memberships: count().as('memberships'),
-      })
-      .from(membershipsTable)
-      .groupBy(membershipsTable.userId)
-      .as('membership_count');
+    const membershipCount = memberCountsQuery('user', 'userId');
 
     const orderColumn = getOrderColumn(
       {
@@ -415,12 +403,12 @@ const generalRoutes = app
         user: safeUserSelect,
         membership: membershipSelect,
         counts: {
-          memberships: membershipCount.memberships,
+          memberships: membershipCount.members,
         },
       })
       .from(usersQuery)
       .innerJoin(memberships, eq(usersTable.id, memberships.userId))
-      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
+      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.id))
       .orderBy(orderColumn);
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));

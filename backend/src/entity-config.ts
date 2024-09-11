@@ -5,9 +5,9 @@ import { projectsTable } from './db/schema/projects';
 import { tasksTable } from './db/schema/tasks';
 import { workspacesTable } from './db/schema/workspaces';
 
-export type EntityTables = typeof usersTable | typeof organizationsTable | typeof workspacesTable | typeof projectsTable;
+export type EntityTables = (typeof entityTables)[keyof typeof entityTables];
 
-export type EntityTableNames = (typeof entityTables)[keyof typeof entityTables]['_']['name'];
+export type EntityTableNames = EntityTables['_']['name'];
 
 export const entityTables = {
   user: usersTable,
