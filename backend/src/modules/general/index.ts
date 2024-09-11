@@ -20,6 +20,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { entityTables } from '#/entity-config';
+import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
@@ -380,15 +381,7 @@ const generalRoutes = app
       .where(and(...membersFilters))
       .as('memberships');
 
-    // TODO: use count helper?
-    const membershipCount = db
-      .select({
-        userId: membershipsTable.userId,
-        memberships: count().as('memberships'),
-      })
-      .from(membershipsTable)
-      .groupBy(membershipsTable.userId)
-      .as('membership_count');
+    const membershipCount = memberCountsQuery('user', 'userId');
 
     const orderColumn = getOrderColumn(
       {
@@ -409,12 +402,12 @@ const generalRoutes = app
         user: safeUserSelect,
         membership: membershipSelect,
         counts: {
-          memberships: membershipCount.memberships,
+          memberships: membershipCount.members,
         },
       })
       .from(usersQuery)
       .innerJoin(memberships, eq(usersTable.id, memberships.userId))
-      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.userId))
+      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.id))
       .orderBy(orderColumn);
 
     const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));

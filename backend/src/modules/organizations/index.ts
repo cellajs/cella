@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
+import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -6,7 +6,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
-import { getMemberCounts } from '#/lib/counts';
+import { memberCountsQuery } from '#/lib/counts';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
 import { getOrderColumn } from '#/lib/order-column';
@@ -100,14 +100,19 @@ const organizationsRoutes = app
       order,
     );
 
-    const countsQuery = await getMemberCounts('organization', 'organizationId');
+    const countsQuery = memberCountsQuery('organization', 'organizationId');
 
     const organizations = await db
       .select({
-        organization: organizationsTable,
+        ...getTableColumns(organizationsTable),
         membership: membershipSelect,
-        admins: countsQuery.admins,
-        members: countsQuery.members,
+        counts: {
+          memberships: sql<{
+            admins: number;
+            members: number;
+            total: number;
+          }>`json_build_object('admins', ${countsQuery.admins}, 'members', ${countsQuery.members}, 'total', ${countsQuery.members})`,
+        },
       })
       .from(organizationsQuery.as('organizations'))
       .leftJoin(memberships, eq(organizationsTable.id, memberships.organizationId))
@@ -120,17 +125,7 @@ const organizationsRoutes = app
       {
         success: true,
         data: {
-          items: organizations.map(({ organization, membership, admins, members }) => ({
-            ...organization,
-            membership,
-            counts: {
-              memberships: {
-                admins,
-                members,
-                total: members,
-              },
-            },
-          })),
+          items: organizations,
           total,
         },
       },
@@ -214,7 +209,7 @@ const organizationsRoutes = app
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
-    const memberCounts = await getMemberCounts('organization', 'organizationId', organization.id);
+    const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
     return ctx.json(
       {
@@ -244,7 +239,7 @@ const organizationsRoutes = app
         and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
       );
 
-    const memberCounts = await getMemberCounts('organization', 'organizationId', organization.id);
+    const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
     return ctx.json(
       {
