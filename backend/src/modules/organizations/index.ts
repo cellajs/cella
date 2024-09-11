@@ -1,10 +1,8 @@
-import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
+import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 
-import { config } from 'config';
-import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { memberCountsQuery } from '#/lib/counts';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -13,6 +11,8 @@ import { getOrderColumn } from '#/lib/order-column';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
+import { config } from 'config';
+import { render } from 'jsx-email';
 import organizationsNewsletter from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -100,7 +100,7 @@ const organizationsRoutes = app
       order,
     );
 
-    const countsQuery = memberCountsQuery('organization', 'organizationId');
+    const countsQuery = memberCountsQuery('organizationId', 'organization');
 
     const organizations = await db
       .select({
@@ -209,7 +209,7 @@ const organizationsRoutes = app
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
-    const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
+    const memberCounts = await memberCountsQuery('organizationId', 'organization', organization.id);
 
     return ctx.json(
       {
@@ -239,7 +239,7 @@ const organizationsRoutes = app
         and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
       );
 
-    const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
+    const memberCounts = await memberCountsQuery('organizationId', 'organization', organization.id);
 
     return ctx.json(
       {

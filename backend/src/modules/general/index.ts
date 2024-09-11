@@ -382,7 +382,7 @@ const generalRoutes = app
       .where(and(...membersFilters))
       .as('memberships');
 
-    const membershipCount = memberCountsQuery('user', 'userId');
+    const membershipCount = memberCountsQuery('userId');
 
     const orderColumn = getOrderColumn(
       {

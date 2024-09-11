@@ -1,10 +1,10 @@
-import { count, eq, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-import type { Entity } from '#/types/common';
+import type { ContextEntity } from '#/types/common';
+import { count, eq, sql } from 'drizzle-orm';
 
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
-const getQuery = (entity: Entity, entityIdColumnName: EntityIdColumnNames) => {
+const getQuery = (entityIdColumnName: EntityIdColumnNames, entity?: ContextEntity) => {
   const entityIdColumn = membershipsTable[entityIdColumnName];
 
   if (!entityIdColumn) {
@@ -20,19 +20,17 @@ const getQuery = (entity: Entity, entityIdColumnName: EntityIdColumnNames) => {
     .from(membershipsTable)
     .groupBy(entityIdColumn);
 
-  if (entity !== 'user') {
-    return query.where(eq(membershipsTable.type, entity)).as('counts');
-  }
+  if (entity) return query.where(eq(membershipsTable.type, entity)).as('counts');
 
   return query.as('counts');
 };
 
 type MemberCounts = { admins: number; members: number; total: number };
 // Overload signatures
-export function memberCountsQuery(entity: Entity, entityIdColumnName: EntityIdColumnNames): ReturnType<typeof getQuery>;
-export function memberCountsQuery(entity: Entity, entityIdColumnName: EntityIdColumnNames, id: string): Promise<MemberCounts>;
-export function memberCountsQuery(entity: Entity, entityIdColumnName: EntityIdColumnNames, id?: string | undefined) {
-  const query = getQuery(entity, entityIdColumnName);
+export function memberCountsQuery(entityIdColumnName: EntityIdColumnNames, entity?: ContextEntity): ReturnType<typeof getQuery>;
+export function memberCountsQuery(entityIdColumnName: EntityIdColumnNames, entity?: ContextEntity, id?: string): Promise<MemberCounts>;
+export function memberCountsQuery(entityIdColumnName: EntityIdColumnNames, entity?: ContextEntity, id?: string) {
+  const query = getQuery(entityIdColumnName, entity);
 
   if (id) {
     return db
