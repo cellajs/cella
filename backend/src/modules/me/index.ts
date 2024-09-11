@@ -62,9 +62,6 @@ const meRoutes = app
       200,
     );
   })
-  /*
-   * TODO:generics issue. Get current user menu
-   */
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = ctx.get('user');
 
