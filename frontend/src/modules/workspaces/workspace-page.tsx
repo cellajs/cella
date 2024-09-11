@@ -20,6 +20,8 @@ const WorkspacePage = () => {
   const workspaceData = useSuspenseQuery(workspaceQueryOptions(idOrSlug)).data;
   const workspace = workspaceData.workspace;
 
+  const isAdmin = workspace.membership?.role === 'admin';
+
   //TODO  try find other solution other than useMutateWorkspaceQueryData hook
   const { mutate } = useUpdateWorkspaceMutation(workspace.id);
 
@@ -46,6 +48,7 @@ const WorkspacePage = () => {
         <PageHeader
           type="workspace"
           id={workspace.id}
+          isAdmin={isAdmin}
           title={workspace.name}
           thumbnailUrl={workspace.thumbnailUrl}
           bannerUrl={workspace.bannerUrl}

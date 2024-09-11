@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import type { z } from 'zod';
 import { labelsTable } from '#/db/schema/labels';
 import { tasksTable } from '#/db/schema/tasks';
-import { usersTable } from '#/db/schema/users';
+import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -28,7 +28,7 @@ const tasksRoutes = app
     logEvent('Task created', { task: newTask.id });
 
     const uniqueAssignedUserIds = [...new Set(createdTask.assignedTo)];
-    const assignedTo = (await db.select().from(usersTable).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
+    const assignedTo = (await db.select().from(safeUserSelect).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
       transformDatabaseUser(user),
     );
     const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, createdTask.labels));
@@ -84,7 +84,7 @@ const tasksRoutes = app
     );
     const uniqueLabelIds = Array.from(new Set([...tasks.flatMap((t) => t.labels)]));
 
-    const users = (await db.select().from(usersTable).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
+    const users = (await db.select().from(safeUserSelect).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
       transformDatabaseUser(user),
     );
 
@@ -157,7 +157,7 @@ const tasksRoutes = app
 
     const uniqueAssignedUserIds = Array.from(new Set([...updatedTask.assignedTo, updatedTask.createdBy]));
     if (updatedTask.modifiedBy) uniqueAssignedUserIds.push(updatedTask.modifiedBy);
-    const users = (await db.select().from(usersTable).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
+    const users = (await db.select().from(safeUserSelect).where(inArray(usersTable.id, uniqueAssignedUserIds))).map((user) =>
       transformDatabaseUser(user),
     );
     const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, updatedTask.labels));
