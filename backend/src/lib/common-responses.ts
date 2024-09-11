@@ -58,8 +58,8 @@ export const errorResponses = {
       },
     },
   },
-  500: {
-    description: 'Server error: something went wrong.',
+  429: {
+    description: 'Rate limit: too many requests.',
     content: {
       'application/json': {
         schema: failWithErrorSchema,
