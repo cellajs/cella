@@ -5,7 +5,8 @@ import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import permissionManager, { HierarchicalEntity } from '#/lib/permission-manager';
-import type { ContextEntity, Entity, Env, ProductEntity } from '#/types/common';
+import type { Env } from '#/types/app';
+import type { ContextEntity, Entity, ProductEntity } from '#/types/common';
 import { logEvent } from '../logger/log-event';
 
 export type PermissionAction = 'create' | 'update' | 'read' | 'delete';

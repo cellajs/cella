@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 
 import { errorResponse } from '#/lib/errors';
 
-import type { Env } from '#/types/common';
+import type { Env } from '#/types/app';
 import { getRateLimiterInstance } from '.';
 
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
