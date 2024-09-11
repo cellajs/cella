@@ -8,7 +8,7 @@ import { attachmentSchema, createAttachmentSchema } from './schema';
 class AttachmentRoutesConfig {
   public createAttachment = createRouteConfig({
     method: 'post',
-    path: '/',
+    path: '/k',
     guard: [isAuthenticated],
     tags: ['attachments'],
     summary: 'Create new attachment',
