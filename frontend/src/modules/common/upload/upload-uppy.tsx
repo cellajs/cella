@@ -1,6 +1,6 @@
 import Audio from '@uppy/audio';
 import type { Uppy, UppyFile, UppyOptions } from '@uppy/core';
-import ImageEditor from '@uppy/image-editor';
+import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
@@ -51,10 +51,8 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, uppyOptions, 
         },
       });
 
-      // TODO: Somehow the type ImageEditorOptions is not being imported
       // For more info on ImageEditorOptions, see: https://uppy.io/docs/image-editor/#options
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      const imageEditorOptions: any = {
+      const imageEditorOptions: ImageEditorOptions = {
         quality: 0.9,
       };
 

@@ -102,7 +102,6 @@ async function createEntityContext(entityType: Entity, ctx: any) {
     payload = {};
   }
 
-  // TODO make this more clear and explicit and tpye safe
   // Initialize context to store the custom created context entity based on the lowest possible ancestor
   const context: Record<string, string> = { entity: entityType };
 

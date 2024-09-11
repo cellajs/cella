@@ -1,7 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
 import { auth as luciaAuth } from '#/db/lucia';
 import { errorResponse } from '#/lib/errors';
-import { i18n } from '#/lib/i18n';
 import { removeSessionCookie } from '#/modules/auth/helpers/cookies';
 
 const isAuthenticated: MiddlewareHandler = async (ctx, next) => {
@@ -28,8 +27,6 @@ const isAuthenticated: MiddlewareHandler = async (ctx, next) => {
 
   ctx.set('user', user);
 
-  // TODO: Does this affect perf?
-  await i18n.changeLanguage(user.language);
   await next();
 };
 

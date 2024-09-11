@@ -56,6 +56,7 @@ const UserProfilePage = ({ user }: { user: Omit<User, 'counts'>; sheet?: boolean
           title={user.name}
           type="user"
           disableScroll={true}
+          isAdmin={isSelf}
           thumbnailUrl={user.thumbnailUrl}
           bannerUrl={user.bannerUrl}
           panel={
