@@ -9,8 +9,8 @@ export type Env = {
   Variables: {
     user: User;
     organization: OrganizationModel;
+    project: ProjectModel;
     workspace: WorkspaceModel;
-    projects: ProjectModel;
     memberships: [MembershipModel];
     allowedIds: Array<string>;
     disallowedIds: Array<string>;
