@@ -229,8 +229,7 @@ const membershipsRoutes = app
 
     const errors: ErrorType[] = [];
 
-    // TODO:generics issue
-    const where = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable.organizationId, membershipContext.id)));
+    const where = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable[`${entityType}Id`], membershipContext.id)));
 
     // Get the user membership
     const [currentUserMembership] = (await db
