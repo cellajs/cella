@@ -33,11 +33,10 @@
 </div>
 
 > [!CAUTION]
-> Please be aware this is a prerelease. It does not meet production requirements yet and large breaking changes still occur regularly. Want to contribute? Let's connect! ✉️ <info@cellajs.com>
+> Please be aware this is a prerelease. It does NOT meet production requirements yet and large breaking changes still occur regularly. An alpha version will be released once we have solid tests for at least authentication & authorization. Want to contribute or discuss cella for one of your projects? Let's connect! ✉️ <info@cellajs.com>
 
 > [!NOTE]
 > Due to a new - rewritten, refocused - version of ElectricSQL, we had to revert to basic API calls everywhere. We are now exploring ways to quickly get local-first back into cella.
-
 
 #### Contents
 - [Installation](#installation)
@@ -68,7 +67,7 @@ Then run your app:
 pnpm install && pnpm quick
 ```
 
-You now have an implementation read web app! But without any unique functionality. Read the [Quickstart](/info/QUICKSTART.md) for that.
+You now have an implementation-ready web app 🤯! But ... without any unique functionality 🤓. Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
 
 
 ## Installation
