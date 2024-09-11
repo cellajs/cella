@@ -29,7 +29,7 @@ export const meUserSchema = userSchema.extend({
   ...signUpInfo.shape,
 });
 
-const menuItemSchema = z.object({
+export const menuItemSchema = z.object({
   slug: slugSchema,
   id: idSchema,
   createdAt: z.string(),

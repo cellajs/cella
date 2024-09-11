@@ -67,34 +67,35 @@ const meRoutes = app
    */
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = ctx.get('user');
-
     const fetchAndFormatEntities = async (type: ContextEntity, subEntityType?: ContextEntity) => {
       let formattedSubmenus: z.infer<typeof menuItemsSchema>;
-      const entityWithMemberships = await db
+      const mainTable = subEntityType ? entityTables[subEntityType] : entityTables[type];
+      const parentTable = entityTables[type];
+      const operatingType = subEntityType ? subEntityType : type;
+      const entity = await db
         .select({
-          entity: entityTables[type],
+          entity: mainTable,
           membership: membershipSelect,
         })
-        .from(entityTables[type])
-        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, type)))
+        .from(mainTable)
+        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, operatingType)))
         .orderBy(asc(membershipsTable.order))
-        .innerJoin(membershipsTable, eq(membershipsTable[`${type}Id`], entityTables[type].id));
-      if (subEntityType && 'parentId' in entityTables[subEntityType]) {
-        const parentTable = entityTables[type];
-        const submenuWithMemberships = await db
+        .innerJoin(membershipsTable, eq(membershipsTable[`${operatingType}Id`], mainTable.id));
+
+      if (subEntityType && 'parentId' in mainTable) {
+        const subEntity = await db
           .select({
-            entity: entityTables[subEntityType],
+            entity: mainTable,
             membership: membershipSelect,
             parent: parentTable,
           })
-          .from(entityTables[subEntityType])
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, subEntityType)))
+          .from(mainTable)
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, operatingType)))
           .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[`${subEntityType}Id`], entityTables[subEntityType].id))
-          .innerJoin(parentTable, eq(parentTable.id, entityTables[subEntityType].parentId as PgColumn));
+          .innerJoin(membershipsTable, eq(membershipsTable[`${operatingType}Id`], mainTable.id))
+          .innerJoin(parentTable, eq(parentTable.id, mainTable.parentId as PgColumn));
 
-        // Format the fetched data
-        formattedSubmenus = submenuWithMemberships.map(({ entity, membership, parent }) => ({
+        formattedSubmenus = subEntity.map(({ entity, membership, parent }) => ({
           slug: entity.slug,
           id: entity.id,
           createdAt: entity.createdAt.toDateString(),
@@ -103,11 +104,12 @@ const meRoutes = app
           entity: entity.entity,
           thumbnailUrl: entity.thumbnailUrl,
           membership,
-          parentSlug: parent.slug,
           parentId: parent.id,
+          parentSlug: parent.slug,
         }));
       }
-      return entityWithMemberships.map(({ entity, membership }) => ({
+
+      return entity.map(({ entity, membership }) => ({
         slug: entity.slug,
         id: entity.id,
         createdAt: entity.createdAt.toDateString(),
@@ -119,21 +121,16 @@ const meRoutes = app
         submenu: formattedSubmenus ? formattedSubmenus.filter((p) => p.parentId === entity.id) : [],
       }));
     };
+
     const data = await entityMenuSections
       .filter((el) => !el.isSubmenu)
       .reduce(
         async (accPromise, section) => {
           const acc = await accPromise;
           const submenu = entityMenuSections.find((el) => el.storageType === section.storageType && el.isSubmenu);
-          if (submenu) {
-            return {
-              ...acc,
-              [section.storageType]: await fetchAndFormatEntities(section.type, submenu.type),
-            };
-          }
           return {
             ...acc,
-            [section.storageType]: await fetchAndFormatEntities(section.type),
+            [section.storageType]: await fetchAndFormatEntities(section.type, submenu?.type),
           };
         },
         Promise.resolve({} as z.infer<typeof userMenuSchema>),
