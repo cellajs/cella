@@ -5,7 +5,7 @@ import { errorResponse } from '#/lib/errors';
 
 import { env } from '#/../env';
 import { queryClient } from '#/db/db';
-import type { Env } from '#/types/common';
+import type { Env } from '#/types/app';
 
 type RateLimiterMode = 'success' | 'fail' | 'limit';
 

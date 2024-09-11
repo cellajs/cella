@@ -1,8 +1,8 @@
-import { count, eq } from 'drizzle-orm';
+import { and, asc, count, eq } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
-import { membershipsTable } from '#/db/schema/memberships';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -12,12 +12,12 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { z } from 'zod';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { entityMenuSections } from '#/entity-config';
+import { entityMenuSections, entityTables } from '#/entity-config';
 import { getPreparedSessions } from './helpers/get-sessions';
-import { getEntityQuery } from './helpers/get-user-menu';
 import type { menuItemsSchema, userMenuSchema } from './schema';
 
 const app = new CustomHono();
@@ -62,20 +62,37 @@ const meRoutes = app
       200,
     );
   })
-  /*
-   * TODO:generics issue. Get current user menu
-   */
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = ctx.get('user');
 
     const fetchAndFormatEntities = async (type: ContextEntity, subEntityType?: ContextEntity) => {
       let formattedSubmenus: z.infer<typeof menuItemsSchema>;
-      const entityWithMemberships = await getEntityQuery(user.id, type);
-      if (subEntityType) {
-        const submenuWithMemberships = await getEntityQuery(user.id, subEntityType, true);
+      const mainTable = entityTables[type];
+      const entity = await db
+        .select({
+          entity: mainTable,
+          membership: membershipSelect,
+        })
+        .from(mainTable)
+        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, type)))
+        .orderBy(asc(membershipsTable.order))
+        .innerJoin(membershipsTable, eq(membershipsTable[`${type}Id`], mainTable.id));
 
-        // Format the fetched data
-        formattedSubmenus = submenuWithMemberships.map(({ entity, membership, parent }) => ({
+      if (subEntityType && 'parentId' in entityTables[subEntityType]) {
+        const subTable = entityTables[subEntityType];
+        const subEntity = await db
+          .select({
+            entity: subTable,
+            membership: membershipSelect,
+            parent: mainTable,
+          })
+          .from(subTable)
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, subEntityType)))
+          .orderBy(asc(membershipsTable.order))
+          .innerJoin(membershipsTable, eq(membershipsTable[`${subEntityType}Id`], subTable.id))
+          .innerJoin(mainTable, eq(mainTable.id, subTable.parentId as PgColumn));
+
+        formattedSubmenus = subEntity.map(({ entity, membership, parent }) => ({
           slug: entity.slug,
           id: entity.id,
           createdAt: entity.createdAt.toDateString(),
@@ -84,11 +101,12 @@ const meRoutes = app
           entity: entity.entity,
           thumbnailUrl: entity.thumbnailUrl,
           membership,
-          parentSlug: entityWithMemberships.find((i) => i.entity.id === parent?.[`${type}Id`])?.entity.slug,
-          parentId: parent?.[`${type}Id`],
+          parentId: parent.id,
+          parentSlug: parent.slug,
         }));
       }
-      return entityWithMemberships.map(({ entity, membership }) => ({
+
+      return entity.map(({ entity, membership }) => ({
         slug: entity.slug,
         id: entity.id,
         createdAt: entity.createdAt.toDateString(),
@@ -100,21 +118,16 @@ const meRoutes = app
         submenu: formattedSubmenus ? formattedSubmenus.filter((p) => p.parentId === entity.id) : [],
       }));
     };
+
     const data = await entityMenuSections
       .filter((el) => !el.isSubmenu)
       .reduce(
         async (accPromise, section) => {
           const acc = await accPromise;
           const submenu = entityMenuSections.find((el) => el.storageType === section.storageType && el.isSubmenu);
-          if (submenu) {
-            return {
-              ...acc,
-              [section.storageType]: await fetchAndFormatEntities(section.type, submenu.type),
-            };
-          }
           return {
             ...acc,
-            [section.storageType]: await fetchAndFormatEntities(section.type),
+            [section.storageType]: await fetchAndFormatEntities(section.type, submenu?.type),
           };
         },
         Promise.resolve({} as z.infer<typeof userMenuSchema>),
