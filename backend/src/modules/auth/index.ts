@@ -5,30 +5,30 @@ import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { VerificationEmail } from '../../../emails/email-verification';
 import { ResetPasswordEmail } from '../../../emails/reset-password';
 
-import { Argon2id } from 'oslo/password';
 import { auth } from '#/db/lucia';
+import { Argon2id } from 'oslo/password';
 
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import { deleteCookie, getCookie } from 'hono/cookie';
 
-import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '#/db/lucia';
+import slugify from 'slugify';
 
 import { createSession, findOauthAccount, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
 
-import { getRandomValues } from 'node:crypto';
-import { config } from 'config';
-import type { z } from 'zod';
 import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/utils';
+import { getUserBy } from '#/db/util';
 import { errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
 import { nanoid } from '#/lib/nanoid';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
+import { config } from 'config';
+import { getRandomValues } from 'node:crypto';
+import type { z } from 'zod';
 import generalRouteConfig from '../general/routes';
 import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
 import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
@@ -239,9 +239,7 @@ const authRoutes = app
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
       return errorResponse(ctx, 400, 'invalid_token', 'warn');
     }
-
     const user = await getUserBy('id', token.userId);
-
     // If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
 
@@ -613,6 +611,7 @@ const authRoutes = app
 
       // Check if user already exists
       const existingUser = await getUserBy('email', user.email.toLowerCase());
+
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'google', {
           providerUser: {
@@ -797,7 +796,6 @@ const authRoutes = app
     // Retrieve user and challenge record
     const user = await getUserBy('email', email.toLowerCase());
     if (!user) return errorResponse(ctx, 404, 'User not found', 'warn');
-
     // const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     // Decode & parse clientDataJSON 4 verify challenge

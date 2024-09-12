@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { Menu, Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
@@ -62,7 +63,9 @@ export const OnboardingCompleted = () => {
         <Undo size={400} strokeWidth={0.1} className="max-xl:hidden scale-y-75 -mt-40 -mb-12 -translate-x-32 text-primary rotate-[30deg]" />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>
-      <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">{t('app:onboarding_completed.text')}</p>
+      <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">
+        {t('common:onboarding_completed.text', { appName: config.name })}
+      </p>
     </div>
   );
 };

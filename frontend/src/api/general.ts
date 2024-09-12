@@ -2,19 +2,11 @@ import type { AppGeneralType } from 'backend/modules/general/index';
 import { config } from 'config';
 import { hc } from 'hono/client';
 import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
-import { type ContextEntity, type Entity, type UploadParams, UploadType, type User } from '~/types/common';
+import { type ContextEntity, type Entity, type UploadParams, UploadType } from '~/types/common';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
 export const client = hc<AppGeneralType>(config.backendUrl, clientConfig);
-
-// Get public counts for about page
-export const getPublicCounts = async () => {
-  const response = await client.public.counts.$get();
-
-  const json = await handleResponse(response);
-  return json.data;
-};
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
@@ -37,7 +29,7 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
 
 export interface SystemInviteProps {
   emails: string[];
-  role: User['role'];
+  role: 'user';
 }
 
 // Invite users
@@ -139,13 +131,6 @@ export const getMembers = async (
     },
   );
 
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-// Get metrics
-export const getMetrics = async () => {
-  const response = await client.metrics.$get();
   const json = await handleResponse(response);
   return json.data;
 };

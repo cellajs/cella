@@ -12,13 +12,10 @@ import {
   passwordSchema,
   slugSchema,
 } from '#/lib/common-schemas';
-import { createEntitiesSchema } from '#/lib/schema-utils';
 import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
-
-export const publicCountsSchema = createEntitiesSchema(() => z.number());
 
 export const checkTokenSchema = z.object({
   type: createSelectSchema(tokensTable).shape.type,
@@ -29,7 +26,7 @@ export const checkTokenSchema = z.object({
 
 export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1),
-  role: userSchema.shape.role,
+  role: z.enum(['user']),
 });
 
 export const acceptInviteBodySchema = z.object({

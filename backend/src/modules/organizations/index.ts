@@ -4,7 +4,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 
 import { usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/utils';
+import { getUserBy } from '#/db/util';
 import { memberCountsQuery } from '#/lib/counts';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';

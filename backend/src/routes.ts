@@ -1,15 +1,16 @@
 // import attachmentsRoutes from '#/modules/attachments';
 import authRoutes from '#/modules/auth';
 import generalRoutes from '#/modules/general';
+import labelsRoutes from '#/modules/labels';
 import meRoutes from '#/modules/me';
 import membershipsRoutes from '#/modules/memberships';
+import metricRoutes from '#/modules/metrics';
 import organizationsRoutes from '#/modules/organizations';
+import projectsRoutes from '#/modules/projects';
 import requestsRoutes from '#/modules/requests';
+import tasksRoutes from '#/modules/tasks';
 import usersRoutes from '#/modules/users';
 import workspacesRoutes from '#/modules/workspaces';
-import labelsRoutes from '#/modules/labels';
-import projectsRoutes from '#/modules/projects';
-import tasksRoutes from '#/modules/tasks';
 import baseApp from './server';
 
 const app = baseApp
@@ -20,8 +21,8 @@ const app = baseApp
   .route('/', generalRoutes)
   .route('/requests', requestsRoutes)
   .route('/memberships', membershipsRoutes)
+  .route('/metrics', metricRoutes)
   // .route('/attachments', attachmentsRoutes);
-
   .route('/workspaces', workspacesRoutes)
   .route('/projects', projectsRoutes)
   .route('/tasks', tasksRoutes)

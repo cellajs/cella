@@ -11,7 +11,8 @@ import { InviteMemberEmail } from '../../../emails/member-invite';
 
 import type { OrganizationModel } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
-import { type UserModel, safeUserSelect } from '#/db/schema/users';
+import { type UserModel, usersTable } from '#/db/schema/users';
+import { getUsersByConditions } from '#/db/util';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import permissionManager from '#/lib/permission-manager';
@@ -56,7 +57,7 @@ const membershipsRoutes = app
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
     // Fetch existing users from the database
-    const existingUsers = await db.select().from(safeUserSelect).where(inArray(safeUserSelect.email, normalizedEmails));
+    const existingUsers = await getUsersByConditions([inArray(usersTable.email, normalizedEmails)]);
 
     // Maps to store memberships by existing user
     const organizationMembershipsByUser = new Map<string, MembershipModel>();

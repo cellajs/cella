@@ -16,19 +16,17 @@ import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/s
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/utils';
+import { getUserBy } from '#/db/util';
 import { entityTables } from '#/entity-config';
 import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
-import { calculateRequestsPerMinute, parsePromMetrics, verifyUnsubscribeToken } from '#/lib/utils';
+import { verifyUnsubscribeToken } from '#/lib/utils';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { type ContextEntity, CustomHono } from '#/types/common';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { getTableConfig } from 'drizzle-orm/pg-core';
-import { register } from 'prom-client';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
@@ -41,33 +39,6 @@ export const streams = new Map<string, SSEStreamingApi>();
 
 // General endpoints
 const generalRoutes = app
-  /*
-   * Get metrics
-   */
-  .openapi(generalRouteConfig.getMetrics, async (ctx) => {
-    const metrics = await register.metrics();
-
-    const parsedMetrics = parsePromMetrics(metrics);
-    const requestsPerMinute = calculateRequestsPerMinute(parsedMetrics);
-
-    return ctx.json({ success: true, data: requestsPerMinute }, 200);
-  })
-  /*
-   * Get public counts
-   */
-  .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
-    const countEntries = await Promise.all(
-      Object.values(entityTables).map(async (table) => {
-        const { name } = getTableConfig(table);
-        const [result] = await db.select({ total: count() }).from(table);
-        return [name, result.total];
-      }),
-    );
-
-    const data = Object.fromEntries(countEntries);
-
-    return ctx.json({ success: true, data }, 200);
-  })
   /*
    * Get upload token
    */
@@ -111,21 +82,20 @@ const generalRoutes = app
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, token)));
-
     // if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
 
-    // const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    // const user = await getUserBy('email', tokenRecord.email);
     // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // For reset token: check if token has valid user
     // if (tokenRecord.type === 'password_reset') {
-    //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    //   const user = await getUserBy('email', tokenRecord.email);
     //   if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     // }
 
     // For system invitation token: check if user email is not already in the system
     // if (tokenRecord.type === 'system_invitation') {
-    //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    //   const user = await getUserBy('email', tokenRecord.email);
     //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
     // }
 
@@ -200,26 +170,16 @@ const generalRoutes = app
     if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
       return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
     }
-
     const user = await getUserBy('email', token.email);
-
     if (!user) {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
     }
 
     // If it is a system invitation, update user role
-    if (token.type === 'system_invitation') {
-      if (token.role === 'admin') {
-        await db.update(usersTable).set({ role: 'admin' }).where(eq(usersTable.id, user.id));
-      }
-
-      return ctx.json({ success: true }, 200);
-    }
+    if (token.type === 'system_invitation') return ctx.json({ success: true }, 200);
 
     if (token.type === 'membership_invitation') {
-      if (!token.organizationId) {
-        return errorResponse(ctx, 400, 'invalid_token', 'warn');
-      }
+      if (!token.organizationId) return errorResponse(ctx, 400, 'invalid_token', 'warn');
 
       const [organization] = await db
         .select()
@@ -434,7 +394,8 @@ const generalRoutes = app
 
     if (!token) return errorResponse(ctx, 400, 'No token provided', 'warn', 'user');
 
-    const user = await getUserBy('unsubscribeToken', token, 'unsafe');
+    const user = await getUserBy('unsubscribeToken', token);
+
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     const isValid = verifyUnsubscribeToken(user.email, token);

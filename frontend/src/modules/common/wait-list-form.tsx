@@ -71,7 +71,18 @@ export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step
             </FormItem>
           )}
         />
-        <Button type="submit" loading={isPending} className="w-full">
+        <Button
+          type="submit"
+          onClick={() =>
+            createRequest({
+              email,
+              type: 'waitlist',
+              message: null,
+            })
+          }
+          loading={isPending}
+          className="w-full"
+        >
           {t('common:put_on_wait_list')}
           <ArrowRight size={16} className="ml-2" />
         </Button>
