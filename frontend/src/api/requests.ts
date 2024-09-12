@@ -14,7 +14,8 @@ export const createRequest = async (requestInfo: CreateRequestProp) => {
     json: requestInfo,
   });
 
-  await handleResponse(response);
+  const json = await handleResponse(response);
+  return json.success;
 };
 
 export type GetRequestsParams = Partial<
