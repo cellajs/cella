@@ -8,14 +8,6 @@ import { clientConfig, handleResponse } from '.';
 // Create Hono clients to make requests to the backend
 export const client = hc<AppGeneralType>(config.backendUrl, clientConfig);
 
-// Get public counts for about page
-export const getPublicCounts = async () => {
-  const response = await client.public.counts.$get();
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
   const id = query.organizationId;
@@ -139,13 +131,6 @@ export const getMembers = async (
     },
   );
 
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-// Get metrics
-export const getMetrics = async () => {
-  const response = await client.metrics.$get();
   const json = await handleResponse(response);
   return json.data;
 };

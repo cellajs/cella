@@ -13,8 +13,6 @@ import { env } from '../../../env';
 import { db } from '#/db/db';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { getTableConfig } from 'drizzle-orm/pg-core';
-import { register } from 'prom-client';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
@@ -25,7 +23,7 @@ import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
-import { calculateRequestsPerMinute, parsePromMetrics, verifyUnsubscribeToken } from '#/lib/utils';
+import { verifyUnsubscribeToken } from '#/lib/utils';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { type ContextEntity, CustomHono } from '#/types/common';
@@ -41,33 +39,6 @@ export const streams = new Map<string, SSEStreamingApi>();
 
 // General endpoints
 const generalRoutes = app
-  /*
-   * Get metrics
-   */
-  .openapi(generalRouteConfig.getMetrics, async (ctx) => {
-    const metrics = await register.metrics();
-
-    const parsedMetrics = parsePromMetrics(metrics);
-    const requestsPerMinute = calculateRequestsPerMinute(parsedMetrics);
-
-    return ctx.json({ success: true, data: requestsPerMinute }, 200);
-  })
-  /*
-   * Get public counts
-   */
-  .openapi(generalRouteConfig.getPublicCounts, async (ctx) => {
-    const countEntries = await Promise.all(
-      Object.values(entityTables).map(async (table) => {
-        const { name } = getTableConfig(table);
-        const [result] = await db.select({ total: count() }).from(table);
-        return [name, result.total];
-      }),
-    );
-
-    const data = Object.fromEntries(countEntries);
-
-    return ctx.json({ success: true, data }, 200);
-  })
   /*
    * Get upload token
    */

@@ -12,9 +12,9 @@ import docs from './lib/docs';
 import app from './routes';
 
 // Set i18n instance before starting server
-import './lib/i18n';
 import chalk from 'chalk';
 import { config } from 'config';
+import './lib/i18n';
 // import { sdk } from './tracing';
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;

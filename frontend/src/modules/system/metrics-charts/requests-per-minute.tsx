@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
-import { getMetrics } from '~/api/general';
+import { getMetrics } from '~/api/metrics';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { type ChartConfig, ChartContainer } from '~/modules/ui/chart';
 
@@ -15,8 +15,13 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+type Metrics = {
+  count: number;
+  date: string;
+};
+
 function RequestsPerMinute() {
-  const [metrics, setMetrics] = useState<Record<string, number>[]>([]);
+  const [metrics, setMetrics] = useState<Metrics[]>([]);
 
   useEffect(() => {
     getMetrics().then((data) => setMetrics(data));
