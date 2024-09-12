@@ -23,7 +23,7 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
     .where(eq(membershipsTable.userId, user.id));
 
   const newMembership: InsertMembershipModel = {
-    organizationId: entity.organizationId ? entity.organizationId : entity.id,
+    organizationId: '',
     workspaceId: null as string | null,
     projectId: null as string | null,
     type: entity.entity,
@@ -32,8 +32,10 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
     createdBy,
     order: maxOrder ? maxOrder + 1 : 1,
   };
-
-  if (entity.entity !== 'organization') newMembership[`${entity.entity}Id`] = entity.id;
+  // If inserted membership is not organization
+  newMembership.organizationId = entity.organizationId ?? entity.id;
+  // If you add more entities to membership
+  newMembership[`${entity.entity}Id`] = entity.id;
 
   // Insert
   const [result] = await db.insert(membershipsTable).values(newMembership).returning({
