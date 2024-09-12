@@ -16,9 +16,6 @@ import {
 } from '#/lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
-import { createEntitiesSchema } from '#/lib/schema-utils';
-
-export const publicCountsSchema = createEntitiesSchema(() => z.number());
 
 export const checkTokenSchema = z.object({
   type: createSelectSchema(tokensTable).shape.type,
@@ -29,7 +26,7 @@ export const checkTokenSchema = z.object({
 
 export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1),
-  role: userSchema.shape.role,
+  role: z.enum(['user']),
 });
 
 export const acceptInviteBodySchema = z.object({

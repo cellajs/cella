@@ -5,35 +5,9 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
 import { userUnsubscribeQuerySchema } from '../users/schema';
-import {
-  acceptInviteBodySchema,
-  checkTokenSchema,
-  inviteBodySchema,
-  membersQuerySchema,
-  membersSchema,
-  publicCountsSchema,
-  suggestionsSchema,
-} from './schema';
+import { acceptInviteBodySchema, checkTokenSchema, inviteBodySchema, membersQuerySchema, membersSchema, suggestionsSchema } from './schema';
 
 class GeneralRoutesConfig {
-  public getMetrics = createRouteConfig({
-    method: 'get',
-    path: '/metrics',
-    guard: isPublicAccess,
-    tags: ['general'],
-    summary: 'Get metrics',
-    responses: {
-      200: {
-        description: 'Metrics',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(z.any()),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
   public unsubscribeUser = createRouteConfig({
     method: 'get',
     path: '/unsubscribe',
@@ -48,24 +22,6 @@ class GeneralRoutesConfig {
       302: {
         description: 'Redirect to FE',
         headers: z.object({ Location: z.string() }),
-      },
-      ...errorResponses,
-    },
-  });
-  public getPublicCounts = createRouteConfig({
-    method: 'get',
-    path: '/public/counts',
-    guard: isPublicAccess,
-    tags: ['general'],
-    summary: 'Get public counts',
-    responses: {
-      200: {
-        description: 'Public counts',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(publicCountsSchema),
-          },
-        },
       },
       ...errorResponses,
     },

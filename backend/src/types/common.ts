@@ -10,6 +10,7 @@ import type { Env } from './app';
 export type BaseEntityModel<T extends Entity> = {
   id: string;
   entity: T;
+  organizationId?: string;
 };
 
 export type Entity = (typeof config.entityTypes)[number];

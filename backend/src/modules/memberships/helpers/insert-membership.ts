@@ -14,8 +14,6 @@ interface Props<T> {
 
 // Helper function to insert a membership and give it proper order number
 export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({ user, role, entity, createdBy = user.id }: Props<T>) => {
-  const organizationId = entity.id;
-
   // Get the max order number
   const [{ maxOrder }] = await db
     .select({
@@ -25,13 +23,17 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
     .where(eq(membershipsTable.userId, user.id));
 
   const newMembership: InsertMembershipModel = {
-    organizationId,
+    organizationId: '',
     type: entity.entity,
     userId: user.id,
     role,
     createdBy,
     order: maxOrder ? maxOrder + 1 : 1,
   };
+  // If inserted membership is not organization
+  newMembership.organizationId = entity.organizationId ?? entity.id;
+  // If you add more entities to membership
+  newMembership[`${entity.entity}Id`] = entity.id;
 
   // Insert
   const [result] = await db.insert(membershipsTable).values(newMembership).returning({

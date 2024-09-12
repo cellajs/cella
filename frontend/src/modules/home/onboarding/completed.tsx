@@ -1,13 +1,15 @@
+import { config } from 'config';
 import { Menu, Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
 import { useTranslation } from 'react-i18next';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
+import { onBoardingFinishCallback } from '~/modules/home/onboarding-config';
 import { useNavigationStore } from '~/store/navigation';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
-  const { menu, setSheet, setSectionsDefault, finishedOnboarding, setFinishedOnboarding } = useNavigationStore();
+  const { menu, setSheet, setSectionsDefault, finishedOnboarding } = useNavigationStore();
   const [isExploding, _] = useState(true);
   const effectRan = useRef(false);
 
@@ -19,12 +21,13 @@ export const OnboardingCompleted = () => {
     const lastCreatedOrganization = sortedOrganizations[0];
 
     if (!lastCreatedOrganization) return;
-    
+
+    onBoardingFinishCallback();
     setSectionsDefault();
     setTimeout(
       () => {
         setSheet({ id: 'menu', sheet: <SheetMenu />, icon: Menu });
-        setFinishedOnboarding();
+        onBoardingFinishCallback();
       },
       finishedOnboarding ? 500 : 4000,
     );
@@ -40,7 +43,9 @@ export const OnboardingCompleted = () => {
         <Undo size={400} strokeWidth={0.1} className="max-xl:hidden scale-y-75 -mt-40 -mb-12 -translate-x-32 text-primary rotate-[30deg]" />
       )}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>
-      <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">{t('app:onboarding_completed.text')}</p>
+      <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">
+        {t('common:onboarding_completed.text', { appName: config.name })}
+      </p>
     </div>
   );
 };

@@ -13,7 +13,7 @@ interface PageHeaderProps {
   title?: string | null;
   type: Entity;
   id: string;
-  isAdmin?: boolean;
+  isAdmin: boolean;
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;
@@ -22,16 +22,17 @@ interface PageHeaderProps {
 }
 
 // PageHeader Component
-const PageHeader = ({ title, id, thumbnailUrl, bannerUrl, type, panel, organizationId, disableScroll }: PageHeaderProps) => {
+const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, organizationId, disableScroll }: PageHeaderProps) => {
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   const organization = organizationId ? useGetEntity(organizationId, 'organization') : null;
+
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
 
   return (
     <div className="relative">
-      <PageCover type={type} id={id} url={bannerUrl} />
+      <PageCover type={type} id={id} url={bannerUrl} canUpdate={isAdmin} />
 
       <div className="absolute flex bottom-0 w-full h-16 bg-background/50 backdrop-blur-sm px-1 py-1" ref={scrollToRef}>
         <AvatarWrap

@@ -37,7 +37,7 @@ export const InviteSystemEmail = ({ userName, userLanguage: lng, userThumbnailUr
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.invite_title', { lng }),
+              __html: i18n.t('backend:email.invite_title', { appName, lng }),
             }}
           />
         }

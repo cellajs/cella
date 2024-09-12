@@ -196,7 +196,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         <div className="flex flex-col sm:flex-row gap-2">
           {children}
           <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending}>
-            {t('common:save_changes')}
+            {t(`common:${hiddenFields?.length ? 'continue' : 'save_changes'}`)}
           </Button>
           {!children && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
