@@ -26,7 +26,7 @@ export const checkTokenSchema = z.object({
 
 export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1),
-  role: userSchema.shape.role,
+  role: z.enum(['user']),
 });
 
 export const acceptInviteBodySchema = z.object({

@@ -14,7 +14,7 @@ interface SelectRoleProps {
 const SelectRole = ({ entityType, onChange, value, className }: SelectRoleProps) => {
   const { t } = useTranslation();
 
-  const roles = entityType ? config.rolesByType.entityRoles : config.rolesByType.systemRoles;
+  const roles = entityType ? config.rolesByType.entityRoles : ['user'];
 
   return (
     <RadioGroup value={value} onValueChange={onChange} className={cn('inline-flex gap-4 items-center', className)}>

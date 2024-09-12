@@ -123,6 +123,7 @@ const generalRoutes = app
 
     for (const email of emails) {
       const targetUser = await getUserBy('email', email.toLowerCase());
+
       const token = generateId(40);
       await db.insert(tokensTable).values({
         id: token,
@@ -175,18 +176,10 @@ const generalRoutes = app
     }
 
     // If it is a system invitation, update user role
-    if (token.type === 'system_invitation') {
-      if (token.role === 'admin') {
-        await db.update(usersTable).set({ role: 'admin' }).where(eq(usersTable.id, user.id));
-      }
-
-      return ctx.json({ success: true }, 200);
-    }
+    if (token.type === 'system_invitation') return ctx.json({ success: true }, 200);
 
     if (token.type === 'membership_invitation') {
-      if (!token.organizationId) {
-        return errorResponse(ctx, 400, 'invalid_token', 'warn');
-      }
+      if (!token.organizationId) return errorResponse(ctx, 400, 'invalid_token', 'warn');
 
       const [organization] = await db
         .select()
