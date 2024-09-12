@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { type SQL, and, eq } from 'drizzle-orm';
 import { db } from './db';
 import { type UnsafeUserModel, type UserModel, safeUserSelect, usersTable } from './schema/users';
 
@@ -24,4 +24,15 @@ export async function getUserBy(field: SafeField | UnsafeField, value: string, t
     .where(eq(usersTable[field as Field], value));
 
   return result?.user ?? null;
+}
+
+export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type?: 'unsafe'): Promise<UserModel[] | UnsafeUserModel[]> {
+  const select = type === 'unsafe' ? usersTable : safeUserSelect;
+
+  const result = await db
+    .select({ user: select })
+    .from(usersTable)
+    .where(and(...whereArray));
+
+  return result.map((el) => el.user);
 }

@@ -111,21 +111,20 @@ const generalRoutes = app
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, token)));
-
     // if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
 
-    // const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    // const user = await getUserBy('email', tokenRecord.email);
     // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // For reset token: check if token has valid user
     // if (tokenRecord.type === 'password_reset') {
-    //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    //   const user = await getUserBy('email', tokenRecord.email);
     //   if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     // }
 
     // For system invitation token: check if user email is not already in the system
     // if (tokenRecord.type === 'system_invitation') {
-    //   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, tokenRecord.email));
+    //   const user = await getUserBy('email', tokenRecord.email);
     //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
     // }
 
@@ -430,7 +429,7 @@ const generalRoutes = app
 
     if (!token) return errorResponse(ctx, 400, 'No token provided', 'warn', 'user');
 
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.unsubscribeToken, token)).limit(1);
+    const user = await getUserBy('unsubscribeToken', token);
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
