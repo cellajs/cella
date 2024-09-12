@@ -33,7 +33,7 @@ const UserProfilePage = ({ user }: { user: Omit<User, 'counts'>; sheet?: boolean
     navigate({ to: '/user/settings', replace: true });
   };
 
-  useEventListener('updateCover', (e) => {
+  useEventListener('updateEntityCover', (e) => {
     const { bannerUrl, entity } = e.detail;
     if (entity !== user.entity) return;
     mutate(
