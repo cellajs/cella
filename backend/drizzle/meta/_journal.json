@@ -1,26 +1,12 @@
 {
-  "version": "1",
+  "version": "7",
   "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
       "version": "7",
-      "when": 1725868721322,
-      "tag": "0000_amused_havok",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1726039754756,
-      "tag": "0001_funny_elektra",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1726075774519,
-      "tag": "0002_amusing_lady_vermin",
+      "when": 1726141920518,
+      "tag": "0000_glorious_union_jack",
       "breakpoints": true
     }
   ]

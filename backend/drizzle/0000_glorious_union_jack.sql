@@ -81,13 +81,6 @@ CREATE TABLE IF NOT EXISTS "passkeys" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "projects_to_workspaces" (
-	"project_id" varchar NOT NULL,
-	"workspace_id" varchar NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "projects_to_workspaces_project_id_workspace_id_pk" PRIMARY KEY("project_id","workspace_id")
-);
---> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "projects" (
 	"id" varchar PRIMARY KEY NOT NULL,
 	"entity" varchar DEFAULT 'project' NOT NULL,
@@ -99,7 +92,8 @@ CREATE TABLE IF NOT EXISTS "projects" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
 	"modified_at" timestamp,
-	"modified_by" varchar
+	"modified_by" varchar,
+	"parent_id" varchar
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "requests" (
@@ -286,18 +280,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "projects_to_workspaces" ADD CONSTRAINT "projects_to_workspaces_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "projects_to_workspaces" ADD CONSTRAINT "projects_to_workspaces_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "projects" ADD CONSTRAINT "projects_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -311,6 +293,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "projects" ADD CONSTRAINT "projects_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "projects" ADD CONSTRAINT "projects_parent_id_workspaces_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."workspaces"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -395,7 +383,6 @@ END $$;
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "organizations_name_index" ON "organizations" USING btree ("name" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "organizations_created_at_index" ON "organizations" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "workspace_id_index" ON "projects_to_workspaces" USING btree ("workspace_id" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "requests_emails" ON "requests" USING btree ("email" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "requests_created_at" ON "requests" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_admin_id" ON "sessions" USING btree ("admin_user_id");--> statement-breakpoint
