@@ -330,7 +330,7 @@ const generalRoutes = app
     // TODO use filter query helper to avoid code duplication. Also, this specific filter is missing name search?
     const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
 
-    const usersQuery = db.select().from(safeUserSelect).where(filter).as('users');
+    const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
     // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
     const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];

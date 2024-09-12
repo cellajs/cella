@@ -69,10 +69,10 @@ const usersRoutes = app
           memberships: coalesce(membershipCounts.count, 0),
         },
       })
-      .from(safeUserSelect)
+      .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(orderColumn)
-      .leftJoin(membershipCounts, eq(membershipCounts.userId, safeUserSelect.id));
+      .leftJoin(membershipCounts, eq(membershipCounts.userId, usersTable.id));
 
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
 
