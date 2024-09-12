@@ -5,7 +5,7 @@ import { lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
-import type { CustomEventDetailId } from '~/lib/custom-events/types';
+
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import FocusTrap from '~/modules/common/focus-trap';
@@ -17,7 +17,7 @@ import { ProjectSettings } from '~/modules/projects/project-settings';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
-import type { TaskChangeEvent } from '~/modules/tasks/types';
+import type { CustomEventDetailId, TaskChangeEvent } from '~/modules/tasks/types';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useThemeStore } from '~/store/theme';

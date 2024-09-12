@@ -49,3 +49,7 @@ export interface TaskChangeEvent extends Event {
     direction: number;
   };
 }
+
+export interface CustomEventDetailId extends Event {
+  detail: string;
+}
