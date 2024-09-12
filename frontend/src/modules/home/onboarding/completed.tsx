@@ -3,16 +3,13 @@ import { Menu, Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
 import { useTranslation } from 'react-i18next';
-import { createProject } from '~/api/projects';
-import { createWorkspace } from '~/api/workspaces';
-import { addMenuItem } from '~/lib/utils';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
+import { onBoardingFinishCallback } from '~/modules/home/onboarding-config';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenuItem } from '~/types/common';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
-  const { menu, setSheet, setSectionsDefault, finishedOnboarding, setFinishedOnboarding } = useNavigationStore();
+  const { menu, setSheet, setSectionsDefault, finishedOnboarding } = useNavigationStore();
   const [isExploding, _] = useState(true);
   const effectRan = useRef(false);
 
@@ -24,30 +21,13 @@ export const OnboardingCompleted = () => {
     const lastCreatedOrganization = sortedOrganizations[0];
 
     if (!lastCreatedOrganization) return;
-    createWorkspace({
-      name: 'Demo workspace',
-      slug: `${lastCreatedOrganization.slug}-workspace`,
-      organizationId: lastCreatedOrganization.id,
-    }).then((createdWorkspace) => {
-      useNavigationStore.setState({ menu: addMenuItem(createdWorkspace as UserMenuItem, 'workspaces') });
-      for (let i = 3; i !== 0; i--) {
-        const namingArr = ['one', 'two', 'three'];
-        createProject(createdWorkspace.id, {
-          name: `Demo project ${namingArr[i - 1]}`,
-          slug: `${lastCreatedOrganization.slug}-project-${i}`,
-          organizationId: lastCreatedOrganization.id,
-        }).then((createdProject) => {
-          useNavigationStore.setState({
-            menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
-          });
-        });
-      }
-    });
+
+    onBoardingFinishCallback();
     setSectionsDefault();
     setTimeout(
       () => {
         setSheet({ id: 'menu', sheet: <SheetMenu />, icon: Menu });
-        setFinishedOnboarding();
+        onBoardingFinishCallback();
       },
       finishedOnboarding ? 500 : 4000,
     );

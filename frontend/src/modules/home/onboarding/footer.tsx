@@ -4,11 +4,12 @@ import { ArrowLeft, Redo } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useStepper } from '~/modules/common/stepper';
+import { onDefaultBoardingSteps } from '~/modules/home/onboarding-config';
 import { SkipOrganizationCreation } from '~/modules/home/onboarding/skipOrganizationCreation';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types/common';
-import { type OnboardingStates, onDefaultBoardingSteps } from '.';
+import type { OnboardingStates } from '.';
 
 interface StepperFooterProps {
   organization?: Organization | null;

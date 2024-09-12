@@ -235,7 +235,7 @@
   "onboarding_completed": "Great! Let's go.",
   "onboarding_step1": "Hi {{name}}, this is you?",
   "onboarding_step2": "Let's get started by creating your organization.",
-  "onboarding_step3": "Invite one or more team members of {{organizationName}} to {{appName}}.",
+  "onboarding_step3": "Invite one or more team members of {{appName}} to the previously created organization.",
   "onboarding_welcome": "Welcome to {{appName}}",
   "onboarding_welcome.text": "An intuitive TypeScript template to build local-first web apps in a matter of weeks. Ready to implement. MIT license.",
   "options": "Options",
