@@ -14,7 +14,7 @@ import { deleteCookie, getCookie } from 'hono/cookie';
 import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '#/db/lucia';
 
-import { createSession, findOauthAccount, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
+import { createSession, findOauthAccount, findUserByEmail, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
 
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
@@ -23,7 +23,6 @@ import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/utils';
 import { errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
 import { nanoid } from '#/lib/nanoid';
@@ -54,7 +53,7 @@ const authRoutes = app
   .openapi(authRoutesConfig.checkEmail, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
-    const user = await getUserBy('email', email.toLowerCase());
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
@@ -108,7 +107,7 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.sendVerificationEmail, async (ctx) => {
     const { email } = ctx.req.valid('json');
-    const user = await getUserBy('email', email.toLowerCase());
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
@@ -163,7 +162,7 @@ const authRoutes = app
       });
     }
 
-    const user = await getUserBy('id', token.userId);
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     // If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) {
@@ -192,7 +191,7 @@ const authRoutes = app
   .openapi(authRoutesConfig.resetPassword, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
-    const user = await getUserBy('email', email.toLowerCase());
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     if (!user) {
       // t('common:error.invalid_email')
@@ -240,7 +239,7 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'invalid_token', 'warn');
     }
 
-    const user = await getUserBy('id', token.userId);
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, token.userId));
 
     // If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
@@ -272,7 +271,7 @@ const authRoutes = app
       tokenData = data?.data;
     }
 
-    const user = await getUserBy('email', email.toLowerCase(), 'unsafe');
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
 
     // If the user is not found or signed up with oauth
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
@@ -515,7 +514,7 @@ const authRoutes = app
       }
 
       // Check if user already exists
-      const existingUser = await getUserBy('email', userEmail);
+      const [existingUser] = await findUserByEmail(userEmail);
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'github', {
           providerUser: {
@@ -612,7 +611,7 @@ const authRoutes = app
       }
 
       // Check if user already exists
-      const existingUser = await getUserBy('email', user.email.toLowerCase());
+      const [existingUser] = await findUserByEmail(user.email.toLowerCase());
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'google', {
           providerUser: {
@@ -709,7 +708,7 @@ const authRoutes = app
       }
 
       // Check if user already exists
-      const existingUser = await getUserBy('email', user.email.toLowerCase());
+      const [existingUser] = await findUserByEmail(user.email.toLowerCase());
       if (existingUser) {
         return await handleExistingUser(ctx, existingUser, 'microsoft', {
           providerUser: {
@@ -795,9 +794,7 @@ const authRoutes = app
     const { clientDataJSON, authenticatorData, signature, email } = await ctx.req.json();
 
     // Retrieve user and challenge record
-    const user = await getUserBy('email', email.toLowerCase());
-    if (!user) return errorResponse(ctx, 404, 'User not found', 'warn');
-
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
     // const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     // Decode & parse clientDataJSON 4 verify challenge

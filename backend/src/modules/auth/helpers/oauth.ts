@@ -49,6 +49,11 @@ export const findOauthAccount = async (providerId: OauthProviderOptions, provide
     .where(and(eq(oauthAccountsTable.providerId, providerId), eq(oauthAccountsTable.providerUserId, providerUserId)));
 };
 
+// Find user by email
+export const findUserByEmail = async (email: string) => {
+  return db.select().from(usersTable).where(eq(usersTable.email, email));
+};
+
 // Create a slug from email
 export const slugFromEmail = (email: string) => {
   const [alias] = email.split('@');

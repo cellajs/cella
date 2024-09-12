@@ -6,7 +6,6 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/utils';
 import { memberCountsQuery } from '#/lib/counts';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
@@ -298,11 +297,12 @@ const organizationsRoutes = app
     const { organizationIds, subject, content } = ctx.req.valid('json');
     // For test purposes
     if (typeof env.SEND_ALL_TO_EMAIL === 'string' && env.NODE_ENV === 'development') {
-      const userFromDb = await getUserBy('id', user.id, 'unsafe');
-
-      if (!userFromDb) return errorResponse(ctx, 404, 'User not found', 'warn', 'organization');
-
-      const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${userFromDb.unsubscribeToken}`;
+      const [{ unsubscribeToken }] = await db
+        .select({ unsubscribeToken: usersTable.unsubscribeToken })
+        .from(usersTable)
+        .where(eq(usersTable.id, user.id))
+        .limit(1);
+      const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`;
       // generating email html
       const emailHtml = await render(organizationsNewsletter({ userLanguage: user.language, subject, content, unsubscribeLink }));
       emailSender.send(env.SEND_ALL_TO_EMAIL, user.newsletter ? subject : 'User unsubscribed from newsletter', emailHtml);
