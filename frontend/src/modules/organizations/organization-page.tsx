@@ -35,7 +35,7 @@ const OrganizationPage = () => {
 
   const { mutate } = useUpdateOrganizationMutation(organization.id);
 
-  useEventListener('updateCover', (e) => {
+  useEventListener('updateEntityCover', (e) => {
     const { bannerUrl, entity } = e.detail;
     if (entity !== organization.entity) return;
     mutate(

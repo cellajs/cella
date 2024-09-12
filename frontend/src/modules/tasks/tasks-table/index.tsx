@@ -14,7 +14,6 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useMutateInfiniteTaskQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import type { TaskTableCRUDEvent } from '~/lib/custom-events/types';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -30,6 +29,7 @@ import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-dow
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
 import TableHeader from '~/modules/tasks/tasks-table/header/table-header';
 import { TaskTableSearch } from '~/modules/tasks/tasks-table/header/table-search';
+import type { TaskTableOperationEvent } from '~/modules/tasks/types';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -165,7 +165,7 @@ export default function TasksTable() {
     setFocusedTaskId(taskId);
   };
 
-  const handleCRUD = (event: TaskTableCRUDEvent) => {
+  const handleCRUD = (event: TaskTableOperationEvent) => {
     const { array, action } = event.detail;
     callback(array, action);
   };
@@ -190,7 +190,7 @@ export default function TasksTable() {
     ['T', () => hotKeyPress('type')],
   ]);
   useEventListener('openTaskCardPreview', (event) => handleOpenPreview(event.detail));
-  useEventListener('taskTableCRUD', handleCRUD);
+  useEventListener('taskTableOperation', handleCRUD);
 
   useEffect(() => {
     if (!rows.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;

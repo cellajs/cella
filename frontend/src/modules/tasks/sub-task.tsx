@@ -41,7 +41,7 @@ const SubTask = ({
 
   const onRemove = (subTaskId: string) => {
     deleteTasks([subTaskId]).then((resp) => {
-      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [{ id: subTaskId }], action: 'deleteSubTask', projectId: task.projectId });
       if (resp) toast.success(t('common:success.delete_resources', { resources: t('app:todos') }));
       else toast.error(t('common:error.delete_resources', { resources: t('app:todos') }));
@@ -56,7 +56,7 @@ const SubTask = ({
   const handleUpdateStatus = async (newStatus: number) => {
     try {
       const updatedTask = await updateTask(task.id, 'status', newStatus);
-      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask', projectId: task.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:todo') }));

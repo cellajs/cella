@@ -103,7 +103,7 @@ export const CreateSubTaskForm = ({
         if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:todo') }));
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('app:todo') }));
-        const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+        const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
         dispatchCustomEvent(eventName, { array: [newSubTask], action: 'createSubTask', projectId: parentTask.projectId });
         setFormState(false);
       })
