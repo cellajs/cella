@@ -6,7 +6,7 @@ import { config } from 'config';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { render } from 'jsx-email';
-import { type User, generateId } from 'lucia';
+import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { env } from '../../../env';
 
@@ -19,6 +19,7 @@ import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/s
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { getUserBy } from '#/db/util';
 import { entityTables } from '#/entity-config';
 import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
@@ -151,8 +152,7 @@ const generalRoutes = app
     const user = ctx.get('user');
 
     for (const email of emails) {
-      const [targetUser] = (await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()))) as (User | undefined)[];
-
+      const targetUser = await getUserBy('email', email.toLowerCase());
       const token = generateId(40);
       await db.insert(tokensTable).values({
         id: token,
@@ -199,9 +199,7 @@ const generalRoutes = app
     if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
       return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
     }
-
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, token.email));
-
+    const user = await getUserBy('email', token.email);
     if (!user) {
       return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
     }
