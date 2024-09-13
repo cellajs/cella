@@ -35,15 +35,17 @@ export const SSEProvider: FC<Props> = ({ children }) => {
   useEffect(() => {
     const eventSource = createResource();
     setSource(eventSource);
+    return () => eventSource.close();
+  }, []);
 
-    const handleVisibilityChange = async () => document.visibilityState === 'visible' && reconnect();
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && source && source.readyState === EventSource.CLOSED) await reconnect();
+    };
 
     window.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      eventSource.close();
-      window.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
+    return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [source]);
 
   return createElement(
     SSEContext.Provider,
