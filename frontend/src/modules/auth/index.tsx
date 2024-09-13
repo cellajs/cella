@@ -14,7 +14,7 @@ import AuthPage from '~/modules/auth/auth-page';
 import OauthOptions from '~/modules/auth/oauth-options';
 import { WaitListForm } from '~/modules/common/wait-list-form';
 import { buttonVariants } from '~/modules/ui/button';
-import { SignInRoute } from '~/routes/authentication';
+import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 
 export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitList';
