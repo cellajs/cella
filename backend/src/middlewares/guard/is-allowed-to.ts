@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import permissionManager, { HierarchicalEntity } from '#/lib/permission-manager';
@@ -23,7 +24,7 @@ const isAllowedTo =
     (action: PermissionAction, type: ContextEntity | ProductEntity): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
-      const user = ctx.get('user');
+      const user = getContextUser();
 
       // Retrieve the context of the entity to be authorized (e.g., 'organization', 'workspace')
       const contextEntity = await getEntityContext(ctx, type);

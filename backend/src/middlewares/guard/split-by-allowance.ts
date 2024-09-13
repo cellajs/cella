@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { Context, MiddlewareHandler } from 'hono';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
+import { getContextUser } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import permissionManager from '#/lib/permission-manager';
@@ -20,7 +21,7 @@ const splitByAllowance =
     (action: string, entityType: Entity): MiddlewareHandler<Env, any> =>
     async (ctx: Context, next) => {
       // Extract user
-      const user = ctx.get('user');
+      const user = getContextUser();
 
       // Convert the ids to an array
       const rawIds = ctx.req.query('ids');
