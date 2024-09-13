@@ -10,7 +10,7 @@ import { type InsertMembershipModel, membershipsTable } from '#/db/schema/member
 import { type InsertOrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { hashPasswordWithArgon } from '#/lib/argon2id';
-import { generateUnsubscribeToken } from '#/lib/utils';
+import { generateUnsubscribeToken } from '#/lib/unsubscribe-token';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 

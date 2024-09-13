@@ -46,6 +46,7 @@ export const useUserStore = create<UserState>()(
 
           i18n.changeLanguage(user.language || 'en');
         },
+        // Used for impersonation to prevent an admin from being added as the last user
         setUserWithoutSetLastUser: (user) => {
           set((state) => {
             state.user = user;

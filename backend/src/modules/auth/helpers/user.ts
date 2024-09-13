@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
-import { generateUnsubscribeToken } from '#/lib/utils';
+import { generateUnsubscribeToken } from '#/lib/unsubscribe-token';
 import { logEvent } from '#/middlewares/logger/log-event';
 import type { OauthProviderOptions } from '#/types/common';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';

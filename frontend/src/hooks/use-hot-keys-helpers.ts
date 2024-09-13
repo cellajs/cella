@@ -12,6 +12,7 @@ type Hotkey = KeyboardModifiers & {
 
 type CheckHotkeyMatch = (event: KeyboardEvent) => boolean;
 
+// Parses a hotkey string into a Hotkey object with modifiers and a key
 function parseHotkey(hotkey: string): Hotkey {
   const keys =
     hotkey === '+'
@@ -29,8 +30,10 @@ function parseHotkey(hotkey: string): Hotkey {
     shift: keys.includes('shift'),
   };
 
+  // Keys that are reserved for modifiers
   const reservedKeys = ['alt', 'ctrl', 'meta', 'shift', 'mod'];
 
+  // Find the non-modifier key
   const freeKey = keys.find((key) => !reservedKeys.includes(key));
 
   return {
@@ -39,30 +42,17 @@ function parseHotkey(hotkey: string): Hotkey {
   };
 }
 
+// Checks if the given KeyboardEvent matches the specified hotkey
 function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
   const { alt, ctrl, meta, mod, shift, key } = hotkey;
   const { altKey, ctrlKey, metaKey, shiftKey, key: pressedKey } = event;
 
-  if (alt !== altKey) {
+  // Check modifiers
+  if (alt !== altKey || (mod && !(ctrlKey || metaKey)) || ctrl !== ctrlKey || meta !== metaKey || shift !== shiftKey) {
     return false;
   }
 
-  if (mod) {
-    if (!ctrlKey && !metaKey) {
-      return false;
-    }
-  } else {
-    if (ctrl !== ctrlKey) {
-      return false;
-    }
-    if (meta !== metaKey) {
-      return false;
-    }
-  }
-  if (shift !== shiftKey) {
-    return false;
-  }
-
+  // Check the actual key press
   if (key && (pressedKey.toLowerCase() === key.toLowerCase() || event.code.replace('Key', '').toLowerCase() === key.toLowerCase())) {
     return true;
   }
@@ -70,6 +60,7 @@ function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
   return false;
 }
 
+// check if a KeyboardEvent matches the specified hotkey string
 function getHotkeyMatcher(hotkey: string): CheckHotkeyMatch {
   return (event) => isExactHotkey(parseHotkey(hotkey), event);
 }
@@ -80,15 +71,14 @@ interface HotkeyItemOptions {
 
 type HotkeyItem = [string, (event: KeyboardEvent) => void, HotkeyItemOptions?];
 
+// Determines whether the event should trigger the hotkey handler based on the target element and settings
 function shouldFireEvent(event: KeyboardEvent, tagsToIgnore: string[], triggerOnContentEditable = false) {
   if (event.target instanceof HTMLElement) {
     if (triggerOnContentEditable) {
       return !tagsToIgnore.includes(event.target.tagName);
     }
-
     return !event.target.isContentEditable && !tagsToIgnore.includes(event.target.tagName);
   }
-
   return true;
 }
 
