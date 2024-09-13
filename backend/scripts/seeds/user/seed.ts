@@ -2,7 +2,8 @@ import { config } from 'config';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 
-import { generateUnsubscribeToken, hashPasswordWithArgon } from '#/lib/utils';
+import { hashPasswordWithArgon } from '#/lib/argon2id';
+import { generateUnsubscribeToken } from '#/lib/utils';
 
 export const adminUser = {
   password: '12345678',

@@ -9,7 +9,8 @@ import { nanoid } from '#/lib/nanoid';
 import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
-import { generateUnsubscribeToken, hashPasswordWithArgon } from '#/lib/utils';
+import { hashPasswordWithArgon } from '#/lib/argon2id';
+import { generateUnsubscribeToken } from '#/lib/utils';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 
