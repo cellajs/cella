@@ -2,8 +2,7 @@ import { config } from 'config';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 
-import { Argon2id } from 'oslo/password';
-import { generateUnsubscribeToken } from '#/lib/utils';
+import { generateUnsubscribeToken, hashPasswordWithArgon } from '#/lib/utils';
 
 export const adminUser = {
   password: '12345678',
@@ -31,7 +30,7 @@ export const userSeed = async () => {
       slug: 'admin-user',
       role: 'admin',
       unsubscribeToken: generateUnsubscribeToken(adminUser.email),
-      hashedPassword: await new Argon2id().hash(adminUser.password),
+      hashedPassword: await hashPasswordWithArgon(adminUser.password),
     })
     .onConflictDoNothing();
 
