@@ -26,8 +26,6 @@ export const routeTree = rootRoute.addChildren([
     UserSettingsRoute,
     // App specific routes here
 
-
-
     // Org routes on bottom because of slug directly after root path
     OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),
   ]),

@@ -1,4 +1,4 @@
-import { type InfiniteData, type QueryKey } from '@tanstack/react-query';
+import type { InfiniteData, QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/lib/router';
 
 interface Item {

@@ -16,6 +16,7 @@ import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import { showToast } from '~/lib/taosts-show';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
@@ -97,7 +98,7 @@ const UsersTable = () => {
     mutationFn: async (user: User) => await updateUser(user.id, { role: user.role }),
     onSuccess: (updatedUser) => {
       callback([updatedUser], 'update');
-      toast.success(t('common:success:user_role_updated'));
+      showToast(t('common:success.user_role_updated'), 'success');
     },
     onError: () => toast.error('Error updating role'),
   });

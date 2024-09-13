@@ -9,9 +9,9 @@ import { idOrSlugSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
-import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/taosts-show';
 import { dialog } from '~/modules/common/dialoger/state';
 import SelectRole from '~/modules/common/form-fields/select-role-radio';
 import { MultiEmail } from '~/modules/common/multi-email';
@@ -72,7 +72,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
       callback?.();
       nextStep?.();
       if (isDialog) dialog.remove();
-      toast.success(t('common:success.user_invited'));
+      showToast(t('common:success.user_invited'), 'success');
     },
   });
 

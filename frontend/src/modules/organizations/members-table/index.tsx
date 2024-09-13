@@ -17,6 +17,7 @@ import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import { showToast } from '~/lib/taosts-show';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -130,9 +131,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role }),
     onSuccess: (updatedMembership) => {
       callback([updatedMembership], 'updateMembership');
-      toast.success(t('common:success:user_role_updated'));
+      showToast(t('common:success:user_role_updated'), 'success');
     },
-    onError: () => toast.error('Error updating role'),
+    onError: () => showToast('Error updating role', 'error'),
   });
 
   const onResetFilters = () => {
