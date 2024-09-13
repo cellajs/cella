@@ -65,6 +65,7 @@ export const useNavigationStore = create<NavigationState>()(
           },
           setSheet: (component, action) => {
             set((state) => {
+              // If the action is 'force', set the activeSheet to the provided component directly
               if (action === 'force') state.activeSheet = component;
               if (action === 'routeChange') {
                 const shouldStayOpen = state.activeSheet?.id === 'menu' && state.keepMenuOpen;
@@ -72,6 +73,7 @@ export const useNavigationStore = create<NavigationState>()(
                 if (!shouldStayOpen || smallScreen) state.activeSheet = null;
                 return;
               }
+              // For any other action, set the activeSheet to the provided component
               state.activeSheet = component;
             });
           },
@@ -111,12 +113,14 @@ export const useNavigationStore = create<NavigationState>()(
           archiveStateToggle: (item: UserMenuItem, active: boolean, parentId?: string | null) => {
             set((state) => {
               if (!parentId) {
+                // Update the 'archived' status for the item in all sections
                 for (const sectionKey of Object.keys(state.menu)) {
                   const section = state.menu[sectionKey as keyof UserMenu];
                   const itemIndex = section.findIndex((el) => el.id === item.id);
                   if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu][itemIndex].membership.archived = active;
                 }
               } else {
+                // Update the 'archived' status for the item in a specific submenu
                 const section = menuSections.find((el) => el.type === item.entity)?.storageType;
                 if (!section) return;
                 const parent = state.menu[section].find((item) => item.id === parentId);

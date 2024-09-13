@@ -9,6 +9,7 @@ import type { ContextEntity, MinimumEntityItem, UserMenu, UserMenuItem } from '~
 
 type WorkspaceQuery = z.infer<typeof workspaceWithProjectSchema>;
 
+// Recursive function to find an item by id or slug
 const findItem = (
   items: (MinimumEntityItem & {
     submenu?: MinimumEntityItem[];
@@ -16,8 +17,11 @@ const findItem = (
   idOrSlug: string,
 ): MinimumEntityItem | null => {
   if (!items) return null;
+
   for (const item of items) {
-    if (item.id === idOrSlug || item.slug === idOrSlug)
+    if (item.submenu) return findItem(item.submenu, idOrSlug);
+
+    if (item.id === idOrSlug || item.slug === idOrSlug) {
       return {
         id: item.id,
         entity: item.entity,
@@ -26,11 +30,12 @@ const findItem = (
         thumbnailUrl: item.thumbnailUrl || null,
         bannerUrl: item.bannerUrl || null,
       };
-    if (item.submenu) return findItem(item.submenu, idOrSlug);
+    }
   }
   return null;
 };
 
+// Hook to fetch an entity based on id or slug
 export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
   const { menu } = useNavigationStore();
   const queryClient = useQueryClient();
@@ -38,7 +43,7 @@ export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
 
   useEffect(() => {
     const getEntity = async () => {
-      // Step 1: Check menu
+      // Step 1: Check for entity in menu
       const keys = Object.keys(menu) as (keyof UserMenu)[];
       for (const category of keys) {
         const found = findItem(menu[category], idOrSlug);
@@ -48,7 +53,7 @@ export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
         }
       }
 
-      // Step 2: Check cache
+      // Step 2: Check for entity in queries cache
       const queriesData = queryClient.getQueriesData<WorkspaceQuery | UserMenuItem[] | UserMenuItem>({});
       for (const query of queriesData) {
         const [[queryKey], data] = query;

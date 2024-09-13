@@ -3,7 +3,7 @@ import * as React from 'react';
 export const useAutoResize = (ref: React.ForwardedRef<HTMLTextAreaElement>, autoResize: boolean) => {
   const areaRef = React.useRef<HTMLTextAreaElement>(null);
 
-  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  // biome-ignore lint/style/noNonNullAssertion: Expose the textarea reference to parent components
   React.useImperativeHandle(ref, () => areaRef.current!);
 
   React.useEffect(() => {
@@ -11,7 +11,9 @@ export const useAutoResize = (ref: React.ForwardedRef<HTMLTextAreaElement>, auto
 
     const updateAreaHeight = () => {
       if (ref && autoResize) {
+        // Reset height to recalculate scrollHeight
         ref.style.height = 'auto';
+        // Set height to scrollHeight to adjust for content
         ref.style.height = `${ref ? ref.scrollHeight : 0}px`;
       }
     };
@@ -19,7 +21,6 @@ export const useAutoResize = (ref: React.ForwardedRef<HTMLTextAreaElement>, auto
     updateAreaHeight();
 
     ref?.addEventListener('input', updateAreaHeight);
-
     return () => ref?.removeEventListener('input', updateAreaHeight);
   }, []);
 

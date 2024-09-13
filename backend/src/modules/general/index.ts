@@ -22,7 +22,7 @@ import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
-import { verifyUnsubscribeToken } from '#/lib/utils';
+import { verifyUnsubscribeToken } from '#/lib/unsubscribe-token';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { type ContextEntity, CustomHono } from '#/types/common';

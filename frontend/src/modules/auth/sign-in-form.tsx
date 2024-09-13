@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
-import { SignInRoute } from '~/routes/authentication';
+import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { TokenData } from '.';
 

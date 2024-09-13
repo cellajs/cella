@@ -28,6 +28,7 @@ const day = 864e5;
 // const month = 2592e6;
 const year = 31536e6;
 
+// convert date in Twitter format
 export const dateTwitterFormat = (startDate: string, passedLoc: string, addStr?: string) => {
   const start = dayjs(startDate);
   const end = dayjs();
@@ -102,9 +103,7 @@ export function makeTransition(transition: () => void) {
 // Get a color class based on an id
 export const getColorClass = (id?: string) => {
   if (!id) return 'bg-gray-300';
-
   const index = generateNumber(id) || 0;
-
   return config.placeholderColors[index];
 };
 
@@ -174,15 +173,17 @@ export const addMenuItem = (newEntity: UserMenuItem, storage: 'organizations' | 
   };
 };
 
+// Check if the passed date is between passed number of days and today(inclusive)
 export const recentlyUsed = (date: string | null, days: number) => {
   if (!date) return false;
   const convertedDate = new Date(date);
+  // Calculate the date days ago and today using dayjs
   const daysAgo = dayjs().subtract(days, 'day');
   const today = dayjs();
   return dayjs(convertedDate).isBetween(daysAgo, today, null, '[]');
 };
 
-// Helper function to decode base64 URL to Uint8Array
+// Decode base64 URL to Uint8Array
 export const base64UrlDecode = (base64urlStr: string) => {
   let base64String = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
   while (base64String.length % 4 !== 0) {
@@ -192,12 +193,13 @@ export const base64UrlDecode = (base64urlStr: string) => {
   return Uint8Array.from(binaryString.split('').map((char) => char.charCodeAt(0))).buffer;
 };
 
-// Helper function to encode Uint8Array to base64 URL
+// Encode Uint8Array to base64 URL
 const base64UrlEncode = (uint8Array: Uint8Array): string => {
   const binaryString = String.fromCharCode(...uint8Array);
   return btoa(binaryString).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 };
 
+// Encode ArrayBuffer to base64 URL
 export const arrayBufferToBase64Url = (buffer: ArrayBuffer) => {
   const uint8Array = new Uint8Array(buffer);
   return base64UrlEncode(uint8Array);

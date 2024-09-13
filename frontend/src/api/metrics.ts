@@ -4,7 +4,7 @@ import { hc } from 'hono/client';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppMetricType>(config.backendUrl, clientConfig);
+export const client = hc<AppMetricType>(`${config.backendUrl}/metrics`, clientConfig);
 
 // Get public counts for about page
 export const getPublicCounts = async () => {

@@ -8,7 +8,7 @@ import { authThroughPasskey, getChallenge, githubSignInUrl, googleSignInUrl, mic
 import { acceptInvite } from '~/api/general';
 import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
-import { SignInRoute } from '~/routes/authentication';
+import { SignInRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
 import type { Step } from '.';
 
