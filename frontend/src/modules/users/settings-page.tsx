@@ -25,7 +25,6 @@ import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
 import type { Session } from '~/types/common';
 import HelpText from '../common/help-text';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -44,33 +43,52 @@ const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps)
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center w-full gap-3 min-h-[40px] p-3">
-      {session.deviceType === 'desktop' ? <Monitor size={24} /> : <Smartphone size={24} />}
-      <div className="text-start">
-        <div className="font-semibold">{session.deviceName || t('common:unknown_device')}</div>
-        <p className="font-light text-sm truncate">
-          <span className="opacity-50 max-md:hidden">{session.deviceOs}</span>
-        </p>
-      </div>
-      {session.isCurrent && (
-        <Badge variant="plain" className="uppercase text-[10px] py-0">
-          current
-        </Badge>
-      )}
-      {!session.isCurrent && (
-        <Button
-          variant="destructive"
-          size="sm"
-          className="text-sm ml-auto hidden group-hover:block"
-          disabled={isPending}
-          onClick={() => {
-            deleteMySessions([session.id]);
-          }}
-        >
-          {t('common:terminate')}
-        </Button>
-      )}
-    </div>
+    <Card className="w-full">
+      <CardContent className="flex p-3 items-center gap-3">
+        {session.deviceType === 'desktop' ? <Monitor size={32} strokeWidth={1.25} /> : <Smartphone size={32} strokeWidth={1.25} />}
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-2">
+            <div className="font-semibold">{session.deviceName || t('common:unknown_device')}</div>
+            {session.isCurrent && (
+              <Badge variant="plain" className="uppercase text-[10px] py-0">
+                {t('common:current')}
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm opacity-50">
+            <p className="truncate" aria-describedby={t('common:period')}>
+              {dateShort(session.createdAt)} - {dateShort(session.expiresAt)}
+            </p>
+            {session.authStrategy && (
+              <p className="truncate capitalize" aria-describedby={t('common:strategy')}>
+                {t(session.authStrategy)}
+              </p>
+            )}
+            <p className="truncate max-lg:hidden" aria-describedby={t('common:os')}>
+              {session.deviceOs}
+            </p>
+            <p className="truncate max-md:hidden" aria-describedby={t('common:browser')}>
+              {session.browser}
+            </p>
+          </div>
+        </div>
+        {!session.isCurrent && (
+          <Button
+            variant="plain"
+            size="sm"
+            className="text-sm ml-auto"
+            disabled={isPending}
+            onClick={() => {
+              deleteMySessions([session.id]);
+            }}
+          >
+            <ZapOff size={16} />
+            <span className="ml-1 max-md:hidden">{t('common:terminate')}</span>
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
@@ -82,6 +100,7 @@ const UserSettingsPage = () => {
   const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.isCurrent), [user.sessions]);
   const sessions = Array.from(user.sessions).sort((a) => (a.isCurrent ? -1 : 1));
 
+  // Terminate one or all sessions
   const { mutate: deleteMySessions, isPending } = useMutation({
     mutationFn: baseTerminateMySessions,
     onSuccess: (_, variables) => {
@@ -92,6 +111,7 @@ const UserSettingsPage = () => {
     },
   });
 
+  // Request a password reset email
   const sendResetPasswordClick = () => {
     sendResetPasswordEmail(user.email);
     setDisabledResetPassword(true);
@@ -101,6 +121,7 @@ const UserSettingsPage = () => {
     toast.success(t('common:success.reset_password_email', { email: user.email }));
   };
 
+  // Delete account
   const openDeleteDialog = () => {
     dialog(
       <DeleteSelf
@@ -116,6 +137,8 @@ const UserSettingsPage = () => {
       },
     );
   };
+
+  // Remove passkey
   const deletePasskey = async () => {
     const result = await baseRemovePasskey();
     if (result) {
@@ -124,6 +147,7 @@ const UserSettingsPage = () => {
     } else toast.error(t('common:error.passkey_remove_failed'));
   };
 
+  // Register passkey
   const registerPasskey = async () => {
     const { challengeBase64 } = await getChallenge();
 
@@ -211,40 +235,14 @@ const UserSettingsPage = () => {
                 </Button>
               )}
               <div className="flex flex-col mt-4 gap-2">
-                <Accordion type="single" collapsible className="space-y-1">
-                  <ExpandableList
-                    items={sessions}
-                    renderItem={(session) => (
-                      <AccordionItem value={session.id} className="border group rounded-md">
-                        <AccordionTrigger className="hover:no-underline p-0 pr-3">
-                          <SessionTile session={session} key={session.id} deleteMySessions={deleteMySessions} isPending={isPending} />
-                        </AccordionTrigger>
-                        <AccordionContent className="p-3 pt-0">
-                          {session.browser && (
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold">{t('common:browser')}</p>
-                              <p className="text-sm">{session.browser}</p>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{t('common:auth_strategy')}</p>
-                            <p className="text-sm">{session.authStrategy}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{t('common:created_at')}</p>
-                            <p className="text-sm">{dateShort(session.createdAt)}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{t('common:expires_at')}</p>
-                            <p className="text-sm">{dateShort(session.expiresAt)}</p>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                    initialDisplayCount={3}
-                    expandText="common:more_sessions"
-                  />
-                </Accordion>
+                <ExpandableList
+                  items={sessions}
+                  renderItem={(session) => (
+                    <SessionTile session={session} key={session.id} deleteMySessions={deleteMySessions} isPending={isPending} />
+                  )}
+                  initialDisplayCount={3}
+                  expandText="common:more_sessions"
+                />
               </div>
             </CardContent>
           </Card>
