@@ -11,7 +11,7 @@
     <b>Linear meets Pivotal tracker. Raak is an OS multi-app issue tracker.</b>
     <br />
     <br />
-    <a href="https://cellajs.com">Website</a>
+    <a href="https://raak.io">Website</a>
     ·
     Prerelease
     ·
@@ -23,7 +23,7 @@
 </div>
 
 > [!CAUTION]
-> Raak is an implementation project based upon cella. Cella is in prerelease.
+> Raak is an implementation project based upon [cella](https://github/com/cellajs/cella). Cella is in prerelease.
 
 #### Contents
 

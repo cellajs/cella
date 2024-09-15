@@ -1,33 +1,32 @@
 export const config = {
   mode: 'development',
-  name: 'Cella',
-  slug: 'cella',
+  name: 'Raak',
+  slug: 'raak',
 
-  domain: 'cellajs.com',
-  frontendUrl: 'https://cellajs.com',
-  backendUrl: 'https://api.cellajs.com',
-  backendAuthUrl: 'https://api.cellajs.com/auth',
-  tusUrl: 'https://tus.cellajs.com',
+  domain: 'raak.io',
+  frontendUrl: 'https://raak.io',
+  backendUrl: 'https://api.raak.io',
+  backendAuthUrl: 'https://api.raak.io/auth',
+  tusUrl: 'https://tus.raak.io',
 
   defaultRedirectPath: '/home',
   firstSignInRedirectPath: '/welcome',
 
   aboutUrl: '/about',
-  statusUrl: 'https://status.cellajs.com',
-  productionUrl: 'https://cellajs.com',
+  statusUrl: 'https://status.raak.io',
+  productionUrl: 'https://raak.io',
 
-  description: 'Intuitive TypeScript template to build local-first web apps. Implementation-ready. MIT licensed.',
+  description: 'raak',
   keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
 
-  supportEmail: 'support@cellajs.com',
-  notificationsEmail: 'notifications@cellajs.com',
+  supportEmail: 'support@raak.io',
+  notificationsEmail: 'notifications@raak.io',
   senderIsReceiver: false,
 
   debug: false,
   maintenance: false,
 
   // Which scripts to run when seeding the database
-
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations', 'pnpm run seed:data'],
 
   // Which fields to omit from user object
@@ -36,14 +35,14 @@ export const config = {
   // API docs settings
   apiVersion: 'v1',
   apiDescription: `
-      (ATTENTION: PRERELEASE!) This API documentation is split in modules. Each module relates to a module in the backend codebase. Each module should be at least loosely-coupled, but ideally entirely decoupled. The documentation is based upon zod schemas that are converted to openapi specs using hono middleware: zod-openapi.
+      This API documentation is split in modules. Each module relates to a module in the backend codebase. Each module should be at least loosely-coupled, but ideally entirely decoupled. The documentation is based upon zod schemas that are converted to openapi specs using hono middleware: zod-openapi.
 
       API differentiates between two types of resource: entities and resources. Entities are the main data objects, the other tables are secondary. They all have an entity column.
 
       Entities can be split into three categories:
-      1) Contextual entities (ie organization, workspace, project)
-      2) Product entities (ie task, label)
-      3) All entities (ie user, organization, workspace, project, task, label)
+      1) Contextual entities (organization, workspace, project)
+      2) Product entities (task, label)
+      3) All entities (user, organization, workspace, project, task, label)
 
       - SSE stream is not included in this API documentation
       - API design is flat, not nested`,
@@ -105,7 +104,7 @@ export const config = {
   ],
 
   // OAuth providers
-  oauthProviderOptions: ['github', 'google', 'microsoft'] as const,
+  oauthProviderOptions: ['github'] as const,
   enabledOauthProviders: ['github'] as const,
 
   // Optional settings
@@ -120,7 +119,6 @@ export const config = {
 
   languages: [
     { value: 'en', label: 'English' },
-    { value: 'nl', label: 'Nederlands' },
   ],
 
   // All entity types
@@ -143,7 +141,7 @@ export const config = {
 
   // Company details
   company: {
-    name: 'CellaJS',
+    name: 'Cella',
     shortName: 'Cella',
     email: 'info@cellajs.com',
     postcode: '90210 JS',

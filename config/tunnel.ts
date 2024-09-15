@@ -2,7 +2,7 @@ import type { Config } from './default';
 
 export default {
   mode: 'tunnel',
-  name: 'Cella TUNNEL',
+  name: 'Raak TUNNEL',
   frontendUrl: 'https://localhost:3003',
-  backendUrl: 'http://cella.eu.ngrok.io',
+  backendUrl: 'http://raak.eu.ngrok.io',
 } as Config;
