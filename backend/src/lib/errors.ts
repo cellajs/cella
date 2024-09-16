@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
 import type { Entity } from '#/types/common';
 import type { errorSchema } from './common-schemas';
+import { getContextUser, getOrganization } from './context';
 import { i18n } from './i18n';
 
 export type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
@@ -32,8 +33,8 @@ export const createError = (
   const translationKey = `common:error.${type}`;
   const message = i18n.t(translationKey);
 
-  const user = ctx.get('user');
-  const organization = ctx.get('organization');
+  const user = getContextUser();
+  const organization = getOrganization();
 
   const error: ErrorType = {
     message,

@@ -11,6 +11,7 @@ import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { env } from '../../../env';
 
 import { db } from '#/db/db';
+import { getContextUser } from '#/lib/context';
 
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
@@ -44,7 +45,7 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.getUploadToken, async (ctx) => {
     const isPublic = ctx.req.query('public');
-    const user = ctx.get('user');
+    const user = getContextUser();
     // TODO: validate query param organization?
     const organizationId = ctx.req.query('organizationId');
 
@@ -119,7 +120,7 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.createInvite, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     for (const email of emails) {
       const targetUser = await getUserBy('email', email.toLowerCase());
@@ -246,7 +247,7 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     // Retrieve user memberships to filter suggestions by relevant organization,  admin users see everything
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
@@ -411,7 +412,7 @@ const generalRoutes = app
    *  Get SSE stream
    */
   .get('/sse', isAuthenticated, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
     return streamSSE(ctx, async (stream) => {
       streams.set(user.id, stream);
       console.info('User connected to SSE', user.id);

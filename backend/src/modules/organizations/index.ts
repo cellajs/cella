@@ -5,6 +5,7 @@ import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from '
 
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
+import { getAllowedIds, getContextUser, getDisallowedIds, getOrganization } from '#/lib/context';
 import { memberCountsQuery } from '#/lib/counts';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
@@ -29,7 +30,7 @@ const organizationsRoutes = app
    */
   .openapi(organizationRoutesConfig.createOrganization, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -75,7 +76,7 @@ const organizationsRoutes = app
    */
   .openapi(organizationRoutesConfig.getOrganizations, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     const filter: SQL | undefined = q ? ilike(organizationsTable.name, `%${q}%`) : undefined;
 
@@ -137,8 +138,8 @@ const organizationsRoutes = app
    * Update an organization by id or slug
    */
   .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
-    const user = ctx.get('user');
-    const organization = ctx.get('organization');
+    const user = getContextUser();
+    const organization = getOrganization();
 
     const {
       name,
@@ -230,8 +231,8 @@ const organizationsRoutes = app
    * Get organization by id or slug
    */
   .openapi(organizationRoutesConfig.getOrganization, async (ctx) => {
-    const user = ctx.get('user');
-    const organization = ctx.get('organization');
+    const user = getContextUser();
+    const organization = getOrganization();
 
     const [membership] = await db
       .select(membershipSelect)
@@ -262,8 +263,8 @@ const organizationsRoutes = app
    */
   .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
     // Extract allowed and disallowed ids
-    const allowedIds = ctx.get('allowedIds');
-    const disallowedIds = ctx.get('disallowedIds');
+    const allowedIds = getAllowedIds();
+    const disallowedIds = getDisallowedIds();
 
     // Map errors of organizations user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
@@ -294,7 +295,7 @@ const organizationsRoutes = app
    * Send newsletter email
    */
   .openapi(organizationRoutesConfig.sendNewsletterEmail, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
     const { organizationIds, subject, content } = ctx.req.valid('json');
     // For test purposes
     if (typeof env.SEND_ALL_TO_EMAIL === 'string' && env.NODE_ENV === 'development') {
