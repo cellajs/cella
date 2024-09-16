@@ -5,7 +5,7 @@ import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
 import { generateUnsubscribeToken } from '#/lib/unsubscribe-token';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { OauthProviderOptions } from '#/types/common';
+import type { EnabledOauthProviderOptions } from '#/types/common';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { setSessionCookie } from './cookies';
 import { insertOauthAccount } from './oauth';
@@ -17,7 +17,7 @@ export const handleCreateUser = async (
   data: Omit<InsertUserModel, 'unsubscribeToken'>,
   options?: {
     provider?: {
-      id: OauthProviderOptions;
+      id: EnabledOauthProviderOptions;
       userId: string;
     };
     isEmailVerified?: boolean;

@@ -1,5 +1,4 @@
 import { createRoute, useParams } from '@tanstack/react-router';
-import type { ErrorType } from 'backend/lib/errors';
 import { membersQuerySchema } from 'backend/modules/general/schema';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
@@ -10,6 +9,7 @@ import { membersQueryOptions } from '~/modules/organizations/members-table/helpe
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { baseEntityRoutes } from '~/nav-config';
 import type { Organization as OrganizationType } from '~/types/common';
+import type { ErrorType } from '#/lib/errors';
 import { AppRoute } from './general';
 
 //Lazy-loaded components

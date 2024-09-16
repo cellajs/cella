@@ -1,8 +1,8 @@
 import type { AppGeneralType } from 'backend/modules/general/index';
 import { config } from 'config';
 import { hc } from 'hono/client';
-import type { OauthProviderOptions } from '~/modules/auth/oauth-options';
 import { type ContextEntity, type Entity, type UploadParams, UploadType } from '~/types/common';
+import type { EnabledOauthProviderOptions } from '#/types/common';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
@@ -74,7 +74,7 @@ export const getSuggestions = async (query: string, type?: Entity | undefined) =
 interface AcceptInviteProps {
   token: string;
   password?: string;
-  oauth?: OauthProviderOptions | undefined;
+  oauth?: EnabledOauthProviderOptions | undefined;
 }
 
 // Accept an invitation

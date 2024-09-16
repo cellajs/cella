@@ -10,21 +10,23 @@ import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
+import type { EnabledOauthProviderOptions } from '#/types/common';
 import type { Step } from '.';
 
-export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
-
-type OauthProvider = {
-  id: OauthProviderOptions;
-  name: string;
-  url: string;
-};
-
-export const oauthProviders: OauthProvider[] = [
+const baseOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
   { id: 'google', name: 'Google', url: googleSignInUrl },
   { id: 'microsoft', name: 'Microsoft', url: microsoftSignInUrl },
 ];
+
+interface OauthOptions {
+  id: EnabledOauthProviderOptions;
+  name: string;
+  url: string;
+}
+export const oauthProviders = baseOauthProviders.filter((prov) =>
+  config.enabledOauthProviders.includes(prov.id as EnabledOauthProviderOptions),
+) as unknown as OauthOptions[];
 
 interface OauthOptionsProps {
   actionType: Step;
@@ -100,35 +102,32 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
             {t('common:passkey_sign_in')}
           </Button>
         )}
-        {config.enabledOauthProviders.map((id) => {
-          const option = oauthProviders.find((provider) => provider.id === id);
-          if (!option) return;
-
+        {oauthProviders.map((provider) => {
           return (
             <Button
               loading={loading}
-              key={option.name}
+              key={provider.name}
               type="button"
               variant="outline"
               className="gap-1.5"
               onClick={() => {
                 setLoading(true);
                 if (token) {
-                  acceptInvite({ token, oauth: option.id }).then(() => {
+                  acceptInvite({ token, oauth: provider.id }).then(() => {
                     window.location.href = config.defaultRedirectPath;
                   });
                 } else {
-                  window.location.href = option.url + redirectQuery;
+                  window.location.href = provider.url + redirectQuery;
                 }
               }}
             >
               <img
-                src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
-                alt={option.name}
-                className={`w-4 h-4 ${option.id === 'github' ? invertClass : ''}`}
+                src={`/static/images/${provider.name.toLowerCase()}-icon.svg`}
+                alt={provider.name}
+                className={`w-4 h-4 ${provider.id === 'github' ? invertClass : ''}`}
                 loading="lazy"
               />
-              {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with {option.name}
+              {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with {provider.name}
             </Button>
           );
         })}

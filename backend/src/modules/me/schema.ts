@@ -19,7 +19,7 @@ export const sessionSchema = z.object({
   adminUserId: idSchema.nullish(),
 });
 
-export const signUpInfo = z.object({ oauth: z.array(z.enum(['github', 'google', 'microsoft'])), passkey: z.boolean() });
+export const signUpInfo = z.object({ oauth: z.array(z.enum(config.enabledOauthProviders)), passkey: z.boolean() });
 export const meUserSchema = userSchema.extend({
   sessions: sessionSchema
     .extend({

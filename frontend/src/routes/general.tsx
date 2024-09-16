@@ -10,7 +10,6 @@ import ErrorNotice from '~/modules/common/error-notice';
 import { queryClient } from '~/lib/router';
 import AcceptInvite from '~/modules/common/accept-invite';
 
-import type { ErrorType } from 'backend/lib/errors';
 import { Suspense, lazy } from 'react';
 import type { ApiError } from '~/api';
 import { onError } from '~/lib/query-client';
@@ -18,6 +17,7 @@ import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
 import UnsubscribePage from '~/modules/common/unsubscribe-page';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import type { ErrorType } from '#/lib/errors';
 import { AuthRoute } from './auth';
 
 // Lazy load main App component, which is behind authentication

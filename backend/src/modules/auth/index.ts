@@ -13,7 +13,15 @@ import { deleteCookie, getCookie } from 'hono/cookie';
 import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '#/db/lucia';
 
-import { createSession, findOauthAccount, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
+import {
+  createSession,
+  findOauthAccount,
+  getRedirectUrl,
+  handleExistingUser,
+  isEnabledOauthProvider,
+  slugFromEmail,
+  splitFullName,
+} from './helpers/oauth';
 
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
@@ -38,6 +46,7 @@ import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
 
+export const supportedOauthProviders = ['github', 'google', 'microsoft'] as const;
 // Scopes for OAuth providers
 const githubScopes = { scopes: ['user:email'] };
 const googleScopes = { scopes: ['profile', 'email'] };
@@ -589,6 +598,11 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.googleSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
+    const googleProvider = isEnabledOauthProvider('google');
+    // Verify if Google is enabled as an OAuth option
+    if (!googleProvider) {
+      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy: 'google' });
+    }
 
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
@@ -619,9 +633,9 @@ const authRoutes = app
       } = await response.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount('google', user.sub);
+      const [existingOauthAccount] = await findOauthAccount(googleProvider, user.sub);
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
+        await setSessionCookie(ctx, existingOauthAccount.userId, googleProvider);
 
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -630,7 +644,7 @@ const authRoutes = app
       const existingUser = await getUserBy('email', user.email.toLowerCase());
 
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, 'google', {
+        return await handleExistingUser(ctx, existingUser, googleProvider, {
           providerUser: {
             id: user.sub,
             email: user.email,
@@ -661,7 +675,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: 'google',
+            id: googleProvider,
             userId: user.sub,
           },
           isEmailVerified: user.email_verified,
@@ -671,11 +685,11 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'google' });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: googleProvider });
       }
 
       const errorMessage = (error as Error).message;
-      logEvent('Error signing in with Google', { strategy: 'google', errorMessage }, 'error');
+      logEvent('Error signing in with Google', { strategy: googleProvider, errorMessage }, 'error');
 
       throw error;
     }
@@ -685,13 +699,18 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.microsoftSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
+    const microsoftProvider = isEnabledOauthProvider('microsoft');
+    // Verify if Google is enabled as an OAuth option
+    if (!microsoftProvider) {
+      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy: microsoftProvider });
+    }
 
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'microsoft' });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: microsoftProvider });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -713,9 +732,9 @@ const authRoutes = app
       } = await response.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount('microsoft', user.sub);
+      const [existingOauthAccount] = await findOauthAccount(microsoftProvider, user.sub);
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
+        await setSessionCookie(ctx, existingOauthAccount.userId, microsoftProvider);
 
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -727,7 +746,7 @@ const authRoutes = app
       // Check if user already exists
       const existingUser = await getUserBy('email', user.email.toLowerCase());
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, 'microsoft', {
+        return await handleExistingUser(ctx, existingUser, microsoftProvider, {
           providerUser: {
             id: user.sub,
             email: user.email,
@@ -758,7 +777,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: 'microsoft',
+            id: microsoftProvider,
             userId: user.sub,
           },
           isEmailVerified: false,
@@ -768,11 +787,11 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'microsoft' });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: microsoftProvider });
       }
 
       const errorMessage = (error as Error).message;
-      logEvent('Error signing in with Microsoft', { strategy: 'microsoft', errorMessage }, 'error');
+      logEvent('Error signing in with Microsoft', { strategy: microsoftProvider, errorMessage }, 'error');
 
       throw error;
     }
