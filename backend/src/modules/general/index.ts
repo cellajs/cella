@@ -151,7 +151,7 @@ const generalRoutes = app
       emailSender
         .send(
           config.senderIsReceiver ? user.email : email.toLowerCase(),
-          i18n.t('backend:email.subject.invitation_to_system', { lan: config.defaultLanguage, appName: config.name }),
+          i18n.t('backend:email.subject.invitation_to_system', { lng: config.defaultLanguage, appName: config.name }),
           emailHtml,
           user.email,
         )

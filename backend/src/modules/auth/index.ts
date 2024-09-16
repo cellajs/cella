@@ -136,7 +136,7 @@ const authRoutes = app
     emailSender.send(
       email,
       i18n.t('backend:email.subject.verify_email', {
-        lan: config.defaultLanguage,
+        lng: config.defaultLanguage,
         appName: config.name,
       }),
       emailHtml,
@@ -232,7 +232,7 @@ const authRoutes = app
     emailSender.send(
       email,
       i18n.t('backend:email.subject.reset_password', {
-        lan: config.defaultLanguage,
+        lng: config.defaultLanguage,
         appName: config.name,
       }),
       emailHtml,
