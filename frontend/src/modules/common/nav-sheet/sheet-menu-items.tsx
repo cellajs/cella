@@ -32,11 +32,11 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
     <Link
       resetScroll={false}
       className={cn(
-        `group ${
+        `group flex ${
           mainItemIdOrSlug && !searchResults ? 'h-12 relative menu-item-sub' : 'h-14'
-        } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 pr-2 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
+        } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
         className,
-        isActive && 'ring-primary/50 text-primary focus:ring-primary',
+        isActive && 'ring-transparent after:right-0 after:top-0 after:w-1 after:bg-primary after:h-full after:rounded-sm',
       )}
       aria-label={item.name}
       to={path}
@@ -49,7 +49,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
         name={item.name}
         url={item.thumbnailUrl}
       />
-      <div className="truncate py-2 flex flex-col justify-center text-left">
+      <div className="truncate grow py-2 flex flex-col justify-center pr-2 text-left">
         <div
           className={`truncate ${mainItemIdOrSlug && !searchResults ? 'max-sm:pt-1.5 text-sm sm:-mb-1 sm:-mt-0.5' : 'max-sm:pt-2.5 text-base'} leading-5`}
         >
