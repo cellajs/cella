@@ -135,7 +135,7 @@ export const useNavigationStore = create<NavigationState>()(
               state.finishedOnboarding = true;
             });
           },
-          clearNavigationStore: () => set(initStore, true),
+          clearNavigationStore: () => set(() => ({ ...initStore }), true),
         }),
         {
           version: 4,

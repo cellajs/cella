@@ -4,8 +4,7 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useEffect, useRef } from 'react';
-import { getColorClass } from '~/lib/utils';
-import { cn } from '~/lib/utils';
+import { cn, getColorClass } from '~/lib/utils';
 import { AppFooter } from '~/modules/common/app-footer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { buttonVariants } from '~/modules/ui/button';
@@ -32,7 +31,8 @@ const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, 
 
 export const SheetAccount = () => {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
+  const { user } = useUserStore();
+
   const isSystemAdmin = user.role === 'admin';
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
   const bgClass = user.bannerUrl ? 'bg-background' : getColorClass(user.id);

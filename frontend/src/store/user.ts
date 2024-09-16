@@ -1,7 +1,6 @@
+import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
-
-import { config } from 'config';
 import { immer } from 'zustand/middleware/immer';
 import { i18n } from '~/lib/i18n';
 import type { MeUser, User } from '~/types/common';
@@ -57,7 +56,13 @@ export const useUserStore = create<UserState>()(
         setUser: (user) => {
           set((state) => {
             state.user = user;
-            state.lastUser = { email: user.email, name: user.name, id: user.id, slug: user.slug, passkey: user.passkey };
+            state.lastUser = {
+              email: user.email,
+              name: user.name,
+              id: user.id,
+              slug: user.slug,
+              passkey: user.passkey,
+            };
           });
 
           i18n.changeLanguage(user.language || 'en');

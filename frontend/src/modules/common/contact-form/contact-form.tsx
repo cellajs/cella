@@ -22,9 +22,9 @@ const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-
 
 // Main contact form map component
 const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
-  const isMediumScreen = useBreakpoints('min', 'md');
-  const { user } = useUserStore(({ user }) => ({ user }));
   const { t } = useTranslation();
+  const { user } = useUserStore();
+  const isMediumScreen = useBreakpoints('min', 'md');
 
   const formSchema = z.object({
     name: z.string().min(2, t('common:error.name_required')).default(''),
