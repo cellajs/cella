@@ -25,7 +25,7 @@ const WorkspacePage = () => {
   //TODO  try find other solution other than useMutateWorkspaceQueryData hook
   const { mutate } = useUpdateWorkspaceMutation(workspace.id);
 
-  useEventListener('updateCover', (e) => {
+  useEventListener('updateEntityCover', (e) => {
     const { bannerUrl, entity } = e.detail;
     if (entity !== workspace.entity) return;
     mutate(

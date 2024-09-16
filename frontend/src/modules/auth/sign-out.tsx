@@ -1,8 +1,8 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { signOut } from '~/api/auth';
+import { showToast } from '~/lib/taosts-show';
 import { useDraftStore } from '~/store/draft';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types/common';
@@ -19,7 +19,7 @@ const SignOut = () => {
 
   useEffect(() => {
     signOutUser().then(() => {
-      toast.success(t('common:success.signed_out'));
+      showToast(t('common:success.signed_out'), 'success');
       navigate({ to: '/about', replace: true });
     });
   }, []);

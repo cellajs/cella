@@ -1,8 +1,8 @@
-import { db } from '#/db/db';
 import { config } from 'config';
 import { sql } from 'drizzle-orm';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { execSync } from 'node:child_process';
+import { db } from '../src/db/db';
 
 // Migrate the database
 await migrate(db, { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' });

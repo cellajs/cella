@@ -23,13 +23,13 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
-import type { TaskCRUDEvent, TaskCardFocusEvent, TaskCardToggleSelectEvent } from '~/lib/custom-events/types';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
+import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, TaskOperationEvent } from '~/modules/tasks/types';
 import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
@@ -158,7 +158,7 @@ export default function Board() {
     if (!newFocusedTask) return;
     const direction = event.key === 'ArrowDown' ? 1 : -1;
 
-    dispatchCustomEvent('taskChange', {
+    dispatchCustomEvent('focusedTaskChange', {
       taskId: newFocusedTask.id,
       projectId: newFocusedTask.projectId,
       direction: focusedTaskId ? direction : 0,
@@ -183,7 +183,7 @@ export default function Board() {
     const nextProject = projects[nextProjectIndex];
 
     if (!nextProject) return;
-    dispatchCustomEvent('projectChange', nextProject.id);
+    dispatchCustomEvent('focusedProjectChange', nextProject.id);
   };
 
   const handleNKeyDown = async () => {
@@ -286,7 +286,7 @@ export default function Board() {
     );
   };
 
-  const handleCRUD = (event: TaskCRUDEvent) => {
+  const handleCRUD = (event: TaskOperationEvent) => {
     const { array, action, projectId } = event.detail;
     const callback = useMutateTasksQueryData(['boardTasks', projectId]);
     callback(array, action);
@@ -298,10 +298,10 @@ export default function Board() {
     });
   };
 
-  useEventListener('taskCRUD', handleCRUD);
-  useEventListener('taskCardClick', handleTaskClick);
+  useEventListener('taskOperation', handleCRUD);
+  useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
-  useEventListener('toggleCard', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
+  useEventListener('toggleTaskExpand', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
   useEventListener('openTaskCardPreview', (event) => handleOpenTaskSheet(event.detail));
   useEventListener('toggleTaskEditing', (e) => setTaskEditing(e.detail.id, e.detail.state));
 

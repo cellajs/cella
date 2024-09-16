@@ -21,7 +21,7 @@
   "archive": "Archive",
   "archived": "Archived",
   "ask_for_help": "Ask for help",
-  "auth_strategy": "Authentication strategy",
+  "strategy": "Method",
   "authentication": "Authentication",
   "authentication.text": "Manage your authentication methods and preferences.",
   "bio": "Bio",
@@ -235,9 +235,9 @@
   "onboarding_completed": "Great! Let's go.",
   "onboarding_step1": "Hi {{name}}, this is you?",
   "onboarding_step2": "Let's get started by creating your organization.",
-  "onboarding_step3": "Invite one or more team members of {{organizationName}} to {{appName}}.",
+  "onboarding_step3": "Invite one or more team members of {{appName}} to the previously created organization.",
   "onboarding_welcome": "Welcome to {{appName}}",
-  "onboarding_welcome.text": "An intuitive TypeScript template to build local-first web apps in a matter of weeks. Ready to implement. MIT license.",
+  "onboarding_welcome.text": "Linear meets Pivotal tracker. Raak is the fastest multi-app issue tracker out there.",
   "options": "Options",
   "or": "Or",
   "organization": "Organization",
@@ -261,6 +261,7 @@
   "placeholder.select_timezone": "Select timezone",
   "placeholder.type_name": "Type name ...",
   "placeholder.your_email": "Your email",
+  "period": "Period",
   "plan": "Plan",
   "prerelease": "Prerelease",
   "previous": "Previous",
@@ -410,5 +411,6 @@
   "without_color": "Without color",
   "year": "year",
   "your_role": "Your role",
-  "manage_content": "Manage content"
+  "manage_content": "Manage content",
+  "onboarding_completed.text": "Kick off your adventure with {{appName}}. Ready to get started?"
 }

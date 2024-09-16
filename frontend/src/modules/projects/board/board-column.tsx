@@ -5,7 +5,7 @@ import { lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
-import type { CustomEventEventById, TaskChangeEvent } from '~/lib/custom-events/types';
+
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import FocusTrap from '~/modules/common/focus-trap';
@@ -17,6 +17,7 @@ import { ProjectSettings } from '~/modules/projects/project-settings';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
+import type { CustomEventDetailId, TaskChangeEvent } from '~/modules/tasks/types';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useThemeStore } from '~/store/theme';
@@ -129,7 +130,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
     setFocusedTaskId(id);
   };
 
-  const handleProjectChangeEventListener = (event: CustomEventEventById) => {
+  const handleProjectChangeEventListener = (event: CustomEventDetailId) => {
     if (event.detail !== project.id) return;
     const { id } = showingTasks[0];
     const taskCard = document.getElementById(id);
@@ -137,8 +138,8 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
     setFocusedTaskId(id);
   };
 
-  useEventListener('taskChange', handleTaskChangeEventListener);
-  useEventListener('projectChange', handleProjectChangeEventListener);
+  useEventListener('focusedTaskChange', handleTaskChangeEventListener);
+  useEventListener('focusedProjectChange', handleProjectChangeEventListener);
 
   // Hides underscroll elements
   // 4rem refers to the header height

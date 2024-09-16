@@ -1,5 +1,7 @@
 import { config } from 'config';
+import { HomeIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { SimpleHeader } from '~/modules/common/simple-header';
 
 const Home = () => {
@@ -8,11 +10,7 @@ const Home = () => {
   return (
     <>
       <SimpleHeader heading={t('common:home')} text={t('common:home.text', { appName: config.name })} className="container pt-4 md:pt-6" />
-      <div className="container">
-        <div className="flex flex-wrap mt-8 justify-center max-w-2xl mx-auto">
-          <p>{t('common:under_construction.text', { appName: config.name })}</p>
-        </div>
-      </div>
+      <ContentPlaceholder Icon={HomeIcon} title="Home page" text="You can put home page content here" />
     </>
   );
 };

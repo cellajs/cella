@@ -34,7 +34,7 @@ export default defineConfig(() => {
         ? sentryVitePlugin({
             disable: config.mode === 'development',
             org: 'cella',
-            project: 'cella',
+            project: 'raak',
             authToken: process.env.SENTRY_AUTH_TOKEN,
           })
         : undefined,

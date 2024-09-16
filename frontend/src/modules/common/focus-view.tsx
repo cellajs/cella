@@ -2,7 +2,7 @@ import { Expand, Shrink } from 'lucide-react';
 import type React from 'react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { showToast } from '~/lib/taosts-show';
 import { cn } from '~/lib/utils';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
@@ -18,7 +18,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const { focusView, setFocusView } = useNavigationStore();
 
   const toggleFocus = () => {
-    toast.success(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'));
+    showToast(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');
     setFocusView(!focusView);
     window.scrollTo(0, 0);
   };

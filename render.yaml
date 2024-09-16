@@ -6,7 +6,7 @@ previewsExpireAfterDays: 3
 services:
   # Backend
   - type: web
-    name: cella-backend
+    name: raak-backend
     runtime: node
     region: frankfurt
     rootDir: backend
@@ -32,7 +32,7 @@ services:
 
   # TUS upload server
   - type: web
-    name: cella-tus
+    name: raak-tus
     runtime: node
     region: frankfurt
     rootDir: tus
@@ -52,7 +52,7 @@ services:
 
   # Frontend
   - type: web
-    name: cella-frontend
+    name: raak-frontend
     runtime: static
     rootDir: frontend
     buildCommand: pnpm install && pnpm build
@@ -66,8 +66,8 @@ services:
         name: Content-Security-Policy
         value: |
           default-src 'self';
-          script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com *.gleap.io;
-          connect-src 'self' blob: *.cellajs.com *.gleap.io wss://ws.gleap.io;
+          script-src 'self' *.raak.io *.vimeo.com *.googleapis.com *.gleap.io;
+          connect-src 'self' blob: *.raak.io *.gleap.io wss://ws.gleap.io;
           img-src 'self' blob: https: data:;
           media-src 'self' blob: data: https://i.ytimg.com *.gleap.io;
           frame-src 'self' *.youtube.com *.vimeo.com *.paddle.com *.gleap.io;
@@ -105,8 +105,8 @@ services:
 
 # Postgres database
 databases:
-  - name: cella-db
-    databaseName: cella
+  - name: raak-db
+    databaseName: raak
     region: frankfurt
     plan: starter
     previewPlan: starter

@@ -1,14 +1,15 @@
 import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 
-import type { User } from 'lucia';
 import { coalesce, db } from '#/db/db';
 import { auth } from '#/db/lucia';
 import { membershipsTable } from '#/db/schema/memberships';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { getUsersByConditions } from '#/db/util';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
+import type { User } from 'lucia';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from './helpers/transform-database-user';
@@ -68,10 +69,10 @@ const usersRoutes = app
           memberships: coalesce(membershipCounts.count, 0),
         },
       })
-      .from(safeUserSelect)
+      .from(usersTable)
       .where(filters.length > 0 ? and(...filters) : undefined)
       .orderBy(orderColumn)
-      .leftJoin(membershipCounts, eq(membershipCounts.userId, safeUserSelect.id));
+      .leftJoin(membershipCounts, eq(membershipCounts.userId, usersTable.id));
 
     const [{ total }] = await db.select({ total: count() }).from(usersQuery.as('users'));
 
@@ -94,7 +95,7 @@ const usersRoutes = app
     const errors: ErrorType[] = [];
 
     // Get the users
-    const targets = await db.select().from(safeUserSelect).where(inArray(safeUserSelect.id, userIds));
+    const targets = await getUsersByConditions([inArray(usersTable.id, userIds)]);
 
     // Check if the users exist
     for (const id of userIds) {
@@ -156,14 +157,9 @@ const usersRoutes = app
     const idOrSlug = ctx.req.param('idOrSlug');
     const user = ctx.get('user');
 
-    const [targetUser] = await db
-      .select()
-      .from(safeUserSelect)
-      .where(or(eq(safeUserSelect.id, idOrSlug), eq(safeUserSelect.slug, idOrSlug)));
+    const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
-    if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
-    }
+    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
 
     if (user.role !== 'admin' && user.id !== targetUser.id) {
       return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
@@ -191,14 +187,9 @@ const usersRoutes = app
     const { idOrSlug } = ctx.req.valid('param');
 
     const user = ctx.get('user');
-    const [targetUser] = await db
-      .select()
-      .from(safeUserSelect)
-      .where(or(eq(safeUserSelect.id, idOrSlug), eq(safeUserSelect.slug, idOrSlug)));
+    const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
-    if (!targetUser) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
-    }
+    if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
 
     if (user.role !== 'admin' && user.id !== targetUser.id) {
       return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: idOrSlug });

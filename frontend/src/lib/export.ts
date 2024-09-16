@@ -9,9 +9,11 @@ interface Column {
   key: string;
   name: ReactElement | string;
 }
-
+// Format the body data based on column definitions
 const formatBodyData = <R>(rows: R[], columns: Column[]): (string | number)[][] => {
+  // Format data for a single row based on column configuration
   const formatRowData = <R>(row: R, column: Column) => {
+    // Handle special cases
     if (column.key === 'adminCount' || column.key === 'memberCount') {
       const key = column.key.replace('Count', 's');
       return (
@@ -32,10 +34,12 @@ const formatBodyData = <R>(rows: R[], columns: Column[]): (string | number)[][] 
   return rows.map((row) => columns.map((column) => formatRowData(row, column)));
 };
 
+// Filter columns based on visibility
 const filterColumns = (column: Column) => {
   if ('visible' in column && column.key !== 'checkbox-column') return column.visible as boolean;
   return false;
 };
+
 // Export table data to CSV
 export async function exportToCsv<R>(columns: { key: string; name: ReactElement | string }[], rows: R[], fileName: string) {
   if (!rows.length) return;
@@ -60,6 +64,7 @@ export async function exportToPdf<R>(
   const head = [preparedColumns.map((column) => String(column.name))];
   const body = formatBodyData(rows, preparedColumns);
 
+  // Import jsPDF and jsPDF autoTable dynamically
   const [{ jsPDF }, autoTable] = await Promise.all([import('jspdf'), (await import('jspdf-autotable')).default]);
   const doc = new jsPDF({
     orientation: 'l',
@@ -75,6 +80,7 @@ export async function exportToPdf<R>(
   const backgroundColor = theme === 'dark' ? '#151519' : '#ffffff';
   const alternateBackgroundColor = theme === 'dark' ? '#2c2c2f' : '#e5e5e5';
 
+  // Add table to the PDF
   autoTable(doc, {
     head,
     body,
@@ -96,6 +102,7 @@ export async function exportToPdf<R>(
   doc.save(fileName);
 }
 
+// Serialize cell values for CSV export
 function serialiseCellValue(value: unknown) {
   if (typeof value === 'string') {
     const formattedValue = value.replace(/"/g, '""');
@@ -104,6 +111,7 @@ function serialiseCellValue(value: unknown) {
   return value;
 }
 
+// Trigger file download in the browser
 function downloadFile(fileName: string, data: Blob) {
   const downloadLink = document.createElement('a');
   downloadLink.download = fileName;

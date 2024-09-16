@@ -2,7 +2,7 @@ import type { Config } from './default';
 
 export default {
   mode: 'development',
-  name: 'Cella DEVELOPMENT',
+  name: 'Raak DEVELOPMENT',
   debug: false,
 
   // senderIsReceiver: true,

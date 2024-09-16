@@ -77,7 +77,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
   const handleCardClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     const target = event.target as HTMLElement;
     if (isExpanded && isFocused) return;
-    dispatchCustomEvent('taskCardClick', { taskId: task.id, clickTarget: target });
+    dispatchCustomEvent('toggleTaskCard', { taskId: task.id, clickTarget: target });
   };
 
   useEffect(() => {
@@ -154,7 +154,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
                 task={task}
                 isEditing={isEditing}
                 changeEditingState={(state) => dispatchCustomEvent('toggleTaskEditing', { id: task.id, state })}
-                closeExpand={() => dispatchCustomEvent('toggleCard', task.id)}
+                closeExpand={() => dispatchCustomEvent('toggleTaskExpand', task.id)}
               />
             )}
             <div className="flex flex-row gap-1 w-full">

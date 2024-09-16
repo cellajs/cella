@@ -1,20 +1,20 @@
 import { serve } from '@hono/node-server';
 import cron from 'node-cron';
 
-import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
-import type { PgliteDatabase } from 'drizzle-orm/pglite';
-import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import { resetDb } from '#/cron/manage-db';
 import { db } from '#/db/db';
 import ascii from '#/lib/ascii';
+import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
+import type { PgliteDatabase } from 'drizzle-orm/pglite';
+import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import { env } from '../env';
 import docs from './lib/docs';
 import app from './routes';
 
 // Set i18n instance before starting server
-import './lib/i18n';
 import chalk from 'chalk';
 import { config } from 'config';
+import './lib/i18n';
 // import { sdk } from './tracing';
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;

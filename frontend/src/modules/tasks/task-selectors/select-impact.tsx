@@ -49,7 +49,7 @@ const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: Select
       if (creationValueChange) return creationValueChange(newImpact);
       if (!focusedTaskId) return;
       const updatedTask = await updateTask(focusedTaskId, 'impact', newImpact);
-      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));

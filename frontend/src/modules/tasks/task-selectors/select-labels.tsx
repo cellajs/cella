@@ -66,7 +66,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
     try {
       const labelIds = labels.map((l) => l.id);
       const updatedTask = await updateTask(focusedTaskId, 'labels', labelIds);
-      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
       return;
     } catch (err) {

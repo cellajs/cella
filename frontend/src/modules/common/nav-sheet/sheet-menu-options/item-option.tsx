@@ -3,10 +3,10 @@ import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/taosts-show';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -32,20 +32,12 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
       if (updatedMembership.archived !== isItemArchived) {
         const archived = updatedMembership.archived || !isItemArchived;
         archiveStateToggle(item, archived, parentItemSlug ? parentItemSlug : null);
-        toast.success(
-          archived
-            ? t('common:success.archived_resource', { resource: t(`common:${itemType}`) })
-            : t('common:success.restore_resource', { resource: t(`common:${itemType}`) }),
-        );
+        showToast(t(`common:success.${archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${itemType}`) }), 'success');
         setItemArchived(archived);
       }
       if (updatedMembership.muted !== isItemMuted) {
         const muted = updatedMembership.muted || !isItemMuted;
-        toast.success(
-          muted
-            ? t('common:success.mute_resource', { resource: t(`common:${itemType}`) })
-            : t('common:success.unmute_resource', { resource: t(`common:${itemType}`) }),
-        );
+        showToast(t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${itemType}`) }), 'success');
         setItemMuted(muted);
       }
       callback([updatedMembership], parentItemSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');

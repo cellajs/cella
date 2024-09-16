@@ -30,10 +30,10 @@ const TaskSelectedTableButtons = () => {
           const selectedIds = selectedTasks.map((id) => ({ id }));
           const projectIds = [...new Set(tasks.filter((t) => selectedTasks.includes(t.id)).map((t) => t.projectId))];
           if (!pathname.includes('/board')) {
-            dispatchCustomEvent('taskTableCRUD', { array: selectedIds, action: 'delete' });
+            dispatchCustomEvent('taskTableOperation', { array: selectedIds, action: 'delete' });
           } else {
             projectIds.map((projectId) => {
-              dispatchCustomEvent('taskCRUD', { array: selectedIds, action: 'delete', projectId });
+              dispatchCustomEvent('taskOperation', { array: selectedIds, action: 'delete', projectId });
             });
           }
           setSelectedTasks([]);

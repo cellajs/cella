@@ -149,7 +149,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('app:task') }));
         handleCloseForm();
-        dispatchCustomEvent('taskCRUD', {
+        dispatchCustomEvent('taskOperation', {
           array: [resp],
           action: 'create',
           projectId: projectId,

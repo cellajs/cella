@@ -14,7 +14,8 @@ export const createRequest = async (requestInfo: CreateRequestProp) => {
     json: requestInfo,
   });
 
-  await handleResponse(response);
+  const json = await handleResponse(response);
+  return json.success;
 };
 
 export type GetRequestsParams = Partial<
@@ -25,6 +26,7 @@ export type GetRequestsParams = Partial<
   }
 >;
 
+// Get all app action requests
 export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetRequestsParams = {}, signal?: AbortSignal) => {
   const response = await client.index.$get(
     {

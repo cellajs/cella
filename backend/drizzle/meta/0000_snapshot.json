@@ -1,5 +1,5 @@
 {
-  "id": "d7ac04a1-0e4d-436c-9b96-3f3a4ac78188",
+  "id": "cb435c4f-5c1b-4023-893a-4f8e87971860",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -694,86 +694,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "public.projects_to_workspaces": {
-      "name": "projects_to_workspaces",
-      "schema": "",
-      "columns": {
-        "project_id": {
-          "name": "project_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "workspace_id_index": {
-          "name": "workspace_id_index",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "projects_to_workspaces_project_id_projects_id_fk": {
-          "name": "projects_to_workspaces_project_id_projects_id_fk",
-          "tableFrom": "projects_to_workspaces",
-          "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "projects_to_workspaces_workspace_id_workspaces_id_fk": {
-          "name": "projects_to_workspaces_workspace_id_workspaces_id_fk",
-          "tableFrom": "projects_to_workspaces",
-          "tableTo": "workspaces",
-          "columnsFrom": [
-            "workspace_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "projects_to_workspaces_project_id_workspace_id_pk": {
-          "name": "projects_to_workspaces_project_id_workspace_id_pk",
-          "columns": [
-            "project_id",
-            "workspace_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {}
-    },
     "public.projects": {
       "name": "projects",
       "schema": "",
@@ -845,6 +765,12 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -881,6 +807,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "modified_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "projects_parent_id_workspaces_id_fk": {
+          "name": "projects_parent_id_workspaces_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "workspaces",
+          "columnsFrom": [
+            "parent_id"
           ],
           "columnsTo": [
             "id"

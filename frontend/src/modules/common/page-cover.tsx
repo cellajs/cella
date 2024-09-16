@@ -29,7 +29,7 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
 
   const setUrl = (bannerUrl: string) => {
     setCoverUrl(bannerUrl);
-    dispatchCustomEvent('updateCover', { bannerUrl, entity: type });
+    dispatchCustomEvent('updateEntityCover', { bannerUrl, entity: type });
   };
 
   // Open the upload dialog

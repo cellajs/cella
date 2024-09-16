@@ -39,7 +39,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
       const query = queryClient.getQueryData(['boardTasks', task.projectId]) as { items: Task[] };
       const newOrder = getNewStatusTaskOrder(task.status, newStatus, isSheet ? tasks ?? [] : query.items ?? []);
       const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
-      const eventName = pathname.includes('/board') ? 'taskCRUD' : 'taskTableCRUD';
+      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: task.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
