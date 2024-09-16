@@ -1,4 +1,4 @@
-import type { Context } from 'hono';
+import type { Context, Env, Input } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
@@ -62,17 +62,17 @@ export const createError = (
 };
 
 // Return error as http response
-export const errorResponse = (
-  ctx: Context,
+export function errorResponse<E extends Env = Env, P extends string = string, I extends Input = Input>(
+  ctx: Context<E, P, I>,
   status: HttpErrorStatus,
   type: string,
   severity: Severity = 'info',
   entityType?: Entity,
   eventData?: EventData,
   err?: Error,
-) => {
+) {
   const error: ErrorType = createError(ctx, status, type, severity, entityType, eventData, err);
 
   // TODO: Review this assignment (as 400)
   return ctx.json({ success: false, error }, status as 400);
-};
+}

@@ -290,7 +290,7 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/sign-in',
     guard: isPublicAccess,
-    middleware: [signInRateLimiter()],
+    middleware: signInRateLimiter,
     tags: ['auth'],
     summary: 'Sign in with password',
     description: 'Sign in with email and password.',
