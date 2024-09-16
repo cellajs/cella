@@ -104,7 +104,7 @@ export const config = {
   ],
 
   // OAuth providers
-  oauthProviderOptions: ['github'] as const,
+  oauthProviderOptions: ['github', 'google', 'microsoft'] as const,
   enabledOauthProviders: ['github'] as const,
 
   // Optional settings
@@ -117,9 +117,7 @@ export const config = {
   // Languages
   defaultLanguage: 'en' as const,
 
-  languages: [
-    { value: 'en', label: 'English' },
-  ],
+  languages: [{ value: 'en', label: 'English' }],
 
   // All entity types
   entityTypes: ['user', 'organization', 'workspace', 'project', 'task', 'label'] as const,
