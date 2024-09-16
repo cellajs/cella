@@ -28,11 +28,11 @@
     "start": "turbo start --filter backend --filter frontend --filter tus"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.3",
-    "@evilmartians/lefthook": "^1.7.14",
+    "@biomejs/biome": "^1.9.1",
+    "@evilmartians/lefthook": "^1.7.15",
     "cross-env": "^7.0.3",
     "rimraf": "^6.0.1",
-    "turbo": "^2.0.14",
+    "turbo": "^2.1.2",
     "typescript": "^5.6.2"
   },
   "packageManager": "pnpm@9.1.2"
