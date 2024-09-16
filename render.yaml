@@ -114,6 +114,4 @@ databases:
     region: frankfurt
     plan: starter
     previewPlan: starter
-    previews:
-     generation: manual
     postgresMajorVersion: 16
