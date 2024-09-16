@@ -23,6 +23,7 @@ import { entityTables } from '#/entity-config';
 import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
+import { i18n } from '#/lib/i18n';
 import { getOrderColumn } from '#/lib/order-column';
 import { verifyUnsubscribeToken } from '#/lib/unsubscribe-token';
 import { isAuthenticated } from '#/middlewares/guard';
@@ -147,9 +148,16 @@ const generalRoutes = app
       );
       logEvent('User invited on system level');
 
-      emailSender.send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email).catch((error) => {
-        logEvent('Error sending email', { error: (error as Error).message }, 'error');
-      });
+      emailSender
+        .send(
+          config.senderIsReceiver ? user.email : email.toLowerCase(),
+          i18n.t('backend:email.subject.invitation_to_system', { lan: config.defaultLanguage, appName: config.name }),
+          emailHtml,
+          user.email,
+        )
+        .catch((error) => {
+          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+        });
     }
 
     return ctx.json({ success: true }, 200);
