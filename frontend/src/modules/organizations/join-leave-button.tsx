@@ -17,8 +17,8 @@ interface Props {
 }
 
 const JoinLeaveButton = ({ organization }: Props) => {
-  const user = useUserStore((state) => state.user);
   const { t } = useTranslation();
+  const { user } = useUserStore();
   const [openPopover, setOpenPopover] = useState(false);
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(organization.slug));
 

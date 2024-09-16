@@ -16,7 +16,7 @@ interface Props {
 }
 
 const ImpersonateRow = ({ user, tabIndex }: Props) => {
-  const currentUser = useUserStore((state) => state.user);
+  const { user: currentUser } = useUserStore();
   const { t } = useTranslation();
   const navigate = useNavigate();
 

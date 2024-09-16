@@ -27,7 +27,7 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
   const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const { menu } = useNavigationStore();
-  const user = useUserStore((state) => state.user);
+  const { user } = useUserStore();
 
   const onCreateOrganization = (organization: Organization) => {
     setOrganization(organization);

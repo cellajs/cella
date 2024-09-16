@@ -19,7 +19,7 @@ interface NavButtonProps {
 
 export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
+  const { user } = useUserStore();
   const { theme } = useThemeStore();
 
   const navIconColor = theme !== 'none' ? 'text-primary-foreground' : '';
