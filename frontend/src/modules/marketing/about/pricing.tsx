@@ -15,9 +15,8 @@ interface PricingPlan {
 }
 
 const pricingPlans: PricingPlan[] = [
-  { id: 'donate', priceId: null, featureCount: 5, borderColor: '' },
-  { id: 'build', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
-  { id: 'partner', priceId: null, featureCount: 3, borderColor: '' },
+  { id: 'free', priceId: null, featureCount: 3, borderColor: '' },
+  { id: 'pro', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
 ];
 
 const Pricing = () => {

@@ -26,15 +26,6 @@ const footerSections = [
     ],
   },
   {
-    title: 'common:documentation',
-    hideOnMobile: true,
-    links: [
-      { title: 'common:api_docs', href: `${config.backendUrl}/docs` },
-      { title: 'common:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
-      { title: 'common:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
-    ],
-  },
-  {
     title: 'common:connect',
     links: [{ title: 'common:contact_us', href: '/contact' }, ...socials],
   },
@@ -52,7 +43,7 @@ function FooterLinks() {
     <nav>
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {footerSections.map((section) => (
-          <li key={section.title} className={section.hideOnMobile ? 'hidden sm:block' : ''}>
+          <li key={section.title}>
             <div className="font-display text-sm font-semibold tracking-wider text-white/40">{t(section.title)}</div>
 
             <ul className="mt-4 text-sm text-white/90">

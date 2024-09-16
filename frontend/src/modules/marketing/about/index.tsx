@@ -5,16 +5,15 @@ import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 import { buttonVariants } from '~/modules/ui/button';
 
-import { config } from 'config';
 import { ArrowDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-// import Counters from '~/modules/marketing/about/counters';
+import Counters from '~/modules/marketing/about/counters';
 // import FAQ from '~/modules/marketing/about/faq';
-import Features from '~/modules/marketing/about/features';
+// import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
-import Integrations from '~/modules/marketing/about/integrations';
-// import Pricing from '~/modules/marketing/about/pricing';
+// import Integrations from '~/modules/marketing/about/integrations';
+import Pricing from '~/modules/marketing/about/pricing';
 import Why from '~/modules/marketing/about/why';
 
 interface AboutSectionProps {
@@ -40,7 +39,7 @@ const AboutSection = ({ title, text, section, children, alternate = false }: Abo
   );
 };
 
-const sectionIds = ['cella', 'why', 'features', 'integrations'];
+const sectionIds = ['hero', 'product', 'pricing', 'faqs', 'counters'];
 
 const About = () => {
   const { t } = useTranslation();
@@ -64,16 +63,11 @@ const About = () => {
       <div className="container max-w-none px-0">
         {/* Hero landing */}
         <Hero key={'hero'} title="about:title_1" subtitle="about:subtitle" text="about:text_1">
-          <div className="max-sm:hidden mb-8">
-            <a href={config.company.githubUrl} className={cn(buttonVariants({ variant: 'glow', size: 'xl' }))} aria-label="Get started">
-              {t('about:start_github.text')}
-            </a>
-          </div>
           <Link
             to="/about"
             replace
-            hash="why"
-            onClick={() => handleMismatch('why')}
+            hash="product"
+            onClick={() => handleMismatch('product')}
             className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
             aria-label="Read more"
           >
@@ -84,34 +78,34 @@ const About = () => {
 
         <div className="my-12">
           {/* Why this product */}
-          <AboutSection key={'why'} section="why" title="about:title_2" text="about:text_2">
+          <AboutSection key={'product'} section="product" title="about:title_2" text="about:text_2">
             <Why />
           </AboutSection>
 
           {/* Features */}
-          <AboutSection key={'features'} section="features" title="about:title_3" text="about:text_3" alternate={true}>
+          {/* <AboutSection key={'features'} section="features" title="about:title_3" text="about:text_3" alternate={true}>
             <Features />
-          </AboutSection>
+          </AboutSection> */}
 
           {/* Integrations */}
-          <AboutSection key={'integrations'} section="integrations" title="about:title_4" text="about:text_4">
+          {/* <AboutSection key={'integrations'} section="integrations" title="about:title_4" text="about:text_4">
             <Integrations />
-          </AboutSection>
-
-          {/* Public counters */}
-          {/* <AboutSection key={'counters'} section="counters" title="about:title_5" text="about:text_5" alternate={true}>
-            <Counters />
           </AboutSection> */}
 
           {/* Pricing */}
-          {/* <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
+          <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6" alternate={true}>
             <Pricing />
-          </AboutSection> */}
+          </AboutSection>
 
           {/* FAQs */}
           {/* <AboutSection key={'faqs'} section="faqs" title="about:title_7" text="about:text_7" alternate={true}>
             <FAQ />
           </AboutSection> */}
+
+          {/* Public counters */}
+          <AboutSection key={'counters'} section="counters" title="about:title_5" text="about:text_5">
+            <Counters />
+          </AboutSection>
         </div>
       </div>
       <MarketingFooter />
