@@ -125,8 +125,8 @@ export const SheetMenu = memo(() => {
       {!searchTerm && (
         <>
           <div className="mt-2">{renderedSections}</div>
-          <div className="grow mt-4 md:border-b md:border-dashed" />
-          <div className="flex flex-col my-6 mx-2 gap-6">
+          <div className="grow mt-4 border-b border-dashed" />
+          <div className="flex flex-col mt-6 mb-3 mx-2 gap-6">
             <div className="max-xl:hidden flex items-center gap-4 ml-1">
               <Switch size="xs" id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
               <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
@@ -134,7 +134,7 @@ export const SheetMenu = memo(() => {
               </label>
             </div>
             {menuSections.some((el) => el.isSubmenu) && (
-              <div className="max-sm:hidden flex items-center gap-4 ml-1">
+              <div className="flex items-center gap-4 ml-1">
                 <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
                 <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
                   {t('common:nested_menu')}
