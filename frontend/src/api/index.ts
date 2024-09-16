@@ -1,7 +1,6 @@
-import type { ErrorType } from 'backend/lib/errors';
-import type { Entity } from 'backend/types/common';
-
 import type { ClientResponse } from 'hono/client';
+import type { ErrorType } from '#/lib/errors';
+import type { Entity } from '#/types/common';
 
 // Custom error class to handle API errors
 export class ApiError extends Error {

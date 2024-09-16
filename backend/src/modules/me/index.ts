@@ -6,20 +6,21 @@ import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { type ContextEntity, CustomHono } from '#/types/common';
+import { type ContextEntity, CustomHono, type EnabledOauthProviderOptions } from '#/types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
+import { config } from 'config';
+import type { PgColumn } from 'drizzle-orm/pg-core';
+import type { z } from 'zod';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { entityMenuSections, entityTables } from '#/entity-config';
 import { getContextUser } from '#/lib/context';
 import { getPreparedSessions } from './helpers/get-sessions';
 import type { menuItemsSchema, userMenuSchema } from './schema';
-import type { z } from 'zod';
-import type { PgColumn } from 'drizzle-orm/pg-core';
 
 const app = new CustomHono();
 
@@ -47,6 +48,9 @@ const meRoutes = app
       .from(oauthAccountsTable)
       .where(eq(oauthAccountsTable.userId, user.id));
 
+    const validOAuthAccounts = oauthAccounts
+      .map((el) => el.providerId)
+      .filter((provider): provider is EnabledOauthProviderOptions => config.enabledOauthProviders.includes(provider as EnabledOauthProviderOptions));
     // Update last visit date
     await db.update(usersTable).set({ lastVisitAt: new Date() }).where(eq(usersTable.id, user.id));
 
@@ -55,7 +59,7 @@ const meRoutes = app
         success: true,
         data: {
           ...transformDatabaseUserWithCount(user, memberships),
-          oauth: oauthAccounts.map((el) => el.providerId),
+          oauth: validOAuthAccounts,
           passkey: !!passkey.length,
           sessions: await getPreparedSessions(user.id, ctx),
         },
@@ -222,6 +226,9 @@ const meRoutes = app
       .from(oauthAccountsTable)
       .where(eq(oauthAccountsTable.userId, user.id));
 
+    const validOAuthAccounts = oauthAccounts
+      .map((el) => el.providerId)
+      .filter((provider): provider is EnabledOauthProviderOptions => config.enabledOauthProviders.includes(provider as EnabledOauthProviderOptions));
     logEvent('User updated', { user: updatedUser.id });
 
     return ctx.json(
@@ -229,7 +236,7 @@ const meRoutes = app
         success: true,
         data: {
           ...transformDatabaseUserWithCount(updatedUser, memberships),
-          oauth: oauthAccounts.map((el) => el.providerId),
+          oauth: validOAuthAccounts,
           passkey: !!passkey.length,
         },
       },

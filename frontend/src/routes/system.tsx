@@ -1,5 +1,4 @@
 import { createRoute } from '@tanstack/react-router';
-import type { ErrorType } from 'backend/lib/errors';
 import { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { getRequestsQuerySchema } from 'backend/modules/requests/schema';
 import { usersQuerySchema } from 'backend/modules/users/schema';
@@ -12,6 +11,7 @@ import { organizationsQueryOptions } from '~/modules/organizations/organizations
 import { requestsQueryOptions } from '~/modules/system/requests-table';
 import SystemPage from '~/modules/system/system-page';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
+import type { ErrorType } from '#/lib/errors';
 import { AppRoute } from './general';
 
 // Lazy-loaded route components
