@@ -21,6 +21,7 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
   const { t } = useTranslation();
   const [isItemArchived, setItemArchived] = useState(item.membership.archived);
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
+
   const { archiveStateToggle } = useNavigationStore();
   const { mutate: updateMembership, status } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
