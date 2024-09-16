@@ -1,4 +1,3 @@
-previewsEnabled: true
 previewsExpireAfterDays: 3
 
 # Make sure to replace everything with *.cella* with own domain name(s), etc
@@ -15,6 +14,8 @@ services:
     startCommand: pnpm start
     numInstances: 1
     healthCheckPath: /ping
+    previews:
+      generation: manual
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -39,6 +40,8 @@ services:
     buildCommand: pnpm install && pnpm build
     startCommand: pnpm start
     numInstances: 1
+    previews:
+      generation: manual
     envVars:
       - key: TUS_UPLOAD_API_SECRET
         sync: false
@@ -57,7 +60,8 @@ services:
     rootDir: frontend
     buildCommand: pnpm install && pnpm build
     staticPublishPath: ./dist
-    pullRequestPreviewsEnabled: true
+    previews:
+      generation: manual
     headers:
       - path: /*
         name: X-Content-Type-Options
@@ -110,4 +114,6 @@ databases:
     region: frankfurt
     plan: starter
     previewPlan: starter
+    previews:
+     generation: manual
     postgresMajorVersion: 16
