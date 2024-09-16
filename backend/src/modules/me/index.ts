@@ -15,10 +15,11 @@ import meRoutesConfig from './routes';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { entityMenuSections, entityTables } from '#/entity-config';
-import type { PgColumn } from 'drizzle-orm/pg-core';
-import type { z } from 'zod';
+import { getContextUser } from '#/lib/context';
 import { getPreparedSessions } from './helpers/get-sessions';
 import type { menuItemsSchema, userMenuSchema } from './schema';
+import type { z } from 'zod';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 
 const app = new CustomHono();
 
@@ -28,7 +29,7 @@ const meRoutes = app
    * Get current user
    */
   .openapi(meRoutesConfig.getSelf, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     const [{ memberships }] = await db
       .select({
@@ -66,7 +67,8 @@ const meRoutes = app
    * Get current user menu
    */
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
+
     const fetchAndFormatEntities = async (type: ContextEntity, subEntityType?: ContextEntity) => {
       let formattedSubmenus: z.infer<typeof menuItemsSchema>;
       const mainTable = entityTables[type];
@@ -174,7 +176,7 @@ const meRoutes = app
    * Update current user (self)
    */
   .openapi(meRoutesConfig.updateSelf, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
@@ -238,7 +240,7 @@ const meRoutes = app
    * Delete current user (self)
    */
   .openapi(meRoutesConfig.deleteSelf, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
     // Check if user exists
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
@@ -256,7 +258,7 @@ const meRoutes = app
    * Delete passkey of self
    */
   .openapi(meRoutesConfig.deletePasskey, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
