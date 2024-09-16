@@ -139,19 +139,19 @@ export const config = {
 
   // Company details
   company: {
-    name: 'Cella',
-    shortName: 'Cella',
-    email: 'info@cellajs.com',
-    postcode: '90210 JS',
-    tel: '+31 6 12345678',
-    streetAddress: 'Drizzle Road 42',
-    city: 'Hono City',
-    country: 'TypeScript Rock',
+    name: 'Shareworks Solutions BV',
+    shortName: 'Shareworks',
+    email: 'info@shareworks.nl',
+    tel: '',
+    postcode: '3033 BH',
+    streetAddress: 'Schiekade 105',
+    city: 'Rotterdam',
+    country: 'Netherlands',
     googleMapsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     twitterUrl: 'https://twitter.com/flipvanhaaren',
     twitterHandle: '@flipvanhaaren',
-    githubUrl: 'https://github.com/cellajs/cella',
+    githubUrl: 'https://github.com/cellajs/raak',
     mapZoom: 4,
     coordinates: {
       lat: 51.92760809717153,

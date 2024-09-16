@@ -122,6 +122,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {!isSheet && form.unsavedChanges && <UnsavedBadge />}
         <AvatarFormField
           control={form.control}
           label={t('common:resource_logo', { resource: t('common:organization') })}

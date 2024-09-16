@@ -6,7 +6,6 @@ import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
 
-import { config } from 'config';
 import type { FooterLinkProps } from '~/modules/common/app-footer';
 import type { NavItem } from '~/modules/common/app-nav';
 import type { SuggestionSection } from '~/modules/common/app-search';
@@ -47,7 +46,7 @@ export const menuSections: SectionItem[] = [
 // Here you set default footer links
 export const defaultFooterLinks: FooterLinkProps[] = [
   { id: 'about', href: '/about' },
-  { id: 'docs', href: `${config.backendUrl}/docs` },
+  // { id: 'docs', href: `${config.backendUrl}/docs` },
   { id: 'legal', href: '/legal' },
 ];
 

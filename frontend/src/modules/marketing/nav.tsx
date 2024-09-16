@@ -1,6 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import { config } from 'config';
-import { Github } from 'lucide-react';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 
@@ -8,15 +6,15 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '~/lib/utils';
 import HamburgerButton from '~/modules/common/hamburger';
 import Logo from '~/modules/common/logo';
-import UserLanguage from '~/modules/common/user-language';
+// import UserLanguage from '~/modules/common/user-language';
 import UserTheme from '~/modules/common/user-theme';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
 
 const marketingNavConfig = [
-  { id: 'features', url: '/about', hash: 'features' },
-  // { id: 'pricing', url: '/about', hash: 'pricing' },
-  { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
+  { id: 'product', url: '/about', hash: 'product' },
+  { id: 'pricing', url: '/about', hash: 'pricing' },
+  // { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 
 export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target: string) => void }) {
@@ -49,9 +47,9 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
     ));
   };
 
-  const openInNewTab = (url: string) => {
-    window.open(url, '_blank', 'noreferrer');
-  };
+  // const openInNewTab = (url: string) => {
+  //   window.open(url, '_blank', 'noreferrer');
+  // };
 
   return (
     <>
@@ -90,21 +88,9 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           </div>
 
           <div className={`gap-2 px-2 flex transition-all duration-300 ease-in-out ${showSheet ? 'translate-x-2 opacity-0' : 'delay-700'}`}>
-            <UserLanguage />
+            {/* <UserLanguage /> */}
 
             <UserTheme className="max-xs:hidden" />
-
-            <Button
-              variant="ghost"
-              aria-label="Github repository"
-              className="max-sm:hidden"
-              size="icon"
-              onClick={() => {
-                openInNewTab(config.company.githubUrl);
-              }}
-            >
-              <Github strokeWidth={config.theme.strokeWidth} />
-            </Button>
 
             <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
               {t('common:sign_in')}
@@ -127,16 +113,6 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               <UserTheme className="absolute top-5 right-4 xs:hidden" />
             </div>
             {renderNavItems()}
-            <Button
-              size="lg"
-              className="sm:hidden"
-              onClick={() => {
-                openInNewTab(config.company.githubUrl);
-              }}
-            >
-              <Github className="mr-2" strokeWidth={config.theme.strokeWidth} />
-              Github
-            </Button>
           </div>
         </SheetContent>
       </Sheet>
