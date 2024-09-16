@@ -154,17 +154,17 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
 
 function assertProjects(items: Item[]): asserts items is Project[] {
   if (!items.length) throw new Error('No items provided');
-  if (!('entity' in items[0])) throw new Error('Not a project');
+  if (!('type' in items[0])) throw new Error('Not a project');
 }
 
 function assertWorkspaces(items: Item[]): asserts items is Workspace[] {
   if (!items.length) throw new Error('No items provided');
-  if (!('entity' in items[0])) throw new Error('Not a workspace');
+  if (!('type' in items[0])) throw new Error('Not a workspace');
 }
 
 function assertMemberships(items: Item[]): asserts items is Membership[] {
   if (!items.length) throw new Error('No items provided');
-  if (!('entity' in items[0])) throw new Error('Not a membership');
+  if (!('type' in items[0])) throw new Error('Not a membership');
 }
 
 export const useMutateWorkSpaceQueryData = (queryKey: QueryKey) => {

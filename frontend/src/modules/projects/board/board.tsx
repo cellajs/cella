@@ -15,14 +15,14 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project, SubTask, Task } from '~/types/app';
-import type { DraggableItemData } from '~/types/common';
+import type { ContextEntity, DraggableItemData, Membership } from '~/types/common';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
-import { useMutateTasksQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateTasksQueryData, useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -298,6 +298,14 @@ export default function Board() {
     });
   };
 
+  const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
+  const handleEntityUpdate = (event: { detail: { membership: Membership; entity: ContextEntity } }) => {
+    const { entity, membership } = event.detail;
+    if (entity !== 'workspace' && entity !== 'project') return;
+    callback([membership], entity === 'project' ? 'updateProjectMembership' : 'updateWorkspaceMembership');
+  };
+
+  useEventListener('entityArchiveToggle', handleEntityUpdate);
   useEventListener('taskOperation', handleCRUD);
   useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
