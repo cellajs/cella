@@ -104,7 +104,6 @@ export const config = {
   ],
 
   // OAuth providers
-  oauthProviderOptions: ['github', 'google', 'microsoft'] as const,
   enabledOauthProviders: ['github'] as const,
 
   // Optional settings

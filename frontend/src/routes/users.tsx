@@ -1,12 +1,12 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { createRoute, useParams } from '@tanstack/react-router';
-import type { ErrorType } from 'backend/lib/errors';
 import { Suspense, lazy } from 'react';
 import { getUser } from '~/api/users';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
 import { baseEntityRoutes } from '~/nav-config';
 import { AppRoute } from '~/routes/general';
+import type { ErrorType } from '#/lib/errors';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 const UserSettingsPage = lazy(() => import('~/modules/users/settings-page'));
