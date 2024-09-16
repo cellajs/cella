@@ -1,6 +1,7 @@
 import { Argon2id } from 'oslo/password';
 import { env } from '../../env';
 
+// Converter func cos Argon2id except secret as ArrayBuffer | TypedArray
 const getArgonSecret = () => {
   return new TextEncoder().encode(env.ARGON_SECRET);
 };

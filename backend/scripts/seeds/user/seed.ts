@@ -3,7 +3,7 @@ import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 
 import { hashPasswordWithArgon } from '#/lib/argon2id';
-import { generateUnsubscribeToken } from '#/lib/utils';
+import { generateUnsubscribeToken } from '#/lib/unsubscribe-token';
 
 export const adminUser = {
   password: '12345678',

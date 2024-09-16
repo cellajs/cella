@@ -1,8 +1,8 @@
-import { Check, KeyRound, Monitor, Send, Smartphone, Trash2, ZapOff } from 'lucide-react';
+import { Check, KeyRound, Send, Trash2, ZapOff } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { deletePasskey as baseRemovePasskey, deleteMySessions as baseTerminateMySessions } from '~/api/me';
+import { deleteMySessions as baseTerminateMySessions } from '~/api/me';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
@@ -12,20 +12,18 @@ import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { getChallenge, sendResetPasswordEmail, setPasskey } from '~/api/auth';
+import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import { arrayBufferToBase64Url, base64UrlDecode, dateShort } from '~/lib/utils';
 import { oauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
+import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
-import { Badge } from '~/modules/ui/badge';
 import DeleteSelf from '~/modules/users/delete-self';
+import { deletePasskey, registerPasskey } from '~/modules/users/helpers';
+import { SessionTile } from '~/modules/users/session-title';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
-import type { Session } from '~/types/common';
-import HelpText from '../common/help-text';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -34,54 +32,15 @@ const tabs = [
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 
-interface SessionTileProps {
-  session: Session;
-  deleteMySessions: (sessionIds: string[]) => void;
-  isPending: boolean;
-}
-
-const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps) => {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex items-center w-full gap-3 min-h-[40px] p-3">
-      {session.deviceType === 'desktop' ? <Monitor size={24} /> : <Smartphone size={24} />}
-      <div className="text-start">
-        <div className="font-semibold">{session.deviceName || t('common:unknown_device')}</div>
-        <p className="font-light text-sm truncate">
-          <span className="opacity-50 max-md:hidden">{session.deviceOs}</span>
-        </p>
-      </div>
-      {session.isCurrent && (
-        <Badge variant="plain" className="uppercase text-[10px] py-0">
-          current
-        </Badge>
-      )}
-      {!session.isCurrent && (
-        <Button
-          variant="destructive"
-          size="sm"
-          className="text-sm ml-auto hidden group-hover:block"
-          disabled={isPending}
-          onClick={() => {
-            deleteMySessions([session.id]);
-          }}
-        >
-          {t('common:terminate')}
-        </Button>
-      )}
-    </div>
-  );
-};
-
 const UserSettingsPage = () => {
-  const { user, setUser } = useUserStore();
+  const { user } = useUserStore();
   const { mode } = useThemeStore();
   const { t } = useTranslation();
 
   const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.isCurrent), [user.sessions]);
   const sessions = Array.from(user.sessions).sort((a) => (a.isCurrent ? -1 : 1));
 
+  // Terminate one or all sessions
   const { mutate: deleteMySessions, isPending } = useMutation({
     mutationFn: baseTerminateMySessions,
     onSuccess: (_, variables) => {
@@ -92,6 +51,7 @@ const UserSettingsPage = () => {
     },
   });
 
+  // Request a password reset email
   const sendResetPasswordClick = () => {
     sendResetPasswordEmail(user.email);
     setDisabledResetPassword(true);
@@ -101,6 +61,7 @@ const UserSettingsPage = () => {
     toast.success(t('common:success.reset_password_email', { email: user.email }));
   };
 
+  // Delete account
   const openDeleteDialog = () => {
     dialog(
       <DeleteSelf
@@ -115,54 +76,6 @@ const UserSettingsPage = () => {
         text: t('common:confirm.delete_account', { email: user.email }),
       },
     );
-  };
-  const deletePasskey = async () => {
-    const result = await baseRemovePasskey();
-    if (result) {
-      toast.success(t('common:success.passkey_removed'));
-      setUser({ ...user, passkey: false });
-    } else toast.error(t('common:error.passkey_remove_failed'));
-  };
-
-  const registerPasskey = async () => {
-    const { challengeBase64 } = await getChallenge();
-
-    const credential = await navigator.credentials.create({
-      publicKey: {
-        rp: {
-          id: config.mode === 'development' ? 'localhost' : config.domain,
-          name: config.name,
-        },
-        user: {
-          id: new TextEncoder().encode(user.id),
-          name: user.name,
-          displayName: user.firstName || user.name || 'No name provided',
-        },
-        challenge: base64UrlDecode(challengeBase64),
-        pubKeyCredParams: [
-          { type: 'public-key', alg: -7 }, // ES256
-          { type: 'public-key', alg: -257 }, // RS256
-        ],
-        authenticatorSelection: { userVerification: 'required' },
-        attestation: 'none',
-      },
-    });
-
-    if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create credential');
-    const response = credential.response;
-    if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error('Unexpected response type');
-
-    const credentialData = {
-      email: user.email,
-      attestationObject: arrayBufferToBase64Url(response.attestationObject),
-      clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
-    };
-
-    const result = await setPasskey(credentialData);
-    if (result) {
-      toast.success(t('common:success.passkey_added'));
-      setUser({ ...user, passkey: true });
-    } else toast.error(t('common:error.passkey_add_failed'));
   };
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
@@ -211,40 +124,14 @@ const UserSettingsPage = () => {
                 </Button>
               )}
               <div className="flex flex-col mt-4 gap-2">
-                <Accordion type="single" collapsible className="space-y-1">
-                  <ExpandableList
-                    items={sessions}
-                    renderItem={(session) => (
-                      <AccordionItem value={session.id} className="border group rounded-md">
-                        <AccordionTrigger className="hover:no-underline p-0 pr-3">
-                          <SessionTile session={session} key={session.id} deleteMySessions={deleteMySessions} isPending={isPending} />
-                        </AccordionTrigger>
-                        <AccordionContent className="p-3 pt-0">
-                          {session.browser && (
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold">{t('common:browser')}</p>
-                              <p className="text-sm">{session.browser}</p>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{t('common:auth_strategy')}</p>
-                            <p className="text-sm">{session.authStrategy}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{t('common:created_at')}</p>
-                            <p className="text-sm">{dateShort(session.createdAt)}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold">{t('common:expires_at')}</p>
-                            <p className="text-sm">{dateShort(session.expiresAt)}</p>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                    initialDisplayCount={3}
-                    expandText="common:more_sessions"
-                  />
-                </Accordion>
+                <ExpandableList
+                  items={sessions}
+                  renderItem={(session) => (
+                    <SessionTile session={session} key={session.id} deleteMySessions={deleteMySessions} isPending={isPending} />
+                  )}
+                  initialDisplayCount={3}
+                  expandText="common:more_sessions"
+                />
               </div>
             </CardContent>
           </Card>

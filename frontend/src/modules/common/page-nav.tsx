@@ -65,7 +65,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
                   <motion.div
                     key={nanoid()}
                     transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                    className="h-1 bg-primary w-full absolute bottom-0 left-0"
+                    className="h-1 bg-primary rounded-t-sm w-full absolute bottom-0 left-0"
                   />
                 )}
               </>
