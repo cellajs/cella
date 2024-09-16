@@ -4,9 +4,8 @@ import { Archive, ArchiveRestore, Bell, BellOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
-import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/taosts-show';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -22,8 +21,6 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
   const { t } = useTranslation();
   const [isItemArchived, setItemArchived] = useState(item.membership.archived);
   const [isItemMuted, setItemMuted] = useState(item.membership.muted);
-
-  const callback = useMutateWorkSpaceQueryData(['workspaces', parentItemSlug ? parentItemSlug : item.slug]);
   const { archiveStateToggle } = useNavigationStore();
   const { mutate: updateMembership, status } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => {
@@ -33,15 +30,16 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
       if (updatedMembership.archived !== isItemArchived) {
         const archived = updatedMembership.archived || !isItemArchived;
         archiveStateToggle(item, archived, parentItemSlug ? parentItemSlug : null);
-        showToast(t(`common:success.${archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${itemType}`) }), 'success');
         setItemArchived(archived);
+        // Triggers an event to handle actions for entities that have been archived or unarchived(default listens in nav-sheet/index)
+        dispatchCustomEvent('entityArchiveToggle', { entity: itemType, membership: updatedMembership });
       }
       if (updatedMembership.muted !== isItemMuted) {
         const muted = updatedMembership.muted || !isItemMuted;
-        showToast(t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${itemType}`) }), 'success');
         setItemMuted(muted);
+        // Triggers an event to handle actions for entities that have been mute or unmuted (default listens in nav-sheet/index)
+        dispatchCustomEvent('entityMuteToggle', { entity: itemType, membership: updatedMembership });
       }
-      callback([updatedMembership], parentItemSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
     },
   });
 

@@ -1,8 +1,10 @@
 import type { TasksCustomEventMap } from '~/modules/tasks/types';
-import type { Entity } from '~/types/common';
+import type { ContextEntity, Entity, Membership } from '~/types/common';
 
 export type CombinedCustomEventMap = TasksCustomEventMap & {
   updateEntityCover: CustomEvent<{ bannerUrl: string; entity: Entity }>;
+  entityArchiveToggle: CustomEvent<{ membership: Membership; entity: ContextEntity }>;
+  entityMuteToggle: CustomEvent<{ membership: Membership; entity: ContextEntity }>;
 };
 
 export type CustomEventsWithData = {

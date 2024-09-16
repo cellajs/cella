@@ -128,6 +128,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
+        {!isSheet && form.unsavedChanges && <UnsavedBadge />}
         <AvatarFormField
           control={form.control}
           label={children ? '' : t('common:profile_picture')}

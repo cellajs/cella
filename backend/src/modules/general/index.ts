@@ -1,5 +1,5 @@
-import { emailSender } from '#/lib/mailer';
 import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { emailSender } from '#/lib/mailer';
 import { InviteSystemEmail } from '../../../emails/system-invite';
 
 import { config } from 'config';
@@ -13,6 +13,7 @@ import { env } from '../../../env';
 import { db } from '#/db/db';
 import { getContextUser } from '#/lib/context';
 
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
@@ -22,12 +23,12 @@ import { entityTables } from '#/entity-config';
 import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
+import { i18n } from '#/lib/i18n';
 import { getOrderColumn } from '#/lib/order-column';
 import { verifyUnsubscribeToken } from '#/lib/unsubscribe-token';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { type ContextEntity, CustomHono } from '#/types/common';
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
@@ -147,9 +148,16 @@ const generalRoutes = app
       );
       logEvent('User invited on system level');
 
-      emailSender.send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email).catch((error) => {
-        logEvent('Error sending email', { error: (error as Error).message }, 'error');
-      });
+      emailSender
+        .send(
+          config.senderIsReceiver ? user.email : email.toLowerCase(),
+          i18n.t('backend:email.subject.invitation_to_system', { lng: config.defaultLanguage, appName: config.name }),
+          emailHtml,
+          user.email,
+        )
+        .catch((error) => {
+          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+        });
     }
 
     return ctx.json({ success: true }, 200);
