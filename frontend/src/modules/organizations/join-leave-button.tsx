@@ -2,9 +2,9 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { Check, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { inviteMembers as baseInvite, removeMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/taosts-show';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
@@ -26,7 +26,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
     mutationFn: baseInvite,
     onSuccess: () => {
       organizationQuery.refetch();
-      toast.success(t('common:success.you_joined_organization'));
+      showToast(t('common:success.you_joined_organization'), 'success');
     },
   });
 
@@ -34,7 +34,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
     mutationFn: removeMembers,
     onSuccess: () => {
       organizationQuery.refetch();
-      toast.success(t('common:success.you_left_organization'));
+      showToast(t('common:success.you_left_organization'), 'success');
     },
   });
 

@@ -1,6 +1,5 @@
 import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
-import { Argon2id } from 'oslo/password';
 
 import { Command } from '@commander-js/extra-typings';
 import { config } from 'config';
@@ -10,7 +9,8 @@ import { nanoid } from '#/lib/nanoid';
 import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
-import { generateUnsubscribeToken } from '#/lib/utils';
+import { hashPasswordWithArgon } from '#/lib/argon2id';
+import { generateUnsubscribeToken } from '#/lib/unsubscribe-token';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 
@@ -51,7 +51,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
 
   await db.insert(organizationsTable).values(organizations).onConflictDoNothing();
 
-  const hashedPassword = await new Argon2id().hash('12345678');
+  const hashedPassword = await hashPasswordWithArgon('12345678');
 
   const usersSlugUniqueEnforcer = new UniqueEnforcer();
   const usersEmailUniqueEnforcer = new UniqueEnforcer();

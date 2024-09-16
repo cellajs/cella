@@ -34,6 +34,7 @@ export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: s
 };
 export type UpdateMenuOptionsProp = { membershipId: string; role?: Membership['role']; archived?: boolean; muted?: boolean; order?: number };
 
+// Update membership in entity
 export const updateMembership = async (values: UpdateMenuOptionsProp) => {
   const { membershipId, role, archived, muted, order } = values;
   const response = await client[':id'].$put({

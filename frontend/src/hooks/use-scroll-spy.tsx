@@ -1,8 +1,6 @@
-// import { useNavigate }  from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
 export const useScrollSpy = ({ sectionIds = [], autoUpdateHash }: { sectionIds: string[]; autoUpdateHash?: boolean }) => {
-  // const navigate = useNavigate();
   const observer = useRef<IntersectionObserver | null>(null);
 
   // Maintain a list of intersecting section ids
@@ -24,9 +22,7 @@ export const useScrollSpy = ({ sectionIds = [], autoUpdateHash }: { sectionIds: 
     }
     document.documentElement.classList.add('scroll-smooth');
 
-    return () => {
-      document.documentElement.classList.remove('scroll-smooth');
-    };
+    return () => document.documentElement.classList.remove('scroll-smooth');
   }, []);
 
   useEffect(() => {

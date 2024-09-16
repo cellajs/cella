@@ -1,6 +1,6 @@
-import { type EntityTableNames, entityTables } from '#/entity-config';
 import { getTableConfig } from 'drizzle-orm/pg-core';
-import { z, type ZodTypeAny } from 'zod';
+import { type ZodTypeAny, z } from 'zod';
+import { type EntityTableNames, entityTables } from '#/entity-config';
 
 export const createEntitiesSchema = <T extends ZodTypeAny>(getSchemaForTable: (tableName: string) => T) => {
   return z.object(

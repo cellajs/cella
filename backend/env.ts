@@ -27,6 +27,8 @@ export const env = createEnv({
     PORT: z.string().optional(),
     UNSUBSCRIBE_TOKEN_SECRET: z.string(),
 
+    ARGON_SECRET: z.string(),
+
     NOVU_API_KEY: z.string().optional(),
     NOVU_SUB_ID: z.string().optional(),
     NOVU_SLACK_WEBHOOK: z.string().optional(),

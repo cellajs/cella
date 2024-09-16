@@ -19,7 +19,7 @@ export const navItems: NavItem[] = [
   { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
 ];
 
-// Here you declare the menu sections
+// Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )
 export const menuSections: SectionItem[] = [
   {
     storageType: 'organizations',

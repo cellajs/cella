@@ -10,7 +10,6 @@ import type { User } from '~/types/common';
 import { updateSelf } from '~/api/me';
 import { type UpdateUserParams, updateUser } from '~/api/users';
 
-import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
@@ -20,6 +19,7 @@ import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
+import { showToast } from '~/lib/taosts-show';
 import { cleanUrl } from '~/lib/utils';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/language-selector';
@@ -98,8 +98,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       onSuccess: (updatedUser) => {
         if (isSelf) {
           updateUser(updatedUser);
-          toast.success(t('common:success.you_updated'));
-        } else toast.success(t('common:success.updated_user'));
+          showToast(t('common:success.you_updated'), 'success');
+        } else showToast(t('common:success.updated_user'), 'success');
         form.reset(updatedUser);
         callback?.(updatedUser);
         if (isSheet) sheet.remove('update-user');

@@ -1,4 +1,4 @@
-import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailWithTokenRoute } from '~/routes/authentication';
+import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailWithTokenRoute } from '~/routes/auth';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
 import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';
@@ -25,8 +25,6 @@ export const routeTree = rootRoute.addChildren([
     UserProfileRoute,
     UserSettingsRoute,
     // App specific routes here
-
-
 
     // Org routes on bottom because of slug directly after root path
     OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),

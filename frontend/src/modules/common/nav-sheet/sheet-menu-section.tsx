@@ -1,7 +1,7 @@
 import type React from 'react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { showToast } from '~/lib/taosts-show';
 import { dialog } from '~/modules/common/dialoger/state';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
 import { MenuSectionSticky } from '~/modules/common/nav-sheet/menu-section-sticky';
@@ -39,7 +39,7 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
   };
 
   const toggleOptionsView = () => {
-    if (!optionsView) toast(t('common:configure_menu.text'));
+    if (!optionsView) showToast(t('common:configure_menu.text'));
     setOptionsView(!optionsView);
   };
 

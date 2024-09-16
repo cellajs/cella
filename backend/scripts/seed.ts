@@ -1,6 +1,6 @@
-import { config } from 'config';
 import { execSync } from 'node:child_process';
 import { argv } from 'node:process';
+import { config } from 'config';
 
 const args = argv.slice(2);
 const addImagesFlag = args.includes('--addImages');

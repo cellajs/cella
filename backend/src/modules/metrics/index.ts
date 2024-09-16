@@ -4,7 +4,7 @@ import { db } from '#/db/db';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { register } from 'prom-client';
 import { entityTables } from '#/entity-config';
-import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/lib/utils';
+import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/helpers/utils';
 import { CustomHono } from '#/types/common';
 import MetricsRoutesConfig from './routes';
 

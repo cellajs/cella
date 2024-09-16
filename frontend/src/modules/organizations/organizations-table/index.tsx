@@ -5,8 +5,7 @@ import { getOrganizations } from '~/api/organizations';
 
 import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { config } from 'config';
-import { Bird } from 'lucide-react';
-import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
+import { Bird, Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -27,6 +26,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 
+import { showToast } from '~/lib/taosts-show';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
@@ -113,12 +113,8 @@ const OrganizationsTable = () => {
           entityType: 'organization',
           organizationId: organization.id,
         })
-          .then(() => {
-            toast.success(t('common:success.your_role_updated'));
-          })
-          .catch(() => {
-            toast.error(t('common:error.error'));
-          });
+          .then(() => toast.success(t('common:success.your_role_updated')))
+          .catch(() => toast.error(t('common:error.error')));
       }
     }
 
@@ -131,7 +127,7 @@ const OrganizationsTable = () => {
         organizations={selectedOrganizations}
         callback={(organizations) => {
           callback(organizations, 'delete');
-          toast.success(t('common:success.delete_resources', { resources: t('common:organizations') }));
+          showToast(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
         }}
         dialog
       />,

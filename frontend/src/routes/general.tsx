@@ -18,7 +18,7 @@ import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
 import UnsubscribePage from '~/modules/common/unsubscribe-page';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
-import { AuthRoute } from './authentication';
+import { AuthRoute } from './auth';
 
 // Lazy load main App component, which is behind authentication
 const App = lazy(() => import('~/modules/common/app'));
