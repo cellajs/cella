@@ -1,8 +1,8 @@
-import { Check, KeyRound, Monitor, Send, Smartphone, Trash2, ZapOff } from 'lucide-react';
+import { Check, KeyRound, Send, Trash2, ZapOff } from 'lucide-react';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
-import { deletePasskey as baseRemovePasskey, deleteMySessions as baseTerminateMySessions } from '~/api/me';
+import { deleteMySessions as baseTerminateMySessions } from '~/api/me';
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
@@ -12,19 +12,18 @@ import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { getChallenge, sendResetPasswordEmail, setPasskey } from '~/api/auth';
+import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import { arrayBufferToBase64Url, base64UrlDecode, dateShort } from '~/lib/utils';
 import { oauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
+import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
-import { Badge } from '~/modules/ui/badge';
 import DeleteSelf from '~/modules/users/delete-self';
+import { deletePasskey, registerPasskey } from '~/modules/users/helpers';
+import { SessionTile } from '~/modules/users/session-title';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
-import type { Session } from '~/types/common';
-import HelpText from '../common/help-text';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -33,67 +32,8 @@ const tabs = [
   { id: 'delete-account', label: 'common:delete_account' },
 ];
 
-interface SessionTileProps {
-  session: Session;
-  deleteMySessions: (sessionIds: string[]) => void;
-  isPending: boolean;
-}
-
-const SessionTile = ({ session, deleteMySessions, isPending }: SessionTileProps) => {
-  const { t } = useTranslation();
-
-  return (
-    <Card className="w-full">
-      <CardContent className="flex p-3 items-center gap-3">
-        {session.deviceType === 'desktop' ? <Monitor size={32} strokeWidth={1.25} /> : <Smartphone size={32} strokeWidth={1.25} />}
-        <div className="flex flex-col gap-1">
-          <div className="flex gap-2">
-            <div className="font-semibold">{session.deviceName || t('common:unknown_device')}</div>
-            {session.isCurrent && (
-              <Badge variant="plain" className="uppercase text-[10px] py-0">
-                {t('common:current')}
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-start gap-x-2 md:gap-x-5 gap-y-1 font-light text-sm opacity-50">
-            <p className="truncate" aria-describedby={t('common:period')}>
-              {dateShort(session.createdAt)} - {dateShort(session.expiresAt)}
-            </p>
-            {session.authStrategy && (
-              <p className="truncate capitalize" aria-describedby={t('common:strategy')}>
-                {t(session.authStrategy)}
-              </p>
-            )}
-            <p className="truncate max-lg:hidden" aria-describedby={t('common:os')}>
-              {session.deviceOs}
-            </p>
-            <p className="truncate max-md:hidden" aria-describedby={t('common:browser')}>
-              {session.browser}
-            </p>
-          </div>
-        </div>
-        {!session.isCurrent && (
-          <Button
-            variant="plain"
-            size="sm"
-            className="text-sm ml-auto"
-            disabled={isPending}
-            onClick={() => {
-              deleteMySessions([session.id]);
-            }}
-          >
-            <ZapOff size={16} />
-            <span className="ml-1 max-md:hidden">{t('common:terminate')}</span>
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
 const UserSettingsPage = () => {
-  const { user, setUser } = useUserStore();
+  const { user } = useUserStore();
   const { mode } = useThemeStore();
   const { t } = useTranslation();
 
@@ -136,57 +76,6 @@ const UserSettingsPage = () => {
         text: t('common:confirm.delete_account', { email: user.email }),
       },
     );
-  };
-
-  // Remove passkey
-  const deletePasskey = async () => {
-    const result = await baseRemovePasskey();
-    if (result) {
-      toast.success(t('common:success.passkey_removed'));
-      setUser({ ...user, passkey: false });
-    } else toast.error(t('common:error.passkey_remove_failed'));
-  };
-
-  // Register passkey
-  const registerPasskey = async () => {
-    const { challengeBase64 } = await getChallenge();
-
-    const credential = await navigator.credentials.create({
-      publicKey: {
-        rp: {
-          id: config.mode === 'development' ? 'localhost' : config.domain,
-          name: config.name,
-        },
-        user: {
-          id: new TextEncoder().encode(user.id),
-          name: user.name,
-          displayName: user.firstName || user.name || 'No name provided',
-        },
-        challenge: base64UrlDecode(challengeBase64),
-        pubKeyCredParams: [
-          { type: 'public-key', alg: -7 }, // ES256
-          { type: 'public-key', alg: -257 }, // RS256
-        ],
-        authenticatorSelection: { userVerification: 'required' },
-        attestation: 'none',
-      },
-    });
-
-    if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create credential');
-    const response = credential.response;
-    if (!(response instanceof AuthenticatorAttestationResponse)) throw new Error('Unexpected response type');
-
-    const credentialData = {
-      email: user.email,
-      attestationObject: arrayBufferToBase64Url(response.attestationObject),
-      clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
-    };
-
-    const result = await setPasskey(credentialData);
-    if (result) {
-      toast.success(t('common:success.passkey_added'));
-      setUser({ ...user, passkey: true });
-    } else toast.error(t('common:error.passkey_add_failed'));
   };
 
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
