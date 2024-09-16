@@ -17,7 +17,7 @@ interface AlertState {
 
 const initStore = {
   downAlert: config.maintenance ? 'maintenance' : (null as downLevels),
-  alertsSeen: [],
+  alertsSeen: [] as string[],
 };
 
 export const useAlertStore = create<AlertState>()(
@@ -41,7 +41,7 @@ export const useAlertStore = create<AlertState>()(
               state.alertsSeen = alertsSeen;
             });
           },
-          clearAlertStore: () => set(initStore, true),
+          clearAlertStore: () => set((state) => ({ ...state, ...initStore }), true),
         }),
         {
           version: 1,

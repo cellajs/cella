@@ -14,7 +14,7 @@ interface Props {
 }
 
 const UserLanguage = ({ align = 'end', className = '' }: Props) => {
-  const { user, updateUser } = useUserStore(({ user, updateUser }) => ({ user, updateUser }));
+  const { user, updateUser } = useUserStore();
   const language = i18n.resolvedLanguage || i18n.language;
   const changeLanguage = (lng: string) => {
     if (!user) return;

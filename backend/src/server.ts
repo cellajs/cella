@@ -1,3 +1,7 @@
+import type { MiddlewareHandler } from 'hono';
+import { contextStorage } from 'hono/context-storage';
+
+import type { Env } from '#/types/app';
 import defaultHook from './lib/default-hook';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
@@ -5,9 +9,12 @@ import middlewares from './middlewares';
 import { CustomHono } from '#/types/common';
 
 // Set default hook to catch validation errors
-const baseApp = new CustomHono({
+const baseApp = new CustomHono<Env>({
   defaultHook,
 });
+
+// biome-ignore lint/complexity/noBannedTypes: <explanation>
+baseApp.use(contextStorage() as unknown as MiddlewareHandler<Env, never, {}>);
 
 // Add global middleware
 baseApp.route('/', middlewares);

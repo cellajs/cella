@@ -1,4 +1,8 @@
 {
+  "email.subject.invitation_to_entity": "Invitation to {{entity}} on {{appName}}",
+  "email.subject.invitation_to_system": "Invitation to {{appName}}",
+  "email.subject.verify_email": "Verify email for {{appName}}",
+  "email.subject.reset_password": "Reset {{appName}} password",
   "email.created_account_in_organization_description": "Hello {{username}}, an account has been created for you in <strong>{{orgName}}</strong> on <strong>{{appName}}</strong>.",
   "email.created_account_in_organization_password": "Your password is <strong>{{userPassword}}</strong>.",
   "email.created_account_in_organization_preview_text": "Account created in {{orgName}} on {{appName}}",

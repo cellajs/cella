@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { type LucideProps, UserX } from 'lucide-react';
-import { Fragment, Suspense, lazy, useEffect } from 'react';
+import { Fragment, Suspense, lazy, useEffect, useMemo } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -42,9 +42,8 @@ const AppNav = () => {
   const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
 
-  const currentSession = useUserStore((state) => {
-    if (state.user) return state.user.sessions.find((s) => s.isCurrent);
-  });
+  const { user } = useUserStore();
+  const currentSession = useMemo(() => user.sessions.find((s) => s.isCurrent), [user.sessions]);
 
   const stopImpersonation = async () => {
     await impersonationStop();

@@ -1,8 +1,8 @@
 import { config } from 'config';
 import Gleap from 'gleap';
+import '~/modules/common/gleap/style.css';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types/common';
-import '~/modules/common/gleap/style.css';
 
 declare global {
   interface Window {
@@ -26,7 +26,7 @@ const setGleapUser = (user: User) => {
 
 const GleapSupport = () => {
   window.Gleap = Gleap;
-  const user = useUserStore((state) => state.user);
+  const { user } = useUserStore();
 
   // Set Gleap user on mount
   if (user && window.Gleap && !window.Gleap.isUserIdentified()) setGleapUser(user);

@@ -1,6 +1,7 @@
 import { db } from '#/db/db';
 
 import { attachmentsTable } from '#/db/schema/attachments';
+import { getContextUser } from '#/lib/context';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import taskRoutesConfig from './routes';
@@ -14,7 +15,7 @@ const attachmentsRoutes = app
    */
   .openapi(taskRoutesConfig.createAttachment, async (ctx) => {
     const newAttachment = ctx.req.valid('json');
-    const user = ctx.get('user');
+    const user = getContextUser();
     const [createdAttachment] = await db
       .insert(attachmentsTable)
       .values({

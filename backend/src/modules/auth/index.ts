@@ -24,7 +24,9 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { hashPasswordWithArgon, verifyPasswordWithArgon } from '#/lib/argon2id';
+import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
+import { i18n } from '#/lib/i18n';
 import { emailSender } from '#/lib/mailer';
 import { nanoid } from '#/lib/nanoid';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -130,7 +132,15 @@ const authRoutes = app
         verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
       }),
     );
-    emailSender.send(email, 'Verify email for Cella', emailHtml);
+
+    emailSender.send(
+      email,
+      i18n.t('backend:email.subject.verify_email', {
+        lan: config.defaultLanguage,
+        appName: config.name,
+      }),
+      emailHtml,
+    );
 
     logEvent('Verification email sent', { user: user.id });
 
@@ -219,7 +229,14 @@ const authRoutes = app
       }),
     );
 
-    emailSender.send(email, 'Reset Cella password', emailHtml);
+    emailSender.send(
+      email,
+      i18n.t('backend:email.subject.reset_password', {
+        lan: config.defaultLanguage,
+        appName: config.name,
+      }),
+      emailHtml,
+    );
 
     logEvent('Reset password link sent', { user: user.id });
 
@@ -299,7 +316,7 @@ const authRoutes = app
    * Impersonate sign in
    */
   .openapi(authRoutesConfig.impersonationSignIn, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
     if (!sessionId) {

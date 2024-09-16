@@ -11,6 +11,7 @@ import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { env } from '../../../env';
 
 import { db } from '#/db/db';
+import { getContextUser } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
@@ -22,6 +23,7 @@ import { entityTables } from '#/entity-config';
 import { memberCountsQuery } from '#/lib/counts';
 import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
+import { i18n } from '#/lib/i18n';
 import { getOrderColumn } from '#/lib/order-column';
 import { verifyUnsubscribeToken } from '#/lib/unsubscribe-token';
 import { isAuthenticated } from '#/middlewares/guard';
@@ -44,7 +46,7 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.getUploadToken, async (ctx) => {
     const isPublic = ctx.req.query('public');
-    const user = ctx.get('user');
+    const user = getContextUser();
     // TODO: validate query param organization?
     const organizationId = ctx.req.query('organizationId');
 
@@ -119,7 +121,7 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.createInvite, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     for (const email of emails) {
       const targetUser = await getUserBy('email', email.toLowerCase());
@@ -146,9 +148,16 @@ const generalRoutes = app
       );
       logEvent('User invited on system level');
 
-      emailSender.send(config.senderIsReceiver ? user.email : email.toLowerCase(), 'Invitation to Cella', emailHtml, user.email).catch((error) => {
-        logEvent('Error sending email', { error: (error as Error).message }, 'error');
-      });
+      emailSender
+        .send(
+          config.senderIsReceiver ? user.email : email.toLowerCase(),
+          i18n.t('backend:email.subject.invitation_to_system', { lan: config.defaultLanguage, appName: config.name }),
+          emailHtml,
+          user.email,
+        )
+        .catch((error) => {
+          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+        });
     }
 
     return ctx.json({ success: true }, 200);
@@ -246,7 +255,7 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     // Retrieve user memberships to filter suggestions by relevant organization,  admin users see everything
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
@@ -410,7 +419,7 @@ const generalRoutes = app
    *  Get SSE stream
    */
   .get('/sse', isAuthenticated, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
     return streamSSE(ctx, async (stream) => {
       streams.set(user.id, stream);
       console.info('User connected to SSE', user.id);

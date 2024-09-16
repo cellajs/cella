@@ -13,8 +13,10 @@ import type { OrganizationModel } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
+import { getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import { i18n } from '#/lib/i18n';
 import permissionManager from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -32,7 +34,7 @@ const membershipsRoutes = app
   .openapi(membershipRouteConfig.createMembership, async (ctx) => {
     const { idOrSlug, entityType, organizationId } = ctx.req.valid('query');
     const { emails, role } = ctx.req.valid('json');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     // Check params
     if (!organizationId || !entityType || !config.contextEntityTypes.includes(entityType) || !idOrSlug) {
@@ -196,7 +198,16 @@ const membershipsRoutes = app
 
         // Send invitation email
         emailSender
-          .send(config.senderIsReceiver ? user.email : email, `Invitation to ${organization.name} on Cella`, emailHtml, user.email)
+          .send(
+            config.senderIsReceiver ? user.email : email,
+            i18n.t('backend:email.subject.invitation_to_entity', {
+              lng: targetUser?.language || organization.defaultLanguage,
+              appName: config.name,
+              entity: organization.name,
+            }),
+            emailHtml,
+            user.email,
+          )
           .catch((error) => {
             logEvent('Error sending email', { error: (error as Error).message }, 'error');
           });
@@ -210,7 +221,7 @@ const membershipsRoutes = app
    */
   .openapi(membershipRouteConfig.deleteMemberships, async (ctx) => {
     const { idOrSlug, entityType, ids } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     if (!config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
     // Convert the member ids to an array
@@ -294,7 +305,7 @@ const membershipsRoutes = app
   .openapi(membershipRouteConfig.updateMembership, async (ctx) => {
     const { id: membershipId } = ctx.req.valid('param');
     const { role, archived, muted, order } = ctx.req.valid('json');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     let orderToUpdate = order;
     // Get the membership

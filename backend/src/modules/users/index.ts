@@ -6,6 +6,7 @@ import { auth } from '#/db/lucia';
 import { membershipsTable } from '#/db/schema/memberships';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
+import { getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -87,7 +88,7 @@ const usersRoutes = app
    */
   .openapi(usersRoutesConfig.deleteUsers, async (ctx) => {
     const { ids } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     // Convert the user ids to an array
     const userIds = Array.isArray(ids) ? ids : [ids];
@@ -155,7 +156,7 @@ const usersRoutes = app
    */
   .openapi(usersRoutesConfig.getUser, async (ctx) => {
     const idOrSlug = ctx.req.param('idOrSlug');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
@@ -186,7 +187,7 @@ const usersRoutes = app
   .openapi(usersRoutesConfig.updateUser, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const user = ctx.get('user');
+    const user = getContextUser();
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
     if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
