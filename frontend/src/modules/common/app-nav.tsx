@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { type LucideProps, UserX } from 'lucide-react';
-import { Fragment, Suspense, lazy, useEffect } from 'react';
+import { Fragment, Suspense, lazy, useEffect, useMemo } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -22,7 +22,6 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { navItems } from '~/nav-config';
 import { useUserStore } from '~/store/user';
-import { useWorkspaceStore } from '~/store/workspace';
 
 export type NavItem = {
   id: string;
@@ -42,10 +41,9 @@ const AppNav = () => {
 
   const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
-  const focusedTaskId = useWorkspaceStore((state) => state.focusedTaskId);
-  const currentSession = useUserStore((state) => {
-    if (state.user) return state.user.sessions.find((s) => s.isCurrent);
-  });
+  const { user } = useUserStore();
+
+  const currentSession = useMemo(() => user.sessions.find((s) => s.isCurrent), [user.sessions]);
 
   const stopImpersonation = async () => {
     await impersonationStop();
@@ -77,7 +75,6 @@ const AppNav = () => {
   };
 
   const buttonsClick = (index: number) => {
-    if (index === 3 && focusedTaskId) return;
     if (sheet.getAll().length) return;
     if (dialog.haveOpenDialogs()) return;
     navButtonClick(navItems[index]);

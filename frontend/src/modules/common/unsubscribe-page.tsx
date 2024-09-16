@@ -6,7 +6,8 @@ import { useUserStore } from '~/store/user';
 
 function UnsubscribePage() {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
+  const { user } = useUserStore();
+
   return (
     <>
       <div className="container">

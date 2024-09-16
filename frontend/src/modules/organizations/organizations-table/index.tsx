@@ -47,7 +47,7 @@ const OrganizationsTable = () => {
   const search = useSearch({ from: OrganizationsTableRoute.id });
   const { t } = useTranslation();
 
-  const user = useUserStore((state) => state.user);
+  const { user } = useUserStore();
 
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
