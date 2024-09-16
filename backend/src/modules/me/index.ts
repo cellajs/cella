@@ -17,6 +17,7 @@ import type { z } from 'zod';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { entityMenuSections, entityTables } from '#/entity-config';
+import { getContextUser } from '#/lib/context';
 import { getPreparedSessions } from './helpers/get-sessions';
 import type { menuItemsSchema, userMenuSchema } from './schema';
 
@@ -28,7 +29,7 @@ const meRoutes = app
    * Get current user
    */
   .openapi(meRoutesConfig.getSelf, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     const [{ memberships }] = await db
       .select({
@@ -63,7 +64,7 @@ const meRoutes = app
     );
   })
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     const fetchAndFormatEntities = async (type: ContextEntity, subEntityType?: ContextEntity) => {
       let formattedSubmenus: z.infer<typeof menuItemsSchema>;
@@ -173,7 +174,7 @@ const meRoutes = app
    * Update current user (self)
    */
   .openapi(meRoutesConfig.updateSelf, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
@@ -237,7 +238,7 @@ const meRoutes = app
    * Delete current user (self)
    */
   .openapi(meRoutesConfig.deleteSelf, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
     // Check if user exists
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
@@ -255,7 +256,7 @@ const meRoutes = app
    * Delete passkey of self
    */
   .openapi(meRoutesConfig.deletePasskey, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     await db.delete(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 

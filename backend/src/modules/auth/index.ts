@@ -24,6 +24,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { hashPasswordWithArgon, verifyPasswordWithArgon } from '#/lib/argon2id';
+import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
 import { nanoid } from '#/lib/nanoid';
@@ -299,7 +300,7 @@ const authRoutes = app
    * Impersonate sign in
    */
   .openapi(authRoutesConfig.impersonationSignIn, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
     if (!sessionId) {

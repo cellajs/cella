@@ -5,6 +5,7 @@ import { errorResponse } from '#/lib/errors';
 
 import { env } from '#/../env';
 import { queryClient } from '#/db/db';
+import { getContextUser } from '#/lib/context';
 import type { Env } from '#/types/app';
 
 type RateLimiterMode = 'success' | 'fail' | 'limit';
@@ -33,7 +34,7 @@ function rateLimiterMiddleware(this: RateLimiterPostgres | RateLimiterMemory, mo
     const ipAddr = ctx.req.header('x-forwarded-for');
     // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
     const body = ctx.req.header('content-type') === 'application/json' ? ((await ctx.req.raw.clone().json()) as any) : undefined;
-    const user = ctx.get('user');
+    const user = getContextUser();
     const username = body?.email || user?.id;
 
     if (!ipAddr && !username) {
