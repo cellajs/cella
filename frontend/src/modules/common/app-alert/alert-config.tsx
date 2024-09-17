@@ -1,6 +1,6 @@
 import { t } from 'i18next';
-import { Info } from 'lucide-react'; // Import your icons here
-import type { AppAlert } from '.';
+import { Info } from 'lucide-react';
+import type { AppAlert } from '~/modules/common/app-alert';
 
 export const alertsConfig: AppAlert[] = [
   {

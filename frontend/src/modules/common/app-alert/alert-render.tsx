@@ -1,6 +1,6 @@
-import { useAlertStore } from '~/store/alert'; // Ensure this is the correct path
-import { AppAlert } from '.';
-import { alertsConfig } from './alert-config';
+import { AppAlert } from '~/modules/common/app-alert';
+import { alertsConfig } from '~/modules/common/app-alert/alert-config';
+import { useAlertStore } from '~/store/alert';
 
 const AlertRenderer = () => {
   const { alertsSeen } = useAlertStore();
