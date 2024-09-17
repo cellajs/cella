@@ -1,21 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { Building2, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
 import { getPublicCounts } from '~/api/metrics';
+import { counts } from '~/modules/marketing/about-config';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
-
-interface Count {
-  id: string;
-  title: string;
-  icon: JSX.ElementType;
-}
-
-const counts: Count[] = [
-  { id: 'users', title: 'common:users', icon: Users },
-  { id: 'organizations', title: 'common:organizations', icon: Building2 },
-];
 
 const Counters = () => {
   const { t } = useTranslation();

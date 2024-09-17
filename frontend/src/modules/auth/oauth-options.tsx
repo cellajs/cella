@@ -12,6 +12,7 @@ import { SignInRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 import type { Step } from '.';
+import { isEnabledAuthStrategy, isEnabledOauthProvider } from './heplers';
 
 const baseOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
@@ -24,9 +25,8 @@ interface OauthOptions {
   name: string;
   url: string;
 }
-export const oauthProviders = baseOauthProviders.filter((prov) =>
-  config.enabledOauthProviders.includes(prov.id as EnabledOauthProviderOptions),
-) as unknown as OauthOptions[];
+// Filter the OAuth providers to only include enabled providers
+export const oauthProviders = baseOauthProviders.filter((prov): prov is OauthOptions => isEnabledOauthProvider(prov.id));
 
 interface OauthOptionsProps {
   actionType: Step;
@@ -96,41 +96,42 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
       </div>
 
       <div className="flex flex-col space-y-2">
-        {hasPasskey && actionType === 'signIn' && (
+        {isEnabledAuthStrategy('passkey') && hasPasskey && actionType === 'signIn' && (
           <Button type="button" onClick={passkeyAuth} variant="plain" className="w-full gap-1.5">
             <Fingerprint size={16} />
             {t('common:passkey_sign_in')}
           </Button>
         )}
-        {oauthProviders.map((provider) => {
-          return (
-            <Button
-              loading={loading}
-              key={provider.name}
-              type="button"
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => {
-                setLoading(true);
-                if (token) {
-                  acceptInvite({ token, oauth: provider.id }).then(() => {
-                    window.location.href = config.defaultRedirectPath;
-                  });
-                } else {
-                  window.location.href = provider.url + redirectQuery;
-                }
-              }}
-            >
-              <img
-                src={`/static/images/${provider.name.toLowerCase()}-icon.svg`}
-                alt={provider.name}
-                className={`w-4 h-4 ${provider.id === 'github' ? invertClass : ''}`}
-                loading="lazy"
-              />
-              {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with {provider.name}
-            </Button>
-          );
-        })}
+        {isEnabledAuthStrategy('oauth') &&
+          oauthProviders.map((provider) => {
+            return (
+              <Button
+                loading={loading}
+                key={provider.name}
+                type="button"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  setLoading(true);
+                  if (token) {
+                    acceptInvite({ token, oauth: provider.id }).then(() => {
+                      window.location.href = config.defaultRedirectPath;
+                    });
+                  } else {
+                    window.location.href = provider.url + redirectQuery;
+                  }
+                }}
+              >
+                <img
+                  src={`/static/images/${provider.name.toLowerCase()}-icon.svg`}
+                  alt={provider.name}
+                  className={`w-4 h-4 ${provider.id === 'github' ? invertClass : ''}`}
+                  loading="lazy"
+                />
+                {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with {provider.name}
+              </Button>
+            );
+          })}
       </div>
     </>
   );

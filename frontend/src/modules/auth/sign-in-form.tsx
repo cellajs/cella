@@ -19,6 +19,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { TokenData } from '.';
+import { isEnabledAuthStrategy } from './heplers';
 
 const formSchema = authBodySchema;
 
@@ -87,25 +88,29 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            // Custom css due to html injection by browser extensions
-            <FormItem className="gap-0">
-              <FormControl>
-                <Input type="password" autoFocus {...field} autoComplete="current-password" placeholder={t('common:password')} />
-              </FormControl>
-              <FormMessage className="mt-2" />
-            </FormItem>
-          )}
-        />
+        {isEnabledAuthStrategy('password') && (
+          <>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                // Custom css due to html injection by browser extensions
+                <FormItem className="gap-0">
+                  <FormControl>
+                    <Input type="password" autoFocus {...field} autoComplete="current-password" placeholder={t('common:password')} />
+                  </FormControl>
+                  <FormMessage className="mt-2" />
+                </FormItem>
+              )}
+            />
 
-        <Button type="submit" loading={isPending} className="w-full">
-          {t('common:sign_in')}
-          <ArrowRight size={16} className="ml-2" />
-        </Button>
-        <ResetPasswordRequest email={email} />
+            <Button type="submit" loading={isPending} className="w-full">
+              {t('common:sign_in')}
+              <ArrowRight size={16} className="ml-2" />
+            </Button>
+            <ResetPasswordRequest email={email} />
+          </>
+        )}
       </form>
     </Form>
   );

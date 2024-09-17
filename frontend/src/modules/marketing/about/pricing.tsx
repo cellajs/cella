@@ -3,21 +3,9 @@ import { Check, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
+import { pricingPlans } from '~/modules/marketing/about-config';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-
-interface PricingPlan {
-  id: string;
-  priceId: string | null;
-  featureCount: number;
-  borderColor: string;
-  popular?: boolean;
-}
-
-const pricingPlans: PricingPlan[] = [
-  { id: 'free', priceId: null, featureCount: 3, borderColor: '' },
-  { id: 'pro', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
-];
 
 const Pricing = () => {
   const isFlexLayout = pricingPlans.length < 3;

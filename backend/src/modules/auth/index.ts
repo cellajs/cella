@@ -13,15 +13,7 @@ import { deleteCookie, getCookie } from 'hono/cookie';
 import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '#/db/lucia';
 
-import {
-  createSession,
-  findOauthAccount,
-  getRedirectUrl,
-  handleExistingUser,
-  isEnabledOauthProvider,
-  slugFromEmail,
-  splitFullName,
-} from './helpers/oauth';
+import { createSession, findOauthAccount, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
 
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
@@ -38,7 +30,7 @@ import { i18n } from '#/lib/i18n';
 import { emailSender } from '#/lib/mailer';
 import { nanoid } from '#/lib/nanoid';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { CustomHono } from '#/types/common';
+import { CustomHono, type EnabledOauthProviderOptions } from '#/types/common';
 import generalRouteConfig from '../general/routes';
 import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
 import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
@@ -435,12 +427,12 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.githubSignInCallback, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
-
     const stateCookie = getCookie(ctx, 'oauth_state');
+    const githubProvider = 'github' as EnabledOauthProviderOptions;
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
       // t('common:error.invalid_state.text')
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'github' });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: githubProvider });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -488,9 +480,9 @@ const authRoutes = app
       } = await githubUserResponse.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount('github', String(githubUser.id));
+      const [existingOauthAccount] = await findOauthAccount(githubProvider, String(githubUser.id));
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
+        await setSessionCookie(ctx, existingOauthAccount.userId, githubProvider);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
@@ -530,7 +522,7 @@ const authRoutes = app
         // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
           return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
-            strategy: 'github',
+            strategy: githubProvider,
             type: 'invitation',
           });
         }
@@ -541,7 +533,7 @@ const authRoutes = app
       // Check if user already exists
       const existingUser = await getUserBy('email', userEmail);
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, 'github', {
+        return await handleExistingUser(ctx, existingUser, githubProvider, {
           providerUser: {
             id: String(githubUser.id),
             email: githubUserEmail,
@@ -574,7 +566,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: 'github',
+            id: githubProvider,
             userId: String(githubUser.id),
           },
           isEmailVerified: primaryEmail.verified,
@@ -585,10 +577,10 @@ const authRoutes = app
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
         // t('common:error.invalid_credentials.text')
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'github' });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: githubProvider });
       }
 
-      logEvent('Error signing in with GitHub', { strategy: 'github', errorMessage: (error as Error).message }, 'error');
+      logEvent('Error signing in with GitHub', { strategy: githubProvider, errorMessage: (error as Error).message }, 'error');
 
       throw error;
     }
@@ -598,18 +590,14 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.googleSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
-    const googleProvider = isEnabledOauthProvider('google');
-    // Verify if Google is enabled as an OAuth option
-    if (!googleProvider) {
-      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy: 'google' });
-    }
+    const googleProvider = 'google' as EnabledOauthProviderOptions;
 
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'google' });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: googleProvider });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -699,11 +687,7 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.microsoftSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
-    const microsoftProvider = isEnabledOauthProvider('microsoft');
-    // Verify if Google is enabled as an OAuth option
-    if (!microsoftProvider) {
-      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy: microsoftProvider });
-    }
+    const microsoftProvider = 'microsoft' as EnabledOauthProviderOptions;
 
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
