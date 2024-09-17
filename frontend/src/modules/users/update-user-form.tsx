@@ -101,9 +101,9 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           showToast(t('common:success.you_updated'), 'success');
         } else showToast(t('common:success.updated_user'), 'success');
         form.reset(updatedUser);
-        callback?.(updatedUser);
         if (isSheet) sheet.remove('update-user');
         nextStep?.();
+        callback?.(updatedUser);
       },
     });
   };
