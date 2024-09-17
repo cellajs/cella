@@ -257,7 +257,6 @@ const organizationsRoutes = app
       200,
     );
   })
-
   /*
    * Delete organizations by ids
    */

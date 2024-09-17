@@ -1,21 +1,15 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { getMinimumEntity } from '~/api/general';
 import { useNavigationStore } from '~/store/navigation';
 
 import type { ContextEntity, MinimumEntityItem, UserMenu, UserMenuItem } from '~/types/common';
 
 // Recursive function to find an item by id or slug
-const findItem = (
-  items: (MinimumEntityItem & {
-    submenu?: MinimumEntityItem[];
-  })[],
-  idOrSlug: string,
-): MinimumEntityItem | null => {
-  if (!items) return null;
+const findItem = (items: (MinimumEntityItem & { submenu?: MinimumEntityItem[] })[], idOrSlug: string): MinimumEntityItem | null => {
+  if (!items || items.length === 0) return null;
 
   for (const item of items) {
-    if (item.submenu) return findItem(item.submenu, idOrSlug);
-
     if (item.id === idOrSlug || item.slug === idOrSlug) {
       return {
         id: item.id,
@@ -26,10 +20,15 @@ const findItem = (
         bannerUrl: item.bannerUrl || null,
       };
     }
+    // Recursively search in submenu if exists
+    if (item.submenu && item.submenu.length > 0) {
+      const found = findItem(item.submenu, idOrSlug);
+      if (found) return found;
+    }
   }
+
   return null;
 };
-
 // Hook to fetch an entity based on id or slug
 export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
   const { menu } = useNavigationStore();
@@ -64,7 +63,10 @@ export const useGetEntity = (idOrSlug: string, entityType: ContextEntity) => {
         }
       }
 
-      // TODO: fall back to fetching entity using their respective API GET endpoints
+      // Step 3: Fetch minimum entity data from BE
+      const fetchedEntity = await getMinimumEntity({ idOrSlug, entityType });
+      if (fetchedEntity) setEntity(fetchedEntity);
+      return;
     };
 
     getEntity();
