@@ -9,7 +9,8 @@ class AttachmentRoutesConfig {
   public createAttachment = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: [isAuthenticated],
+    // TODO: with guard it breaks. Investigate why
+    guard: 'THIS IS BROKEN',
     tags: ['attachments'],
     summary: 'Create new attachment',
     description: 'Create a new attachment in a task.',
