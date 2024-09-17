@@ -10,7 +10,7 @@ import type { User } from 'lucia';
 import slugify from 'slugify';
 import { db } from '#/db/db';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { EnabledOauthProviderOptions, OauthProviderOptions } from '#/types/common';
+import type { EnabledOauthProviderOptions } from '#/types/common';
 import { sendVerificationEmail } from './verify-email';
 
 // Create a session before redirecting to the oauth provider
@@ -35,14 +35,6 @@ export const getRedirectUrl = (ctx: Context, firstSignIn?: boolean): string => {
   if (firstSignIn) redirectUrl = config.frontendUrl + config.firstSignInRedirectPath;
   return redirectUrl;
 };
-
-export const isEnabledOauthProvider = (data: OauthProviderOptions): EnabledOauthProviderOptions | null => {
-  if (config.enabledOauthProviders.includes(data as EnabledOauthProviderOptions)) {
-    return data as EnabledOauthProviderOptions;
-  }
-  return null;
-};
-
 // Insert oauth account into db
 export const insertOauthAccount = async (userId: string, providerId: EnabledOauthProviderOptions, providerUserId: string) => {
   await db.insert(oauthAccountsTable).values({ providerId, providerUserId, userId });
