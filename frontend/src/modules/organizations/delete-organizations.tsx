@@ -21,9 +21,9 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
           queryKey: ['organizations', organization.id],
         });
       }
+      if (isDialog) dialog.remove();
 
       callback?.(organizations);
-      if (isDialog) dialog.remove();
     },
   });
 

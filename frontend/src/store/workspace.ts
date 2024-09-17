@@ -9,7 +9,7 @@ interface WorkspaceState {
   projects: Project[];
   members: Member[];
   labels: Label[];
-  setWorkspace: (workspace: Workspace, projects: Project[] | undefined, labels: Label[] | undefined, members: Member[] | undefined) => void;
+  setWorkspace: (workspace: Workspace, projects?: Project[], labels?: Label[], members?: Member[]) => void;
   selectedTasks: string[];
   setSelectedTasks: (tasks: string[]) => void;
   searchQuery: string;

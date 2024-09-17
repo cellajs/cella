@@ -81,7 +81,7 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
     if (!isSheet) return;
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('edit-workspace');
-      if (targetSheet) {
+      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
         sheet.update('edit-workspace', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
