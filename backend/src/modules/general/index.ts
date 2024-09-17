@@ -341,8 +341,7 @@ const generalRoutes = app
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
-    // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
-    const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];
+    const membersFilters = [eq(membershipsTable[`${entityType}Id`], entity.id), eq(membershipsTable.type, entityType)];
 
     if (role) membersFilters.push(eq(membershipsTable.role, role as MembershipModel['role']));
 
