@@ -22,9 +22,8 @@ const DeleteWorkspaces = ({ workspaces, callback, dialog: isDialog }: Props) => 
         });
       }
 
-      callback?.(workspaces);
-
       if (isDialog) dialog.remove();
+      callback?.(workspaces);
     },
   });
 

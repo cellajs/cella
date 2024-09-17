@@ -64,7 +64,6 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
     onSuccess: (createdWorkspace) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t('app:workspace') }));
-      callback?.(createdWorkspace);
       if (isDialog) dialog.remove();
 
       useNavigationStore.setState({
@@ -74,6 +73,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
         to: '/workspaces/$idOrSlug/board',
         params: { idOrSlug: createdWorkspace.slug },
       });
+      callback?.(createdWorkspace);
     },
   });
 

@@ -112,9 +112,9 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
     };
 
     await createLabel(newLabel);
-    callback([newLabel], 'create');
     const updatedLabels = [...selectedLabels, newLabel];
     setSelectedLabels(updatedLabels);
+    callback([newLabel], 'create');
     if (creationValueChange) return creationValueChange(updatedLabels);
     await updateTaskLabels(updatedLabels);
   };

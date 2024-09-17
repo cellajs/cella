@@ -80,17 +80,7 @@ export default function TasksTable() {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId } = useWorkspaceStore(
-    ({ focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId }) => ({
-      focusedTaskId,
-      searchQuery,
-      selectedTasks,
-      setSelectedTasks,
-      projects,
-      setSearchQuery,
-      setFocusedTaskId,
-    }),
-  );
+  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId } = useWorkspaceStore();
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'createdAt'));
   const [selectedStatuses] = useState<number[]>(typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || []);

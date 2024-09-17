@@ -20,10 +20,9 @@ const DeleteProjects = ({ projects, callback, dialog: isDialog }: Props) => {
           queryKey: ['projects', project.id],
         });
       }
+      if (isDialog) dialog.remove();
 
       callback?.(projects);
-
-      if (isDialog) dialog.remove();
     },
   });
 

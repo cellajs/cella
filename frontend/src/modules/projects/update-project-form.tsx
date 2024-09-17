@@ -59,6 +59,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
       slug: project.slug,
       name: project.name,
       thumbnailUrl: cleanUrl(project.thumbnailUrl),
+      parentId: project.parentId,
     },
   };
 
@@ -117,14 +118,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
           description={t('common:resource_handle.text', { resource: t('app:project').toLowerCase() })}
           previousSlug={project.slug}
         />
-        <SelectParentFormField
-          collection="workspaces"
-          type="workspace"
-          control={form.control}
-          label={t('app:workspace')}
-          name="workspaceId"
-          disabled
-        />
+        <SelectParentFormField collection="workspaces" type="workspace" control={form.control} label={t('app:workspace')} name="parentId" disabled />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}

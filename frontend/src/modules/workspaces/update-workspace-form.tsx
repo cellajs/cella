@@ -67,11 +67,11 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
   const onSubmit = (values: FormValues) => {
     mutate(values, {
       onSuccess: (updatedWorkspace) => {
-        callback?.(updatedWorkspace);
         if (isDialog) dialog.remove();
         if (isSheet) sheet.remove('edit-workspace');
         form.reset(updatedWorkspace);
         toast.success(t('common:success.update_resource', { resource: t('app:workspace') }));
+        callback?.(updatedWorkspace);
       },
     });
   };
