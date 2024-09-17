@@ -60,16 +60,14 @@ const UserProfilePage = ({ user }: { user: Omit<User, 'counts'>; sheet?: boolean
           thumbnailUrl={user.thumbnailUrl}
           bannerUrl={user.bannerUrl}
           panel={
-            <>
-              {isSelf && (
-                <div className="max-xs:hidden flex items-center p-2">
-                  <Button size="sm" onClick={handleSettingCLick} aria-label="Account">
-                    <UserCog size={16} />
-                    <span className="max-sm:hidden ml-1">{t('common:settings')}</span>
-                  </Button>
-                </div>
-              )}
-            </>
+            isSelf && (
+              <div className="max-xs:hidden flex items-center p-2">
+                <Button size="sm" onClick={handleSettingCLick} aria-label="Account">
+                  <UserCog size={16} />
+                  <span className="max-sm:hidden ml-1">{t('common:settings')}</span>
+                </Button>
+              </div>
+            )
           }
         />
         <Suspense>

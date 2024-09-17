@@ -10,21 +10,23 @@ import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
+import type { EnabledOauthProviderOptions } from '#/types/common';
 import type { Step } from '.';
+import { isEnabledAuthStrategy, isEnabledOauthProvider } from './heplers';
 
-export type OauthProviderOptions = (typeof config.oauthProviderOptions)[number];
-
-type OauthProvider = {
-  id: OauthProviderOptions;
-  name: string;
-  url: string;
-};
-
-export const oauthProviders: OauthProvider[] = [
+const baseOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
   { id: 'google', name: 'Google', url: googleSignInUrl },
   { id: 'microsoft', name: 'Microsoft', url: microsoftSignInUrl },
 ];
+
+interface OauthOptions {
+  id: EnabledOauthProviderOptions;
+  name: string;
+  url: string;
+}
+// Filter the OAuth providers to only include enabled providers
+export const oauthProviders = baseOauthProviders.filter((prov): prov is OauthOptions => isEnabledOauthProvider(prov.id));
 
 interface OauthOptionsProps {
   actionType: Step;
@@ -94,44 +96,42 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
       </div>
 
       <div className="flex flex-col space-y-2">
-        {hasPasskey && actionType === 'signIn' && (
+        {isEnabledAuthStrategy('passkey') && hasPasskey && actionType === 'signIn' && (
           <Button type="button" onClick={passkeyAuth} variant="plain" className="w-full gap-1.5">
             <Fingerprint size={16} />
             {t('common:passkey_sign_in')}
           </Button>
         )}
-        {config.enabledOauthProviders.map((id) => {
-          const option = oauthProviders.find((provider) => provider.id === id);
-          if (!option) return;
-
-          return (
-            <Button
-              loading={loading}
-              key={option.name}
-              type="button"
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => {
-                setLoading(true);
-                if (token) {
-                  acceptInvite({ token, oauth: option.id }).then(() => {
-                    window.location.href = config.defaultRedirectPath;
-                  });
-                } else {
-                  window.location.href = option.url + redirectQuery;
-                }
-              }}
-            >
-              <img
-                src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
-                alt={option.name}
-                className={`w-4 h-4 ${option.id === 'github' ? invertClass : ''}`}
-                loading="lazy"
-              />
-              {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with {option.name}
-            </Button>
-          );
-        })}
+        {isEnabledAuthStrategy('oauth') &&
+          oauthProviders.map((provider) => {
+            return (
+              <Button
+                loading={loading}
+                key={provider.name}
+                type="button"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  setLoading(true);
+                  if (token) {
+                    acceptInvite({ token, oauth: provider.id }).then(() => {
+                      window.location.href = config.defaultRedirectPath;
+                    });
+                  } else {
+                    window.location.href = provider.url + redirectQuery;
+                  }
+                }}
+              >
+                <img
+                  src={`/static/images/${provider.name.toLowerCase()}-icon.svg`}
+                  alt={provider.name}
+                  className={`w-4 h-4 ${provider.id === 'github' ? invertClass : ''}`}
+                  loading="lazy"
+                />
+                {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in')} with {provider.name}
+              </Button>
+            );
+          })}
       </div>
     </>
   );

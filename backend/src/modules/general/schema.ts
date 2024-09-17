@@ -31,7 +31,7 @@ export const inviteBodySchema = z.object({
 
 export const acceptInviteBodySchema = z.object({
   password: passwordSchema.optional(),
-  oauth: z.enum(config.oauthProviderOptions).optional(),
+  oauth: z.enum(config.enabledOauthProviders).optional(),
 });
 
 export const entitySuggestionSchema = z.object({

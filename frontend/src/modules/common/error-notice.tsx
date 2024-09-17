@@ -1,5 +1,4 @@
 import { useRouterState } from '@tanstack/react-router';
-import type { ErrorType } from 'backend/lib/errors';
 import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
@@ -9,6 +8,7 @@ import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
+import type { ErrorType } from '#/lib/errors';
 
 interface ErrorNoticeProps {
   error?: ErrorType;

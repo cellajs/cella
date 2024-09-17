@@ -33,9 +33,9 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
       clearNavigationStore();
       clearAlertStore();
 
-      callback?.(user);
       navigate({ to: '/sign-out', replace: true });
       if (isDialog) dialog.remove();
+      callback?.(user);
     },
   });
 

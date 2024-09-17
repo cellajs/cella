@@ -81,10 +81,10 @@ const AppNav = () => {
   };
 
   useHotkeys([
-    ['A', () => buttonsClick(3)],
-    ['F', () => buttonsClick(2)],
-    ['H', () => buttonsClick(1)],
-    ['M', () => buttonsClick(0)],
+    ['Shift + A', () => buttonsClick(3)],
+    ['Shift + F', () => buttonsClick(2)],
+    ['Shift + H', () => buttonsClick(1)],
+    ['Shift + M', () => buttonsClick(0)],
   ]);
 
   useEffect(() => {

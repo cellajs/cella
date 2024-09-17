@@ -103,8 +103,10 @@ export const config = {
     'bg-red-300',
   ],
 
+  // Allowed oauth strategies providers
+  enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,
+
   // OAuth providers
-  oauthProviderOptions: ['github', 'google', 'microsoft'] as const,
   enabledOauthProviders: ['github'] as const,
 
   // Optional settings

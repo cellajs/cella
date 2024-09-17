@@ -1,11 +1,11 @@
-import { config } from 'config';
 import { pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { supportedOauthProviders } from '#/middlewares/guard/allowed-auth';
 
 export const oauthAccountsTable = pgTable(
   'oauth_accounts',
   {
-    providerId: varchar('provider_id', { enum: config.oauthProviderOptions }).notNull(),
+    providerId: varchar('provider_id', { enum: supportedOauthProviders }).notNull(),
     providerUserId: varchar('provider_user_id').notNull(),
     userId: varchar('user_id')
       .notNull()

@@ -111,8 +111,11 @@ export default defineConfig(() => {
           },
         ],
       },
+      // TODO: these glob patterns should not be necessary, it should pick all files from dist?
+      // https://vite-pwa-org.netlify.app/guide/service-worker-precache.html
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,ico,json}'],
+        globIgnores: ['**/public/static/flags/*.(svg|png)'],
         navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
       },
     }),
