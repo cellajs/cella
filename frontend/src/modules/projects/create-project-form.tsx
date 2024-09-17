@@ -36,7 +36,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
   const { t } = useTranslation();
-  const user = useUserStore((state) => state.user);
+  const { user } = useUserStore();
   const type = 'project';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({

@@ -80,7 +80,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organizationId, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { user } = useUserStore(({ user }) => ({ user }));
+  const { user } = useUserStore();
   const defaultId = nanoid();
   const { ref, bounds } = useMeasure();
 

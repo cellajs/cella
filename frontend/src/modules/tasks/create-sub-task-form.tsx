@@ -44,7 +44,7 @@ export const CreateSubTaskForm = ({
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { pathname } = useLocation();
-  const { user } = useUserStore(({ user }) => ({ user }));
+  const { user } = useUserStore();
 
   const handleHotKeysKeyPress = useCallback(() => {
     setFormState(false);
