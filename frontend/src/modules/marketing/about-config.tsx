@@ -15,15 +15,6 @@ export const footerSections = [
     ],
   },
   {
-    title: 'common:documentation',
-    hideOnMobile: true,
-    links: [
-      { title: 'common:api_docs', href: `${config.backendUrl}/docs` },
-      { title: 'common:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
-      { title: 'common:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
-    ],
-  },
-  {
     title: 'common:connect',
     links: [{ title: 'common:contact_us', href: '/contact' }, ...socials],
   },
@@ -43,9 +34,8 @@ interface PricingPlan {
 }
 
 export const pricingPlans: PricingPlan[] = [
-  { id: 'donate', priceId: null, featureCount: 5, borderColor: '' },
-  { id: 'build', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
-  { id: 'partner', priceId: null, featureCount: 3, borderColor: '' },
+  { id: 'free', priceId: null, featureCount: 3, borderColor: '' },
+  { id: 'pro', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
 ];
 
 interface Count {
