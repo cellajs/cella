@@ -1,12 +1,10 @@
 import { Outlet } from '@tanstack/react-router';
-import { Info } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { AppAlert } from '~/modules/common/app-alert';
+
+import AlertRenderer from '~/modules/common/app-alert/alert-render';
 import { useNavigationStore } from '~/store/navigation';
 
 export const AppContent = () => {
-  const { t } = useTranslation();
   const { activeSheet, keepMenuOpen, setSheet, focusView } = useNavigationStore();
 
   const clickContentRef = useRef<HTMLDivElement>(null);
@@ -40,11 +38,7 @@ export const AppContent = () => {
         }`}
       >
         <main id="main-app-content" className="flex-1 flex flex-col" aria-label="Main Content">
-          {/* Prerelease heads up */}
-          <AppAlert id="prerelease" Icon={Info} className="rounded-none border-0 border-b">
-            <strong className="mr-2">{t('about:prerelease')}</strong>
-            {t('common:experiment_notice.text')}
-          </AppAlert>
+          <AlertRenderer />
 
           <Outlet />
         </main>

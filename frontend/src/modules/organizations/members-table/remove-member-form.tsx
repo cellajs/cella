@@ -21,8 +21,8 @@ const RemoveMembersForm = ({ members, entityId, entityType = 'organization', cal
       //     queryKey: ['members', member.id],
       //   });
       // }
-      callback?.(members);
       if (isDialog) dialog.remove();
+      callback?.(members);
     },
   });
 

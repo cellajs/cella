@@ -27,15 +27,17 @@ export const legalLinks = [
 
 interface PricingPlan {
   id: string;
+  action: 'sign_in' | 'contact_us' | 'waitlist_request';
   priceId: string | null;
   featureCount: number;
   borderColor: string;
   popular?: boolean;
+  discount?: string;
 }
 
 export const pricingPlans: PricingPlan[] = [
-  { id: 'free', priceId: null, featureCount: 3, borderColor: '' },
-  { id: 'pro', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
+  { id: 'free', action: 'sign_in', priceId: null, featureCount: 3, borderColor: '', discount: 'Free' },
+  { id: 'pro', action: 'contact_us', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
 ];
 
 interface Count {

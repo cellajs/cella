@@ -416,6 +416,28 @@ const generalRoutes = app
     return ctx.redirect(redirectUrl, 302);
   })
   /*
+   * Get minimum entity by it's id and type
+   */
+  .openapi(generalRouteConfig.getMinimumEntity, async (ctx) => {
+    const { idOrSlug, entityType } = ctx.req.valid('query');
+    const { id, entity, slug, name, bannerUrl, thumbnailUrl } = await resolveEntity(entityType, idOrSlug);
+
+    return ctx.json(
+      {
+        success: true,
+        data: {
+          id,
+          entity,
+          slug,
+          name,
+          thumbnailUrl,
+          bannerUrl,
+        },
+      },
+      200,
+    );
+  })
+  /*
    *  Get SSE stream
    */
   .get('/sse', isAuthenticated, async (ctx) => {

@@ -64,9 +64,9 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
     },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
-      callback?.();
       if (isDialog) dialog.remove();
       showToast(t('common:success.user_invited'), 'success');
+      callback?.();
     },
   });
 

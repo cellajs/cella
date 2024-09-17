@@ -88,7 +88,7 @@ export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps
   return json.success;
 };
 
-type RequiredGetMembersParams = {
+type RequiredGetFromEntityParams = {
   idOrSlug: string;
   entityType: ContextEntity;
 };
@@ -100,7 +100,7 @@ type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof client.members)[
 };
 
 // Combined type
-export type GetMembersParams = RequiredGetMembersParams & OptionalGetMembersParams;
+export type GetMembersParams = RequiredGetFromEntityParams & OptionalGetMembersParams;
 
 // Get a list of members in an entity
 export const getMembers = async (
@@ -130,6 +130,16 @@ export const getMembers = async (
       },
     },
   );
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+// Get minimum entity data
+export const getMinimumEntity = async ({ idOrSlug, entityType }: RequiredGetFromEntityParams) => {
+  const response = await client['minimum-entity'].$get({
+    query: { idOrSlug, entityType },
+  });
 
   const json = await handleResponse(response);
   return json.data;

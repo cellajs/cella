@@ -1,8 +1,10 @@
+import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 
+import { config } from 'config';
+import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { getAllowedIds, getContextUser, getDisallowedIds, getOrganization } from '#/lib/context';
@@ -13,8 +15,6 @@ import { getOrderColumn } from '#/lib/order-column';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
-import { config } from 'config';
-import { render } from 'jsx-email';
 import organizationsNewsletter from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -257,7 +257,6 @@ const organizationsRoutes = app
       200,
     );
   })
-
   /*
    * Delete organizations by ids
    */

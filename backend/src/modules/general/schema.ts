@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { config } from 'config';
+import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '#/db/schema/tokens';
 import {
   contextEntityTypeSchema,
@@ -12,8 +14,6 @@ import {
   passwordSchema,
   slugSchema,
 } from '#/lib/common-schemas';
-import { config } from 'config';
-import { createSelectSchema } from 'drizzle-zod';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
@@ -62,4 +62,18 @@ export const membersQuerySchema = paginationQuerySchema.extend({
   entityType: contextEntityTypeSchema,
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
   role: z.enum(config.rolesByType.entityRoles).default('member').optional(),
+});
+
+export const minEntityQuerySchema = z.object({
+  idOrSlug: idOrSlugSchema,
+  entityType: contextEntityTypeSchema,
+});
+
+export const minEntitySchema = z.object({
+  id: z.string(),
+  entity: contextEntityTypeSchema,
+  slug: z.string(),
+  name: z.string(),
+  thumbnailUrl: z.string().nullable().optional(),
+  bannerUrl: z.string().nullable().optional(),
 });
