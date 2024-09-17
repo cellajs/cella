@@ -37,7 +37,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
   const updateStatus = async (newStatus: number) => {
     try {
       const query = queryClient.getQueryData(['boardTasks', task.projectId]) as { items: Task[] };
-      const newOrder = getNewStatusTaskOrder(task.status, newStatus, isSheet ? tasks ?? [] : query.items ?? []);
+      const newOrder = getNewStatusTaskOrder(task.status, newStatus, isSheet ? (tasks ?? []) : (query.items ?? []));
       const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: task.projectId });
@@ -81,15 +81,11 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
       >
         {task.labels.length > 0 ? (
           isMobile ? (
-            <div className="inline-flex gap-0.5 items-center">
-              <Badge
-                variant="outline"
-                key={task.labels[0].id}
-                className="inline-block border-0 px-0 truncate font-xs text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
-              >
+            <div className="flex truncate flex-wrap gap-0.5 font-xs  text-[.75rem] items-center">
+              <Badge variant="outline" key={task.labels[0].id} className="inline-block bg-border border-0 px-2 h-5 last:mr-0 leading-4">
                 {task.labels[0].name}
               </Badge>
-              <Badge className="p-1 min-w-5 min-h-5 flex bg-accent justify-center">+{task.labels.length - 1}</Badge>
+              <Badge className="px-1 flex bg-border  justify-center">+{task.labels.length - 1}</Badge>
             </div>
           ) : (
             <div className="flex truncate flex-wrap gap-[.07rem]">
