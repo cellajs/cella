@@ -61,7 +61,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     onSuccess: (createdOrganization) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
-      callback?.(createdOrganization);
       nextStep?.();
 
       useNavigationStore.setState({
@@ -77,6 +76,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       }
 
       if (isDialog) dialog.remove(true, 'create-organization');
+      callback?.(createdOrganization);
     },
   });
 

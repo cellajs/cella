@@ -69,10 +69,10 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
     },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
-      callback?.();
       nextStep?.();
       if (isDialog) dialog.remove();
       showToast(t('common:success.user_invited'), 'success');
+      callback?.();
     },
   });
 

@@ -80,9 +80,9 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     mutate(values, {
       onSuccess: (updatedOrganization) => {
         if (isSheet) sheet.remove('update-organization');
-        callback?.(updatedOrganization);
         form.reset(updatedOrganization);
         showToast(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
+        callback?.(updatedOrganization);
       },
     });
   };
@@ -110,7 +110,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-organization');
-      if (targetSheet) {
+      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
         sheet.update('update-organization', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });

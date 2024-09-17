@@ -112,7 +112,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-user');
-      if (targetSheet) {
+      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
         sheet.update('update-user', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
