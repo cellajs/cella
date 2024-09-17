@@ -84,7 +84,7 @@ export default defineConfig(() => {
     VitePWA({
       disable: !config.has.pwa,
       devOptions: {
-        enabled: false,
+        enabled: true,
       },
       manifest: {
         name: config.name,

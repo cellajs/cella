@@ -1,4 +1,4 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
@@ -124,6 +124,12 @@ const UsersTable = () => {
 
   // Update user role
   const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     for (const index of indexes) {
       if (column.key === 'role') updateUserRole(changedRows[index]);
     }

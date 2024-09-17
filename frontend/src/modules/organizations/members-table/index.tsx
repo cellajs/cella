@@ -1,4 +1,4 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -154,6 +154,12 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   };
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     for (const index of indexes) {
       if (column.key === 'role') updateMemberRole(changedRows[index]);
     }

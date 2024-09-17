@@ -9,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -129,6 +130,12 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
   });
 
   const handleResetRequestSubmit = () => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     // TODO maybe find a better way
     dialog.update('send-reset-password', {
       content: (
