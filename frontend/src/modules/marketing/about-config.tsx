@@ -36,16 +36,18 @@ export const legalLinks = [
 
 interface PricingPlan {
   id: string;
+  action: 'sign_in' | 'contact_us' | 'waitlist_request';
   priceId: string | null;
   featureCount: number;
   borderColor: string;
   popular?: boolean;
+  discount?: string;
 }
 
 export const pricingPlans: PricingPlan[] = [
-  { id: 'donate', priceId: null, featureCount: 5, borderColor: '' },
-  { id: 'build', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
-  { id: 'partner', priceId: null, featureCount: 3, borderColor: '' },
+  { id: 'donate', action: 'contact_us', priceId: null, featureCount: 5, borderColor: '' },
+  { id: 'build', action: 'waitlist_request', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
+  { id: 'partner', action: 'contact_us', priceId: null, featureCount: 3, borderColor: '' },
 ];
 
 interface Count {
