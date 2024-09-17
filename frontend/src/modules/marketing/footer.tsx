@@ -1,49 +1,16 @@
 import { Link } from '@tanstack/react-router';
 import clsx from 'clsx';
 import { config } from 'config';
-import { Github, Twitter } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import Logo from '~/modules/common/logo';
+import { footerSections, legalLinks } from '~/modules/marketing/about-config';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import NewsletterForm from '~/modules/marketing/newsletter';
-
-export const socials = [
-  { title: 'Twitter', href: config.company.twitterUrl, icon: Twitter },
-  { title: 'GitHub', href: config.company.githubUrl, icon: Github },
-];
 
 const currentYear = new Date().getFullYear();
 const companyName = config.company.name;
 const productName = config.name;
-
-const footerSections = [
-  {
-    title: 'common:product',
-    links: [
-      { title: 'common:about', href: '/about' },
-      { title: 'common:sign_up', href: '/auth/sign-in' },
-    ],
-  },
-  {
-    title: 'common:documentation',
-    hideOnMobile: true,
-    links: [
-      { title: 'common:api_docs', href: `${config.backendUrl}/docs` },
-      { title: 'common:architecture', href: 'https://github.com/cellajs/cella/blob/main/info/ARCHITECTURE.md' },
-      { title: 'common:roadmap', href: 'https://github.com/cellajs/cella/blob/main/info/ROADMAP.md' },
-    ],
-  },
-  {
-    title: 'common:connect',
-    links: [{ title: 'common:contact_us', href: '/contact' }, ...socials],
-  },
-];
-
-const legalLinks = [
-  { title: 'common:legal', href: '/legal' },
-  { title: 'common:accessibility', href: '/accessibility' },
-];
 
 function FooterLinks() {
   const { t } = useTranslation();
