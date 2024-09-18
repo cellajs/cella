@@ -10,24 +10,11 @@ type Props = React.PropsWithChildren;
 
 export const SSEProvider: FC<Props> = ({ children }) => {
   const [source, setSource] = useState<EventSource | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-
-  // Tries up to 3 times, then pauses for 1 minute if unsuccessful
-  const handleReconnect = async () => {
-    if (retryCount < 3) {
-      reconnect();
-      setRetryCount(retryCount + 1);
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 60000)); // 1m wait
-      setRetryCount(0);
-      reconnect(); // Retry after the pause
-    }
-  };
 
   // Closes old source, creates new
   const reconnect = async () => {
     if (source) source.close(); // Close old if it exists
-    const newSource = createResource(handleReconnect);
+    const newSource = createResource(reconnect);
     setSource(newSource);
     await Promise.all([getAndSetMe(), getAndSetMenu()]); // Refetch data some sse events might have been skipped
   };
@@ -45,7 +32,7 @@ export const SSEProvider: FC<Props> = ({ children }) => {
   }, [source]);
 
   useEffect(() => {
-    const eventSource = createResource(handleReconnect);
+    const eventSource = createResource(reconnect);
     setSource(eventSource);
     return () => eventSource.close();
   }, []);

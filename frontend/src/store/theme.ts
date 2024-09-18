@@ -4,7 +4,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 export type Mode = 'light' | 'dark';
-export type Theme = string;
+export type Theme = keyof typeof config.theme.colors | 'none';
 
 interface ThemeState {
   mode: Mode;
@@ -21,7 +21,7 @@ export const useThemeStore = create<ThemeState>()(
       persist(
         (set) => ({
           mode: browserMode,
-          theme: 'rose',
+          theme: 'none',
           setMode: (mode) => {
             set((state) => {
               state.mode = mode;

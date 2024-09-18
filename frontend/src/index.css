@@ -62,8 +62,7 @@
     --success: 120 100% 40%;
   }
 
-  .theme-rose.light {
-    --primary: 346.8 77.2% 49.8%;
+  .theme-base.light {
     --primary-foreground: 355.7 100% 97.3%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -71,8 +70,7 @@
     --accent-foreground: 240 5.9% 10%;
   }
 
-  .theme-rose.dark {
-    --primary: 346.8 77.2% 49.8%;
+  .theme-base.dark {
     --primary-foreground: 355.7 100% 97.3%;
     --secondary: 240 3.7% 15%;
     --secondary-foreground: 0 0% 98%;
