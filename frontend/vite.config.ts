@@ -83,8 +83,10 @@ export default defineConfig(() => {
   viteConfig.plugins?.push(
     VitePWA({
       disable: !config.has.pwa,
+      strategies: 'injectManifest',
       devOptions: {
         enabled: true,
+        type: 'module',
       },
       manifest: {
         name: config.name,
@@ -111,8 +113,9 @@ export default defineConfig(() => {
           },
         ],
       },
-      workbox: {
-        navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
+      injectManifest: {
+        globDirectory: 'dist',
+        globPatterns: config.mode === 'production' ? ['**/*.{js,css,html,json}'] : [],
       },
     }),
   );
