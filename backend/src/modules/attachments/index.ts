@@ -4,7 +4,7 @@ import { attachmentsTable } from '#/db/schema/attachments';
 import { getContextUser } from '#/lib/context';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
-import taskRoutesConfig from './routes';
+import attachmentsRoutesConfig from './routes';
 
 const app = new CustomHono();
 
@@ -13,7 +13,7 @@ const attachmentsRoutes = app
   /*
    * Create attachment
    */
-  .openapi(taskRoutesConfig.createAttachment, async (ctx) => {
+  .openapi(attachmentsRoutesConfig.createAttachment, async (ctx) => {
     const newAttachment = ctx.req.valid('json');
     const user = getContextUser();
     const [createdAttachment] = await db
@@ -28,7 +28,5 @@ const attachmentsRoutes = app
 
     return ctx.json({ success: true, data: createdAttachment }, 200);
   });
-
-export type AppAttachmentsType = typeof attachmentsRoutes;
 
 export default attachmentsRoutes;

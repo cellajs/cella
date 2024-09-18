@@ -73,10 +73,13 @@ export const config = {
   privateCDNUrl: 'https://cdn-priv.cellajs.com',
   publicCDNUrl: 'https://cdn.cellajs.com',
 
+  viteColor: '#26262b',
+
   // Theme settings
   theme: {
-    dark: { primary: '#26262b' },
-    rose: { primary: '#e11d48' },
+    colors: {
+      rose: '#e11d48',
+    },
     colorDarkBackground: 'hsl(240 10% 9%)',
     strokeWidth: 1.5,
     screenSizes: {

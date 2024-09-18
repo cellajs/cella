@@ -1,10 +1,7 @@
-import type { AppUsersType } from 'backend/modules/users/index';
-import { config } from 'config';
-import { hc } from 'hono/client';
-import { clientConfig, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppUsersType>(`${config.backendUrl}/users`, clientConfig);
+export const client = apiClient.users;
 
 // Get user by slug or ID
 export const getUser = async (idOrSlug: string) => {
@@ -17,7 +14,7 @@ export const getUser = async (idOrSlug: string) => {
 };
 
 export type GetUsersParams = Partial<
-  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit?: number;
     offset?: number;
     page?: number;
@@ -26,7 +23,7 @@ export type GetUsersParams = Partial<
 
 // Get a list of users in system
 export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 2, role, offset }: GetUsersParams = {}, signal?: AbortSignal) => {
-  const response = await client.index.$get(
+  const response = await client.$get(
     {
       query: {
         q,
@@ -54,7 +51,7 @@ export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit 
 
 // Delete users from system
 export const deleteUsers = async (userIds: string[]) => {
-  const response = await client.index.$delete({
+  const response = await client.$delete({
     query: { ids: userIds },
   });
 
