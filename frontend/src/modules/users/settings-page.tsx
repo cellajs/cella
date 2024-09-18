@@ -8,6 +8,7 @@ import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -81,6 +82,16 @@ const UserSettingsPage = () => {
   const [disabledResetPassword, setDisabledResetPassword] = useState(false);
   const invertClass = mode === 'dark' ? 'invert' : '';
 
+  const onDeleteSession = (ids: string[]) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
+    deleteMySessions(ids);
+  };
+
   return (
     <div className="container md:flex md:flex-row mt-4 md:mt-8 mx-auto gap-4 mb-[50vh]">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-2">
@@ -115,9 +126,7 @@ const UserSettingsPage = () => {
                   variant="plain"
                   size="sm"
                   disabled={isPending}
-                  onClick={() => {
-                    deleteMySessions(sessionsWithoutCurrent.map((session) => session.id));
-                  }}
+                  onClick={() => onDeleteSession(sessionsWithoutCurrent.map((session) => session.id))}
                 >
                   <ZapOff size={16} className="mr-2" />
                   {t('common:terminate_all')}
@@ -127,7 +136,7 @@ const UserSettingsPage = () => {
                 <ExpandableList
                   items={sessions}
                   renderItem={(session) => (
-                    <SessionTile session={session} key={session.id} deleteMySessions={deleteMySessions} isPending={isPending} />
+                    <SessionTile session={session} key={session.id} deleteMySessions={onDeleteSession} isPending={isPending} />
                   )}
                   initialDisplayCount={3}
                   expandText="common:more_sessions"

@@ -8,6 +8,7 @@ import type { z } from 'zod';
 import { createOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { createOrganization } from '~/api/organizations';
 
+import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -95,6 +96,12 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   }, [form.unsavedChanges]);
 
   const onSubmit = (values: FormValues) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     create(values);
   };
 

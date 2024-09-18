@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type DefaultError, useMutation } from '@tanstack/react-query';
+import { type DefaultError, onlineManager, useMutation } from '@tanstack/react-query';
 import { updateUserBodySchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 import type { UseFormProps } from 'react-hook-form';
+import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
@@ -93,6 +94,12 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
+
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
 
     mutate(values, {
       onSuccess: (updatedUser) => {

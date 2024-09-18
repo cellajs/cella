@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { onlineManager, useMutation } from '@tanstack/react-query';
 import type { Entity } from 'backend/types/common';
 import { config } from 'config';
 import { Undo } from 'lucide-react';
@@ -7,6 +7,7 @@ import type { Control } from 'react-hook-form';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
+import { toast } from 'sonner';
 import { checkSlugAvailable } from '~/api/general';
 import InputFormField from '~/modules/common/form-fields/input';
 import { Button } from '~/modules/ui/button';
@@ -61,7 +62,16 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   // Check on change
   useEffect(() => {
     if (slug.length < 2 || (isValidSlug(slug) && previousSlug && previousSlug === slug)) return setSlugAvailable('blank');
-    if (isValidSlug(slug)) return checkAvailability({ slug, type });
+    if (isValidSlug(slug)) {
+      if (!onlineManager.isOnline()) {
+        toast.warning(t('common:offline'), {
+          position: 'top-right',
+        });
+        return;
+      }
+
+      return checkAvailability({ slug, type });
+    }
     if (!isValidSlug(slug)) return setSlugAvailable('notAvailable');
   }, [slug]);
 

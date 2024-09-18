@@ -83,8 +83,10 @@ export default defineConfig(() => {
   viteConfig.plugins?.push(
     VitePWA({
       disable: !config.has.pwa,
+      strategies: 'injectManifest',
       devOptions: {
-        enabled: false,
+        enabled: true,
+        type: 'module',
       },
       manifest: {
         name: config.name,
@@ -111,12 +113,10 @@ export default defineConfig(() => {
           },
         ],
       },
-      // TODO: these glob patterns should not be necessary, it should pick all files from dist?
-      // https://vite-pwa-org.netlify.app/guide/service-worker-precache.html
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,ico,json}'],
+      injectManifest: {
+        globDirectory: 'dist',
+        globPatterns: config.mode === 'production' ? ['**/*.{js,css,html,json,svg,png}'] : [],
         globIgnores: ['**/public/static/flags/*.(svg|png)'],
-        navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
       },
     }),
   );

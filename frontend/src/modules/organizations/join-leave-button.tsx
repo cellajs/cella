@@ -1,7 +1,8 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { Check, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { inviteMembers as baseInvite, removeMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/taosts-show';
@@ -49,6 +50,12 @@ const JoinLeaveButton = ({ organization }: Props) => {
   };
 
   const onLeave = () => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     leave({
       idOrSlug: organization.id,
       entityType: 'organization',

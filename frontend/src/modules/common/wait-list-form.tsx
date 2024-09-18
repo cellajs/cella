@@ -5,8 +5,10 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/taosts-show';
@@ -43,6 +45,12 @@ export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: stri
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     createRequest({
       email: values.email,
       type: 'waitlist',
@@ -78,13 +86,13 @@ export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: stri
         />
         <Button
           type="submit"
-          onClick={() => {
-            createRequest({
-              email: form.getValues('email'),
+          onClick={() =>
+            onSubmit({
+              email,
               type: 'waitlist',
               message: null,
-            });
-          }}
+            })
+          }
           loading={isPending}
           className="w-full"
         >
