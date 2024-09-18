@@ -29,6 +29,4 @@ const attachmentsRoutes = app
     return ctx.json({ success: true, data: createdAttachment }, 200);
   });
 
-export type AppAttachmentsType = typeof attachmentsRoutes;
-
 export default attachmentsRoutes;

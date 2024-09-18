@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import type { Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useGetEntity } from '~/hooks/use-get-entity-minimum-info';
+
 import Combobox from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, MinimumEntityItem, UserMenu } from '~/types/common';
+import type { ContextEntity, UserMenu, UserMenuItem } from '~/types/common';
 
 interface Props {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -19,7 +19,7 @@ interface Props {
   disabled?: boolean;
 }
 
-const convertItemToOption = (item: MinimumEntityItem) => {
+const convertItemToOption = (item: UserMenuItem) => {
   return {
     value: item.id,
     label: item.name,
@@ -31,17 +31,7 @@ const SelectParentFormField = ({ collection, control, name, label, type, placeho
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
 
-  const options = useMemo(() => {
-    const menuOptions = menu[collection]?.map((item) => convertItemToOption(item)) || [];
-
-    if (menuOptions.length > 0) return menuOptions;
-
-    const { _defaultValues } = control;
-    const entityId = _defaultValues[name];
-    const entity = useGetEntity(entityId, name.replace('Id', '') as ContextEntity);
-
-    return [convertItemToOption(entity)];
-  }, [menu, collection, control, name]);
+  const options = useMemo(() => menu[collection]?.map((item) => convertItemToOption(item)) || [], [menu, collection, control, name]);
 
   return (
     <FormField

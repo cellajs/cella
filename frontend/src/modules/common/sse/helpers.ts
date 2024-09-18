@@ -1,4 +1,3 @@
-import { config } from 'config';
 import { menuSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import type { UserMenu, UserMenuItem } from '~/types/common';
@@ -48,18 +47,4 @@ export const deleteMenuItem = (itemId: string) => {
       .map((item) => (item.submenu ? { ...item, submenu: remove(item.submenu) } : item));
 
   return useTransformOnMenuItems(remove); // use remove on every menu item by storage type from menu config
-};
-
-export const createResource = (reconnectFunc: () => void) => {
-  const eventSource = new EventSource(`${config.backendUrl}/sse`, {
-    withCredentials: true,
-  });
-  // Handle errors and try reconnecting
-  eventSource.onerror = () => {
-    console.error('SSE connection error. Reconnecting...');
-    eventSource.close();
-    reconnectFunc(); // Handle the reconnection logic
-  };
-
-  return eventSource;
 };

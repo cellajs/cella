@@ -1,4 +1,6 @@
+import { config } from 'config';
 import type { ClientResponse } from 'hono/client';
+import { hcWithType } from '#/hc';
 import type { ErrorType } from '#/lib/errors';
 import type { Entity } from '#/types/common';
 
@@ -49,3 +51,6 @@ export const clientConfig = {
       credentials: 'include',
     }),
 };
+
+// Create Hono clients to make requests to the backend
+export const apiClient = hcWithType(config.backendUrl, clientConfig);

@@ -54,7 +54,7 @@ export default defineConfig(() => {
             description: config.description,
             keywords: config.keywords,
             author: config.company.name,
-            color: config.theme.dark.primary,
+            color: config.viteColor,
             url: config.frontendUrl,
             twitter: config.company.twitterHandle,
           },
@@ -90,7 +90,7 @@ export default defineConfig(() => {
         name: config.name,
         short_name: config.name,
         description: config.description,
-        theme_color: config.theme.dark.primary,
+        theme_color: config.viteColor,
         icons: [
           {
             src: '/static/icons/icon-192x192.png',

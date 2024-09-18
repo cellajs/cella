@@ -1,11 +1,8 @@
-import type { AppMembershipsType } from 'backend/modules/memberships/index';
-import { config } from 'config';
-import { hc } from 'hono/client';
 import type { ContextEntity, Membership } from '~/types/common';
-import { clientConfig, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppMembershipsType>(`${config.backendUrl}/memberships`, clientConfig);
+export const client = apiClient.memberships;
 
 export interface InviteMemberProps {
   emails: string[];
@@ -17,7 +14,7 @@ export interface InviteMemberProps {
 
 // Invite users
 export const inviteMembers = async ({ idOrSlug, entityType, organizationId, ...rest }: InviteMemberProps) => {
-  const response = await client.index.$post({
+  const response = await client.$post({
     query: { idOrSlug, organizationId, entityType },
     json: rest,
   });
@@ -26,7 +23,7 @@ export const inviteMembers = async ({ idOrSlug, entityType, organizationId, ...r
 };
 
 export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: string; ids: string[]; entityType: ContextEntity }) => {
-  const response = await client.index.$delete({
+  const response = await client.$delete({
     query: { idOrSlug, entityType, ids },
   });
 

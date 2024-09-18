@@ -257,6 +257,7 @@ const organizationsRoutes = app
       200,
     );
   })
+
   /*
    * Delete organizations by ids
    */
@@ -335,7 +336,5 @@ const organizationsRoutes = app
 
     return ctx.json({ success: true }, 200);
   });
-
-export type AppOrganizationsType = typeof organizationsRoutes;
 
 export default organizationsRoutes;

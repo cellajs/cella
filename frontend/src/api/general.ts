@@ -1,12 +1,9 @@
-import type { AppGeneralType } from 'backend/modules/general/index';
-import { config } from 'config';
-import { hc } from 'hono/client';
 import { type ContextEntity, type Entity, type UploadParams, UploadType } from '~/types/common';
 import type { EnabledOauthProviderOptions } from '#/types/common';
-import { clientConfig, handleResponse } from '.';
+import { apiClient, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppGeneralType>(config.backendUrl, clientConfig);
+export const client = apiClient;
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
@@ -88,7 +85,7 @@ export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps
   return json.success;
 };
 
-type RequiredGetFromEntityParams = {
+type RequiredGetMembersParams = {
   idOrSlug: string;
   entityType: ContextEntity;
 };
@@ -100,7 +97,7 @@ type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof client.members)[
 };
 
 // Combined type
-export type GetMembersParams = RequiredGetFromEntityParams & OptionalGetMembersParams;
+export type GetMembersParams = RequiredGetMembersParams & OptionalGetMembersParams;
 
 // Get a list of members in an entity
 export const getMembers = async (
@@ -130,16 +127,6 @@ export const getMembers = async (
       },
     },
   );
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-// Get minimum entity data
-export const getMinimumEntity = async ({ idOrSlug, entityType }: RequiredGetFromEntityParams) => {
-  const response = await client['minimum-entity'].$get({
-    query: { idOrSlug, entityType },
-  });
 
   const json = await handleResponse(response);
   return json.data;
