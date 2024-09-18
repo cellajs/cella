@@ -1,5 +1,6 @@
 import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 
+import type { User } from 'lucia';
 import { coalesce, db } from '#/db/db';
 import { auth } from '#/db/lucia';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -10,7 +11,6 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
-import type { User } from 'lucia';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from './helpers/transform-database-user';
@@ -242,7 +242,5 @@ const usersRoutes = app
       200,
     );
   });
-
-export type AppUsersType = typeof usersRoutes;
 
 export default usersRoutes;

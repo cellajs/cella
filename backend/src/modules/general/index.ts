@@ -446,6 +446,4 @@ const generalRoutes = app
     });
   });
 
-export type AppGeneralType = typeof generalRoutes;
-
 export default generalRoutes;

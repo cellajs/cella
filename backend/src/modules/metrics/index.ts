@@ -40,6 +40,4 @@ const metricRoutes = app
     return ctx.json({ success: true, data }, 200);
   });
 
-export type AppMetricType = typeof metricRoutes;
-
 export default metricRoutes;
