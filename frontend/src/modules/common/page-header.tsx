@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import type { Entity } from 'backend/types/common';
-import { ChevronRight, Home } from 'lucide-react';
-import { useRef } from 'react';
+import { ChevronRight, Home, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover } from '~/modules/common/page-cover';
@@ -18,16 +18,35 @@ interface PageHeaderProps {
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;
-  parent?: MinimumEntityItem;
+  parent?: { id: string; fetchFunc: (idOrSlug: string) => Promise<MinimumEntityItem> };
   disableScroll?: boolean;
 }
 
 // PageHeader Component
 const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, parent, disableScroll }: PageHeaderProps) => {
+  const [fetchedParent, setFetchedParent] = useState<MinimumEntityItem | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<boolean>(false);
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
+
+  useEffect(() => {
+    if (!parent) return;
+
+    // Define an async function inside the effect
+    (async () => {
+      try {
+        const data = await parent.fetchFunc(parent.id);
+        setFetchedParent(data);
+        setLoading(false);
+      } catch (err) {
+        setError(true);
+        setLoading(false);
+      }
+    })();
+  }, [parent]);
 
   return (
     <div className="relative">
@@ -59,15 +78,19 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
               <BreadcrumbSeparator className="max-sm:hidden">
                 <ChevronRight size={12} />
               </BreadcrumbSeparator>
-              {parent && (
+              {parent && !error && (
                 <>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink className="flex items-center" asChild>
-                      <Link to={baseEntityRoutes[parent.entity]} params={{ idOrSlug: parent.slug }}>
-                        <span>{parent.name}</span>
-                      </Link>
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
+                  {loading || !fetchedParent ? (
+                    <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                  ) : (
+                    <BreadcrumbItem>
+                      <BreadcrumbLink className="flex items-center" asChild>
+                        <Link to={baseEntityRoutes[fetchedParent.entity]} params={{ idOrSlug: fetchedParent.slug }}>
+                          <span>{fetchedParent.name}</span>
+                        </Link>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                  )}
                   <BreadcrumbSeparator>
                     <ChevronRight size={12} />
                   </BreadcrumbSeparator>
