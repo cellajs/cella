@@ -5,16 +5,7 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
 import { userUnsubscribeQuerySchema } from '../users/schema';
-import {
-  acceptInviteBodySchema,
-  checkTokenSchema,
-  inviteBodySchema,
-  membersQuerySchema,
-  membersSchema,
-  minEntityQuerySchema,
-  minEntitySchema,
-  suggestionsSchema,
-} from './schema';
+import { acceptInviteBodySchema, checkTokenSchema, inviteBodySchema, membersQuerySchema, membersSchema, suggestionsSchema } from './schema';
 
 class GeneralRoutesConfig {
   public unsubscribeUser = createRouteConfig({
@@ -267,29 +258,6 @@ class GeneralRoutesConfig {
         content: {
           'application/json': {
             schema: successWithPaginationSchema(membersSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getMinimumEntity = createRouteConfig({
-    method: 'get',
-    path: '/minimum-entity',
-    guard: [isAuthenticated],
-    tags: ['general'],
-    summary: 'Get minimum info about requested entity',
-    description: 'Get info of a context entity by id or slug. It returns minimum info without membership.',
-    request: {
-      query: minEntityQuerySchema,
-    },
-    responses: {
-      200: {
-        description: 'Minimum entity',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(minEntitySchema),
           },
         },
       },
