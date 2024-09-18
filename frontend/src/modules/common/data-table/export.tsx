@@ -7,7 +7,7 @@ import router from '~/lib/router';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { type Theme, useThemeStore } from '~/store/theme';
+import { useThemeStore } from '~/store/theme';
 
 interface Props<R> {
   filename: string;
@@ -24,11 +24,11 @@ const Export = <R extends object>({ filename, columns, selectedRows, fetchRows, 
     const rows = selected && selectedRows ? selectedRows : await fetchRows(1000);
     const filenameWithExtension = `${filename}.${type}`;
     const themeState = useThemeStore.getState();
-    const theme: Theme = themeState.mode;
+    const mode = themeState.mode;
 
     if (type === 'csv') return exportToCsv(columns, rows, filenameWithExtension);
 
-    return exportToPdf(columns, rows, filenameWithExtension, router.state.location.pathname, theme);
+    return exportToPdf(columns, rows, filenameWithExtension, router.state.location.pathname, mode);
   };
 
   return (
