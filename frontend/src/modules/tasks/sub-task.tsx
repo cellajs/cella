@@ -64,7 +64,7 @@ const SubTask = ({
   };
 
   useEventListener('toggleSubTaskEditing', (e) => {
-    if (task.id === e.detail.id) setIsEditing(e.detail.state);
+    if (task.parentId === e.detail.id) setIsEditing(e.detail.state);
   });
 
   // create draggable & dropTarget elements and auto scroll

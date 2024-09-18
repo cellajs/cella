@@ -251,7 +251,12 @@ export default function Board() {
   const handleTaskClick = (event: TaskCardFocusEvent) => {
     const { taskId, clickTarget } = event.detail;
 
+    if (focusedTaskId && focusedTaskId !== taskId) {
+      dispatchCustomEvent('toggleSubTaskEditing', { id: focusedTaskId, state: false });
+      dispatchCustomEvent('toggleTaskEditing', { id: focusedTaskId, state: false });
+    }
     if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(taskId);
+
     if (focusedTaskId === taskId) return setTaskExpanded(taskId, true);
 
     const taskCard = document.getElementById(taskId);
@@ -286,7 +291,7 @@ export default function Board() {
     );
   };
 
-  const handleCRUD = (event: TaskOperationEvent) => {
+  const handleTaskOperations = (event: TaskOperationEvent) => {
     const { array, action, projectId } = event.detail;
     const callback = useMutateTasksQueryData(['boardTasks', projectId]);
     callback(array, action);
@@ -306,7 +311,7 @@ export default function Board() {
   };
 
   useEventListener('entityArchiveToggle', handleEntityUpdate);
-  useEventListener('taskOperation', handleCRUD);
+  useEventListener('taskOperation', handleTaskOperations);
   useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('toggleTaskExpand', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
