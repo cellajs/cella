@@ -846,6 +846,4 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   });
 
-export type AppAuthType = typeof authRoutes;
-
 export default authRoutes;
