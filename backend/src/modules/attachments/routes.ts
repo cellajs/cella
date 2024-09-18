@@ -9,7 +9,7 @@ class AttachmentRoutesConfig {
   public createAttachment = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: [isAuthenticated],
+    guard: isAuthenticated,
     tags: ['attachments'],
     summary: 'Create new attachment',
     description: 'Create a new attachment in a task.',
