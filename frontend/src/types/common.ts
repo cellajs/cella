@@ -33,8 +33,8 @@ export type MinimumEntityItem = {
   entity: ContextEntity;
   slug: string;
   name: string;
-  thumbnailUrl?: string | null;
-  bannerUrl?: string | null;
+  thumbnailUrl: string | null;
+  bannerUrl: string | null;
 };
 
 export type EntityPage = MinimumEntityItem & {

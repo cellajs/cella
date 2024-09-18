@@ -2,11 +2,12 @@ import { Link } from '@tanstack/react-router';
 import type { Entity } from 'backend/types/common';
 import { ChevronRight, Home } from 'lucide-react';
 import { useRef } from 'react';
-import { useGetEntity } from '~/hooks/use-get-entity-minimum-info';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover } from '~/modules/common/page-cover';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
+import { baseEntityRoutes } from '~/nav-config';
+import type { MinimumEntityItem } from '~/types/common';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {
@@ -17,15 +18,13 @@ interface PageHeaderProps {
   thumbnailUrl?: string | null;
   bannerUrl?: string | null;
   panel?: React.ReactNode;
-  organizationId?: string;
+  parent?: MinimumEntityItem;
   disableScroll?: boolean;
 }
 
 // PageHeader Component
-const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, organizationId, disableScroll }: PageHeaderProps) => {
+const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, parent, disableScroll }: PageHeaderProps) => {
   const scrollToRef = useRef<HTMLDivElement>(null);
-
-  const organization = organizationId ? useGetEntity(organizationId, 'organization') : null;
 
   // Scroll to page header on load
   if (!disableScroll) useScrollTo(scrollToRef);
@@ -60,12 +59,12 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
               <BreadcrumbSeparator className="max-sm:hidden">
                 <ChevronRight size={12} />
               </BreadcrumbSeparator>
-              {organization && (
+              {parent && (
                 <>
                   <BreadcrumbItem>
                     <BreadcrumbLink className="flex items-center" asChild>
-                      <Link to="/$idOrSlug/members" params={{ idOrSlug: organization.slug }}>
-                        <span>{organization.name}</span>
+                      <Link to={baseEntityRoutes[parent.entity]} params={{ idOrSlug: parent.slug }}>
+                        <span>{parent.name}</span>
                       </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
