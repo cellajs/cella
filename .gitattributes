@@ -1,5 +1,0 @@
-backend/drizzle/* merge=ours
-README.md merge=ours
-package.json merge=ours
-.gitattributes merge=ours
-config/default merge=ours

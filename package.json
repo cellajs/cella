@@ -13,8 +13,6 @@
     "node": ">=20.14.0"
   },
   "scripts": {
-    "upstream": "git remote get-url upstream || git remote add upstream https://github.com/cellajs/cella.git && git fetch upstream && git merge upstream/main",
-    "upstream:dev": "git remote get-url upstream || git remote add upstream https://github.com/cellajs/cella.git && git fetch upstream && git merge upstream/development",
     "prepare": "cross-env [ $NODE_ENV=development ] && lefthook install && code --install-extension biomejs.biome; exit 0",
     "quick": "pnpm --filter backend run quick & turbo dev --filter frontend --filter tus",
     "docker": "pnpm --filter backend run docker:up --detach",
