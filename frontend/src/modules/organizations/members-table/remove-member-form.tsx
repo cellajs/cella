@@ -1,3 +1,6 @@
+import { onlineManager } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { removeMembers as baseRemoveMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '~/modules/common/delete-form';
@@ -13,6 +16,8 @@ interface Props {
 }
 
 const RemoveMembersForm = ({ members, entityId, entityType = 'organization', callback, dialog: isDialog }: Props) => {
+  const { t } = useTranslation();
+
   const { mutate: removeMembers, isPending } = useMutation({
     mutationFn: baseRemoveMembers,
     onSuccess: () => {
@@ -27,6 +32,12 @@ const RemoveMembersForm = ({ members, entityId, entityType = 'organization', cal
   });
 
   const onRemoveMember = () => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     removeMembers({
       idOrSlug: entityId,
       entityType: entityType,

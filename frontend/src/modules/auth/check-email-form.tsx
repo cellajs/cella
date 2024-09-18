@@ -8,9 +8,11 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { checkEmail as baseCheckEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import type { TokenData } from '.';
@@ -44,6 +46,12 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     checkEmail(values.email);
   };
 

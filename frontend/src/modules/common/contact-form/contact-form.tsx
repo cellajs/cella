@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 
+import { onlineManager } from '@tanstack/react-query';
 import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createRequest as baseCreateRequest } from '~/api/requests';
@@ -57,6 +58,12 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   });
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     const { name, email, message } = data;
     createRequest({ email, type: 'contact', message: `${name} with the message: ${message}` });
   };

@@ -73,7 +73,7 @@ export const config = {
   privateCDNUrl: 'https://cdn-priv.cellajs.com',
   publicCDNUrl: 'https://cdn.cellajs.com',
 
-  viteColor: '#26262b',
+  themeColor: '#26262b',
 
   // Theme settings
   theme: {
