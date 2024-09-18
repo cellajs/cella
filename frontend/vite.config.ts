@@ -85,14 +85,13 @@ export default defineConfig(() => {
       disable: !config.has.pwa,
       strategies: 'injectManifest',
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'module',
       },
       manifest: {
         name: config.name,
         short_name: config.name,
         description: config.description,
-        theme_color: config.viteColor,
         icons: [
           {
             src: '/static/icons/icon-192x192.png',

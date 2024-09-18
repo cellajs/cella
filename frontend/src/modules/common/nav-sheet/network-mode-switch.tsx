@@ -43,7 +43,7 @@ export const NetworkModeSwitch = () => {
   const onCheckedChange = (mode: boolean) => setNetworkMode(mode ? 'offline' : 'online');
 
   return (
-    <div className="max-xl:hidden flex items-center gap-4 ml-1">
+    <div className="flex items-center gap-4 ml-1">
       <Switch
         size="xs"
         id="keepMenuOpen"
