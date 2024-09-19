@@ -46,7 +46,7 @@ export const NetworkModeSwitch = () => {
     <div className="flex items-center gap-4 ml-1">
       <Switch
         size="xs"
-        id="keepMenuOpen"
+        id="offlineMode"
         checked={networkMode === 'offline'}
         onCheckedChange={onCheckedChange}
         aria-label={t('common:keep_menu_open')}
