@@ -1,10 +1,9 @@
-import type { AppLabelsType } from 'backend/modules/labels/index';
 import { config } from 'config';
-import { hc } from 'hono/client';
+import { labelsHc } from '#/modules/labels/hc';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppLabelsType>(`${config.backendUrl}/labels`, clientConfig);
+export const client = labelsHc(config.backendUrl, clientConfig);
 
 export type CreateLabelParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 

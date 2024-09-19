@@ -115,7 +115,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
           aria-label="Assign"
           variant="ghost"
           size="xs"
-          className="relative flex justify-start gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80"
+          className="relative flex justify-center gap-2 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 px-1 min-w-8 opacity-80"
         >
           {task.assignedTo.length > 0 ? (
             <AvatarGroup limit={isMobile ? 1 : 3}>
@@ -150,7 +150,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
           variant="outlineGhost"
           size="xs"
           className={cn(
-            'relative rounded-none rounded-r -ml-2 [&:not(.absolute)]:active:translate-y-0',
+            'relative rounded-none rounded-r -ml-2 px-2 [&:not(.absolute)]:active:translate-y-0',
             statusVariants({ status: task.status as TaskStatus }),
           )}
         >

@@ -11,7 +11,8 @@ export const footerSections = [
     title: 'common:product',
     links: [
       { title: 'common:about', href: '/about' },
-      { title: 'common:sign_up', href: '/auth/sign-in' },
+      { title: 'common:sign_in', href: '/auth/sign-in' },
+      { title: 'common:docs', href: `${config.backendUrl}/docs` },
     ],
   },
   {
