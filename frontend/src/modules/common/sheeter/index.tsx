@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dialog } from '~/modules/common/dialoger/state';
-import { type SheetAction, SheetObserver, type SheetT } from '~/modules/common/sheeter/state';
+import { type SheetAction, SheetObserver, type SheetT, sheet } from '~/modules/common/sheeter/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
 
@@ -36,6 +36,8 @@ export function Sheeter() {
   }, []);
 
   useEffect(() => {
+    // To triggers sheets that opens on mount
+    setCurrentSheets(sheet.getAll());
     const handleAction = (action: SheetAction & SheetT) => {
       if (action.remove) handleRemoveSheet(action.id);
       else {
@@ -46,10 +48,8 @@ export function Sheeter() {
         });
       }
     };
-
-    const unsubscribe = SheetObserver.subscribe(handleAction);
-    return unsubscribe;
-  }, [handleRemoveSheet]);
+    return SheetObserver.subscribe(handleAction);
+  }, []);
 
   if (!currentSheets.length) return null;
 

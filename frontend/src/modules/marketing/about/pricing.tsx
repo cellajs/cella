@@ -33,7 +33,7 @@ const Pricing = () => {
         drawerOnMobile: false,
         className: 'sm:max-w-5xl',
         title: t('common:waitlist_request'),
-        text: t('common:waitlist_request.text'),
+        text: t('common:waitlist_request.text', { appName: config.name }),
       });
     }
   };
@@ -62,7 +62,7 @@ const Pricing = () => {
                 {t(title)}
                 {popular && <Sparkles className="ml-1 w-5 text-primary" strokeWidth={config.theme.strokeWidth} />}
               </h3>
-              <div className="text-center mt-4 text-gray-600 dark:text-gray-400">
+              <div className="flex items-center justify-center mt-4 text-gray-600 dark:text-gray-400">
                 {discount && <Badge className="text-lg mr-1 px-3">{discount}</Badge>}
                 <span className={`text-3xl font-bold ${discount ? 'line-through mr-2' : 'mr-1'}`}>{t(price)}</span>
                 <span className="font-light">/ {t('common:year')}</span>

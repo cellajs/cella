@@ -406,7 +406,7 @@
   "view_screenshot": "View screenshot",
   "visit": "Visit",
   "waitlist_request": "Join waitlist",
-  "waitlist_request.text": "By joining our waitlist, you will secured a spot in our queue.",
+  "waitlist_request.text": "Be one of the first to try out {{appName}}. We will not send any marketing mails.",
   "website_url": "Website url",
   "welcome_back": "Welcome back",
   "without_color": "Without color",

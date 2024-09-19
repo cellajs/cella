@@ -1,7 +1,12 @@
+import { useThemeStore } from '~/store/theme';
+
 export const hexToHsl = (hex: string): string => {
   // Validate hex format
   const hexPattern = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-  if (!hexPattern.test(hex)) throw new Error('Invalid hex format');
+  if (!hexPattern.test(hex)) {
+    useThemeStore.setState((state) => ({ ...state, ...{ theme: 'none' } }));
+    throw new Error('Invalid theme color hex format.');
+  }
 
   // Clean the hex string
   const cleanedHex = hex.replace(/^#/, '').toLowerCase();
