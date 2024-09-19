@@ -199,7 +199,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         members={selectedMembers}
       />,
       {
-        drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:remove_resource', { resource: t('member').toLowerCase() }),
         text: (
