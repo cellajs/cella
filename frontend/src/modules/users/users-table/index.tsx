@@ -124,11 +124,7 @@ const UsersTable = () => {
 
   // Update user role
   const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     for (const index of indexes) {
       if (column.key === 'role') updateUserRole(changedRows[index]);
