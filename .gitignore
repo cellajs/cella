@@ -9,6 +9,7 @@ lerna-debug.log*
 vite.config.ts.*
 node_modules
 dist
+dev-dist
 out
 dist-ssr
 *.local

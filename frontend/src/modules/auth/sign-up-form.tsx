@@ -5,9 +5,11 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
+import { toast } from 'sonner';
 import { signUp as baseSignUp } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -49,6 +51,12 @@ export const SignUpForm = ({ tokenData, email, setStep }: { tokenData: TokenData
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     signUp({
       ...values,
       token: tokenData?.token,

@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
+import { onlineManager } from '@tanstack/react-query';
 import type { checkTokenSchema } from 'backend/modules/general/schema';
 import { config } from 'config';
 import { ArrowRight, Loader2 } from 'lucide-react';
@@ -44,6 +45,12 @@ const AcceptInvite = () => {
   });
 
   const onSubmit = () => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     acceptInvite({ token });
   };
 

@@ -13,7 +13,10 @@ import Counters from '~/modules/marketing/about/counters';
 // import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
 import Pricing from '~/modules/marketing/about/pricing';
+// import Integrations from '~/modules/marketing/about/integrations';
 import Why from '~/modules/marketing/about/why';
+
+import '~/modules/marketing/about/glow-button.css';
 
 interface AboutSectionProps {
   title: string;

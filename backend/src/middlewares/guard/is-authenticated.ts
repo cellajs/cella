@@ -1,9 +1,9 @@
-import type { MiddlewareHandler } from 'hono';
+import type { Context, Next } from 'hono';
 import { auth as luciaAuth } from '#/db/lucia';
 import { errorResponse } from '#/lib/errors';
 import { removeSessionCookie } from '#/modules/auth/helpers/cookies';
 
-const isAuthenticated: MiddlewareHandler = async (ctx, next) => {
+export async function isAuthenticated(ctx: Context, next: Next): Promise<Response | undefined> {
   const cookieHeader = ctx.req.raw.headers.get('Cookie');
   // Read the session ID from the session cookie
   const sessionId = luciaAuth.readSessionCookie(cookieHeader ?? '');
@@ -31,6 +31,4 @@ const isAuthenticated: MiddlewareHandler = async (ctx, next) => {
   ctx.set('user', user);
 
   await next();
-};
-
-export default isAuthenticated;
+}

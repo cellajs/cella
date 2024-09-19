@@ -54,7 +54,7 @@ export default defineConfig(() => {
             description: config.description,
             keywords: config.keywords,
             author: config.company.name,
-            color: config.viteColor,
+            color: config.themeColor,
             url: config.frontendUrl,
             twitter: config.company.twitterHandle,
           },
@@ -85,12 +85,13 @@ export default defineConfig(() => {
       disable: !config.has.pwa,
       devOptions: {
         enabled: false,
+        type: 'module',
       },
       manifest: {
         name: config.name,
         short_name: config.name,
         description: config.description,
-        theme_color: config.viteColor,
+        theme_color: config.themeColor,
         icons: [
           {
             src: '/static/icons/icon-192x192.png',
@@ -111,12 +112,9 @@ export default defineConfig(() => {
           },
         ],
       },
-      // TODO: these glob patterns should not be necessary, it should pick all files from dist?
-      // https://vite-pwa-org.netlify.app/guide/service-worker-precache.html
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,jpg,jpeg,svg,ico,json}'],
+        globPatterns: config.mode === 'production' ? ['**/*.{js,css,html,json,svg,png}'] : [],
         globIgnores: ['**/public/static/flags/*.(svg|png)'],
-        navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
       },
     }),
   );

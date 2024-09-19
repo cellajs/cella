@@ -18,6 +18,7 @@ import { SheetMenuSearch } from '~/modules/common/nav-sheet/sheet-menu-search';
 import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
 import { Switch } from '~/modules/ui/switch';
 import { menuSections } from '~/nav-config';
+import { NetworkModeSwitch } from './network-mode-switch';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
 
@@ -37,8 +38,7 @@ export type SectionItem = {
 
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
-  const { menu } = useNavigationStore();
-  const { keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
+  const { menu, keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
 
   const idOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -133,6 +133,7 @@ export const SheetMenu = memo(() => {
                 {t('common:keep_menu_open')}
               </label>
             </div>
+            <NetworkModeSwitch />
             {menuSections.some((el) => el.isSubmenu) && (
               <div className="flex items-center gap-4 ml-1">
                 <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />

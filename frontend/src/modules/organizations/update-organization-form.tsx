@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type DefaultError, useMutation } from '@tanstack/react-query';
+import { type DefaultError, onlineManager, useMutation } from '@tanstack/react-query';
 import { updateOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -9,6 +9,7 @@ import type { Organization } from '~/types/common';
 import { config } from 'config';
 import { useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
@@ -77,6 +78,12 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     mutate(values, {
       onSuccess: (updatedOrganization) => {
         if (isSheet) sheet.remove('update-organization');

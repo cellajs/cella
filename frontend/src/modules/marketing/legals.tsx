@@ -9,8 +9,8 @@ import PublicPage from '~/modules/marketing/page';
 type LegalTypes = 'privacy' | 'terms';
 
 export const LegalText = ({ textFor }: { textFor: LegalTypes }) => {
-  if (textFor === 'terms') return <p>Put terms here</p>;
-  return <p>Put privacy statement here</p>;
+  if (textFor === 'terms') return <p className="mb-24">Put terms here</p>;
+  return <p className="mb-24">Put privacy statement here</p>;
 };
 
 const Legal = ({ type }: { type: LegalTypes }) => {
