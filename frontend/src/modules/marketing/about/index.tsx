@@ -8,7 +8,7 @@ import { buttonVariants } from '~/modules/ui/button';
 import { ArrowDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import Counters from '~/modules/marketing/about/counters';
+// import Counters from '~/modules/marketing/about/counters';
 // import FAQ from '~/modules/marketing/about/faq';
 // import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
@@ -105,9 +105,9 @@ const About = () => {
           </AboutSection> */}
 
           {/* Public counters */}
-          <AboutSection key={'counters'} section="counters" title="about:title_5" text="about:text_5">
+          {/* <AboutSection key={'counters'} section="counters" title="about:title_5" text="about:text_5">
             <Counters />
-          </AboutSection>
+          </AboutSection> */}
         </div>
       </div>
       <MarketingFooter />
