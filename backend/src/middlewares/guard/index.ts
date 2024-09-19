@@ -1,13 +1,11 @@
-import type { Context, MiddlewareHandler } from 'hono';
+import type { Context, Next } from 'hono';
 import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import isAllowedTo from './is-allowed-to';
-import isAuthenticated from './is-authenticated';
-import splitByAllowance from './split-by-allowance';
+export { isAllowedTo } from './is-allowed-to';
+export { isAuthenticated } from './is-authenticated';
+export { splitByAllowance } from './split-by-allowance';
 
-export { isAllowedTo, isAuthenticated, splitByAllowance };
-
-export const isSystemAdmin: MiddlewareHandler = async (ctx: Context, next) => {
+export async function isSystemAdmin(ctx: Context, next: Next): Promise<Response | undefined> {
   // Extract user
   const user = getContextUser();
 
@@ -17,8 +15,8 @@ export const isSystemAdmin: MiddlewareHandler = async (ctx: Context, next) => {
   }
 
   await next();
-};
+}
 
-export const isPublicAccess: MiddlewareHandler = async (_, next) => {
+export async function isPublicAccess(_: Context, next: Next): Promise<void> {
   await next();
-};
+}

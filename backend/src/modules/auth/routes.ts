@@ -4,6 +4,7 @@ import { errorResponses, successWithDataSchema, successWithoutDataSchema } from 
 import { cookieSchema, passwordSchema } from '#/lib/common-schemas';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
+import { isAllowedAuthStrategy, isAllowedOAuth } from '#/middlewares/guard/allowed-auth';
 import { authRateLimiter } from '#/middlewares/rate-limiter';
 import { signInRateLimiter } from '#/middlewares/rate-limiter/sign-in';
 import { authBodySchema, emailBodySchema } from './schema';
@@ -251,7 +252,7 @@ class AuthRoutesConfig {
   public verifyPasskey = createRouteConfig({
     method: 'post',
     path: '/passkey-verification',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('passkey')],
     tags: ['auth'],
     summary: 'Verify passkey',
     description: 'Verify passkey by checking the validity of signature with public key.',
@@ -289,7 +290,7 @@ class AuthRoutesConfig {
   public signIn = createRouteConfig({
     method: 'post',
     path: '/sign-in',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('password')],
     middleware: signInRateLimiter,
     tags: ['auth'],
     summary: 'Sign in with password',
@@ -327,7 +328,7 @@ class AuthRoutesConfig {
   public githubSignIn = createRouteConfig({
     method: 'get',
     path: '/github',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('github')],
     tags: ['auth'],
     summary: 'Authenticate with GitHub',
     description: 'Authenticate with Github to sign in or sign up.',
@@ -347,7 +348,7 @@ class AuthRoutesConfig {
   public githubSignInCallback = createRouteConfig({
     method: 'get',
     path: '/github/callback',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('github')],
     middleware: [authRateLimiter],
     tags: ['auth'],
     summary: 'Callback for GitHub',
@@ -373,7 +374,7 @@ class AuthRoutesConfig {
   public getPasskeyChallenge = createRouteConfig({
     method: 'get',
     path: '/passkey-challenge',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('passkey')],
     tags: ['auth'],
     summary: 'Get passkey challenge',
     description: 'Handing over the challenge, which results in a key pair, a private and a public key, being created on the device',
@@ -394,7 +395,7 @@ class AuthRoutesConfig {
   public setPasskey = createRouteConfig({
     method: 'post',
     path: '/passkey-registration',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('passkey')],
     tags: ['auth'],
     summary: 'Register passkey',
     description:
@@ -430,7 +431,7 @@ class AuthRoutesConfig {
   public googleSignIn = createRouteConfig({
     method: 'get',
     path: '/google',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('google')],
     tags: ['auth'],
     summary: 'Authenticate with Google',
     description: 'Authenticate with Google to sign in or sign up.',
@@ -450,7 +451,7 @@ class AuthRoutesConfig {
   public googleSignInCallback = createRouteConfig({
     method: 'get',
     path: '/google/callback',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('google')],
     middleware: [authRateLimiter],
     tags: ['auth'],
     summary: 'Callback for Google',
@@ -476,7 +477,7 @@ class AuthRoutesConfig {
   public microsoftSignIn = createRouteConfig({
     method: 'get',
     path: '/microsoft',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('microsoft')],
     tags: ['auth'],
     summary: 'Authenticate with Microsoft',
     description: 'Authenticate with Microsoft to sign in or sign up.',
@@ -500,7 +501,7 @@ class AuthRoutesConfig {
   public microsoftSignInCallback = createRouteConfig({
     method: 'get',
     path: '/microsoft/callback',
-    guard: isPublicAccess,
+    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('microsoft')],
     middleware: [authRateLimiter],
     tags: ['auth'],
     summary: 'Callback for Microsoft',

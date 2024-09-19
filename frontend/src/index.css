@@ -39,7 +39,7 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    
+
     --background: 240 10% 9%;
     --foreground: 0 0% 95%;
     --card: 240 10% 14%;
@@ -62,8 +62,7 @@
     --success: 120 100% 40%;
   }
 
-  .theme-rose.light {
-    --primary: 346.8 77.2% 49.8%;
+  .theme-base.light {
     --primary-foreground: 355.7 100% 97.3%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -71,8 +70,7 @@
     --accent-foreground: 240 5.9% 10%;
   }
 
-  .theme-rose.dark {
-    --primary: 346.8 77.2% 49.8%;
+  .theme-base.dark {
     --primary-foreground: 355.7 100% 97.3%;
     --secondary: 240 3.7% 15%;
     --secondary-foreground: 0 0% 98%;
@@ -103,7 +101,7 @@
       overflow: hidden;
       position: relative;
     }
-    
+
     #app-content {
       flex: 1;
       height: 100%;
@@ -118,12 +116,12 @@
 
 @layer components {
   .menu-item-sub:before {
-    content: '';
+    content: "";
     display: block;
     position: absolute;
     top: -9px;
     left: 27px;
-    opacity: .5;
+    opacity: 0.5;
     z-index: 0;
     width: 1px;
     height: 14px;
@@ -131,7 +129,7 @@
   }
 
   .rich-gradient:after {
-    content: '';
+    content: "";
     display: block;
     position: absolute;
     top: 0;
@@ -139,24 +137,22 @@
     width: 100%;
     height: 100%;
     z-index: -3;
-    background-image:
-      linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(255, 199, 147, 0.87)),
+    background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(255, 199, 147, 0.87)),
       linear-gradient(to top left, rgba(0, 0, 0, 0), rgb(57, 160, 251)),
       linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgb(195, 120, 241)),
       linear-gradient(to top right, rgba(0, 0, 0, 0), rgb(2, 155, 129));
   }
 
   .dark .rich-gradient:after {
-    opacity: .8;
-    background-image:
-      linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(60, 0, 59, 1)),
+    opacity: 0.8;
+    background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(60, 0, 59, 1)),
       linear-gradient(to top left, rgba(0, 0, 0, 0), rgba(15, 6, 86, 1)),
       linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgba(184, 144, 0, 1)),
       linear-gradient(to top right, rgba(0, 0, 0, 0), rgba(11, 144, 122, 1));
   }
 
   .rich-gradient:before {
-    content: '';
+    content: "";
     display: block;
     position: absolute;
     top: 0;
@@ -168,79 +164,27 @@
   }
 
   .dark .rich-gradient:before {
-    opacity: .8;
+    opacity: 0.8;
     background-image: radial-gradient(circle 90vh at 40% 40%, hsla(var(--background)), rgba(255, 255, 255, 0));
   }
 
   .rich-gradient.dark-gradient:after {
     opacity: 1;
     background: rgba(0, 0, 0, 1);
-    background-image:
-      linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(255, 255, 255, 0.2)),
+    background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(255, 255, 255, 0.2)),
       linear-gradient(to top left, rgba(0, 0, 0, 0), rgba(49, 49, 230, 0.3)),
       linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgba(156, 39, 228, 0.2)),
       linear-gradient(to top right, rgba(0, 0, 0, 0), rgba(254, 185, 24, 0.3));
   }
 
   .dark .dark-gradient:after {
-    opacity: .2;
+    opacity: 0.2;
   }
 
   .rich-gradient.dark-gradient:before {
     background-image: radial-gradient(circle 120vh at 40% 120%, rgba(59, 17, 37, 0.6), rgba(255, 255, 255, 0));
   }
 }
-
-.outline-glow-button:before {
-  content: '';
-  display: block;
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  opacity: .5;
-  width: calc(100% + 2px);
-  height: calc(100% + 2px);
-  z-index: -2;
-  border-radius: 100px;
-  background: linear-gradient(45deg, rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%);
-}
-
-.outline-glow-button:after {
-  content: '';
-  display: block;
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  filter: blur(6px);
-  opacity: .4;
-  width: calc(100% + 2px);
-  height: calc(100% + 2px);
-  z-index: -2;
-  border-radius: 100px;
-  background: linear-gradient(45deg, rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%);
-}
-
-.outline-glow-button:hover::before {
-  opacity: 1;
-}
-
-.outline-glow-button:hover::after {
-  opacity: .8;
-}
-
-.outline-glow-button:active::after {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  filter: none;
-  opacity: 1;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  border-radius: 100px;
-  background: hsla(var(--background));
-}
-
 .fill-grid {
   block-size: 100%;
 }

@@ -9,6 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -19,6 +20,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { TokenData } from '.';
+import { isEnabledAuthStrategy } from './heplers';
 
 const formSchema = authBodySchema;
 
@@ -87,25 +89,29 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            // Custom css due to html injection by browser extensions
-            <FormItem className="gap-0">
-              <FormControl>
-                <Input type="password" autoFocus {...field} autoComplete="current-password" placeholder={t('common:password')} />
-              </FormControl>
-              <FormMessage className="mt-2" />
-            </FormItem>
-          )}
-        />
+        {isEnabledAuthStrategy('password') && (
+          <>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                // Custom css due to html injection by browser extensions
+                <FormItem className="gap-0">
+                  <FormControl>
+                    <Input type="password" autoFocus {...field} autoComplete="current-password" placeholder={t('common:password')} />
+                  </FormControl>
+                  <FormMessage className="mt-2" />
+                </FormItem>
+              )}
+            />
 
-        <Button type="submit" loading={isPending} className="w-full">
-          {t('common:sign_in')}
-          <ArrowRight size={16} className="ml-2" />
-        </Button>
-        <ResetPasswordRequest email={email} />
+            <Button type="submit" loading={isPending} className="w-full">
+              {t('common:sign_in')}
+              <ArrowRight size={16} className="ml-2" />
+            </Button>
+            <ResetPasswordRequest email={email} />
+          </>
+        )}
       </form>
     </Form>
   );
@@ -124,6 +130,12 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
   });
 
   const handleResetRequestSubmit = () => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     // TODO maybe find a better way
     dialog.update('send-reset-password', {
       content: (

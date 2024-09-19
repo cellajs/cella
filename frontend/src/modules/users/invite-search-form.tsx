@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type InviteMemberProps, inviteMembers } from '~/api/memberships';
 
+import { onlineManager } from '@tanstack/react-query';
 import { idOrSlugSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
+import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/taosts-show';
@@ -64,13 +66,19 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
     },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
-      callback?.();
       if (isDialog) dialog.remove();
       showToast(t('common:success.user_invited'), 'success');
+      callback?.();
     },
   });
 
   const onSubmit = (values: FormValues) => {
+    if (!onlineManager.isOnline()) {
+      return toast.warning(t('common:offline'), {
+        position: 'top-right',
+      });
+    }
+
     invite(values);
   };
 

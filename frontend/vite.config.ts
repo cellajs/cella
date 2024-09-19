@@ -54,7 +54,7 @@ export default defineConfig(() => {
             description: config.description,
             keywords: config.keywords,
             author: config.company.name,
-            color: config.theme.dark.primary,
+            color: config.themeColor,
             url: config.frontendUrl,
             twitter: config.company.twitterHandle,
           },
@@ -85,12 +85,13 @@ export default defineConfig(() => {
       disable: !config.has.pwa,
       devOptions: {
         enabled: false,
+        type: 'module',
       },
       manifest: {
         name: config.name,
         short_name: config.name,
         description: config.description,
-        theme_color: config.theme.dark.primary,
+        theme_color: config.themeColor,
         icons: [
           {
             src: '/static/icons/icon-192x192.png',
@@ -112,7 +113,8 @@ export default defineConfig(() => {
         ],
       },
       workbox: {
-        navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
+        globPatterns: config.mode === 'production' ? ['**/*.{js,css,html,json,svg,png}'] : [],
+        globIgnores: ['**/public/static/flags/*.(svg|png)'],
       },
     }),
   );

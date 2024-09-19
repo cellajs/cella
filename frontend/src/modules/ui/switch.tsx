@@ -22,22 +22,38 @@ export const switchVariants = cva(
 );
 
 const switchThumbVariants = cva(
-  'pointer-events-none block rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0',
+  'pointer-events-none block rounded-full shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0',
   {
     variants: {
       size: { xs: 'h-3 w-3 data-[state=checked]:translate-x-4', sm: 'h-4 w-4', base: 'h-5 w-5', lg: 'h-6 w-6' },
+      bg: {
+        none: 'bg-transparent',
+        default: 'bg-background',
+      },
     },
-    defaultVariants: { size: 'base' },
+    defaultVariants: { size: 'base', bg: 'default' },
   },
 );
 
-export interface SwitchProps extends React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>, VariantProps<typeof switchVariants> {}
+export interface SwitchProps extends React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>, VariantProps<typeof switchVariants> {
+  thumb?: React.ReactNode;
+}
 
-const Switch = React.forwardRef<React.ElementRef<typeof SwitchPrimitives.Root>, SwitchProps>(({ className, size, ...props }, ref) => (
-  <SwitchPrimitives.Root className={cn(switchVariants({ size, className }))} {...props} ref={ref}>
-    <SwitchPrimitives.Thumb className={cn(switchThumbVariants({ size }))} />
-  </SwitchPrimitives.Root>
-));
+const Switch = React.forwardRef<React.ElementRef<typeof SwitchPrimitives.Root>, SwitchProps>(({ className, size, thumb, ...props }, ref) => {
+  const thumbElement = (
+    <SwitchPrimitives.Thumb className={cn(switchThumbVariants({ size, bg: thumb ? 'none' : 'default' }))}>
+      {thumb &&
+        React.cloneElement(thumb as React.ReactElement, {
+          className: cn(switchThumbVariants({ size, bg: 'none' }), (thumb as React.ReactElement).props.className),
+        })}
+    </SwitchPrimitives.Thumb>
+  );
+  return (
+    <SwitchPrimitives.Root className={cn(switchVariants({ size, className }))} {...props} ref={ref}>
+      {thumbElement}
+    </SwitchPrimitives.Root>
+  );
+});
 Switch.displayName = SwitchPrimitives.Root.displayName;
 
 export { Switch };

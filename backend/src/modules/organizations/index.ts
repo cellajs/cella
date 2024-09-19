@@ -337,6 +337,4 @@ const organizationsRoutes = app
     return ctx.json({ success: true }, 200);
   });
 
-export type AppOrganizationsType = typeof organizationsRoutes;
-
 export default organizationsRoutes;

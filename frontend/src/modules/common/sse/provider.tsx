@@ -1,6 +1,6 @@
+import { config } from 'config';
 import { type FC, createContext, createElement, useEffect, useState } from 'react';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
-import { createResource } from './helpers';
 
 export const SSEContext = createContext<EventSource | null>(null);
 
@@ -10,51 +10,54 @@ type Props = React.PropsWithChildren;
 
 export const SSEProvider: FC<Props> = ({ children }) => {
   const [source, setSource] = useState<EventSource | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-
-  // Tries up to 3 times, then pauses for 1 minute if unsuccessful
-  const handleReconnect = async () => {
-    if (retryCount < 3) {
-      reconnect();
-      setRetryCount(retryCount + 1);
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 60000)); // 1m wait
-      setRetryCount(0);
-      reconnect(); // Retry after the pause
-    }
-  };
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   // Closes old source, creates new
-  const reconnect = async () => {
+  const reconnect = () => {
     if (source) source.close(); // Close old if it exists
-    const newSource = createResource(handleReconnect);
+    const newSource = createSource(true);
     setSource(newSource);
-    await Promise.all([getAndSetMe(), getAndSetMenu()]); // Refetch data some sse events might have been skipped
   };
+
+  const createSource = (reconnectAttempt = false) => {
+    const source = new EventSource(`${config.backendUrl}/sse`, {
+      withCredentials: true,
+    });
+
+    source.onopen = async () => {
+      if (reconnectAttempt) await Promise.all([getAndSetMe(), getAndSetMenu()]); // Refetch data some sse events might have been skipped
+      setIsReconnecting(false);
+    };
+
+    source.onerror = () => {
+      console.error('SSE connection error. Scheduling reconnection...');
+      source.close();
+      if (!isReconnecting) {
+        setIsReconnecting(true);
+        setTimeout(reconnect, 5000); // Retry reconnection after 5 seconds
+      }
+    };
+
+    return source;
+  };
+
+  useEffect(() => {
+    const eventSource = createSource();
+    setSource(eventSource);
+    return () => eventSource.close();
+  }, []);
 
   // Effect to handle reconnecting when the tab becomes visible again
   useEffect(() => {
     const handleVisibilityChange = async () => {
       // Reconnect if the page becomes visible and the SSE connection is closed
-      if (document.visibilityState !== 'visible' || source?.readyState !== EventSource.CLOSED) return;
-      await reconnect();
+      if (document.visibilityState !== 'visible') return;
+      if (source?.readyState === EventSource.CLOSED) reconnect();
     };
 
     window.addEventListener('visibilitychange', handleVisibilityChange);
     return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [source]);
 
-  useEffect(() => {
-    const eventSource = createResource(handleReconnect);
-    setSource(eventSource);
-    return () => eventSource.close();
-  }, []);
-
-  return createElement(
-    SSEContext.Provider,
-    {
-      value: source,
-    },
-    children,
-  );
+  return createElement(SSEContext.Provider, { value: source }, children);
 };

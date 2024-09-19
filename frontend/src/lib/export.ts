@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import type { ReactElement } from 'react';
-import type { Theme } from '~/store/theme';
+import type { Mode } from '~/store/theme';
 
 dayjs.extend(localizedFormat);
 
@@ -57,7 +57,7 @@ export async function exportToPdf<R>(
   rows: R[],
   fileName: string,
   pageName: string,
-  theme: Theme,
+  mode: Mode,
 ) {
   // Redo type assign into the  columns
   const preparedColumns = columns.filter((column) => filterColumns(column));
@@ -76,9 +76,9 @@ export async function exportToPdf<R>(
   const exportInfo = `Exported from page: ${pageName}\nExport Date: ${exportDate}`;
   doc.text(exportInfo, 10, 10);
 
-  const textColor = theme === 'dark' ? '#f2f2f2' : '#17171C';
-  const backgroundColor = theme === 'dark' ? '#151519' : '#ffffff';
-  const alternateBackgroundColor = theme === 'dark' ? '#2c2c2f' : '#e5e5e5';
+  const textColor = mode === 'dark' ? '#f2f2f2' : '#17171C';
+  const backgroundColor = mode === 'dark' ? '#151519' : '#ffffff';
+  const alternateBackgroundColor = mode === 'dark' ? '#2c2c2f' : '#e5e5e5';
 
   // Add table to the PDF
   autoTable(doc, {

@@ -4,8 +4,8 @@ import type { z } from 'zod';
 import type { config } from 'config';
 import type { Schema } from 'hono';
 
-import type { supportedOauthProviders } from '#/modules/auth';
-import type { failWithErrorSchema } from '../lib/common-schemas';
+import type { failWithErrorSchema } from '#/lib/common-schemas';
+import type { supportedOauthProviders } from '#/middlewares/guard/allowed-auth';
 import type { Env } from './app';
 
 export type BaseEntityModel<T extends Entity> = {
@@ -22,6 +22,8 @@ export type ProductEntity = (typeof config.productEntityTypes)[number];
 
 export type OauthProviderOptions = (typeof supportedOauthProviders)[number];
 export type EnabledOauthProviderOptions = (typeof config.enabledOauthProviders)[number];
+
+export type AllowedAuthStrategies = (typeof config.enabledAuthenticationStrategies)[number];
 
 export type NonEmptyArray<T> = readonly [T, ...T[]];
 
