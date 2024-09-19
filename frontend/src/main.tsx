@@ -18,8 +18,9 @@ import { initSentry } from '~/lib/sentry';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 
+// TODO: tune this and use config to determine if we should use localStorage or sessionStorage
 const localStoragePersister = createSyncStoragePersister({
-  storage: window.localStorage,
+  storage: window.sessionStorage,
 });
 
 // Render ASCII logo in console
