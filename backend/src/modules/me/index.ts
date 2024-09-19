@@ -13,7 +13,6 @@ import { transformDatabaseUserWithCount } from '../users/helpers/transform-datab
 import meRoutesConfig from './routes';
 
 import { config } from 'config';
-import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { z } from 'zod';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
@@ -83,7 +82,7 @@ const meRoutes = app
         .orderBy(asc(membershipsTable.order))
         .innerJoin(membershipsTable, eq(membershipsTable[`${type}Id`], mainTable.id));
 
-      if (subEntityType && 'parentId' in entityTables[subEntityType]) {
+      if (subEntityType) {
         const subTable = entityTables[subEntityType];
         const subEntity = await db
           .select({
@@ -94,8 +93,7 @@ const meRoutes = app
           .from(subTable)
           .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, subEntityType)))
           .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[`${subEntityType}Id`], subTable.id))
-          .innerJoin(mainTable, eq(mainTable.id, subTable.parentId as PgColumn));
+          .innerJoin(membershipsTable, eq(membershipsTable[`${subEntityType}Id`], subTable.id));
 
         formattedSubmenus = subEntity.map(({ entity, membership, parent }) => ({
           slug: entity.slug,

@@ -26,7 +26,7 @@ const Legal = ({ type }: { type: LegalTypes }) => {
 const tabs = [
   { id: 'privacy', label: 'common:privacy_policy' },
   { id: 'terms', label: 'common:terms_of_use' },
-];
+] as const;
 
 export const LegalsMenu = () => {
   const { t } = useTranslation();
@@ -43,7 +43,7 @@ export const LegalsMenu = () => {
           {tabs.map((tab) => {
             return (
               <AsideAnchor key={tab.id} id={tab.id}>
-                <Legal type={tab.id as LegalTypes} />
+                <Legal type={tab.id} />
               </AsideAnchor>
             );
           })}

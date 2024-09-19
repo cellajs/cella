@@ -16,7 +16,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 
 export function QueryCombobox({ onChange, value }: { value: string[]; onChange: (items: string[]) => void }) {
   const { t } = useTranslation();
-  const { ref, bounds } = useMeasure();
+  const { ref, bounds } = useMeasure<HTMLDivElement>();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(value);
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,7 +64,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div
-          ref={ref as React.LegacyRef<HTMLDivElement>}
+          ref={ref}
           className="rounded-md w-full flex relative items-center flex-wrap gap-1 border border-input bg-background active:!translate-y-0 hover:transparent p-2 cursor-pointer"
         >
           {value?.length ? (

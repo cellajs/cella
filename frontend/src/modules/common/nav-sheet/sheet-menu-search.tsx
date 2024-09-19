@@ -30,7 +30,7 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, searchResults
           const filteredSubmenu = item.submenu ? filterItems(item.submenu) : [];
           return isMatch ? [item, ...filteredSubmenu] : filteredSubmenu;
         });
-      return menuSections.filter((el) => !el.isSubmenu).flatMap((section) => filterItems(menu[section.storageType as keyof UserMenu]));
+      return menuSections.filter((el) => !el.isSubmenu).flatMap((section) => filterItems(menu[section.storageType]));
     };
     searchResultsChange(filterResults());
   }, [searchTerm, menu]);

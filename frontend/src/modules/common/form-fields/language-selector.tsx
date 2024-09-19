@@ -1,7 +1,7 @@
 'use client';
 import { config } from 'config';
 import { Check, ChevronDown } from 'lucide-react';
-import { type LegacyRef, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useMeasure } from '~/hooks/use-measure';
@@ -10,22 +10,25 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import type { Language } from '~/types/common';
 
-type Language = { value: string; label: string };
+const languages = config.languages;
 
-const languages: Language[] = config.languages;
+interface SelectLanguagesProps {
+  onChange: (value: Language[]) => void;
+}
 
-export const SelectLanguages = ({ onChange }: { onChange: (value: string[]) => void }) => {
+export const SelectLanguages = ({ onChange }: SelectLanguagesProps) => {
   const { t } = useTranslation();
-  const { ref, bounds } = useMeasure();
+  const { ref, bounds } = useMeasure<HTMLButtonElement>();
 
   const { getValues } = useFormContext();
   const formValue = getValues('languages');
   const [open, setOpen] = useState(false);
 
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(Array.isArray(formValue) ? formValue : []);
+  const [selectedLanguages, setSelectedLanguages] = useState<Language[]>(Array.isArray(formValue) ? formValue : []);
 
-  const toggleLanguageSelection = (language: string) => {
+  const toggleLanguageSelection = (language: Language) => {
     setSelectedLanguages((prev) => {
       if (prev.includes(language)) return prev.filter((lang) => lang !== language);
       return [...prev, language];
@@ -43,13 +46,7 @@ export const SelectLanguages = ({ onChange }: { onChange: (value: string[]) => v
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          ref={ref as LegacyRef<HTMLButtonElement>}
-          variant="input"
-          aria-label="Select language"
-          className="w-full justify-between font-normal"
-          aria-expanded={open}
-        >
+        <Button ref={ref} variant="input" aria-label="Select language" className="w-full justify-between font-normal" aria-expanded={open}>
           {selectedLanguages.length > 0 ? (
             <div className="flex items-center flex-nowrap truncate">
               {selectedLanguages.map((lang, index) => {
@@ -97,28 +94,31 @@ export const SelectLanguages = ({ onChange }: { onChange: (value: string[]) => v
     </Popover>
   );
 };
-export const SelectLanguage = ({
-  name,
-  onChange,
-  disabledItemFunction,
-}: { name: string; onChange: (value: string) => void; disabledItemFunction?: (value: string) => boolean }) => {
+
+interface SelectLanguageProps {
+  name: string;
+  onChange: (value: Language) => void;
+  disabledItemFunction?: (value: Language) => boolean;
+}
+
+export const SelectLanguage = ({ name, onChange, disabledItemFunction }: SelectLanguageProps) => {
   const { t } = useTranslation();
 
   const { getValues } = useFormContext();
-  const formValue = getValues(name);
+  const formValue: string = getValues(name);
   const [open, setOpen] = useState(false);
 
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(formValue || '');
+  const [selectedLanguage, setSelectedLanguage] = useState(formValue || '');
 
   useEffect(() => {
-    setSelectedLanguage(formValue as string);
+    setSelectedLanguage(formValue);
   }, [formValue]);
 
   return (
     <Select
       open={open}
       onOpenChange={setOpen}
-      onValueChange={(lang: string) => {
+      onValueChange={(lang: Language) => {
         setSelectedLanguage(lang);
         onChange(lang);
       }}
@@ -128,7 +128,7 @@ export const SelectLanguage = ({
         <SelectValue placeholder={t('common:placeholder.select_language')} />
       </SelectTrigger>
       <SelectContent>
-        {languages.map((language: Language) => (
+        {languages.map((language) => (
           <SelectItem key={language.value} value={language.value} disabled={disabledItemFunction?.(language.value)} className="truncate">
             <CountryFlag countryCode={language.value} imgType="png" className="mr-2 shrink-0" />
             <span className="truncate">{language.label}</span>

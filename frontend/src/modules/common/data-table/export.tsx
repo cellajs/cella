@@ -1,5 +1,4 @@
 import { Download } from 'lucide-react';
-import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { exportToCsv, exportToPdf } from '~/lib/export';
@@ -8,16 +7,18 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useThemeStore } from '~/store/theme';
+import type { ColumnOrColumnGroup } from './columns-view';
 
-interface Props<R> {
+interface Props<TData> {
   filename: string;
-  columns: { key: string; name: ReactElement | string }[];
-  selectedRows?: R[];
-  fetchRows: (limit: number) => Promise<R[]>;
+  columns: ColumnOrColumnGroup<TData>[];
+  selectedRows?: TData[];
+  fetchRows: (limit: number) => Promise<TData[]>;
   className?: string;
 }
 
-const Export = <R extends object>({ filename, columns, selectedRows, fetchRows, className = '' }: Props<R>) => {
+// biome-ignore lint/suspicious/noExplicitAny: any is required here
+const Export = <R extends Record<string, any>>({ filename, columns, selectedRows, fetchRows, className = '' }: Props<R>) => {
   const { t } = useTranslation();
 
   const onExport = async (type: 'csv' | 'pdf', selected: boolean) => {

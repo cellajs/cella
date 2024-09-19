@@ -40,7 +40,7 @@ const Combobox: React.FC<ComboboxProps> = ({
 }) => {
   const formValue = useFormContext?.()?.getValues(name);
 
-  const { ref, bounds } = useMeasure();
+  const { ref, bounds } = useMeasure<HTMLButtonElement>();
   const isMobile = useBreakpoints('max', 'sm');
   const [open, setOpen] = React.useState(false);
   const [selectedOption, setSelectedOption] = React.useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
@@ -66,7 +66,7 @@ const Combobox: React.FC<ComboboxProps> = ({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          ref={ref as React.LegacyRef<HTMLButtonElement>}
+          ref={ref}
           variant="input"
           role="combobox"
           aria-expanded={open}

@@ -3,7 +3,7 @@ import React from 'react';
 import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
 
 interface TooltipButtonProps extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
-  children: React.ReactNode;
+  children: React.ReactElement;
   toolTipContent: string;
   disabled?: boolean;
   side?: 'top' | 'bottom' | 'left' | 'right';
@@ -19,7 +19,7 @@ export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps
     return (
       <Tooltip>
         <TooltipTrigger className={className} asChild>
-          {React.cloneElement(children as React.ReactElement, { ref })}
+          {React.cloneElement(children, { ref })}
         </TooltipTrigger>
         {portal ? (
           <TooltipPortal>

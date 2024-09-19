@@ -39,7 +39,7 @@ export const SheetAccount = () => {
   const bannerClass = `relative transition-all duration-300 hover:bg-opacity-50 hover:-mx-8 -mx-4 -mt-4 bg-cover bg-center h-24 ${bgClass} bg-opacity-80`;
 
   useEffect(() => {
-    const firstRow = buttonWrapper.current?.querySelector('#btn-profile') as HTMLElement;
+    const firstRow = buttonWrapper.current?.querySelector<HTMLElement>('#btn-profile');
     firstRow?.focus();
   }, []);
 

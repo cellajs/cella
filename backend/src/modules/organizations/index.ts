@@ -282,7 +282,7 @@ const organizationsRoutes = app
     for (const id of allowedIds) {
       // Send the event to the user if they are a member of the organization
       if (organizationsMembers.length > 0) {
-        const membersId = organizationsMembers.map((member) => member.id).filter(Boolean) as string[];
+        const membersId = organizationsMembers.map((member) => member.id);
         sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'organization' });
       }
 

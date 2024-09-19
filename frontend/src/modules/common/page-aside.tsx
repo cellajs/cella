@@ -5,17 +5,19 @@ import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { cn } from '~/lib/utils';
 import { buttonVariants } from '~/modules/ui/button';
 
-interface PageAsideProps {
-  className?: string;
-  tabs: {
-    id: string;
-    label: string;
-    resource?: string;
-    icon?: React.ElementType<LucideProps>;
-  }[];
+interface Tab {
+  id: string;
+  label: string;
+  resource?: string;
+  icon?: React.ElementType<LucideProps>;
 }
 
-export const PageAside = ({ tabs, className }: PageAsideProps) => {
+interface PageAsideProps<T> {
+  className?: string;
+  tabs: T[] | readonly T[];
+}
+
+export const PageAside = <T extends Tab>({ tabs, className }: PageAsideProps<T>) => {
   const { t } = useTranslation();
   const sectionIds = tabs.map((tab) => tab.id);
   const { activeHash } = useScrollSpy({ sectionIds, autoUpdateHash: true });

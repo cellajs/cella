@@ -101,8 +101,8 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   });
 
   useEffect(() => {
-    if (languages && !languages.includes(defaultLanguage as string)) {
-      form.setValue('defaultLanguage', languages[0] as typeof defaultLanguage);
+    if (languages && ((defaultLanguage && !languages.includes(defaultLanguage)) || !defaultLanguage)) {
+      form.setValue('defaultLanguage', languages[0]);
     }
   }, [languages, defaultLanguage]);
 
@@ -188,7 +188,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
                 <SelectLanguage
                   name="defaultLanguage"
                   onChange={onChange}
-                  disabledItemFunction={(value: string) => !form.getValues('languages')?.includes(value)}
+                  disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
                 />
               </FormControl>
               <FormMessage />
