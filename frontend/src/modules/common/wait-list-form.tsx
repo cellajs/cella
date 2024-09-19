@@ -39,8 +39,9 @@ export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: stri
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: email,
+      email,
       type: 'waitlist',
+      message: null,
     },
   });
 
@@ -53,8 +54,8 @@ export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: stri
 
     createRequest({
       email: values.email,
-      type: 'waitlist',
-      message: null,
+      type: values.type,
+      message: values.message,
     });
   };
 
@@ -84,18 +85,7 @@ export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: stri
             </FormItem>
           )}
         />
-        <Button
-          type="submit"
-          onClick={() =>
-            onSubmit({
-              email,
-              type: 'waitlist',
-              message: null,
-            })
-          }
-          loading={isPending}
-          className="w-full"
-        >
+        <Button type="submit" loading={isPending} className="w-full">
           {t('common:put_on_wait_list')}
           <ArrowRight size={16} className="ml-2" />
         </Button>
