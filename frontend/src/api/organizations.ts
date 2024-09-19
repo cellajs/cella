@@ -1,13 +1,15 @@
-import { apiClient, handleResponse } from '.';
+import { config } from 'config';
+import { organizationsHc } from '#/modules/organizations/hc';
+import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = apiClient.organizations;
+export const client = organizationsHc(config.backendUrl, clientConfig);
 
-export type CreateOrganizationParams = Parameters<(typeof client)['$post']>['0']['json'];
+export type CreateOrganizationParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Create a new organization
 export const createOrganization = async (params: CreateOrganizationParams) => {
-  const response = await client.$post({
+  const response = await client.index.$post({
     json: params,
   });
 
@@ -26,7 +28,7 @@ export const getOrganization = async (idOrSlug: string) => {
 };
 
 export type GetOrganizationsParams = Partial<
-  Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit?: number;
     offset?: number;
     page?: number;
@@ -38,7 +40,7 @@ export const getOrganizations = async (
   { q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetOrganizationsParams = {},
   signal?: AbortSignal,
 ) => {
-  const response = await client.$get(
+  const response = await client.index.$get(
     {
       query: {
         q,
@@ -78,7 +80,7 @@ export const updateOrganization = async (idOrSlug: string, params: UpdateOrganiz
 
 // Delete organizations
 export const deleteOrganizations = async (ids: string[]) => {
-  const response = await client.$delete({
+  const response = await client.index.$delete({
     query: { ids },
   });
 
