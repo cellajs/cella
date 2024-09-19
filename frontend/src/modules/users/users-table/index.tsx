@@ -1,4 +1,4 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
@@ -19,7 +19,7 @@ import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/taosts-show';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
@@ -124,6 +124,8 @@ const UsersTable = () => {
 
   // Update user role
   const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     for (const index of indexes) {
       if (column.key === 'role') updateUserRole(changedRows[index]);
     }

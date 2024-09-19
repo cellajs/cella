@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,9 +23,12 @@ const VerifyEmail = () => {
   });
 
   const resendEmail = () => {
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     verifyEmail({ token, resend: true });
   };
 
+  // TODO: Offline mode
   useEffect(() => {
     if (!token) return;
     verifyEmail({ token });

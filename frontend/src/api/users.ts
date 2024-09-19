@@ -1,10 +1,9 @@
-import type { AppUsersType } from 'backend/modules/users/index';
 import { config } from 'config';
-import { hc } from 'hono/client';
+import { usersHc } from '#/modules/users/hc';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppUsersType>(`${config.backendUrl}/users`, clientConfig);
+export const client = usersHc(config.backendUrl, clientConfig);
 
 // Get user by slug or ID
 export const getUser = async (idOrSlug: string) => {

@@ -1,10 +1,9 @@
-import type { AppMetricType } from 'backend/modules/metrics/index';
 import { config } from 'config';
-import { hc } from 'hono/client';
+import { metricsHc } from '#/modules/metrics/hc';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppMetricType>(`${config.backendUrl}/metrics`, clientConfig);
+export const client = metricsHc(config.backendUrl, clientConfig);
 
 // Get public counts for about page
 export const getPublicCounts = async () => {

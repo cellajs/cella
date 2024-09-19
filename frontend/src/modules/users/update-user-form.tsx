@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type DefaultError, useMutation } from '@tanstack/react-query';
+import { type DefaultError, onlineManager, useMutation } from '@tanstack/react-query';
 import { updateUserBodySchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
 import type { UseFormProps } from 'react-hook-form';
+import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
@@ -93,6 +94,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     mutate(values, {
       onSuccess: (updatedUser) => {
@@ -101,9 +103,9 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           showToast(t('common:success.you_updated'), 'success');
         } else showToast(t('common:success.updated_user'), 'success');
         form.reset(updatedUser);
-        callback?.(updatedUser);
         if (isSheet) sheet.remove('update-user');
         nextStep?.();
+        callback?.(updatedUser);
       },
     });
   };
@@ -112,7 +114,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-user');
-      if (targetSheet) {
+      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
         sheet.update('update-user', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });

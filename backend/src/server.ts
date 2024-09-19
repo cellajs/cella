@@ -1,4 +1,3 @@
-import type { MiddlewareHandler } from 'hono';
 import { contextStorage } from 'hono/context-storage';
 
 import type { Env } from '#/types/app';
@@ -13,8 +12,7 @@ const baseApp = new CustomHono<Env>({
   defaultHook,
 });
 
-// biome-ignore lint/complexity/noBannedTypes: <explanation>
-baseApp.use(contextStorage() as unknown as MiddlewareHandler<Env, never, {}>);
+baseApp.use(contextStorage());
 
 // Add global middleware
 baseApp.route('/', middlewares);

@@ -13,15 +13,7 @@ import { deleteCookie, getCookie } from 'hono/cookie';
 import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '#/db/lucia';
 
-import {
-  createSession,
-  findOauthAccount,
-  getRedirectUrl,
-  handleExistingUser,
-  isEnabledOauthProvider,
-  slugFromEmail,
-  splitFullName,
-} from './helpers/oauth';
+import { createSession, findOauthAccount, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
 
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
@@ -84,7 +76,7 @@ const authRoutes = app
     if (token) {
       const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path.replace('{token}', token)}`);
 
-      const data = (await response.json()) as CheckTokenResponse;
+      const data: CheckTokenResponse = await response.json();
       tokenData = data?.data;
     }
 
@@ -292,7 +284,7 @@ const authRoutes = app
     if (token) {
       const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path.replace('{token}', token)}`);
 
-      const data = (await response.json()) as CheckTokenResponse;
+      const data: CheckTokenResponse = await response.json();
       tokenData = data?.data;
     }
 
@@ -435,7 +427,6 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.githubSignInCallback, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
-
     const stateCookie = getCookie(ctx, 'oauth_state');
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
@@ -588,7 +579,10 @@ const authRoutes = app
         return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'github' });
       }
 
-      logEvent('Error signing in with GitHub', { strategy: 'github', errorMessage: (error as Error).message }, 'error');
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        logEvent('Error signing in with GitHub', { strategy: 'github', errorMessage }, 'error');
+      }
 
       throw error;
     }
@@ -598,11 +592,6 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.googleSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
-    const googleProvider = isEnabledOauthProvider('google');
-    // Verify if Google is enabled as an OAuth option
-    if (!googleProvider) {
-      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy: 'google' });
-    }
 
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
@@ -633,9 +622,9 @@ const authRoutes = app
       } = await response.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount(googleProvider, user.sub);
+      const [existingOauthAccount] = await findOauthAccount('google', user.sub);
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId, googleProvider);
+        await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
 
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -644,7 +633,7 @@ const authRoutes = app
       const existingUser = await getUserBy('email', user.email.toLowerCase());
 
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, googleProvider, {
+        return await handleExistingUser(ctx, existingUser, 'google', {
           providerUser: {
             id: user.sub,
             email: user.email,
@@ -675,7 +664,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: googleProvider,
+            id: 'google',
             userId: user.sub,
           },
           isEmailVerified: user.email_verified,
@@ -685,11 +674,13 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: googleProvider });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'google' });
       }
 
-      const errorMessage = (error as Error).message;
-      logEvent('Error signing in with Google', { strategy: googleProvider, errorMessage }, 'error');
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        logEvent('Error signing in with Google', { strategy: 'google', errorMessage }, 'error');
+      }
 
       throw error;
     }
@@ -699,18 +690,13 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.microsoftSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
-    const microsoftProvider = isEnabledOauthProvider('microsoft');
-    // Verify if Google is enabled as an OAuth option
-    if (!microsoftProvider) {
-      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy: microsoftProvider });
-    }
 
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: microsoftProvider });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'microsoft' });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -732,9 +718,9 @@ const authRoutes = app
       } = await response.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount(microsoftProvider, user.sub);
+      const [existingOauthAccount] = await findOauthAccount('microsoft', user.sub);
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId, microsoftProvider);
+        await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
 
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -746,7 +732,7 @@ const authRoutes = app
       // Check if user already exists
       const existingUser = await getUserBy('email', user.email.toLowerCase());
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, microsoftProvider, {
+        return await handleExistingUser(ctx, existingUser, 'microsoft', {
           providerUser: {
             id: user.sub,
             email: user.email,
@@ -777,7 +763,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: microsoftProvider,
+            id: 'microsoft',
             userId: user.sub,
           },
           isEmailVerified: false,
@@ -787,11 +773,13 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: microsoftProvider });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'microsoft' });
       }
 
-      const errorMessage = (error as Error).message;
-      logEvent('Error signing in with Microsoft', { strategy: microsoftProvider, errorMessage }, 'error');
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        logEvent('Error signing in with Microsoft', { strategy: 'microsoft', errorMessage }, 'error');
+      }
 
       throw error;
     }
@@ -852,7 +840,10 @@ const authRoutes = app
       const isValid = await verifyPassKeyPublic(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
       if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
     } catch (error) {
-      return errorResponse(ctx, 500, (error as Error).message ?? 'Passkey verification error', 'error', undefined);
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        return errorResponse(ctx, 500, errorMessage || 'Passkey verification error', 'error', undefined);
+      }
     }
 
     // Extract the counter
@@ -862,7 +853,5 @@ const authRoutes = app
     await setSessionCookie(ctx, user.id, 'passkey');
     return ctx.json({ success: true }, 200);
   });
-
-export type AppAuthType = typeof authRoutes;
 
 export default authRoutes;

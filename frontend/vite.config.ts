@@ -4,7 +4,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { type PluginOption, type UserConfig, defineConfig } from 'vite';
+import { type UserConfig, defineConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
@@ -54,7 +54,7 @@ export default defineConfig(() => {
             description: config.description,
             keywords: config.keywords,
             author: config.company.name,
-            color: config.theme.dark.primary,
+            color: config.themeColor,
             url: config.frontendUrl,
             twitter: config.company.twitterHandle,
           },
@@ -65,7 +65,7 @@ export default defineConfig(() => {
           pure_funcs: ['console.debug'], // Removes console.debug
         },
       }),
-      visualizer({ open: true, gzipSize: true }) as PluginOption,
+      visualizer({ open: true, gzipSize: true }),
     ],
     resolve: {
       alias: {
@@ -85,12 +85,13 @@ export default defineConfig(() => {
       disable: !config.has.pwa,
       devOptions: {
         enabled: false,
+        type: 'module',
       },
       manifest: {
         name: config.name,
         short_name: config.name,
         description: config.description,
-        theme_color: config.theme.dark.primary,
+        theme_color: config.themeColor,
         icons: [
           {
             src: '/static/icons/icon-192x192.png',
@@ -112,7 +113,8 @@ export default defineConfig(() => {
         ],
       },
       workbox: {
-        navigateFallbackDenylist: [/^.*\.(docx|DOCX|gif|GIF|doc|DOC|pdf|PDF|csv|CSV)$/, /^\/api\/v1*/, /^\/static\/*/],
+        globPatterns: config.mode === 'production' ? ['**/*.{js,css,html,json,svg,png}'] : [],
+        globIgnores: ['**/public/static/flags/*.(svg|png)'],
       },
     }),
   );

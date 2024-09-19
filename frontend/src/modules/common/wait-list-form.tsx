@@ -5,10 +5,13 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/taosts-show';
 import { dialog } from '~/modules/common/dialoger/state';
 import { LegalText } from '~/modules/marketing/legals';
 import { Button } from '~/modules/ui/button';
@@ -17,7 +20,7 @@ import { Input } from '~/modules/ui/input';
 
 const formSchema = createRequestSchema;
 
-export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step: string) => void }) => {
+export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: string; dialog?: boolean; setStep?: (step: string) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -28,22 +31,27 @@ export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step
         to: '/about',
         replace: true,
       });
+      if (isDialog) dialog.remove();
+      showToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
     },
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: email,
+      email,
       type: 'waitlist',
+      message: null,
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     createRequest({
       email: values.email,
-      type: 'waitlist',
-      message: null,
+      type: values.type,
+      message: values.message,
     });
   };
 
@@ -51,10 +59,12 @@ export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step
     <Form {...form}>
       <div className="text-2xl text-center">
         <h1 className="text-xxl">{t('common:request_access')}</h1>
-        <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-1 text-xl">
-          {email}
-          <ChevronDown size={16} className="ml-2" />
-        </Button>
+        {setStep && (
+          <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-1 text-xl">
+            {email}
+            <ChevronDown size={16} className="ml-2" />
+          </Button>
+        )}
       </div>
       <LegalNotice />
 
@@ -63,26 +73,15 @@ export const WaitListForm = ({ email, setStep }: { email: string; setStep: (step
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className="hidden">
+            <FormItem className={`${isDialog ? '' : 'hidden'}`}>
               <FormControl>
-                <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
+                <Input {...field} type="email" disabled={!isDialog} readOnly={!isDialog} placeholder={t('common:email')} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button
-          type="submit"
-          onClick={() =>
-            createRequest({
-              email,
-              type: 'waitlist',
-              message: null,
-            })
-          }
-          loading={isPending}
-          className="w-full"
-        >
+        <Button type="submit" loading={isPending} className="w-full">
           {t('common:put_on_wait_list')}
           <ArrowRight size={16} className="ml-2" />
         </Button>

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { config } from 'config';
+import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '#/db/schema/tokens';
 import {
   contextEntityTypeSchema,
@@ -12,8 +14,6 @@ import {
   passwordSchema,
   slugSchema,
 } from '#/lib/common-schemas';
-import { config } from 'config';
-import { createSelectSchema } from 'drizzle-zod';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 

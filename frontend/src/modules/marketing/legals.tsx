@@ -9,8 +9,8 @@ import PublicPage from '~/modules/marketing/page';
 type LegalTypes = 'privacy' | 'terms';
 
 export const LegalText = ({ textFor }: { textFor: LegalTypes }) => {
-  if (textFor === 'terms') return <p>Put terms here</p>;
-  return <p>Put privacy statement here</p>;
+  if (textFor === 'terms') return <p className="mb-24">Put terms here</p>;
+  return <p className="mb-24">Put privacy statement here</p>;
 };
 
 const Legal = ({ type }: { type: LegalTypes }) => {
@@ -26,7 +26,7 @@ const Legal = ({ type }: { type: LegalTypes }) => {
 const tabs = [
   { id: 'privacy', label: 'common:privacy_policy' },
   { id: 'terms', label: 'common:terms_of_use' },
-];
+] as const;
 
 export const LegalsMenu = () => {
   const { t } = useTranslation();
@@ -43,7 +43,7 @@ export const LegalsMenu = () => {
           {tabs.map((tab) => {
             return (
               <AsideAnchor key={tab.id} id={tab.id}>
-                <Legal type={tab.id as LegalTypes} />
+                <Legal type={tab.id} />
               </AsideAnchor>
             );
           })}

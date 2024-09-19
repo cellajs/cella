@@ -1,41 +1,36 @@
-import { useQuery } from '@tanstack/react-query';
-import { Building2, Users } from 'lucide-react';
+import { config } from 'config';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
 import { getPublicCounts } from '~/api/metrics';
+import { counts } from '~/modules/marketing/about-config';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
-
-interface Count {
-  id: string;
-  title: string;
-  icon: JSX.ElementType;
-}
-
-const counts: Count[] = [
-  { id: 'users', title: 'common:users', icon: Users },
-  { id: 'organizations', title: 'common:organizations', icon: Building2 },
-];
 
 const Counters = () => {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
+  const initialObject = config.entityTypes.reduce(
+    (acc, key) => {
+      acc[key] = 0;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+  const [countValues, setCountValues] = useState(initialObject);
 
-  // Get counts
-  const { data: countValues } = useQuery({
-    queryKey: ['getPublicCounts'],
-    queryFn: () => getPublicCounts(),
-    initialData: { users: 0, organizations: 0, workspaces: 0, projects: 0, tasks: 0, labels: 0 },
-  });
+  useEffect(() => {
+    getPublicCounts().then((resp) => setCountValues(resp));
+  }, []);
 
   return (
-    <div ref={ref} className="mx-auto grid gap-4 md:max-w-5xl md:grid-cols-2 lg:grid-cols-2">
+    <div ref={ref} className="mx-auto grid gap-4 md:max-w-5xl grid-cols-2 lg:grid-cols-4">
       {inView &&
         counts.map(({ id, title, icon: Icon }) => {
-          const countValue = countValues[id as keyof typeof countValues];
+          const countValue = countValues[id];
 
           return (
-            <Card key={id}>
+            <Card key={id} className="bg-background">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t(title)}</CardTitle>
                 <Icon className="text-muted-foreground h-4 w-4" />

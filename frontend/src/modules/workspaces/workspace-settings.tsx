@@ -50,7 +50,6 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
           <UpdateWorkspaceForm
             workspace={workspace}
             callback={(updatedWorkspace) => {
-              callback([updatedWorkspace], 'updateWorkspace');
               setWorkspace(updatedWorkspace, undefined, undefined, undefined);
 
               if (idOrSlug !== updatedWorkspace.slug) {
@@ -60,6 +59,7 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
                   replace: true,
                 });
               }
+              callback([updatedWorkspace], 'updateWorkspace');
             }}
             sheet={isSheet}
           />

@@ -17,7 +17,7 @@ export const config = {
   productionUrl: 'https://raak.io',
 
   description: 'raak',
-  keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
+  keywords: 'project management tool, collaboration tool, task tracker, task management, issue tracker, kanban board, trello, pivotal, jira, linear',
 
   supportEmail: 'support@raak.io',
   notificationsEmail: 'notifications@raak.io',
@@ -34,18 +34,7 @@ export const config = {
 
   // API docs settings
   apiVersion: 'v1',
-  apiDescription: `
-      This API documentation is split in modules. Each module relates to a module in the backend codebase. Each module should be at least loosely-coupled, but ideally entirely decoupled. The documentation is based upon zod schemas that are converted to openapi specs using hono middleware: zod-openapi.
-
-      API differentiates between two types of resource: entities and resources. Entities are the main data objects, the other tables are secondary. They all have an entity column.
-
-      Entities can be split into three categories:
-      1) Contextual entities (organization, workspace, project)
-      2) Product entities (task, label)
-      3) All entities (user, organization, workspace, project, task, label)
-
-      - SSE stream is not included in this API documentation
-      - API design is flat, not nested`,
+  apiDescription: 'Raak API alpha version',
 
   // Payment with Paddle
   // paddleToken: 'live_ba8bb57b62089459e4f4fd1da8c',
@@ -73,10 +62,11 @@ export const config = {
   privateCDNUrl: 'https://cdn-priv.cellajs.com',
   publicCDNUrl: 'https://cdn.cellajs.com',
 
+  themeColor: '#26262b',
+
   // Theme settings
   theme: {
-    dark: { primary: '#26262b' },
-    rose: { primary: '#e11d48' },
+    colors: {},
     colorDarkBackground: 'hsl(240 10% 9%)',
     strokeWidth: 1.5,
     screenSizes: {
@@ -87,7 +77,7 @@ export const config = {
       xl: '1280px',
       '2xl': '1400px',
     },
-  },
+  } as const,
 
   // Placeholder colors
   placeholderColors: [
@@ -103,20 +93,26 @@ export const config = {
     'bg-red-300',
   ],
 
+  // Allowed oauth strategies providers
+  enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,
+
   // OAuth providers
   enabledOauthProviders: ['github'] as const,
 
   // Optional settings
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
-    signUp: true, // Allow users to sign up. If disabled, the app is by invitation only
-    waitList: false, // Suggest a waitlist for unknown emails when sign up is disabled
+    signUp: false, // Allow users to sign up. If disabled, the app is by invitation only
+    waitList: true, // Suggest a waitlist for unknown emails when sign up is disabled
   },
 
   // Languages
   defaultLanguage: 'en' as const,
 
-  languages: [{ value: 'en', label: 'English' }],
+  languages: [
+    { value: 'en', label: 'English' },
+    { value: 'nl', label: 'Nederlands' },
+  ] as const,
 
   // All entity types
   entityTypes: ['user', 'organization', 'workspace', 'project', 'task', 'label'] as const,

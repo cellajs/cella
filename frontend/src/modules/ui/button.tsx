@@ -23,7 +23,6 @@ const buttonVariants = cva(
         darkSuccess: 'bg-green-700 text-white hover:bg-green-700/80',
         cell: 'text-regular underline-offset-4 hover:underline !ring-offset-transparent !ring-transparent opacity-75 hover:opacity-100',
         plain: 'text-primary bg-primary/5 border border-primary/30 hover:bg-primary/10 hover:border-primary/50',
-        glow: 'outline-glow-button bg-background !rounded-full relative active:bk-background',
         input: 'border border-input bg-background active:!translate-y-0 hover:transparent',
         none: 'bg-transparent border-none',
       },

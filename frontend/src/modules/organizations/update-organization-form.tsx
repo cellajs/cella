@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type DefaultError, useMutation } from '@tanstack/react-query';
+import { type DefaultError, onlineManager, useMutation } from '@tanstack/react-query';
 import { updateOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -9,6 +9,7 @@ import type { Organization } from '~/types/common';
 import { config } from 'config';
 import { useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
@@ -77,12 +78,14 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     mutate(values, {
       onSuccess: (updatedOrganization) => {
         if (isSheet) sheet.remove('update-organization');
-        callback?.(updatedOrganization);
         form.reset(updatedOrganization);
         showToast(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
+        callback?.(updatedOrganization);
       },
     });
   };
@@ -98,8 +101,8 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   });
 
   useEffect(() => {
-    if (languages && !languages.includes(defaultLanguage as string)) {
-      form.setValue('defaultLanguage', languages[0] as typeof defaultLanguage);
+    if (languages && ((defaultLanguage && !languages.includes(defaultLanguage)) || !defaultLanguage)) {
+      form.setValue('defaultLanguage', languages[0]);
     }
   }, [languages, defaultLanguage]);
 
@@ -110,7 +113,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-organization');
-      if (targetSheet) {
+      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
         sheet.update('update-organization', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
@@ -185,7 +188,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
                 <SelectLanguage
                   name="defaultLanguage"
                   onChange={onChange}
-                  disabledItemFunction={(value: string) => !form.getValues('languages')?.includes(value)}
+                  disabledItemFunction={(value) => !form.getValues('languages')?.includes(value)}
                 />
               </FormControl>
               <FormMessage />

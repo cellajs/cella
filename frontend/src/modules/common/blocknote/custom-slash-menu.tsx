@@ -17,6 +17,7 @@ const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>) => {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') onItemClick?.(item);
               }}
+              // biome-ignore lint/a11y/useSemanticElements: <explanation>
               role="button"
               tabIndex={0}
             >

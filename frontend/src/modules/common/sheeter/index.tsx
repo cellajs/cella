@@ -2,13 +2,16 @@ import { useNavigate } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { objectKeys } from '~/lib/object';
 import { dialog } from '~/modules/common/dialoger/state';
-import { type SheetAction, SheetObserver, type SheetT } from '~/modules/common/sheeter/state';
+
+import { type SheetAction, SheetObserver, type SheetT, sheet } from '~/modules/common/sheeter/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPortal, SheetTitle } from '~/modules/ui/sheet';
 
 export function Sheeter() {
   const { t } = useTranslation();
+  const initialized = useRef(false);
   const [currentSheets, setCurrentSheets] = useState<SheetT[]>([]);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
   const navigate = useNavigate();
@@ -19,8 +22,8 @@ export function Sheeter() {
         replace: true,
         resetScroll: false,
         search: (prev) => {
-          const newSearch = { ...prev } as Record<string, string>;
-          for (const key of Object.keys(newSearch)) {
+          const newSearch = { ...prev };
+          for (const key of objectKeys(newSearch)) {
             if (key.includes('Preview')) delete newSearch[key];
           }
           return newSearch;
@@ -36,6 +39,12 @@ export function Sheeter() {
   }, []);
 
   useEffect(() => {
+    if (!initialized.current) {
+      // To triggers sheets that opens on mount
+      setCurrentSheets(sheet.getAll());
+      initialized.current = true;
+    }
+
     const handleAction = (action: SheetAction & SheetT) => {
       if (action.remove) handleRemoveSheet(action.id);
       else {
@@ -46,10 +55,8 @@ export function Sheeter() {
         });
       }
     };
-
-    const unsubscribe = SheetObserver.subscribe(handleAction);
-    return unsubscribe;
-  }, [handleRemoveSheet]);
+    return SheetObserver.subscribe(handleAction);
+  }, []);
 
   if (!currentSheets.length) return null;
 

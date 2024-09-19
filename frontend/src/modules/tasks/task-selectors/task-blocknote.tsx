@@ -66,11 +66,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
     const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (onChange) onChange(cleanDescription, cleanSummary);
-    else {
-      handleUpdateHTML(cleanDescription, cleanSummary);
-      if (subTask) dispatchCustomEvent('toggleSubTaskEditing', { id, state: false });
-      else dispatchCustomEvent('toggleTaskEditing', { id, state: false });
-    }
+    else handleUpdateHTML(cleanDescription, cleanSummary);
   };
 
   const handleKeyDown: KeyboardEventHandler = async (event) => {
@@ -141,7 +137,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
         slashMenu={false}
         filePanel={false}
       >
-        <BlockNoteForTaskContent editor={editor} members={members.filter((m) => m.membership.projectId === projectId)} />
+        <BlockNoteForTaskContent editor={editor} members={members.filter((m) => m.membership.projectId === projectId)} subTask={subTask} />
         {/* Replaces default file panel with Uppy one. */}
         <FilePanelController filePanel={UppyFilePanel} />
       </BlockNoteView>

@@ -184,64 +184,62 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
                   onCloseForm={() => toggleCreateForm(project.id)}
                 />
               )}
-              <div className="h-full flex flex-col " ref={cardListRef}>
+              <div className="h-full flex flex-col" id={`tasks-list-${project.id}`} ref={cardListRef}>
                 {!!tasks.length && (
-                  <>
-                    <div className="flex flex-col flex-grow">
-                      <Button
-                        onClick={handleAcceptedClick}
-                        variant="ghost"
-                        disabled={!acceptedCount}
-                        size="sm"
-                        className="flex relative justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-xs -mt-[.07rem]"
+                  <div className="flex flex-col flex-grow">
+                    <Button
+                      onClick={handleAcceptedClick}
+                      variant="ghost"
+                      disabled={!acceptedCount}
+                      size="sm"
+                      className="flex relative justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-xs -mt-[.07rem]"
+                    >
+                      <span className="w-6 mr-1 text-center">{acceptedCount}</span>
+                      <span>{t('app:accepted').toLowerCase()}</span>
+                      {!!acceptedCount && (
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform absolute right-5 opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`}
+                        />
+                      )}
+                    </Button>
+                    {showingTasks.map((task) => (
+                      <motion.div
+                        key={task.id}
+                        variants={taskVariants}
+                        initial={task.status === 6 || task.status === 0 ? 'hidden' : 'visible'}
+                        animate="visible"
+                        exit="exit"
                       >
-                        <span className="w-6 mr-1 text-center">{acceptedCount}</span>
-                        <span>{t('app:accepted').toLowerCase()}</span>
-                        {!!acceptedCount && (
-                          <ChevronDown
-                            size={16}
-                            className={`transition-transform absolute right-5 opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`}
+                        <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
+                          <TaskCard
+                            task={task}
+                            isEditing={editingTasks[task.id] ?? false}
+                            isExpanded={expandedTasks[task.id] ?? false}
+                            isSelected={selectedTasks.includes(task.id)}
+                            isFocused={task.id === focusedTaskId}
+                            mode={mode}
                           />
-                        )}
-                      </Button>
-                      {showingTasks.map((task) => (
-                        <motion.div
-                          key={task.id}
-                          variants={taskVariants}
-                          initial={task.status === 6 || task.status === 0 ? 'hidden' : 'visible'}
-                          animate="visible"
-                          exit="exit"
-                        >
-                          <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
-                            <TaskCard
-                              task={task}
-                              isEditing={editingTasks[task.id] ?? false}
-                              isExpanded={expandedTasks[task.id] ?? false}
-                              isSelected={selectedTasks.includes(task.id)}
-                              isFocused={task.id === focusedTaskId}
-                              mode={mode}
-                            />
-                          </FocusTrap>
-                        </motion.div>
-                      ))}
-                      <Button
-                        onClick={handleIcedClick}
-                        variant="ghost"
-                        disabled={!icedCount}
-                        size="sm"
-                        className="flex relative justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-xs -mt-[.07rem]"
-                      >
-                        <span className="w-6 mr-1 text-center">{icedCount}</span>
-                        <span> {t('app:iced').toLowerCase()}</span>
-                        {!!icedCount && (
-                          <ChevronDown
-                            size={16}
-                            className={`transition-transform absolute right-5 opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`}
-                          />
-                        )}
-                      </Button>
-                    </div>
-                  </>
+                        </FocusTrap>
+                      </motion.div>
+                    ))}
+                    <Button
+                      onClick={handleIcedClick}
+                      variant="ghost"
+                      disabled={!icedCount}
+                      size="sm"
+                      className="flex relative justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-xs -mt-[.07rem]"
+                    >
+                      <span className="w-6 mr-1 text-center">{icedCount}</span>
+                      <span> {t('app:iced').toLowerCase()}</span>
+                      {!!icedCount && (
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform absolute right-5 opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`}
+                        />
+                      )}
+                    </Button>
+                  </div>
                 )}
 
                 {!tasks.length && !searchQuery && (

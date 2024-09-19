@@ -1,7 +1,7 @@
+import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { projectsTable } from '#/db/schema/projects';
-import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
@@ -222,7 +222,5 @@ const projectsRoutes = app
 
     return ctx.json({ success: true, errors: errors }, 200);
   });
-
-export type AppProjectsType = typeof projectsRoutes;
 
 export default projectsRoutes;

@@ -132,7 +132,7 @@ const generalRoutes = app
         type: 'system_invitation',
         userId: targetUser?.id,
         email: email.toLowerCase(),
-        role: (role as TokenModel['role']) || 'user',
+        role,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 
@@ -156,7 +156,9 @@ const generalRoutes = app
           user.email,
         )
         .catch((error) => {
-          logEvent('Error sending email', { error: (error as Error).message }, 'error');
+          if (error instanceof Error) {
+            logEvent('Error sending email', { error: error.message }, 'error');
+          }
         });
     }
 
@@ -168,10 +170,11 @@ const generalRoutes = app
   .openapi(generalRouteConfig.acceptInvite, async (ctx) => {
     const verificationToken = ctx.req.valid('param').token;
 
-    const [token] = await db
+    const [token]: (TokenModel | undefined)[] = await db
       .select()
       .from(tokensTable)
-      .where(and(eq(tokensTable.id, verificationToken)));
+      .where(and(eq(tokensTable.id, verificationToken)))
+      .limit(1);
 
     // Delete token
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
@@ -245,7 +248,10 @@ const generalRoutes = app
         }
       }
     } catch (error) {
-      logEvent('Error handling paddle webhook', { error: (error as Error).message }, 'error');
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        logEvent('Error handling paddle webhook', { errorMessage }, 'error');
+      }
     }
 
     return ctx.json({ success: true }, 200);
@@ -341,10 +347,9 @@ const generalRoutes = app
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
 
-    // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
-    const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];
+    const membersFilters = [eq(membershipsTable[`${entityType}Id`], entity.id), eq(membershipsTable.type, entityType)];
 
-    if (role) membersFilters.push(eq(membershipsTable.role, role as MembershipModel['role']));
+    if (role) membersFilters.push(eq(membershipsTable.role, role));
 
     const memberships = db
       .select()
@@ -446,7 +451,5 @@ const generalRoutes = app
       }
     });
   });
-
-export type AppGeneralType = typeof generalRoutes;
 
 export default generalRoutes;

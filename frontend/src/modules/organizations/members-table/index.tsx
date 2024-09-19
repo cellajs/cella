@@ -1,4 +1,4 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -22,7 +22,7 @@ import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
@@ -112,8 +112,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     const filters = useMemo(
       () => ({
         q,
-        sort: sortColumns[0]?.columnKey,
-        order: sortColumns[0]?.direction.toLowerCase(),
+        sort,
+        order,
         role,
       }),
       [q, role, sortColumns],
@@ -154,6 +154,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   };
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     for (const index of indexes) {
       if (column.key === 'role') updateMemberRole(changedRows[index]);
     }
@@ -163,8 +165,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const fetchForExport = async (limit: number) => {
     const data = await getMembers({
       q,
-      sort: sortColumns[0]?.columnKey as MemberSearch['sort'],
-      order: sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'],
+      sort,
+      order,
       role,
       limit,
       idOrSlug: entity.id,
@@ -174,7 +176,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   };
 
   const openInviteDialog = () => {
-    dialog(<InviteUsers entity={entity as EntityPage} mode={null} dialog />, {
+    dialog(<InviteUsers entity={entity} mode={null} dialog />, {
       id: `user-invite-${entity.id}`,
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[120] max-w-4xl',
@@ -197,7 +199,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         members={selectedMembers}
       />,
       {
-        drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:remove_resource', { resource: t('member').toLowerCase() }),
         text: (

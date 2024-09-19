@@ -22,6 +22,7 @@
 }
 p.bn-inline-content{
   font-size: 0.888rem;
+  font-weight: 300;
   line-height: 1.3;
   min-height: 1.3rem;
   padding: 0;
@@ -30,6 +31,10 @@ p.bn-inline-content{
 .bn-shadcn .bn-block-outer, .bn-shadcn .bn-default-styles {
   font-size: 0.888rem;
   line-height: 1.3;
+}
+
+.bn-container.bn-shadcn a {
+  text-decoration: underline;
 }
 
 .bn-shadcn .bn-editor {

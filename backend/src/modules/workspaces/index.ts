@@ -1,7 +1,7 @@
+import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { workspacesTable } from '#/db/schema/workspaces';
-import { and, asc, count, eq, inArray } from 'drizzle-orm';
 
 import { labelsTable } from '#/db/schema/labels';
 import { projectsTable } from '#/db/schema/projects';
@@ -241,7 +241,5 @@ const workspacesRoutes = app
 
     return ctx.json({ success: true, errors: errors }, 200);
   });
-
-export type AppWorkspacesType = typeof workspacesRoutes;
 
 export default workspacesRoutes;

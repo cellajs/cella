@@ -15,7 +15,7 @@ const tus = ImadoTus({
   },
 });
 
-const tusUrl = new URL(config.tusUrl as string);
+const tusUrl = new URL(config.tusUrl);
 
 tus.listen({
   host: '0.0.0.0',

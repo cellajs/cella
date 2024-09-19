@@ -55,7 +55,7 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen
   return (
     <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
       <AvatarWrap className="h-8 w-8 text-xs" id={id} type="project" name={name} url={thumbnailUrl} />
-      <div className="truncate leading-6">{name}</div>
+      <div className="ml-1 truncate leading-6">{name}</div>
       <div className="grow" />
       <TooltipButton
         toolTipContent={role === 'admin' ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members')}

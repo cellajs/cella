@@ -1,8 +1,10 @@
+import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
-import { type SQL, and, count, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm';
 
+import { config } from 'config';
+import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { getAllowedIds, getContextUser, getDisallowedIds, getOrganization } from '#/lib/context';
@@ -13,8 +15,6 @@ import { getOrderColumn } from '#/lib/order-column';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
-import { config } from 'config';
-import { render } from 'jsx-email';
 import organizationsNewsletter from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -282,7 +282,7 @@ const organizationsRoutes = app
     for (const id of allowedIds) {
       // Send the event to the user if they are a member of the organization
       if (organizationsMembers.length > 0) {
-        const membersId = organizationsMembers.map((member) => member.id).filter(Boolean) as string[];
+        const membersId = organizationsMembers.map((member) => member.id);
         sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'organization' });
       }
 
@@ -338,7 +338,5 @@ const organizationsRoutes = app
 
     return ctx.json({ success: true }, 200);
   });
-
-export type AppOrganizationsType = typeof organizationsRoutes;
 
 export default organizationsRoutes;

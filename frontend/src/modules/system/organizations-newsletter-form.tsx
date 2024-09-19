@@ -6,6 +6,7 @@ import type { z } from 'zod';
 import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
 import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
 import '@blocknote/shadcn/style.css';
+import { onlineManager } from '@tanstack/react-query';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -49,6 +50,8 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
   });
 
   const onSubmit = (values: FormValues) => {
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     sendNewsletter({
       organizationIds: values.organizationIds,
       subject: values.subject,

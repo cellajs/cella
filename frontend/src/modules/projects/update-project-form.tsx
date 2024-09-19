@@ -21,6 +21,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
+import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types/app';
 
 interface Props {
@@ -50,7 +51,7 @@ export const useUpdateProjectMutation = (idOrSlug: string) => {
 
 const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet }: Props) => {
   const { t } = useTranslation();
-
+  const { setWorkspace, workspace, projects } = useWorkspaceStore();
   const { mutate, isPending } = useUpdateProjectMutation(project.id);
 
   const formOptions: UseFormProps<FormValues> = {
@@ -59,6 +60,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
       slug: project.slug,
       name: project.name,
       thumbnailUrl: cleanUrl(project.thumbnailUrl),
+      parentId: project.parentId,
     },
   };
 
@@ -74,11 +76,19 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
   const onSubmit = (values: FormValues) => {
     mutate(values, {
       onSuccess: (updatedProject) => {
-        callback?.(updatedProject as Project);
         if (isDialog) dialog.remove();
         if (isSheet) sheet.remove();
         form.reset(updatedProject);
         toast.success(t('common:success.update_resource', { resource: t('app:project') }));
+        setWorkspace(
+          workspace,
+          [...projects.filter((p) => p.id !== updatedProject.id), updatedProject].sort((a, b) => {
+            const orderA = a.membership ? a.membership.order : 0; // Default value if membership is null
+            const orderB = b.membership ? b.membership.order : 0;
+            return orderA - orderB;
+          }),
+        );
+        callback?.(updatedProject as Project);
       },
     });
   };
@@ -88,7 +98,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
     if (!isSheet) return;
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('edit-project');
-      if (targetSheet) {
+      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
         sheet.update('edit-project', {
           title: <UnsavedBadge title={targetSheet?.title} />,
         });
@@ -117,14 +127,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
           description={t('common:resource_handle.text', { resource: t('app:project').toLowerCase() })}
           previousSlug={project.slug}
         />
-        <SelectParentFormField
-          collection="workspaces"
-          type="workspace"
-          control={form.control}
-          label={t('app:workspace')}
-          name="workspaceId"
-          disabled
-        />
+        <SelectParentFormField collection="workspaces" type="workspace" control={form.control} label={t('app:workspace')} name="parentId" disabled />
         <div className="flex flex-col sm:flex-row gap-2">
           <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}

@@ -6,7 +6,7 @@ import { Textarea } from '~/modules/ui/textarea';
 
 interface Props<TFieldValues extends FieldValues> {
   control: Control<TFieldValues>;
-  name: keyof TFieldValues;
+  name: Path<TFieldValues>;
   label: string;
   value?: string;
   defaultValue?: string;
@@ -53,8 +53,8 @@ const InputFormField = <TFieldValues extends FieldValues>({
       setPrefixPadding(`${prefixWidth + 16}px`);
     }
     if (subComponent && subComponentRef.current?.children[0]) {
-      const element = subComponentRef.current?.children[0] as HTMLElement;
-      setSubComponentPadding(`${element.offsetWidth + 6}px`);
+      const element = subComponentRef.current?.children[0] as HTMLElement | undefined;
+      if (element) setSubComponentPadding(`${element.offsetWidth + 6}px`);
     }
     if (!subComponent) setSubComponentPadding('12px');
     if (!prefix) setSubComponentPadding('12px');
@@ -67,7 +67,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
   return (
     <FormField
       control={disabled ? undefined : control}
-      name={name as Path<TFieldValues>}
+      name={name}
       render={({ field: { value: formFieldValue, ...rest } }) => (
         <FormItem name={name.toString()}>
           <FormLabel>

@@ -8,6 +8,7 @@ import type { z } from 'zod';
 import { createOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { createOrganization } from '~/api/organizations';
 
+import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -61,7 +62,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
     onSuccess: (createdOrganization) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
-      callback?.(createdOrganization);
       nextStep?.();
 
       useNavigationStore.setState({
@@ -77,6 +77,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       }
 
       if (isDialog) dialog.remove(true, 'create-organization');
+      callback?.(createdOrganization);
     },
   });
 
@@ -95,6 +96,8 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   }, [form.unsavedChanges]);
 
   const onSubmit = (values: FormValues) => {
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     create(values);
   };
 

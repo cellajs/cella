@@ -1,4 +1,4 @@
-// import attachmentsRoutes from '#/modules/attachments';
+import attachmentsRoutes from '#/modules/attachments';
 import authRoutes from '#/modules/auth';
 import generalRoutes from '#/modules/general';
 import labelsRoutes from '#/modules/labels';
@@ -21,8 +21,8 @@ const app = baseApp
   .route('/', generalRoutes)
   .route('/requests', requestsRoutes)
   .route('/memberships', membershipsRoutes)
+  .route('/attachments', attachmentsRoutes)
   .route('/metrics', metricRoutes)
-  // .route('/attachments', attachmentsRoutes);
   .route('/workspaces', workspacesRoutes)
   .route('/projects', projectsRoutes)
   .route('/tasks', tasksRoutes)

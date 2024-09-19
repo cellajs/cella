@@ -114,7 +114,7 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
   return { sortedTasks, acceptedCount, icedCount };
 };
 
-export const configureForExport = (tasks: Task[], projects: Omit<Project, 'counts'>[]) => {
+export const configureForExport = (tasks: Task[], projects: Omit<Project, 'counts'>[]): Task[] => {
   const parser = new DOMParser();
 
   return tasks.map((task) => {
@@ -136,6 +136,6 @@ export const configureForExport = (tasks: Task[], projects: Omit<Project, 'count
       createdBy: task.createdBy?.name ?? '-',
       modifiedBy: task.modifiedBy?.name ?? '-',
       assignedTo: task.assignedTo.map((m) => m.name) || '-',
-    };
+    } as unknown as Task;
   });
 };

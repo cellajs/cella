@@ -1,12 +1,11 @@
-import type { AppGeneralType } from 'backend/modules/general/index';
 import { config } from 'config';
-import { hc } from 'hono/client';
 import { type ContextEntity, type Entity, type UploadParams, UploadType } from '~/types/common';
+import { generalHc } from '#/modules/general/hc';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = hc<AppGeneralType>(config.backendUrl, clientConfig);
+export const client = generalHc(config.backendUrl, clientConfig);
 
 // Get upload token to securely upload files with imado: https://imado.eu
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {

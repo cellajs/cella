@@ -4,7 +4,6 @@ import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeManager } from '~/modules/common/theme-manager';
 
-import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import '~/lib/i18n';
 
@@ -16,6 +15,14 @@ import { queryClient } from '~/lib/router';
 import router from '~/lib/router';
 import { initSentry } from '~/lib/sentry';
 
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+
+// TODO: tune this and use config to determine if we should use localStorage or sessionStorage
+const localStoragePersister = createSyncStoragePersister({
+  storage: window.sessionStorage,
+});
+
 // Render ASCII logo in console
 renderAscii();
 
@@ -25,8 +32,8 @@ initSentry();
 ReactDOM.createRoot(root).render(
   <StrictMode>
     <ThemeManager />
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: localStoragePersister }}>
       <RouterProvider router={router} />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </StrictMode>,
 );

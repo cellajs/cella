@@ -3,6 +3,7 @@ import { Outlet, useLocation, useParams } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { getOrganization } from '~/api/organizations';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
@@ -52,7 +53,7 @@ const WorkspacePage = () => {
           title={workspace.name}
           thumbnailUrl={workspace.thumbnailUrl}
           bannerUrl={workspace.bannerUrl}
-          organizationId={workspace.organizationId}
+          parent={{ id: workspace.organizationId, fetchFunc: getOrganization }}
         />
       )}
       <div className="flex flex-col gap-2 md:gap-3 p-2 md:p-3 group/workspace">

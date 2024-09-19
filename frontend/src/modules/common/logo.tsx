@@ -12,7 +12,7 @@ export interface LogoProps extends React.SVGProps<SVGSVGElement> {
 function Logo({ className, iconColor, textColor, height = 50, iconOnly = false, ...props }: LogoProps) {
   const { mode, theme } = useThemeStore();
   const defaultTextColor = mode === 'light' ? '#333' : '#fff';
-  const defaultIconColor = theme === 'none' ? '#333' : config.theme.rose.primary;
+  const defaultIconColor = theme === 'none' ? '#333' : config.theme.colors[theme];
   if (!textColor) textColor = defaultTextColor;
   if (!iconColor) iconColor = defaultIconColor;
 

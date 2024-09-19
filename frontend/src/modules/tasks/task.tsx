@@ -101,6 +101,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
         getInitialData: () => data,
         onDragStart: () => setDragging(true),
         onDrop: () => setDragging(false),
+        canDrag: () => !isEditing,
       }),
       dropTargetForExternal({
         element,
@@ -125,7 +126,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
         onDrop: () => dragEnd(),
       }),
     );
-  }, [task]);
+  }, [task, isEditing]);
 
   return (
     <motion.div layout transition={{ duration: 0.3 }}>

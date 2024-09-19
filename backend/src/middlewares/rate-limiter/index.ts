@@ -32,8 +32,7 @@ function rateLimiterMiddleware(this: RateLimiterPostgres | RateLimiterMemory, mo
 
   return async (ctx, next) => {
     const ipAddr = ctx.req.header('x-forwarded-for');
-    // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-    const body = ctx.req.header('content-type') === 'application/json' ? ((await ctx.req.raw.clone().json()) as any) : undefined;
+    const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.raw.clone().json() : undefined;
     const user = getContextUser();
     const username = body?.email || user?.id;
 

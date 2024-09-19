@@ -5,10 +5,12 @@ import { z } from 'zod';
 import { type SystemInviteProps, invite as inviteSystem } from '~/api/general';
 import { type InviteMemberProps, inviteMembers } from '~/api/memberships';
 
+import { onlineManager } from '@tanstack/react-query';
 import { idOrSlugSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
+import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/taosts-show';
@@ -69,14 +71,16 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
     },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });
-      callback?.();
       nextStep?.();
       if (isDialog) dialog.remove();
       showToast(t('common:success.user_invited'), 'success');
+      callback?.();
     },
   });
 
   const onSubmit = (values: FormValues) => {
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     invite(values);
   };
 

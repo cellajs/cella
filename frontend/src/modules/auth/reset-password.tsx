@@ -6,6 +6,7 @@ import * as z from 'zod';
 import AuthPage from '~/modules/auth/auth-page';
 import { Button } from '~/modules/ui/button';
 
+import { onlineManager } from '@tanstack/react-query';
 import { passwordSchema } from 'backend/lib/common-schemas';
 import { config } from 'config';
 import { ArrowRight, Loader2 } from 'lucide-react';
@@ -58,6 +59,8 @@ const ResetPassword = () => {
 
   // Submit new password
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     const { password } = values;
     resetPassword({ token, password });
   };

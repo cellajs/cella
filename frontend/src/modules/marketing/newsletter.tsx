@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useRef } from 'react';
@@ -25,6 +26,9 @@ const NewsletterForm = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+
     let email = formRef.current?.email.value;
     if (!email) return;
     email = email.trim().toLowerCase();

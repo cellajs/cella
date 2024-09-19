@@ -1,9 +1,9 @@
+import { eq, or } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
 import { usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
 import { errorResponse } from '#/lib/errors';
-import isAllowedTo from '#/middlewares/guard/is-allowed-to';
-import { eq, or } from 'drizzle-orm';
-import type { MiddlewareHandler } from 'hono';
+import { isAllowedTo } from '#/middlewares/guard/is-allowed-to';
 
 const checkUserPermissions: MiddlewareHandler = async (ctx, next) => {
   const requestUserId = ctx.req.query('userId');

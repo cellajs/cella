@@ -1,6 +1,6 @@
 import { pgTable, primaryKey, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { supportedOauthProviders } from '#/modules/auth';
+import { supportedOauthProviders } from '#/middlewares/guard/allowed-auth';
 
 export const oauthAccountsTable = pgTable(
   'oauth_accounts',

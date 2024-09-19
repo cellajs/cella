@@ -10,7 +10,6 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { getOrderColumn } from '#/lib/order-column';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
-import type { User } from 'lucia';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from './helpers/transform-database-user';
@@ -61,7 +60,7 @@ const usersRoutes = app
     if (q) {
       filters.push(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)));
     }
-    if (role) filters.push(eq(usersTable.role, role as User['role']));
+    if (role) filters.push(eq(usersTable.role, role));
 
     const usersQuery = db
       .select({
@@ -242,7 +241,5 @@ const usersRoutes = app
       200,
     );
   });
-
-export type AppUsersType = typeof usersRoutes;
 
 export default usersRoutes;

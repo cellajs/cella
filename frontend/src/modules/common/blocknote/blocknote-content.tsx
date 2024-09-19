@@ -4,16 +4,22 @@ import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { getMentionMenuItems, type schemaWithMentions } from '~/modules/common/blocknote/mention';
 import type { Member } from '~/types/common';
 
-export const BlockNoteForTaskContent = ({ editor, members }: { editor: typeof schemaWithMentions.BlockNoteEditor; members: Member[] }) => (
+export const BlockNoteForTaskContent = ({
+  editor,
+  members,
+  subTask = false,
+}: { editor: typeof schemaWithMentions.BlockNoteEditor; members: Member[]; subTask?: boolean }) => (
   <>
     <CustomSlashMenu />
-    <SideMenuController
-      sideMenu={(props) => (
-        <SideMenu {...props}>
-          <DragHandleButton dragHandleMenu={() => null} {...props} />
-        </SideMenu>
-      )}
-    />
+    {!subTask && (
+      <SideMenuController
+        sideMenu={(props) => (
+          <SideMenu {...props}>
+            <DragHandleButton dragHandleMenu={() => null} {...props} />
+          </SideMenu>
+        )}
+      />
+    )}
     <GridSuggestionMenuController
       triggerCharacter={'@'}
       getItems={async () =>

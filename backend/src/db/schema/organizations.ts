@@ -5,6 +5,8 @@ import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/lib/nanoid';
 import { membershipsTable } from './memberships';
 
+type Language = (typeof config.languages)[number]['value'];
+
 export const organizationsTable = pgTable(
   'organizations',
   {
@@ -22,7 +24,7 @@ export const organizationsTable = pgTable(
     })
       .notNull()
       .default(config.defaultLanguage),
-    languages: json('languages').$type<string[]>().notNull().default([config.defaultLanguage]),
+    languages: json('languages').$type<Language[]>().notNull().default([config.defaultLanguage]),
     notificationEmail: varchar('notification_email'),
     emailDomains: json('email_domains').$type<string[]>().notNull().default([]),
     color: varchar('color'),

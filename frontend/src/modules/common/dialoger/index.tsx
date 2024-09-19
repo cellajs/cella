@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { DialogState, type DialogT, type DialogToRemove, type DialogToReset } from '~/modules/common/dialoger/state';
+import { DialogState, type DialogT, type DialogToRemove } from '~/modules/common/dialoger/state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
@@ -32,11 +32,11 @@ export function Dialoger() {
 
   useEffect(() => {
     return DialogState.subscribe((dialog) => {
-      if ((dialog as DialogToRemove).remove) {
-        removeDialog(dialog as DialogT);
+      if ('remove' in dialog) {
+        removeDialog(dialog);
         return;
       }
-      if ((dialog as DialogToReset).reset) {
+      if ('reset' in dialog) {
         setUpdatedDialogs((updatedDialogs) => updatedDialogs.filter(({ id }) => id !== dialog.id));
         return;
       }
@@ -94,16 +94,15 @@ export function Dialoger() {
     return (
       <Drawer key={dialog.id} open={dialog.open} onOpenChange={onOpenChange(dialog)}>
         <DrawerContent className={dialog.className}>
-          {dialog.title || dialog.text ? (
-            <DrawerHeader className="text-left">
-              {existingDialog?.title ? (
-                existingDialog.title
-              ) : dialog.title ? (
-                <DrawerTitle>{typeof dialog.title === 'string' ? <span>{dialog.title}</span> : dialog.title}</DrawerTitle>
-              ) : null}
-              {dialog.text && <DrawerDescription>{dialog.text}</DrawerDescription>}
-            </DrawerHeader>
-          ) : null}
+          <DrawerHeader className={`${dialog.title || dialog.text ? '' : 'hidden'}`}>
+            <DrawerTitle className={`${dialog.title || existingDialog?.title ? '' : 'hidden'} text-left h-6`}>
+              {existingDialog?.title
+                ? existingDialog.title
+                : dialog.title && (typeof dialog.title === 'string' ? <span>{dialog.title}</span> : dialog.title)}
+            </DrawerTitle>
+            <DrawerDescription className={`${dialog.text ? '' : 'hidden'}`}>{dialog.text}</DrawerDescription>
+          </DrawerHeader>
+
           <div className="flex flex-col px-4 pb-8 gap-4">{dialog.content}</div>
         </DrawerContent>
       </Drawer>

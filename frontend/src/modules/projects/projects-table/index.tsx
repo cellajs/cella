@@ -117,8 +117,8 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
         dialog
         projects={selectedProjects}
         callback={(projects) => {
-          callback(projects, 'delete');
           toast.success(t('common:success.delete_resources', { resources: t('app:projects') }));
+          callback(projects, 'delete');
         }}
       />,
       {

@@ -138,10 +138,24 @@ export default function Board() {
   }, [tasks, focusedTaskId, taskIdPreview]);
 
   const toggleCreateTaskForm = (itemId: string) => {
-    setColumnTaskCreate((prevState) => ({
-      ...prevState,
-      [itemId]: !prevState[itemId],
-    }));
+    setColumnTaskCreate((prevState) => {
+      const newState = {
+        ...prevState,
+        [itemId]: !prevState[itemId],
+      };
+
+      // Scroll to top only when opening the form
+      if (newState[itemId] && !prevState[itemId]) {
+        const listElement = document.getElementById(`tasks-list-${itemId}`);
+        if (!listElement) return newState;
+        listElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+
+      return newState;
+    });
   };
 
   const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
@@ -251,7 +265,12 @@ export default function Board() {
   const handleTaskClick = (event: TaskCardFocusEvent) => {
     const { taskId, clickTarget } = event.detail;
 
+    if (focusedTaskId && focusedTaskId !== taskId) {
+      dispatchCustomEvent('toggleSubTaskEditing', { id: focusedTaskId, state: false });
+      dispatchCustomEvent('toggleTaskEditing', { id: focusedTaskId, state: false });
+    }
     if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(taskId);
+
     if (focusedTaskId === taskId) return setTaskExpanded(taskId, true);
 
     const taskCard = document.getElementById(taskId);
@@ -286,7 +305,7 @@ export default function Board() {
     );
   };
 
-  const handleCRUD = (event: TaskOperationEvent) => {
+  const handleTaskOperations = (event: TaskOperationEvent) => {
     const { array, action, projectId } = event.detail;
     const callback = useMutateTasksQueryData(['boardTasks', projectId]);
     callback(array, action);
@@ -306,7 +325,7 @@ export default function Board() {
   };
 
   useEventListener('entityArchiveToggle', handleEntityUpdate);
-  useEventListener('taskOperation', handleCRUD);
+  useEventListener('taskOperation', handleTaskOperations);
   useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('toggleTaskExpand', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));

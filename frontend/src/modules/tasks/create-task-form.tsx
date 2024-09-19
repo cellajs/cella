@@ -80,7 +80,7 @@ type FormValues = z.infer<typeof formSchema>;
 const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organizationId, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { user } = useUserStore(({ user }) => ({ user }));
+  const { user } = useUserStore();
   const defaultId = nanoid();
   const { ref, bounds } = useMeasure();
 
@@ -234,7 +234,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                     {taskTypes.map((type) => (
                       <ToggleGroupItem size="sm" value={type.value} className="w-full" key={type.label}>
                         {type.icon()}
-                        <span className="ml-2 font-light">{t(`common:${type.value}`)}</span>
+                        <span className="ml-2 font-light">{t(`app:${type.value}`)}</span>
                       </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
