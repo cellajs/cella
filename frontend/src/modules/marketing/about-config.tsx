@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Building2, Github, Twitter, Users } from 'lucide-react';
+import { Building2, Folder, Github, StickyNote, Twitter, Users } from 'lucide-react';
 
 export const socials = [
   { title: 'Twitter', href: config.company.twitterUrl, icon: Twitter },
@@ -36,7 +36,7 @@ interface PricingPlan {
 }
 
 export const pricingPlans: PricingPlan[] = [
-  { id: 'free', action: 'sign_in', priceId: null, featureCount: 3, borderColor: '', discount: 'Free' },
+  { id: 'free', action: 'waitlist_request', priceId: null, featureCount: 3, borderColor: '', discount: 'Free' },
   { id: 'pro', action: 'contact_us', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
 ];
 
@@ -47,6 +47,8 @@ interface Count {
 }
 
 export const counts: Count[] = [
-  { id: 'users', title: 'common:users', icon: Users },
   { id: 'organizations', title: 'common:organizations', icon: Building2 },
+  { id: 'users', title: 'common:users', icon: Users },
+  { id: 'projects', title: 'app:projects', icon: Folder },
+  { id: 'tasks', title: 'app:tasks', icon: StickyNote },
 ];

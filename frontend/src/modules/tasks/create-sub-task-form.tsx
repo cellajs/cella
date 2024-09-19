@@ -131,14 +131,14 @@ export const CreateSubTaskForm = ({
 
   if (!formOpen)
     return (
-      <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none bg-secondary/25" onClick={() => setFormState(true)}>
+      <Button variant="secondary" size="sm" className="w-full mb-1 rounded-none bg-secondary/50" onClick={() => setFormState(true)}>
         <Plus size={16} />
         <span className="ml-1 font-normal">{t('common:add_resource', { resource: t('app:todo').toLowerCase() })}</span>
       </Button>
     );
   return (
     <Form {...form}>
-      <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary/20">
+      <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 flex gap-2 flex-col bg-secondary/50">
         <FormField
           control={form.control}
           name="description"

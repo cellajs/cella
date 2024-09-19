@@ -114,7 +114,7 @@ const SubTask = ({
         layout
         transition={{ duration: 0 }}
         ref={subTaskRef}
-        className={`relative flex items-start gap-1 p-1 mb-0.5 hover:bg-secondary/40 opacity-${dragging ? '30' : '100'} bg-secondary/25`}
+        className={`relative flex items-start gap-1 p-1 mb-0.5 hover:bg-secondary/50 opacity-${dragging ? '30' : '100'} bg-secondary/40`}
       >
         <div className="flex flex-col gap-1">
           <Checkbox

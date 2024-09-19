@@ -17,7 +17,7 @@ export const config = {
   productionUrl: 'https://raak.io',
 
   description: 'raak',
-  keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
+  keywords: 'project management tool, collaboration tool, task tracker, task management, issue tracker, kanban board, trello, pivotal, jira, linear',
 
   supportEmail: 'support@raak.io',
   notificationsEmail: 'notifications@raak.io',

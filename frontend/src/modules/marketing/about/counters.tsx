@@ -18,13 +18,13 @@ const Counters = () => {
   });
 
   return (
-    <div ref={ref} className="mx-auto grid gap-4 md:max-w-5xl md:grid-cols-2 lg:grid-cols-2">
+    <div ref={ref} className="mx-auto grid gap-4 md:max-w-5xl grid-cols-2 lg:grid-cols-4">
       {inView &&
         counts.map(({ id, title, icon: Icon }) => {
           const countValue = countValues[id as keyof typeof countValues];
 
           return (
-            <Card key={id}>
+            <Card key={id} className="bg-background">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t(title)}</CardTitle>
                 <Icon className="text-muted-foreground h-4 w-4" />
