@@ -6,6 +6,7 @@ import { Ban, Circle, type LucideProps, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
+import { Switch } from '~/modules/ui/switch';
 
 interface UserThemeProps {
   size?: number;
@@ -26,6 +27,23 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
     return <Icon size={16} />;
   }
 
+  if (!themes.length)
+    return (
+      <Switch
+        size="sm"
+        id="changeTheme"
+        checked={mode === 'light'}
+        onCheckedChange={() => setMode(mode === 'light' ? 'dark' : 'light')}
+        aria-label={'changeTheme'}
+        thumb={
+          mode === 'light' ? (
+            <Sun size={size} className="text-white" strokeWidth={config.theme.strokeWidth} />
+          ) : (
+            <Moon size={size} className="text-white" strokeWidth={config.theme.strokeWidth} />
+          )
+        }
+      />
+    );
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -44,26 +62,21 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
             <span className="ml-2">{item.label}</span>
           </DropdownMenuCheckboxItem>
         ))}
-
-        {themes.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem key={'none'} checked={theme === 'none'} onCheckedChange={() => setTheme('none')}>
-              <span className={'opacity-50'}>
-                <Icon icon={Ban} />
-              </span>
-              <span className="ml-2">{t('common:without_color')}</span>
-            </DropdownMenuCheckboxItem>
-            {themes.map(([name, color]) => (
-              <DropdownMenuCheckboxItem key={name} checked={theme === name} onCheckedChange={() => setTheme(name as Theme)}>
-                <span style={{ color }}>
-                  <Icon icon={Circle} />
-                </span>
-                <span className="ml-2">{name[0].toUpperCase() + name.slice(1)}</span>
-              </DropdownMenuCheckboxItem>
-            ))}
-          </>
-        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuCheckboxItem key={'none'} checked={theme === 'none'} onCheckedChange={() => setTheme('none')}>
+          <span className={'opacity-50'}>
+            <Icon icon={Ban} />
+          </span>
+          <span className="ml-2">{t('common:without_color')}</span>
+        </DropdownMenuCheckboxItem>
+        {themes.map(([name, color]) => (
+          <DropdownMenuCheckboxItem key={name} checked={theme === name} onCheckedChange={() => setTheme(name as Theme)}>
+            <span style={{ color }}>
+              <Icon icon={Circle} />
+            </span>
+            <span className="ml-2">{name[0].toUpperCase() + name.slice(1)}</span>
+          </DropdownMenuCheckboxItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
