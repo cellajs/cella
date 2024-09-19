@@ -94,16 +94,15 @@ export function Dialoger() {
     return (
       <Drawer key={dialog.id} open={dialog.open} onOpenChange={onOpenChange(dialog)}>
         <DrawerContent className={dialog.className}>
-          {dialog.title || dialog.text ? (
-            <DrawerHeader className="text-left">
-              {existingDialog?.title ? (
-                existingDialog.title
-              ) : dialog.title ? (
-                <DrawerTitle>{typeof dialog.title === 'string' ? <span>{dialog.title}</span> : dialog.title}</DrawerTitle>
-              ) : null}
-              {dialog.text && <DrawerDescription>{dialog.text}</DrawerDescription>}
-            </DrawerHeader>
-          ) : null}
+          <DrawerHeader className={`${dialog.title || dialog.text ? '' : 'hidden'}`}>
+            <DrawerTitle className={`${dialog.title || existingDialog?.title ? '' : 'hidden'} text-left h-6`}>
+              {existingDialog?.title
+                ? existingDialog.title
+                : dialog.title && (typeof dialog.title === 'string' ? <span>{dialog.title}</span> : dialog.title)}
+            </DrawerTitle>
+            <DrawerDescription className={`${dialog.text ? '' : 'hidden'}`}>{dialog.text}</DrawerDescription>
+          </DrawerHeader>
+
           <div className="flex flex-col px-4 pb-8 gap-4">{dialog.content}</div>
         </DrawerContent>
       </Drawer>
