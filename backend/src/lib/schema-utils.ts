@@ -6,8 +6,8 @@ export const createEntitiesSchema = <T extends ZodTypeAny>(getSchemaForTable: (t
   return z.object(
     Object.values(entityTables).reduce(
       (acc, table) => {
-        const { name } = getTableConfig(table);
-        acc[name as EntityTableNames] = getSchemaForTable(name); // Use the passed function to define the schema
+        const name = getTableConfig(table).name as EntityTableNames;
+        acc[name] = getSchemaForTable(name); // Use the passed function to define the schema
         return acc;
       },
       {} as Record<EntityTableNames, T>,

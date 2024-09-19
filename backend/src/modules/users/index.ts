@@ -1,6 +1,5 @@
 import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 
-import type { User } from 'lucia';
 import { coalesce, db } from '#/db/db';
 import { auth } from '#/db/lucia';
 import { membershipsTable } from '#/db/schema/memberships';
@@ -61,7 +60,7 @@ const usersRoutes = app
     if (q) {
       filters.push(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)));
     }
-    if (role) filters.push(eq(usersTable.role, role as User['role']));
+    if (role) filters.push(eq(usersTable.role, role));
 
     const usersQuery = db
       .select({

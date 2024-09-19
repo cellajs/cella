@@ -4,6 +4,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import {
   imageUrlSchema,
+  languageSchema,
   membershipsCountSchema,
   nameSchema,
   paginationQuerySchema,
@@ -17,7 +18,7 @@ export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  languages: z.array(z.string()),
+  languages: z.array(languageSchema),
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
   membership: membershipInfoSchema.nullable(),
@@ -39,7 +40,7 @@ export const updateOrganizationBodySchema = createInsertSchema(organizationsTabl
   slug: validSlugSchema,
   name: nameSchema,
   shortName: nameSchema,
-  languages: z.array(z.string()).min(1).optional(),
+  languages: z.array(languageSchema).optional(),
   emailDomains: validDomainsSchema,
   authStrategies: z.array(z.string()).optional(),
   websiteUrl: validUrlSchema,

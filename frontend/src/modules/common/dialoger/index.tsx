@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { DialogState, type DialogT, type DialogToRemove, type DialogToReset } from '~/modules/common/dialoger/state';
+import { DialogState, type DialogT, type DialogToRemove } from '~/modules/common/dialoger/state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
@@ -32,11 +32,11 @@ export function Dialoger() {
 
   useEffect(() => {
     return DialogState.subscribe((dialog) => {
-      if ((dialog as DialogToRemove).remove) {
-        removeDialog(dialog as DialogT);
+      if ('remove' in dialog) {
+        removeDialog(dialog);
         return;
       }
-      if ((dialog as DialogToReset).reset) {
+      if ('reset' in dialog) {
         setUpdatedDialogs((updatedDialogs) => updatedDialogs.filter(({ id }) => id !== dialog.id));
         return;
       }

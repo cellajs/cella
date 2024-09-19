@@ -5,7 +5,7 @@ import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
 import { generateUnsubscribeToken } from '#/lib/unsubscribe-token';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { EnabledOauthProviderOptions } from '#/types/common';
+import type { OauthProviderOptions } from '#/types/common';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { setSessionCookie } from './cookies';
 import { insertOauthAccount } from './oauth';
@@ -17,7 +17,7 @@ export const handleCreateUser = async (
   data: Omit<InsertUserModel, 'unsubscribeToken'>,
   options?: {
     provider?: {
-      id: EnabledOauthProviderOptions;
+      id: OauthProviderOptions;
       userId: string;
     };
     isEmailVerified?: boolean;
@@ -66,8 +66,11 @@ export const handleCreateUser = async (
       return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
     }
 
-    const strategy = options?.provider ? options.provider.id : 'EMAIL';
-    logEvent('Error creating user', { strategy, errorMessage: (error as Error).message }, 'error');
+    if (error instanceof Error) {
+      const strategy = options?.provider ? options.provider.id : 'EMAIL';
+      const errorMessage = error.message;
+      logEvent('Error creating user', { strategy, errorMessage }, 'error');
+    }
 
     throw error;
   }

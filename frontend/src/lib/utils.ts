@@ -29,12 +29,12 @@ const day = 864e5;
 const year = 31536e6;
 
 // convert date in Twitter format
-export const dateTwitterFormat = (startDate: string, passedLoc: string, addStr?: string) => {
+export const dateTwitterFormat = (startDate: string, passedLoc: keyof typeof locale, addStr?: string) => {
   const start = dayjs(startDate);
   const end = dayjs();
   const diff = Math.abs(end.diff(start));
 
-  const loc = locale[passedLoc as keyof typeof locale] || locale.en;
+  const loc = locale[passedLoc];
   let unit: keyof typeof loc;
   let num: number | string;
 
@@ -125,7 +125,7 @@ export function generateNumber(id: string) {
 
 // Get valid children from a React component
 export function getValidChildren(children: React.ReactNode) {
-  return React.Children.toArray(children).filter((child) => React.isValidElement(child)) as React.ReactElement[];
+  return React.Children.toArray(children).filter((child) => React.isValidElement(child));
 }
 
 // Clean a URL by removing search and hash
@@ -153,6 +153,7 @@ export const noDirectAccess = (pathname: string, param: string, redirectLocation
 export const addMenuItem = (newEntity: UserMenuItem, storage: keyof UserMenu) => {
   const menu = useNavigationStore.getState().menu;
 
+  // TODO: Do we still need parentId?
   const add = (items: UserMenuItem[]): UserMenuItem[] => {
     return items.map((item) => {
       if (item.id === newEntity.parentId) {

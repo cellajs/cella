@@ -3,12 +3,15 @@ import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
 import type { Entity } from '#/types/common';
 
+type EntityModel<T extends Entity> = (typeof entityTables)[T]['$inferSelect'];
+
 /**
  * Resolves entity based on ID or Slug and sets the context accordingly.
  * @param entityType - The type of the entity.
  * @param idOrSlug - The unique identifier (ID or Slug) of the entity.
  */
-export const resolveEntity = async <T extends Entity>(entityType: T, idOrSlug: string): Promise<(typeof entityTables)[T]['$inferSelect']> => {
+export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string): Promise<EntityModel<T>>;
+export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string) {
   const table = entityTables[entityType];
 
   // Return early if table is not available
@@ -22,8 +25,8 @@ export const resolveEntity = async <T extends Entity>(entityType: T, idOrSlug: s
     .from(table)
     .where(or(...$where));
 
-  return entity as (typeof entityTables)[T]['$inferSelect'];
-};
+  return entity;
+}
 
 /**
  * Resolves entities based on their IDs and sets the context accordingly.

@@ -19,7 +19,7 @@ import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/taosts-show';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
-import { getInitialSortColumns } from '~/modules/common/data-table/init-sort-columns';
+import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';

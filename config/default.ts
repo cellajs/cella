@@ -90,7 +90,7 @@ export const config = {
       xl: '1280px',
       '2xl': '1400px',
     },
-  },
+  } as const,
 
   // Placeholder colors
   placeholderColors: [
@@ -125,7 +125,7 @@ export const config = {
   languages: [
     { value: 'en', label: 'English' },
     { value: 'nl', label: 'Nederlands' },
-  ],
+  ] as const,
 
   // All entity types
   entityTypes: ['user', 'organization'] as const,

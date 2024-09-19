@@ -22,6 +22,8 @@ export type UserMenuItem = z.infer<typeof menuItemsSchema>[number];
 
 export type Organization = z.infer<typeof organizationSchema>;
 
+export type Language = Organization['languages'][number];
+
 export type Member = z.infer<typeof membersSchema>;
 export type Membership = z.infer<typeof membershipSchema>;
 export type MinimumMembershipInfo = z.infer<typeof membershipInfoSchema>;

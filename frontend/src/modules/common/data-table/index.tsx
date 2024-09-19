@@ -119,7 +119,7 @@ export const DataTable = <TData,>({
       {initialDone ? ( // Render skeleton only on initial load
         <>
           {error && rows.length === 0 ? (
-            <ErrorMessage error={error as Error} />
+            <ErrorMessage error={error} />
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (

@@ -20,7 +20,7 @@ export type ExternalDropDown = Omit<DropDownT, 'id' | 'content'> & {
 };
 
 const isDropDown = (dropdowner: DropDownT | DropDownToRemove): dropdowner is DropDownT => {
-  return !(dropdowner as DropDownToRemove).remove;
+  return !('remove' in dropdowner);
 };
 
 class Observer {

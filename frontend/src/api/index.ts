@@ -32,14 +32,14 @@ export class ApiError extends Error {
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: any is used to handle any type of response
+// biome-ignore lint/suspicious/noExplicitAny: any is used to allow any type of response
 export const handleResponse = async <T extends Record<string, any>, U extends ClientResponse<T, number, 'json'>>(response: U) => {
+  const json = await response.json();
+
   if (response.ok) {
-    const json = await response.json();
     return json as Awaited<ReturnType<Extract<U, { status: 200 }>['json']>>;
   }
 
-  const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
   throw new Error('Unknown error');
 };

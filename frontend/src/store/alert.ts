@@ -15,9 +15,11 @@ interface AlertState {
   clearAlertStore: () => void;
 }
 
-const initStore = {
-  downAlert: config.maintenance ? 'maintenance' : (null as downLevels),
-  alertsSeen: [] as string[],
+interface InitStore extends Pick<AlertState, 'alertsSeen' | 'downAlert'> {}
+
+const initStore: InitStore = {
+  downAlert: config.maintenance ? 'maintenance' : null,
+  alertsSeen: [],
 };
 
 export const useAlertStore = create<AlertState>()(

@@ -5,4 +5,4 @@ export default {
   name: 'Cella TUNNEL',
   frontendUrl: 'https://localhost:3003',
   backendUrl: 'http://cella.eu.ngrok.io',
-} as Config;
+} satisfies Config;

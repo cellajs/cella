@@ -1,24 +1,24 @@
-import { type LegacyRef, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 const FocusTrap = ({ children, mainElementId, active = true }: { children: React.ReactNode; mainElementId?: string; active?: boolean }) => {
-  const focusTrapRef = useRef<HTMLElement | null>(null);
+  const focusTrapRef = useRef<HTMLDivElement | null>(null);
 
   const handleTabKey = (e: KeyboardEvent) => {
     if (!focusTrapRef || !focusTrapRef.current) return;
     const focusableElements = focusTrapRef.current.querySelectorAll('a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])');
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+    const firstElement = focusableElements[0] as HTMLElement | undefined;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement | undefined;
 
     if (e.shiftKey) {
       // Shift + Tab
       if (document.activeElement === firstElement) {
-        lastElement.focus();
+        lastElement?.focus();
         e.preventDefault();
       }
     } else {
       // Tab
       if (document.activeElement === lastElement) {
-        firstElement.focus();
+        firstElement?.focus();
         e.preventDefault();
       }
     }
@@ -46,7 +46,7 @@ const FocusTrap = ({ children, mainElementId, active = true }: { children: React
   }, [active]);
 
   return (
-    <div ref={focusTrapRef as LegacyRef<HTMLDivElement>} tabIndex={-1}>
+    <div ref={focusTrapRef} tabIndex={-1}>
       {children}
     </div>
   );

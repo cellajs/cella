@@ -33,4 +33,5 @@ const configModes = {
 
 export type ConfigMode = keyof typeof configModes;
 
-export const config = mergeDeep(_default, configModes[(process.env.NODE_ENV || 'development') as ConfigMode]);
+const mode = (process.env.NODE_ENV || 'development') as ConfigMode;
+export const config = mergeDeep(_default, configModes[mode]);

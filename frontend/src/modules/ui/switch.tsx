@@ -36,15 +36,15 @@ const switchThumbVariants = cva(
 );
 
 export interface SwitchProps extends React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>, VariantProps<typeof switchVariants> {
-  thumb?: React.ReactNode;
+  thumb?: React.ReactElement;
 }
 
 const Switch = React.forwardRef<React.ElementRef<typeof SwitchPrimitives.Root>, SwitchProps>(({ className, size, thumb, ...props }, ref) => {
   const thumbElement = (
     <SwitchPrimitives.Thumb className={cn(switchThumbVariants({ size, bg: thumb ? 'none' : 'default' }))}>
       {thumb &&
-        React.cloneElement(thumb as React.ReactElement, {
-          className: cn(switchThumbVariants({ size, bg: 'none' }), (thumb as React.ReactElement).props.className),
+        React.cloneElement(thumb, {
+          className: cn(switchThumbVariants({ size, bg: 'none' }), thumb.props.className),
         })}
     </SwitchPrimitives.Thumb>
   );
