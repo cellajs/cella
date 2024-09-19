@@ -1,11 +1,11 @@
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { type FullSearchSchema, type RegisteredRouter, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { objectKeys } from '~/lib/object';
+
+type SearchParams = Pick<FullSearchSchema<RegisteredRouter['routeTree']>, 'sort' | 'order' | 'q' | 'role'>;
 
 // This hook is used to save values in the URL search params
-const useSaveInSearchParams = (
-  values: Record<string, number | string | string[] | number[] | undefined>,
-  defaultValues?: Record<string, string | undefined>,
-) => {
+const useSaveInSearchParams = (values: SearchParams, defaultValues?: SearchParams) => {
   const navigate = useNavigate();
   //Strict false is needed because can be used at any route
   const params = useParams({
@@ -16,16 +16,28 @@ const useSaveInSearchParams = (
   });
 
   useEffect(() => {
-    const searchParams = values;
-    for (const key in searchParams) {
+    let searchParams = { ...values };
+    for (const key of objectKeys(searchParams)) {
       if (searchParams[key] === '' || searchParams[key] === undefined) {
-        if (defaultValues?.[key] !== '' || defaultValues?.[key] !== undefined) searchParams[key] = defaultValues?.[key];
-        else delete searchParams[key];
+        const defaultValue = defaultValues?.[key];
+        if (defaultValue !== '' && defaultValue !== undefined) {
+          searchParams = {
+            ...searchParams,
+            [key]: defaultValue,
+          };
+        } else {
+          delete searchParams[key];
+        }
       }
-      if (currentSearchParams[key as keyof typeof currentSearchParams] === searchParams[key]) delete searchParams[key];
-      if (searchParams[key] === '' || (Array.isArray(searchParams[key]) && searchParams[key]?.length === 0)) searchParams[key] = undefined;
-      if (Array.isArray(searchParams[key]) && searchParams[key]?.length > 0)
+      if (currentSearchParams[key] === searchParams[key]) {
+        delete searchParams[key];
+      }
+      if (searchParams[key] === '' || (Array.isArray(searchParams[key]) && searchParams[key]?.length === 0)) {
+        searchParams[key] = undefined;
+      }
+      if (Array.isArray(searchParams[key]) && searchParams[key]?.length > 0) {
         searchParams[key] = searchParams[key].length === 1 ? searchParams[key][0] : searchParams[key].join('_');
+      }
     }
 
     if (Object.keys(searchParams).length === 0) return;

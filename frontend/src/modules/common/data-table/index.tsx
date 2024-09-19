@@ -119,7 +119,7 @@ export const DataTable = <TData,>({
       {initialDone ? ( // Render skeleton only on initial load
         <>
           {error && rows.length === 0 ? (
-            <ErrorMessage error={error as Error} />
+            <ErrorMessage error={error} />
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
@@ -132,9 +132,8 @@ export const DataTable = <TData,>({
                 onRowsChange={onRowsChange}
                 rows={rows}
                 onCellClick={onCellClick}
-                className="fill-grid"
                 // NOTICE: Hack to rerender html/css by changing width
-                style={{ marginRight: columns.length % 2 === 0 ? '0' : '.07rem' }}
+                style={{ blockSize: '100%', marginRight: columns.length % 2 === 0 ? '0' : '.07rem' }}
                 selectedRows={selectedRows}
                 onSelectedRowsChange={onSelectedRowsChange}
                 sortColumns={sortColumns}

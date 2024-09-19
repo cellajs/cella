@@ -3,6 +3,7 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { objectKeys } from '~/lib/object';
 import type { NavItem } from '~/modules/common/app-nav';
 import { menuSections } from '~/nav-config';
 import type { UserMenu, UserMenuItem } from '~/types/common';
@@ -33,16 +34,22 @@ interface NavigationState {
   clearNavigationStore: () => void;
 }
 
+interface InitStore
+  extends Pick<
+    NavigationState,
+    'recentSearches' | 'activeSheet' | 'keepMenuOpen' | 'hideSubmenu' | 'navLoading' | 'focusView' | 'menu' | 'activeSections' | 'finishedOnboarding'
+  > {}
+
 const initialMenuState: UserMenu = menuSections
   .filter((el) => !el.isSubmenu)
-  .reduce<UserMenu>((acc, section) => {
-    acc[section.storageType as keyof UserMenu] = [];
+  .reduce((acc, section) => {
+    acc[section.storageType] = [];
     return acc;
   }, {} as UserMenu);
 
-const initStore = {
-  recentSearches: [] as string[],
-  activeSheet: null as NavItem | null,
+const initStore: InitStore = {
+  recentSearches: [],
+  activeSheet: null,
   keepMenuOpen: false,
   hideSubmenu: false,
   navLoading: false,
@@ -114,10 +121,10 @@ export const useNavigationStore = create<NavigationState>()(
             set((state) => {
               if (!parentId) {
                 // Update the 'archived' status for the item in all sections
-                for (const sectionKey of Object.keys(state.menu)) {
-                  const section = state.menu[sectionKey as keyof UserMenu];
+                for (const sectionKey of objectKeys(state.menu)) {
+                  const section = state.menu[sectionKey];
                   const itemIndex = section.findIndex((el) => el.id === item.id);
-                  if (itemIndex !== -1) state.menu[sectionKey as keyof UserMenu][itemIndex].membership.archived = active;
+                  if (itemIndex !== -1) state.menu[sectionKey][itemIndex].membership.archived = active;
                 }
               } else {
                 // Update the 'archived' status for the item in a specific submenu

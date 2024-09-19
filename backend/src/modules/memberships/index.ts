@@ -9,8 +9,7 @@ import { TimeSpan, createDate } from 'oslo';
 import { emailSender } from '#/lib/mailer';
 import { InviteMemberEmail } from '../../../emails/member-invite';
 
-import type { OrganizationModel } from '#/db/schema/organizations';
-import { type TokenModel, tokensTable } from '#/db/schema/tokens';
+import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
 import { getContextUser } from '#/lib/context';
@@ -43,7 +42,7 @@ const membershipsRoutes = app
 
     // Fetch organization, user memberships, and context from the database
     const [organization, memberships, context] = await Promise.all([
-      resolveEntity('organization', organizationId) as Promise<OrganizationModel>,
+      resolveEntity('organization', organizationId),
       db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
       resolveEntity(entityType, idOrSlug),
     ]);
@@ -70,7 +69,7 @@ const membershipsRoutes = app
       const $where = [
         and(
           eq(membershipsTable[`${context.entity}Id`], context.id),
-          eq(membershipsTable.type, context.entity as MembershipModel['type']),
+          eq(membershipsTable.type, context.entity),
           inArray(
             membershipsTable.userId,
             existingUsers.map((u) => u.id),
@@ -124,10 +123,7 @@ const membershipsRoutes = app
 
           // Check if the role needs to be updated (downgrade or upgrade)
           if (role && existingMembership.role !== role) {
-            await db
-              .update(membershipsTable)
-              .set({ role: role as MembershipModel['role'] })
-              .where(eq(membershipsTable.id, existingMembership.id));
+            await db.update(membershipsTable).set({ role }).where(eq(membershipsTable.id, existingMembership.id));
 
             logEvent('User role updated', { user: existingUser.id, id: context.id, type: existingMembership.type, role });
           }
@@ -138,10 +134,8 @@ const membershipsRoutes = app
             (context.entity !== 'organization' && !organizationMembership) || (context.entity === 'organization' && existingUser.id !== user.id);
 
           if (canCreateMembership) {
-            const assignedRole = (role as MembershipModel['role']) || 'member';
-
             // Insert membership
-            const createdMembership = await insertMembership({ user: existingUser, role: assignedRole, entity: context });
+            const createdMembership = await insertMembership({ user: existingUser, role, entity: context });
 
             // Send a Server-Sent Event (SSE) to the newly added user
             sendSSEToUsers([existingUser.id], 'update_entity', {
@@ -174,7 +168,7 @@ const membershipsRoutes = app
           type: 'membership_invitation',
           userId: targetUser?.id,
           email: email,
-          role: (role as TokenModel['role']) || 'member',
+          role,
           organizationId: organization.id,
           expiresAt: createDate(new TimeSpan(7, 'd')),
         });
@@ -209,7 +203,10 @@ const membershipsRoutes = app
             user.email,
           )
           .catch((error) => {
-            logEvent('Error sending email', { error: (error as Error).message }, 'error');
+            if (error instanceof Error) {
+              const errorMessage = error.message;
+              logEvent('Error sending email', { errorMessage }, 'error');
+            }
           });
       }),
     );
@@ -242,10 +239,11 @@ const membershipsRoutes = app
     const filters = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable[`${entityType}Id`], membershipContext.id)));
 
     // Get the user membership
-    const [currentUserMembership] = (await db
+    const [currentUserMembership]: (MembershipModel | undefined)[] = await db
       .select()
       .from(membershipsTable)
-      .where(and(filters, eq(membershipsTable.userId, user.id)))) as (MembershipModel | undefined)[];
+      .where(and(filters, eq(membershipsTable.userId, user.id)))
+      .limit(1);
 
     // Get the memberships
     const targets = await db
@@ -291,7 +289,7 @@ const membershipsRoutes = app
     // Send SSE events for the memberships that were deleted
     for (const membership of allowedTargets) {
       // Send the event to the user if they are a member of the organization
-      const memberIds = targets.map((el) => el.userId).filter(Boolean) as string[];
+      const memberIds = targets.map((el) => el.userId);
       sendSSEToUsers(memberIds, 'remove_entity', { id: membershipContext.id, entity: membershipContext.entity });
 
       logEvent('Member deleted', { membership: membership.id });

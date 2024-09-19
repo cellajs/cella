@@ -23,11 +23,7 @@ const VerifyEmail = () => {
   });
 
   const resendEmail = () => {
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     verifyEmail({ token, resend: true });
   };

@@ -1,5 +1,6 @@
 import { config } from 'config';
 import { z } from 'zod';
+import { constructZodLiteralUnionType } from './zod';
 
 export const passwordSchema = z.string().min(8).max(100);
 
@@ -89,6 +90,8 @@ export const membershipsCountSchema = z.object({
     total: z.number(),
   }),
 });
+
+export const languageSchema = constructZodLiteralUnionType(config.languages.map((lang) => z.literal(lang.value)));
 
 export const imageUrlSchema = z
   .string()

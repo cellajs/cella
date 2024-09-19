@@ -27,8 +27,7 @@ const limiterConsecutiveFailsByUsernameAndIP = getRateLimiterInstance({
 
 export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next) => {
   const ipAddr = ctx.req.header('x-forwarded-for')?.split(',')[0] || '';
-  // biome-ignore lint/suspicious/noExplicitAny: it's required to use `any` here
-  const body = (await ctx.req.raw.clone().json()) as any;
+  const body = await ctx.req.raw.clone().json();
 
   if (!body.email || !ipAddr) {
     return next();

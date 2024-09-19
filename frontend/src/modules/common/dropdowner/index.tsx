@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { type DropDownT, type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
+import { type DropDownT, dropdownerState } from '~/modules/common/dropdowner/state';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 export function DropDowner() {
@@ -8,8 +8,8 @@ export function DropDowner() {
 
   useEffect(() => {
     return dropdownerState.subscribe((dropdowner) => {
-      if ((dropdowner as DropDownToRemove).remove) setDropdowner(null);
-      else setDropdowner(dropdowner as DropDownT);
+      if ('remove' in dropdowner) setDropdowner(null);
+      else setDropdowner(dropdowner);
     });
   }, []);
 

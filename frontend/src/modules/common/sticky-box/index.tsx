@@ -1,4 +1,4 @@
-import { type ComponentProps, type LegacyRef, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, useEffect, useRef, useState } from 'react';
 
 const getScrollParent = (node: HTMLElement) => {
   let parent: HTMLElement | null = node;
@@ -242,7 +242,9 @@ const setup = (node: HTMLElement, unsubs: UnsubList, opts: Required<StickyBoxCon
     mode = newMode;
     if (prevMode === MODES.relative) relativeOffset = -1;
     if (newMode === MODES.small) {
-      node.style.position = stickyProp as string;
+      if (stickyProp) {
+        node.style.position = stickyProp;
+      }
       if (bottom) {
         node.style.bottom = `${offsetBottom}px`;
       } else {
@@ -267,7 +269,9 @@ const setup = (node: HTMLElement, unsubs: UnsubList, opts: Required<StickyBoxCon
         node.style.top = `${relativeOffset}px`;
       }
     } else {
-      node.style.position = stickyProp as string;
+      if (stickyProp) {
+        node.style.position = stickyProp;
+      }
       if (newMode === MODES.stickyBottom) {
         if (bottom) {
           node.style.bottom = `${offsetBottom}px`;
@@ -385,7 +389,7 @@ export type StickyBoxCompProps = StickyBoxConfig & Pick<ComponentProps<'div'>, '
 const StickyBox = (props: StickyBoxCompProps) => {
   const { enabled = true, offsetTop, offsetBottom, bottom, children, className, style } = props;
 
-  const ref = useRef<HTMLElement | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [setRef, isSticky] = useStickyBox({ offsetTop, offsetBottom, bottom, enabled });
 
   useEffect(() => {
@@ -395,7 +399,7 @@ const StickyBox = (props: StickyBoxCompProps) => {
   const stickyClass = isSticky ? 'group/sticky is-sticky' : '';
 
   return (
-    <div className={`${className} ${stickyClass}`} style={style} ref={ref as LegacyRef<HTMLDivElement> | undefined}>
+    <div className={`${className} ${stickyClass}`} style={style} ref={ref}>
       {children}
     </div>
   );

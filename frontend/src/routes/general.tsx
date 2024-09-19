@@ -11,7 +11,6 @@ import { queryClient } from '~/lib/router';
 import AcceptInvite from '~/modules/common/accept-invite';
 
 import { Suspense, lazy } from 'react';
-import type { ApiError } from '~/api';
 import { onError } from '~/lib/query-client';
 import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
@@ -67,9 +66,11 @@ export const AppRoute = createRoute({
 
       await Promise.all([getSelf(), getMenu()]);
     } catch (error) {
-      // TODO put sentry and onError in a reusable wrapper to reuse it in frontend catch blocks
-      Sentry.captureException(error);
-      onError(error as ApiError);
+      if (error instanceof Error) {
+        // TODO put sentry and onError in a reusable wrapper to reuse it in frontend catch blocks
+        Sentry.captureException(error);
+        onError(error);
+      }
 
       if (location.pathname.startsWith('/auth/')) return console.info('Not authenticated');
 

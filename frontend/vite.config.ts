@@ -4,7 +4,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { type PluginOption, type UserConfig, defineConfig } from 'vite';
+import { type UserConfig, defineConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
@@ -65,7 +65,7 @@ export default defineConfig(() => {
           pure_funcs: ['console.debug'], // Removes console.debug
         },
       }),
-      visualizer({ open: true, gzipSize: true }) as PluginOption,
+      visualizer({ open: true, gzipSize: true }),
     ],
     resolve: {
       alias: {

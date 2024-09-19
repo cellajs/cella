@@ -47,11 +47,7 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
   });
 
   const itemOptionStatesHandle = (state: 'archive' | 'mute') => {
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     const role = item.membership.role;
     if (state === 'archive') updateMembership({ membershipId: item.membership.id, role, archived: !isItemArchived });

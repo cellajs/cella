@@ -48,7 +48,7 @@ const ColumnsView = <TData,>({ columns, setColumns, className = '' }: Props<TDat
       <DropdownMenuContent align="end" className="min-w-56" collisionPadding={16}>
         {filteredColumns.map((column) => (
           <DropdownMenuCheckboxItem
-            key={column.name as string}
+            key={column.key}
             className="min-h-8"
             checked={column.visible}
             onCheckedChange={() =>

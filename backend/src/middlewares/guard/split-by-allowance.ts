@@ -51,7 +51,7 @@ export function splitByAllowance(action: string, entityType: Entity): Middleware
 
     // Check if user or context is missing
     if (!allowedIds.length) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', entityType.toUpperCase() as Entity, { user: user.id });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', entityType, { user: user.id });
     }
 
     // Attach the split IDs to the context

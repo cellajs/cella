@@ -7,6 +7,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useParams } from '@tanstack/react-router';
+import { config } from 'config';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
@@ -44,6 +45,8 @@ export const SheetMenu = memo(() => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 
+  const pwaEnabled = config.has.pwa;
+
   const searchResultsListItems = useCallback(() => {
     return searchResults.length > 0
       ? searchResults.map((item: UserMenuItem) => (
@@ -56,7 +59,7 @@ export const SheetMenu = memo(() => {
     return menuSections
       .filter((el) => !el.isSubmenu)
       .map((section) => {
-        const menuSection = menu[section.storageType as keyof UserMenu];
+        const menuSection = menu[section.storageType];
 
         return (
           <MenuSection
@@ -126,14 +129,14 @@ export const SheetMenu = memo(() => {
         <>
           <div className="mt-2">{renderedSections}</div>
           <div className="grow mt-4 border-b border-dashed" />
-          <div className="flex flex-col mt-6 mb-3 mx-2 gap-6">
+          <div className="flex flex-col mt-6 mb-3 mx-2 gap-4">
             <div className="max-xl:hidden flex items-center gap-4 ml-1">
               <Switch size="xs" id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
               <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
                 {t('common:keep_menu_open')}
               </label>
             </div>
-            <NetworkModeSwitch />
+            {pwaEnabled && <NetworkModeSwitch />}
             {menuSections.some((el) => el.isSubmenu) && (
               <div className="flex items-center gap-4 ml-1">
                 <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />

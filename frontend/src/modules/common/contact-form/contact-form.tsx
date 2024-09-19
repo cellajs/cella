@@ -58,11 +58,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   });
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     const { name, email, message } = data;
     createRequest({ email, type: 'contact', message: `${name} with the message: ${message}` });

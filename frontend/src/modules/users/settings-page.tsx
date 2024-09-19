@@ -83,11 +83,7 @@ const UserSettingsPage = () => {
   const invertClass = mode === 'dark' ? 'invert' : '';
 
   const onDeleteSession = (ids: string[]) => {
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     deleteMySessions(ids);
   };
@@ -193,6 +189,7 @@ const UserSettingsPage = () => {
                           className={`w-4 h-4 ${option.id === 'github' ? invertClass : ''}`}
                           loading="lazy"
                         />
+                        <Check size={18} className="text-success" />
                         {`${t('common:already_connected_to')} ${option.name} `}
                       </div>
                     );

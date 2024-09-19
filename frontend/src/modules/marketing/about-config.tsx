@@ -40,15 +40,9 @@ export const pricingPlans: PricingPlan[] = [
   { id: 'pro', action: 'contact_us', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
 ];
 
-interface Count {
-  id: string;
-  title: string;
-  icon: JSX.ElementType;
-}
-
-export const counts: Count[] = [
-  { id: 'organizations', title: 'common:organizations', icon: Building2 },
-  { id: 'users', title: 'common:users', icon: Users },
-  { id: 'projects', title: 'app:projects', icon: Folder },
-  { id: 'tasks', title: 'app:tasks', icon: StickyNote },
-];
+export const counts = [
+  { id: 'user', title: 'common:users', icon: Users },
+  { id: 'organization', title: 'common:organizations', icon: Building2 },
+  { id: 'project', title: 'app:projects', icon: Folder },
+  { id: 'task', title: 'app:tasks', icon: StickyNote },
+] as const;

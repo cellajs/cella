@@ -22,7 +22,7 @@ export const switchVariants = cva(
 );
 
 const switchThumbVariants = cva(
-  'pointer-events-none block rounded-full shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0',
+  'pointer-events-none block rounded-full ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0',
   {
     variants: {
       size: { xs: 'h-3 w-3 data-[state=checked]:translate-x-4', sm: 'h-4 w-4', base: 'h-5 w-5', lg: 'h-6 w-6' },
@@ -36,15 +36,15 @@ const switchThumbVariants = cva(
 );
 
 export interface SwitchProps extends React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>, VariantProps<typeof switchVariants> {
-  thumb?: React.ReactNode;
+  thumb?: React.ReactElement;
 }
 
 const Switch = React.forwardRef<React.ElementRef<typeof SwitchPrimitives.Root>, SwitchProps>(({ className, size, thumb, ...props }, ref) => {
   const thumbElement = (
     <SwitchPrimitives.Thumb className={cn(switchThumbVariants({ size, bg: thumb ? 'none' : 'default' }))}>
       {thumb &&
-        React.cloneElement(thumb as React.ReactElement, {
-          className: cn(switchThumbVariants({ size, bg: 'none' }), (thumb as React.ReactElement).props.className),
+        React.cloneElement(thumb, {
+          className: cn(switchThumbVariants({ size, bg: 'none' }), thumb.props.className),
         })}
     </SwitchPrimitives.Thumb>
   );
