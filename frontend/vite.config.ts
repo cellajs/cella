@@ -83,7 +83,6 @@ export default defineConfig(() => {
   viteConfig.plugins?.push(
     VitePWA({
       disable: !config.has.pwa,
-      strategies: 'injectManifest',
       devOptions: {
         enabled: false,
         type: 'module',
@@ -113,8 +112,7 @@ export default defineConfig(() => {
           },
         ],
       },
-      injectManifest: {
-        globDirectory: 'dist',
+      workbox: {
         globPatterns: config.mode === 'production' ? ['**/*.{js,css,html,json,svg,png}'] : [],
         globIgnores: ['**/public/static/flags/*.(svg|png)'],
       },

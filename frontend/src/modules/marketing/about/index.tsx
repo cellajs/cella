@@ -14,8 +14,10 @@ import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
 import Integrations from '~/modules/marketing/about/integrations';
-import Pricing from '~/modules/marketing/about/pricing';
+// import Pricing from '~/modules/marketing/about/pricing';
 import Why from '~/modules/marketing/about/why';
+
+import '~/modules/marketing/about/glow-button.css';
 
 interface AboutSectionProps {
   title: string;
@@ -65,7 +67,14 @@ const About = () => {
         {/* Hero landing */}
         <Hero key={'hero'} title="about:title_1" subtitle="about:subtitle" text="about:text_1">
           <div className="max-sm:hidden mb-8">
-            <a href={config.company.githubUrl} className={cn(buttonVariants({ variant: 'glow', size: 'xl' }))} aria-label="Get started">
+            <a
+              href={config.company.githubUrl}
+              className={cn(
+                'glow-button bg-background/95 !rounded-full relative hover:!bg-background active:bg-background',
+                buttonVariants({ variant: 'ghost', size: 'xl' }),
+              )}
+              aria-label="Get started"
+            >
               {t('about:start_github.text')}
             </a>
           </div>
@@ -104,9 +113,9 @@ const About = () => {
           </AboutSection> */}
 
           {/* Pricing */}
-          <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
+          {/* <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
             <Pricing />
-          </AboutSection>
+          </AboutSection> */}
 
           {/* FAQs */}
           {/* <AboutSection key={'faqs'} section="faqs" title="about:title_7" text="about:text_7" alternate={true}>
