@@ -138,17 +138,24 @@ export default function Board() {
   }, [tasks, focusedTaskId, taskIdPreview]);
 
   const toggleCreateTaskForm = (itemId: string) => {
-    const listElement = document.getElementById(`tasks-list-${itemId}`);
-    if (listElement) {
-      listElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
-    setColumnTaskCreate((prevState) => ({
-      ...prevState,
-      [itemId]: !prevState[itemId],
-    }));
+    setColumnTaskCreate((prevState) => {
+      const newState = {
+        ...prevState,
+        [itemId]: !prevState[itemId],
+      };
+
+      // Scroll to top only when opening the form
+      if (newState[itemId] && !prevState[itemId]) {
+        const listElement = document.getElementById(`tasks-list-${itemId}`);
+        if (!listElement) return newState;
+        listElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+
+      return newState;
+    });
   };
 
   const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
