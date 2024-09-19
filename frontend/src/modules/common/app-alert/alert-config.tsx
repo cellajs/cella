@@ -12,7 +12,6 @@ export const alertsConfig: AppAlert[] = [
       </>
     ),
     className: 'rounded-none border-0 border-b',
-    title: 'System Alert',
     Icon: Info,
   },
 ];
