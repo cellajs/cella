@@ -18,10 +18,10 @@ class SheetsStateObserver {
   private subscribers: Array<(action: SheetAction & SheetT) => void> = [];
 
   // Method to subscribe to changes
-  subscribe = (callback: (action: SheetAction & SheetT) => void) => {
-    this.subscribers.push(callback);
+  subscribe = (subscriber: (action: SheetAction & SheetT) => void) => {
+    this.subscribers.push(subscriber);
     return () => {
-      this.subscribers = this.subscribers.filter((sub) => sub !== callback);
+      this.subscribers = this.subscribers.filter((sub) => sub !== subscriber);
     };
   };
 
