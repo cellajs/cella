@@ -43,7 +43,7 @@ export const NetworkModeSwitch = () => {
   }, [networkMode]);
 
   const onCheckedChange = (mode: boolean) => {
-    showToast(t(`common:offline_mode_${mode ? 'off' : 'on'}.text`, { appName: config.name }), 'info');
+    showToast(t(`common:offline_mode_${mode ? 'on' : 'off'}.text`, { appName: config.name }), 'info');
     setNetworkMode(mode ? 'offline' : 'online');
   };
 
