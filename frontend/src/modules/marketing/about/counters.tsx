@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
@@ -9,7 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 const Counters = () => {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
-  const [countValues, setCountValues] = useState<Record<string, number>>({});
+  const initialObject = config.entityTypes.reduce(
+    (acc, key) => {
+      acc[key] = 0;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+  const [countValues, setCountValues] = useState(initialObject);
 
   useEffect(() => {
     getPublicCounts().then((resp) => setCountValues(resp));

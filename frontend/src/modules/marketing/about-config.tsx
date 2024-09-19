@@ -51,12 +51,12 @@ export const pricingPlans: PricingPlan[] = [
 ];
 
 interface Count {
-  id: string;
+  id: (typeof config.entityTypes)[number];
   title: string;
   icon: JSX.ElementType;
 }
 
 export const counts: Count[] = [
-  { id: 'users', title: 'common:users', icon: Users },
-  { id: 'organizations', title: 'common:organizations', icon: Building2 },
+  { id: 'user', title: 'common:users', icon: Users },
+  { id: 'organization', title: 'common:organizations', icon: Building2 },
 ];
