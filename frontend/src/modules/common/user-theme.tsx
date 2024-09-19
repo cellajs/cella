@@ -4,6 +4,7 @@ import { type Mode, type Theme, useThemeStore } from '~/store/theme';
 
 import { Ban, Circle, type LucideProps, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { Switch } from '~/modules/ui/switch';
@@ -32,15 +33,12 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
       <Switch
         size="sm"
         id="changeTheme"
+        className={cn(mode === 'light' && '!bg-border/50', className)}
         checked={mode === 'light'}
         onCheckedChange={() => setMode(mode === 'light' ? 'dark' : 'light')}
         aria-label={'changeTheme'}
         thumb={
-          mode === 'light' ? (
-            <Sun size={size} className="text-white" strokeWidth={config.theme.strokeWidth} />
-          ) : (
-            <Moon size={size} className="text-white" strokeWidth={config.theme.strokeWidth} />
-          )
+          mode === 'light' ? <Sun size={size} strokeWidth={config.theme.strokeWidth} /> : <Moon size={size} strokeWidth={config.theme.strokeWidth} />
         }
       />
     );
