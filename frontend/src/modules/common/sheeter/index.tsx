@@ -9,6 +9,7 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetPo
 
 export function Sheeter() {
   const { t } = useTranslation();
+  const initialized = useRef(false);
   const [currentSheets, setCurrentSheets] = useState<SheetT[]>([]);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
   const navigate = useNavigate();
@@ -36,8 +37,12 @@ export function Sheeter() {
   }, []);
 
   useEffect(() => {
-    // To triggers sheets that opens on mount
-    setCurrentSheets(sheet.getAll());
+    if (!initialized.current) {
+      // To triggers sheets that opens on mount
+      setCurrentSheets(sheet.getAll());
+      initialized.current = true;
+    }
+
     const handleAction = (action: SheetAction & SheetT) => {
       if (action.remove) handleRemoveSheet(action.id);
       else {
