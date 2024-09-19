@@ -5,7 +5,6 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { useLocation } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Trash } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -134,18 +133,12 @@ const SubTask = ({
           onKeyDown={() => {}}
           className="flex flex-col grow min-h-7 justify-center gap-2 mx-1"
         >
-          <div className={!isExpanded ? 'inline-flex items-center mt-1' : 'flex flex-col items-start'}>
+          <div className={!isExpanded ? 'inline-flex items-center mt-1' : 'mt-1 flex flex-col items-start'}>
             {!isExpanded ? (
               // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
               <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
             ) : (
               <>
-                <TaskHeader
-                  task={task as Task}
-                  isEditing={isEditing}
-                  changeEditingState={(state) => setIsEditing(state)}
-                  closeExpand={() => setIsExpanded(false)}
-                />
                 {isEditing ? (
                   <>
                     <TaskBlockNote
@@ -167,6 +160,13 @@ const SubTask = ({
                     />
                   </div>
                 )}
+                <TaskHeader
+                  task={task as Task}
+                  isEditing={isEditing}
+                  onRemove={onRemove}
+                  changeEditingState={(state) => setIsEditing(state)}
+                  closeExpand={() => setIsExpanded(false)}
+                />
               </>
             )}
 
@@ -177,10 +177,6 @@ const SubTask = ({
             )}
           </div>
         </div>
-        <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer opacity-30">
-          <span className="sr-only">{t('app:move_task')}</span>
-          <Trash size={16} />
-        </Button>
         {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
       </motion.div>
     </motion.div>

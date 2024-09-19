@@ -1,4 +1,4 @@
-import { Link, X } from 'lucide-react';
+import { ChevronUp, Maximize2, Trash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dateTwitterFormat } from '~/lib/utils';
@@ -14,9 +14,16 @@ import type { Task } from '~/types/app';
 export const TaskHeader = ({
   task,
   isEditing,
+  onRemove,
   changeEditingState,
   closeExpand,
-}: { task: Task; isEditing: boolean; changeEditingState: (state: boolean) => void; closeExpand: () => void }) => {
+}: {
+  task: Task;
+  isEditing: boolean;
+  changeEditingState: (state: boolean) => void;
+  closeExpand: () => void;
+  onRemove?: (subTaskId: string) => void;
+}) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const isSubTask = task.parentId !== null;
@@ -71,10 +78,20 @@ export const TaskHeader = ({
               size="xs"
               className="w-8 h-8"
             >
-              <Link size={12} />
+              <Maximize2 size={14} />
             </Button>
           </TooltipButton>
         )}
+
+        {task.parentId && onRemove && (
+          <TooltipButton toolTipContent={t('common:delete')} side="bottom" sideOffset={5} hideWhenDetached>
+            <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer">
+              <span className="sr-only">{t('app:move_task')}</span>
+              <Trash size={14} />
+            </Button>
+          </TooltipButton>
+        )}
+
         <TooltipButton toolTipContent={t('common:close')} side="bottom" sideOffset={5} hideWhenDetached>
           <Button
             onClick={() => {
@@ -86,7 +103,7 @@ export const TaskHeader = ({
             size="xs"
             className="w-8 h-8"
           >
-            <X size={14} />
+            <ChevronUp size={14} />
           </Button>
         </TooltipButton>
       </div>
