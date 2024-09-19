@@ -137,7 +137,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
         slashMenu={false}
         filePanel={false}
       >
-        <BlockNoteForTaskContent editor={editor} members={members.filter((m) => m.membership.projectId === projectId)} />
+        <BlockNoteForTaskContent editor={editor} members={members.filter((m) => m.membership.projectId === projectId)} subTask={subTask} />
         {/* Replaces default file panel with Uppy one. */}
         <FilePanelController filePanel={UppyFilePanel} />
       </BlockNoteView>
