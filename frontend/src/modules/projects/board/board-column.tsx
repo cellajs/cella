@@ -184,7 +184,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
                   onCloseForm={() => toggleCreateForm(project.id)}
                 />
               )}
-              <div className="h-full flex flex-col " ref={cardListRef}>
+              <div className="h-full flex flex-col" id={`tasks-list-${project.id}`} ref={cardListRef}>
                 {!!tasks.length && (
                   <div className="flex flex-col flex-grow">
                     <Button
