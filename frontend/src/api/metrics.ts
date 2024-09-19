@@ -1,7 +1,9 @@
-import { apiClient, handleResponse } from '.';
+import { config } from 'config';
+import { metricsHc } from '#/modules/metrics/hc';
+import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = apiClient.metrics;
+export const client = metricsHc(config.backendUrl, clientConfig);
 
 // Get public counts for about page
 export const getPublicCounts = async () => {
@@ -13,7 +15,7 @@ export const getPublicCounts = async () => {
 
 // Get metrics
 export const getMetrics = async () => {
-  const response = await client.$get();
+  const response = await client.index.$get();
   const json = await handleResponse(response);
   return json.data;
 };
