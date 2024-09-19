@@ -1,4 +1,4 @@
-.outline-glow-button:before {
+.glow-button:before {
   content: "";
   display: block;
   position: absolute;
@@ -12,7 +12,7 @@
   background: linear-gradient(45deg, rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%);
 }
 
-.outline-glow-button:after {
+.glow-button:after {
   content: "";
   display: block;
   position: absolute;
@@ -27,15 +27,15 @@
   background: linear-gradient(45deg, rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%);
 }
 
-.outline-glow-button:hover::before {
+.glow-button:hover::before {
   opacity: 1;
 }
 
-.outline-glow-button:hover::after {
+.glow-button:hover::after {
   opacity: 0.8;
 }
 
-.outline-glow-button:active::after {
+.glow-button:active::after {
   position: absolute;
   top: 0px;
   left: 0px;
