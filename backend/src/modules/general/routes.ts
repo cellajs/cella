@@ -124,7 +124,7 @@ class GeneralRoutesConfig {
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, isSystemAdmin],
-    middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
+    middleware: [rateLimiter({ limit: 10, windowMs: 60 * 60 * 1000, keyPrefix: 'invite_success' }, 'success')],
     tags: ['general'],
     summary: 'Invite to system',
     description: 'Invite one or more users to system by email address.',
