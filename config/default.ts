@@ -77,7 +77,9 @@ export const config = {
 
   // Theme settings
   theme: {
-    colors: {},
+    colors: {
+      rose: '#e11d48',
+    },
     colorDarkBackground: 'hsl(240 10% 9%)',
     strokeWidth: 1.5,
     screenSizes: {

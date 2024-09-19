@@ -1,3 +1,6 @@
+/* Custom gradients that are not easy to build using tailwind */
+@import './gradients.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -79,6 +82,7 @@
   }
 }
 
+/* Some tweak on tailwind here */
 @layer base {
   * {
     @apply border-border;
@@ -88,7 +92,8 @@
     @apply bg-background text-foreground min-h-full;
   }
 
-  @media (max-width: 639px) {
+    /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
+    @media (max-width: 639px) {
     html {
       font-size: 18px;
     }
@@ -114,82 +119,6 @@
   }
 }
 
+/* Override tailwind here */
 @layer components {
-  .menu-item-sub:before {
-    content: "";
-    display: block;
-    position: absolute;
-    top: -9px;
-    left: 27px;
-    opacity: 0.5;
-    z-index: 0;
-    width: 1px;
-    height: 14px;
-    background-color: hsl(var(--foreground));
-  }
-
-  .rich-gradient:after {
-    content: "";
-    display: block;
-    position: absolute;
-    top: 0;
-    opacity: 1;
-    width: 100%;
-    height: 100%;
-    z-index: -3;
-    background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(255, 199, 147, 0.87)),
-      linear-gradient(to top left, rgba(0, 0, 0, 0), rgb(57, 160, 251)),
-      linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgb(195, 120, 241)),
-      linear-gradient(to top right, rgba(0, 0, 0, 0), rgb(2, 155, 129));
-  }
-
-  .dark .rich-gradient:after {
-    opacity: 0.8;
-    background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(60, 0, 59, 1)),
-      linear-gradient(to top left, rgba(0, 0, 0, 0), rgba(15, 6, 86, 1)),
-      linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgba(184, 144, 0, 1)),
-      linear-gradient(to top right, rgba(0, 0, 0, 0), rgba(11, 144, 122, 1));
-  }
-
-  .rich-gradient:before {
-    content: "";
-    display: block;
-    position: absolute;
-    top: 0;
-    opacity: 1;
-    width: 100%;
-    height: 100%;
-    z-index: -2;
-    background-image: radial-gradient(circle 90vh at 40% 40%, hsla(var(--background)), rgba(255, 255, 255, 0.5));
-  }
-
-  .dark .rich-gradient:before {
-    opacity: 0.8;
-    background-image: radial-gradient(circle 90vh at 40% 40%, hsla(var(--background)), rgba(255, 255, 255, 0));
-  }
-
-  .rich-gradient.dark-gradient:after {
-    opacity: 1;
-    background: rgba(0, 0, 0, 1);
-    background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(255, 255, 255, 0.2)),
-      linear-gradient(to top left, rgba(0, 0, 0, 0), rgba(49, 49, 230, 0.3)),
-      linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgba(156, 39, 228, 0.2)),
-      linear-gradient(to top right, rgba(0, 0, 0, 0), rgba(254, 185, 24, 0.3));
-  }
-
-  .dark .dark-gradient:after {
-    opacity: 0.2;
-  }
-
-  .rich-gradient.dark-gradient:before {
-    background-image: radial-gradient(circle 120vh at 40% 120%, rgba(59, 17, 37, 0.6), rgba(255, 255, 255, 0));
-  }
-}
-.fill-grid {
-  block-size: 100%;
-}
-
-/* Hide non-focus-view elements */
-.focus-view #main-app-content *:not(.focus-view-container, .focus-view-container *) {
-  display: none;
 }

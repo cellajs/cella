@@ -229,6 +229,7 @@
   "notifications": "Meldingen",
   "oauth": "OAuth-providers",
   "oauth.text": "Verbind je account met een authenticatieprovider.",
+  "offline": "Offline",
   "offline_mode": "Offline modus",
   "offline_mode.text": "Het lijkt erop dat je geen internetverbinding hebt.",
   "onboarding_completed": "Geweldig! Laten we beginnen.",

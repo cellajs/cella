@@ -229,6 +229,7 @@
   "notifications": "Notifications",
   "oauth": "OAuth providers",
   "oauth.text": "Connect your account with an auth provider.",
+  "offline": "Offline",
   "offline_mode": "Offline mode",
   "offline_mode.text": "You appear to have no internet connection.",
   "onboarding_completed": "Great! Let's go.",

@@ -8,6 +8,8 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 
+import './style.css';
+
 interface FocusViewProps {
   className?: string;
   iconOnly?: boolean;
