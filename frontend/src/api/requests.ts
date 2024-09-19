@@ -1,13 +1,15 @@
-import { apiClient, handleResponse } from '.';
+import { config } from 'config';
+import { requestsHc } from '#/modules/requests/hc';
+import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
-export const client = apiClient.requests;
+export const client = requestsHc(config.backendUrl, clientConfig);
 
-type CreateRequestProp = Parameters<(typeof client)['$post']>['0']['json'];
+type CreateRequestProp = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Request access or request info
 export const createRequest = async (requestInfo: CreateRequestProp) => {
-  const response = await client.$post({
+  const response = await client.index.$post({
     json: requestInfo,
   });
 
@@ -16,7 +18,7 @@ export const createRequest = async (requestInfo: CreateRequestProp) => {
 };
 
 export type GetRequestsParams = Partial<
-  Omit<Parameters<(typeof client)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
     limit?: number;
     offset?: number;
     page?: number;
@@ -25,7 +27,7 @@ export type GetRequestsParams = Partial<
 
 // Get all app action requests
 export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetRequestsParams = {}, signal?: AbortSignal) => {
-  const response = await client.$get(
+  const response = await client.index.$get(
     {
       query: {
         q,

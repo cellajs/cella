@@ -50,13 +50,7 @@ export const pricingPlans: PricingPlan[] = [
   { id: 'partner', action: 'contact_us', priceId: null, featureCount: 3, borderColor: '' },
 ];
 
-interface Count {
-  id: string;
-  title: string;
-  icon: JSX.ElementType;
-}
-
-export const counts: Count[] = [
+export const counts = [
   { id: 'users', title: 'common:users', icon: Users },
   { id: 'organizations', title: 'common:organizations', icon: Building2 },
-];
+] as const;

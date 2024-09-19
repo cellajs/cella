@@ -1,9 +1,11 @@
 import { queryOptions } from '@tanstack/react-query';
+import { config } from 'config';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/general';
 import { getOrganization } from '~/api/organizations';
 import { queryClient } from '~/lib/router';
+import { showToast } from '~/lib/taosts-show';
 import { Switch } from '~/modules/ui/switch';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
@@ -40,7 +42,10 @@ export const NetworkModeSwitch = () => {
     }
   }, [networkMode]);
 
-  const onCheckedChange = (mode: boolean) => setNetworkMode(mode ? 'offline' : 'online');
+  const onCheckedChange = (mode: boolean) => {
+    showToast(t(`common:offline_mode_${mode ? 'on' : 'off'}.text`, { appName: config.name }), 'info');
+    setNetworkMode(mode ? 'offline' : 'online');
+  };
 
   return (
     <div className="flex items-center gap-4 ml-1">

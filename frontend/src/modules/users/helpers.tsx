@@ -1,5 +1,6 @@
 import { config } from 'config';
-import { useTranslation } from 'react-i18next';
+import { t } from 'i18next';
+
 import { toast } from 'sonner';
 import { getChallenge, setPasskey } from '~/api/auth';
 import { deletePasskey as baseRemovePasskey, getSelf, getUserMenu } from '~/api/me';
@@ -9,7 +10,6 @@ import { useUserStore } from '~/store/user';
 
 // Register a new passkey
 export const registerPasskey = async () => {
-  const { t } = useTranslation();
   const user = useUserStore.getState().user;
 
   try {
@@ -54,6 +54,7 @@ export const registerPasskey = async () => {
       useUserStore.getState().setUser({ ...user, passkey: true });
     } else toast.error(t('common:error.passkey_add_failed'));
   } catch (error) {
+    // On cancel throws error NotAllowedError
     console.error('Error during passkey registration:', error);
     toast.error(t('common:error.passkey_add_failed'));
   }
@@ -61,8 +62,6 @@ export const registerPasskey = async () => {
 
 // Delete an existing passkey
 export const deletePasskey = async () => {
-  const { t } = useTranslation();
-
   try {
     const result = await baseRemovePasskey();
     if (result) {

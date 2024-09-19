@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { config } from 'config';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
@@ -9,19 +10,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 const Counters = () => {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0 });
+  const initialObject = config.entityTypes.reduce(
+    (acc, key) => {
+      acc[key] = 0;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+  const [countValues, setCountValues] = useState(initialObject);
 
-  // Get counts
-  const { data: countValues } = useQuery({
-    queryKey: ['getPublicCounts'],
-    queryFn: () => getPublicCounts(),
-    initialData: { users: 0, organizations: 0 },
-  });
+  useEffect(() => {
+    getPublicCounts().then((resp) => setCountValues(resp));
+  }, []);
 
   return (
     <div ref={ref} className="mx-auto grid gap-4 md:max-w-5xl md:grid-cols-2 lg:grid-cols-2">
       {inView &&
         counts.map(({ id, title, icon: Icon }) => {
-          const countValue = countValues[id as keyof typeof countValues];
+          const countValue = countValues[id];
 
           return (
             <Card key={id}>

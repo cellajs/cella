@@ -1,6 +1,4 @@
-import { config } from 'config';
 import type { ClientResponse } from 'hono/client';
-import { hcWithType } from '#/hc';
 import type { ErrorType } from '#/lib/errors';
 import type { Entity } from '#/types/common';
 
@@ -32,14 +30,14 @@ export class ApiError extends Error {
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: any is used to handle any type of response
+// biome-ignore lint/suspicious/noExplicitAny: any is used to allow any type of response
 export const handleResponse = async <T extends Record<string, any>, U extends ClientResponse<T, number, 'json'>>(response: U) => {
+  const json = await response.json();
+
   if (response.ok) {
-    const json = await response.json();
     return json as Awaited<ReturnType<Extract<U, { status: 200 }>['json']>>;
   }
 
-  const json = await response.json();
   if ('error' in json) throw new ApiError(json.error);
   throw new Error('Unknown error');
 };
@@ -51,6 +49,3 @@ export const clientConfig = {
       credentials: 'include',
     }),
 };
-
-// Create Hono clients to make requests to the backend
-export const apiClient = hcWithType(config.backendUrl, clientConfig);

@@ -50,11 +50,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
   });
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     sendNewsletter({
       organizationIds: values.organizationIds,

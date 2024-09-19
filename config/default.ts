@@ -77,7 +77,9 @@ export const config = {
 
   // Theme settings
   theme: {
-    colors: {},
+    colors: {
+      rose: '#e11d48',
+    },
     colorDarkBackground: 'hsl(240 10% 9%)',
     strokeWidth: 1.5,
     screenSizes: {
@@ -88,7 +90,7 @@ export const config = {
       xl: '1280px',
       '2xl': '1400px',
     },
-  },
+  } as const,
 
   // Placeholder colors
   placeholderColors: [
@@ -123,7 +125,7 @@ export const config = {
   languages: [
     { value: 'en', label: 'English' },
     { value: 'nl', label: 'Nederlands' },
-  ],
+  ] as const,
 
   // All entity types
   entityTypes: ['user', 'organization'] as const,

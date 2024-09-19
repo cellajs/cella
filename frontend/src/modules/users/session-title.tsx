@@ -34,7 +34,7 @@ export const SessionTile = ({ session, deleteMySessions, isPending }: SessionTil
               {dateShort(session.createdAt)} - {dateShort(session.expiresAt)}
             </p>
             {session.authStrategy && (
-              <p className="truncate capitalize" aria-describedby={t('common:strategy')}>
+              <p className="truncate max-sm:hidden capitalize" aria-describedby={t('common:strategy')}>
                 {t(session.authStrategy)}
               </p>
             )}

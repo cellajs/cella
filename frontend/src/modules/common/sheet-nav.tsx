@@ -40,9 +40,7 @@ export const SheetNav = ({ tabs }: Props) => {
           ))}
         </nav>
       )}
-      <Suspense>
-        <div className="py-5">{renderPage()}</div>
-      </Suspense>
+      <Suspense>{renderPage()}</Suspense>
     </div>
   );
 };

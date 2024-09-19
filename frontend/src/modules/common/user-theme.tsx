@@ -1,9 +1,10 @@
 import { config } from 'config';
 
-import { type Mode, type Theme, useThemeStore } from '~/store/theme';
+import { useThemeStore } from '~/store/theme';
 
 import { Ban, Circle, type LucideProps, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { objectEntries } from '~/lib/object';
 import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -21,8 +22,8 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
   const modes = [
     { id: 'light', label: t('common:light'), icon: Sun },
     { id: 'dark', label: t('common:dark'), icon: Moon },
-  ];
-  const themes: [string, string][] = Object.entries(config.theme.colors);
+  ] as const;
+  const themes = objectEntries(config.theme.colors);
 
   function Icon({ icon: Icon }: { icon: React.FC<LucideProps> }) {
     return <Icon size={16} />;
@@ -55,7 +56,7 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48" align="end">
         {modes.map((item) => (
-          <DropdownMenuCheckboxItem key={item.id} checked={mode === item.id} onCheckedChange={() => setMode(item.id as Mode)}>
+          <DropdownMenuCheckboxItem key={item.id} checked={mode === item.id} onCheckedChange={() => setMode(item.id)}>
             <Icon icon={item.icon} />
             <span className="ml-2">{item.label}</span>
           </DropdownMenuCheckboxItem>
@@ -68,7 +69,7 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
           <span className="ml-2">{t('common:without_color')}</span>
         </DropdownMenuCheckboxItem>
         {themes.map(([name, color]) => (
-          <DropdownMenuCheckboxItem key={name} checked={theme === name} onCheckedChange={() => setTheme(name as Theme)}>
+          <DropdownMenuCheckboxItem key={name} checked={theme === name} onCheckedChange={() => setTheme(name)}>
             <span style={{ color }}>
               <Icon icon={Circle} />
             </span>

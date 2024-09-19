@@ -94,12 +94,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
-
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     mutate(values, {
       onSuccess: (updatedUser) => {

@@ -50,11 +50,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
   };
 
   const onLeave = () => {
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     leave({
       idOrSlug: organization.id,

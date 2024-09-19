@@ -33,11 +33,7 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
   });
 
   const onDelete = () => {
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     deleteOrganizations(organizations.map((organization) => organization.id));
   };

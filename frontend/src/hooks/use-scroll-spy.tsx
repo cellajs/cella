@@ -26,8 +26,8 @@ export const useScrollSpy = ({ sectionIds = [], autoUpdateHash }: { sectionIds: 
   }, []);
 
   useEffect(() => {
-    const options = {
-      root: null as Element | null,
+    const options: IntersectionObserverInit = {
+      root: null,
       rootMargin: '-10% 0% -10% 0%',
       threshold: [0.1, 1],
     };

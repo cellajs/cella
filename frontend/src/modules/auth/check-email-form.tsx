@@ -46,11 +46,7 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) {
-      return toast.warning(t('common:offline'), {
-        position: 'top-right',
-      });
-    }
+    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
 
     checkEmail(values.email);
   };

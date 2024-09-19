@@ -5,7 +5,7 @@ export function useEventListener<K extends keyof WindowEventMap>(eventName: K, h
   useEffect(() => {
     const listener = (event: WindowEventMap[K]) => handler(event);
 
-    window.addEventListener(eventName, listener as EventListener);
-    return () => window.removeEventListener(eventName, listener as EventListener);
+    window.addEventListener(eventName, listener);
+    return () => window.removeEventListener(eventName, listener);
   }, [eventName, handler]);
 }

@@ -15,7 +15,7 @@ const BgAnimation = () => {
   const { theme } = useThemeStore();
 
   useEffect(() => {
-    const c = document.getElementById('animation-canvas') as HTMLCanvasElement;
+    const c = document.getElementById('animation-canvas') as HTMLCanvasElement | null;
     if (!c) return;
 
     start_cells(c);

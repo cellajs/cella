@@ -1,11 +1,11 @@
 import { config } from 'config';
 import { useEffect } from 'react';
 import { hexToHsl } from '~/lib/hex-to-hsl';
-import { type Theme, useThemeStore } from '~/store/theme';
+import { type Mode, type Theme, useThemeStore } from '~/store/theme';
 
 const root = window.document.documentElement;
 
-const setModeClass = (mode: string) => {
+const setModeClass = (mode: Mode) => {
   root.classList.remove('light', 'dark');
   root.classList.add(mode);
 };
@@ -15,7 +15,8 @@ const setThemeColor = (passedTheme: Theme) => {
   root.classList.add('theme-base');
 
   const color = config.theme.colors[passedTheme];
-  const hslColor = hexToHsl(color);
+  // replace comas so tailwind can operate with color var
+  const hslColor = hexToHsl(color).replaceAll(',', '');
 
   // Check if exist <style> tag for theme-base rules
   let themeStyleTag = document.getElementById('theme-style');
