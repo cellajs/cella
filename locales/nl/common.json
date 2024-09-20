@@ -45,7 +45,7 @@
   "confirm.delete_account": "Weet je zeker dat je je account met e-mailadres {{email}} wilt verwijderen?",
   "confirm.delete_resource": "Weet je zeker dat je {{resource}} {{name}} wilt verwijderen?",
   "confirm.delete_resources": "Weet je zeker dat je deze {{resources}} wilt verwijderen?",
-  "confirm.remove_members": "Weet je zeker dat je het lidmaatschap van {{emails}} voor deze organisatie wilt verwijderen?",
+  "confirm.remove_members": "Weet je zeker dat je het lidmaatschap van {{emails}} voor deze organisatie wilt {{entity}}?",
   "connect": "Verbinden",
   "contact": "Contact",
   "contact_request": "Contact",
