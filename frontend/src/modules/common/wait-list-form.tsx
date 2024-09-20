@@ -21,7 +21,13 @@ import { Input } from '~/modules/ui/input';
 
 const formSchema = createRequestSchema;
 
-export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: string; dialog?: boolean; setStep?: (step: Step) => void }) => {
+export const WaitListForm = ({
+  email,
+  buttonContent,
+  emailField,
+  dialog: isDialog,
+  setStep,
+}: { email: string; buttonContent?: string | React.ReactNode; emailField?: boolean; dialog?: boolean; setStep?: (step: Step) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -76,17 +82,30 @@ export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: stri
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className={`${isDialog ? '' : 'hidden'}`}>
+            <FormItem className={`${emailField ? '' : 'hidden'}`}>
               <FormControl>
-                <Input {...field} type="email" disabled={!isDialog} readOnly={!isDialog} placeholder={t('common:email')} />
+                <Input
+                  {...field}
+                  className="block w-full rounded-2xl border border-gray-300/40 bg-transparent py-4 pl-6 pr-20 text-base/6 text-gray-200 ring-4 ring-primary/10 transition placeholder:text-gray-300/50 focus:border-gray-300 focus:outline-none focus:ring-primary/20"
+                  type="email"
+                  disabled={!emailField}
+                  readOnly={!emailField}
+                  placeholder={t('common:email')}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" loading={isPending} className="w-full">
-          {t('common:put_on_wait_list')}
-          <ArrowRight size={16} className="ml-2" />
+          {buttonContent ? (
+            buttonContent
+          ) : (
+            <>
+              {t('common:put_on_wait_list')}
+              <ArrowRight size={16} className="ml-2" />
+            </>
+          )}
         </Button>
       </form>
     </Form>

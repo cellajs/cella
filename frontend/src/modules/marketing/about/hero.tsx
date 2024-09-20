@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import { WaitListForm } from '~/modules/common/wait-list-form';
 import { useThemeStore } from '~/store/theme';
 
 interface HeroProps {
@@ -34,6 +35,7 @@ export const Hero = ({ title, subtitle, text, children }: HeroProps) => {
               <span className={`bg-gradient-to-br ${gradientClass} bg-clip-text font-bold`}>{t(subtitle)}</span>
             </h1>
             {text && <h2 className="text-foreground/80 mx-auto mb-8 max-w-[48rem] text-xl md:text-2xl">{t(text)}</h2>}
+            <WaitListForm email="" buttonContent={`${t('common:join')} ${t('common:waitlist')}`} emailField />
             <div className="space-x-4">{children}</div>
           </div>
         </header>
