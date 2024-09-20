@@ -25,11 +25,22 @@ interface TaskBlockNoteProps {
   projectId: string;
   className?: string;
   onChange?: (newContent: string, newSummary: string) => void;
+  taskToClose?: string | null;
   subTask?: boolean;
   callback?: () => void;
 }
 
-export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, subTask = false, className = '' }: TaskBlockNoteProps) => {
+export const TaskBlockNote = ({
+  id,
+  html,
+  projectId,
+  mode,
+  onChange,
+  callback,
+  taskToClose = null,
+  subTask = false,
+  className = '',
+}: TaskBlockNoteProps) => {
   const { t } = useTranslation();
   const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
 
@@ -54,6 +65,12 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
     },
     [pathname],
   );
+
+  const handleEditorFocus = () => {
+    // Remove subTask editing state
+    dispatchCustomEvent('toggleSubTaskEditing', { id, state: false });
+    if (taskToClose) dispatchCustomEvent('toggleTaskEditing', { id: taskToClose, state: false });
+  };
 
   const updateData = async () => {
     //if user in Formatting Toolbar does not update
@@ -125,6 +142,7 @@ export const TaskBlockNote = ({ id, html, projectId, mode, onChange, callback, s
           if (!onChange || editor.document[0].content?.toString() === '') return;
           updateData();
         }}
+        onFocus={handleEditorFocus}
         onBlur={updateData}
         onKeyDown={handleKeyDown}
         editor={editor}

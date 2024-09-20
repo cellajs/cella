@@ -6,6 +6,7 @@ export interface TasksCustomEventMap {
   toggleTaskCard: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
   toggleTaskExpand: CustomEvent<string>;
   toggleTaskEditing: CustomEvent<{ state: boolean; id: string }>;
+  closeAllEditingTasks: CustomEvent;
   toggleSubTaskEditing: CustomEvent<{ state: boolean; id: string }>;
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
@@ -47,6 +48,13 @@ export interface TaskChangeEvent extends Event {
     taskId: string;
     projectId: string;
     direction: number;
+  };
+}
+
+export interface TaskEditToggleEvent extends Event {
+  detail: {
+    id: string;
+    state: boolean;
   };
 }
 

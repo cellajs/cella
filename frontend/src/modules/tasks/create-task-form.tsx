@@ -31,6 +31,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
+import { useWorkspaceStore } from '~/store/workspace';
 import type { Label, Task } from '~/types/app';
 import type { Member } from '~/types/common';
 
@@ -81,6 +82,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore();
+  const { focusedTaskId } = useWorkspaceStore();
+
   const defaultId = nanoid();
   const { ref, bounds } = useMeasure();
 
@@ -205,6 +208,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                       onChange(description);
                       form.setValue('summary', summary);
                     }}
+                    taskToClose={focusedTaskId}
                     callback={form.handleSubmit(onSubmit)}
                     mode={mode}
                   />

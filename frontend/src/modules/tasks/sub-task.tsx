@@ -63,7 +63,13 @@ const SubTask = ({
   };
 
   useEventListener('toggleSubTaskEditing', (e) => {
-    if (task.parentId === e.detail.id) setIsEditing(e.detail.state);
+    const { id, state } = e.detail;
+    // Update the sub-task editing state based on the event id:
+    // - matches the task's parentId
+    // - doesn't match both the task's parentId and task id
+    if (task.parentId === id || (task.parentId !== id && task.id !== id)) {
+      setIsEditing(state);
+    }
   });
 
   // create draggable & dropTarget elements and auto scroll
@@ -78,6 +84,7 @@ const SubTask = ({
         dragHandle: element,
         getInitialData: () => data,
         onDragStart: () => setDragging(true),
+        canDrag: () => !isEditing,
         onDrop: () => setDragging(false),
       }),
       dropTargetForExternal({
@@ -140,16 +147,15 @@ const SubTask = ({
             ) : (
               <>
                 {isEditing ? (
-                  <>
-                    <TaskBlockNote
-                      id={task.id}
-                      projectId={task.projectId}
-                      html={task.description || ''}
-                      mode={mode}
-                      className="w-full pr-2 bg-transparent border-none"
-                      subTask
-                    />
-                  </>
+                  <TaskBlockNote
+                    id={task.id}
+                    projectId={task.projectId}
+                    html={task.description || ''}
+                    mode={mode}
+                    className="w-full pr-2 bg-transparent border-none"
+                    subTask
+                    taskToClose={task.parentId}
+                  />
                 ) : (
                   <div className={'w-full bg-transparent pr-2 border-none bn-container bn-shadcn'} data-color-scheme={mode}>
                     <div

@@ -7,7 +7,7 @@ declare global {
 // dispatch custom function
 export function dispatchCustomEvent<EventName extends keyof CombinedCustomEventMap>(
   eventName: EventName,
-  eventData: EventName extends keyof CustomEventsWithData ? CustomEventsWithData[EventName] : never,
+  eventData?: EventName extends keyof CustomEventsWithData ? CustomEventsWithData[EventName] : never,
 ): void {
   window.dispatchEvent(new CustomEvent(eventName, { detail: eventData }));
 }
