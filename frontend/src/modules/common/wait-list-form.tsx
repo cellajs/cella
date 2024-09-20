@@ -13,8 +13,8 @@ import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/taosts-show';
 import type { Step } from '~/modules/auth';
+import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { LegalText } from '~/modules/marketing/legals';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -41,6 +41,7 @@ export const WaitListForm = ({
       if (isDialog) dialog.remove();
       showToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
     },
+    onError: (error) => toast.info(error.message),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -109,33 +110,5 @@ export const WaitListForm = ({
         </Button>
       </form>
     </Form>
-  );
-};
-
-export const LegalNotice = () => {
-  const { t } = useTranslation();
-
-  const openDialog = (mode: 'terms' | 'privacy') => () => {
-    const dialogComponent = <LegalText textFor={mode} />;
-    const dialogTitle = mode;
-
-    dialog(dialogComponent, {
-      className: 'md:max-w-xl',
-      title: dialogTitle,
-    });
-  };
-
-  return (
-    <p className="font-light text-base text-center space-x-1">
-      <span>{t('common:legal_notice_access_request.text')}</span>
-      <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
-        {t('common:terms').toLocaleLowerCase()}
-      </Button>
-      <span>&</span>
-      <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('privacy')}>
-        {t('common:privacy_policy').toLocaleLowerCase()}
-      </Button>
-      <span>of {config.company.name}.</span>
-    </p>
   );
 };
