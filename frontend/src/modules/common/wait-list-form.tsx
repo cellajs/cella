@@ -58,17 +58,19 @@ export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: stri
 
   return (
     <Form {...form}>
-      <div className="text-2xl text-center">
-        <h1 className="text-xxl">{t('common:request_access')}</h1>
-        {setStep && (
-          <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-1 text-xl">
-            {email}
-            <ChevronDown size={16} className="ml-2" />
-          </Button>
-        )}
-      </div>
-      <LegalNotice />
+      {setStep && (
+        <>
+          <div className="text-2xl text-center">
+            <h1 className="text-xxl">{t('common:request_access')}</h1>
 
+            <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-1 text-xl">
+              {email}
+              <ChevronDown size={16} className="ml-2" />
+            </Button>
+          </div>
+          <LegalNotice />
+        </>
+      )}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
