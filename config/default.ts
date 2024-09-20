@@ -62,7 +62,7 @@ export const config = {
   privateCDNUrl: 'https://cdn-priv.cellajs.com',
   publicCDNUrl: 'https://cdn.cellajs.com',
 
-  themeColor: '#26262b',
+  themeColor: '#2AB16A',
 
   // Theme settings
   theme: {
