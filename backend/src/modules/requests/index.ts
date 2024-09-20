@@ -1,7 +1,8 @@
-import { type SQL, count, ilike } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { requestsTable } from '#/db/schema/requests';
+import { errorResponse } from '#/lib/errors';
 import { sendSlackNotification } from '#/lib/notification';
 import { getOrderColumn } from '#/lib/order-column';
 import { CustomHono } from '#/types/common';
@@ -16,6 +17,16 @@ const requestsRoutes = app
    */
   .openapi(requestsRoutesConfig.createRequest, async (ctx) => {
     const { email, type, message } = ctx.req.valid('json');
+
+    const conflictingTypes = ['waitlist', 'newsletter'];
+    if (conflictingTypes.includes(type)) {
+      const [existingRequest] = await db
+        .select()
+        .from(requestsTable)
+        .where(and(eq(requestsTable.email, email), inArray(requestsTable.type, ['waitlist', 'newsletter'])));
+      if (existingRequest?.type === type) return errorResponse(ctx, 400, 'request_exists', 'warn');
+      if (conflictingTypes.includes(existingRequest?.type)) return errorResponse(ctx, 400, `${type}_request_error`, 'warn');
+    }
 
     const [createdAccessRequest] = await db
       .insert(requestsTable)
