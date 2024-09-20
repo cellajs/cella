@@ -7,6 +7,7 @@ import uaParser from 'ua-parser-js';
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
 import { usersTable } from '#/db/schema/users';
+import { supportedAuthStrategies, supportedOauthProviders } from '#/middlewares/guard/allowed-auth';
 import { logEvent } from '#/middlewares/logger/log-event';
 
 const isProduction = config.mode === 'production';
@@ -31,8 +32,11 @@ const getDevice = (ctx: Context) => {
   return { name, type, os, browser };
 };
 
-const isAuthStrategy = (strategy: string): strategy is 'github' | 'google' | 'microsoft' | 'password' | 'passkey' =>
-  ['github', 'google', 'microsoft', 'password', 'passkey'].includes(strategy);
+const isAuthStrategy = (strategy: string): strategy is (typeof allSupportedStrategies)[number] => {
+  const [, ...elseStrategies] = supportedAuthStrategies; // Destructure to exclude 'oauth'
+  const allSupportedStrategies = [...supportedOauthProviders, ...elseStrategies];
+  return (allSupportedStrategies as string[]).includes(strategy);
+};
 const getAuthStrategy = (strategy: string) => (isAuthStrategy(strategy) ? strategy : null);
 
 export const setCookie = (ctx: Context, name: string, value: string) =>
