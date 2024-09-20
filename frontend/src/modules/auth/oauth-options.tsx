@@ -61,9 +61,11 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
 
   return (
     <>
-      <div className="relative flex justify-center text-xs uppercase">
-        <span className="text-muted-foreground px-2">{t('common:or')}</span>
-      </div>
+      {((isEnabledAuthStrategy('oauth') && config.enabledOauthProviders.length) || (isEnabledAuthStrategy('passkey') && hasPasskey)) && (
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="text-muted-foreground px-2">{t('common:or')}</span>
+        </div>
+      )}
 
       <div className="flex flex-col space-y-2">
         {isEnabledAuthStrategy('passkey') && hasPasskey && actionType === 'signIn' && (
