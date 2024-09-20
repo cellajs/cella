@@ -69,6 +69,7 @@ export const TaskBlockNote = ({
   const handleEditorFocus = () => {
     // Remove subTask editing state
     dispatchCustomEvent('toggleSubTaskEditing', { id, state: false });
+    // Remove Task editing state if focused not task itself
     if (taskToClose) dispatchCustomEvent('toggleTaskEditing', { id: taskToClose, state: false });
   };
 
