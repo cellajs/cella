@@ -28,7 +28,7 @@ const Pricing = () => {
       navigate({ to: '/auth/sign-in', replace: true });
     }
     if (action === 'waitlist_request') {
-      dialog(<WaitListForm email="" dialog />, {
+      dialog(<WaitListForm email="" dialog emailField />, {
         id: 'waitlist-form',
         drawerOnMobile: false,
         className: 'sm:max-w-5xl',
