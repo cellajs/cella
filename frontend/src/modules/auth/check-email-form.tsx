@@ -15,13 +15,13 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { checkEmail as baseCheckEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import type { TokenData } from '.';
+import type { Step, TokenData } from '.';
 
 const formSchema = emailBodySchema;
 
 interface CheckEmailProps {
   tokenData: TokenData | null;
-  setStep: (step: string, email: string, hasPasskey: boolean) => void;
+  setStep: (step: Step, email: string, hasPasskey: boolean) => void;
 }
 
 export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {

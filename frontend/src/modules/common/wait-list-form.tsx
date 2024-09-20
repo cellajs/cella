@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/taosts-show';
+import type { Step } from '~/modules/auth';
 import { dialog } from '~/modules/common/dialoger/state';
 import { LegalText } from '~/modules/marketing/legals';
 import { Button } from '~/modules/ui/button';
@@ -20,7 +21,7 @@ import { Input } from '~/modules/ui/input';
 
 const formSchema = createRequestSchema;
 
-export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: string; dialog?: boolean; setStep?: (step: string) => void }) => {
+export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: string; dialog?: boolean; setStep?: (step: Step) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 

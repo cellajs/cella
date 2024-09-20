@@ -10,9 +10,9 @@ import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
+import { isEnabledAuthStrategy, isEnabledOauthProvider } from '#/lib/auth';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 import type { Step } from '.';
-import { isEnabledAuthStrategy, isEnabledOauthProvider } from './heplers';
 
 const baseOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
