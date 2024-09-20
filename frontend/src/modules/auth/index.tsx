@@ -55,14 +55,14 @@ const SignIn = () => {
     if (lastUser?.email && !token) handleCheckEmail('signIn', lastUser.email, !!lastUser.passkey);
   }, [lastUser]);
 
-  const handleCheckEmail = (step: string, email: string, hasPasskey: boolean) => {
+  const handleCheckEmail = (step: Step, email: string, hasPasskey: boolean) => {
     setEmail(email);
     setHasPasskey(hasPasskey);
-    setStep(step as Step);
+    setStep(step);
   };
 
-  const handleSetStep = (step: string) => {
-    setStep(step as Step);
+  const handleSetStep = (step: Step) => {
+    setStep(step);
   };
 
   return (

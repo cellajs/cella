@@ -7,7 +7,7 @@ import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/gu
 import { isAllowedAuthStrategy, isAllowedOAuth } from '#/middlewares/guard/allowed-auth';
 import { authRateLimiter } from '#/middlewares/rate-limiter';
 import { signInRateLimiter } from '#/middlewares/rate-limiter/sign-in';
-import { authBodySchema, emailBodySchema } from './schema';
+import { authBodySchema, emailBodySchema, passkeyChallengeQuerySchema, passkeyCreationBodySchema, passkeyVerificationBodySchema } from './schema';
 
 class AuthRoutesConfig {
   public impersonationSignIn = createRouteConfig({
@@ -260,13 +260,7 @@ class AuthRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              credentialId: z.string(),
-              clientDataJSON: z.string(),
-              authenticatorData: z.string(),
-              signature: z.string(),
-              email: z.string(),
-            }),
+            schema: passkeyVerificationBodySchema,
           },
         },
       },
@@ -384,7 +378,7 @@ class AuthRoutesConfig {
         description: 'Challenge created',
         content: {
           'application/json': {
-            schema: z.object({ challengeBase64: z.string() }),
+            schema: passkeyChallengeQuerySchema,
           },
         },
       },
@@ -406,11 +400,7 @@ class AuthRoutesConfig {
         required: true,
         content: {
           'application/json': {
-            schema: z.object({
-              email: z.string(),
-              attestationObject: z.string(),
-              clientDataJSON: z.string(),
-            }),
+            schema: passkeyCreationBodySchema,
           },
         },
       },

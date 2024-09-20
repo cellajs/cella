@@ -2,7 +2,7 @@ import { config } from 'config';
 import type { AllowedAuthStrategies, EnabledOauthProviderOptions } from '#/types/common';
 
 // Type guard to ensure `id` matches `EnabledOauthProviderOptions`
-export const isEnabledOauthProvider = (id: string): id is EnabledOauthProviderOptions => {
+export const isEnabledOauthProvider = (id: string) => {
   return config.enabledOauthProviders.includes(id as EnabledOauthProviderOptions);
 };
 
