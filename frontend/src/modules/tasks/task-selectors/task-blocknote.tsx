@@ -121,7 +121,7 @@ export const TaskBlockNote = ({
       const newBlocksContent = blocks.map((block) => block.content).join('');
 
       // Only replace blocks if the content actually changes
-      if (currentBlocks !== newBlocksContent) {
+      if (currentBlocks !== newBlocksContent || html === '') {
         editor.replaceBlocks(editor.document, blocks);
         triggerFocus(subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`);
       }

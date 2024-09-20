@@ -96,7 +96,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <InputFormField control={form.control} name="name" label={t('common:name')} required />
+        <InputFormField control={form.control} name="name" label={t('common:name')} required autoFocus />
         <SlugFormField
           control={form.control}
           type="project"
