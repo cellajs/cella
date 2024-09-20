@@ -10,6 +10,7 @@ import { auth } from '#/db/lucia';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import { deleteCookie, getCookie } from 'hono/cookie';
 
+import { encodeBase64 } from '@oslojs/encoding';
 import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '#/db/lucia';
 
@@ -33,7 +34,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import generalRouteConfig from '../general/routes';
 import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
-import { base64UrlDecode, parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
+import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
@@ -789,7 +790,8 @@ const authRoutes = app
   .openapi(authRoutesConfig.getPasskeyChallenge, async (ctx) => {
     // Generate a random challenge
     const challenge = getRandomValues(new Uint8Array(32));
-    const challengeBase64 = Buffer.from(challenge).toString('base64url');
+    // Convert to string
+    const challengeBase64 = encodeBase64(challenge);
     setCookie(ctx, 'challenge', challengeBase64);
     return ctx.json({ challengeBase64 }, 200);
   })
@@ -797,14 +799,15 @@ const authRoutes = app
    * Passkey registration
    */
   .openapi(authRoutesConfig.setPasskey, async (ctx) => {
-    const { attestationObject, clientDataJSON, email } = await ctx.req.json();
+    const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
 
     const challengeFromCookie = getCookie(ctx, 'challenge');
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
     // Save public key in the database
+
     await db.insert(passkeysTable).values({
-      userEmail: email,
+      userEmail,
       credentialId,
       publicKey,
     });
@@ -814,29 +817,19 @@ const authRoutes = app
    * Verifies the passkey response
    */
   .openapi(authRoutesConfig.verifyPasskey, async (ctx) => {
-    const { clientDataJSON, authenticatorData, signature, email } = await ctx.req.json();
+    const { clientDataJSON, authenticatorData, signature, userEmail } = ctx.req.valid('json');
 
     // Retrieve user and challenge record
-    const user = await getUserBy('email', email.toLowerCase());
+    const user = await getUserBy('email', userEmail.toLowerCase());
     if (!user) return errorResponse(ctx, 404, 'User not found', 'warn');
-    // const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
-    // Decode & parse clientDataJSON 4 verify challenge
-    const clientData = JSON.parse(Buffer.from(base64UrlDecode(clientDataJSON)).toString());
     const challengeFromCookie = getCookie(ctx, 'challenge');
-    if (clientData.challenge !== challengeFromCookie) return errorResponse(ctx, 400, 'Invalid challenge', 'warn', undefined);
 
-    const [credential] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, email));
+    const [credential] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
     if (!credential) return errorResponse(ctx, 404, 'Credential not found', 'warn');
-    // Decode & parse authenticatorData 4 user verify
-    const authData = base64UrlDecode(authenticatorData);
-    const flags = authData[32];
-    const userPresent = (flags & 0x01) !== 0;
-    const userVerified = (flags & 0x04) !== 0;
-    if (!userPresent || !userVerified) return errorResponse(ctx, 400, 'User presence or verification failed', 'warn', undefined);
 
     try {
-      const isValid = await verifyPassKeyPublic(credential.publicKey, Buffer.concat([authData, base64UrlDecode(clientDataJSON)]), signature);
+      const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credential.publicKey, challengeFromCookie);
       if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
     } catch (error) {
       if (error instanceof Error) {
@@ -844,10 +837,6 @@ const authRoutes = app
         return errorResponse(ctx, 500, errorMessage || 'Passkey verification error', 'error', undefined);
       }
     }
-
-    // Extract the counter
-    // Optionally do we need update the counter in the database
-    // const counter = authData.slice(33, 37).readUInt32BE(0);
 
     await setSessionCookie(ctx, user.id, 'passkey');
     return ctx.json({ success: true }, 200);

@@ -99,31 +99,21 @@ export const getChallenge = async () => {
   return json;
 };
 
-export const setPasskey = async ({
-  clientDataJSON,
-  attestationObject,
-  email,
-}: {
-  attestationObject: string;
-  clientDataJSON: string;
-  email: string;
-}) => {
+type SetPasskeyProp = Parameters<(typeof client)['passkey-registration']['$post']>['0']['json'];
+
+export const setPasskey = async (data: SetPasskeyProp) => {
   const apiResponse = await client['passkey-registration'].$post({
-    json: { attestationObject, clientDataJSON, email },
+    json: data,
   });
   const json = await handleResponse(apiResponse);
   return json.success;
 };
 
-export const authThroughPasskey = async ({
-  credentialId,
-  clientDataJSON,
-  authenticatorData,
-  signature,
-  email,
-}: { credentialId: string; clientDataJSON: string; authenticatorData: string; signature: string; email: string }) => {
+type AuthThroughPasskeyProp = Parameters<(typeof client)['passkey-verification']['$post']>['0']['json'];
+
+export const authThroughPasskey = async (data: AuthThroughPasskeyProp) => {
   const response = await client['passkey-verification'].$post({
-    json: { credentialId, clientDataJSON, authenticatorData, signature, email },
+    json: data,
   });
 
   const json = await handleResponse(response);
