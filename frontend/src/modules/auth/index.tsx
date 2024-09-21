@@ -55,14 +55,14 @@ const SignIn = () => {
     if (lastUser?.email && !token) handleCheckEmail('signIn', lastUser.email, !!lastUser.passkey);
   }, [lastUser]);
 
-  const handleCheckEmail = (step: string, email: string, hasPasskey: boolean) => {
+  const handleCheckEmail = (step: Step, email: string, hasPasskey: boolean) => {
     setEmail(email);
     setHasPasskey(hasPasskey);
-    setStep(step as Step);
+    setStep(step);
   };
 
-  const handleSetStep = (step: string) => {
-    setStep(step as Step);
+  const handleSetStep = (step: Step) => {
+    setStep(step);
   };
 
   return (
@@ -72,7 +72,7 @@ const SignIn = () => {
           {step === 'check' && <CheckEmailForm tokenData={tokenData} setStep={handleCheckEmail} />}
           {step === 'signIn' && <SignInForm tokenData={tokenData} email={email} setStep={handleSetStep} />}
           {step === 'signUp' && <SignUpForm tokenData={tokenData} email={email} setStep={handleSetStep} />}
-          {step === 'waitList' && <WaitListForm email={email} setStep={handleSetStep} />}
+          {step === 'waitList' && <WaitListForm buttonContent={t('common:request_access')} email={email} setStep={handleSetStep} />}
           {step === 'inviteOnly' && (
             <>
               <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>

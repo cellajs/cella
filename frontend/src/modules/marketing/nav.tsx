@@ -64,10 +64,10 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
-              className="md:ml-2 hover:opacity-90 active:scale-95 relative"
+              className="md:ml-2 mt-1 hover:opacity-90 active:scale-95 relative"
               aria-label="Go to about page"
             >
-              <Logo height={30} />
+              <Logo height={40} />
 
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0 -right-4">
                 <title>We support Ukraine</title>
@@ -92,7 +92,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           >
             {/* <UserLanguage /> */}
 
-            <UserTheme className="max-xs:hidden" />
+            <UserTheme className="max-xs:hidden scale-125 mr-2" />
 
             <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
               {t('common:sign_in')}
@@ -112,7 +112,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           >
             <div className="flex justify-between mb-4">
               <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
-              <UserTheme className="absolute top-5 right-4 xs:hidden" />
+              <UserTheme className="absolute top-7 right-5 xs:hidden scale-125" />
             </div>
             {renderNavItems()}
           </div>

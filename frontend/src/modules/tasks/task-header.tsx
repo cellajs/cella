@@ -14,12 +14,14 @@ import type { Task } from '~/types/app';
 export const TaskHeader = ({
   task,
   isEditing,
+  isSheet,
   onRemove,
   changeEditingState,
   closeExpand,
 }: {
   task: Task;
   isEditing: boolean;
+  isSheet?: boolean;
   changeEditingState: (state: boolean) => void;
   closeExpand: () => void;
   onRemove?: (subTaskId: string) => void;
@@ -66,7 +68,7 @@ export const TaskHeader = ({
           </Button>
         </TooltipButton>
 
-        {!task.parentId && (
+        {!task.parentId && !isSheet && (
           <TooltipButton toolTipContent={t('common:expand')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {
@@ -92,20 +94,22 @@ export const TaskHeader = ({
           </TooltipButton>
         )}
 
-        <TooltipButton toolTipContent={t('common:close')} side="bottom" sideOffset={5} hideWhenDetached>
-          <Button
-            onClick={() => {
-              closeExpand();
-              changeEditingState(false);
-            }}
-            aria-label="Collapse"
-            variant="ghost"
-            size="xs"
-            className="w-8 h-8"
-          >
-            <ChevronUp size={14} />
-          </Button>
-        </TooltipButton>
+        {(!isSheet || task.parentId) && (
+          <TooltipButton toolTipContent={t('common:close')} side="bottom" sideOffset={5} hideWhenDetached>
+            <Button
+              onClick={() => {
+                closeExpand();
+                changeEditingState(false);
+              }}
+              aria-label="Collapse"
+              variant="ghost"
+              size="xs"
+              className="w-8 h-8"
+            >
+              <ChevronUp size={14} />
+            </Button>
+          </TooltipButton>
+        )}
       </div>
     </StickyBox>
   );

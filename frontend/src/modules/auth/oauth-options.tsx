@@ -4,15 +4,15 @@ import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { authThroughPasskey, getChallenge, githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/auth';
+import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/auth';
 import { acceptInvite } from '~/api/general';
-import { arrayBufferToBase64Url, base64UrlDecode } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
+import { passkeyAuth } from '~/modules/users/helpers';
 import { SignInRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
+import { isEnabledAuthStrategy, isEnabledOauthProvider } from '#/lib/auth';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 import type { Step } from '.';
-import { isEnabledAuthStrategy, isEnabledOauthProvider } from './heplers';
 
 const baseOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
@@ -44,40 +44,6 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
 
   const [loading, setLoading] = useState(false);
 
-  async function passkeyAuth() {
-    const { challengeBase64 } = await getChallenge();
-
-    const credential = await navigator.credentials.get({
-      publicKey: {
-        challenge: base64UrlDecode(challengeBase64),
-        userVerification: 'required',
-      },
-    });
-
-    if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to get credential');
-    const response = credential.response;
-    if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error('Unexpected response type');
-
-    const credentialData = {
-      credentialId: credential.id,
-      authenticatorData: arrayBufferToBase64Url(response.authenticatorData),
-      clientDataJSON: arrayBufferToBase64Url(response.clientDataJSON),
-      signature: arrayBufferToBase64Url(response.signature),
-      userHandle: response.userHandle ? arrayBufferToBase64Url(response.userHandle) : null,
-      email,
-    };
-
-    try {
-      const success = await authThroughPasskey(credentialData);
-      if (success) {
-        toast.success(t('common:success.passkey_sign_in'));
-        navigate({ to: config.defaultRedirectPath, replace: true });
-      } else toast.error(t('common:error.passkey_sign_in'));
-    } catch (err) {
-      toast.error(t('common:error.passkey_sign_in'));
-    }
-  }
-
   const invertClass = mode === 'dark' ? 'invert' : '';
   let redirect = '';
   if (token) {
@@ -86,18 +52,24 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
     });
     redirect = searchResult.redirect ?? '';
   }
+  const successesCallback = () => {
+    toast.success(t('common:success.passkey_sign_in'));
+    navigate({ to: config.defaultRedirectPath, replace: true });
+  };
 
   const redirectQuery = redirect ? `?redirect=${redirect}` : '';
 
   return (
     <>
-      <div className="relative flex justify-center text-xs uppercase">
-        <span className="text-muted-foreground px-2">{t('common:or')}</span>
-      </div>
+      {((isEnabledAuthStrategy('oauth') && config.enabledOauthProviders.length) || (isEnabledAuthStrategy('passkey') && hasPasskey)) && (
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="text-muted-foreground px-2">{t('common:or')}</span>
+        </div>
+      )}
 
       <div className="flex flex-col space-y-2">
         {isEnabledAuthStrategy('passkey') && hasPasskey && actionType === 'signIn' && (
-          <Button type="button" onClick={passkeyAuth} variant="plain" className="w-full gap-1.5">
+          <Button type="button" onClick={() => passkeyAuth(email, successesCallback)} variant="plain" className="w-full gap-1.5">
             <Fingerprint size={16} />
             {t('common:passkey_sign_in')}
           </Button>

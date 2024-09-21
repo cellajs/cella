@@ -81,7 +81,7 @@ export function MarketingFooter() {
             }}
             className="mt-12 hover:opacity-90 active:scale-95"
           >
-            <Logo textColor="white" iconColor="#793f599e" />
+            <Logo textColor="white" />
           </Link>
 
           <ul className="mb-12 mt-6 flex flex-wrap justify-center gap-x-6 gap-y-4 border-t border-white/20 pt-12 text-center text-sm text-white/60">

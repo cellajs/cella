@@ -62,7 +62,7 @@ export const config = {
   privateCDNUrl: 'https://cdn-priv.cellajs.com',
   publicCDNUrl: 'https://cdn.cellajs.com',
 
-  themeColor: '#26262b',
+  themeColor: '#2AB16A',
 
   // Theme settings
   theme: {
@@ -94,7 +94,7 @@ export const config = {
   ],
 
   // Allowed oauth strategies providers
-  enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,
+  enabledAuthenticationStrategies: ['password', 'passkey'] as const,
 
   // OAuth providers
   enabledOauthProviders: ['github'] as const,

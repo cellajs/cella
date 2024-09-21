@@ -205,6 +205,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
           <Trans
             i18nKey="common:confirm.remove_members"
             values={{
+              entity: entityType,
               emails: selectedMembers.map((member) => member.email).join(', '),
             }}
           />

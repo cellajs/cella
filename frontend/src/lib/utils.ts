@@ -183,25 +183,3 @@ export const recentlyUsed = (date: string | null, days: number) => {
   const today = dayjs();
   return dayjs(convertedDate).isBetween(daysAgo, today, null, '[]');
 };
-
-// Decode base64 URL to Uint8Array
-export const base64UrlDecode = (base64urlStr: string) => {
-  let base64String = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
-  while (base64String.length % 4 !== 0) {
-    base64String += '=';
-  }
-  const binaryString = atob(base64String);
-  return Uint8Array.from(binaryString.split('').map((char) => char.charCodeAt(0))).buffer;
-};
-
-// Encode Uint8Array to base64 URL
-const base64UrlEncode = (uint8Array: Uint8Array): string => {
-  const binaryString = String.fromCharCode(...uint8Array);
-  return btoa(binaryString).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-};
-
-// Encode ArrayBuffer to base64 URL
-export const arrayBufferToBase64Url = (buffer: ArrayBuffer) => {
-  const uint8Array = new Uint8Array(buffer);
-  return base64UrlEncode(uint8Array);
-};

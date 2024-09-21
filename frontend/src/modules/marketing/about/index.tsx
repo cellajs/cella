@@ -8,12 +8,13 @@ import { buttonVariants } from '~/modules/ui/button';
 import { ArrowDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { WaitListForm } from '~/modules/common/wait-list-form';
 // import Counters from '~/modules/marketing/about/counters';
 // import FAQ from '~/modules/marketing/about/faq';
 // import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
-import Pricing from '~/modules/marketing/about/pricing';
 // import Integrations from '~/modules/marketing/about/integrations';
+import Pricing from '~/modules/marketing/about/pricing';
 import Why from '~/modules/marketing/about/why';
 
 import '~/modules/marketing/about/glow-button.css';
@@ -41,7 +42,7 @@ const AboutSection = ({ title, text, section, children, alternate = false }: Abo
   );
 };
 
-const sectionIds = ['hero', 'product', 'pricing', 'faqs', 'counters'];
+const sectionIds = ['hero', 'product', 'pricing'];
 
 const About = () => {
   const { t } = useTranslation();
@@ -65,12 +66,14 @@ const About = () => {
       <div className="container max-w-none px-0">
         {/* Hero landing */}
         <Hero key={'hero'} title="about:title_1" subtitle="about:subtitle" text="about:text_1">
+          <WaitListForm email="" buttonContent={`${t('common:join')} ${t('common:waitlist')}`} emailField />
+
           <Link
             to="/about"
             replace
             hash="product"
             onClick={() => handleMismatch('product')}
-            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }))}
+            className={cn('mt-8', buttonVariants({ variant: 'ghost', size: 'lg' }))}
             aria-label="Read more"
           >
             <span className="font-light">{t('about:why')}</span>

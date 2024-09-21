@@ -29,7 +29,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
-import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, TaskOperationEvent } from '~/modules/tasks/types';
+import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, TaskEditToggleEvent, TaskOperationEvent } from '~/modules/tasks/types';
 import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
@@ -324,13 +324,18 @@ export default function Board() {
     callback([membership], entity === 'project' ? 'updateProjectMembership' : 'updateWorkspaceMembership');
   };
 
+  const handleTaskEditingToggle = (event: TaskEditToggleEvent) => {
+    const { id, state } = event.detail;
+    setTaskEditing(id, state);
+  };
+
   useEventListener('entityArchiveToggle', handleEntityUpdate);
   useEventListener('taskOperation', handleTaskOperations);
   useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('toggleTaskExpand', (e) => setTaskExpanded(e.detail, !expandedTasks[e.detail]));
   useEventListener('openTaskCardPreview', (event) => handleOpenTaskSheet(event.detail));
-  useEventListener('toggleTaskEditing', (e) => setTaskEditing(e.detail.id, e.detail.state));
+  useEventListener('toggleTaskEditing', handleTaskEditingToggle);
 
   useEffect(() => {
     if (q?.length) setSearchQuery(q);

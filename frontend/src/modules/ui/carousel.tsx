@@ -120,6 +120,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
           ref={ref}
           onKeyDownCapture={handleKeyDown}
           className={cn('relative', className)}
+          // biome-ignore lint/a11y/useSemanticElements: <explanation>
           role="region"
           aria-roledescription="carousel"
           {...props}
@@ -247,6 +248,7 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
   }, [api]);
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: <explanation>
     <div ref={ref} role="tablist" className={cn('my-2 flex justify-center', className)} {...props}>
       {Array.from({ length }).map((_, index) => (
         <button
@@ -267,4 +269,4 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
 });
 CarouselDots.displayName = 'CarouselDots';
 
-export { type CarouselApi, Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, CarouselDots };
+export { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi };

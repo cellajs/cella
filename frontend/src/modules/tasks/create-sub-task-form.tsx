@@ -156,6 +156,7 @@ export const CreateSubTaskForm = ({
                     }}
                     callback={form.handleSubmit(onSubmit)}
                     mode={mode}
+                    taskToClose={parentTask.id}
                     subTask
                     className="pl-8"
                   />

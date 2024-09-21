@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import { Badge } from '~/modules/ui/badge';
 import { useThemeStore } from '~/store/theme';
 
 interface HeroProps {
@@ -25,16 +26,17 @@ export const Hero = ({ title, subtitle, text, children }: HeroProps) => {
 
   return (
     <>
-      <section id="cella" className={sectionClass}>
+      <section id="hero" className={sectionClass}>
         <header ref={ref} className={headerClass}>
           <div className="container flex max-w-5xl flex-col items-center gap-4 text-center">
+            <Badge className="hidden sm:block">{t('about:prerelease')}</Badge>
             <h1 className="font-heading test-primary mt-6 mb-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
               <span>{t(title)}</span>
               <br />
               <span className={`bg-gradient-to-br ${gradientClass} bg-clip-text font-bold`}>{t(subtitle)}</span>
             </h1>
-            {text && <h2 className="text-foreground/80 mx-auto mb-8 max-w-[48rem] text-xl md:text-2xl">{t(text)}</h2>}
-            <div className="space-x-4">{children}</div>
+            {text && <h2 className="text-foreground/80 mx-auto mb-4 max-w-[48rem] text-xl md:text-2xl">{t(text)}</h2>}
+            <div>{children}</div>
           </div>
         </header>
       </section>

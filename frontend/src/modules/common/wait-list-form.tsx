@@ -12,15 +12,22 @@ import { toast } from 'sonner';
 import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/taosts-show';
+import type { Step } from '~/modules/auth';
+import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { LegalText } from '~/modules/marketing/legals';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
 const formSchema = createRequestSchema;
 
-export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: string; dialog?: boolean; setStep?: (step: string) => void }) => {
+export const WaitListForm = ({
+  email,
+  buttonContent,
+  emailField,
+  dialog: isDialog,
+  setStep,
+}: { email: string; buttonContent?: string | React.ReactNode; emailField?: boolean; dialog?: boolean; setStep?: (step: Step) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -34,6 +41,7 @@ export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: stri
       if (isDialog) dialog.remove();
       showToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
     },
+    onError: (error) => toast.info(error.message),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -57,63 +65,50 @@ export const WaitListForm = ({ email, dialog: isDialog, setStep }: { email: stri
 
   return (
     <Form {...form}>
-      <div className="text-2xl text-center">
-        <h1 className="text-xxl">{t('common:request_access')}</h1>
-        {setStep && (
-          <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-1 text-xl">
-            {email}
-            <ChevronDown size={16} className="ml-2" />
-          </Button>
-        )}
-      </div>
-      <LegalNotice />
+      {setStep && (
+        <>
+          <div className="text-2xl text-center">
+            <h1 className="text-xxl">{t('common:request_access')}</h1>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-2 text-xl border border-primary/20">
+              {email}
+              <ChevronDown size={16} className="ml-2" />
+            </Button>
+          </div>
+          <LegalNotice />
+        </>
+      )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-xs:min-w-full flex flex-col gap-4 sm:flex-row">
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className={`${isDialog ? '' : 'hidden'}`}>
+            <FormItem className={`${emailField ? '' : 'hidden'} gap-0`}>
               <FormControl>
-                <Input {...field} type="email" disabled={!isDialog} readOnly={!isDialog} placeholder={t('common:email')} />
+                <Input
+                  {...field}
+                  className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-transparent text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-none focus:ring-primary/20"
+                  type="email"
+                  disabled={!emailField}
+                  readOnly={!emailField}
+                  placeholder={t('common:email')}
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="mt-2" />
             </FormItem>
           )}
         />
-        <Button type="submit" loading={isPending} className="w-full">
-          {t('common:put_on_wait_list')}
-          <ArrowRight size={16} className="ml-2" />
+        <Button type="submit" size="xl" loading={isPending} className={`w-full ${emailField && 'rounded-full ring-4 ring-primary/10'}`}>
+          {buttonContent ? (
+            buttonContent
+          ) : (
+            <>
+              {t('common:join')}
+              <ArrowRight size={16} className="ml-2" />
+            </>
+          )}
         </Button>
       </form>
     </Form>
-  );
-};
-
-export const LegalNotice = () => {
-  const { t } = useTranslation();
-
-  const openDialog = (mode: 'terms' | 'privacy') => () => {
-    const dialogComponent = <LegalText textFor={mode} />;
-    const dialogTitle = mode;
-
-    dialog(dialogComponent, {
-      className: 'md:max-w-xl',
-      title: dialogTitle,
-    });
-  };
-
-  return (
-    <p className="font-light text-base text-center space-x-1">
-      <span>{t('common:legal_notice_access_request.text')}</span>
-      <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
-        {t('common:terms').toLocaleLowerCase()}
-      </Button>
-      <span>&</span>
-      <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('privacy')}>
-        {t('common:privacy_policy').toLocaleLowerCase()}
-      </Button>
-      <span>of {config.company.name}.</span>
-    </p>
   );
 };
