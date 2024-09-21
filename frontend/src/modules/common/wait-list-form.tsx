@@ -70,7 +70,7 @@ export const WaitListForm = ({
           <div className="text-2xl text-center">
             <h1 className="text-xxl">{t('common:request_access')}</h1>
 
-            <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-1 text-xl">
+            <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-2 text-xl border border-primary/20">
               {email}
               <ChevronDown size={16} className="ml-2" />
             </Button>
@@ -78,32 +78,32 @@ export const WaitListForm = ({
           <LegalNotice />
         </>
       )}
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-xs:min-w-full flex flex-col gap-4 sm:flex-row">
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className={`${emailField ? '' : 'hidden'}`}>
+            <FormItem className={`${emailField ? '' : 'hidden'} gap-0`}>
               <FormControl>
                 <Input
                   {...field}
-                  className="block w-full rounded-2xl border border-gray-300/40 bg-transparent py-4 pl-6 pr-20 text-base/6 text-gray-200 ring-4 ring-primary/10 transition placeholder:text-gray-300/50 focus:border-gray-300 focus:outline-none focus:ring-primary/20"
+                  className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-transparent text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-none focus:ring-primary/20"
                   type="email"
                   disabled={!emailField}
                   readOnly={!emailField}
                   placeholder={t('common:email')}
                 />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="mt-2" />
             </FormItem>
           )}
         />
-        <Button type="submit" loading={isPending} className="w-full">
+        <Button type="submit" size="xl" loading={isPending} className={`w-full ${!emailField && 'rounded-full ring-4 ring-primary/10'}`}>
           {buttonContent ? (
             buttonContent
           ) : (
             <>
-              {t('common:put_on_wait_list')}
+              {t('common:join')}
               <ArrowRight size={16} className="ml-2" />
             </>
           )}

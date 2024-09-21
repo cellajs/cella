@@ -72,7 +72,7 @@ const SignIn = () => {
           {step === 'check' && <CheckEmailForm tokenData={tokenData} setStep={handleCheckEmail} />}
           {step === 'signIn' && <SignInForm tokenData={tokenData} email={email} setStep={handleSetStep} />}
           {step === 'signUp' && <SignUpForm tokenData={tokenData} email={email} setStep={handleSetStep} />}
-          {step === 'waitList' && <WaitListForm email={email} setStep={handleSetStep} />}
+          {step === 'waitList' && <WaitListForm buttonContent={t('common:request_access')} email={email} setStep={handleSetStep} />}
           {step === 'inviteOnly' && (
             <>
               <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>
