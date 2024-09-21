@@ -367,7 +367,7 @@
   "success.you_left_organization": "You have left the organization.",
   "success.you_updated": "Your profile has been updated.",
   "success.your_role_updated": "Your role has been updated.",
-  "success.waitlist_request": "Your waitlist request to {{appName}}, successful",
+  "success.waitlist_request": "Waitlist request for {{appName}} received!",
   "system_panel": "System panel",
   "system_panel.text": "System admins can manage and monitor all organizations and their members.",
   "table_view": "Table view",

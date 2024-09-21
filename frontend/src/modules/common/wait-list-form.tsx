@@ -98,7 +98,7 @@ export const WaitListForm = ({
             </FormItem>
           )}
         />
-        <Button type="submit" size="xl" loading={isPending} className={`w-full ${!emailField && 'rounded-full ring-4 ring-primary/10'}`}>
+        <Button type="submit" size="xl" loading={isPending} className={`w-full ${emailField && 'rounded-full ring-4 ring-primary/10'}`}>
           {buttonContent ? (
             buttonContent
           ) : (

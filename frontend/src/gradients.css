@@ -21,7 +21,7 @@
   width: 100%;
   height: 100%;
   z-index: -3;
-  background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(245, 233, 102, 0.87)),
+  background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(245, 233, 102, 0.7)),
     linear-gradient(to top left, rgba(0, 0, 0, 0), rgb(140, 193, 239)),
     linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgb(81, 197, 131)),
     linear-gradient(to top right, rgba(0, 0, 0, 0), rgb(2, 155, 129));
@@ -31,8 +31,8 @@
   opacity: 0.8;
   background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgb(0, 60, 36)),
     linear-gradient(to top left, rgba(0, 0, 0, 0), rgb(12, 5, 66)),
-    linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgba(215, 169, 0, 0.984)),
-    linear-gradient(to top right, rgba(0, 0, 0, 0), rgb(4, 175, 147));
+    linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgba(215, 169, 0, 0.6)),
+    linear-gradient(to top right, rgba(0, 0, 0, 0), rgb(4, 175, 147, 0.8));
 }
 
 .rich-gradient:before {
@@ -48,7 +48,7 @@
 }
 
 .dark .rich-gradient:before {
-  opacity: 0.8;
+  opacity: 0.9;
   background-image: radial-gradient(circle 90vh at 40% 40%, hsla(var(--background)), rgba(255, 255, 255, 0));
 }
 
@@ -56,9 +56,9 @@
   opacity: 1;
   background: rgba(0, 0, 0, 1);
   background-image: linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(255, 255, 255, 0.2)),
-    linear-gradient(to top left, rgba(0, 0, 0, 0), rgba(89, 135, 82, 0.124)),
+    linear-gradient(to top left, rgba(0, 0, 0, 0), rgba(89, 135, 82, 0.214)),
     linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgba(21, 121, 71, 0.2)),
-    linear-gradient(to top right, rgba(0, 0, 0, 0), rgba(254, 185, 24, 0.3));
+    linear-gradient(to top right, rgba(0, 0, 0, 0), rgba(139, 156, 65, 0.338));
 }
 
 .dark .dark-gradient:after {
@@ -66,5 +66,5 @@
 }
 
 .rich-gradient.dark-gradient:before {
-  background-image: radial-gradient(circle 120vh at 40% 120%, rgba(59, 17, 37, 0.6), rgba(255, 255, 255, 0));
+  background-image: radial-gradient(circle 120vh at 40% 120%, rgba(12, 25, 18, 0.874), rgba(255, 255, 255, 0));
 }
