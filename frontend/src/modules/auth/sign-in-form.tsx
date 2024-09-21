@@ -19,12 +19,12 @@ import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import type { TokenData } from '.';
-import { isEnabledAuthStrategy } from './heplers';
+import { isEnabledAuthStrategy } from '#/lib/auth';
+import type { Step, TokenData } from '.';
 
 const formSchema = authBodySchema;
 
-export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: string) => void }) => {
+export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: Step) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { lastUser, clearLastUser } = useUserStore();

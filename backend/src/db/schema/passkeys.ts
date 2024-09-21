@@ -16,7 +16,7 @@ export const passkeysTable = pgTable('passkeys', {
 export const passkeyTableRelations = relations(passkeysTable, ({ one }) => ({
   user: one(usersTable, {
     fields: [passkeysTable.userEmail],
-    references: [usersTable.id],
+    references: [usersTable.email],
   }),
 }));
 

@@ -42,7 +42,7 @@ const AboutSection = ({ title, text, section, children, alternate = false }: Abo
   );
 };
 
-const sectionIds = ['cella', 'why', 'features', 'integrations'];
+const sectionIds = ['hero', 'why', 'features', 'integrations'];
 
 const About = () => {
   const { t } = useTranslation();

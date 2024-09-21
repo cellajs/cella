@@ -17,13 +17,13 @@ import { LegalText } from '~/modules/marketing/legals';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import type { TokenData } from '.';
+import type { Step, TokenData } from '.';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
 const formSchema = authBodySchema;
 
-export const SignUpForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: string) => void }) => {
+export const SignUpForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: Step) => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
