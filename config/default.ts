@@ -94,7 +94,7 @@ export const config = {
   ],
 
   // Allowed oauth strategies providers
-  enabledAuthenticationStrategies: ['password', 'passkey', 'oauth'] as const,
+  enabledAuthenticationStrategies: ['password', 'passkey'] as const,
 
   // OAuth providers
   enabledOauthProviders: ['github'] as const,
