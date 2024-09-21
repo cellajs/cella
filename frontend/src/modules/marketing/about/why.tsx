@@ -4,12 +4,12 @@ import DeviceMockup from '~/modules/marketing/device-mockup';
 const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 
 // Slides for light and dark themes
-const lightSlides = [{ src: 'signin-with-cella.jpg' }, { src: 'onboarding.jpg' }, { src: 'org-page.jpg' }, { src: 'user-sheet-cella.jpg' }];
+const lightSlides = [{ src: 'tasks-board.png' }, { src: 'tasks-table.png' }, { src: 'menu-create-task.png' }, { src: 'manage-project.png' }];
 const darkSlides = [
-  { src: 'dark/signin-with-cella.jpg' },
-  { src: 'dark/onboarding.jpg' },
-  { src: 'dark/org-page.jpg' },
-  { src: 'dark/user-sheet-cella.jpg' },
+  { src: 'dark/tasks-board.png' },
+  { src: 'dark/tasks-table.png' },
+  { src: 'dark/menu-create-task.png' },
+  { src: 'dark/manage-project.png' },
 ];
 
 const Why = () => {
