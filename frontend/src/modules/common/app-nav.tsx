@@ -42,7 +42,6 @@ const AppNav = () => {
   const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
   const { user } = useUserStore();
-
   const currentSession = useMemo(() => user?.sessions.find((s) => s.isCurrent), [user]);
 
   const stopImpersonation = async () => {
