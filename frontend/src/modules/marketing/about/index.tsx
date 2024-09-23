@@ -13,6 +13,7 @@ import { WaitListForm } from '~/modules/common/wait-list-form';
 import FAQ from '~/modules/marketing/about/faq';
 // import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
+import Pricing from '~/modules/marketing/about/pricing';
 // import Integrations from '~/modules/marketing/about/integrations';
 import Why from '~/modules/marketing/about/why';
 
@@ -112,9 +113,9 @@ const About = () => {
           </AboutSection> */}
 
           {/* Pricing */}
-          {/* <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
+          <AboutSection key={'pricing'} section="pricing" title="about:title_6" text="about:text_6">
             <Pricing />
-          </AboutSection> */}
+          </AboutSection>
 
           {/* FAQs */}
           <AboutSection key={'faqs'} section="faqs" title="about:title_7" text="about:text_7" alternate={true}>
