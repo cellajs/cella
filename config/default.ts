@@ -102,8 +102,8 @@ export const config = {
   // Optional settings
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
-    signUp: false, // Allow users to sign up. If disabled, the app is by invitation only
-    waitList: true, // Suggest a waitlist for unknown emails when sign up is disabled
+    registrationEnabled: false, // Allow users to sign up. If disabled, the app is by invitation only
+    waitList: false, // Suggest a waitlist for unknown emails when sign up is disabled
   },
 
   // Languages
