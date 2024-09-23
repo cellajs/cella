@@ -177,7 +177,7 @@ const SubTask = ({
             )}
 
             {task.expandable && !isExpanded && (
-              <Button onClick={() => setIsExpanded(true)} variant="link" size="micro" className="py-0">
+              <Button onClick={() => setIsExpanded(true)} variant="link" size="micro" className="py-0 -mt-[0.15rem]">
                 {t('common:more').toLowerCase()}
               </Button>
             )}
