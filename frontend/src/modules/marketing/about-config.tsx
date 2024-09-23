@@ -46,10 +46,12 @@ interface FaqItem {
   link?: string;
 }
 export const faqsData: FaqItem[] = [
-  { id: 'production-ready', link: config.company.githubUrl },
-  { id: 'cella-vs-next' },
-  { id: 'alternative-to-nextjs' },
-  { id: 'cella-made-in-europe' },
+  { id: 'roadmap', link: config.company.githubUrl },
+  { id: 'open-source-software', link: '/contact' },
+  { id: 'linear-comparison' },
+  { id: 'pivotal-comparison', link: 'https://news.ycombinator.com/item?id=41591622' },
+  { id: 'raak-integration' },
+  { id: 'pivotal-migrations' },
 ];
 
 export const counts = [
