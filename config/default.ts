@@ -17,7 +17,8 @@ export const config = {
   productionUrl: 'https://raak.io',
 
   description: 'raak',
-  keywords: 'project management tool, collaboration tool, task tracker, task management, issue tracker, kanban board, trello, pivotal, jira, linear',
+  keywords:
+    'project management tool, collaboration tool, task tracker, task management, issue tracker, kanban board, trello, pivotal tracker replacement, jira, linear, pivotal tracker migration',
 
   supportEmail: 'support@raak.io',
   notificationsEmail: 'notifications@raak.io',
