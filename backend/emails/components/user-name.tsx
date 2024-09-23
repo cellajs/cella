@@ -1,21 +1,24 @@
 import { Text } from 'jsx-email';
-import type React from 'react';
 import { i18n } from '#/lib/i18n';
 
-export const UserName = ({ children, userName }: { children: React.ReactNode; userName?: string }) => {
+export const UserName = ({ beforeText, userName }: { beforeText?: string; userName?: string }) => {
   const username = userName || i18n.t('common:unknown_name', { lng: 'en' });
+  const contentBeforeText = beforeText ? beforeText : '';
+
   return (
-    <Text
-      style={{
-        display: 'inline-flex',
-        gap: '0,25rem',
-        fontSize: '1rem',
-        lineHeight: '1.5',
-        color: '#000000',
-      }}
-    >
-      {children}
-      {username}
+    <Text>
+      <div
+        style={{
+          display: 'inline-flex',
+          gap: '.25rem',
+          fontSize: '1rem',
+          color: '#000000',
+        }}
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+        dangerouslySetInnerHTML={{
+          __html: `${contentBeforeText} ${username}`,
+        }}
+      />
     </Text>
   );
 };
