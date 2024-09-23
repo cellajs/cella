@@ -5,7 +5,14 @@ interface FaqItem {
   id: string;
 }
 
-const faqsData: FaqItem[] = [{ id: 'production-ready' }, { id: 'cella-vs-next' }, { id: 'alternative-to-nextjs' }, { id: 'cella-made-in-europe' }];
+const faqsData: FaqItem[] = [
+  { id: 'production-ready' },
+  { id: 'cella-vs-next' },
+  { id: 'alternative-to-nextjs' },
+  { id: 'cella-made-ineurope' },
+  { id: 'cella-made-in-urope' },
+  { id: 'cella-mae-in-europe' },
+];
 
 const FAQ = () => {
   const { t } = useTranslation();

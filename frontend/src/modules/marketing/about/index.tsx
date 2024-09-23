@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { WaitListForm } from '~/modules/common/wait-list-form';
 // import Counters from '~/modules/marketing/about/counters';
-// import FAQ from '~/modules/marketing/about/faq';
+import FAQ from '~/modules/marketing/about/faq';
 // import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
 // import Integrations from '~/modules/marketing/about/integrations';
@@ -42,7 +42,7 @@ const AboutSection = ({ title, text, section, children, alternate = false }: Abo
   );
 };
 
-const sectionIds = ['hero', 'product', 'pricing'];
+const sectionIds = ['hero', 'product', 'pricing', 'faqs'];
 
 const About = () => {
   const { t } = useTranslation();
@@ -103,9 +103,9 @@ const About = () => {
           </AboutSection>
 
           {/* FAQs */}
-          {/* <AboutSection key={'faqs'} section="faqs" title="about:title_7" text="about:text_7" alternate={true}>
+          <AboutSection key={'faqs'} section="faqs" title="about:title_7" text="about:text_7" alternate={true}>
             <FAQ />
-          </AboutSection> */}
+          </AboutSection>
 
           {/* Public counters */}
           {/* <AboutSection key={'counters'} section="counters" title="about:title_5" text="about:text_5">
