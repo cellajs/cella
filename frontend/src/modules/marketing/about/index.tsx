@@ -5,7 +5,7 @@ import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 import { buttonVariants } from '~/modules/ui/button';
 
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { WaitListForm } from '~/modules/common/wait-list-form';
@@ -17,6 +17,8 @@ import { Hero } from '~/modules/marketing/about/hero';
 import Pricing from '~/modules/marketing/about/pricing';
 import Why from '~/modules/marketing/about/why';
 
+import { config } from 'config';
+import { useState } from 'react';
 import '~/modules/marketing/about/glow-button.css';
 
 interface AboutSectionProps {
@@ -47,6 +49,7 @@ const sectionIds = ['hero', 'product', 'pricing'];
 const About = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [joinedToWaitlist, setJoinedToWaitlist] = useState(false);
 
   useScrollSpy({ sectionIds, autoUpdateHash: true });
 
@@ -66,7 +69,19 @@ const About = () => {
       <div className="container max-w-none px-0">
         {/* Hero landing */}
         <Hero key={'hero'} title="about:title_1" subtitle="about:subtitle" text="about:text_1">
-          <WaitListForm email="" buttonContent={`${t('common:join')} ${t('common:waitlist')}`} emailField />
+          {joinedToWaitlist ? (
+            <span className="flex gap-3 justify-between items-center">
+              {t('common:in_waitlist', { appName: config.name })}
+              <Check className="text-success" size={20} />
+            </span>
+          ) : (
+            <WaitListForm
+              email=""
+              buttonContent={`${t('common:join')} ${t('common:waitlist')}`}
+              emailField
+              callback={() => setJoinedToWaitlist(true)}
+            />
+          )}
 
           <Link
             to="/about"

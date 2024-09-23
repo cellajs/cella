@@ -27,7 +27,15 @@ export const WaitListForm = ({
   emailField,
   dialog: isDialog,
   setStep,
-}: { email: string; buttonContent?: string | React.ReactNode; emailField?: boolean; dialog?: boolean; setStep?: (step: Step) => void }) => {
+  callback,
+}: {
+  email: string;
+  buttonContent?: string | React.ReactNode;
+  emailField?: boolean;
+  dialog?: boolean;
+  setStep?: (step: Step) => void;
+  callback?: () => void;
+}) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -38,10 +46,13 @@ export const WaitListForm = ({
         to: '/about',
         replace: true,
       });
-      if (isDialog) dialog.remove();
       showToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
+      callback?.();
+      if (isDialog) dialog.remove();
     },
-    onError: (error) => toast.info(error.message),
+    onError: (error) => {
+      if (callback && error.status === 409) return callback();
+    },
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
