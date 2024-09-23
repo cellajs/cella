@@ -51,7 +51,7 @@ export const faqsData: FaqItem[] = [
   { id: 'linear-comparison' },
   { id: 'pivotal-comparison', link: 'https://news.ycombinator.com/item?id=41591622' },
   { id: 'raak-integration' },
-  { id: 'pivotal-migrations' },
+  { id: 'pivotal-migrations', link: '/contact' },
 ];
 
 export const counts = [
