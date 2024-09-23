@@ -18,6 +18,10 @@ const requestsRoutes = app
    */
   .openapi(requestsRoutesConfig.createRequest, async (ctx) => {
     const { email, type, message } = ctx.req.valid('json');
+    if (type === 'waitlist') {
+      const [existingRequest] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+      if (existingRequest) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
+    }
 
     const conflictingTypes = ['waitlist', 'newsletter'];
     if (type === 'waitlist') {

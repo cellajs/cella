@@ -149,8 +149,8 @@ const UsersTable = () => {
         dialog
         users={selectedUsers}
         callback={(users) => {
-          callback(users, 'delete');
           toast.success(t('common:success.delete_resources', { resources: t('common:users') }));
+          callback(users, 'delete');
         }}
       />,
       {

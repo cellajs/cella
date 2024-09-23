@@ -24,6 +24,14 @@ export const useColumns = () => {
       minWidth: 160,
     },
     {
+      key: 'email',
+      name: t('common:email'),
+      visible: true,
+      sortable: false,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row }) => <>{row.email || '-'}</>,
+    },
+    {
       key: 'message',
       name: t('common:message'),
       visible: !isMobile,

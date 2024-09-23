@@ -19,6 +19,7 @@ export function Sheeter() {
     if (dialog.haveOpenDialogs()) return;
     if (!open) {
       navigate({
+        to: '.',
         replace: true,
         resetScroll: false,
         search: (prev) => {

@@ -92,6 +92,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const openUserPreview = (user: Member) => {
     openUserPreviewSheet(user);
     navigate({
+      to: '.',
       replace: true,
       resetScroll: false,
       search: (prev) => ({
@@ -130,8 +131,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { mutate: updateMemberRole } = useMutation({
     mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role }),
     onSuccess: (updatedMembership) => {
-      callback([updatedMembership], 'updateMembership');
       showToast(t('common:success:user_role_updated'), 'success');
+      callback([updatedMembership], 'updateMembership');
     },
     onError: () => showToast('Error updating role', 'error'),
   });
@@ -193,8 +194,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         entityType={entityType}
         dialog
         callback={(members) => {
-          callback(members, 'delete');
           toast.success(t('common:success.delete_members'));
+          callback(members, 'delete');
         }}
         members={selectedMembers}
       />,

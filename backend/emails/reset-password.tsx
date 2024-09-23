@@ -42,9 +42,8 @@ export const ResetPasswordEmail = ({ userName, userLanguage: lng, resetPasswordL
           marginTop: '2rem',
         }}
       >
-        <UserName userName={userName}>
-          <Text>{i18n.t('backend:email.hi', { lng })}</Text>
-        </UserName>
+        <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />
+
         <div
           // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
           dangerouslySetInnerHTML={{

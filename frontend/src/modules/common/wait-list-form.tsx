@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/taosts-show';
-import type { Step } from '~/modules/auth';
 import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
@@ -26,14 +25,14 @@ export const WaitListForm = ({
   buttonContent,
   emailField,
   dialog: isDialog,
-  setStep,
+  changeEmail,
   callback,
 }: {
   email: string;
   buttonContent?: string | React.ReactNode;
   emailField?: boolean;
   dialog?: boolean;
-  setStep?: (step: Step) => void;
+  changeEmail?: () => void;
   callback?: () => void;
 }) => {
   const { t } = useTranslation();
@@ -47,8 +46,8 @@ export const WaitListForm = ({
         replace: true,
       });
       showToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
-      callback?.();
       if (isDialog) dialog.remove();
+      callback?.();
     },
     onError: (error) => {
       if (callback && error.status === 409) return callback();
@@ -76,12 +75,12 @@ export const WaitListForm = ({
 
   return (
     <Form {...form}>
-      {setStep && (
+      {changeEmail && (
         <>
           <div className="text-2xl text-center">
             <h1 className="text-xxl">{t('common:request_access')}</h1>
 
-            <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-2 text-xl border border-primary/20">
+            <Button variant="ghost" onClick={changeEmail} className="font-light mt-2 text-xl border border-primary/20">
               {email}
               <ChevronDown size={16} className="ml-2" />
             </Button>

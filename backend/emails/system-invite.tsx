@@ -51,20 +51,12 @@ export const InviteSystemEmail = ({ userName, userLanguage: lng, userThumbnailUr
           padding: '1rem',
         }}
       >
-        <UserName userName={userName}>
-          <Text>{i18n.t('backend:email.hi', { lng })}</Text>
-        </UserName>
-        <UserName userName={inviteBy}>
-          <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.invite_description', { lng, appName }),
-            }}
-          />
-        </UserName>
+        <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />
+        <UserName beforeText={i18n.t('backend:email.invite_description', { lng, appName })} userName={inviteBy} />
+
         <Row>
           <Column align="right">
-            <Avatar url={userThumbnailUrl} type="user" />
+            <Avatar name={userThumbnailUrl} type="user" />
           </Column>
           <Column align="center">
             <Img src={`${productionUrl}/static/email/arrow.png`} width="12" height="9" alt="invited to" />

@@ -30,7 +30,7 @@ const Pricing = () => {
     if (action === 'waitlist_request') {
       dialog(<WaitListForm email="" dialog emailField />, {
         id: 'waitlist-form',
-        drawerOnMobile: false,
+        drawerOnMobile: true,
         className: 'sm:max-w-2xl',
         title: t('common:waitlist_request'),
         text: t('common:waitlist_request.text', { appName: config.name }),

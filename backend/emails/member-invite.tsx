@@ -1,6 +1,5 @@
-import { Column, Img, Row, Section, Text } from 'jsx-email';
-
 import { config } from 'config';
+import { Column, Img, Row, Section, Text } from 'jsx-email';
 import { i18n } from '../../backend/src/lib/i18n';
 
 import Avatar from './components/avatar';
@@ -9,7 +8,7 @@ import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
-import { UserName } from './components/user-name';
+import UserName from './components/user-name';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
@@ -23,16 +22,7 @@ interface Props extends BasicTemplateType {
 const productionUrl = config.productionUrl;
 const appName = config.name;
 
-export const InviteMemberEmail = ({
-  userName,
-  userLanguage: lng,
-  userThumbnailUrl,
-  inviteBy,
-  organizationName,
-  inviterEmail,
-  organizationThumbnailUrl,
-  token,
-}: Props) => {
+export const InviteMemberEmail = ({ userName, userLanguage: lng, inviteBy, organizationName, inviterEmail, token }: Props) => {
   const orgName = organizationName || i18n.t('common:unknown_organization', { lng });
 
   return (
@@ -41,7 +31,7 @@ export const InviteMemberEmail = ({
       containerStyle={{
         marginTop: '2.5rem',
         marginBottom: '2.5rem',
-        width: '32rem',
+        width: '50rem',
       }}
     >
       <EmailHeader
@@ -56,38 +46,35 @@ export const InviteMemberEmail = ({
       />
       <Section
         style={{
-          borderRadius: '0.25rem',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          borderRadius: '.75rem',
           borderWidth: '1px',
           borderStyle: 'solid',
           borderColor: '#eaeaea',
           padding: '1rem',
         }}
       >
-        <UserName userName={userName}>
-          <Text>{i18n.t('backend:email.hi', { lng })}</Text>
-        </UserName>
-        <UserName userName={inviteBy}>
-          <div
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
-            dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.invite_to_organization_description', { lng, orgName, appName }),
-            }}
-          />
-        </UserName>
+        <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />
+        <UserName beforeText={i18n.t('backend:email.invite_to_organization_description', { lng, orgName, appName })} userName={inviteBy} />
+
         <Row>
           <Column align="right">
-            <Avatar url={userThumbnailUrl} type="user" />
+            <Avatar name={userName} type="user" />
           </Column>
           <Column align="center">
             <Img src={`${productionUrl}/static/email/arrow.png`} width="12" height="9" alt="invited to" />
           </Column>
           <Column align="left">
-            <Avatar url={organizationThumbnailUrl} type="organization" />
+            <Avatar name={organizationName} type="organization" />
           </Column>
         </Row>
         <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={`${config.frontendUrl}/auth/invite/${token}`} />
         <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>{i18n.t('backend:email.invite_expire', { lng })}</Text>
       </Section>
+
       <EmailReplyTo email={inviterEmail} />
       <Footer />
     </EmailContainer>

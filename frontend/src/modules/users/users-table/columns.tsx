@@ -39,6 +39,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
               navigate({
+                to: '.',
                 replace: true,
                 resetScroll: false,
                 search: (prev) => ({
