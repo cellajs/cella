@@ -78,7 +78,7 @@ export const useColumns = () => {
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <>
-          {taskTypes[taskTypes.findIndex((t) => t.value === row.type)]?.icon()} <span className="ml-2">{t(`common:${row.type}`)}</span>
+          {taskTypes[taskTypes.findIndex((t) => t.value === row.type)]?.icon()} <span className="ml-2">{t(`app:${row.type}`)}</span>
         </>
       ),
       width: 140,

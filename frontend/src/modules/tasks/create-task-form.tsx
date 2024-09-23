@@ -190,7 +190,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
         ref={ref as LegacyRef<HTMLFormElement>}
         id="create-task"
         onSubmit={form.handleSubmit(onSubmit)}
-        className="p-3 border-b flex gap-2 flex-col shadow-inner"
+        className="p-3 xs:pl-11 border-b flex gap-2 flex-col shadow-inner"
       >
         <FormField
           control={form.control}
@@ -201,7 +201,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ tasks, projectId, organ
                 <FormControl>
                   <TaskBlockNote
                     id={defaultId}
-                    className="pl-4 min-h-16 [&>.bn-editor]:min-h-16"
+                    className="min-h-16 [&>.bn-editor]:min-h-16"
                     projectId={projectId}
                     html={value}
                     onChange={(description, summary) => {
