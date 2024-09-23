@@ -81,17 +81,25 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
       >
         {task.labels.length > 0 ? (
           isMobile ? (
-            <div className="flex truncate flex-wrap gap-0.5 font-xs  text-[.75rem] items-center">
-              <Badge variant="outline" key={task.labels[0].id} className="inline-block bg-border border-0 px-2 h-5 last:mr-0 leading-4">
+            <div className="flex truncate flex-wrap gap-0.5 font-xs text-[.75rem] items-center">
+              <Badge
+                variant="outline"
+                key={task.labels[0].id}
+                className="inline-block bg-border px-2 max-w-24 h-5 border-0 last:mr-0 font-normal leading-4 truncate"
+              >
                 {task.labels[0].name}
               </Badge>
-              <Badge className="px-1 flex bg-border  justify-center">+{task.labels.length - 1}</Badge>
+              {task.labels.length > 1 && (
+                <Badge variant="outline" className="px-1 h-5 flex bg-border border-0 font-normal justify-center">
+                  +{task.labels.length - 1}
+                </Badge>
+              )}
             </div>
           ) : (
             <div className="flex truncate flex-wrap gap-[.07rem]">
               {task.labels.map(({ name, id }) => {
                 return (
-                  <div key={id} className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full border px-0 bg-border">
+                  <div key={id} className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full px-0 bg-border">
                     <Badge
                       variant="outline"
                       key={id}
