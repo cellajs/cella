@@ -1,6 +1,6 @@
 {
   "start_github.text": "Begin op Github",
-  "faq.answer_1": "Binnenkort! Het is openbaar gemaakt om input en feedback van de gemeenschap te verzamelen. Grote veranderingen zullen nog plaatsvinden. Help ons door het uit te proberen en feedback te geven.",
+  "faq.answer_1": "Binnenkort! Het is openbaar gemaakt om input en feedback van de gemeenschap te verzamelen. Grote veranderingen zullen nog plaatsvinden. Help <Link>ons door het uit</Link> te proberen en feedback te geven.",
   "faq.answer_2": "Een kernconcept is: blijf dicht bij bibliotheken & weersta het aanbrengen van abstractielaag. We geloven dat dit je code uiteindelijk gemakkelijker te lezen, begrijpen, aanpassen, vervangen en schalen maakt. Een React-framework past niet binnen dit concept.",
   "faq.answer_3": "Je kiest voor NextJS als je veel architectonische beslissingen zelf wilt nemen. Je kiest Cella als je minder architectonische vrijheid als een goede ruil beschouwt om enorme hoeveelheden ontwikkelingstijd te besparen. Oh, en kies Cella als je gewoon de mooie stack leuk vindt die wij hebben gekozen :D.",
   "faq.answer_4": "Onze beslissing om - vooral voor toolintegraties - op Europa te focussen is niet bedoeld om een andere regio uit te sluiten. We geloven gewoon in Europa en willen het onafhankelijker maken. Een gezonde machtsbalans komt niet alleen Europa, maar de hele wereldwijde (open source) gemeenschap ten goede.",
