@@ -1,5 +1,4 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
 import { Bird, Trash, XSquare } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
@@ -11,7 +10,6 @@ import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
@@ -33,7 +31,7 @@ export const labelsQueryOptions = ({
 }: GetLabelsParams & {
   rowsLength?: number;
 }) => {
-  const sort = initialSort || 'name';
+  const sort = initialSort || 'lastUsed';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
@@ -66,12 +64,10 @@ const LabelsTable = () => {
   const [columns] = useColumns();
   const { projects } = useWorkspaceStore();
 
-  const search = useSearch({ strict: false });
-
   const [rows, setRows] = useState<Label[]>([]);
   const [query, setQuery] = useState<LabelsSearch['q']>('');
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'name'));
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'lastUsed', direction: 'DESC' }]);
 
   // Search query options
   const q = useDebounce(query, 200);
