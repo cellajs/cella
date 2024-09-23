@@ -13,7 +13,7 @@ const features = [
   { icon: 'hono' },
   { icon: 'react' },
   { icon: 'drizzle' },
-  { icon: 'tailwind' },
+  { icon: 'shadcn' },
   { icon: 'lucia' },
   { icon: 'openapi' },
   { icon: 'vite' },
