@@ -169,7 +169,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
                 <span>{label.name}</span>
               </div>
               <div className="flex items-center">
-                {selectedLabels.some((l) => l.id === label.id) && <Check size={16} className="text-success" />}
+                <Check size={16} className={`text-success ${!selectedLabels.some((l) => l.id === label.id) && 'invisible'}`} />
                 {!isSearching && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
               </div>
             </CommandItem>
