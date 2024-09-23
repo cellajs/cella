@@ -1,5 +1,5 @@
 {
-  "faq.answer_1": "As Raak is <Link>open-source</Link>, you can already run Raak yourself without waiting for access. However, we advice most of you to wait for the private beta around Nov/Dec 2024. If you are really enthusiastic, please reach out to us for access to Raak during private alpha.",
+  "faq.answer_1": "As Raak is <Link>open-source</Link>, you can already run Raak yourself without waiting for access. However, we advice most of you to wait for the private beta around Nov/Dec 2024. A more detailed roadmap will also be released by then.",
   "faq.answer_2": "If you are also building open-source software, you can use Raak Pro for free! Please <Link>reach out to us</Link> with a repository link to get started quickly.",
   "faq.answer_3": "Linear is amazing: their design and sync engine are aspirations for Raak. That said, Raak is focused on small companies with a single, product-oriented team. A simple page view captures all tasks and issues, even if you manage multiple apps.",
   "faq.answer_4": "Though Pivotal Tracker (2006) is <Link>shutting down</Link>, it still is a very effective way to communicate tasks. Raak is heavily inspired by Pivotal Tracker. Yet, we also do things differently: no comments nor notifications (only inline mentioning if enabled). A modern design, more granular editing, table view and dark mode.",
