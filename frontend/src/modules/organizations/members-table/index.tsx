@@ -92,6 +92,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const openUserPreview = (user: Member) => {
     openUserPreviewSheet(user);
     navigate({
+      to: '.',
       replace: true,
       resetScroll: false,
       search: (prev) => ({
