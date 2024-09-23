@@ -114,7 +114,7 @@ export default defineConfig(() => {
       },
       workbox: {
         globPatterns: config.mode === 'production' ? ['**/*.{js,css,html,json,svg,png}'] : [],
-        globIgnores: ['**/public/static/flags/*.(svg|png)'],
+        globIgnores: ['/public/static/flags/**/*'],
       },
     }),
   );

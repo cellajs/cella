@@ -43,7 +43,7 @@ const AppNav = () => {
   const { theme } = useThemeStore();
 
   const { user } = useUserStore();
-  const currentSession = useMemo(() => user.sessions.find((s) => s.isCurrent), [user.sessions]);
+  const currentSession = useMemo(() => user?.sessions.find((s) => s.isCurrent), [user]);
 
   const stopImpersonation = async () => {
     await impersonationStop();

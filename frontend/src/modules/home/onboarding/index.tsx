@@ -17,17 +17,18 @@ export type OnboardingStates = 'start' | 'stepper' | 'completed';
 
 interface OnboardingProps {
   onboarding: OnboardingStates;
-  setOnboarding: (value: OnboardingStates) => void;
+  onboardingToStepper: () => void;
 }
 
-const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) => {
+const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingProps) => {
+  const { user } = useUserStore();
   const { hasStarted } = useMounted();
+  const { menu } = useNavigationStore();
+
   const [steps, setSteps] = useState(onDefaultBoardingSteps);
   const [organization, setOrganization] = useState<Organization | null>(null);
-  const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
-  const { menu } = useNavigationStore();
-  const { user } = useUserStore();
+  const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
   const onCreateOrganization = (organization: Organization) => {
     setOrganization(organization);
@@ -40,7 +41,7 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
   return (
     <div className="flex flex-col min-h-[90vh] sm:min-h-screen items-center">
       <div className="mt-auto mb-auto w-full">
-        {onboarding === 'start' && <OnboardingStart setOnboarding={setOnboarding} />}
+        {onboarding === 'start' && <OnboardingStart onboardingToStepper={onboardingToStepper} />}
         {onboarding === 'stepper' && (
           <div className={cn('mx-auto mt-8 flex flex-col justify-center gap-4 px-4 py-8 sm:w-10/12 max-w-3xl', animateClass)}>
             <Stepper initialStep={0} steps={steps} orientation="vertical">
@@ -53,17 +54,17 @@ const Onboarding = ({ onboarding = 'start', setOnboarding }: OnboardingProps) =>
                     <CardContent>
                       {id === 'profile' && (
                         <UpdateUserForm user={user} hiddenFields={['email', 'bio', 'newsletter', 'slug']}>
-                          <StepperFooter setOnboarding={setOnboarding} />
+                          <StepperFooter />
                         </UpdateUserForm>
                       )}
                       {id === 'organization' && (
                         <CreateOrganizationForm callback={onCreateOrganization}>
-                          <StepperFooter setOnboarding={setOnboarding} />
+                          <StepperFooter />
                         </CreateOrganizationForm>
                       )}
                       {id === 'invitation' && organization && (
                         <InviteUsers entity={organization} mode="email">
-                          <StepperFooter organization={organization} setOnboarding={setOnboarding} />
+                          <StepperFooter organization={organization} />
                         </InviteUsers>
                       )}
                     </CardContent>

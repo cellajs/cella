@@ -41,6 +41,7 @@ export const PageAside = <T extends Tab>({ tabs, className }: PageAsideProps<T>)
         return (
           <Link
             key={id}
+            to="."
             className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass, activeHash === id && 'bg-secondary')}
             hash={id}
             replace

@@ -19,7 +19,6 @@ const NewsletterForm = () => {
       toast.success(t('common:success.newsletter_sign_up', { appName: config.name }));
       formRef.current?.reset();
     },
-    onError: (error) => (error.message ? toast.info(error.message) : toast.error(t('common:error.newsletter_sign_up'))),
   });
 
   const handleSubmit = async (event: React.FormEvent) => {

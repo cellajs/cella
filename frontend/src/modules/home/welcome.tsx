@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { OnboardingStates } from '~/modules/home/onboarding';
 import Onboarding from '~/modules/home/onboarding';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
@@ -16,6 +16,10 @@ const Welcome = () => {
     navigate({ to: config.defaultRedirectPath, replace: true });
   };
 
+  useEffect(() => {
+    if (finishedOnboarding) setOnboarding('completed');
+  }, [finishedOnboarding]);
+
   return (
     <>
       <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
@@ -24,7 +28,7 @@ const Welcome = () => {
           className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto"
         >
           <DialogHiddenTitle>Welcome</DialogHiddenTitle>
-          <Onboarding onboarding={onboarding} setOnboarding={setOnboarding} />
+          <Onboarding onboarding={onboarding} onboardingToStepper={() => setOnboarding('stepper')} />
         </DialogContent>
       </Dialog>
 

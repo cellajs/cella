@@ -25,7 +25,7 @@ export const handleCreateUser = async (
   },
 ) => {
   // If sign up is disabled, return an error
-  if (!config.has.signUp) return errorResponse(ctx, 403, 'sign_up_disabled', 'warn', undefined);
+  if (!config.has.registrationEnabled) return errorResponse(ctx, 403, 'sign_up_disabled', 'warn', undefined);
 
   // Check if the slug is available
   const slugAvailable = await checkSlugAvailable(data.slug);

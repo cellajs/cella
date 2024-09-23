@@ -43,8 +43,9 @@ const useSaveInSearchParams = (values: SearchParams, defaultValues?: SearchParam
     if (Object.keys(searchParams).length === 0) return;
 
     navigate({
-      params,
       replace: true,
+      params,
+      to: '.',
       search: (prev) => ({
         ...prev,
         ...searchParams,

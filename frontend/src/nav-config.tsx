@@ -11,6 +11,9 @@ import type { NavItem } from '~/modules/common/app-nav';
 import type { SuggestionSection } from '~/modules/common/app-search';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
 
+// Set entities paths
+export const baseEntityRoutes = { user: '/user/$idOrSlug', organization: '/$idOrSlug' } as const;
+
 // Here you declare main navigation items
 export const navItems: NavItem[] = [
   { id: 'menu', sheet: <SheetMenu />, icon: Menu },
@@ -42,6 +45,3 @@ export const suggestionSections: SuggestionSection[] = [
   { id: 'users', label: 'common:users', type: 'user' },
   { id: 'organizations', label: 'common:organizations', type: 'organization' },
 ];
-
-// Set entities paths
-export const baseEntityRoutes = { user: '/user/$idOrSlug', organization: '/$idOrSlug' } as const;

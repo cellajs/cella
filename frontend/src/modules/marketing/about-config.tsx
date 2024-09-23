@@ -50,6 +50,17 @@ export const pricingPlans: PricingPlan[] = [
   { id: 'partner', action: 'contact_us', priceId: null, featureCount: 3, borderColor: '' },
 ];
 
+interface FaqItem {
+  id: string;
+  link?: string;
+}
+export const faqsData: FaqItem[] = [
+  { id: 'production-ready', link: config.company.githubUrl },
+  { id: 'cella-vs-next' },
+  { id: 'alternative-to-nextjs' },
+  { id: 'cella-made-in-europe' },
+];
+
 export const counts = [
   { id: 'users', title: 'common:users', icon: Users },
   { id: 'organizations', title: 'common:organizations', icon: Building2 },

@@ -1,11 +1,7 @@
-import { useTranslation } from 'react-i18next';
+import { Link } from '@tanstack/react-router';
+import { Trans, useTranslation } from 'react-i18next';
+import { faqsData } from '~/modules/marketing/about-config';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
-
-interface FaqItem {
-  id: string;
-}
-
-const faqsData: FaqItem[] = [{ id: 'production-ready' }, { id: 'cella-vs-next' }, { id: 'alternative-to-nextjs' }, { id: 'cella-made-in-europe' }];
 
 const FAQ = () => {
   const { t } = useTranslation();
@@ -22,7 +18,12 @@ const FAQ = () => {
                 <span className="text-lg">{t(question)}</span>
               </AccordionTrigger>
               <AccordionContent>
-                <span className="text-lg font-light">{t(answer)}</span>
+                <Trans
+                  i18nKey={answer}
+                  components={{
+                    Link: <Link to={faq.link} aria-label={`Visit ${faq.link}`} target="_blank" className="underline" />,
+                  }}
+                />
               </AccordionContent>
             </AccordionItem>
           );
