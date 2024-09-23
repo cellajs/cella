@@ -93,9 +93,8 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
     };
 
     const success = await authThroughPasskey(credentialData);
-    if (success) {
-      callback?.();
-    } else toast.error(t('common:error.passkey_sign_in'));
+    if (success) callback?.();
+    else toast.error(t('common:error.passkey_sign_in'));
   } catch (err) {
     toast.error(t('common:error.passkey_sign_in'));
   }

@@ -17,13 +17,17 @@ import { LegalText } from '~/modules/marketing/legals';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import type { Step, TokenData } from '.';
+import type { TokenData } from '.';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
 const formSchema = authBodySchema;
 
-export const SignUpForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: Step) => void }) => {
+export const SignUpForm = ({
+  tokenData,
+  email,
+  resetToInitialStep,
+}: { tokenData: TokenData | null; email: string; resetToInitialStep: () => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -70,7 +74,7 @@ export const SignUpForm = ({ tokenData, email, setStep }: { tokenData: TokenData
       <h1 className="text-2xl text-center">
         {tokenData ? t('common:invite_create_account') : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`} <br />
         {!tokenData && (
-          <Button variant="ghost" onClick={() => setStep('check')} className="font-light mt-2 text-xl">
+          <Button variant="ghost" onClick={resetToInitialStep} className="font-light mt-2 text-xl">
             {email}
             <ChevronDown size={16} className="ml-2" />
           </Button>

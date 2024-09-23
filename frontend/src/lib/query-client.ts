@@ -33,7 +33,8 @@ export const onError = (error: Error) => {
           : fallback[statusCode as keyof typeof fallback];
 
     // Show toast
-    toast.error(errorMessage || error.message);
+    if (error.severity === 'info') toast.info(errorMessage || error.message);
+    else toast.error(errorMessage || error.message);
 
     // Set down alerts
     if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');

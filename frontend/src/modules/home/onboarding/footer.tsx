@@ -9,17 +9,16 @@ import { SkipOrganizationCreation } from '~/modules/home/onboarding/skipOrganiza
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types/common';
-import type { OnboardingStates } from '.';
 
-interface StepperFooterProps {
+const StepperFooter = ({
+  organization,
+}: {
   organization?: Organization | null;
-  setOnboarding: (value: OnboardingStates) => void;
-}
-
-const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
+}) => {
   const { nextStep, prevStep, isOptionalStep, hasCompletedAllSteps, activeStep } = useStepper();
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
+  const { setFinishedOnboarding } = useNavigationStore();
   const haveOrganizations = menu.organizations.length > 0;
 
   // Ask to confirm
@@ -44,8 +43,7 @@ const StepperFooter = ({ organization, setOnboarding }: StepperFooterProps) => {
   };
 
   useEffect(() => {
-    if (activeStep === 2 && organization === null) setOnboarding('completed');
-    if (hasCompletedAllSteps) setOnboarding('completed');
+    if ((activeStep === 2 && organization === null) || hasCompletedAllSteps) setFinishedOnboarding();
   }, [organization, hasCompletedAllSteps]);
 
   return (

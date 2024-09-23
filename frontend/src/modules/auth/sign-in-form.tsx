@@ -20,11 +20,15 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { isEnabledAuthStrategy } from '#/lib/auth';
-import type { Step, TokenData } from '.';
+import type { TokenData } from '.';
 
 const formSchema = authBodySchema;
 
-export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData | null; email: string; setStep: (step: Step) => void }) => {
+export const SignInForm = ({
+  tokenData,
+  email,
+  resetToInitialStep,
+}: { tokenData: TokenData | null; email: string; resetToInitialStep: () => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { lastUser, clearLastUser } = useUserStore();
@@ -58,7 +62,7 @@ export const SignInForm = ({ tokenData, email, setStep }: { tokenData: TokenData
 
   const cancel = () => {
     clearLastUser();
-    setStep('check');
+    resetToInitialStep();
   };
 
   useEffect(() => {

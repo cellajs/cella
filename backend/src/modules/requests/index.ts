@@ -2,6 +2,7 @@ import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { requestsTable } from '#/db/schema/requests';
+import { usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
 import { sendSlackNotification } from '#/lib/notification';
 import { getOrderColumn } from '#/lib/order-column';
@@ -17,6 +18,10 @@ const requestsRoutes = app
    */
   .openapi(requestsRoutesConfig.createRequest, async (ctx) => {
     const { email, type, message } = ctx.req.valid('json');
+    if (type === 'waitlist') {
+      const [existingRequest] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+      if (existingRequest) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
+    }
 
     const conflictingTypes = ['waitlist', 'newsletter'];
     if (conflictingTypes.includes(type)) {
@@ -24,8 +29,8 @@ const requestsRoutes = app
         .select()
         .from(requestsTable)
         .where(and(eq(requestsTable.email, email), inArray(requestsTable.type, ['waitlist', 'newsletter'])));
-      if (existingRequest?.type === type) return errorResponse(ctx, 400, 'request_exists', 'warn');
-      if (conflictingTypes.includes(existingRequest?.type)) return errorResponse(ctx, 400, `${type}_request_error`, 'warn');
+      if (existingRequest?.type === type) return errorResponse(ctx, 409, 'request_exists', 'info');
+      if (conflictingTypes.includes(existingRequest?.type)) return errorResponse(ctx, 400, `${type}_request_error`, 'info');
     }
 
     const [createdAccessRequest] = await db
