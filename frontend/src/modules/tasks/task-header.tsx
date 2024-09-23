@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { ChevronUp, Maximize2, Trash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -29,27 +30,36 @@ export const TaskHeader = ({
   const { t } = useTranslation();
   const { user } = useUserStore();
   const isSubTask = task.parentId !== null;
+  const initialAndExitParams = { opacity: isSubTask ? 1 : 0, y: isSubTask ? 0 : -10 };
   return (
     <StickyBox enabled={false} className="flex flex-row z-100 w-full justify-between">
-      <div className="flex flex-row gap-1 w-full items-center">
+      {!isSubTask && task.createdBy && (
+        <Button
+          id="type"
+          onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
+          aria-label="Set type"
+          variant="ghost"
+          size="xs"
+          className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
+        >
+          {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
+        </Button>
+      )}
+      <motion.div
+        className="flex flex-row gap-1 w-full items-center"
+        initial={initialAndExitParams}
+        animate={{ opacity: 1, y: 0 }}
+        exit={initialAndExitParams}
+        transition={{ duration: 0.3 }}
+      >
         {!isSubTask && task.createdBy && (
           <>
-            <Button
-              id="type"
-              onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
-              aria-label="Set type"
-              variant="ghost"
-              size="xs"
-              className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
-            >
-              {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
-            </Button>
             <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
             <span className="ml-1 opacity-50 text-sm text-center font-light">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
           </>
         )}
-        <div className="grow" />
 
+        <div className="grow" />
         <TooltipButton
           disabled={isEditing}
           toolTipContent={t('common:edit_resource', { resource: t('app:task').toLowerCase() })}
@@ -110,7 +120,7 @@ export const TaskHeader = ({
             </Button>
           </TooltipButton>
         )}
-      </div>
+      </motion.div>
     </StickyBox>
   );
 };

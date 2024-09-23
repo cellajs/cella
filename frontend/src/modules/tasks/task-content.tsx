@@ -1,4 +1,5 @@
 import '@blocknote/shadcn/style.css';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -52,7 +53,7 @@ const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
           )}
         </div>
       ) : (
-        <>
+        <motion.div initial={{ y: -10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.3 }}>
           {isEditing ? (
             <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
           ) : (
@@ -75,7 +76,7 @@ const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
 
             <CreateSubTaskForm formOpen={createSubTask} setFormState={(value) => setCreateSubTask(value)} parentTask={task} />
           </div>
-        </>
+        </motion.div>
       )}
     </div>
   );
