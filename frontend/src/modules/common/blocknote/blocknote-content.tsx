@@ -37,6 +37,8 @@ export const BlockNoteForTaskContent = ({
       columns={10}
       minQueryLength={0}
     />
-    <CustomFormattingToolbar />
+    <div className="fixed  z-[99999]">
+      <CustomFormattingToolbar />
+    </div>
   </>
 );
