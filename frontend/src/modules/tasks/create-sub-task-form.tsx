@@ -166,8 +166,8 @@ export const CreateSubTaskForm = ({
             );
           }}
         />
-        <div className="inline-flex justify-between">
-          <div className="inline-flex gap-2">
+        <div className="flex ml-8 justify-between">
+          <div className="flex gap-2">
             <Button size={'xs'} type="submit" disabled={!isDirty()}>
               <span>{t('common:create')}</span>
             </Button>
