@@ -159,7 +159,7 @@ export default function Board() {
   };
 
   const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
-    if (!projects.length) return;
+    if (!projects.length || (focusedTaskId && editingTasks[focusedTaskId])) return;
 
     const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === projects[0].id);
     let newFocusedTask: { projectId: string; id: string } | undefined;
@@ -227,6 +227,7 @@ export default function Board() {
 
   const handleEscKeyPress = () => {
     if (!focusedTaskId || !expandedTasks[focusedTaskId]) return;
+    if (editingTasks[focusedTaskId]) return setTaskEditing(focusedTaskId, false);
     setTaskExpanded(focusedTaskId, false);
   };
 
