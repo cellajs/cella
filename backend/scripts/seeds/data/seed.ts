@@ -9,16 +9,13 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { type InsertProjectModel, projectsTable } from '#/db/schema/projects';
 import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
 import { type InsertWorkspaceModel, workspacesTable } from '#/db/schema/workspaces';
-import { Command } from '@commander-js/extra-typings';
+
 import { and, eq } from 'drizzle-orm';
 import { UniqueEnforcer } from 'enforce-unique';
 import slugify from 'slugify';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 import { extractKeywords } from './helpers';
-
-const seedCommand = new Command().option('--addImages', 'Add images to members').parse(process.argv);
-const options = seedCommand.opts();
 
 export const dataSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
@@ -52,8 +49,8 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         organizationId: organization.id,
         name: faker.company.name(),
         slug: faker.helpers.slugify(name).toLowerCase(),
-        bannerUrl: options.addImages ? faker.image.url() : null,
-        thumbnailUrl: options.addImages ? faker.image.url() : null,
+        bannerUrl: null,
+        thumbnailUrl: null,
         createdAt: faker.date.past(),
         createdBy: orgMemberships[Math.floor(Math.random() * orgMemberships.length)].userId,
         modifiedAt: faker.date.past(),
@@ -161,6 +158,25 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
 
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
 
+        const insertLabels: InsertLabelModel[] = Array.from({ length: 5 }).map(() => {
+          const name = organizationsUniqueEnforcer.enforce(() => slugify(faker.company.name(), { lower: true }));
+
+          return {
+            id: nanoid(),
+            organizationId: organization.id,
+            projectId: project.id,
+            lastUsed: faker.date.past(),
+            useCount: Math.floor(Math.random() * 20) + 1,
+            name,
+            color: faker.internet.color(),
+          };
+        });
+
+        labelsCount += insertLabels.length;
+        if (progressCallback) progressCallback('labels', labelsCount, 'inserting');
+
+        const labels = await db.insert(labelsTable).values(insertLabels).onConflictDoNothing().returning();
+
         const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).flatMap((_, index) => {
           const taskDescription = faker.commerce.productDescription();
           const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
@@ -200,6 +216,16 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             summary: `<div class="bn-block-content"><p class="bn-inline-content">${name}</p></div>`,
             keywords: extractKeywords(taskDescription),
             expandable: true,
+            // Selection 1-2 random members
+            assignedTo: projectMemberships
+              .sort(() => 0.5 - Math.random())
+              .slice(0, Math.floor(Math.random() * 2) + 1)
+              .map((m) => m.userId),
+            // Selection 2-4 random labels
+            labels: labels
+              .sort(() => 0.5 - Math.random())
+              .slice(0, Math.floor(Math.random() * 3) + 2)
+              .map((l) => l.id),
             slug: faker.helpers.slugify(name).toLowerCase(),
             order: index + 1,
             // random integer between 0 and 6
@@ -222,25 +248,6 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         if (progressCallback) progressCallback('tasks', tasksCount, 'inserting');
 
         await db.insert(tasksTable).values(insertTasks).onConflictDoNothing();
-
-        const insertLabels: InsertLabelModel[] = Array.from({ length: 5 }).map(() => {
-          const name = organizationsUniqueEnforcer.enforce(() => slugify(faker.company.name(), { lower: true }));
-
-          return {
-            id: nanoid(),
-            organizationId: organization.id,
-            projectId: project.id,
-            lastUsed: faker.date.past(),
-            useCount: Math.floor(Math.random() * 20) + 1,
-            name,
-            color: faker.internet.color(),
-          };
-        });
-
-        labelsCount += insertLabels.length;
-        if (progressCallback) progressCallback('labels', labelsCount, 'inserting');
-
-        await db.insert(labelsTable).values(insertLabels).onConflictDoNothing();
       }
     }
   }

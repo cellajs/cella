@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronUp, Maximize2, Trash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { dateTwitterFormat } from '~/lib/utils';
+import { dateShort, dateTwitterFormat } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -12,6 +12,7 @@ import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import type { Task } from '~/types/app';
+import HeaderInfo from './header-info';
 
 export const TaskHeader = ({
   task,
@@ -56,7 +57,10 @@ export const TaskHeader = ({
         {!isSubTask && task.createdBy && (
           <>
             <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
-            <span className="ml-1 opacity-50 text-sm text-center font-light">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
+            <TooltipButton toolTipContent={dateShort(task.createdAt)} side="bottom" sideOffset={5} hideWhenDetached>
+              <span className="ml-1 opacity-50 text-sm text-center font-light">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
+            </TooltipButton>
+            <HeaderInfo task={task} />
             {/*  in development: show subtask order number to debug drag */}
             {config.mode === 'development' && isSubTask && <span className="ml-1 opacity-50 text-sm text-center font-light">{task.order}</span>}
           </>
