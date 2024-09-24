@@ -1,3 +1,4 @@
+import { config } from 'config';
 import { motion } from 'framer-motion';
 import { ChevronUp, Maximize2, Trash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -56,6 +57,8 @@ export const TaskHeader = ({
           <>
             <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
             <span className="ml-1 opacity-50 text-sm text-center font-light">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
+            {/*  in development: show subtask order number to debug drag */}
+            {config.mode === 'development' && isSubTask && <span className="ml-1 opacity-50 text-sm text-center font-light">{task.order}</span>}
           </>
         )}
 
