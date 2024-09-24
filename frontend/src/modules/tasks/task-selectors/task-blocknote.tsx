@@ -11,9 +11,10 @@ import { useWorkspaceStore } from '~/store/workspace';
 import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+
+import { customSchema } from '~/modules/common/blocknote/blackbote-config';
 import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
-import { schemaWithMentions } from '~/modules/common/blocknote/mention';
 import '~/modules/common/blocknote/styles.css';
 import { taskExpandable } from '~/modules/tasks/helpers';
 import UppyFilePanel from './uppy-file-panel';
@@ -42,7 +43,7 @@ export const TaskBlockNote = ({
   className = '',
 }: TaskBlockNoteProps) => {
   const { t } = useTranslation();
-  const editor = useCreateBlockNote({ schema: schemaWithMentions, trailingBlock: false });
+  const editor = useCreateBlockNote({ schema: customSchema, trailingBlock: false });
 
   const { pathname } = useLocation();
   const { members } = useWorkspaceStore();

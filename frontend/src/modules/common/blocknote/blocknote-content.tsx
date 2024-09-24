@@ -1,16 +1,17 @@
 import { DragHandleButton, GridSuggestionMenuController, SideMenu, SideMenuController } from '@blocknote/react';
+import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blackbote-config';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { getMentionMenuItems, type schemaWithMentions } from '~/modules/common/blocknote/mention';
+import { getMentionMenuItems } from '~/modules/common/blocknote/mention';
 import type { Member } from '~/types/common';
 
 export const BlockNoteForTaskContent = ({
   editor,
   members,
   subTask = false,
-}: { editor: typeof schemaWithMentions.BlockNoteEditor; members: Member[]; subTask?: boolean }) => (
+}: { editor: CustomBlockNoteSchema; members: Member[]; subTask?: boolean }) => (
   <>
-    <CustomSlashMenu />
+    <CustomSlashMenu editor={editor} />
     {!subTask && (
       <SideMenuController
         sideMenu={(props) => (
