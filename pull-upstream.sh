@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Navigate to the repository
+# (e.g. if the script is in a directory called "scripts", point it to the root like: cd "$(dirname "$0")/..")
+cd "$(dirname "$0")"  # Ensures the script runs in its (root) directory
+
 # Path to the configuration file (can be .json, .ts, or .js)
 CONFIG_FILE="cella.config.json"
 
@@ -36,9 +40,6 @@ fi
 
 # Output the extracted values for debugging purposes
 echo "Ignoring files listed in: $IGNORE_FILE"
-
-# Navigate to the repository
-cd "$(dirname "$0")"  # Ensures the script runs in its directory
 
 # Fetch upstream changes
 git fetch upstream
