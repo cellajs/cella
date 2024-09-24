@@ -32,7 +32,6 @@ frontend/src/modules/marketing/about/hero.tsx
 frontend/src/modules/marketing/about/index.tsx
 frontend/src/modules/marketing/about/why.tsx
 frontend/src/modules/marketing/footer.tsx
-frontend/src/modules/marketing/nav.tsx
 frontend/src/modules/users/profile-page-content.tsx
 frontend/src/routes/index.tsx
 frontend/src/types/app.ts
