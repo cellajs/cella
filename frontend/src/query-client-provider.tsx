@@ -25,12 +25,19 @@ export const QueryClientProvider = ({
   useEffect(() => {
     if (networkMode === 'offline') {
       (async () => {
+        // Invalidate and prefetch me and menu
+        await queryClient.invalidateQueries({
+          queryKey: ['me'],
+        });
         queryClient.prefetchQuery({
           queryKey: ['me'],
           queryFn: getAndSetMe,
           gcTime: GC_TIME,
         });
-        const menu = await queryClient.ensureQueryData({
+        await queryClient.invalidateQueries({
+          queryKey: ['menu'],
+        });
+        const menu = await queryClient.fetchQuery({
           queryKey: ['menu'],
           queryFn: getAndSetMenu,
           gcTime: GC_TIME,
@@ -39,6 +46,10 @@ export const QueryClientProvider = ({
         for (const section of Object.values(menu)) {
           for (const item of section) {
             if (item.entity === 'organization') {
+              // Invalidate and prefetch organization and members
+              await queryClient.invalidateQueries({
+                queryKey: ['organizations', item.id],
+              });
               queryClient.prefetchQuery(
                 queryOptions({
                   queryKey: ['organizations', item.id],
@@ -46,7 +57,10 @@ export const QueryClientProvider = ({
                   gcTime: GC_TIME,
                 }),
               );
-              queryClient.ensureQueryData(
+              await queryClient.invalidateQueries({
+                queryKey: ['members', item.id, item.entity],
+              });
+              queryClient.prefetchQuery(
                 queryOptions({
                   queryKey: ['members', item.id, item.entity],
                   queryFn: async () =>
