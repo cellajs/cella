@@ -101,7 +101,7 @@ const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) =>
                 <span>{Type.label}</span>
               </div>
               <div className="flex items-center">
-                {selectedType?.value === Type.value && <Check size={16} className="text-success" />}
+                <Check size={16} className={`text-success ${!selectedType || (selectedType.value !== Type.value && 'invisible')}`} />
                 {!isSearching && <span className="max-sm:hidden text-xs ml-3 opacity-50 mr-1">{index + 1}</span>}
               </div>
             </CommandItem>
