@@ -41,7 +41,7 @@ if git diff --check > /dev/null; then
     git add .
 
     # Commit the merge
-    git commit -m "Merged upstream changes, keeping files listed in $IGNORE_FILE."
+    # git commit -m "Merged upstream changes, keeping files listed in $IGNORE_FILE."
 
     # Push changes to your fork
     # git push origin development
