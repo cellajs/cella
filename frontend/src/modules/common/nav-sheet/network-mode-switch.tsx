@@ -1,50 +1,20 @@
-import { queryOptions } from '@tanstack/react-query';
 import { config } from 'config';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getMembers } from '~/api/general';
-import { getOrganization } from '~/api/organizations';
-import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/taosts-show';
 import { Switch } from '~/modules/ui/switch';
-import { useNavigationStore } from '~/store/navigation';
-import { useUserStore } from '~/store/user';
+import { useGeneralStore } from '~/store/general';
 
 export const NetworkModeSwitch = () => {
   const { t } = useTranslation();
-  const { networkMode, setNetworkMode } = useUserStore();
-  const { menu } = useNavigationStore();
+  const { networkMode, setNetworkMode } = useGeneralStore();
 
-  useEffect(() => {
-    if (networkMode === 'online') return;
+  const onCheckedChange = (isOffline: boolean) => {
+    // setTimeout is used to show the toast after the switch is toggled (QueryProvider updates)
+    setTimeout(() => {
+      showToast(t(`common:offline_mode_${isOffline ? 'on' : 'off'}.text`, { appName: config.name }), 'info');
+    }, 0);
 
-    for (const section of Object.values(menu)) {
-      for (const item of section) {
-        if (item.entity === 'organization') {
-          queryClient.ensureQueryData(
-            queryOptions({
-              queryKey: ['organizations', item.id],
-              queryFn: () => getOrganization(item.id),
-            }),
-          );
-          queryClient.ensureQueryData(
-            queryOptions({
-              queryKey: ['members', item.id, item.entity],
-              queryFn: async () =>
-                getMembers({
-                  idOrSlug: item.id,
-                  entityType: item.entity,
-                }),
-            }),
-          );
-        }
-      }
-    }
-  }, [networkMode]);
-
-  const onCheckedChange = (mode: boolean) => {
-    showToast(t(`common:offline_mode_${mode ? 'on' : 'off'}.text`, { appName: config.name }), 'info');
-    setNetworkMode(mode ? 'offline' : 'online');
+    setNetworkMode(isOffline ? 'offline' : 'online');
   };
 
   return (

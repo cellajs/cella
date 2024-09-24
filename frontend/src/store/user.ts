@@ -6,13 +6,10 @@ import { i18n } from '~/lib/i18n';
 import type { MeUser, User } from '~/types/common';
 
 type PartialUser = Partial<MeUser>;
-type NetworkMode = 'online' | 'offline';
 
 interface UserState {
   user: MeUser;
   lastUser: PartialUser | null;
-  networkMode: NetworkMode;
-  setNetworkMode: (mode: NetworkMode) => void;
   clearLastUser: () => void;
   setUser: (user: MeUser) => void;
   setUserWithoutSetLastUser: (user: MeUser) => void;
@@ -25,12 +22,6 @@ export const useUserStore = create<UserState>()(
       immer((set) => ({
         user: null as unknown as MeUser,
         lastUser: null,
-        networkMode: 'online',
-        setNetworkMode: (mode) => {
-          set((state) => {
-            state.networkMode = mode;
-          });
-        },
         clearLastUser: () => {
           set((state) => {
             state.lastUser = null;

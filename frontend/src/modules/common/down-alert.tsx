@@ -1,50 +1,62 @@
 import { config } from 'config';
 import { CloudOff, Construction, X } from 'lucide-react';
-import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import { healthCheck } from '~/lib/health-check';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
+import { useGeneralStore } from '~/store/general';
 
 export const DownAlert = () => {
   const { t } = useTranslation();
   const { downAlert, setDownAlert } = useAlertStore();
+  const { networkMode } = useGeneralStore();
+  const { isOnline } = useOnlineManager();
+  const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
 
   // Check if the user is offline or online and handle accordingly
   useEffect(() => {
-    let isMounted = true;
-
-    const updateOnlineStatus = async () => {
-      if (navigator.onLine && downAlert === 'offline') {
+    (async () => {
+      if (isOnline && downAlert === 'offline') {
         setDownAlert(null);
       }
-      if (!navigator.onLine && !downAlert) {
+      if (!isOnline && !downAlert && !isNetworkAlertClosed) {
         setDownAlert('offline');
-
-        const isBackendOnline = await healthCheck(`${config.backendUrl}/ping`);
-        if (isBackendOnline && isMounted) {
-          setDownAlert(null);
+        if (networkMode === 'online') {
+          const isBackendOnline = await healthCheck(`${config.backendUrl}/ping`);
+          if (isBackendOnline) {
+            setDownAlert(null);
+          }
         }
       }
-    };
-
-    // Listen for online/offline changes
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-
-    return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
-      isMounted = false;
-    };
-  }, [downAlert]);
+    })();
+  }, [downAlert, isOnline, networkMode, isNetworkAlertClosed]);
 
   const cancelAlert = () => {
     setDownAlert(null);
   };
 
+  const closeNetworkAlert = () => {
+    cancelAlert();
+    setIsNetworkAlertClosed(true);
+  };
+
   if (!downAlert) return;
+
+  const offlineText =
+    networkMode === 'offline' ? (
+      <Trans
+        i18nKey="common:offline_mode.text"
+        t={t}
+        components={{
+          site_anchor: <button type="button" className="underline" onClick={closeNetworkAlert} />,
+        }}
+      />
+    ) : (
+      t('common:offline.text')
+    );
 
   return (
     <div className="fixed z-[2000] max-sm:bottom-20 bottom-4 left-4 right-4 border-0 justify-center">
@@ -57,7 +69,7 @@ export const DownAlert = () => {
         <AlertDescription className="pr-8 font-light">
           <strong>{downAlert === 'maintenance' ? t('common:maintenance_mode') : t('common:offline')}</strong>
           <span className="max-sm:hidden mx-2">&#183;</span>
-          <span className="max-sm:hidden">{downAlert === 'maintenance' ? t('common:maintenance_mode.text') : t('common:offline_mode.text')}</span>
+          <span className="max-sm:hidden">{downAlert === 'maintenance' ? t('common:maintenance_mode.text') : offlineText}</span>
           {config.statusUrl && (
             <span>
               <span className="max-sm:hidden ml-1">Try again later or check our server</span>
