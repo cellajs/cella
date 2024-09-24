@@ -59,7 +59,7 @@ const ResetPassword = () => {
 
   // Submit new password
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     const { password } = values;
     resetPassword({ token, password });

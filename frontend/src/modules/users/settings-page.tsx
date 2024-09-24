@@ -83,7 +83,7 @@ const UserSettingsPage = () => {
   const invertClass = mode === 'dark' ? 'invert' : '';
 
   const onDeleteSession = (ids: string[]) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     deleteMySessions(ids);
   };

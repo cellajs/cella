@@ -64,7 +64,7 @@ export const WaitListForm = ({
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     createRequest({
       email: values.email,

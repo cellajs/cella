@@ -11,17 +11,9 @@ const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
 import { renderAscii } from '~/lib/ascii';
-import { queryClient } from '~/lib/router';
 import router from '~/lib/router';
 import { initSentry } from '~/lib/sentry';
-
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-
-// TODO: tune this and use config to determine if we should use localStorage or sessionStorage
-const localStoragePersister = createSyncStoragePersister({
-  storage: window.sessionStorage,
-});
+import { QueryClientProvider } from './query-client-provider';
 
 // Render ASCII logo in console
 renderAscii();
@@ -32,8 +24,8 @@ initSentry();
 ReactDOM.createRoot(root).render(
   <StrictMode>
     <ThemeManager />
-    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: localStoragePersister }}>
+    <QueryClientProvider>
       <RouterProvider router={router} />
-    </PersistQueryClientProvider>
+    </QueryClientProvider>
   </StrictMode>,
 );

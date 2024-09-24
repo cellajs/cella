@@ -24,7 +24,7 @@ const NewsletterForm = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     let email = formRef.current?.email.value;
     if (!email) return;

@@ -78,7 +78,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     mutate(values, {
       onSuccess: (updatedOrganization) => {

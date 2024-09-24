@@ -155,7 +155,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   };
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     for (const index of indexes) {
       if (column.key === 'role') updateMemberRole(changedRows[index]);

@@ -45,7 +45,7 @@ const AcceptInvite = () => {
   });
 
   const onSubmit = () => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     acceptInvite({ token });
   };

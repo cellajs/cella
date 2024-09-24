@@ -96,7 +96,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   }, [form.unsavedChanges]);
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     create(values);
   };
