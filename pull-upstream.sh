@@ -33,7 +33,7 @@ else
 fi
 
 # Check if the values were extracted successfully
-if [[-z "$IGNORE_FILE" ]]; then
+if [[ -z "$IGNORE_FILE" ]]; then
     echo "Failed to extract file paths from the configuration file."
     exit 1
 fi
