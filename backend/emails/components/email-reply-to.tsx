@@ -9,13 +9,13 @@ const link = {
   lineHeight: '1.13rem',
 };
 
-export const EmailReplyTo = ({ email }: { email?: string }) => (
+export const EmailReplyTo = ({ email, emailText }: { email?: string; emailText?: string }) => (
   <>
     <AppLogo />
     <Text style={{ marginTop: '1.25rem', gap: '0.25rem', textAlign: 'center' as const }}>
       {email && (
         <Link style={link} href={`mailto:${email}`}>
-          {i18n.t('backend:email.inviter_email')}
+          {emailText ? emailText : i18n.t('backend:email.inviter_email')}
         </Link>
       )}
       ・

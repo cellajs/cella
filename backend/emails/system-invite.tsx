@@ -22,14 +22,14 @@ interface Props extends BasicTemplateType {
 const productionUrl = config.productionUrl;
 const appName = config.name;
 
-export const InviteSystemEmail = ({ userName, userLanguage: lng, userThumbnailUrl, inviteBy, inviterEmail, token }: Props) => {
+export const InviteSystemEmail = ({ userName, userLanguage: lng, inviteBy, inviterEmail, token }: Props) => {
   return (
     <EmailContainer
       previewText={i18n.t('backend:email.invite_preview_text', { appName, lng })}
       containerStyle={{
         marginTop: '2.5rem',
         marginBottom: '2.5rem',
-        width: '32rem',
+        width: '50rem',
       }}
     >
       <EmailHeader
@@ -44,7 +44,11 @@ export const InviteSystemEmail = ({ userName, userLanguage: lng, userThumbnailUr
       />
       <Section
         style={{
-          borderRadius: '0.25rem',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          borderRadius: '.75rem',
           borderWidth: '1px',
           borderStyle: 'solid',
           borderColor: '#eaeaea',
@@ -56,7 +60,7 @@ export const InviteSystemEmail = ({ userName, userLanguage: lng, userThumbnailUr
 
         <Row>
           <Column align="right">
-            <Avatar name={userThumbnailUrl} type="user" />
+            <Avatar name={userName} type="user" />
           </Column>
           <Column align="center">
             <Img src={`${productionUrl}/static/email/arrow.png`} width="12" height="9" alt="invited to" />
