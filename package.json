@@ -25,7 +25,9 @@
     "check:fix": "pnpm dlx @biomejs/biome check --write .",
     "build": "pnpm run clean && turbo build --filter backend --filter frontend --filter tus",
     "build:dev": "turbo build:dev --filter backend --filter frontend --filter tus",
-    "start": "turbo start --filter backend --filter frontend --filter tus"
+    "start": "turbo start --filter backend --filter frontend --filter tus",
+    "pull-upstream": "./pull-upstream.sh",
+    "list-divergent-files": "./list-divergent-files.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.1",
