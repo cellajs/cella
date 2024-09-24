@@ -34,6 +34,7 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen
     const targetIndex = currentIndex + (side === 'left' ? -1 : 1);
     const slug = projects[targetIndex].slug;
     navigate({
+      to: '.',
       params,
       replace: true,
       search: (prev) => ({

@@ -20,17 +20,22 @@ const BoardSearch = () => {
     inputRef.current?.focus();
   };
 
+  // TODO refactor this
   useEffect(() => {
     const q = debouncedSearchQuery;
     if (!q.length) {
       navigate({
+        to: '.',
         search: (prev) => {
           const { q, ...rest } = prev;
           return rest;
         },
       });
     } else {
-      navigate({ search: (prev) => ({ ...prev, q }) });
+      navigate({
+        to: '.',
+        search: (prev) => ({ ...prev, q }),
+      });
     }
   }, [debouncedSearchQuery]);
 

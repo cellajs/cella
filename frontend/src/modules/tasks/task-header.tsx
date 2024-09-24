@@ -48,7 +48,7 @@ export const TaskHeader = ({
         </Button>
       )}
       <motion.div
-        className="flex flex-row gap-1 w-full items-center"
+        className="flex flex-row gap-1 w-full items-center ml-1"
         initial={initialAndExitParams}
         animate={{ opacity: 1, y: 0 }}
         exit={initialAndExitParams}

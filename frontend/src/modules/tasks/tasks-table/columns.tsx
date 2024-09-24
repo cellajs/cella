@@ -28,6 +28,7 @@ export const useColumns = () => {
 
   const setPreviewSearch = (id: string, key: string) => {
     navigate({
+      to: '.',
       replace: true,
       resetScroll: false,
       search: (prev) => ({

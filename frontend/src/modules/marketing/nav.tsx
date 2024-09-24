@@ -92,7 +92,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           >
             {/* <UserLanguage /> */}
 
-            <UserTheme className="max-xs:hidden scale-125 mr-2" />
+            <UserTheme className="max-xs:hidden scale-125 mr-2 !bg-background/30" />
 
             <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
               {t('common:sign_in')}

@@ -67,7 +67,7 @@ const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
             </div>
           )}
 
-          <div className="-mx-2 w-[calc(100%+1.25rem)]">
+          <div className="-mx-2 mt-2 w-[calc(100%+1.25rem)]">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (
                 <SubTask mode={mode} key={task.id} task={task} />

@@ -288,6 +288,7 @@ export default function Board() {
 
   const handleOpenTaskSheet = (taskId: string) => {
     navigate({
+      to: '.',
       replace: true,
       resetScroll: false,
       search: (prev) => ({

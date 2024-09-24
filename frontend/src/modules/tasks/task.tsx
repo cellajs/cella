@@ -149,7 +149,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
       >
         <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-2 pr-3 space-between flex flex-col relative">
           {/* To prevent on expand animation */}
-          <motion.div className="flex flex-col gap-1" layout transition={{ duration: 0 }}>
+          <motion.div className="flex flex-col" layout transition={{ duration: 0 }}>
             {isExpanded && (
               <TaskHeader
                 task={task}

@@ -179,7 +179,7 @@
   "invite_sign_in": "Sign in to accept the invitation",
   "invite_sign_in_or_up": "Sign in or sign up to accept the invitation",
   "invite_users.text": "Invited users will receive an email to accept the invitation.",
-  "in_waitlist": "Joined {{appName}} waitlist for early access.",
+  "in_waitlist": "{{appName}} will soon contact you for early access!",
   "is_built_by": "is built by",
   "join": "Join",
   "joined": "Joined",

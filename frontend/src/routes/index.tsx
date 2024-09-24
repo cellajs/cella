@@ -1,6 +1,6 @@
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailWithTokenRoute } from '~/routes/auth';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
-import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
+import { AboutRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
 import { OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system';
 import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
@@ -13,7 +13,6 @@ export const routeTree = rootRoute.addChildren([
     UnsubscribeRoute,
     ContactRoute,
     LegalRoute,
-    AccessibilityRoute,
     ErrorNoticeRoute,
     SignOutRoute,
     AuthRoute.addChildren([SignInRoute, ResetPasswordRoute, VerifyEmailRoute.addChildren([VerifyEmailWithTokenRoute]), acceptInviteRoute]),

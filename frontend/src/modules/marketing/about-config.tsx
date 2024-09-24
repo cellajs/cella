@@ -21,10 +21,7 @@ export const footerSections = [
   },
 ];
 
-export const legalLinks = [
-  { title: 'common:legal', href: '/legal' },
-  { title: 'common:accessibility', href: '/accessibility' },
-];
+export const legalLinks = [{ title: 'common:legal', href: '/legal' }];
 
 interface PricingPlan {
   id: string;
@@ -37,8 +34,8 @@ interface PricingPlan {
 }
 
 export const pricingPlans: PricingPlan[] = [
-  { id: 'free', action: 'waitlist_request', priceId: null, featureCount: 3, borderColor: '', discount: 'Free' },
-  { id: 'pro', action: 'contact_us', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
+  { id: 'free', action: 'waitlist_request', priceId: null, featureCount: 4, borderColor: '', discount: 'Free' },
+  { id: 'pro', action: 'contact_us', priceId: null, featureCount: 5, borderColor: 'ring-4 ring-primary/5', popular: true },
 ];
 
 interface FaqItem {

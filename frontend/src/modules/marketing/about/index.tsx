@@ -70,9 +70,9 @@ const About = () => {
         {/* Hero landing */}
         <Hero key={'hero'} title="about:title_1" subtitle="about:subtitle" text="about:text_1">
           {joinedToWaitlist ? (
-            <span className="flex gap-3 justify-between items-center">
-              {t('common:in_waitlist', { appName: config.name })}
-              <Check className="text-success" size={20} />
+            <span className="flex gap-2 justify-between items-center border-2 rounded-full px-4 py-3.5 ring-4 ring-primary/5 border-success">
+              <Check className="text-success w-8" size={20} />
+              <span className="opacity-60">{t('common:in_waitlist', { appName: config.name })}</span>
             </span>
           ) : (
             <WaitListForm

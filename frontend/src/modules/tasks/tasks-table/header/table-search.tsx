@@ -37,6 +37,7 @@ export function TaskTableSearch() {
     if (!q.length) {
       setSearchQuery('');
       navigate({
+        to: '.',
         search: (prev) => {
           const { q, ...rest } = prev;
           return rest;
@@ -44,7 +45,10 @@ export function TaskTableSearch() {
       });
     } else {
       setSearchQuery(q);
-      navigate({ search: (prev) => ({ ...prev, q }) });
+      navigate({
+        to: '.',
+        search: (prev) => ({ ...prev, q }),
+      });
     }
   }, [debouncedSearchQuery]);
 
