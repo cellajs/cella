@@ -45,33 +45,32 @@ export const QueryClientProvider = ({
 
         for (const section of Object.values(menu)) {
           for (const item of section) {
-            if (item.entity === 'organization') {
-              // Invalidate and prefetch organization and members
-              await queryClient.invalidateQueries({
-                queryKey: ['organizations', item.id],
-              });
-              queryClient.prefetchQuery(
-                queryOptions({
-                  queryKey: ['organizations', item.id],
-                  queryFn: () => getOrganization(item.id),
-                  gcTime: GC_TIME,
-                }),
-              );
-              await queryClient.invalidateQueries({
+            const entityKey = `${item.entity}s`;
+            // Invalidate and prefetch organization and members
+            await queryClient.invalidateQueries({
+              queryKey: [entityKey, item.id],
+            });
+            queryClient.prefetchQuery(
+              queryOptions({
+                queryKey: [entityKey, item.id],
+                queryFn: () => getOrganization(item.id),
+                gcTime: GC_TIME,
+              }),
+            );
+            await queryClient.invalidateQueries({
+              queryKey: ['members', item.id, item.entity],
+            });
+            queryClient.prefetchQuery(
+              queryOptions({
                 queryKey: ['members', item.id, item.entity],
-              });
-              queryClient.prefetchQuery(
-                queryOptions({
-                  queryKey: ['members', item.id, item.entity],
-                  queryFn: async () =>
-                    getMembers({
-                      idOrSlug: item.id,
-                      entityType: item.entity,
-                    }),
-                  gcTime: GC_TIME,
-                }),
-              );
-            }
+                queryFn: async () =>
+                  getMembers({
+                    idOrSlug: item.id,
+                    entityType: item.entity,
+                  }),
+                gcTime: GC_TIME,
+              }),
+            );
           }
         }
       })();
