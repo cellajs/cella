@@ -44,7 +44,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
   });
 
   const onDelete = () => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     deleteSelf();
   };

@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
-import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
@@ -115,7 +114,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                       {name !== 'timezone' && name !== 'country' && <AvatarWrap id={option.value} name={name} url={option.url} />}
                       {renderOption ? renderOption(option) : <> {option.label}</>}
                     </div>
-                    <Check size={16} className={cn('text-success', formValue === option.value ? 'opacity-100' : 'opacity-0')} />
+                    <Check size={16} className={`text-success ${formValue !== option.value && 'invisible'}`} />
                   </CommandItem>
                 ))}
               </CommandGroup>

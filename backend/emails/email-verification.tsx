@@ -3,7 +3,6 @@ import { Section, Text } from 'jsx-email';
 import { config } from 'config';
 import { i18n } from '../../backend/src/lib/i18n';
 
-import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailReplyTo } from './components/email-reply-to';
@@ -31,10 +30,9 @@ export const VerificationEmail = ({ userLanguage: lng, verificationLink = baseUr
         lineHeight: '1.5',
       }}
     >
-      <AppLogo />
       <Section
         style={{
-          borderRadius: '0.25rem',
+          borderRadius: '0.75rem',
           borderWidth: '1px',
           borderStyle: 'solid',
           borderColor: '#eaeaea',

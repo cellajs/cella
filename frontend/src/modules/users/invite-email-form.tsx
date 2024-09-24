@@ -79,7 +79,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
   });
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     invite(values);
   };

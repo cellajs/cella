@@ -3,7 +3,6 @@ import { Link, Section, Text } from 'jsx-email';
 import { config } from 'config';
 import { i18n } from '../../backend/src/lib/i18n';
 
-import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailReplyTo } from './components/email-reply-to';
@@ -28,18 +27,16 @@ export const ResetPasswordEmail = ({ userName, userLanguage: lng, resetPasswordL
         borderColor: '#f0f0f0',
         color: '#404040',
         lineHeight: '1.5',
-        width: '32rem',
+        width: '42rem',
       }}
     >
-      <AppLogo />
       <Section
         style={{
-          borderRadius: '0.25rem',
+          borderRadius: '.75rem',
           borderWidth: '1px',
           borderStyle: 'solid',
           borderColor: '#eaeaea',
           padding: '1.5rem',
-          marginTop: '2rem',
         }}
       >
         <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />
@@ -51,10 +48,20 @@ export const ResetPasswordEmail = ({ userName, userLanguage: lng, resetPasswordL
           }}
         />
         <EmailButton ButtonText={i18n.t('common:reset_password', { lng })} href={resetPasswordLink} />
-        <Text>
+        <Text
+          style={{
+            fontSize: '0.75rem',
+          }}
+        >
           {i18n.t('backend:email.reset_password_text_2', { lng })} <Link href={resetPasswordUrl}>{resetPasswordUrl}</Link>
         </Text>
-        <Text>{i18n.t('backend:email.reset_password_text_3', { lng })}</Text>
+        <Text
+          style={{
+            fontSize: '0.75rem',
+          }}
+        >
+          {i18n.t('backend:email.reset_password_text_3', { lng })}
+        </Text>
       </Section>
       <EmailReplyTo />
       <Footer />

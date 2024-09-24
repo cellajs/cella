@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
 
-import { Command } from '@commander-js/extra-typings';
 import { config } from 'config';
 import { db } from '#/db/db';
 import { nanoid } from '#/lib/nanoid';
@@ -13,9 +12,6 @@ import { hashPasswordWithArgon } from '#/lib/argon2id';
 import { generateUnsubscribeToken } from '#/lib/unsubscribe-token';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
-
-const seedCommand = new Command().option('--addImages', 'Add images to org').parse(process.argv);
-const options = seedCommand.opts();
 
 // Seed organizations with data
 export const organizationsSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
@@ -39,13 +35,13 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
       id: nanoid(),
       name,
       slug: faker.helpers.slugify(name).toLowerCase(),
-      bannerUrl: options.addImages ? faker.image.url() : null,
+      bannerUrl: null,
       color: faker.internet.color(),
       chatSupport: faker.datatype.boolean(),
       country: faker.location.country(),
       createdAt: faker.date.past(),
       logoUrl: faker.image.url(),
-      thumbnailUrl: options.addImages ? faker.image.url() : null,
+      thumbnailUrl: null,
     };
   });
 
@@ -89,14 +85,14 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         id: nanoid(),
         firstName,
         lastName,
-        thumbnailUrl: options.addImages ? faker.image.avatar() : null,
+        thumbnailUrl: null,
         language: config.defaultLanguage,
         name,
         email,
         unsubscribeToken: generateUnsubscribeToken(email),
         hashedPassword,
         slug,
-        avatarUrl: options.addImages ? faker.image.avatar() : null,
+        avatarUrl: null,
         createdAt: faker.date.past(),
       };
     });

@@ -303,12 +303,15 @@ const organizationsRoutes = app
       const unsubscribeToken = unsafeUser ? unsafeUser.unsubscribeToken : '';
       const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`;
       // generating email html
-      const emailHtml = await render(organizationsNewsletter({ userLanguage: user.language, subject, content, unsubscribeLink }));
+      const emailHtml = await render(
+        organizationsNewsletter({ userLanguage: user.language, subject, content, unsubscribeLink, authorEmail: user.email, orgName: 'SOME NAME' }),
+      );
       emailSender.send(env.SEND_ALL_TO_EMAIL, user.newsletter ? subject : 'User unsubscribed from newsletter', emailHtml);
     } else {
       // Get members
       const organizationsMembersEmails = await db
         .select({
+          membershipId: membershipsTable.userId,
           email: usersTable.email,
           unsubscribeToken: usersTable.unsubscribeToken,
           newsletter: usersTable.newsletter,
@@ -326,9 +329,25 @@ const organizationsRoutes = app
 
       for (const member of organizationsMembersEmails) {
         if (!member.newsletter) continue;
+        const [organization] = await db
+          .select({
+            name: organizationsTable.name,
+          })
+          .from(organizationsTable)
+          .innerJoin(membershipsTable, and(eq(membershipsTable.userId, member.membershipId)))
+          .where(eq(organizationsTable.id, membershipsTable.organizationId));
         const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${member.unsubscribeToken}`;
         // generating email html
-        const emailHtml = await render(organizationsNewsletter({ userLanguage: member.language, subject, content, unsubscribeLink }));
+        const emailHtml = await render(
+          organizationsNewsletter({
+            userLanguage: member.language,
+            subject,
+            content,
+            unsubscribeLink,
+            authorEmail: user.email,
+            orgName: organization?.name ?? 'Organization',
+          }),
+        );
 
         emailSender.send(member.email, subject, emailHtml);
       }

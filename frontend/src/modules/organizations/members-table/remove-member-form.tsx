@@ -32,7 +32,7 @@ const RemoveMembersForm = ({ members, entityId, entityType = 'organization', cal
   });
 
   const onRemoveMember = () => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:offline.text'));
+    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     removeMembers({
       idOrSlug: entityId,
