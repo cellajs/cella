@@ -195,7 +195,7 @@ const SelectStatus = ({
                 <span className={`${selectedStatus.value === status.value ? statusTextColors[status.value] : ''}`}>{t(`app:${status.status}`)}</span>
               </div>
               <div className="flex items-center">
-                {selectedStatus.value === status.value && <Check size={16} className="text-success" />}
+                <Check size={16} className={`text-success ${selectedStatus.value !== status.value && 'invisible'}`} />
                 {!searchValue && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
               </div>
             </CommandItem>

@@ -138,7 +138,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
                 </div>
 
                 <div className="flex items-center">
-                  {selectedMembers.some((u) => u.id === user.id) && <Check size={16} className="text-success" />}
+                  <Check size={16} className={`text-success ${!selectedMembers.some((u) => u.id === user.id) && 'invisible'}`} />
                   {!searchValue.length && !showAll && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
                 </div>
               </CommandItem>

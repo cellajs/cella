@@ -84,7 +84,7 @@ export const SelectLanguages = ({ onChange }: SelectLanguagesProps) => {
                     <CountryFlag countryCode={language.value} imgType="png" className="mr-2 shrink-0" />
                     <span className="truncate">{language.label}</span>
                   </div>
-                  {selectedLanguages.includes(language.value) && <Check className="h-4 w-4 text-success" />}
+                  <Check size={16} className={`text-success ${!selectedLanguages.some((u) => u === language.value) && 'invisible'}`} />
                 </CommandItem>
               ))}
             </CommandGroup>

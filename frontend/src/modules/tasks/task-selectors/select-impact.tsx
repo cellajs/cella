@@ -102,7 +102,7 @@ const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: Select
                 <span>{Impact.label}</span>
               </div>
               <div className="flex items-center">
-                {selectedImpact?.value === Impact.value && <Check size={16} className="text-success" />}
+                <Check size={16} className={`text-success ${!selectedImpact || (selectedImpact.value !== Impact.value && 'invisible')}`} />
                 {!isSearching && <span className="max-sm:hidden text-xs ml-3 opacity-50 mr-1">{index + 1}</span>}
               </div>
             </CommandItem>

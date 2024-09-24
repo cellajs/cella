@@ -136,7 +136,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
                         <AvatarWrap type={user.entity} className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
                         <span className="group-hover:underline underline-offset-4 truncate font-medium">{user.name}</span>
                       </div>
-                      <Check size={16} className={`text-success ${selected.some((el) => el === user.email) ? 'opacity-100' : 'opacity-0'}`} />
+                      <Check size={16} className={`text-success ${!selected.some((u) => u === user.email) && 'invisible'}`} />
                     </CommandItem>
                   ))}
                 </CommandGroup>
