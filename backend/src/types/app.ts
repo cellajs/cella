@@ -1,8 +1,8 @@
+import type { User } from 'lucia';
 import type { MembershipModel } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
 import type { ProjectModel } from '#/db/schema/projects';
 import type { WorkspaceModel } from '#/db/schema/workspaces';
-import type { User } from 'lucia';
 
 // Middleware env is app-specific
 export type Env = {

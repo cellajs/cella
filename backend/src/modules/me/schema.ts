@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/lib/common-schemas';
 import { config } from 'config';
+import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/lib/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
