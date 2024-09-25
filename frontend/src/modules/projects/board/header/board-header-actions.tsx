@@ -27,7 +27,7 @@ const WorkspaceActions = ({ createNewProject, openLabelsSheet, openSettingsSheet
 
       <DropdownMenu>
         <DropdownMenuTrigger className="md:hidden" asChild>
-          <Button variant="outline" aria-label="Workspace options">
+          <Button variant="ghost" aria-label="Workspace options">
             <EllipsisVertical size={16} />
           </Button>
         </DropdownMenuTrigger>
