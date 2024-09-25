@@ -123,12 +123,14 @@ export default function Board() {
   }, [project, projects]);
 
   const queries = queryClient.getQueriesData({ queryKey: ['boardTasks'] });
+
   const tasks = useMemo(() => {
     return queries.flatMap((el) => {
       const [, data] = el as [string[], undefined | { items: Task[] }];
       return data?.items ?? [];
     });
   }, [queries]);
+
   const [currentTask] = useMemo(() => {
     const taskId = taskIdPreview ? taskIdPreview : focusedTaskId;
     return tasks.filter((t) => t.id === taskId);
@@ -292,6 +294,7 @@ export default function Board() {
   };
 
   const handleOpenTaskSheet = (taskId: string) => {
+    if (!focusedTaskId || focusedTaskId !== taskId) setFocusedTaskId(taskId);
     navigate({
       to: '.',
       replace: true,
