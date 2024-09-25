@@ -34,7 +34,7 @@ interface BoardColumnProps {
   createForm: boolean;
 }
 
-const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
+export const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
   return queryOptions({
     queryKey: ['boardTasks', projectId],
     queryFn: async () =>

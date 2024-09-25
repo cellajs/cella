@@ -3,7 +3,7 @@ import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
-import { visualizer } from 'rollup-plugin-visualizer';
+// import { visualizer } from 'rollup-plugin-visualizer';
 import { type UserConfig, defineConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -65,7 +65,7 @@ export default defineConfig(() => {
           pure_funcs: ['console.debug'], // Removes console.debug
         },
       }),
-      visualizer({ open: true, gzipSize: true }),
+      // visualizer({ open: true, gzipSize: true }),
     ],
     resolve: {
       alias: {
@@ -85,7 +85,8 @@ export default defineConfig(() => {
       disable: !config.has.pwa,
       devOptions: {
         enabled: false,
-        type: 'module',
+        navigateFallback: 'index.html',
+        suppressWarnings: true,
       },
       manifest: {
         name: config.name,
@@ -113,8 +114,11 @@ export default defineConfig(() => {
         ],
       },
       workbox: {
-        globPatterns: config.mode === 'production' ? ['**/*.{js,css,html,json,svg,png}'] : [],
-        globIgnores: ['/public/static/flags/**/*'],
+        globPatterns: ['**/*.{js,css,html,svg,png,svg,ico}'],
+        globIgnores: ['static/flags/**/*'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
       },
     }),
   );

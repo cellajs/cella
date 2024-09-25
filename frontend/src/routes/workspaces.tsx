@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { Suspense, lazy } from 'react';
@@ -27,14 +28,31 @@ export const WorkspaceRoute = createRoute({
   staticData: { pageTitle: 'Workspace', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
-  loader: async ({ params: { idOrSlug } }) => {
-    const workspaceData = await queryClient.ensureQueryData(workspaceQueryOptions(idOrSlug));
-    useWorkspaceStore.setState({
-      workspace: workspaceData.workspace,
-      projects: workspaceData.projects,
-      labels: workspaceData.labels,
-      members: workspaceData.members,
-    });
+  loader: ({ params: { idOrSlug } }) => {
+    const queryOptions = workspaceQueryOptions(idOrSlug);
+    const cachedData = queryClient.getQueryData(queryOptions.queryKey);
+    if (cachedData) {
+      useWorkspaceStore.setState({
+        workspace: cachedData.workspace,
+        projects: cachedData.projects,
+        labels: cachedData.labels,
+        members: cachedData.members,
+      });
+    }
+    // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
+    return (
+      cachedData ??
+      (onlineManager.isOnline()
+        ? queryClient.fetchQuery(queryOptions).then((data) => {
+            useWorkspaceStore.setState({
+              workspace: data.workspace,
+              projects: data.projects,
+              labels: data.labels,
+              members: data.members,
+            });
+          })
+        : undefined)
+    );
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {

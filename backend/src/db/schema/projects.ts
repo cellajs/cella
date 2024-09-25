@@ -1,7 +1,7 @@
-import { usersTable } from '#/db/schema/users';
-import { nanoid } from '#/lib/nanoid';
 import { relations } from 'drizzle-orm';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { usersTable } from '#/db/schema/users';
+import { nanoid } from '#/lib/nanoid';
 import { membershipsTable } from './memberships';
 import { organizationsTable } from './organizations';
 import { workspacesTable } from './workspaces';
@@ -33,9 +33,12 @@ export const projectsTable = pgTable('projects', {
   }),
 });
 
-export const projectsTableRelations = relations(projectsTable, ({ many }) => ({
+export const projectsTableRelations = relations(projectsTable, ({ one, many }) => ({
   users: many(membershipsTable),
-  workspaces: many(workspacesTable),
+  workspace: one(workspacesTable, {
+    fields: [projectsTable.parentId],
+    references: [workspacesTable.id],
+  }),
 }));
 
 export type ProjectModel = typeof projectsTable.$inferSelect;
