@@ -5,7 +5,6 @@ import { Fragment, Suspense, lazy, useEffect, useMemo } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import router from '~/lib/router';
 import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { NavSheet } from '~/modules/common/nav-sheet';
@@ -16,6 +15,7 @@ import { toast } from 'sonner';
 import { impersonationStop } from '~/api/auth';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import useMounted from '~/hooks/use-mounted';
+import router from '~/lib/router';
 import { NavButton } from '~/modules/common/app-nav-button';
 import { AppSearch } from '~/modules/common/app-search';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -23,12 +23,17 @@ import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { navItems } from '~/nav-config';
 import { useUserStore } from '~/store/user';
 
+type RoutePaths = keyof typeof router.routesByPath;
+
 export type NavItem = {
   id: string;
   icon: React.ElementType<LucideProps>;
   sheet?: React.ReactNode;
   href?: string;
   mirrorOnMobile?: boolean;
+  visibleOn?: RoutePaths[];
+  hiddenOn?: RoutePaths[];
+  visibilityMobileOnly?: boolean;
 };
 
 const DebugToolbars = config.mode === 'development' ? lazy(() => import('~/modules/common/debug-toolbars')) : () => null;
@@ -38,6 +43,7 @@ const AppNav = () => {
   const { t } = useTranslation();
   const { hasStarted } = useMounted();
   const isSmallScreen = useBreakpoints('max', 'xl');
+  const isMobile = useBreakpoints('max', 'sm');
 
   const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
   const { theme } = useThemeStore();
@@ -117,6 +123,23 @@ const AppNav = () => {
       >
         <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">
           {navItems.map((navItem: NavItem, index: number) => {
+            // Retrieve the full paths of all currently matched routes
+            const matchPaths = router.state.matches.map((el) => el.fullPath);
+
+            // Check if the current navItem should be hidden based on hiddenOn routes
+            const isHidden = navItem.hiddenOn?.some((el) => matchPaths.includes(el)) ?? false;
+
+            // Check if the current navItem should be visible based on visibleOn routes
+            const isVisible = navItem.visibleOn ? navItem.visibleOn.some((el) => matchPaths.includes(el)) : true;
+
+            // Determine if mobile visibility toggle is enabled
+            const applyVisibilityConfigMobileOnly = navItem.visibilityMobileOnly ?? false;
+
+            // Apply visibility configuration only on mobile if visibilityMobileOnly is true
+            if ((applyVisibilityConfigMobileOnly && isMobile) || !applyVisibilityConfigMobileOnly) {
+              // If the item is hidden or not visible based on the criteria above, return null
+              if (isHidden || !isVisible) return null;
+            }
             const isSecondItem = index === 1;
             const isActive = activeSheet?.id === navItem.id;
 
