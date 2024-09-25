@@ -1,8 +1,15 @@
-import { Palmtree } from 'lucide-react';
+import { Squirrel } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 
-const ProfilePageContent = ({ children }: { children?: React.ReactNode }) => {
-  return <div className="container">{children ? children : <ContentPlaceholder Icon={Palmtree} title={'Default user page'} />}</div>;
+// Here you can add app-specific profile page content
+const ProfilePageContent = ({ sheet, userId }: { userId: string; sheet?: boolean }) => {
+  console.info(sheet, userId);
+
+  return (
+    <div className="container">
+      <ContentPlaceholder Icon={Squirrel} title={'Default user page'} />
+    </div>
+  );
 };
 
 export default ProfilePageContent;
