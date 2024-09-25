@@ -16,7 +16,7 @@ interface UserContextValue {
   user: Omit<User, 'counts'>;
 }
 
-const ProjectsTable = lazy(() => import('~/modules/projects/projects-table'));
+const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
 export const UserContext = createContext({} as UserContextValue);
 
@@ -72,7 +72,7 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
         />
         <Suspense>
           <div className="container">
-            <ProjectsTable userId={user.id} sheet={sheet} />
+            <ProfilePageContent userId={user.id} sheet={sheet} />
           </div>
         </Suspense>
       </UserContext.Provider>
