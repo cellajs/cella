@@ -19,11 +19,7 @@ const entityQueryOptions = {
   organization: organizationQueryOptions,
 } as const;
 
-export const QueryClientProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { networkMode } = useGeneralStore();
 
   useEffect(() => {
@@ -49,6 +45,8 @@ export const QueryClientProvider = ({
 
         for (const section of Object.values(menu)) {
           for (const item of section) {
+            // TODO FIX Offline raak menu fetch
+            if (item.entity !== 'organization') return;
             const entityOptions = entityQueryOptions[item.entity](item.slug);
             // Invalidate and prefetch organization and members
             await queryClient.invalidateQueries({

@@ -2,6 +2,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight, Minimize2, Plus, Settings, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
@@ -15,10 +16,9 @@ interface BoardColumnHeaderProps {
   thumbnailUrl: string | null;
   createFormOpen: boolean;
   openConfig: () => void;
-  createFormClick: () => void;
 }
 
-export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen, openConfig, createFormClick }: BoardColumnHeaderProps) {
+export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen, openConfig }: BoardColumnHeaderProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { changeColumn } = useWorkspaceUIStore();
@@ -85,7 +85,7 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen
       >
         <ArrowRight size={14} />
       </Button>
-      <Button variant="plain" size="xs" className="rounded hidden sm:inline-flex" onClick={createFormClick}>
+      <Button variant="plain" size="xs" className="rounded hidden sm:inline-flex" onClick={() => dispatchCustomEvent('toggleCreateTaskForm', id)}>
         <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />
         <span className="ml-1">{t('app:task')}</span>
       </Button>

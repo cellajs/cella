@@ -2,6 +2,7 @@ import type { SubTask, Task } from '~/types/app';
 
 export interface TasksCustomEventMap {
   focusedProjectChange: CustomEvent<string>;
+  toggleCreateTaskForm: CustomEvent<string>;
   focusedTaskChange: CustomEvent<{ taskId: string; direction: number; projectId: string }>;
   toggleTaskCard: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
   toggleTaskExpand: CustomEvent<string>;

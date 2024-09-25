@@ -1,4 +1,4 @@
-import { Home, Menu, Search, User } from 'lucide-react';
+import { ArrowLeftCircle, Home, Menu, PlusCircle, Search, User } from 'lucide-react';
 
 import { SheetAccount } from '~/modules/common/nav-sheet/sheet-account';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
@@ -21,10 +21,19 @@ export const baseEntityRoutes = {
 
 // Here you declare main navigation items
 export const navItems: NavItem[] = [
-  { id: 'menu', sheet: <SheetMenu />, icon: Menu },
-  { id: 'home', icon: Home, href: '/' },
-  { id: 'search', icon: Search },
-  { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
+  { id: 'menu', sheet: <SheetMenu />, icon: Menu, hiddenOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  { id: 'home', icon: Home, href: '/', hiddenOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  { id: 'search', icon: Search, hiddenOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  {
+    id: 'account',
+    sheet: <SheetAccount />,
+    hiddenOn: ['/workspaces/$idOrSlug/board'],
+    icon: User,
+    mirrorOnMobile: true,
+    visibilityMobileOnly: true,
+  },
+  { id: 'return', icon: ArrowLeftCircle, visibleOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  { id: '+task', icon: PlusCircle, visibleOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
 ];
 
 // Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )

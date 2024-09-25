@@ -32,7 +32,6 @@ interface BoardColumnProps {
   editingTasks: Record<string, boolean>;
   project: Project;
   createForm: boolean;
-  toggleCreateForm: (projectId: string) => void;
 }
 
 const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
@@ -45,7 +44,7 @@ const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
   });
 };
 
-export function BoardColumn({ project, expandedTasks, editingTasks, createForm, toggleCreateForm }: BoardColumnProps) {
+export function BoardColumn({ project, expandedTasks, editingTasks, createForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
   const columnRef = useRef<HTMLDivElement | null>(null);
@@ -114,10 +113,6 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
     });
   };
 
-  const handleTaskFormClick = () => {
-    toggleCreateForm(project.id);
-  };
-
   const handleTaskChangeEventListener = (event: TaskChangeEvent) => {
     const { taskId, direction, projectId } = event.detail;
     if (projectId !== project.id) return;
@@ -157,7 +152,6 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
         role={project.membership?.role || 'member'}
         thumbnailUrl={project.thumbnailUrl}
         name={project.name}
-        createFormClick={handleTaskFormClick}
         openConfig={openConfigSheet}
         createFormOpen={createForm}
       />
@@ -176,13 +170,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm, 
             <ScrollArea id={project.id} className="h-full mx-[-.07rem]">
               <ScrollBar />
               {createForm && (
-                <CreateTaskForm
-                  projectId={project.id}
-                  organizationId={project.organizationId}
-                  tasks={showingTasks}
-                  labels={projectLabels}
-                  onCloseForm={() => toggleCreateForm(project.id)}
-                />
+                <CreateTaskForm projectId={project.id} organizationId={project.organizationId} tasks={showingTasks} labels={projectLabels} />
               )}
               <div className="h-full flex flex-col" id={`tasks-list-${project.id}`} ref={cardListRef}>
                 {!!tasks.length && (
