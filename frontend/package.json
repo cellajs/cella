@@ -10,8 +10,9 @@
     "check:types": "tsc",
     "dev": "NODE_ENV=development vite --mode development && node --trace-warnings",
     "build": "tsc && vite build",
-    "build:dev": "tsc && NODE_ENV=development vite build --mode development",
-    "preview": "vite preview --port 3000"
+    "build:dev": "NODE_ENV=development vite build --mode development",
+    "preview": "vite preview --port 3000",
+    "preview:dev": "NODE_ENV=development vite preview --port 3003"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.3.1",

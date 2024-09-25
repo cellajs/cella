@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import { createRoute, useParams } from '@tanstack/react-router';
 import { membersQuerySchema } from 'backend/modules/general/schema';
 import { Suspense, lazy } from 'react';
@@ -25,8 +26,11 @@ export const OrganizationRoute = createRoute({
   staticData: { pageTitle: 'Organization', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
   getParentRoute: () => AppRoute,
-  loader: async ({ params: { idOrSlug } }) => {
-    await queryClient.ensureQueryData(organizationQueryOptions(idOrSlug));
+  loader: ({ params: { idOrSlug } }) => {
+    const queryOptions = organizationQueryOptions(idOrSlug);
+    const cachedData = queryClient.getQueryData(queryOptions.queryKey);
+    // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
+    return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchQuery(queryOptions) : undefined);
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
@@ -45,15 +49,17 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'Members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: async ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
+  loader: ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'organization';
-    const infiniteQueryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role, limit: 40 });
-    const cachedMembers = queryClient.getQueryData(infiniteQueryOptions.queryKey);
-    if (!cachedMembers) queryClient.fetchInfiniteQuery(infiniteQueryOptions);
+    const queryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role, limit: 40 });
+    const cachedData = queryClient.getQueryData(queryOptions.queryKey);
+    // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
+    return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchInfiniteQuery(queryOptions) : undefined);
   },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
     const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
+
     if (!organization) return;
     return (
       <Suspense>
