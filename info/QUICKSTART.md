@@ -9,11 +9,11 @@ Also read the [architecture](./ARCHITECTURE.md) info.
 
 # Quickstart Guide for Cella Scripts
 
-This guide will help you use the two scripts, **list divergent files** and **pull upstream**, to manage changes in your Cella project.
+This guide will help you use the two scripts, **list diverged files** and **pull upstream**, to manage changes in your Cella project.
 
 ## 1. List Divergent Files
 
-The `list-divergent-files.sh` script lists all files that have diverged from the upstream `cella` repository and writes the output to `cella.config.changed_files`. 
+The `list-diverged-files.sh` script lists all files that have diverged from the upstream `cella` repository and writes the output to `cella.config.changed_files`. 
 It only includes changed files that are present in both your development branch and the upstream repository. 
 Additionally, files specified in `cella.config.ignore_file` will be excluded from the results.
 
@@ -22,7 +22,7 @@ Additionally, files specified in `cella.config.ignore_file` will be excluded fro
 Before running the script, ensure it is executable:
 
 ```bash
-chmod +x path/to/list-divergent-files.sh
+chmod +x path/to/list-diverged-files.sh
 ```
 
 ### Set Up Upstream Repository
@@ -38,7 +38,7 @@ git remote add upstream https://github.com/cellajs/cella.git
 Execute the script using `pnpm`:
 
 ```bash
-pnpm run list-divergent-files
+pnpm run list-diverged-files
 ```
 
 ## 2. Pull Upstream

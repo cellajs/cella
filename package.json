@@ -26,8 +26,8 @@
     "build": "pnpm run clean && turbo build --filter backend --filter frontend --filter tus",
     "build:dev": "turbo build:dev --filter backend --filter frontend --filter tus",
     "start": "turbo start --filter backend --filter frontend --filter tus",
-    "pull-upstream": "./scripts/pull-upstream.sh",
-    "list-divergent-files": "./scripts/list-divergent-files.sh"
+    "upstream:pull": "./scripts/pull-upstream.sh",
+    "diverged": "./scripts/list-diverged-files.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.1",
