@@ -19,7 +19,7 @@
 }
 
 @media (max-width: 480px) {
-  .rdg-cell[aria-selected='true'] {
+  .rdg-cell[aria-selected="true"] {
     outline: none !important;
   }
 }
