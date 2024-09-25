@@ -1,7 +1,7 @@
 import { type DefaultReactSuggestionItem, SuggestionMenuController, type SuggestionMenuProps } from '@blocknote/react';
 import { useCallback, useEffect } from 'react';
 
-import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blackbote-config';
+import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blocknote-config';
 import { getNotifyItems } from '~/modules/common/blocknote/notify';
 import '~/modules/common/blocknote/styles.css';
 

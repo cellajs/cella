@@ -1,5 +1,5 @@
 import { DragHandleButton, GridSuggestionMenuController, SideMenu, SideMenuController } from '@blocknote/react';
-import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blackbote-config';
+import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blocknote-config';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { getMentionMenuItems } from '~/modules/common/blocknote/mention';

@@ -6,7 +6,7 @@ import { Suspense, useEffect, useRef } from 'react';
 import { cn } from '~/lib/utils';
 import { useThemeStore } from '~/store/theme';
 
-import { customSchema } from '~/modules/common/blocknote/blackbote-config';
+import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';

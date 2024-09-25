@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '~/modules/ui/dropdown-menu';
 
-import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blackbote-config';
+import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blocknote-config';
 import { notifyTypes } from '~/modules/common/blocknote/notify/notifyOptions';
 import '~/modules/common/blocknote/styles.css';
 
