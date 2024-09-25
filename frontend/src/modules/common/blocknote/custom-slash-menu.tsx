@@ -3,7 +3,6 @@ import { useCallback, useEffect } from 'react';
 
 import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blocknote-config';
 import { getNotifyItems } from '~/modules/common/blocknote/notify';
-import '~/modules/common/blocknote/styles.css';
 
 const indexedItems = ['Image', 'Video', 'File', 'Bullet List', 'Numbered List', 'Check List', 'Notify', 'Emoji'];
 const otherItems = ['Table', 'Audio', 'Heading 1', 'Heading 2', 'Heading 3', 'Paragraph'];

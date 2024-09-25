@@ -10,7 +10,6 @@ import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
-import '~/modules/common/blocknote/styles.css';
 
 interface BlockNoteProps {
   value: string;
