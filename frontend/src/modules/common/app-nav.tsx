@@ -126,6 +126,7 @@ const AppNav = () => {
       >
         <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">
           {navItems.map((navItem: NavItem, index: number) => {
+            // TODO: Refactor this
             // Retrieve the full paths of all currently matched routes
             const matchPaths = router.state.matches.map((el) => el.fullPath);
             //  navItem should be hidden based on the current route (using hiddenOn)
