@@ -73,7 +73,7 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
             <span style={{ color }}>
               <Icon icon={Circle} />
             </span>
-            <span className="ml-2">{name[0].toUpperCase() + name.slice(1)}</span>
+            <span className="ml-2">{(name as string)[0].toUpperCase() + (name as string).slice(1)}</span>
           </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>
