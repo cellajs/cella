@@ -85,7 +85,7 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen
       >
         <ArrowRight size={14} />
       </Button>
-      <Button variant="plain" size="xs" className="rounded" onClick={createFormClick}>
+      <Button variant="plain" size="xs" className="rounded hidden sm:inline-flex" onClick={createFormClick}>
         <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />
         <span className="ml-1">{t('app:task')}</span>
       </Button>
