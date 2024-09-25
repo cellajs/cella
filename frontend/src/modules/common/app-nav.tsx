@@ -126,20 +126,19 @@ const AppNav = () => {
             // Retrieve the full paths of all currently matched routes
             const matchPaths = router.state.matches.map((el) => el.fullPath);
 
-            // Check if the current navItem should be hidden based on hiddenOn routes
-            const isHidden = navItem.hiddenOn?.some((el) => matchPaths.includes(el)) ?? false;
+            // navItem should be hidden based on the current route (using hiddenOn)
+            const isHiddenOnCurrentRoute = navItem.hiddenOn?.some((route) => matchPaths.includes(route)) ?? false;
 
-            // Check if the current navItem should be visible based on visibleOn routes
-            const isVisible = navItem.visibleOn ? navItem.visibleOn.some((el) => matchPaths.includes(el)) : true;
+            // Check if the navItem is restricted to mobile visibility only and if the screen is mobile
+            const shouldApplyMobileVisibility = navItem.visibilityMobileOnly && isMobile;
+            // This is only checked if the navItem is marked for mobile-only visibility
+            const isVisibleOnCurrentRoute = shouldApplyMobileVisibility ? navItem.visibleOn?.some((route) => matchPaths.includes(route)) : false;
 
-            // Determine if mobile visibility toggle is enabled
-            const applyVisibilityConfigMobileOnly = navItem.visibilityMobileOnly ?? false;
+            const isDefaultVisible = navItem.visibleOn ? isVisibleOnCurrentRoute : true;
+            // Determine whether the navItem should be hidden based on the hiddenOn rules and current route
+            const shouldBeHidden = shouldApplyMobileVisibility ? isHiddenOnCurrentRoute : false;
 
-            // Apply visibility configuration only on mobile if visibilityMobileOnly is true
-            if ((applyVisibilityConfigMobileOnly && isMobile) || !applyVisibilityConfigMobileOnly) {
-              // If the item is hidden or not visible based on the criteria above, return null
-              if (isHidden || !isVisible) return null;
-            }
+            if (shouldBeHidden || !isDefaultVisible) return null;
             const isSecondItem = index === 1;
             const isActive = activeSheet?.id === navItem.id;
 
