@@ -5,7 +5,7 @@ import animatePlugin from 'tailwindcss-animate';
 /** @type {Config} */
 
 export default {
-  darkMode: 'media',
+  darkMode: 'class',
   variants: {
     extend: {
       display: ['empty'],

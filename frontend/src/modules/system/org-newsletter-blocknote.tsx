@@ -6,10 +6,10 @@ import { Suspense, useEffect, useRef } from 'react';
 import { cn } from '~/lib/utils';
 import { useThemeStore } from '~/store/theme';
 
-import '~/modules/common/blocknote/styles.css';
+import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { triggerFocus } from '../common/blocknote/helpers';
+import { triggerFocus } from '~/modules/common/blocknote/helpers';
 
 interface BlockNoteProps {
   value: string;
@@ -18,7 +18,8 @@ interface BlockNoteProps {
 }
 
 const BlockNote = ({ value, onChange, className = '' }: BlockNoteProps) => {
-  const editor = useCreateBlockNote();
+  const editor = useCreateBlockNote({ schema: customSchema, trailingBlock: false });
+
   const { mode } = useThemeStore();
   const initial = useRef(true);
   const onBlockNoteChange = async () => {
@@ -51,7 +52,7 @@ const BlockNote = ({ value, onChange, className = '' }: BlockNoteProps) => {
         formattingToolbar={false}
         className={cn('p-2 border rounded-lg', className)}
       >
-        <CustomSlashMenu />
+        <CustomSlashMenu editor={editor} />
         <CustomFormattingToolbar />
       </BlockNoteView>
     </Suspense>
