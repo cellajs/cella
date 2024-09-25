@@ -11,8 +11,6 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import '~/modules/common/blocknote/styles.css';
-
 export const CustomBlockTypeSelect = () => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;

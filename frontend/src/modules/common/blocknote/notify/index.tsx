@@ -14,7 +14,6 @@ import {
 
 import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blocknote-config';
 import { notifyTypes } from '~/modules/common/blocknote/notify/notifyOptions';
-import '~/modules/common/blocknote/styles.css';
 
 // The Notify block.
 export const Notify = createReactBlockSpec(
