@@ -1,7 +1,7 @@
 import { FilePanelController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
-import { type KeyboardEventHandler, Suspense, useCallback, useEffect } from 'react';
+import { type KeyboardEventHandler, Suspense, useCallback, useEffect, useLayoutEffect } from 'react';
 import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
@@ -115,7 +115,7 @@ export const TaskBlockNote = ({
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
       const currentBlocks = editor.document.map((block) => block.content).join('');
@@ -139,13 +139,14 @@ export const TaskBlockNote = ({
     <Suspense>
       <BlockNoteView
         id={subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`}
+        // Defer onChange, onFocus and onBlur  to run after rendering
         onChange={() => {
           // to avoid update if content empty, so from draft shown
           if (!onChange || editor.document[0].content?.toString() === '') return;
-          updateData();
+          queueMicrotask(() => updateData());
         }}
-        onFocus={handleEditorFocus}
-        onBlur={updateData}
+        onFocus={() => queueMicrotask(() => handleEditorFocus())}
+        onBlur={() => queueMicrotask(() => updateData())}
         onKeyDown={handleKeyDown}
         editor={editor}
         data-color-scheme={mode}
