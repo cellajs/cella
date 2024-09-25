@@ -1,6 +1,5 @@
 import {
   BasicTextStyleButton,
-  BlockTypeSelect,
   ColorStyleButton,
   CreateLinkButton,
   FileCaptionButton,
@@ -8,13 +7,14 @@ import {
   FormattingToolbar,
   FormattingToolbarController,
 } from '@blocknote/react';
+import { CustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-select';
 
 // Removed text position left|center|right, also remove indentation.
 export const CustomFormattingToolbar = () => (
   <FormattingToolbarController
     formattingToolbar={() => (
       <FormattingToolbar>
-        <BlockTypeSelect key={'blockTypeSelect'} />
+        <CustomBlockTypeSelect />
 
         <FileCaptionButton key={'fileCaptionButton'} />
         <FileReplaceButton key={'replaceFileButton'} />

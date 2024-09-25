@@ -46,6 +46,25 @@ p.bn-inline-content {
   height: 100%;
 }
 
+.bn-menu-dropdown {
+  position: absolute; /* or 'fixed' if you want it to be fixed in place */
+  z-index: 9999 !important;
+  width: 11rem;
+  max-height: 44vh !important;
+  overflow-y: auto;
+}
+
+.bn-menu-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.bn-dropdown-button {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
 .slash-menu {
   max-height: 44vh;
   overflow-y: auto;
