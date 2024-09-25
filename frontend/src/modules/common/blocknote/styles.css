@@ -1,4 +1,3 @@
-
 p.bn-inline-content {
   font-size: 0.888rem;
   font-weight: 300;
@@ -8,10 +7,10 @@ p.bn-inline-content {
 }
 
 p.bn-inline-content code {
-    background: hsl(var(--muted));
-    font-size: 0.85em;
-    border-radius: 0.24rem;
-    border: 0.25rem solid hsl(var(--muted));
+  background: hsl(var(--muted));
+  font-size: 0.85em;
+  border-radius: 0.24rem;
+  border: 0.25rem solid hsl(var(--muted));
 }
 
 .bn-shadcn .bn-block-outer,
@@ -25,7 +24,7 @@ p.bn-inline-content code {
 }
 
 .bn-shadcn .bn-side-menu {
-  position:relative;
+  position: relative;
   left: -0.6rem;
   top: -0.15rem;
 }
