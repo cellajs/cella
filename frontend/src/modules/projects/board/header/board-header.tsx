@@ -1,4 +1,5 @@
 import { PanelTopClose, Plus } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -18,9 +19,10 @@ import { useWorkspaceStore } from '~/store/workspace';
 
 const BoardHeader = () => {
   const { t } = useTranslation();
-
   const { setFocusView } = useNavigationStore();
-  const { workspace, selectedTasks, searchQuery, showPageHeader, togglePageHeader } = useWorkspaceStore();
+  const { workspace, selectedTasks, showPageHeader, togglePageHeader } = useWorkspaceStore();
+
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const openSettingsSheet = () => {
     sheet.create(<WorkspaceSettings sheet />, {
@@ -69,8 +71,8 @@ const BoardHeader = () => {
         </div>
       )}
       {!!selectedTasks.length && <TaskSelectedTableButtons />}
-      <BoardSearch />
-      {!searchQuery.length && (
+      <BoardSearch toggleFocus={() => setSearchFocused(!searchFocused)} />
+      {!searchFocused && (
         <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_resource', { resource: t('app:project').toLowerCase() })}>
           <Button variant="plain" onClick={handleAddProjects}>
             <Plus size={16} />
