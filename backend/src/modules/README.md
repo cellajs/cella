@@ -1,5 +1,5 @@
 # Backend modules
-Write your app-specific code into new modules to easily merge updates of core modules.
+Each module has a similar setup: `routes`, `schema`, a `hc` hono client and the business logic in the `index` file. Large blocks of code can be put in a `helpers` folder. Write your app-specific code into new modules.
 
 ### Core modules
 * me
@@ -9,3 +9,5 @@ Write your app-specific code into new modules to easily merge updates of core mo
 * requests
 * general
 * auth
+* metrics
+* attachments
