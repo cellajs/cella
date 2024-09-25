@@ -67,25 +67,27 @@ export const TaskHeader = ({
         )}
 
         <div className="grow" />
-        <TooltipButton
-          disabled={isEditing}
-          toolTipContent={t('common:edit_resource', { resource: t('app:task').toLowerCase() })}
-          side="bottom"
-          sideOffset={5}
-          hideWhenDetached
-        >
-          <Button
-            onClick={() => changeEditingState(!isEditing)}
-            aria-label="Edit"
-            variant="ghost"
-            className="flex flex-row items-center gap-1 font-light"
-            size="xs"
+        {(!isSheet || isSubTask) && (
+          <TooltipButton
+            disabled={isEditing}
+            toolTipContent={t('common:edit_resource', { resource: t('app:task').toLowerCase() })}
+            side="bottom"
+            sideOffset={5}
+            hideWhenDetached
           >
-            {isEditing ? <span className="italic">{t('app:editing')}</span> : t('common:edit')}
-          </Button>
-        </TooltipButton>
+            <Button
+              onClick={() => changeEditingState(!isEditing)}
+              aria-label="Edit"
+              variant="ghost"
+              className="flex flex-row items-center gap-1 font-light"
+              size="xs"
+            >
+              {isEditing ? <span className="italic">{t('app:editing')}</span> : t('common:edit')}
+            </Button>
+          </TooltipButton>
+        )}
 
-        {!task.parentId && !isSheet && (
+        {!isSubTask && !isSheet && (
           <TooltipButton toolTipContent={t('common:expand')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {
@@ -102,7 +104,7 @@ export const TaskHeader = ({
           </TooltipButton>
         )}
 
-        {task.parentId && onRemove && (
+        {isSubTask && onRemove && (
           <TooltipButton toolTipContent={t('common:delete')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer">
               <span className="sr-only">{t('app:move_task')}</span>
@@ -111,7 +113,7 @@ export const TaskHeader = ({
           </TooltipButton>
         )}
 
-        {(!isSheet || task.parentId) && (
+        {(!isSheet || isSubTask) && (
           <TooltipButton toolTipContent={t('common:close')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {

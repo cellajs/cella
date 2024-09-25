@@ -268,7 +268,7 @@ export default function Board() {
 
     if (focusedTaskId && focusedTaskId !== taskId) {
       dispatchCustomEvent('toggleSubTaskEditing', { id: focusedTaskId, state: false });
-      dispatchCustomEvent('toggleTaskEditing', { id: focusedTaskId, state: false });
+      setTaskEditing(focusedTaskId, false);
     }
     if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(taskId);
 
