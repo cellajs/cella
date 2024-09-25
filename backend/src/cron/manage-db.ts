@@ -4,7 +4,6 @@ import { userSeed } from '../../scripts/seeds/user/seed';
 
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
-import { tasksTable } from '#/db/schema/tasks';
 import { usersTable } from '#/db/schema/users';
 
 export const resetDb = async () => {
@@ -26,7 +25,6 @@ export const clearDb = async () => {
 const deleteTables = async () => {
   await db.delete(organizationsTable);
   await db.delete(usersTable);
-  await db.delete(tasksTable);
 
   console.info('Deleted all organizations and users.');
 };
