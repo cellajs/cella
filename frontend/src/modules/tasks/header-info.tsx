@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { dateShort } from '~/lib/utils';
-import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import type { Task } from '~/types/app';
@@ -23,11 +22,15 @@ const HeaderInfo = ({ task }: { task: Task }) => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <TooltipButton toolTipContent={t('common:info')} side="bottom" sideOffset={5} hideWhenDetached>
-          <Button onClick={() => setOpen(true)} aria-label="Info" variant="ghost" className="secondary-foreground cursor-pointer" size="xs">
-            <Info size={16} />
-          </Button>
-        </TooltipButton>
+        <Button
+          onClick={() => setOpen(true)}
+          aria-label="Info"
+          variant="ghost"
+          className="cursor-pointer text-secondary-foreground/50 hover:text-secondary-foreground"
+          size="xs"
+        >
+          <Info size={16} />
+        </Button>
       </PopoverTrigger>
       <PopoverContent className="flex flex-col font-light text-sm text-muted-foreground" align="start" side="top">
         <span>

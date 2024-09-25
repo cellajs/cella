@@ -1,31 +1,17 @@
-.bn-container.bn-shadcn.dark {
-  --background: 240 10% 9%;
-  --foreground: 0 0% 95%;
-  --card: 240 10% 14%;
-  --card-foreground: 0 0% 95%;
-  --popover: 240 10% 9%;
-  --popover-foreground: 0 0% 95%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 16%;
-  --secondary: 240 3.7% 15%;
-  --secondary-foreground: 0 0% 95%;
-  --muted: 240 3.7% 25%;
-  --muted-foreground: 240 5% 84.9%;
-  --accent: 240 3.7% 25%;
-  --accent-foreground: 0 0% 95%;
-  --destructive: 0 62.8% 50%;
-  --destructive-foreground: 0 0% 95%;
-  --border: 240 3.7% 20%;
-  --input: 240 3.7% 25%;
-  --ring: 240 4.9% 83.9%;
-  --success: 120 100% 40%;
-}
+
 p.bn-inline-content {
   font-size: 0.888rem;
   font-weight: 300;
   line-height: 1.3;
   min-height: 1.3rem;
   padding: 0;
+}
+
+p.bn-inline-content code {
+    background: hsl(var(--muted));
+    font-size: 0.85em;
+    border-radius: 0.24rem;
+    border: 0.25rem solid hsl(var(--muted));
 }
 
 .bn-shadcn .bn-block-outer,
@@ -36,6 +22,16 @@ p.bn-inline-content {
 
 .bn-container.bn-shadcn a {
   text-decoration: underline;
+}
+
+.bn-shadcn .bn-side-menu {
+  position:relative;
+  left: -0.6rem;
+  top: -0.15rem;
+}
+
+.prosemirror-dropcursor-block {
+  border-radius: 2rem;
 }
 
 .bn-shadcn .bn-editor {
@@ -68,7 +64,7 @@ p.bn-inline-content {
 .slash-menu {
   max-height: 44vh;
   overflow-y: auto;
-  z-index: 9999;
+  z-index: 9999 !important;
   background-color: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
