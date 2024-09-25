@@ -1,13 +1,11 @@
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
-import { config } from 'config';
-import { Construction } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { queryClient } from '~/lib/router';
 import { noDirectAccess } from '~/lib/utils';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
 import ErrorNotice from '~/modules/common/error-notice';
+import Overview from '~/modules/projects/overview';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import { baseEntityRoutes } from '~/nav-config';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -86,24 +84,5 @@ export const WorkspaceOverviewRoute = createRoute({
   path: '/overview',
   staticData: { pageTitle: 'Overview', isAuth: true },
   getParentRoute: () => WorkspaceRoute,
-  component: () => (
-    <div className="text-sm text-center mt-12">
-      <ContentPlaceholder
-        Icon={Construction}
-        title="Not built yet."
-        text={
-          <>
-            <p>Here will be a grid of project cards for stats, analytics and advisory.</p>
-            <p className="mt-4">
-              Please connect on
-              <a href={config.company.githubUrl} className="underline underline-offset-2 text-primary mx-1" target="_blank" rel="noreferrer">
-                Github
-              </a>
-              if you want to help out as OS contributor!
-            </p>
-          </>
-        }
-      />
-    </div>
-  ),
+  component: () => <Overview />,
 });
