@@ -14,6 +14,7 @@
  * @type {CellaConfig}
  */
 export const config = {
+    upstreamBranch: "development",
     divergentFile: "scripts/cella.divergent.txt",
     ignoreList: [
       "README.md",

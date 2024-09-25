@@ -13,23 +13,28 @@ FILE_EXT="${CONFIG_FILE##*.}"
 # Default variables
 IGNORE_FILE=""
 IGNORE_LIST=""
+UPSTREAM_BRANCH="development"  # Default value set to 'development'
+LOCAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 # Function to extract paths from .json (simple key-value pairs)
 extract_from_json() {
     IGNORE_FILE=$(grep '"ignore_file":' "$CONFIG_FILE" | sed 's/.*"ignore_file": *"\([^"]*\)".*/\1/')
     IGNORE_LIST=$(grep '"ignore_list":' "$CONFIG_FILE" | sed 's/.*"ignore_list": *\[\([^]]*\)\].*/\1/' | tr -d '" ' | tr ',' '\n')
+    UPSTREAM_BRANCH=$(grep '"upstream_branch":' "$CONFIG_FILE" | sed 's/.*"upstream_branch": *"\([^"]*\)".*/\1/' || echo "$UPSTREAM_BRANCH")
 }
 
 # Function to extract paths from .ts or .js using grep/sed
 extract_from_ts() {
     IGNORE_FILE=$(grep 'ignoreFile:' "$CONFIG_FILE" | sed 's/.*ignoreFile: *"\([^"]*\)".*/\1/')
     IGNORE_LIST=$(grep 'ignoreList:' "$CONFIG_FILE" | sed 's/.*ignoreList: *\[\([^]]*\)\].*/\1/' | tr -d '" ' | tr ',' '\n')
+    UPSTREAM_BRANCH=$(grep 'upstreamBranch:' "$CONFIG_FILE" | sed 's/.*upstreamBranch: *"\([^"]*\)".*/\1/' || echo "$UPSTREAM_BRANCH")
 }
 
 # Function to extract paths from .js or .ts using node (with dynamic import for ES modules)
 extract_from_js() {
     IGNORE_FILE=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.ignoreFile))")
     IGNORE_LIST=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.ignoreList.join('\n')))") 
+    UPSTREAM_BRANCH=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.upstreamBranch))" || echo "$UPSTREAM_BRANCH")
 }
 
 # Extract values based on the file extension
@@ -47,21 +52,28 @@ else
     exit 1
 fi
 
-# Output extracted values for debugging purposes
-if [[ -n "$IGNORE_LIST" ]]; then
-    echo "Ignoring files from ignoreList: $IGNORE_LIST"
-else
-    echo "Ignoring files listed in: $IGNORE_FILE"
+# Output the variables for verification (optional)
+echo "UPSTREAM_BRANCH: $UPSTREAM_BRANCH"
+echo "LOCAL_BRANCH: $LOCAL_BRANCH"
+
+# Updated echo statements for ignore files
+if [ -n "$IGNORE_FILE" ]; then
+    echo "Ignore files by IGNORE_FILE: $IGNORE_FILE"
+fi
+
+if [ -n "$IGNORE_LIST" ]; then
+    IFS=',' read -ra IGNORE_ARRAY <<< "$IGNORE_LIST"  # Convert the comma-separated list to an array
+    echo "Ignore files by configured list (IGNORE_LIST length: ${#IGNORE_ARRAY[@]})"
 fi
 
 # Fetch upstream changes
 git fetch upstream
 
-# Checkout the development branch
-# git checkout development
+# Checkout the local branch
+git checkout "$LOCAL_BRANCH"
 
 # Merge upstream changes without committing
-git merge --no-commit upstream/development
+git merge --no-commit "upstream/$UPSTREAM_BRANCH"
 
 # If neither `ignoreList` nor `ignoreFile` exists or is empty, skip the reset/checkout process
 if [[ -n "$IGNORE_LIST" || ( -f "$IGNORE_FILE" && -s "$IGNORE_FILE" ) ]]; then
@@ -106,7 +118,7 @@ if git diff --check > /dev/null; then
     git commit -m "Merged upstream changes, keeping files listed in $IGNORE_FILE."
 
     # Push changes to your fork
-    # git push origin development
+    # git push origin branch
 else
     echo "Merge conflicts detected. Resolve conflicts before committing."
     exit 1

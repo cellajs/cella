@@ -14,12 +14,15 @@ FILE_EXT="${CONFIG_FILE##*.}"
 DIVERGENT_FILE=""
 IGNORE_FILE=""
 IGNORE_LIST=""
+UPSTREAM_BRANCH="development"  # Default value set to 'development'
+LOCAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 # Function to extract paths from .json (simple key-value pairs)
 extract_from_json() {
     DIVERGENT_FILE=$(grep '"divergent_file":' "$CONFIG_FILE" | sed 's/.*"divergent_file": *"\([^"]*\)".*/\1/')
     IGNORE_FILE=$(grep '"ignore_file":' "$CONFIG_FILE" | sed 's/.*"ignore_file": *"\([^"]*\)".*/\1/')
     IGNORE_LIST=$(grep '"ignore_list":' "$CONFIG_FILE" | sed 's/.*"ignore_list": *\[\([^]]*\)\].*/\1/' | tr -d '" ' | tr ',' '\n')
+    UPSTREAM_BRANCH=$(grep '"upstream_branch":' "$CONFIG_FILE" | sed 's/.*"upstream_branch": *"\([^"]*\)".*/\1/' || echo "$UPSTREAM_BRANCH")
 }
 
 # Function to extract paths from .ts or .js using grep/sed
@@ -27,6 +30,7 @@ extract_from_ts() {
     DIVERGENT_FILE=$(grep 'divergentFile:' "$CONFIG_FILE" | sed 's/.*divergentFile: *"\([^"]*\)".*/\1/')
     IGNORE_FILE=$(grep 'ignoreFile:' "$CONFIG_FILE" | sed 's/.*ignoreFile: *"\([^"]*\)".*/\1/')
     IGNORE_LIST=$(grep 'ignoreList:' "$CONFIG_FILE" | sed 's/.*ignoreList: *\[\([^]]*\)\].*/\1/' | tr -d '" ' | tr ',' '\n')
+    UPSTREAM_BRANCH=$(grep 'upstreamBranch:' "$CONFIG_FILE" | sed 's/.*upstreamBranch: *"\([^"]*\)".*/\1/' || echo "$UPSTREAM_BRANCH")
 }
 
 # Function to extract paths from .js or .ts using node (with dynamic import for ES modules)
@@ -43,6 +47,7 @@ extract_from_js() {
             }
         })
     ")
+    UPSTREAM_BRANCH=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.upstreamBranch))" || echo "$UPSTREAM_BRANCH")
 }
 
 # Extract values based on the file extension
@@ -66,27 +71,38 @@ if [[ -z "$DIVERGENT_FILE" ]]; then
     exit 1
 fi
 
-# Output the extracted values for debugging purposes
-echo "Divergent files will be listed in: $DIVERGENT_FILE"
-echo "Ignoring files listed in: $IGNORE_FILE or provided via ignoreList."
+# Output the variables for verification (optional)
+echo "DIVERGENT_FILE: $DIVERGENT_FILE"
+echo "UPSTREAM_BRANCH: $UPSTREAM_BRANCH"
+echo "LOCAL_BRANCH: $LOCAL_BRANCH"
+
+# Updated echo statements for ignore files
+if [ -n "$IGNORE_FILE" ]; then
+    echo "Ignore files by IGNORE_FILE: $IGNORE_FILE"
+fi
+
+if [ -n "$IGNORE_LIST" ]; then
+    IFS=',' read -ra IGNORE_ARRAY <<< "$IGNORE_LIST"  # Convert the comma-separated list to an array
+    echo "Ignore files by configured list (IGNORE_LIST length: ${#IGNORE_ARRAY[@]})"
+fi
 
 # Fetch upstream changes
 git fetch upstream
 
-# Checkout the development branch
-# git checkout development
+# Checkout the local branch
+git checkout "$LOCAL_BRANCH"
 
-# Get the list of tracked files from upstream/development
-UPSTREAM_FILES=$(git ls-tree -r upstream/development --name-only)
+# Get the list of tracked files from upstream branch
+UPSTREAM_FILES=$(git ls-tree -r "upstream/$UPSTREAM_BRANCH" --name-only)
 
-# Get the list of tracked files from local development branch
-MAIN_FILES=$(git ls-tree -r development --name-only)
+# Get the list of tracked files from local branch
+MAIN_FILES=$(git ls-tree -r "$LOCAL_BRANCH" --name-only)
 
-# Find common files between upstream/development and local development branch
+# Find common files between upstream and local branch
 COMMON_FILES=$(comm -12 <(echo "$UPSTREAM_FILES" | sort) <(echo "$MAIN_FILES" | sort))
 
-# Compare the local development branch with upstream/development to get the divergent files
-git diff --name-only development upstream/development > "$DIVERGENT_FILE.tmp"
+# Compare the local branch with upstream branch to get the divergent files
+git diff --name-only "$LOCAL_BRANCH" "upstream/$UPSTREAM_BRANCH" > "$DIVERGENT_FILE.tmp"
 
 # Check if the ignore list was specified directly in the config
 if [[ -n "$IGNORE_LIST" ]]; then
@@ -105,7 +121,7 @@ fi
 IGNORE_PATTERNS=$(cat "$DIVERGENT_FILE.ignore.tmp")
 
 # Filter divergent files:
-# 1. Files must be present in both upstream and development branches
+# 1. Files must be present in both upstream and local branches
 # 2. Exclude files listed in the ignore file
 grep -Fxf <(echo "$COMMON_FILES") "$DIVERGENT_FILE.tmp" > "$DIVERGENT_FILE.tmp.filtered"
 
@@ -130,7 +146,7 @@ if [[ -s "$DIVERGENT_FILE" ]]; then
     echo "The following files have divergent, are present in both branches, and are not ignored:"
     cat "$DIVERGENT_FILE"
 else
-    echo "No files have divergent between upstream/development and local development that are not ignored."
+    echo "No files have divergent between upstream and local branch that are not ignored."
     # Optionally, remove the DIVERGENT_FILE if it's empty
     rm -f "$DIVERGENT_FILE"
 fi
