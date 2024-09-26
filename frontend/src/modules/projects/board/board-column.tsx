@@ -1,13 +1,15 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
-import { lazy, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Palmtree, Plus, Search, Undo } from 'lucide-react';
+import { type MutableRefObject, lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { type DialogT, dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -43,8 +45,16 @@ export const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
   });
 };
 
+const taskVariants = {
+  hidden: { opacity: 0, height: 0 },
+  visible: { opacity: 1, height: 'auto' },
+  exit: { opacity: 0, height: 0 },
+};
+
 export function BoardColumn({ project, tasksState, createForm }: BoardColumnProps) {
   const { t } = useTranslation();
+  const afterRef = useRef<HTMLDivElement | null>(null);
+  const beforeRef = useRef<HTMLDivElement | null>(null);
 
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
@@ -56,6 +66,9 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
   const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
+  const [mouseX, setMouseX] = useState(0);
+  const [isMouseNearTop, setIsMouseNearTop] = useState(false);
+  const [isMouseNearBottom, setIsMouseNearBottom] = useState(false);
 
   // Query tasks
   const tasksQuery = useSuspenseQuery(tasksQueryOptions({ projectId: project.id }));
@@ -72,6 +85,26 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
     icedCount,
   } = useMemo(() => sortAndGetCounts(tasks, showAccepted, showIced), [tasks, showAccepted, showIced]);
 
+  const firstUpstartedIndex = useMemo(() => showingTasks.findIndex((t) => t.status === 1), [showingTasks]);
+  const lastUpstartedIndex = useMemo(() => showingTasks.findLastIndex((t) => t.status === 1), [showingTasks]);
+
+  const handleMouseMove = (e: React.MouseEvent, index: number) => {
+    if (index !== firstUpstartedIndex && index !== lastUpstartedIndex) return;
+    const isOpenDialog = dialog.get(`create-task-form-${project.id}`);
+    if (isOpenDialog && (isOpenDialog as DialogT)?.open) return;
+    const target = e.currentTarget as HTMLElement;
+    const { top, left } = target.getBoundingClientRect();
+    const mouseY = e.clientY - top;
+    const mouseX = e.clientX - left;
+    // to match half button width
+    setMouseX(mouseX - 30);
+    // mouse in the edge of 5% of the task card
+    const isNearTop = mouseY < target.offsetHeight * 0.05;
+    const isNearBottom = mouseY > target.offsetHeight * 0.95;
+    if (index === firstUpstartedIndex) setIsMouseNearTop(isNearTop);
+    if (index === lastUpstartedIndex) setIsMouseNearBottom(isNearBottom);
+  };
+
   const handleIcedClick = () => {
     setShowIced(!showIced);
     changeColumn(workspace.id, project.id, {
@@ -82,6 +115,15 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
     setShowAccepted(!showAccepted);
     changeColumn(workspace.id, project.id, {
       expandAccepted: !showAccepted,
+    });
+  };
+
+  const openCreateTaskDialog = (ref: MutableRefObject<HTMLDivElement | null>) => {
+    dialog(<CreateTaskForm projectId={project.id} organizationId={project.organizationId} tasks={showingTasks} labels={projectLabels} dialog />, {
+      id: `create-task-form-${project.id}`,
+      drawerOnMobile: false,
+      className: 'w-auto shadow-none relative z-[250] p-0 rounded-none mt-1 max-w-4xl',
+      container: ref.current,
     });
   };
 
@@ -139,11 +181,6 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
   // 4rem refers to the header height
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
-  const taskVariants = {
-    hidden: { opacity: 0, height: 0 },
-    visible: { opacity: 1, height: 'auto' },
-    exit: { opacity: 0, height: 0 },
-  };
   return (
     <div ref={columnRef} className="flex flex-col h-full">
       <BoardColumnHeader
@@ -169,7 +206,15 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
             <ScrollArea id={project.id} className="h-full mx-[-.07rem]">
               <ScrollBar />
               {createForm && (
-                <CreateTaskForm projectId={project.id} organizationId={project.organizationId} tasks={showingTasks} labels={projectLabels} />
+                <CreateTaskForm
+                  projectId={project.id}
+                  organizationId={project.organizationId}
+                  tasks={showingTasks}
+                  labels={projectLabels}
+                  onCloseForm={() => {
+                    if (createForm) dispatchCustomEvent('toggleCreateTaskForm', project.id);
+                  }}
+                />
               )}
               <div className="h-full flex flex-col" id={`tasks-list-${project.id}`} ref={cardListRef}>
                 {!!tasks.length && (
@@ -190,25 +235,49 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
                         />
                       )}
                     </Button>
-                    {showingTasks.map((task) => (
-                      <motion.div
-                        key={task.id}
-                        variants={taskVariants}
-                        initial={task.status === 6 || task.status === 0 ? 'hidden' : 'visible'}
-                        animate="visible"
-                        exit="exit"
-                      >
-                        <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
-                          <TaskCard
-                            task={task}
-                            state={tasksState[task.id] ?? 'folded'}
-                            isSelected={selectedTasks.includes(task.id)}
-                            isFocused={task.id === focusedTaskId}
-                            mode={mode}
-                          />
-                        </FocusTrap>
-                      </motion.div>
-                    ))}
+                    {showingTasks.map((task, index) => {
+                      return (
+                        <div key={task.id}>
+                          {index === firstUpstartedIndex && <div className="z-[250]" ref={beforeRef} />}
+                          <motion.div
+                            variants={taskVariants}
+                            initial={task.status === 6 || task.status === 0 ? 'hidden' : 'visible'}
+                            animate="visible"
+                            exit="exit"
+                            className={cn((index === firstUpstartedIndex || index === lastUpstartedIndex) && 'group relative')}
+                            onMouseMove={(e) => handleMouseMove(e, index)} // track mouse movement
+                            onMouseLeave={() => {
+                              setIsMouseNearTop(false);
+                              setIsMouseNearBottom(false);
+                            }}
+                          >
+                            <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
+                              <TaskCard
+                                task={task}
+                                state={tasksState[task.id] ?? 'folded'}
+                                isSelected={selectedTasks.includes(task.id)}
+                                isFocused={task.id === focusedTaskId}
+                                mode={mode}
+                              />
+                              {/* Conditionally render "+ Task" button for first and last task */}
+                              {((index === firstUpstartedIndex && isMouseNearTop) || (index === lastUpstartedIndex && isMouseNearBottom)) && (
+                                <Button
+                                  variant="plain"
+                                  size="xs"
+                                  style={{ left: `${mouseX}px` }}
+                                  className={`absolute bg-background hover:bg-background transform -translate-y-1/2 opacity-1 rounded hidden sm:inline-flex ${index === firstUpstartedIndex ? 'top' : 'bottom'}-2`}
+                                  onClick={() => openCreateTaskDialog(index === firstUpstartedIndex ? beforeRef : afterRef)}
+                                >
+                                  <Plus size={16} />
+                                  <span className="ml-1">{t('app:task')}</span>
+                                </Button>
+                              )}
+                            </FocusTrap>
+                          </motion.div>
+                          {index === lastUpstartedIndex && <div className="z-[250]" ref={afterRef} />}
+                        </div>
+                      );
+                    })}
                     <Button
                       onClick={handleIcedClick}
                       variant="ghost"

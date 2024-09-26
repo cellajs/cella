@@ -206,7 +206,6 @@ export default function Board() {
 
     const projectIndex = projects.findIndex((p) => p.id === focusedTask.projectId);
     if (projectIndex === -1) return;
-
     toggleCreateTaskForm(projects[projectIndex].id);
   };
 
