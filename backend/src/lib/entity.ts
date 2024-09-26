@@ -10,7 +10,7 @@ type EntityModel<T extends Entity> = (typeof entityTables)[T]['$inferSelect'];
  * @param entityType - The type of the entity.
  * @param idOrSlug - The unique identifier (ID or Slug) of the entity.
  */
-export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string): Promise<EntityModel<T>>;
+export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string): Promise<EntityModel<T> | undefined>;
 export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: string) {
   const table = entityTables[entityType];
 

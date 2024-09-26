@@ -226,6 +226,9 @@ const membershipsRoutes = app
 
     // Check if the user has permission to delete the memberships
     const membershipContext = await resolveEntity(entityType, idOrSlug);
+
+    if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
+
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', membershipContext);
@@ -325,6 +328,8 @@ const membershipsRoutes = app
     }
 
     const membershipContext = await resolveEntity(updatedType, membershipToUpdate[`${updatedType}Id`] || '');
+
+    if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
 
     // Check if user has permission to someone elses membership
     if (user.id !== membershipToUpdate.userId) {

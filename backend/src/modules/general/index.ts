@@ -342,6 +342,8 @@ const generalRoutes = app
     const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
     const entity = await resolveEntity(entityType, idOrSlug);
 
+    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
+
     // TODO use filter query helper to avoid code duplication. Also, this specific filter is missing name search?
     const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
 
