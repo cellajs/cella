@@ -14,11 +14,10 @@ interface BoardColumnHeaderProps {
   name: string;
   role: 'admin' | 'member';
   thumbnailUrl: string | null;
-  createFormOpen: boolean;
   openConfig: () => void;
 }
 
-export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen, openConfig }: BoardColumnHeaderProps) {
+export function BoardColumnHeader({ id, name, role, thumbnailUrl, openConfig }: BoardColumnHeaderProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { changeColumn } = useWorkspaceUIStore();
@@ -86,7 +85,7 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl, createFormOpen
         <ArrowRight size={14} />
       </Button>
       <Button variant="plain" size="xs" className="rounded hidden sm:inline-flex" onClick={() => dispatchCustomEvent('toggleCreateTaskForm', id)}>
-        <Plus size={16} className={`transition-transform ${createFormOpen ? 'rotate-45 scale-125' : 'rotate-0'}`} />
+        <Plus size={16} />
         <span className="ml-1">{t('app:task')}</span>
       </Button>
     </div>

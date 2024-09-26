@@ -29,14 +29,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
-import type {
-  CustomEventDetailId,
-  TaskCardFocusEvent,
-  TaskCardToggleSelectEvent,
-  TaskOperationEvent,
-  TaskStates,
-  TaskStatesChangeEvent,
-} from '~/modules/tasks/types';
+import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, TaskOperationEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
 import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
@@ -65,12 +58,10 @@ function BoardDesktop({
   workspaceId,
   projects,
   tasksState,
-  columnTaskCreate,
 }: {
   tasksState: Record<string, TaskStates>;
   projects: Project[];
   workspaceId: string;
-  columnTaskCreate: Record<string, boolean>;
 }) {
   const { ref, bounds } = useMeasure();
   const scrollerWidth = getScrollerWidth(bounds.width, projects.length);
@@ -80,19 +71,16 @@ function BoardDesktop({
     <div className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto" ref={ref as LegacyRef<HTMLDivElement>}>
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
         <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspaceId}>
-          {projects.map((project, index) => {
-            const isFormOpen = columnTaskCreate[project.id] || false;
-            return (
-              <Fragment key={project.id}>
-                <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
-                  <BoardColumn createForm={isFormOpen} tasksState={tasksState} key={project.id} project={project} />
-                </ResizablePanel>
-                {projects.length > index + 1 && (
-                  <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
-                )}
-              </Fragment>
-            );
-          })}
+          {projects.map((project, index) => (
+            <Fragment key={project.id}>
+              <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
+                <BoardColumn tasksState={tasksState} key={project.id} project={project} />
+              </ResizablePanel>
+              {projects.length > index + 1 && (
+                <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
+              )}
+            </Fragment>
+          ))}
         </ResizablePanelGroup>
       </div>
     </div>
@@ -108,7 +96,6 @@ export default function Board() {
   const isDesktopLayout = useBreakpoints('min', 'sm');
   const { workspaces } = useWorkspaceUIStore();
 
-  const [columnTaskCreate, setColumnTaskCreate] = useState<Record<string, boolean>>({});
   const [tasksState, setTasksState] = useState<Record<string, TaskStates>>({});
 
   const { project, q, taskIdPreview } = useSearch({
@@ -134,27 +121,6 @@ export default function Board() {
     const taskId = taskIdPreview ? taskIdPreview : focusedTaskId;
     return tasks.filter((t) => t.id === taskId);
   }, [tasks, focusedTaskId, taskIdPreview]);
-
-  const toggleCreateTaskForm = (itemId: string) => {
-    setColumnTaskCreate((prevState) => {
-      const newState = {
-        ...prevState,
-        [itemId]: !prevState[itemId],
-      };
-
-      // Scroll to top only when opening the form
-      if (newState[itemId] && !prevState[itemId]) {
-        const listElement = document.getElementById(`tasks-list-${itemId}`);
-        if (!listElement) return newState;
-        listElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
-      }
-
-      return newState;
-    });
-  };
 
   const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
     if (!projects.length || (focusedTaskId && (tasksState[focusedTaskId] === 'editing' || tasksState[focusedTaskId] === 'unsaved'))) return;
@@ -200,20 +166,11 @@ export default function Board() {
 
   const handleNKeyDown = async () => {
     if (!projects.length) return;
+    if (!focusedTaskId) return dispatchCustomEvent('toggleCreateTaskForm', projects[0].id);
 
-    const focusedTask = await getTask(focusedTaskId ? focusedTaskId : projects[0].id);
-    if (!focusedTask) return;
-
-    const projectIndex = projects.findIndex((p) => p.id === focusedTask.projectId);
-    if (projectIndex === -1) return;
-    toggleCreateTaskForm(projects[projectIndex].id);
-  };
-
-  const handleTaskFormClick = (e: CustomEventDetailId) => {
-    const { detail: idOrSlug } = e;
-    if (!idOrSlug) return toggleCreateTaskForm(mobileDeviceProject.id);
-    const projectId = projects.find((p) => p.slug === idOrSlug)?.id ?? idOrSlug;
-    toggleCreateTaskForm(projectId);
+    const focusedTask = await getTask(focusedTaskId);
+    const project = projects.find((p) => p.id === focusedTask.projectId);
+    dispatchCustomEvent('toggleCreateTaskForm', project?.id ?? projects[0].id);
   };
 
   const setTaskState = (taskId: string, state: TaskStates) => {
@@ -335,7 +292,7 @@ export default function Board() {
   useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('openTaskCardPreview', (event) => handleOpenTaskSheet(event.detail));
-  useEventListener('toggleCreateTaskForm', handleTaskFormClick);
+  // useEventListener('toggleCreateTaskForm', handleTaskFormClick);
 
   useEffect(() => {
     if (q?.length) setSearchQuery(q);
@@ -422,9 +379,9 @@ export default function Board() {
       ) : (
         <>
           {isDesktopLayout ? (
-            <BoardDesktop tasksState={tasksState} columnTaskCreate={columnTaskCreate} projects={projects} workspaceId={workspace.id} />
+            <BoardDesktop tasksState={tasksState} projects={projects} workspaceId={workspace.id} />
           ) : (
-            <BoardColumn tasksState={tasksState} createForm={columnTaskCreate[mobileDeviceProject.id] || false} project={mobileDeviceProject} />
+            <BoardColumn tasksState={tasksState} project={mobileDeviceProject} />
           )}
         </>
       )}

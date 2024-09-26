@@ -5,7 +5,6 @@ import { type MutableRefObject, lazy, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 
 import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -32,7 +31,6 @@ const MembersTable = lazy(() => import('~/modules/organizations/members-table'))
 interface BoardColumnProps {
   tasksState: Record<string, TaskStates>;
   project: Project;
-  createForm: boolean;
 }
 
 export const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
@@ -51,15 +49,16 @@ const taskVariants = {
   exit: { opacity: 0, height: 0 },
 };
 
-export function BoardColumn({ project, tasksState, createForm }: BoardColumnProps) {
+export function BoardColumn({ project, tasksState }: BoardColumnProps) {
   const { t } = useTranslation();
+  const defaultTaskFormRef = useRef<HTMLDivElement | null>(null);
   const afterRef = useRef<HTMLDivElement | null>(null);
   const beforeRef = useRef<HTMLDivElement | null>(null);
 
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
   const { mode } = useThemeStore();
-  const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId, labels } = useWorkspaceStore();
+  const { workspace, searchQuery, selectedTasks, projects, focusedTaskId, setFocusedTaskId, labels } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
   const projectLabels = labels.filter((l) => l.projectId === project.id);
@@ -174,6 +173,14 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
     setFocusedTaskId(id);
   };
 
+  const handleTaskFormClick = (e: { detail: string | null }) => {
+    const { detail: idOrSlug } = e;
+    if (idOrSlug && project.id !== idOrSlug && project.slug !== idOrSlug) return;
+    if (!idOrSlug && projects[0].id !== project.id) return;
+    openCreateTaskDialog(defaultTaskFormRef);
+  };
+
+  useEventListener('toggleCreateTaskForm', handleTaskFormClick);
   useEventListener('focusedTaskChange', handleTaskChangeEventListener);
   useEventListener('focusedProjectChange', handleProjectChangeEventListener);
 
@@ -189,7 +196,6 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
         thumbnailUrl={project.thumbnailUrl}
         name={project.name}
         openConfig={openConfigSheet}
-        createFormOpen={createForm}
       />
       <div
         className={cn(
@@ -205,17 +211,8 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
           ) : (
             <ScrollArea id={project.id} className="h-full mx-[-.07rem]">
               <ScrollBar />
-              {createForm && (
-                <CreateTaskForm
-                  projectId={project.id}
-                  organizationId={project.organizationId}
-                  tasks={showingTasks}
-                  labels={projectLabels}
-                  onCloseForm={() => {
-                    if (createForm) dispatchCustomEvent('toggleCreateTaskForm', project.id);
-                  }}
-                />
-              )}
+              <div className="z-[250]" ref={defaultTaskFormRef} />
+
               <div className="h-full flex flex-col" id={`tasks-list-${project.id}`} ref={cardListRef}>
                 {!!tasks.length && (
                   <div className="flex flex-col flex-grow">
@@ -302,20 +299,18 @@ export function BoardColumn({ project, tasksState, createForm }: BoardColumnProp
                     Icon={Palmtree}
                     title={t('common:no_resource_yet', { resource: t('app:tasks').toLowerCase() })}
                     text={
-                      !createForm && (
-                        <>
-                          <Undo
-                            size={200}
-                            strokeWidth={0.2}
-                            className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
-                          />
-                          <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
-                            <span>{t('common:click')}</span>
-                            <span className="text-primary">{`+ ${t('app:task')}`}</span>
-                            <span>{t('app:no_tasks.text')}</span>
-                          </p>
-                        </>
-                      )
+                      <>
+                        <Undo
+                          size={200}
+                          strokeWidth={0.2}
+                          className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
+                        />
+                        <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
+                          <span>{t('common:click')}</span>
+                          <span className="text-primary">{`+ ${t('app:task')}`}</span>
+                          <span>{t('app:no_tasks.text')}</span>
+                        </p>
+                      </>
                     }
                   />
                 )}
