@@ -43,13 +43,13 @@ importers:
         version: 0.2.7
       '@hono/node-server':
         specifier: ^1.13.0
-        version: 1.13.1(hono@4.6.1)
+        version: 1.13.1(hono@4.6.3)
       '@hono/sentry':
         specifier: ^1.2.0
-        version: 1.2.0(hono@4.6.1)
+        version: 1.2.0(hono@4.6.3)
       '@hono/zod-openapi':
         specifier: 0.16.0
-        version: 0.16.0(hono@4.6.1)(zod@3.23.8)
+        version: 0.16.0(hono@4.6.3)(zod@3.23.8)
       '@logtail/node':
         specifier: ^0.5.0
         version: 0.5.0
@@ -94,7 +94,7 @@ importers:
         version: 1.7.0
       '@scalar/hono-api-reference':
         specifier: ^0.5.146
-        version: 0.5.147(hono@4.6.1)
+        version: 0.5.147(hono@4.6.3)
       '@sendgrid/mail':
         specifier: ^8.1.3
         version: 8.1.3
@@ -123,8 +123,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0
       hono:
-        specifier: 4.6.1
-        version: 4.6.1
+        specifier: 4.6.3
+        version: 4.6.3
       i18next:
         specifier: ^23.15.1
         version: 23.15.1
@@ -441,8 +441,8 @@ importers:
         specifier: ^14.0.1
         version: 14.0.1
       hono:
-        specifier: 4.6.1
-        version: 4.6.1
+        specifier: 4.6.3
+        version: 4.6.3
       i18next:
         specifier: ^23.15.1
         version: 23.15.1
@@ -525,8 +525,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(react@18.3.1)
       vaul:
-        specifier: ^0.9.4
-        version: 0.9.4(@types/react-dom@18.3.0)(@types/react@18.3.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^0.9.9
+        version: 0.9.9(@types/react-dom@18.3.0)(@types/react@18.3.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       workbox-window:
         specifier: ^7.1.0
         version: 7.1.0
@@ -2675,7 +2675,6 @@ packages:
 
   '@evilmartians/lefthook@1.7.15':
     resolution: {integrity: sha512-YgKTw9noH/SG0aOaPgrZNRgY7iJ0FuIVfvdB/aGsNulYLqiFnJyID2sfCaQ7PsGaFng2wdFBhmK/wbnb8+qPcA==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -7292,9 +7291,9 @@ packages:
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
-  hono@4.6.1:
-    resolution: {integrity: sha512-6NGwvttY1+HAFii08VYiEKI6ETPAFbpLntpm2M/MogEsAFWdZV74UNT+2M4bmqX90cIQhjlpBSP+tO+CfB0uww==}
-    engines: {node: '>=16.0.0'}
+  hono@4.6.3:
+    resolution: {integrity: sha512-0LeEuBNFeSHGqZ9sNVVgZjB1V5fmhkBSB0hZrpqStSMLOWgfLy0dHOvrjbJh0H2khsjet6rbHfWTHY0kpYThKQ==}
+    engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
@@ -10244,8 +10243,8 @@ packages:
     resolution: {integrity: sha512-c1Q0mCiPlgdTVVVIJIrBuxNicYE+t/7oKeI9MWLj3fh/uq2Pxh/3eeWbVZ4OcGW1TUf53At0njHw5SMdA3tmMg==}
     engines: {node: '>= 0.10'}
 
-  vaul@0.9.4:
-    resolution: {integrity: sha512-pcyIy1nEk6798ReNQpbVH/T/dYnoJ3bwyq7jmSp134s+bSvpWoSWQthm3/jfsQRvHNYIEK4ZKbkHUJ3YfLfw1w==}
+  vaul@0.9.9:
+    resolution: {integrity: sha512-7afKg48srluhZwIkaU+lgGtFCUsYBSGOl8vcc8N/M3YQlZFlynHD15AE+pwrYdc826o7nrIND4lL9Y6b9WWZZQ==}
     peerDependencies:
       react: ^16.8 || ^17.0 || ^18.0
       react-dom: ^16.8 || ^17.0 || ^18.0
@@ -12928,29 +12927,29 @@ snapshots:
       protobufjs: 7.4.0
       yargs: 17.7.2
 
-  '@hono/node-server@1.13.0(hono@4.6.1)':
+  '@hono/node-server@1.13.0(hono@4.6.3)':
     dependencies:
-      hono: 4.6.1
+      hono: 4.6.3
 
-  '@hono/node-server@1.13.1(hono@4.6.1)':
+  '@hono/node-server@1.13.1(hono@4.6.3)':
     dependencies:
-      hono: 4.6.1
+      hono: 4.6.3
 
-  '@hono/sentry@1.2.0(hono@4.6.1)':
+  '@hono/sentry@1.2.0(hono@4.6.3)':
     dependencies:
-      hono: 4.6.1
+      hono: 4.6.3
       toucan-js: 4.0.0
 
-  '@hono/zod-openapi@0.16.0(hono@4.6.1)(zod@3.23.8)':
+  '@hono/zod-openapi@0.16.0(hono@4.6.3)(zod@3.23.8)':
     dependencies:
       '@asteasolutions/zod-to-openapi': 7.1.1(zod@3.23.8)
-      '@hono/zod-validator': 0.2.2(hono@4.6.1)(zod@3.23.8)
-      hono: 4.6.1
+      '@hono/zod-validator': 0.2.2(hono@4.6.3)(zod@3.23.8)
+      hono: 4.6.3
       zod: 3.23.8
 
-  '@hono/zod-validator@0.2.2(hono@4.6.1)(zod@3.23.8)':
+  '@hono/zod-validator@0.2.2(hono@4.6.3)(zod@3.23.8)':
     dependencies:
-      hono: 4.6.1
+      hono: 4.6.3
       zod: 3.23.8
 
   '@hookform/resolvers@3.9.0(react-hook-form@7.53.0(react@18.3.1))':
@@ -13126,14 +13125,14 @@ snapshots:
       '@axiomhq/js': 1.0.0-rc.3
       '@babel/core': 7.24.6
       '@babel/types': 7.24.6
-      '@hono/node-server': 1.13.0(hono@4.6.1)
+      '@hono/node-server': 1.13.0(hono@4.6.3)
       '@million/install': 0.0.18
       '@rollup/pluginutils': 5.1.0(rollup@2.79.1)
       '@rrweb/types': 2.0.0-alpha.16
       babel-plugin-syntax-hermes-parser: 0.21.1
       ci-info: 4.0.0
       esbuild: 0.20.2
-      hono: 4.6.1
+      hono: 4.6.3
       isomorphic-fetch: 3.0.0
       nanoid: 5.0.7
       pako: 2.1.0
@@ -15220,10 +15219,10 @@ snapshots:
     dependencies:
       rrweb-snapshot: 2.0.0-alpha.17
 
-  '@scalar/hono-api-reference@0.5.147(hono@4.6.1)':
+  '@scalar/hono-api-reference@0.5.147(hono@4.6.3)':
     dependencies:
       '@scalar/types': 0.0.9
-      hono: 4.6.1
+      hono: 4.6.3
 
   '@scalar/openapi-types@0.1.1': {}
 
@@ -18366,7 +18365,7 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  hono@4.6.1: {}
+  hono@4.6.3: {}
 
   hookable@5.5.3: {}
 
@@ -22045,7 +22044,7 @@ snapshots:
 
   validator@13.12.0: {}
 
-  vaul@0.9.4(@types/react-dom@18.3.0)(@types/react@18.3.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  vaul@0.9.9(@types/react-dom@18.3.0)(@types/react@18.3.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@radix-ui/react-dialog': 1.1.1(@types/react-dom@18.3.0)(@types/react@18.3.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
