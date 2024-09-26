@@ -1,6 +1,6 @@
-import { resetDb } from '#/cron/manage-db';
+import { dataSeed } from './seed';
 
-resetDb()
+dataSeed()
   .catch((error) => {
     console.error(error);
     process.exit(1);

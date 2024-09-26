@@ -1,7 +1,7 @@
+import type { AppCustomEventMap } from '~/types/app';
 import type { ContextEntity, Entity, Membership } from '~/types/common';
 
-// Add to CombinedCustomEventMap events that you create in your own app
-export type CombinedCustomEventMap = {
+export type CombinedCustomEventMap = AppCustomEventMap & {
   updateEntityCover: CustomEvent<{ bannerUrl: string; entity: Entity }>;
   entityArchiveToggle: CustomEvent<{ membership: Membership; entity: ContextEntity }>;
   entityMuteToggle: CustomEvent<{ membership: Membership; entity: ContextEntity }>;

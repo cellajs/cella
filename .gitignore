@@ -42,3 +42,6 @@ backend/files
 frontend/stats.html
 frontend/src/generated
 *.zip
+
+## Cella
+cella.diverged.txt

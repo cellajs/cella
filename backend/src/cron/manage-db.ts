@@ -1,3 +1,4 @@
+import { dataSeed } from '../../scripts/seeds/data/seed';
 import { organizationsSeed } from '../../scripts/seeds/organizations/seed';
 import { userSeed } from '../../scripts/seeds/user/seed';
 
@@ -11,6 +12,7 @@ export const resetDb = async () => {
   // Reset the database with seeds
   await userSeed();
   await organizationsSeed();
+  await dataSeed();
 
   console.info('Database reset complete.');
 };
