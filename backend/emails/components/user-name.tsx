@@ -1,4 +1,3 @@
-import { Text } from 'jsx-email';
 import { i18n } from '#/lib/i18n';
 
 export const UserName = ({ beforeText, userName }: { beforeText?: string; userName?: string }) => {
@@ -6,20 +5,18 @@ export const UserName = ({ beforeText, userName }: { beforeText?: string; userNa
   const contentBeforeText = beforeText ? beforeText : '';
 
   return (
-    <Text>
-      <div
-        style={{
-          display: 'inline-flex',
-          gap: '.25rem',
-          fontSize: '1rem',
-          color: '#000000',
-        }}
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
-        dangerouslySetInnerHTML={{
-          __html: `${contentBeforeText} ${username}`,
-        }}
-      />
-    </Text>
+    <div
+      style={{
+        display: 'block',
+        gap: '.25rem',
+        fontSize: '1rem',
+        color: '#000000',
+      }}
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+      dangerouslySetInnerHTML={{
+        __html: `${contentBeforeText} ${username}`,
+      }}
+    />
   );
 };
 

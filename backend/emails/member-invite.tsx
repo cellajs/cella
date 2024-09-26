@@ -1,7 +1,8 @@
 import { config } from 'config';
-import { Column, Img, Row, Section, Text } from 'jsx-email';
+import { Column, Row, Section, Text } from 'jsx-email';
 import { i18n } from '../../backend/src/lib/i18n';
 
+import { ArrowRight } from './components/arrow-right';
 import Avatar from './components/avatar';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
@@ -19,7 +20,6 @@ interface Props extends BasicTemplateType {
   organizationThumbnailUrl?: string | null;
 }
 
-const productionUrl = config.productionUrl;
 const appName = config.name;
 
 export const InviteMemberEmail = ({ userName, userLanguage: lng, inviteBy, organizationName, inviterEmail, token }: Props) => {
@@ -65,7 +65,7 @@ export const InviteMemberEmail = ({ userName, userLanguage: lng, inviteBy, organ
             <Avatar name={userName} type="user" />
           </Column>
           <Column align="center">
-            <Img src={`${productionUrl}/static/email/arrow.png`} width="12" height="9" alt="invited to" />
+            <ArrowRight />
           </Column>
           <Column align="left">
             <Avatar name={organizationName} type="organization" />
