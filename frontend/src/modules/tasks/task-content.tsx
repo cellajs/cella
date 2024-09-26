@@ -9,22 +9,22 @@ import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
+import type { TaskStates } from './types';
 
 interface Props {
   task: Task;
   mode: Mode;
-  isExpanded: boolean;
-  isEditing: boolean;
+  state: TaskStates;
 }
 
-const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
+const TaskContent = ({ task, mode, state }: Props) => {
   const { t } = useTranslation();
   const [createSubTask, setCreateSubTask] = useState(false);
 
   const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none pl-9';
   return (
     <div className="flex flex-col grow gap-2">
-      {!isExpanded ? (
+      {state === 'folded' ? (
         <div className="mt-1 inline-flex">
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
@@ -35,7 +35,12 @@ const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
 
           {(task.expandable || task.subTasks.length > 0) && (
             <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 pl-2 -mt-[0.15rem]">
-              <Button variant="link" size="micro" onClick={() => dispatchCustomEvent('toggleTaskExpand', task.id)} className="inline-flex py-0 h-5">
+              <Button
+                variant="link"
+                size="micro"
+                onClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'editing' })}
+                className="inline-flex py-0 h-5"
+              >
                 {t('common:more').toLowerCase()}
               </Button>
               {task.subTasks.length > 0 && (
@@ -54,14 +59,17 @@ const TaskContent = ({ task, mode, isExpanded, isEditing }: Props) => {
         </div>
       ) : (
         <motion.div initial={{ y: -10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.3 }}>
-          {isEditing ? (
+          {state === 'editing' || state === 'unsaved' ? (
             <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
           ) : (
             <div className={`${expandedStyle} bn-container bn-shadcn`} data-color-scheme={mode}>
               <div
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
                 dangerouslySetInnerHTML={{ __html: task.description }}
-                onClick={() => dispatchCustomEvent('toggleTaskEditing', { id: task.id, state: true })}
+                onClick={(e) => {
+                  e.preventDefault();
+                  dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'editing' });
+                }}
                 onKeyDown={() => {}}
               />
             </div>

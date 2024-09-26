@@ -13,26 +13,26 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import type { Task } from '~/types/app';
 import HeaderInfo from './header-info';
+import type { TaskStates } from './types';
 
 export const TaskHeader = ({
   task,
-  isEditing,
+  state,
   isSheet,
   onRemove,
-  changeEditingState,
-  closeExpand,
 }: {
   task: Task;
-  isEditing: boolean;
+  state: TaskStates;
   isSheet?: boolean;
-  changeEditingState: (state: boolean) => void;
-  closeExpand: () => void;
   onRemove?: (subTaskId: string) => void;
 }) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const isSubTask = task.parentId !== null;
   const initialAndExitParams = { opacity: isSubTask ? 1 : 0, y: isSubTask ? 0 : -10 };
+  const isEditing = state === 'editing' || state === 'unsaved';
+
+  const buttonText = isEditing ? t(`app:${state}`) : t('common:edit');
   return (
     <StickyBox enabled={false} className="flex flex-row z-100 w-full justify-between">
       {!isSubTask && task.createdBy && (
@@ -70,19 +70,19 @@ export const TaskHeader = ({
         {(!isSheet || isSubTask) && (
           <TooltipButton
             disabled={isEditing}
-            toolTipContent={t('common:edit_resource', { resource: t('app:task').toLowerCase() })}
+            toolTipContent={t('common:edit_resource', { resource: isSubTask ? t('app:todo').toLowerCase() : t('app:task').toLowerCase() })}
             side="bottom"
             sideOffset={5}
             hideWhenDetached
           >
             <Button
-              onClick={() => changeEditingState(!isEditing)}
+              onClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: isEditing ? 'expanded' : 'editing' })}
               aria-label="Edit"
               variant="ghost"
               className="flex flex-row items-center gap-1 font-light"
               size="xs"
             >
-              {isEditing ? <span className="italic">{t('app:editing')}</span> : t('common:edit')}
+              {isEditing ? <span className="italic">{buttonText}</span> : buttonText}
             </Button>
           </TooltipButton>
         )}
@@ -91,7 +91,7 @@ export const TaskHeader = ({
           <TooltipButton toolTipContent={t('common:expand')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {
-                if (isEditing) changeEditingState(false);
+                if (isEditing) dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
                 dispatchCustomEvent('openTaskCardPreview', task.id);
               }}
               aria-label="OpenTaskSheet"
@@ -116,10 +116,7 @@ export const TaskHeader = ({
         {(!isSheet || isSubTask) && (
           <TooltipButton toolTipContent={t('common:close')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
-              onClick={() => {
-                closeExpand();
-                changeEditingState(false);
-              }}
+              onClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'folded' })}
               aria-label="Collapse"
               variant="ghost"
               size="xs"

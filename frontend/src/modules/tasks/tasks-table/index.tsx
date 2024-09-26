@@ -145,14 +145,11 @@ export default function TasksTable() {
   const handleOpenPreview = (taskId: string) => {
     const relativeTasks = rows.filter((t) => t.id === taskId || t.parentId === taskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
-    sheet.create(
-      <TaskCard mode={mode} task={currentTask} tasks={rows} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />,
-      {
-        className: 'max-w-full lg:max-w-4xl',
-        title: <span className="pl-4">{t('app:task')}</span>,
-        id: `task-preview-${taskId}`,
-      },
-    );
+    sheet.create(<TaskCard mode={mode} task={currentTask} tasks={rows} state="editing" isSelected={false} isFocused={true} isSheet />, {
+      className: 'max-w-full lg:max-w-4xl',
+      title: <span className="pl-4">{t('app:task')}</span>,
+      id: `task-preview-${taskId}`,
+    });
     setFocusedTaskId(taskId);
   };
 
@@ -188,9 +185,7 @@ export default function TasksTable() {
     const relativeTasks = rows.filter((t) => t.id === focusedTaskId || t.parentId === focusedTaskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === focusedTaskId);
     sheet.update(`task-preview-${currentTask.id}`, {
-      content: (
-        <TaskCard mode={mode} task={currentTask} tasks={rows} isEditing={true} isExpanded={true} isSelected={false} isFocused={true} isSheet />
-      ),
+      content: <TaskCard mode={mode} task={currentTask} tasks={rows} state="editing" isSelected={false} isFocused={true} isSheet />,
     });
   }, [rows, focusedTaskId]);
 

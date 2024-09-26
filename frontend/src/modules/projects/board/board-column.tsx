@@ -17,7 +17,7 @@ import { ProjectSettings } from '~/modules/projects/project-settings';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
-import type { CustomEventDetailId, TaskChangeEvent } from '~/modules/tasks/types';
+import type { CustomEventDetailId, TaskChangeEvent, TaskStates } from '~/modules/tasks/types';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useThemeStore } from '~/store/theme';
@@ -28,8 +28,7 @@ import type { Project } from '~/types/app';
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
 interface BoardColumnProps {
-  expandedTasks: Record<string, boolean>;
-  editingTasks: Record<string, boolean>;
+  tasksState: Record<string, TaskStates>;
   project: Project;
   createForm: boolean;
 }
@@ -44,7 +43,7 @@ export const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
   });
 };
 
-export function BoardColumn({ project, expandedTasks, editingTasks, createForm }: BoardColumnProps) {
+export function BoardColumn({ project, tasksState, createForm }: BoardColumnProps) {
   const { t } = useTranslation();
 
   const columnRef = useRef<HTMLDivElement | null>(null);
@@ -202,8 +201,7 @@ export function BoardColumn({ project, expandedTasks, editingTasks, createForm }
                         <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                           <TaskCard
                             task={task}
-                            isEditing={editingTasks[task.id] ?? false}
-                            isExpanded={expandedTasks[task.id] ?? false}
+                            state={tasksState[task.id] ?? 'folded'}
                             isSelected={selectedTasks.includes(task.id)}
                             isFocused={task.id === focusedTaskId}
                             mode={mode}

@@ -24,6 +24,7 @@ import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme.ts';
 import type { Task } from '~/types/app';
+import type { TaskStates } from './types';
 
 const variants = cva('task-card', {
   variants: {
@@ -46,8 +47,7 @@ const variants = cva('task-card', {
 interface TaskProps {
   task: Task;
   mode: Mode;
-  isExpanded: boolean;
-  isEditing: boolean;
+  state: TaskStates;
   isSelected: boolean;
   isFocused: boolean;
   tasks?: Task[];
@@ -55,7 +55,7 @@ interface TaskProps {
   style?: React.CSSProperties;
 }
 
-export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEditing, isExpanded, isSheet }: TaskProps) {
+export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, state, isSheet }: TaskProps) {
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -76,7 +76,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
 
   const handleCardClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     const target = event.target as HTMLElement;
-    if (isExpanded && isFocused) return;
+    if (state !== 'folded' && isFocused) return;
     dispatchCustomEvent('toggleTaskCard', { taskId: task.id, clickTarget: target });
   };
 
@@ -101,7 +101,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
         getInitialData: () => data,
         onDragStart: () => setDragging(true),
         onDrop: () => setDragging(false),
-        canDrag: () => !isEditing,
+        canDrag: () => state === 'folded' || state === 'expanded',
       }),
       dropTargetForExternal({
         element,
@@ -126,7 +126,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
         onDrop: () => dragEnd(),
       }),
     );
-  }, [task, isEditing]);
+  }, [task, state]);
 
   return (
     <motion.div layout transition={{ duration: 0.3 }}>
@@ -141,7 +141,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
         focus-visible:none border-l-2 via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} 
         ${dragOver ? 'bg-card/20' : ''} 
         ${isFocused && !isSheet ? 'border-l-primary is-focused' : 'border-l-transparent'}
-        ${isExpanded ? 'is-expanded' : 'is-collapsed'}`,
+        ${state !== 'folded' ? 'is-expanded' : 'is-collapsed'}`,
           variants({
             status: task.status as TaskStatus,
           }),
@@ -150,17 +150,9 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
         <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-2 pr-3 space-between flex flex-col relative">
           {/* To prevent on expand animation */}
           <motion.div className="flex flex-col" layout transition={{ duration: 0 }}>
-            {isExpanded && (
-              <TaskHeader
-                task={task}
-                isEditing={isEditing}
-                isSheet={isSheet}
-                changeEditingState={(state) => dispatchCustomEvent('toggleTaskEditing', { id: task.id, state })}
-                closeExpand={() => dispatchCustomEvent('toggleTaskExpand', task.id)}
-              />
-            )}
+            {state !== 'folded' && <TaskHeader task={task} state={state} isSheet={isSheet} />}
             <div className="flex flex-row gap-1 w-full">
-              {!isExpanded && (
+              {state === 'folded' && (
                 <Button
                   id="type"
                   onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
@@ -172,7 +164,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, isEd
                   {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
                 </Button>
               )}
-              <TaskDescription mode={mode} task={task} isExpanded={isExpanded} isEditing={isEditing} />
+              <TaskDescription mode={mode} task={task} state={state} />
             </div>
             <TaskFooter task={task} tasks={tasks} isSheet={isSheet} isSelected={isSelected} isStatusDropdownOpen={isStatusDropdownOpen} />
           </motion.div>

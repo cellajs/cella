@@ -1,7 +1,7 @@
 import { FilePanelController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
-import { type KeyboardEventHandler, Suspense, useCallback, useEffect, useLayoutEffect } from 'react';
+import { type KeyboardEventHandler, Suspense, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
@@ -45,6 +45,8 @@ export const TaskBlockNote = ({
   const { t } = useTranslation();
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock: false });
 
+  const wasInitial = useRef(false);
+
   const { pathname } = useLocation();
   const { members } = useWorkspaceStore();
 
@@ -69,9 +71,9 @@ export const TaskBlockNote = ({
 
   const handleEditorFocus = () => {
     // Remove subTask editing state
-    dispatchCustomEvent('toggleSubTaskEditing', { id, state: false });
+    dispatchCustomEvent('changeSubTaskState', { taskId: id, state: 'removeEditing' });
     // Remove Task editing state if focused not task itself
-    if (taskToClose) dispatchCustomEvent('toggleTaskEditing', { id: taskToClose, state: false });
+    if (taskToClose) dispatchCustomEvent('changeTaskState', { taskId: taskToClose, state: 'expanded' });
   };
 
   const updateData = async () => {
@@ -86,6 +88,8 @@ export const TaskBlockNote = ({
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (onChange) onChange(cleanDescription, cleanSummary);
     else handleUpdateHTML(cleanDescription, cleanSummary);
+    const event = subTask ? 'changeSubTaskState' : 'changeTaskState';
+    dispatchCustomEvent(event, { taskId: id, state: 'editing' });
   };
 
   const handleKeyDown: KeyboardEventHandler = async (event) => {
@@ -118,13 +122,14 @@ export const TaskBlockNote = ({
   useLayoutEffect(() => {
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
-      const currentBlocks = editor.document.map((block) => block.content).join('');
-      const newBlocksContent = blocks.map((block) => block.content).join('');
+      const currentBlocks = editor.document.map((block) => block.content?.toString()).join('');
+      const newBlocksContent = blocks.map((block) => block.content?.toString()).join('');
 
       // Only replace blocks if the content actually changes
       if (currentBlocks !== newBlocksContent || html === '') {
         editor.replaceBlocks(editor.document, blocks);
         triggerFocus(subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`);
+        if (!wasInitial.current) wasInitial.current = true;
       }
     };
     blockUpdate(html);
@@ -141,6 +146,10 @@ export const TaskBlockNote = ({
         id={subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`}
         // Defer onChange, onFocus and onBlur  to run after rendering
         onChange={() => {
+          if (!onChange && wasInitial.current) {
+            const event = subTask ? 'changeSubTaskState' : 'changeTaskState';
+            dispatchCustomEvent(event, { taskId: id, state: 'unsaved' });
+          }
           // to avoid update if content empty, so from draft shown
           if (!onChange || editor.document[0].content?.toString() === '') return;
           queueMicrotask(() => updateData());

@@ -1,18 +1,22 @@
 import type { SubTask, Task } from '~/types/app';
 
 export interface TasksCustomEventMap {
+  changeTaskState: CustomEvent<{ taskId: string; state: TaskStates }>;
   focusedProjectChange: CustomEvent<string>;
   toggleCreateTaskForm: CustomEvent<string>;
   focusedTaskChange: CustomEvent<{ taskId: string; direction: number; projectId: string }>;
   toggleTaskCard: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
-  toggleTaskExpand: CustomEvent<string>;
-  toggleTaskEditing: CustomEvent<{ state: boolean; id: string }>;
-  closeAllEditingTasks: CustomEvent;
-  toggleSubTaskEditing: CustomEvent<{ state: boolean; id: string }>;
+  changeSubTaskState: CustomEvent<{ taskId: string; state: TaskStates | 'removeEditing' }>;
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
   openTaskCardPreview: CustomEvent<string>;
   taskTableOperation: CustomEvent<TaskQueryInfo>;
   taskOperation: CustomEvent<TaskQueryInfo & { projectId: string }>;
+}
+
+export type TaskStates = 'folded' | 'editing' | 'expanded' | 'unsaved';
+
+export interface TaskStatesChangeEvent extends Event {
+  detail: { taskId: string; state: TaskStates };
 }
 
 export type TaskQueryActions = 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
