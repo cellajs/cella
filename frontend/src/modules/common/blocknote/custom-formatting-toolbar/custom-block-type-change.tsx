@@ -10,6 +10,8 @@ import {
 } from '@blocknote/react';
 import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { customBlockTypeSelectItems } from '~/modules/common/blocknote/blocknote-config';
+import type { BlockTypes } from '~/modules/common/blocknote/types';
 
 export const CustomBlockTypeSelect = () => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
@@ -24,10 +26,11 @@ export const CustomBlockTypeSelect = () => {
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 
   const filteredItems = useMemo(() => {
-    return blockTypeSelectItems(dict).filter((item) => item.type in editor.schema.blockSchema);
+    return blockTypeSelectItems(dict).filter((item) => customBlockTypeSelectItems.includes(item.type as BlockTypes));
   }, [editor, dict]);
 
   const shouldShow: boolean = useMemo(() => filteredItems.find((item) => item.type === block.type) !== undefined, [block.type, filteredItems]);
+
   const selectedItem = useMemo(() => {
     const { props, type } = currentBlock || {};
     if (props?.level) {
@@ -40,10 +43,10 @@ export const CustomBlockTypeSelect = () => {
   const fullItems = useMemo(() => {
     const onClick = (item: BlockTypeSelectItem) => {
       editor.focus();
-
       for (const block of selectedBlocks) {
         editor.updateBlock(block, {
           type: item.type,
+          //In our case we pass props cos by it we get heading level: 1 | 2 | 3
           // biome-ignore lint/suspicious/noExplicitAny: required by author
           props: item.props as any,
         });
@@ -51,13 +54,12 @@ export const CustomBlockTypeSelect = () => {
     };
 
     return filteredItems.map((item) => {
-      const Icon = item.icon;
-
+      const { icon: Icon, isSelected, name } = item;
       return {
-        title: item.name,
+        title: name,
         icon: <Icon size={16} />,
         onClick: () => onClick(item),
-        isSelected: item.isSelected(block),
+        isSelected: isSelected(block),
       };
     });
   }, [block, filteredItems, editor, selectedBlocks]);
