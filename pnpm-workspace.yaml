@@ -4,4 +4,4 @@ packages:
   - 'locales'
   - 'tus'
   - 'config'
-  - 'cli/create-cella'
+  - 'cli/*'
