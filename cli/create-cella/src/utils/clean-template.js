@@ -1,54 +1,70 @@
-import { TO_CLEAN, TO_REMOVE } from '../constants.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { TO_CLEAN, TO_REMOVE } from '../constants.js';
+
+/**
+ * Cleans the specified template by removing designated folders and files.
+ * @param {Object} params - Parameters containing targetFolder.
+ * @param {string} params.targetFolder - The folder to clean.
+ */
 export async function cleanTemplate({
   targetFolder,
 }) {
-  // Change directory to targetFolder if not already there
+  // Change the current working directory to targetFolder if not already set
   if (process.cwd() !== targetFolder) {
     process.chdir(targetFolder);
   }
 
   return new Promise(async (resolve, reject) => {
     try {
-      // Clean folder contents
-      for (const folderPath of TO_CLEAN) {
+      // Clean specified folder contents
+      await Promise.all(TO_CLEAN.map(folderPath => {
         const absolutePath = path.resolve(targetFolder, folderPath);
-        await removeFolderContents(absolutePath);
-      }
+        return removeFolderContents(absolutePath);
+      }));
 
-      // Remove files and folders
-      for (const filePath of TO_REMOVE) {
+      // Remove specified files and folders
+      await Promise.all(TO_REMOVE.map(filePath => {
         const absolutePath = path.resolve(targetFolder, filePath);
-        await removeFileOrFolder(absolutePath);
-      }
+        return removeFileOrFolder(absolutePath);
+      }));
 
       resolve();
     } catch (err) {
-      reject(`Error during cleaning process: ${err}`);
+      reject(`Error during the cleaning process: ${err}`);
     }
   });
 }
 
-// Helper function to remove contents of a folder
+/**
+ * Removes all contents within a specified folder.
+ * @param {string} folderPath - The path of the folder to clean.
+ */
 export async function removeFolderContents(folderPath) {
-  const files = await fs.readdir(folderPath); // List all files in the folder
-  for (const file of files) {
-    const filePath = path.join(folderPath, file);
-    const stat = await fs.lstat(filePath); // Get the file/folder information
+  // List all files in the folder
+  const files = await fs.readdir(folderPath); 
 
+  await Promise.all(files.map(async (file) => {
+    const filePath = path.join(folderPath, file);
+
+    // Get the file or folder statistics
+    const stat = await fs.lstat(filePath);
+
+    // If it's a directory, remove it and all its contents
     if (stat.isDirectory()) {
-      // If it's a directory, remove the directory and its contents
       await fs.rm(filePath, { recursive: true, force: true });
     } else {
       // If it's a file, remove it
       await fs.rm(filePath);
     }
-  }
+  }));
 }
 
-// Helper function to remove files or folders
+/**
+ * Removes a specified file or folder.
+ * @param {string} pathToRemove - The path to the file or folder to remove.
+ */
 export async function removeFileOrFolder(pathToRemove) {
   await fs.rm(pathToRemove, { recursive: true, force: true });
 }
