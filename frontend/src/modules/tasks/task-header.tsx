@@ -76,7 +76,10 @@ export const TaskHeader = ({
             hideWhenDetached
           >
             <Button
-              onClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: isEditing ? 'expanded' : 'editing' })}
+              onClick={() => {
+                const event = isSubTask ? 'changeSubTaskState' : 'changeTaskState';
+                dispatchCustomEvent(event, { taskId: task.id, state: isEditing ? 'expanded' : 'editing' });
+              }}
               aria-label="Edit"
               variant="ghost"
               className="flex flex-row items-center gap-1 font-light"

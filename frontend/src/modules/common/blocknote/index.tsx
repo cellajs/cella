@@ -108,7 +108,7 @@ export const BlockNote = ({
       sideMenu={customSideMenu ? false : sideMenu}
       slashMenu={customSlashMenu ? false : slashMenu}
       formattingToolbar={customFormattingToolbar ? false : formattingToolbar}
-      emojiPicker={emojiPicker}
+      emojiPicker={!emojiPicker}
       className={cn('p-2 border rounded-lg', className)}
     >
       {customSlashMenu && <CustomSlashMenu editor={editor} />}
@@ -123,7 +123,7 @@ export const BlockNote = ({
         <GridSuggestionMenuController
           triggerCharacter={':'}
           // Changes the Emoji Picker to only have 10 columns & min length of 0.
-          columns={10}
+          columns={5}
           minQueryLength={0}
         />
       )}

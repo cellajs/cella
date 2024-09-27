@@ -1,5 +1,5 @@
 {
-  "name": "@cellajs/frontend",
+  "name": "frontend",
   "version": "0.0.1",
   "type": "module",
   "engines": {
