@@ -3,9 +3,9 @@ import { db } from '#/db/db';
 
 import { labelsTable } from '#/db/schema/labels';
 import { errorResponse } from '#/lib/errors';
-import { getOrderColumn } from '#/lib/order-column';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
+import { getOrderColumn } from '#/utils/order-column';
 import labelsRoutesConfig from './routes';
 
 const app = new CustomHono();

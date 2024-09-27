@@ -1,9 +1,9 @@
 import { contextStorage } from 'hono/context-storage';
 
 import type { Env } from '#/types/app';
-import defaultHook from './lib/default-hook';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
+import defaultHook from './utils/default-hook';
 
 import { CustomHono } from '#/types/common';
 

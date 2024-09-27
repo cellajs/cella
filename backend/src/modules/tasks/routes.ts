@@ -1,5 +1,5 @@
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/lib/common-responses';
-import { idsQuerySchema, productParamSchema } from '#/lib/common-schemas';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
+import { idsQuerySchema, productParamSchema } from '#/utils/schema/common-schemas';
 
 import { createRouteConfig } from '#/lib/route-config';
 import { isAllowedTo, isAuthenticated } from '#/middlewares/guard';

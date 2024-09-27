@@ -5,8 +5,8 @@ import { requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
 import { sendSlackNotification } from '#/lib/notification';
-import { getOrderColumn } from '#/lib/order-column';
 import { CustomHono } from '#/types/common';
+import { getOrderColumn } from '#/utils/order-column';
 import requestsRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -38,7 +38,7 @@ const requestsRoutes = app
       .values({
         email,
         type,
-        message: message,
+        message,
       })
       .returning();
 

@@ -155,6 +155,11 @@ p.bn-inline-content code {
   background-color: #208020;
 }
 
+/* styles.css */
+.no-hover-bg:hover {
+  background-color: transparent !important;
+}
+
 .notify-icon-wrapper {
   border-radius: 16px;
   display: flex;

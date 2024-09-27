@@ -1,5 +1,5 @@
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from '#/lib/nanoid';
+import { nanoid } from '#/utils/nanoid';
 import { tasksTable } from './tasks';
 import { usersTable } from './users';
 

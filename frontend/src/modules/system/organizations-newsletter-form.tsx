@@ -3,19 +3,20 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
-import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
 import '@blocknote/shadcn/style.css';
 import { onlineManager } from '@tanstack/react-query';
+import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
 import { Send } from 'lucide-react';
+import { Suspense } from 'react';
 import { toast } from 'sonner';
+import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { sheet } from '~/modules/common/sheeter/state';
-import BlockNote from '~/modules/system/org-newsletter-blocknote';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { BlockNote } from '../common/blocknote';
 
 interface NewsletterFormProps {
   organizationIds: string[];
@@ -88,7 +89,19 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
             <FormItem>
               <FormLabel>{t('common:message')}</FormLabel>
               <FormControl>
-                <BlockNote onChange={onChange} className="min-h-20" value={value} />
+                <Suspense>
+                  <BlockNote
+                    id={'blocknote-org-letter'}
+                    defaultValue={value}
+                    triggerUpdateOnChange={true}
+                    updateData={onChange}
+                    customSideMenu={true}
+                    customSlashMenu={true}
+                    customFormattingToolbar={true}
+                    className="min-h-20 pl-10"
+                    emojis={false}
+                  />
+                </Suspense>
               </FormControl>
               <FormMessage />
             </FormItem>

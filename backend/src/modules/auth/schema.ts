@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { passwordSchema } from '#/lib/common-schemas';
+import { passwordSchema } from '#/utils/schema/common-schemas';
 import { userSchema } from '../users/schema';
 
 export const authBodySchema = z.object({

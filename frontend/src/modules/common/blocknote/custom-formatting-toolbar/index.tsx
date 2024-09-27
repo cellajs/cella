@@ -1,31 +1,38 @@
 import {
-  BasicTextStyleButton,
-  ColorStyleButton,
   CreateLinkButton,
   FileCaptionButton,
   FileReplaceButton,
   FormattingToolbar,
   FormattingToolbarController,
+  NestBlockButton,
+  UnnestBlockButton,
 } from '@blocknote/react';
-import { CustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-select';
+import { CustomTextAlignSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-align-cahnge';
+import { CustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
+import { CustomTextStyleSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-text-stype-change';
+import type { CustomFormatToolBarConfig } from '~/modules/common/blocknote/types';
 
-// Removed text position left|center|right, also remove indentation.
-export const CustomFormattingToolbar = () => (
+export const CustomFormattingToolbar = ({ config }: { config: CustomFormatToolBarConfig }) => (
   <FormattingToolbarController
     formattingToolbar={() => (
       <FormattingToolbar>
-        <CustomBlockTypeSelect />
+        {config.blockTypeSelect && <CustomBlockTypeSelect />}
+        {config.blockStyleSelect && <CustomTextStyleSelect />}
+        {config.blockAlignSelect && <CustomTextAlignSelect />}
 
-        <FileCaptionButton key={'fileCaptionButton'} />
-        <FileReplaceButton key={'replaceFileButton'} />
+        {config.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
+        {config.replaceFile && <FileReplaceButton key={'replaceFileButton'} />}
 
-        <BasicTextStyleButton basicTextStyle={'bold'} key={'boldStyleButton'} />
-        <BasicTextStyleButton basicTextStyle={'italic'} key={'italicStyleButton'} />
-        <BasicTextStyleButton basicTextStyle={'underline'} key={'underlineStyleButton'} />
-        <BasicTextStyleButton basicTextStyle={'strike'} key={'strikeStyleButton'} />
+        {config.textColorSelect && <CreateLinkButton key={'createLinkButton'} />}
 
-        <ColorStyleButton key={'colorStyleButton'} />
-        <CreateLinkButton key={'createLinkButton'} />
+        {config.createLink && <CreateLinkButton key={'createLinkButton'} />}
+
+        {config.blockNestingSelect && (
+          <>
+            <NestBlockButton key={'nestBlockButton'} />
+            <UnnestBlockButton key={'unnestBlockButton'} />
+          </>
+        )}
       </FormattingToolbar>
     )}
   />

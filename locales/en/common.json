@@ -422,5 +422,6 @@
   "your_role": "Your role",
   "manage_content": "Manage content",
   "onboarding_completed.text": "Kick off your adventure with {{appName}}. Ready to get started?",
-  "action.offline.text": "Action disabled during offline mode."
+  "action.offline.text": "Action disabled during offline mode.",
+  "sign_in_with": "Sign in with {{provider}}"
 }

@@ -24,14 +24,14 @@ import { passkeysTable } from '#/db/schema/passkeys';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
-import { hashPasswordWithArgon, verifyPasswordWithArgon } from '#/lib/argon2id';
 import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { emailSender } from '#/lib/mailer';
-import { nanoid } from '#/lib/nanoid';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { CustomHono } from '#/types/common';
+import { hashPasswordWithArgon, verifyPasswordWithArgon } from '#/modules/auth/helpers/argon2id';
+import { type AllowedAuthStrategies, CustomHono, type EnabledOauthProviderOptions } from '#/types/common';
+import { nanoid } from '#/utils/nanoid';
 import generalRouteConfig from '../general/routes';
 import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
@@ -44,6 +44,17 @@ export const supportedOauthProviders = ['github', 'google', 'microsoft'] as cons
 const githubScopes = { scopes: ['user:email'] };
 const googleScopes = { scopes: ['profile', 'email'] };
 const microsoftScopes = { scopes: ['profile', 'email'] };
+
+// TODO: Type guard
+function isOAuthEnabled(provider: EnabledOauthProviderOptions): boolean {
+  // Use a readonly array since enabledAuthenticationStrategies is readonly
+  const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+
+  // Check for 'oauth' in the readonly array
+  if (!enabledStrategies.includes('oauth')) return false;
+
+  return config.enabledOauthProviders.includes(provider);
+}
 
 const app = new CustomHono();
 
@@ -62,18 +73,28 @@ const authRoutes = app
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
+    // Check if user has a passkey
     const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
     const hasPasskey = !!passkey.length;
 
     return ctx.json({ success: true, data: { hasPasskey } }, 200);
   })
   /*
-   * Sign up with email and password
+   * Sign up with email & password
    */
   .openapi(authRoutesConfig.signUp, async (ctx) => {
     const { email, password, token } = ctx.req.valid('json');
 
+    // Verify if strategy allowed
+    const strategy = 'password' as AllowedAuthStrategies;
+
+    if (!config.enabledAuthenticationStrategies.includes(strategy)) {
+      return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
+    }
+
+    // TODO explain what happens here??
     let tokenData: TokenData | undefined;
+
     if (token) {
       const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path.replace('{token}', token)}`);
 
@@ -81,7 +102,6 @@ const authRoutes = app
       tokenData = data?.data;
     }
 
-    // hash password
     const hashedPassword = await hashPasswordWithArgon(password);
     const userId = nanoid();
 
@@ -89,21 +109,17 @@ const authRoutes = app
 
     const isEmailVerified = tokenData?.email === email;
 
-    // create user and send verification email
-    await handleCreateUser(
-      ctx,
-      {
-        id: userId,
-        slug,
-        name: slug,
-        email: email.toLowerCase(),
-        language: config.defaultLanguage,
-        hashedPassword,
-      },
-      {
-        isEmailVerified,
-      },
-    );
+    // Create user & send verification email
+    const newUser = {
+      id: userId,
+      slug,
+      name: slug,
+      email: email,
+      language: config.defaultLanguage,
+      hashedPassword,
+    };
+
+    await handleCreateUser(ctx, newUser, { isEmailVerified });
 
     return ctx.json({ success: true }, 200);
   })
@@ -112,11 +128,12 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.sendVerificationEmail, async (ctx) => {
     const { email } = ctx.req.valid('json');
-    const user = await getUserBy('email', email.toLowerCase());
 
+    // Check if user exists
+    const user = await getUserBy('email', email.toLowerCase());
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
-    // creating email verification token
+    // Creating email verification token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
     const token = generateId(40);
     await db.insert(tokensTable).values({
@@ -127,7 +144,7 @@ const authRoutes = app
       expiresAt: createDate(new TimeSpan(2, 'h')),
     });
 
-    // generating email html
+    // Generating email html
     const emailHtml = await render(
       VerificationEmail({
         userLanguage: user?.language || config.defaultLanguage,
@@ -177,9 +194,9 @@ const authRoutes = app
 
     const user = await getUserBy('id', token.userId);
 
-    // If the user is not found or the email is different from the token email
+    // If user not found or email different from token email
     if (!user || user.email !== token.email) {
-      // If 'resend' is true and the token has an email we will resend the email
+      // If 'resend' true and token has an email, we will send again
       if (resend === 'true' && token && token.email) {
         sendVerificationEmail(token.email);
 
@@ -251,6 +268,13 @@ const authRoutes = app
     const { password } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
 
+    // Verify if strategy allowed
+    const strategy = 'password' as AllowedAuthStrategies;
+
+    if (!config.enabledAuthenticationStrategies.includes(strategy)) {
+      return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
+    }
+
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
@@ -281,6 +305,13 @@ const authRoutes = app
   .openapi(authRoutesConfig.signIn, async (ctx) => {
     const { email, password, token } = ctx.req.valid('json');
 
+    // Verify if strategy allowed
+    const strategy = 'password' as AllowedAuthStrategies;
+
+    if (!config.enabledAuthenticationStrategies.includes(strategy)) {
+      return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
+    }
+
     let tokenData: TokenData | undefined;
     if (token) {
       const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path.replace('{token}', token)}`);
@@ -301,7 +332,7 @@ const authRoutes = app
 
     const isEmailVerified = user.emailVerified || tokenData?.email === user.email;
 
-    // send verify email first
+    // Send verify email if email not verified
     if (!isEmailVerified) {
       sendVerificationEmail(email);
 
@@ -428,11 +459,18 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.githubSignInCallback, async (ctx) => {
     const { code, state } = ctx.req.valid('query');
+    const strategy = 'github' as EnabledOauthProviderOptions;
+
+    if (!isOAuthEnabled(strategy)) {
+      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
+    }
+
     const stateCookie = getCookie(ctx, 'oauth_state');
+
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
       // t('common:error.invalid_state.text')
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'github' });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -480,9 +518,9 @@ const authRoutes = app
       } = await githubUserResponse.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount('github', String(githubUser.id));
+      const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId, 'github');
+        await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
@@ -522,7 +560,7 @@ const authRoutes = app
         // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
           return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
-            strategy: 'github',
+            strategy,
             type: 'invitation',
           });
         }
@@ -533,7 +571,7 @@ const authRoutes = app
       // Check if user already exists
       const existingUser = await getUserBy('email', userEmail);
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, 'github', {
+        return await handleExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: String(githubUser.id),
             email: githubUserEmail,
@@ -566,7 +604,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: 'github',
+            id: strategy,
             userId: String(githubUser.id),
           },
           isEmailVerified: primaryEmail.verified,
@@ -577,12 +615,12 @@ const authRoutes = app
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
         // t('common:error.invalid_credentials.text')
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'github' });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy });
       }
 
       if (error instanceof Error) {
         const errorMessage = error.message;
-        logEvent('Error signing in with GitHub', { strategy: 'github', errorMessage }, 'error');
+        logEvent('Error signing in with GitHub', { strategy, errorMessage }, 'error');
       }
 
       throw error;
@@ -593,13 +631,18 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.googleSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
+    const strategy = 'google' as EnabledOauthProviderOptions;
+
+    if (!isOAuthEnabled(strategy)) {
+      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
+    }
 
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'google' });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -623,9 +666,9 @@ const authRoutes = app
       } = await response.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount('google', user.sub);
+      const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId, 'google');
+        await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
 
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -634,7 +677,7 @@ const authRoutes = app
       const existingUser = await getUserBy('email', user.email.toLowerCase());
 
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, 'google', {
+        return await handleExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: user.sub,
             email: user.email,
@@ -665,7 +708,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: 'google',
+            id: strategy,
             userId: user.sub,
           },
           isEmailVerified: user.email_verified,
@@ -675,12 +718,12 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'google' });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy });
       }
 
       if (error instanceof Error) {
         const errorMessage = error.message;
-        logEvent('Error signing in with Google', { strategy: 'google', errorMessage }, 'error');
+        logEvent('Error signing in with Google', { strategy, errorMessage }, 'error');
       }
 
       throw error;
@@ -691,13 +734,18 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.microsoftSignInCallback, async (ctx) => {
     const { state, code } = ctx.req.valid('query');
+    const strategy = 'microsoft' as EnabledOauthProviderOptions;
+
+    if (!isOAuthEnabled(strategy)) {
+      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
+    }
 
     const storedState = getCookie(ctx, 'oauth_state');
     const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy: 'microsoft' });
+      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -719,9 +767,9 @@ const authRoutes = app
       } = await response.json();
 
       // Check if oauth account already exists
-      const [existingOauthAccount] = await findOauthAccount('microsoft', user.sub);
+      const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
-        await setSessionCookie(ctx, existingOauthAccount.userId, 'microsoft');
+        await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
 
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -733,7 +781,7 @@ const authRoutes = app
       // Check if user already exists
       const existingUser = await getUserBy('email', user.email.toLowerCase());
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, 'microsoft', {
+        return await handleExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: user.sub,
             email: user.email,
@@ -764,7 +812,7 @@ const authRoutes = app
         },
         {
           provider: {
-            id: 'microsoft',
+            id: strategy,
             userId: user.sub,
           },
           isEmailVerified: false,
@@ -774,12 +822,12 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy: 'microsoft' });
+        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy });
       }
 
       if (error instanceof Error) {
         const errorMessage = error.message;
-        logEvent('Error signing in with Microsoft', { strategy: 'microsoft', errorMessage }, 'error');
+        logEvent('Error signing in with Microsoft', { strategy, errorMessage }, 'error');
       }
 
       throw error;

@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/lib/common-responses';
-import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/lib/common-schemas';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
+import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
 import { acceptInviteBodySchema, checkTokenSchema, inviteBodySchema, membersQuerySchema, membersSchema, suggestionsSchema } from './schema';
 

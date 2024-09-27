@@ -19,7 +19,6 @@ import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import { isEnabledAuthStrategy } from '#/lib/auth';
 import type { TokenData } from '.';
 
 const formSchema = authBodySchema;
@@ -93,7 +92,7 @@ export const SignInForm = ({
             </FormItem>
           )}
         />
-        {isEnabledAuthStrategy('password') && (
+        {config.enabledAuthenticationStrategies.includes('password') && (
           <>
             <FormField
               control={form.control}

@@ -7,7 +7,7 @@ import AuthPage from '~/modules/auth/auth-page';
 import { Button } from '~/modules/ui/button';
 
 import { onlineManager } from '@tanstack/react-query';
-import { passwordSchema } from 'backend/lib/common-schemas';
+import { passwordSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';

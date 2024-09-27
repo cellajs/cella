@@ -1,4 +1,4 @@
-import { FilePanelController, useCreateBlockNote } from '@blocknote/react';
+import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
 import { type KeyboardEventHandler, Suspense, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
@@ -12,8 +12,11 @@ import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import { customSchema } from '~/modules/common/blocknote/blackbote-config';
-import { BlockNoteForTaskContent } from '~/modules/common/blocknote/blocknote-content';
+import { customFormattingToolBarConfig, customSchema } from '~/modules/common/blocknote/blocknote-config';
+import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
+import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
+import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
+import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
 import { taskExpandable } from '~/modules/tasks/helpers';
@@ -167,7 +170,23 @@ export const TaskBlockNote = ({
         slashMenu={false}
         filePanel={false}
       >
-        <BlockNoteForTaskContent editor={editor} members={members.filter((m) => m.membership.projectId === projectId)} subTask={subTask} />
+        <CustomSlashMenu editor={editor} />
+
+        <div className="fixed">
+          <CustomFormattingToolbar config={customFormattingToolBarConfig} />
+        </div>
+
+        {!subTask && <CustomSideMenu />}
+
+        <Mention members={members.filter((m) => m.membership.projectId === projectId)} editor={editor} />
+
+        <GridSuggestionMenuController
+          triggerCharacter={':'}
+          // Changes the Emoji Picker to only have 10 columns & min length of 0.
+          columns={10}
+          minQueryLength={0}
+        />
+
         {/* Replaces default file panel with Uppy one. */}
         <FilePanelController filePanel={UppyFilePanel} />
       </BlockNoteView>

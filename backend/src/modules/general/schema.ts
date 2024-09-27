@@ -13,7 +13,7 @@ import {
   paginationQuerySchema,
   passwordSchema,
   slugSchema,
-} from '#/lib/common-schemas';
+} from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 

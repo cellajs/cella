@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 
 import { db } from '#/db/db';
-import { nanoid } from '#/lib/nanoid';
+import { nanoid } from '#/utils/nanoid';
 
 import { type InsertLabelModel, labelsTable } from '#/db/schema/labels';
 import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
