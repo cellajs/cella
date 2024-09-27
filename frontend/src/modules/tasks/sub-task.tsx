@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { deleteTasks, updateTask } from '~/api/tasks';
+import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { getDraggableItemData } from '~/lib/drag-drop';
@@ -55,6 +56,19 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
       toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
     }
   };
+
+  useDoubleClick({
+    onSingleClick: () => {
+      if (state !== 'folded') return;
+      setState('expanded');
+    },
+    onDoubleClick: () => {
+      if (state === 'editing' || state === 'unsaved') return;
+      setState('editing');
+    },
+    allowedTargets: ['p', 'div'],
+    ref: subTaskRef,
+  });
 
   useEventListener('changeSubTaskState', (e) => {
     const { taskId, state: newState } = e.detail;
@@ -136,20 +150,11 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
             onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
           />
         </div>
-        <div
-          onClick={() => {
-            if (state === 'folded') setState('expanded');
-          }}
-          onKeyDown={() => {}}
-          className="flex flex-col grow min-h-7 justify-center gap-2 mx-1"
-        >
+        <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
           <div className={state !== 'folded' ? 'inline-flex items-center mt-1' : 'mt-1 flex flex-col items-start'}>
             {state === 'folded' ? (
-              <div
-                // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
-                dangerouslySetInnerHTML={{ __html: task.summary as string }}
-                className="mr-1.5"
-              />
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+              <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
             ) : (
               <>
                 {state === 'editing' || state === 'unsaved' ? (
@@ -164,12 +169,8 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
                   />
                 ) : (
                   <div className={'w-full bg-transparent pr-2 border-none bn-container bn-shadcn'} data-color-scheme={mode}>
-                    <div
-                      // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
-                      dangerouslySetInnerHTML={{ __html: task.description }}
-                      onClick={() => setState('editing')}
-                      onKeyDown={() => {}}
-                    />
+                    {/* biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend */}
+                    <div dangerouslySetInnerHTML={{ __html: task.description }} />
                   </div>
                 )}
                 <TaskHeader task={task as Task} state={state} onRemove={onRemove} />
