@@ -14,7 +14,7 @@ p.bn-inline-content code {
 }
 
 .bn-grid-suggestion-menu {
-  max-height: 14rem !important;
+  max-height: 40vh !important;
   overflow-y: auto;
 }
 
@@ -50,7 +50,7 @@ p.bn-inline-content code {
   position: absolute; /* or 'fixed' if you want it to be fixed in place */
   z-index: 9999 !important;
   width: 11rem;
-  max-height: 35vh !important;
+  max-height: 40vh !important;
   overflow-y: auto;
 }
 
@@ -66,7 +66,7 @@ p.bn-inline-content code {
 }
 
 .slash-menu {
-  max-height: 30vh;
+  max-height: 40vh;
   overflow-y: auto;
   z-index: 9999 !important;
   background-color: hsl(var(--card));
