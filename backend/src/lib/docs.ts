@@ -9,7 +9,7 @@ const commonModulesList = [
   {
     name: 'memberships',
     description:
-      'Organization firewall. Memberships are one-on-one relations between a user and a contextual entity, such as an organization or project. It contains a role and archived, muted status.',
+      'Organization-scope only. Memberships are one-on-one relations between a user and a contextual entity, such as an organization or project. It contains a role and archived, muted status.',
   },
   { name: 'organizations', description: 'Organizations - `organization` - are obviously a central `entity`.' },
   { name: 'requests', description: 'Receive public requests such as contact form, newsletter and waitlist requests.' },

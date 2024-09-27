@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, eq, ilike, inArray, or } from 'drizzle-orm';
 import { emailSender } from '#/lib/mailer';
 import { InviteSystemEmail } from '../../../emails/system-invite';
 
@@ -14,21 +14,18 @@ import { db } from '#/db/db';
 import { getContextUser } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
-import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { entityTables } from '#/entity-config';
-import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { type ContextEntity, CustomHono } from '#/types/common';
-import { memberCountsQuery } from '#/utils/counts';
-import { getOrderColumn } from '#/utils/order-column';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
@@ -333,74 +330,6 @@ const generalRoutes = app
     const items = results.flat();
 
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
-  })
-  /*
-   * Get members by entity id and type
-   */
-  .openapi(generalRouteConfig.getMembers, async (ctx) => {
-    const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
-    const entity = await resolveEntity(entityType, idOrSlug);
-
-    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
-
-    // TODO use filter query helper to avoid code duplication. Also, this specific filter is missing name search?
-    const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
-
-    const usersQuery = db.select().from(usersTable).where(filter).as('users');
-
-    // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
-    const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];
-
-    if (role) membersFilters.push(eq(membershipsTable.role, role));
-
-    const memberships = db
-      .select()
-      .from(membershipsTable)
-      .where(and(...membersFilters))
-      .as('memberships');
-
-    const membershipCount = memberCountsQuery(null, 'userId');
-
-    const orderColumn = getOrderColumn(
-      {
-        id: usersTable.id,
-        name: usersTable.name,
-        email: usersTable.email,
-        createdAt: usersTable.createdAt,
-        lastSeenAt: usersTable.lastSeenAt,
-        role: memberships.role,
-      },
-      sort,
-      usersTable.id,
-      order,
-    );
-
-    const membersQuery = db
-      .select({
-        user: safeUserSelect,
-        membership: membershipSelect,
-        counts: {
-          memberships: membershipCount.members,
-        },
-      })
-      .from(usersQuery)
-      .innerJoin(memberships, eq(usersTable.id, memberships.userId))
-      .leftJoin(membershipCount, eq(usersTable.id, membershipCount.id))
-      .orderBy(orderColumn);
-
-    const [{ total }] = await db.select({ total: count() }).from(membersQuery.as('memberships'));
-
-    const result = await membersQuery.limit(Number(limit)).offset(Number(offset));
-
-    const members = await Promise.all(
-      result.map(async ({ user, membership, counts }) => ({
-        ...user,
-        membership,
-        counts,
-      })),
-    );
-
-    return ctx.json({ success: true, data: { items: members, total } }, 200);
   })
   /*
    * Unsubscribe a user by token

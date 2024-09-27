@@ -1,5 +1,5 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
-import { type GetMembersParams, getMembers } from '~/api/general';
+import { type GetMembersParams, getMembers } from '~/api/memberships';
 
 // Build query to get members with infinite scroll
 export const membersQueryOptions = ({
