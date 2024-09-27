@@ -1,21 +1,37 @@
 import { config } from 'config';
 import { z } from 'zod';
-import { constructZodLiteralUnionType } from './zod';
+import { constructZodLiteralUnionType } from '../zod';
 
 export const passwordSchema = z.string().min(8).max(100);
 
 export const cookieSchema = z.string();
 
 export const entityTypeSchema = z.enum(config.entityTypes);
+
 export const pageEntityTypeSchema = z.enum(config.pageEntityTypes);
+
 export const contextEntityTypeSchema = z.enum(config.contextEntityTypes);
+
 // export const productTypeSchema = z.enum(config.productEntityTypes);
 
 export const idSchema = z.string();
+
 export const slugSchema = z.string();
+
 export const idOrSlugSchema = idSchema.or(slugSchema);
 
 export const tokenSchema = z.object({ token: z.string() });
+
+export const idsQuerySchema = z.object({ ids: z.union([z.string(), z.array(z.string())]) });
+
+export const languageSchema = constructZodLiteralUnionType(config.languages.map((lang) => z.literal(lang.value)));
+
+export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');
+
+export const imageUrlSchema = z
+  .string()
+  .url()
+  .refine((url) => new URL(url).search === '', 'Search params not allowed');
 
 export const errorSchema = z.object({
   message: z.string(),
@@ -47,10 +63,6 @@ export const paginationQuerySchema = z.object({
   limit: z.string().default('50').optional().refine(limitRefine, 'Must be number greater than 0'),
 });
 
-export const idsQuerySchema = z.object({
-  ids: z.union([z.string(), z.array(z.string())]),
-});
-
 export const validSlugSchema = z
   .string()
   .min(2)
@@ -75,13 +87,9 @@ export const validDomainsSchema = z
   )
   .optional();
 
-export const entityParamSchema = z.object({
-  idOrSlug: idOrSlugSchema,
-});
+export const entityParamSchema = z.object({ idOrSlug: idOrSlugSchema });
 
-export const productParamSchema = z.object({
-  id: idSchema,
-});
+export const productParamSchema = z.object({ id: idSchema });
 
 export const membershipsCountSchema = z.object({
   memberships: z.object({
@@ -91,17 +99,8 @@ export const membershipsCountSchema = z.object({
   }),
 });
 
-export const languageSchema = constructZodLiteralUnionType(config.languages.map((lang) => z.literal(lang.value)));
-
-export const imageUrlSchema = z
-  .string()
-  .url()
-  .refine((url) => new URL(url).search === '', 'Search params not allowed');
-
 export const nameSchema = z
   .string()
   .min(2)
   .max(100)
   .refine((s) => /^[a-z0-9 ,.'-]+$/i.test(s), "Name may only contain letters, numbers, spaces and these characters: ,.'-");
-
-export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');

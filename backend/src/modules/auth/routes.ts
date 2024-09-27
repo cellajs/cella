@@ -1,12 +1,11 @@
 import { z } from '@hono/zod-openapi';
 
-import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/lib/common-responses';
-import { cookieSchema, passwordSchema } from '#/lib/common-schemas';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
-import { isAllowedAuthStrategy, isAllowedOAuth } from '#/middlewares/guard/allowed-auth';
 import { authRateLimiter } from '#/middlewares/rate-limiter';
 import { signInRateLimiter } from '#/middlewares/rate-limiter/sign-in';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
+import { cookieSchema, passwordSchema } from '#/utils/schema/common-schemas';
 import { authBodySchema, emailBodySchema, passkeyChallengeQuerySchema, passkeyCreationBodySchema, passkeyVerificationBodySchema } from './schema';
 
 class AuthRoutesConfig {
@@ -252,7 +251,7 @@ class AuthRoutesConfig {
   public verifyPasskey = createRouteConfig({
     method: 'post',
     path: '/passkey-verification',
-    guard: [isPublicAccess, isAllowedAuthStrategy('passkey')],
+    guard: [isPublicAccess],
     tags: ['auth'],
     summary: 'Verify passkey',
     description: 'Verify passkey by checking the validity of signature with public key.',
@@ -284,7 +283,7 @@ class AuthRoutesConfig {
   public signIn = createRouteConfig({
     method: 'post',
     path: '/sign-in',
-    guard: [isPublicAccess, isAllowedAuthStrategy('password')],
+    guard: [isPublicAccess],
     middleware: [signInRateLimiter()],
     tags: ['auth'],
     summary: 'Sign in with password',
@@ -322,7 +321,7 @@ class AuthRoutesConfig {
   public githubSignIn = createRouteConfig({
     method: 'get',
     path: '/github',
-    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('github')],
+    guard: [isPublicAccess],
     tags: ['auth'],
     summary: 'Authenticate with GitHub',
     description: 'Authenticate with Github to sign in or sign up.',
@@ -342,11 +341,11 @@ class AuthRoutesConfig {
   public githubSignInCallback = createRouteConfig({
     method: 'get',
     path: '/github/callback',
-    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('github')],
+    guard: [isPublicAccess],
     middleware: [authRateLimiter],
     tags: ['auth'],
     summary: 'Callback for GitHub',
-    description: 'Callback to receive authorization and basic user data.',
+    description: 'Callback to receive authorization and basic user data from Github.',
     security: [],
     request: {
       query: z.object({
@@ -368,10 +367,10 @@ class AuthRoutesConfig {
   public getPasskeyChallenge = createRouteConfig({
     method: 'get',
     path: '/passkey-challenge',
-    guard: [isPublicAccess, isAllowedAuthStrategy('passkey')],
+    guard: [isPublicAccess],
     tags: ['auth'],
     summary: 'Get passkey challenge',
-    description: 'Handing over the challenge, which results in a key pair, a private and a public key, being created on the device',
+    description: 'Handing over the challenge: this results in a key pair, private and public key being created on the device.',
     security: [],
     responses: {
       200: {
@@ -389,7 +388,7 @@ class AuthRoutesConfig {
   public setPasskey = createRouteConfig({
     method: 'post',
     path: '/passkey-registration',
-    guard: [isPublicAccess, isAllowedAuthStrategy('passkey')],
+    guard: [isPublicAccess],
     tags: ['auth'],
     summary: 'Register passkey',
     description:
@@ -421,7 +420,7 @@ class AuthRoutesConfig {
   public googleSignIn = createRouteConfig({
     method: 'get',
     path: '/google',
-    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('google')],
+    guard: [isPublicAccess],
     tags: ['auth'],
     summary: 'Authenticate with Google',
     description: 'Authenticate with Google to sign in or sign up.',
@@ -441,11 +440,11 @@ class AuthRoutesConfig {
   public googleSignInCallback = createRouteConfig({
     method: 'get',
     path: '/google/callback',
-    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('google')],
+    guard: [isPublicAccess],
     middleware: [authRateLimiter],
     tags: ['auth'],
     summary: 'Callback for Google',
-    description: 'Callback to receive authorization and basic user data.',
+    description: 'Callback to receive authorization and basic user data from Google.',
     security: [],
     request: {
       query: z.object({
@@ -467,7 +466,7 @@ class AuthRoutesConfig {
   public microsoftSignIn = createRouteConfig({
     method: 'get',
     path: '/microsoft',
-    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('microsoft')],
+    guard: [isPublicAccess],
     tags: ['auth'],
     summary: 'Authenticate with Microsoft',
     description: 'Authenticate with Microsoft to sign in or sign up.',
@@ -491,11 +490,11 @@ class AuthRoutesConfig {
   public microsoftSignInCallback = createRouteConfig({
     method: 'get',
     path: '/microsoft/callback',
-    guard: [isPublicAccess, isAllowedAuthStrategy('oauth'), isAllowedOAuth('microsoft')],
+    guard: [isPublicAccess],
     middleware: [authRateLimiter],
     tags: ['auth'],
     summary: 'Callback for Microsoft',
-    description: 'Callback to receive authorization and basic user data.',
+    description: 'Callback to receive authorization and basic user data from Microsoft.',
     security: [],
     request: {
       query: z.object({

@@ -6,9 +6,12 @@ import type { User } from 'lucia';
 import uaParser from 'ua-parser-js';
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
+import { supportedOauthProviders } from '#/db/schema/oauth-accounts';
 import { usersTable } from '#/db/schema/users';
-import { supportedAuthStrategies, supportedOauthProviders } from '#/middlewares/guard/allowed-auth';
 import { logEvent } from '#/middlewares/logger/log-event';
+
+// The authentication strategies supported by cella
+export const supportedAuthStrategies = ['oauth', 'password', 'passkey'] as const;
 
 const isProduction = config.mode === 'production';
 
@@ -35,6 +38,8 @@ const getDevice = (ctx: Context) => {
 const isAuthStrategy = (strategy: string): strategy is (typeof allSupportedStrategies)[number] => {
   const [, ...elseStrategies] = supportedAuthStrategies; // Destructure to exclude 'oauth'
   const allSupportedStrategies = [...supportedOauthProviders, ...elseStrategies];
+
+  // Check if strategy is supported
   return (allSupportedStrategies as string[]).includes(strategy);
 };
 const getAuthStrategy = (strategy: string) => (isAuthStrategy(strategy) ? strategy : null);

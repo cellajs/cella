@@ -3,7 +3,7 @@ import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/ht
 import type { z } from 'zod';
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
 import type { Entity } from '#/types/common';
-import type { errorSchema } from './common-schemas';
+import type { errorSchema } from '../utils/schema/common-schemas';
 import { getContextUser, getOrganization } from './context';
 import { i18n } from './i18n';
 
