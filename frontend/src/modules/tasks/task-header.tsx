@@ -116,7 +116,10 @@ export const TaskHeader = ({
         {(!isSheet || isSubTask) && (
           <TooltipButton toolTipContent={t('common:close')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
-              onClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'folded' })}
+              onClick={() => {
+                const event = isSubTask ? 'changeSubTaskState' : 'changeTaskState';
+                dispatchCustomEvent(event, { taskId: task.id, state: 'folded' });
+              }}
               aria-label="Collapse"
               variant="ghost"
               size="xs"

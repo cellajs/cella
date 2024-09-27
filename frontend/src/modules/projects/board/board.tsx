@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
-import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
+import { Fragment, type LegacyRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getTask } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -164,15 +164,6 @@ export default function Board() {
     dispatchCustomEvent('focusedProjectChange', nextProject.id);
   };
 
-  const handleNKeyDown = async () => {
-    if (!projects.length) return;
-    if (!focusedTaskId) return dispatchCustomEvent('toggleCreateTaskForm', projects[0].id);
-
-    const focusedTask = await getTask(focusedTaskId);
-    const project = projects.find((p) => p.id === focusedTask.projectId);
-    dispatchCustomEvent('toggleCreateTaskForm', project?.id ?? projects[0].id);
-  };
-
   const setTaskState = (taskId: string, state: TaskStates) => {
     setTasksState((prevState) => ({
       ...prevState,
@@ -193,6 +184,15 @@ export default function Board() {
     const taskState = tasksState[focusedTaskId];
     if (taskState === 'folded') setTaskState(focusedTaskId, 'expanded');
     if (taskState === 'expanded') setTaskState(focusedTaskId, 'editing');
+  };
+
+  const handleNKeyDown = async () => {
+    if (!projects.length) return;
+    if (!focusedTaskId) return dispatchCustomEvent('toggleCreateTaskForm', projects[0].id);
+
+    const focusedTask = await getTask(focusedTaskId);
+    const project = projects.find((p) => p.id === focusedTask.projectId);
+    dispatchCustomEvent('toggleCreateTaskForm', project?.id ?? projects[0].id);
   };
 
   // Open on key press
@@ -222,20 +222,35 @@ export default function Board() {
   ]);
 
   const handleTaskClick = (event: TaskCardFocusEvent) => {
-    const { taskId, clickTarget } = event.detail;
+    const { taskId: newFocused, clickTarget } = event.detail;
+    const currentFocused = focusedTaskId;
 
-    if (focusedTaskId && focusedTaskId !== taskId) {
-      dispatchCustomEvent('changeSubTaskState', { taskId: focusedTaskId, state: 'folded' });
-      setTaskState(taskId, tasksState[taskId] === 'folded' ? 'folded' : 'expanded');
+    // Check if the clicked element is a button or inside a button,
+    // if so, set the new focused task and return early (no need to fold/expand in this case)
+    if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(newFocused);
+
+    // If the task clicked is already focused
+    if (currentFocused === newFocused) return setTaskState(currentFocused, 'expanded');
+
+    // If there's a different task already focused
+    if (currentFocused && currentFocused !== newFocused) {
+      //change the state of previously focused subtasks
+      dispatchCustomEvent('changeSubTaskState', { taskId: currentFocused, state: 'folded' });
+
+      // Set the state of the previously focused task
+      setTaskState(currentFocused, tasksState[currentFocused] === 'folded' ? 'folded' : 'expanded');
+      // Set the state of the newly focused task
+      setTaskState(newFocused, tasksState[newFocused] === 'expanded' ? 'editing' : 'expanded');
     }
-    if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return setFocusedTaskId(taskId);
-    if (focusedTaskId === taskId) return setTaskState(focusedTaskId, tasksState[focusedTaskId] === 'folded' ? 'folded' : 'expanded');
 
-    const taskCard = document.getElementById(taskId);
+    // If there's no currently focused task, expand the newly focused task
+    if (!currentFocused) setTaskState(newFocused, 'expanded');
+
+    // ensure newly focused task receives focus
+    const taskCard = document.getElementById(newFocused);
     if (taskCard && document.activeElement !== taskCard) taskCard.focus();
-
-    setFocusedTaskId(taskId);
-    setTaskState(taskId, tasksState[taskId] === 'folded' ? 'folded' : 'expanded');
+    // Set the new focused task ID
+    setFocusedTaskId(newFocused);
   };
 
   const handleToggleTaskSelect = (event: TaskCardToggleSelectEvent) => {
@@ -244,23 +259,26 @@ export default function Board() {
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
-  const handleOpenTaskSheet = (taskId: string) => {
-    if (!focusedTaskId || focusedTaskId !== taskId) setFocusedTaskId(taskId);
-    navigate({
-      to: '.',
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({
-        ...prev,
-        ...{ taskIdPreview: taskId },
-      }),
-    });
-    sheet.create(<TaskCard mode={mode} task={currentTask} tasks={tasks} state={'editing'} isSelected={false} isFocused={true} isSheet />, {
-      className: 'max-w-full lg:max-w-4xl',
-      title: <span className="pl-4">{t('app:task')}</span>,
-      id: `task-preview-${taskId}`,
-    });
-  };
+  const handleOpenTaskSheet = useCallback(
+    (taskId: string) => {
+      if (!focusedTaskId || focusedTaskId !== taskId) setFocusedTaskId(taskId);
+      navigate({
+        to: '.',
+        replace: true,
+        resetScroll: false,
+        search: (prev) => ({
+          ...prev,
+          ...{ taskIdPreview: taskId },
+        }),
+      });
+      sheet.create(<TaskCard mode={mode} task={currentTask} tasks={tasks} state={'editing'} isSelected={false} isFocused={true} isSheet />, {
+        className: 'max-w-full lg:max-w-4xl',
+        title: <span className="pl-4">{t('app:task')}</span>,
+        id: `task-preview-${taskId}`,
+      });
+    },
+    [currentTask, focusedTaskId, tasks],
+  );
 
   const handleTaskOperations = (event: TaskOperationEvent) => {
     const { array, action, projectId } = event.detail;

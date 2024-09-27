@@ -58,13 +58,17 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 
   useEventListener('changeSubTaskState', (e) => {
     const { taskId, state: newState } = e.detail;
-    // Update the sub-task editing state based on the event id:
-    // - matches the task's parentId
-    // - doesn't match both the task's parentId and task id
+
+    // The logic ensures that tasks are expanded from 'editing' or 'unsaved' states when 'removeEditing' is triggered
     if ((task.parentId === taskId || (task.parentId !== taskId && task.id !== taskId)) && newState === 'removeEditing') {
       if (state === 'editing' || state === 'unsaved') return setState('expanded');
       return;
     }
+
+    // If the task is a sub-task of the taskId from the event and the newState is 'folded', fold the task
+    if (task.parentId === taskId && newState === 'folded') return setState(newState);
+
+    // If the task.id as the event's taskId, update the task state
     if (task.id === taskId) {
       if (newState === 'removeEditing') return;
       setState(newState);
