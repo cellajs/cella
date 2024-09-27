@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { relations } from 'drizzle-orm';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { omitKeys } from '#/lib/omit';
+import { omitKeys } from '#/utils/omit';
 import { membershipsTable } from './memberships';
 
 const roleEnum = config.rolesByType.systemRoles;

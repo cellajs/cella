@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { env } from '../../env';
+import { env } from '../../../../env';
 
 const secretKey = env.UNSUBSCRIBE_TOKEN_SECRET;
 

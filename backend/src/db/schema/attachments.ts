@@ -1,5 +1,5 @@
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { nanoid } from '#/lib/nanoid';
+import { nanoid } from '#/utils/nanoid';
 import { usersTable } from './users';
 
 export const attachmentsTable = pgTable('attachments', {

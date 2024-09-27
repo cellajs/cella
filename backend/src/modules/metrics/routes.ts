@@ -1,6 +1,6 @@
-import { errorResponses, successWithDataSchema } from '#/lib/common-responses';
 import { createRouteConfig } from '#/lib/route-config';
 import { isPublicAccess } from '#/middlewares/guard';
+import { errorResponses, successWithDataSchema } from '#/utils/schema/common-responses';
 import { metricsSchema, publicCountsSchema } from './schema';
 
 class MetricsRoutesConfig {
@@ -10,6 +10,7 @@ class MetricsRoutesConfig {
     guard: isPublicAccess,
     tags: ['metrics'],
     summary: 'Get metrics',
+    description: 'EXPERIMENTAL. Receive node observability metrics.',
     responses: {
       200: {
         description: 'Metrics',
@@ -29,6 +30,7 @@ class MetricsRoutesConfig {
     guard: isPublicAccess,
     tags: ['metrics'],
     summary: 'Get public counts',
+    description: 'Get a count of all entities (ie. users, organizations).',
     responses: {
       200: {
         description: 'Public counts',

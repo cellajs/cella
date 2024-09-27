@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { nanoid } from '#/lib/nanoid';
+import { nanoid } from '#/utils/nanoid';
 
 export const passkeysTable = pgTable('passkeys', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),

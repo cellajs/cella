@@ -15,7 +15,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import { oauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page-aside';
@@ -25,6 +24,7 @@ import { deletePasskey, registerPasskey } from '~/modules/users/helpers';
 import { SessionTile } from '~/modules/users/session-title';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
+import { mapOauthProviders } from '../auth/oauth-options';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -178,37 +178,37 @@ const UserSettingsPage = () => {
 
               <div className="flex max-sm:flex-col gap-2 mb-6">
                 {config.enabledOauthProviders.map((id) => {
-                  const option = oauthProviders.find((provider) => provider.id === id);
-                  if (!option) return;
+                  const provider = mapOauthProviders.find((provider) => provider.id === id);
+                  if (!provider) return;
                   if (user.oauth.includes(id))
                     return (
-                      <div key={option.name} className="flex items-center justify-center py-2 px-3 gap-2 border rounded-md">
+                      <div key={provider.id} className="flex items-center justify-center py-2 px-3 gap-2 border rounded-md">
                         <img
-                          src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
-                          alt={option.name}
-                          className={`w-4 h-4 ${option.id === 'github' ? invertClass : ''}`}
+                          src={`/static/images/${provider.id}-icon.svg`}
+                          alt={provider.id}
+                          className={`w-4 h-4 ${provider.id === 'github' ? invertClass : ''}`}
                           loading="lazy"
                         />
                         <Check size={18} className="text-success" />
-                        {`${t('common:already_connected_to')} ${option.name} `}
+                        {`${t('common:already_connected_to')} ${provider.name}`}
                       </div>
                     );
                   return (
                     <Button
-                      key={option.name}
+                      key={provider.id}
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        window.location.href = `${option.url}?redirect=${window.location.href}`;
+                        window.location.href = `${provider.url}?redirect=${window.location.href}`;
                       }}
                     >
                       <img
-                        src={`/static/images/${option.name.toLowerCase()}-icon.svg`}
-                        alt={option.name}
-                        className={`w-4 h-4 mr-2 ${option.id === 'github' ? invertClass : ''}`}
+                        src={`/static/images/${provider.id}-icon.svg`}
+                        alt={provider.id}
+                        className={`w-4 h-4 mr-2 ${provider.id === 'github' ? invertClass : ''}`}
                         loading="lazy"
                       />
-                      {`${t('common:add')} ${option.name} ${t('common:account').toLowerCase()}`}
+                      {`${t('common:add')} ${provider.name} ${t('common:account').toLowerCase()}`}
                     </Button>
                   );
                 })}
