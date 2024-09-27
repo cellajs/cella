@@ -38,7 +38,7 @@ const requestsRoutes = app
       .values({
         email,
         type,
-        message: message,
+        message,
       })
       .returning();
 

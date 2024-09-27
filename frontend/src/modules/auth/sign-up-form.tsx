@@ -13,13 +13,13 @@ import { toast } from 'sonner';
 import { signUp as baseSignUp } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
-import { LegalText } from '~/modules/marketing/legals';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import type { TokenData } from '.';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
+const LegalText = lazy(() => import('~/modules/marketing/legals-text'));
 
 const formSchema = authBodySchema;
 

@@ -12,9 +12,6 @@
   "engines": {
     "node": ">=20.14.0"
   },
-  "bin": {
-    "create-cella": "./cli/create-cella/index.js"
-  },
   "scripts": {
     "prepare": "cross-env [ $NODE_ENV=development ] && lefthook install && code --install-extension biomejs.biome; exit 0",
     "quick": "pnpm --filter backend run quick & turbo dev --filter frontend --filter tus",
