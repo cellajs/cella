@@ -17,27 +17,44 @@ export interface InviteMemberProps {
 // Invite users
 export const inviteMembers = async ({ idOrSlug, entityType, organizationId, ...rest }: InviteMemberProps) => {
   const response = await client.index.$post({
-    query: { idOrSlug, organizationId, entityType },
+    param: { orgIdOrSlug: organizationId },
+    query: { idOrSlug, entityType },
     json: rest,
   });
 
   await handleResponse(response);
 };
 
-export const removeMembers = async ({ idOrSlug, entityType, ids }: { idOrSlug: string; ids: string[]; entityType: ContextEntity }) => {
+interface RemoveMembersProps {
+  idOrSlug: string;
+  ids: string[];
+  entityType: ContextEntity;
+  organizationId: string;
+}
+
+export const removeMembers = async ({ idOrSlug, entityType, ids, organizationId }: RemoveMembersProps) => {
   const response = await client.index.$delete({
+    param: { orgIdOrSlug: organizationId },
     query: { idOrSlug, entityType, ids },
   });
 
   await handleResponse(response);
 };
-export type UpdateMenuOptionsProp = { membershipId: string; role?: Membership['role']; archived?: boolean; muted?: boolean; order?: number };
+export type UpdateMenuOptionsProp = {
+  membershipId: string;
+  organizationId: string;
+  role?: Membership['role'];
+  archived?: boolean;
+  muted?: boolean;
+  order?: number;
+};
 
 // Update membership in entity
 export const updateMembership = async (values: UpdateMenuOptionsProp) => {
-  const { membershipId, role, archived, muted, order } = values;
+  const { membershipId, role, archived, muted, order, organizationId } = values;
   const response = await client[':id'].$put({
     param: {
+      orgIdOrSlug: organizationId,
       id: membershipId,
     },
     json: { role, archived, muted, order },

@@ -99,7 +99,11 @@ export const SheetMenu = memo(() => {
           } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
           else newOrder = (relativeItem.membership.order + targetData.order) / 2;
 
-          await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
+          await updateMembership({
+            membershipId: sourceData.item.membership.id,
+            order: newOrder,
+            organizationId: sourceData.item.organizationId || sourceData.item.id,
+          });
         },
       }),
     );
