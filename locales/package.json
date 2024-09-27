@@ -1,5 +1,5 @@
 {
-  "name": "locales",
+  "name": "@cellajs/locales",
   "type": "module",
   "exports": {
     ".": "./**"
