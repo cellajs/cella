@@ -9,6 +9,7 @@ import requestsRoutes from '#/modules/requests';
 import usersRoutes from '#/modules/users';
 import baseApp from './server';
 
+// Define backend routes of your app
 const app = baseApp
   .route('/auth', authRoutes)
   .route('/me', meRoutes)

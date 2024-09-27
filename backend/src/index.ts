@@ -6,7 +6,7 @@ import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import { resetDb } from '#/cron/manage-db';
 import { db } from '#/db/db';
-import ascii from '#/lib/ascii';
+import ascii from '#/utils/ascii';
 import { env } from '../env';
 import docs from './lib/docs';
 import app from './routes';

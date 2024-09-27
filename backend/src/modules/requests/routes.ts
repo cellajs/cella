@@ -1,8 +1,8 @@
-import { errorResponses, successWithDataSchema, successWithPaginationSchema } from '#/lib/common-responses';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { authRateLimiter } from '#/middlewares/rate-limiter';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
 import { createRequestSchema, getRequestsQuerySchema, requestsInfoSchema, requestsSchema } from './schema';
 
 class RequestsRoutesConfig {

@@ -1,13 +1,13 @@
+import { createRouteConfig } from '#/lib/route-config';
+import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '#/middlewares/guard';
 import {
   errorResponses,
   successWithDataSchema,
   successWithErrorsSchema,
   successWithPaginationSchema,
   successWithoutDataSchema,
-} from '#/lib/common-responses';
-import { entityParamSchema, idsQuerySchema } from '#/lib/common-schemas';
-import { createRouteConfig } from '#/lib/route-config';
-import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '#/middlewares/guard';
+} from '#/utils/schema/common-responses';
+import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
@@ -22,7 +22,7 @@ class OrganizationRoutesConfig {
     path: '/',
     guard: isAuthenticated,
     tags: ['organizations'],
-    summary: 'Create new organization',
+    summary: 'Create organization',
     description: 'Create a new organization.',
     request: {
       body: {

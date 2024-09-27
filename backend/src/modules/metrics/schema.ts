@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createEntitiesSchema } from '#/lib/schema-utils';
+import { mapEntitiesSchema } from '#/utils/schema/schema';
 
-export const publicCountsSchema = createEntitiesSchema(() => z.number());
+export const publicCountsSchema = mapEntitiesSchema(() => z.number());
 
 export const metricsSchema = z.array(
   z.object({

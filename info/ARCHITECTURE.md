@@ -45,10 +45,11 @@ This document describes the high-level architecture of Cella.
 │   ├── src                   
 │   │   ├── cron              
 │   │   ├── db                Connect, table schemas
-│   │   ├── lib               Library code and helper functions
+│   │   ├── lib               Init library code & important helpers
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
 │   │   └── types             
+│   │   └── utils             
 ├── config                    Shared config: default, development, production
 ├── frontend                  Frontend SPA
 │   ├── public                

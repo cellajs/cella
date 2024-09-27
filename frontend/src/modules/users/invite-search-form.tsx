@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { type InviteMemberProps, inviteMembers } from '~/api/memberships';
 
 import { onlineManager } from '@tanstack/react-query';
-import { idOrSlugSchema } from 'backend/lib/common-schemas';
+import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';

@@ -1,4 +1,4 @@
-import { errorResponses, successWithDataSchema } from '#/lib/common-responses';
+import { errorResponses, successWithDataSchema } from '#/utils/schema/common-responses';
 
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated } from '#/middlewares/guard';
@@ -11,8 +11,8 @@ class AttachmentRoutesConfig {
     path: '/',
     guard: isAuthenticated,
     tags: ['attachments'],
-    summary: 'Create new attachment',
-    description: 'Create a new attachment in a task.',
+    summary: 'Create attachment',
+    description: 'EXPERIMENTAL. Create a new attachment.',
     request: {
       body: {
         required: true,

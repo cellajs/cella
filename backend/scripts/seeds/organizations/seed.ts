@@ -3,13 +3,13 @@ import { UniqueEnforcer } from 'enforce-unique';
 
 import { config } from 'config';
 import { db } from '#/db/db';
-import { nanoid } from '#/lib/nanoid';
+import { nanoid } from '#/utils/nanoid';
 
 import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
-import { hashPasswordWithArgon } from '#/lib/argon2id';
-import { generateUnsubscribeToken } from '#/lib/unsubscribe-token';
+import { hashPasswordWithArgon } from '#/modules/auth/helpers/argon2id';
+import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 

@@ -2,7 +2,7 @@ import { config } from 'config';
 import { relations } from 'drizzle-orm';
 import { boolean, index, json, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { nanoid } from '#/lib/nanoid';
+import { nanoid } from '#/utils/nanoid';
 import { membershipsTable } from './memberships';
 
 type Language = (typeof config.languages)[number]['value'];

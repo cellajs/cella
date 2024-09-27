@@ -11,7 +11,7 @@ import {
   validDomainsSchema,
   validSlugSchema,
   validUrlSchema,
-} from '#/lib/common-schemas';
+} from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
 export const organizationSchema = z.object({
