@@ -1,4 +1,5 @@
 import {
+  ColorStyleButton,
   CreateLinkButton,
   FileCaptionButton,
   FileReplaceButton,
@@ -23,7 +24,7 @@ export const CustomFormattingToolbar = ({ config }: { config: CustomFormatToolBa
         {config.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
         {config.replaceFile && <FileReplaceButton key={'replaceFileButton'} />}
 
-        {config.textColorSelect && <CreateLinkButton key={'createLinkButton'} />}
+        {config.textColorSelect && <ColorStyleButton key={'colorStyleButton'} />}
 
         {config.createLink && <CreateLinkButton key={'createLinkButton'} />}
 
