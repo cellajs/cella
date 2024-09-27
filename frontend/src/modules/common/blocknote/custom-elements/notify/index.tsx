@@ -12,8 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '~/modules/ui/dropdown-menu';
 
-import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blocknote-config';
-import { notifyTypes } from '~/modules/common/blocknote/notify/notifyOptions';
+import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notifyOptions';
+import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 
 // The Notify block.
 export const Notify = createReactBlockSpec(
@@ -24,6 +24,7 @@ export const Notify = createReactBlockSpec(
       textColor: defaultProps.textColor,
       type: {
         default: 'warning',
+        // must match notifyTypes in ./notifyOptions
         values: ['warning', 'error', 'info', 'success'],
       },
     },
@@ -65,7 +66,6 @@ export const Notify = createReactBlockSpec(
                 })}
               </DropdownMenuContent>
             </DropdownMenuTrigger>
-            {/*Dropdown to change the Alert type*/}
           </DropdownMenu>
           {/*Rich text field for user to type in*/}
           <div className={'inline-content'} ref={props.contentRef} />

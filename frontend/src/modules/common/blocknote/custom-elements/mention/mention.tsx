@@ -1,10 +1,10 @@
 import { type DefaultReactGridSuggestionItem, createReactInlineContentSpec } from '@blocknote/react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/blocknote-config';
+import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 import type { Member } from '~/types/common';
 
 // The Mention inline content.
-export const Mention = createReactInlineContentSpec(
+export const MentionSchema = createReactInlineContentSpec(
   {
     type: 'mention',
     propSchema: {
