@@ -60,8 +60,8 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
-    const { name, email, message } = data;
-    createRequest({ email, type: 'contact', message: `${name} with the message: ${message}` });
+    const { email, message } = data;
+    createRequest({ email, type: 'contact', message });
   };
 
   // Update dialog title with unsaved changes
@@ -84,7 +84,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
         <div className="w-full">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
-              <InputFormField control={form.control} name="name" label={t('common:name')} icon={<User size={16} />} required />
+              <InputFormField control={form.control} name="name" label={t('common:name')} icon={<User size={16} />} />
               <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<Mail size={16} />} required />
               <InputFormField control={form.control} name="message" label={t('common:message')} type="textarea" icon={<MessageSquare size={16} />} />
               <div className="flex flex-col sm:flex-row gap-2">
