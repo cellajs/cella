@@ -1,5 +1,5 @@
 {
-  "name": "@cellajs/tus",
+  "name": "tus",
   "version": "0.0.1",
   "description": "TUS server to handle file uploading with imado",
   "type": "module",
