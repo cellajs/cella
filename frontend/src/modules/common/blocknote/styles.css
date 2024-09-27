@@ -14,6 +14,7 @@ p.bn-inline-content code {
 }
 
 .bn-grid-suggestion-menu {
+  z-index: 9999 !important;
   max-height: 40vh !important;
   overflow-y: auto;
 }
@@ -50,7 +51,7 @@ p.bn-inline-content code {
 }
 
 .bn-menu-dropdown {
-  position: absolute; /* or 'fixed' if you want it to be fixed in place */
+  position: fixed;
   z-index: 9999 !important;
   width: 11rem;
   max-height: 40vh !important;
