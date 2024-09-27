@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '#/db/schema/memberships';
-import { contextEntityTypeSchema, idOrSlugSchema, idSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+import { contextEntityTypeSchema, idOrSlugSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
 import { userSchema } from '../users/schema';
 
 const membershipTableSchema = createSelectSchema(membershipsTable);
@@ -31,7 +31,7 @@ const baseMembersQuerySchema = z.object({
   entityType: contextEntityTypeSchema,
 });
 
-export const createMembershipQuerySchema = baseMembersQuerySchema.extend({ organizationId: idSchema });
+export const createMembershipQuerySchema = baseMembersQuerySchema;
 
 export const deleteMembersQuerySchema = baseMembersQuerySchema.extend(idsQuerySchema.shape);
 

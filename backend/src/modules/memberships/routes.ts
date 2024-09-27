@@ -3,7 +3,7 @@ import { z } from '@hono/zod-openapi';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { idSchema } from '#/utils/schema/common-schemas';
+import { idOrSlugSchema, idSchema } from '#/utils/schema/common-schemas';
 import {
   createMembershipBodySchema,
   createMembershipQuerySchema,
@@ -22,6 +22,7 @@ class MembershipRoutesConfig {
     description: 'Invite members to an entity such as an organization.',
     request: {
       query: createMembershipQuerySchema,
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       body: {
         content: {
           'application/json': {
@@ -51,6 +52,7 @@ class MembershipRoutesConfig {
     summary: 'Delete memberships',
     description: 'Delete memberships by their ids. This will remove the membership but not delete any user(s).',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       query: deleteMembersQuerySchema,
     },
     responses: {
@@ -74,7 +76,7 @@ class MembershipRoutesConfig {
     summary: 'Update membership',
     description: 'Update role, muted, or archived status in a membership.',
     request: {
-      params: z.object({ id: idSchema }),
+      params: z.object({ orgIdOrSlug: idOrSlugSchema, id: idSchema }),
       body: {
         content: {
           'application/json': {

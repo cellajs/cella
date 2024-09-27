@@ -3,7 +3,7 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
+import { idOrSlugSchema, pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
 import { acceptInviteBodySchema, checkTokenSchema, inviteBodySchema, membersQuerySchema, membersSchema, suggestionsSchema } from './schema';
 
@@ -244,13 +244,16 @@ class GeneralRoutesConfig {
 
   public getMembers = createRouteConfig({
     method: 'get',
-    path: '/members',
+    path: '/{orgIdOrSlug}/members',
     guard: [isAuthenticated],
     tags: ['general'],
     summary: 'Get list of members',
     description: 'Get members of a context entity by id or slug. It returns members (users) with their membership.',
     request: {
       query: membersQuerySchema,
+      params: z.object({
+        orgIdOrSlug: idOrSlugSchema.optional(),
+      }),
     },
     responses: {
       200: {

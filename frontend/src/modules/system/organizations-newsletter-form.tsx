@@ -99,7 +99,6 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
                     customSlashMenu={true}
                     customFormattingToolbar={true}
                     className="min-h-20 pl-10"
-                    emojis={false}
                   />
                 </Suspense>
               </FormControl>

@@ -31,18 +31,19 @@ const membershipsRoutes = app
    * Invite members to an entity such as an organization
    */
   .openapi(membershipRouteConfig.createMembership, async (ctx) => {
-    const { idOrSlug, entityType, organizationId } = ctx.req.valid('query');
+    // TODO get full organization here from context
+    const { idOrSlug, entityType } = ctx.req.valid('query');
     const { emails, role } = ctx.req.valid('json');
     const user = getContextUser();
 
     // Check params
-    if (!organizationId || !entityType || !config.contextEntityTypes.includes(entityType) || !idOrSlug) {
+    if (!entityType || !config.contextEntityTypes.includes(entityType) || !idOrSlug) {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
 
     // Fetch organization, user memberships, and context from the database
     const [organization, memberships, context] = await Promise.all([
-      resolveEntity('organization', organizationId),
+      resolveEntity('organization', idOrSlug),
       db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
       resolveEntity(entityType, idOrSlug),
     ]);
@@ -81,7 +82,7 @@ const membershipsRoutes = app
       if (context.entity !== 'organization') {
         $where.push(
           and(
-            eq(membershipsTable.organizationId, organizationId),
+            // eq(membershipsTable.organizationId, organizationId),
             eq(membershipsTable.type, 'organization'),
             inArray(
               membershipsTable.userId,

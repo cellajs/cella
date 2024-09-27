@@ -92,7 +92,7 @@ type RequiredGetMembersParams = {
   entityType: ContextEntity;
 };
 
-type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof client.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
+type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof client)[':orgIdOrSlug']['members']['$get']>['0']['query'], 'limit' | 'offset'>> & {
   limit?: number;
   offset?: number;
   page?: number;
@@ -106,7 +106,7 @@ export const getMembers = async (
   { idOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50, offset }: GetMembersParams,
   signal?: AbortSignal,
 ) => {
-  const response = await client.members.$get(
+  const response = await client[':orgIdOrSlug'].members.$get(
     {
       query: {
         idOrSlug,
@@ -118,6 +118,7 @@ export const getMembers = async (
         limit: String(limit),
         role,
       },
+      param: { orgIdOrSlug: idOrSlug },
     },
     {
       fetch: (input: RequestInfo | URL, init?: RequestInit) => {

@@ -17,7 +17,7 @@ const app = baseApp
   .route('/organizations', organizationsRoutes)
   .route('/', generalRoutes)
   .route('/requests', requestsRoutes)
-  .route('/memberships', membershipsRoutes)
+  .route('/:orgIdOrSlug/memberships', membershipsRoutes)
   .route('/attachments', attachmentsRoutes)
   .route('/metrics', metricRoutes);
 

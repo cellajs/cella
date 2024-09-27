@@ -63,6 +63,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
+  // Organization id
+  const organizationId = entity.organizationId || entity.id;
+
   // Search query options
   const q = useDebounce(query, 200);
   const sort = sortColumns[0]?.columnKey as MemberSearch['sort'];
@@ -127,9 +130,10 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   }, [selectedRows, rows]);
 
   const callback = useMutateInfiniteQueryData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
+
   // Update member role
   const { mutate: updateMemberRole } = useMutation({
-    mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role }),
+    mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role, organizationId }),
     onSuccess: (updatedMembership) => {
       showToast(t('common:success:user_role_updated'), 'success');
       callback([updatedMembership], 'updateMembership');
@@ -190,6 +194,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const openRemoveDialog = () => {
     dialog(
       <RemoveMembersForm
+        organizationId={organizationId}
         entityId={entity.id}
         entityType={entityType}
         dialog

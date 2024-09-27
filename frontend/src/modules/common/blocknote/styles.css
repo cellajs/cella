@@ -13,6 +13,11 @@ p.bn-inline-content code {
   border: 0.25rem solid hsl(var(--muted));
 }
 
+.bn-grid-suggestion-menu {
+  max-height: 40vh !important;
+  overflow-y: auto;
+}
+
 .bn-shadcn .bn-block-outer,
 .bn-shadcn .bn-default-styles {
   font-size: 0.888rem;
@@ -45,7 +50,7 @@ p.bn-inline-content code {
   position: absolute; /* or 'fixed' if you want it to be fixed in place */
   z-index: 9999 !important;
   width: 11rem;
-  max-height: 44vh !important;
+  max-height: 40vh !important;
   overflow-y: auto;
 }
 
@@ -61,7 +66,7 @@ p.bn-inline-content code {
 }
 
 .slash-menu {
-  max-height: 44vh;
+  max-height: 40vh;
   overflow-y: auto;
   z-index: 9999 !important;
   background-color: hsl(var(--card));
@@ -71,7 +76,7 @@ p.bn-inline-content code {
   display: flex;
   flex-direction: column;
   height: fit-content;
-  padding: 0.25rem;
+  padding: 0.5rem;
   top: 0.25rem;
 }
 
@@ -81,10 +86,10 @@ p.bn-inline-content code {
   font-size: 0.888rem;
   align-items: center;
   display: flex;
-  height: 1.5rem;
+  height: 2rem;
   flex-direction: row;
   justify-content: space-between;
-  padding: 0.5rem;
+  padding: 1rem;
 }
 
 .slash-menu-item-badge {

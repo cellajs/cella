@@ -1,5 +1,5 @@
 {
-  "name": "@cellajs/config",
+  "name": "config",
   "type": "module",
   "exports": {
     ".": "./index.ts"

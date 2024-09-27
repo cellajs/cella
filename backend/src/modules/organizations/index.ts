@@ -141,25 +141,8 @@ const organizationsRoutes = app
     const user = getContextUser();
     const organization = getOrganization();
 
-    const {
-      name,
-      slug,
-      shortName,
-      country,
-      timezone,
-      defaultLanguage,
-      languages,
-      notificationEmail,
-      emailDomains,
-      color,
-      thumbnailUrl,
-      logoUrl,
-      bannerUrl,
-      websiteUrl,
-      welcomeText,
-      authStrategies,
-      chatSupport,
-    } = ctx.req.valid('json');
+    const updatedFields = ctx.req.valid('json');
+    const slug = updatedFields.slug;
 
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -172,23 +155,7 @@ const organizationsRoutes = app
     const [updatedOrganization] = await db
       .update(organizationsTable)
       .set({
-        name,
-        slug,
-        shortName,
-        country,
-        timezone,
-        defaultLanguage,
-        languages,
-        notificationEmail,
-        emailDomains,
-        color,
-        thumbnailUrl,
-        logoUrl,
-        bannerUrl,
-        websiteUrl,
-        welcomeText,
-        authStrategies,
-        chatSupport,
+        ...updatedFields,
         modifiedAt: new Date(),
         modifiedBy: user.id,
       })
@@ -297,7 +264,8 @@ const organizationsRoutes = app
   .openapi(organizationRoutesConfig.sendNewsletterEmail, async (ctx) => {
     const user = getContextUser();
     const { organizationIds, subject, content } = ctx.req.valid('json');
-    // For test purposes
+
+    // TODO simplify this? // For test purposes
     if (typeof env.SEND_ALL_TO_EMAIL === 'string' && env.NODE_ENV === 'development') {
       const unsafeUser = await getUserBy('id', user.id, 'unsafe');
       const unsubscribeToken = unsafeUser ? unsafeUser.unsubscribeToken : '';
@@ -337,6 +305,7 @@ const organizationsRoutes = app
           .innerJoin(membershipsTable, and(eq(membershipsTable.userId, member.membershipId)))
           .where(eq(organizationsTable.id, membershipsTable.organizationId));
         const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${member.unsubscribeToken}`;
+
         // generating email html
         const emailHtml = await render(
           organizationsNewsletter({
