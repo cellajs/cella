@@ -14,7 +14,7 @@ class GeneralRoutesConfig {
     guard: isPublicAccess,
     tags: ['users'],
     summary: 'Unsubscribe',
-    description: 'Unsubscribe from newsletters using a personal unsubscribe token',
+    description: 'Unsubscribe using a personal unsubscribe token.',
     request: {
       query: userUnsubscribeQuerySchema,
     },
