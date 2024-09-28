@@ -17,16 +17,14 @@ export const createRequest = async (requestInfo: CreateRequestProp) => {
   return json.success;
 };
 
-export type GetRequestsParams = Partial<
-  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit?: number;
-    offset?: number;
-    page?: number;
-  }
->;
+export type GetRequestsParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  limit?: number;
+  offset?: number;
+  page?: number;
+};
 
 // Get all app action requests
-export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetRequestsParams = {}, signal?: AbortSignal) => {
+export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetRequestsParams, signal?: AbortSignal) => {
   const response = await client.index.$get(
     {
       query: {

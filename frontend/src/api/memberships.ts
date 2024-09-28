@@ -69,7 +69,7 @@ type RequiredGetMembersParams = {
   entityType: ContextEntity;
 };
 
-type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof client)['members']['$get']>['0']['query'], 'limit' | 'offset'>> & {
+type OptionalGetMembersParams = Omit<Parameters<(typeof client)['members']['$get']>['0']['query'], 'limit' | 'offset'> & {
   limit?: number;
   offset?: number;
   page?: number;

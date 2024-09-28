@@ -27,17 +27,15 @@ export const getOrganization = async (idOrSlug: string) => {
   return json.data;
 };
 
-export type GetOrganizationsParams = Partial<
-  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit?: number;
-    offset?: number;
-    page?: number;
-  }
->;
+export type GetOrganizationsParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  limit?: number;
+  offset?: number;
+  page?: number;
+};
 
 // Get a list of organizations
 export const getOrganizations = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetOrganizationsParams = {},
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetOrganizationsParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(
