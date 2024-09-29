@@ -15,16 +15,14 @@ export const getUser = async (idOrSlug: string) => {
   return json.data;
 };
 
-export type GetUsersParams = Partial<
-  Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
-    limit?: number;
-    offset?: number;
-    page?: number;
-  }
->;
+export type GetUsersParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  limit?: number;
+  offset?: number;
+  page?: number;
+};
 
 // Get a list of users in system
-export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 2, role, offset }: GetUsersParams = {}, signal?: AbortSignal) => {
+export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 2, role, offset }: GetUsersParams, signal?: AbortSignal) => {
   const response = await client.index.$get(
     {
       query: {

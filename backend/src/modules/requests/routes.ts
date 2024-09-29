@@ -3,7 +3,7 @@ import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/gu
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { authRateLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
-import { createRequestSchema, getRequestsQuerySchema, requestsInfoSchema, requestsSchema } from './schema';
+import { createRequestSchema, getRequestsQuerySchema, requestSchema } from './schema';
 
 class RequestsRoutesConfig {
   public createRequest = createRouteConfig({
@@ -28,7 +28,7 @@ class RequestsRoutesConfig {
         description: 'Requests',
         content: {
           'application/json': {
-            schema: successWithDataSchema(requestsSchema),
+            schema: successWithDataSchema(requestSchema),
           },
         },
       },
@@ -51,7 +51,7 @@ class RequestsRoutesConfig {
         description: 'Requests',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(requestsInfoSchema),
+            schema: successWithPaginationSchema(requestSchema),
           },
         },
       },

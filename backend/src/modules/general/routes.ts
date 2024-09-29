@@ -2,10 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
 import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { idOrSlugSchema, pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
+import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
+import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
-import { acceptInviteBodySchema, checkTokenSchema, inviteBodySchema, membersQuerySchema, membersSchema, suggestionsSchema } from './schema';
+import { acceptInviteBodySchema, checkTokenSchema, inviteBodySchema, suggestionsSchema } from './schema';
 
 class GeneralRoutesConfig {
   public unsubscribeUser = createRouteConfig({
@@ -14,7 +14,7 @@ class GeneralRoutesConfig {
     guard: isPublicAccess,
     tags: ['users'],
     summary: 'Unsubscribe',
-    description: 'Unsubscribe from newsletters using a personal unsubscribe token',
+    description: 'Unsubscribe using a personal unsubscribe token.',
     request: {
       query: userUnsubscribeQuerySchema,
     },
@@ -235,32 +235,6 @@ class GeneralRoutesConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(suggestionsSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getMembers = createRouteConfig({
-    method: 'get',
-    path: '/{orgIdOrSlug}/members',
-    guard: [isAuthenticated],
-    tags: ['general'],
-    summary: 'Get list of members',
-    description: 'Get members of a context entity by id or slug. It returns members (users) with their membership.',
-    request: {
-      query: membersQuerySchema,
-      params: z.object({
-        orgIdOrSlug: idOrSlugSchema.optional(),
-      }),
-    },
-    responses: {
-      200: {
-        description: 'Members',
-        content: {
-          'application/json': {
-            schema: successWithPaginationSchema(membersSchema),
           },
         },
       },

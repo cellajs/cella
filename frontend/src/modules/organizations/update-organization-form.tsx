@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
-import { showToast } from '~/lib/taosts-show';
+import { showToast } from '~/lib/toasts';
 import { cleanUrl } from '~/lib/utils';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import DomainsFormField from '~/modules/common/form-fields/domains';

@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api/auth';
-import { showToast } from '~/lib/taosts-show';
+import { showToast } from '~/lib/toasts';
 import { useDraftStore } from '~/store/draft';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types/common';

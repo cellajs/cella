@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useKeyPress } from '~/hooks/use-key-press';
-import { showToast } from '~/lib/taosts-show';
+import { showToast } from '~/lib/toasts';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import type { sheetVariants } from '~/modules/ui/sheet';
 import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
