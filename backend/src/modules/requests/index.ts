@@ -47,16 +47,7 @@ const requestsRoutes = app
     if (type === 'newsletter') await sendSlackNotification('to become a donate or build member.', email);
     if (type === 'contact') await sendSlackNotification(`for contact from ${message}.`, email);
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          email: createdAccessRequest.email,
-          type: createdAccessRequest.type,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: createdAccessRequest }, 200);
   })
   /*
    *  Get list of requests for system admins

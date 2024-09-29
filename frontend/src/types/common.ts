@@ -2,7 +2,7 @@ import type { membersSchema } from 'backend/modules/general/schema';
 import type { menuItemsSchema, userMenuSchema } from 'backend/modules/me/schema';
 import type { membershipInfoSchema, membershipSchema } from 'backend/modules/memberships/schema';
 import type { organizationSchema } from 'backend/modules/organizations/schema';
-import type { requestsInfoSchema } from 'backend/modules/requests/schema';
+import type { requestSchema } from 'backend/modules/requests/schema';
 import type { userSchema } from 'backend/modules/users/schema';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
@@ -28,7 +28,7 @@ export type Member = z.infer<typeof membersSchema>;
 export type Membership = z.infer<typeof membershipSchema>;
 export type MinimumMembershipInfo = z.infer<typeof membershipInfoSchema>;
 
-export type Request = z.infer<typeof requestsInfoSchema>;
+export type Request = z.infer<typeof requestSchema>;
 
 export type MinimumEntityItem = {
   id: string;
