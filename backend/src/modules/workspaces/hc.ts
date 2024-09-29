@@ -5,4 +5,4 @@ import type routes from '.';
 // assign the client to a variable to calculate the type when compiling
 const client = hc<typeof routes>('');
 type Client = typeof client;
-export const workspacesHc = createHc<Client>('/workspaces');
+export const workspacesHc = createHc<Client>('/:orgIdOrSlug/workspaces');

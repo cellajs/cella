@@ -1,9 +1,10 @@
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { idsQuerySchema, productParamSchema } from '#/utils/schema/common-schemas';
+import { idOrSlugSchema, idsQuerySchema, productParamSchema } from '#/utils/schema/common-schemas';
 
 import { createRouteConfig } from '#/lib/route-config';
 import { isAllowedTo, isAuthenticated } from '#/middlewares/guard';
 
+import { z } from 'zod';
 import { createTaskSchema, fullTaskSchema, getTasksQuerySchema, simpleTaskSchema, updateTaskSchema } from './schema';
 
 class TaskRoutesConfig {
@@ -15,6 +16,7 @@ class TaskRoutesConfig {
     summary: 'Create new task',
     description: 'Create a new task in a project.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       body: {
         required: true,
         content: {
@@ -45,6 +47,7 @@ class TaskRoutesConfig {
     summary: 'Get list of tasks',
     description: 'Get list of tasks for specific projects.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       query: getTasksQuerySchema,
     },
     responses: {
@@ -121,6 +124,7 @@ class TaskRoutesConfig {
     summary: 'Delete tasks',
     description: 'Delete tasks by ids.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       query: idsQuerySchema,
     },
     responses: {

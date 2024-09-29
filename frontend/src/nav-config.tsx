@@ -15,25 +15,25 @@ import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
 export const baseEntityRoutes = {
   user: '/user/$idOrSlug',
   organization: '/$idOrSlug',
-  workspace: '/workspaces/$idOrSlug',
-  project: '/workspaces/$idOrSlug/board',
+  workspace: '/$orgIdOrSlug/workspaces/$idOrSlug',
+  project: '/$orgIdOrSlug/workspaces/$idOrSlug/board',
 } as const;
 
 // Here you declare main navigation items
 export const navItems: NavItem[] = [
-  { id: 'menu', sheet: <SheetMenu />, icon: Menu, hiddenOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
-  { id: 'home', icon: Home, href: '/', hiddenOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
-  { id: 'search', icon: Search, hiddenOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  { id: 'menu', sheet: <SheetMenu />, icon: Menu, hiddenOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  { id: 'home', icon: Home, href: '/', hiddenOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  { id: 'search', icon: Search, hiddenOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
   {
     id: 'account',
     sheet: <SheetAccount />,
-    hiddenOn: ['/workspaces/$idOrSlug/board'],
+    hiddenOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'],
     icon: User,
     mirrorOnMobile: true,
     visibilityMobileOnly: true,
   },
-  { id: 'return', icon: ArrowLeftCircle, visibleOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
-  { id: '+task', icon: PlusCircle, visibleOn: ['/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  { id: 'return', icon: ArrowLeftCircle, visibleOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  { id: '+task', icon: PlusCircle, visibleOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
 ];
 
 // Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )

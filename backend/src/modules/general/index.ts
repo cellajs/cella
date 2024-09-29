@@ -289,7 +289,6 @@ const generalRoutes = app
         entity: table.entity,
         ...('email' in table && { email: table.email }),
         ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
-        ...('parentId' in table && { parentId: table.parentId }),
       };
 
       // Build search filters

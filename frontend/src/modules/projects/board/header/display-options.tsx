@@ -17,7 +17,7 @@ const DisplayOptions = ({ className = '' }: Props) => {
 
   const handleItemChange = (value: string) => {
     navigate({
-      to: `/workspaces/$idOrSlug/${value}`,
+      to: `/$orgIdOrSlug/workspaces/$idOrSlug/${value}`,
       params: { idOrSlug },
     });
   };

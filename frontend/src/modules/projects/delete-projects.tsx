@@ -16,7 +16,7 @@ const DeleteProjects = ({ projects, callback, dialog: isDialog }: Props) => {
   const { setWorkspace, workspace, projects: currentProjects } = useWorkspaceStore();
 
   const { mutate: deleteProjects, isPending } = useMutation({
-    mutationFn: baseDeleteProjects,
+    mutationFn: async (ids: string[]) => await baseDeleteProjects(ids, workspace.organizationId),
     onSuccess: () => {
       for (const project of projects) {
         queryClient.invalidateQueries({

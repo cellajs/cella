@@ -109,6 +109,7 @@ export const SheetMenu = memo(() => {
             order: newOrder,
             organizationId: sourceData.item.organizationId || sourceData.item.id,
           });
+          // TODO refactor this into a more generic entity event and align it with cella
           const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
           if (idOrSlug === slug) callback([updatedItem], sourceData.item.parentSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
         },

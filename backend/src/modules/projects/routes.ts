@@ -1,7 +1,8 @@
+import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
-import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+import { entityInOrgParamSchema, idOrSlugSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
 import checkUserPermissions from './middlewares/userPermissionsCheck';
 
 import { createProjectBodySchema, createProjectQuerySchema, getProjectsQuerySchema, projectSchema, updateProjectBodySchema } from './schema';
@@ -16,6 +17,7 @@ class ProjectRoutesConfig {
     description: 'Create a new project in an organization. Creator will become admin and can invite other members.',
     security: [{ bearerAuth: [] }],
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       query: createProjectQuerySchema,
       body: {
         required: true,
@@ -47,7 +49,7 @@ class ProjectRoutesConfig {
     summary: 'Get project',
     description: 'Get project by id or slug.',
     request: {
-      params: entityParamSchema,
+      params: entityInOrgParamSchema,
     },
     responses: {
       200: {
@@ -70,6 +72,7 @@ class ProjectRoutesConfig {
     summary: 'Get list of projects',
     description: 'Get list of projects.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       query: getProjectsQuerySchema,
     },
     responses: {
@@ -93,7 +96,7 @@ class ProjectRoutesConfig {
     summary: 'Update project',
     description: 'Update project by id or slug.',
     request: {
-      params: entityParamSchema,
+      params: entityInOrgParamSchema,
       body: {
         content: {
           'application/json': {
@@ -123,6 +126,7 @@ class ProjectRoutesConfig {
     summary: 'Delete projects',
     description: 'Delete projects by ids.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       query: idsQuerySchema,
     },
     responses: {

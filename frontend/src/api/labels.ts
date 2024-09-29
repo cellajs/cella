@@ -8,8 +8,11 @@ export const client = labelsHc(config.backendUrl, clientConfig);
 export type CreateLabelParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Create a new label
-export const createLabel = async (label: CreateLabelParams) => {
-  const response = await client.index.$post({ json: label });
+export const createLabel = async (label: CreateLabelParams, orgIdOrSlug: string) => {
+  const response = await client.index.$post({
+    param: { orgIdOrSlug },
+    json: label,
+  });
   const json = await handleResponse(response);
   return json.success;
 };
@@ -18,15 +21,17 @@ export type GetLabelsParams = Omit<Parameters<(typeof client.index)['$get']>['0'
   limit?: number;
   offset?: number;
   page?: number;
+  orgIdOrSlug: string;
 };
 
 // Get list of labels
 export const getLabels = async (
-  { q, sort = 'name', order = 'asc', page = 0, limit = 20, offset, projectId }: GetLabelsParams,
+  { q, sort = 'name', order = 'asc', page = 0, limit = 20, offset, projectId, orgIdOrSlug }: GetLabelsParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(
     {
+      param: { orgIdOrSlug },
       query: {
         q,
         sort,
@@ -52,9 +57,9 @@ export const getLabels = async (
 };
 
 // Update label by its ID
-export const updateLabel = async (id: string, useCount: number) => {
+export const updateLabel = async (id: string, orgIdOrSlug: string, useCount: number) => {
   const response = await client[':id'].$put({
-    param: { id },
+    param: { id, orgIdOrSlug },
     json: {
       useCount,
     },
@@ -65,8 +70,9 @@ export const updateLabel = async (id: string, useCount: number) => {
 };
 
 // Delete labels
-export const deleteLabels = async (ids: string[]) => {
+export const deleteLabels = async (ids: string[], orgIdOrSlug: string) => {
   const response = await client.index.$delete({
+    param: { orgIdOrSlug },
     query: { ids },
   });
   const json = await handleResponse(response);

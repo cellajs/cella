@@ -51,16 +51,17 @@ export const TaskBlockNote = ({
   const wasInitial = useRef(false);
 
   const { pathname } = useLocation();
-  const { members } = useWorkspaceStore();
+  const { members, workspace } = useWorkspaceStore();
 
   const handleUpdateHTML = useCallback(
     async (newContent: string, newSummary: string) => {
       try {
-        await updateTask(id, 'summary', newSummary);
-        const updatedTask = await updateTask(id, 'description', newContent);
+        // TODO Move this to api so that we need to do only one content request and derive summary and expandable from it
+        await updateTask(id, workspace.organizationId, 'summary', newSummary);
+        const updatedTask = await updateTask(id, workspace.organizationId, 'description', newContent);
         const expandable = taskExpandable(newSummary, newContent);
 
-        if (updatedTask.expandable !== expandable) updateTask(id, 'expandable', expandable);
+        if (updatedTask.expandable !== expandable) updateTask(id, workspace.organizationId, 'expandable', expandable);
 
         const action = updatedTask.parentId ? 'updateSubTask' : 'update';
         const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';

@@ -54,8 +54,8 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
 
               if (idOrSlug !== updatedWorkspace.slug) {
                 navigate({
-                  to: '/workspaces/$idOrSlug/board',
-                  params: { idOrSlug: updatedWorkspace.slug },
+                  to: '/$orgIdOrSlug/workspaces/$idOrSlug/board',
+                  params: { idOrSlug: updatedWorkspace.slug, orgIdOrSlug: updatedWorkspace.organizationId },
                   replace: true,
                 });
               }

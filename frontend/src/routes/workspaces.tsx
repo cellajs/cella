@@ -28,8 +28,8 @@ export const WorkspaceRoute = createRoute({
   staticData: { pageTitle: 'Workspace', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
-  loader: ({ params: { idOrSlug } }) => {
-    const queryOptions = workspaceQueryOptions(idOrSlug);
+  loader: ({ params: { idOrSlug, orgIdOrSlug } }) => {
+    const queryOptions = workspaceQueryOptions(idOrSlug, orgIdOrSlug);
     const cachedData = queryClient.getQueryData(queryOptions.queryKey);
     if (cachedData) {
       useWorkspaceStore.setState({

@@ -65,7 +65,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
     if (!focusedTaskId) return;
     try {
       const labelIds = labels.map((l) => l.id);
-      const updatedTask = await updateTask(focusedTaskId, 'labels', labelIds);
+      const updatedTask = await updateTask(focusedTaskId, workspace.organizationId, 'labels', labelIds);
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
       return;
@@ -83,7 +83,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       setSelectedLabels(updatedLabels);
       if (creationValueChange) return creationValueChange(updatedLabels);
       await updateTaskLabels(updatedLabels);
-      await updateLabel(existingLabel.id, existingLabel.useCount + 1);
+      await updateLabel(existingLabel.id, workspace.organizationId, existingLabel.useCount + 1);
       return;
     }
     const newLabel = labels.find((label) => label.name === value);
@@ -91,7 +91,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       const updatedLabels = [...selectedLabels, newLabel];
       setSelectedLabels(updatedLabels);
       if (creationValueChange) return creationValueChange(updatedLabels);
-      await updateLabel(newLabel.id, newLabel.useCount + 1);
+      await updateLabel(newLabel.id, workspace.organizationId, newLabel.useCount + 1);
       await updateTaskLabels(updatedLabels);
       return;
     }
@@ -111,7 +111,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
       useCount: 1,
     };
 
-    await createLabel(newLabel);
+    await createLabel(newLabel, workspace.organizationId);
     const updatedLabels = [...selectedLabels, newLabel];
     setSelectedLabels(updatedLabels);
     callback([newLabel], 'create');

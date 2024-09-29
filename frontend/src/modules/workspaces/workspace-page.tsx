@@ -15,16 +15,16 @@ import { useWorkspaceStore } from '~/store/workspace';
 const WorkspacePage = () => {
   const { t } = useTranslation();
   const { showPageHeader, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
-  const { idOrSlug } = useParams({ from: WorkspaceRoute.id });
+  const { idOrSlug, orgIdOrSlug } = useParams({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
 
-  const workspaceData = useSuspenseQuery(workspaceQueryOptions(idOrSlug)).data;
+  const workspaceData = useSuspenseQuery(workspaceQueryOptions(idOrSlug, orgIdOrSlug)).data;
   const workspace = workspaceData.workspace;
 
   const isAdmin = workspace.membership?.role === 'admin';
 
   //TODO  try find other solution other than useMutateWorkspaceQueryData hook
-  const { mutate } = useUpdateWorkspaceMutation(workspace.id);
+  const { mutate } = useUpdateWorkspaceMutation(workspace.id, workspace.organizationId);
 
   useEventListener('updateEntityCover', (e) => {
     const { bannerUrl, entity } = e.detail;

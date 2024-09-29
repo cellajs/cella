@@ -33,6 +33,7 @@ export const projectsQueryOptions = ({
   limit = LIMIT,
   userId,
   rowsLength = 0,
+  orgIdOrSlug,
 }: GetProjectsParams & {
   rowsLength?: number;
 }) => {
@@ -56,6 +57,7 @@ export const projectsQueryOptions = ({
           // If some items were added, offset should be undefined, otherwise it should be the length of the rows
           offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
           userId,
+          orgIdOrSlug,
         },
         signal,
       ),
@@ -65,7 +67,7 @@ export const projectsQueryOptions = ({
 
 const LIMIT = 40;
 
-export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: boolean; userId?: string }) {
+export default function ProjectsTable({ userId, organizationId, sheet: IsSheet }: { organizationId: string; sheet?: boolean; userId?: string }) {
   const { t } = useTranslation();
 
   const [rows, setRows] = useState<Project[]>([]);
@@ -87,7 +89,7 @@ export default function ProjectsTable({ userId, sheet: IsSheet }: { sheet?: bool
   };
 
   // Query projects
-  const queryResult = useInfiniteQuery(projectsQueryOptions({ q, sort, order, limit, userId, rowsLength: rows.length }));
+  const queryResult = useInfiniteQuery(projectsQueryOptions({ q, sort, order, limit, userId, rowsLength: rows.length, orgIdOrSlug: organizationId }));
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;

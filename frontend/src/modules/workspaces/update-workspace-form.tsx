@@ -33,10 +33,10 @@ const formSchema = updateWorkspaceBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const useUpdateWorkspaceMutation = (idOrSlug: string) => {
+export const useUpdateWorkspaceMutation = (idOrSlug: string, orgIdOrSlug: string) => {
   return useMutation<Workspace, DefaultError, UpdateWorkspaceParams>({
     mutationKey: ['workspaces', 'update', idOrSlug],
-    mutationFn: (params) => updateWorkspace(idOrSlug, params),
+    mutationFn: (params) => updateWorkspace(idOrSlug, orgIdOrSlug, params),
     gcTime: 1000 * 10,
   });
 };
@@ -44,7 +44,7 @@ export const useUpdateWorkspaceMutation = (idOrSlug: string) => {
 const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isSheet }: Props) => {
   const { t } = useTranslation();
 
-  const { mutate, isPending } = useUpdateWorkspaceMutation(workspace.id);
+  const { mutate, isPending } = useUpdateWorkspaceMutation(workspace.id, workspace.organizationId);
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),

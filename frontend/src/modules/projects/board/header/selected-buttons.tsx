@@ -14,12 +14,12 @@ import type { Task } from '~/types/app';
 const TaskSelectedTableButtons = () => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { selectedTasks, setSelectedTasks } = useWorkspaceStore();
+  const { selectedTasks, setSelectedTasks, workspace } = useWorkspaceStore();
 
   const queries = queryClient.getQueriesData({ queryKey: ['boardTasks'] });
 
   const onRemove = () => {
-    deleteTasks(selectedTasks)
+    deleteTasks(selectedTasks, workspace.organizationId)
       .then((resp) => {
         if (resp) {
           toast.success(t('common:success.delete_resources', { resources: t('app:tasks') }));

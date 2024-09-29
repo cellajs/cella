@@ -28,6 +28,7 @@ export const labelsQueryOptions = ({
   order: initialOrder,
   limit = 20,
   rowsLength = 0,
+  orgIdOrSlug,
 }: GetLabelsParams & {
   rowsLength?: number;
 }) => {
@@ -50,6 +51,7 @@ export const labelsQueryOptions = ({
           limit: limit + Math.max(page * limit - rowsLength, 0),
           // If some items were added, offset should be undefined, otherwise it should be the length of the rows
           offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+          orgIdOrSlug,
         },
         signal,
       ),
@@ -62,7 +64,7 @@ type LabelsSearch = z.infer<typeof labelsSearchSchema>;
 const LabelsTable = () => {
   const { t } = useTranslation();
   const [columns] = useColumns();
-  const { projects } = useWorkspaceStore();
+  const { projects, workspace } = useWorkspaceStore();
 
   const [rows, setRows] = useState<Label[]>([]);
   const [query, setQuery] = useState<LabelsSearch['q']>('');
@@ -75,7 +77,14 @@ const LabelsTable = () => {
   const order = sortColumns[0]?.direction.toLowerCase() as LabelsSearch['order'];
 
   const queryResult = useInfiniteQuery(
-    labelsQueryOptions({ q, sort, order, projectId: projects.map((p) => p.id).join('_'), rowsLength: rows.length }),
+    labelsQueryOptions({
+      q,
+      sort,
+      order,
+      projectId: projects.map((p) => p.id).join('_'),
+      rowsLength: rows.length,
+      orgIdOrSlug: workspace.organizationId,
+    }),
   );
 
   // Map (updated) query data to rows
@@ -105,7 +114,10 @@ const LabelsTable = () => {
   };
 
   const removeLabel = () => {
-    deleteLabels(selectedLabels.map((l) => l.id)).then(() => {
+    deleteLabels(
+      selectedLabels.map((l) => l.id),
+      workspace.organizationId,
+    ).then(() => {
       toast.success(t(`app:success.delete_${selectedRows.size > 1 ? 'labels' : 'label'}`));
       setSelectedRows(new Set<string>());
     });

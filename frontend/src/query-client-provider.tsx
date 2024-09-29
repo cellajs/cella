@@ -67,6 +67,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
         } satisfies UseQueryOptions;
         const menu = await prefetchQuery(menuQueryOptions);
 
+        // TODO can we make this dynamic by adding more props in an entity map?
         for (const section of Object.values(menu)) {
           for (const item of section) {
             if (item.entity === 'organization') {
@@ -77,13 +78,13 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
             }
 
             if (item.entity === 'workspace') {
-              const options = workspaceQueryOptions(item.slug);
+              const options = workspaceQueryOptions(item.slug, item.organizationId || item.slug);
               prefetchQuery(options);
               prefetchMembers(item);
 
               for (const subItem of item.submenu ?? []) {
                 if (subItem.entity === 'project') {
-                  const options = tasksQueryOptions({ projectId: subItem.id });
+                  const options = tasksQueryOptions({ projectId: subItem.id, orgIdOrSlug: item.organizationId || item.slug });
                   prefetchQuery(options);
                 }
               }

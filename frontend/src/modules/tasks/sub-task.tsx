@@ -34,7 +34,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const onRemove = (subTaskId: string) => {
-    deleteTasks([subTaskId]).then((resp) => {
+    deleteTasks([subTaskId], task.organizationId).then((resp) => {
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [{ id: subTaskId }], action: 'deleteSubTask', projectId: task.projectId });
       if (resp) toast.success(t('common:success.delete_resources', { resources: t('app:todos') }));
@@ -49,7 +49,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 
   const handleUpdateStatus = async (newStatus: number) => {
     try {
-      const updatedTask = await updateTask(task.id, 'status', newStatus);
+      const updatedTask = await updateTask(task.id, task.organizationId, 'status', newStatus);
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask', projectId: task.projectId });
     } catch (err) {

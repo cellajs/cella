@@ -33,11 +33,12 @@ interface BoardColumnProps {
   project: Project;
 }
 
-export const tasksQueryOptions = ({ projectId }: GetTasksParams) => {
+export const tasksQueryOptions = ({ projectId, orgIdOrSlug }: GetTasksParams) => {
   return queryOptions({
     queryKey: ['boardTasks', projectId],
     queryFn: async () =>
       await getTasksList({
+        orgIdOrSlug,
         projectId,
       }),
   });
@@ -70,7 +71,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
   const [isMouseNearBottom, setIsMouseNearBottom] = useState(false);
 
   // Query tasks
-  const tasksQuery = useSuspenseQuery(tasksQueryOptions({ projectId: project.id }));
+  const tasksQuery = useSuspenseQuery(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }));
 
   const tasks = useMemo(() => {
     const respTasks = tasksQuery.data?.items || [];

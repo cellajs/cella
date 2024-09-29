@@ -1,9 +1,9 @@
 import ProjectsTable from '~/modules/projects/projects-table';
 
-const ProfilePageContent = ({ sheet, userId }: { userId: string; sheet?: boolean }) => {
+const ProfilePageContent = ({ sheet, userId, organizationId }: { userId: string; organizationId: string; sheet?: boolean }) => {
   return (
     <div className="container">
-      <ProjectsTable userId={userId} sheet={sheet} />
+      <ProjectsTable organizationId={organizationId} userId={userId} sheet={sheet} />
     </div>
   );
 };

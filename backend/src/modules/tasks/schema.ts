@@ -71,6 +71,7 @@ export const subTaskSchema = z.array(
       projectId: true,
       parentId: true,
       entity: true,
+      organizationId: true,
     }).shape,
   }),
 );

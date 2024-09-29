@@ -27,7 +27,7 @@ interface AssignMembersProps {
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { focusedTaskId, members } = useWorkspaceStore();
+  const { focusedTaskId, members, workspace } = useWorkspaceStore();
   const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
@@ -53,6 +53,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
     try {
       const updatedTask = await updateTask(
         focusedTaskId,
+        workspace.organizationId,
         'assignedTo',
         members.map((user) => user.id),
       );

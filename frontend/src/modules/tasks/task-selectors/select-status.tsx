@@ -94,7 +94,7 @@ const SelectStatus = ({
 
   const search = useSearch({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
-  const { focusedTaskId, projects } = useWorkspaceStore();
+  const { focusedTaskId, projects, workspace } = useWorkspaceStore();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
 
@@ -124,7 +124,7 @@ const SelectStatus = ({
       const query: Query | undefined = queryClient.getQueryData(queryKeys);
       const tasks: Task[] = query ? (isTable ? query.pages?.[0]?.items || [] : query.items || []) : [];
       const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
-      const updatedTask = await updateTask(focusedTaskId, 'status', newStatus, newOrder);
+      const updatedTask = await updateTask(focusedTaskId, 'status', workspace.organizationId, newOrder);
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {

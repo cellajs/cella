@@ -33,7 +33,7 @@ export interface SelectTaskTypeProps {
 const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { focusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId, workspace } = useWorkspaceStore();
   const [selectedType, setSelectedType] = useState<Type | undefined>(taskTypes[taskTypes.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
@@ -41,7 +41,7 @@ const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) =>
   const changeTaskType = async (newType: TaskType) => {
     if (!focusedTaskId) return;
     try {
-      const updatedTask = await updateTask(focusedTaskId, 'type', newType);
+      const updatedTask = await updateTask(focusedTaskId, workspace.organizationId, 'type', newType);
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {

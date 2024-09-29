@@ -38,7 +38,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
     try {
       const query = queryClient.getQueryData(['boardTasks', task.projectId]) as { items: Task[] };
       const newOrder = getNewStatusTaskOrder(task.status, newStatus, isSheet ? (tasks ?? []) : (query.items ?? []));
-      const updatedTask = await updateTask(task.id, 'status', newStatus, newOrder);
+      const updatedTask = await updateTask(task.id, task.organizationId, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: task.projectId });
     } catch (err) {

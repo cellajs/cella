@@ -18,9 +18,9 @@ export const createWorkspace = async ({ ...rest }: CreateWorkspaceParams) => {
 };
 
 // Get workspace by its slug or ID
-export const getWorkspace = async (idOrSlug: string) => {
+export const getWorkspace = async (idOrSlug: string, orgIdOrSlug: string) => {
   const response = await client[':idOrSlug'].$get({
-    param: { idOrSlug },
+    param: { idOrSlug, orgIdOrSlug },
   });
 
   const json = await handleResponse(response);
@@ -30,9 +30,9 @@ export const getWorkspace = async (idOrSlug: string) => {
 export type UpdateWorkspaceParams = Parameters<(typeof client)[':idOrSlug']['$put']>['0']['json'];
 
 // Update workspace
-export const updateWorkspace = async (idOrSlug: string, params: UpdateWorkspaceParams) => {
+export const updateWorkspace = async (idOrSlug: string, orgIdOrSlug: string, params: UpdateWorkspaceParams) => {
   const response = await client[':idOrSlug'].$put({
-    param: { idOrSlug },
+    param: { idOrSlug, orgIdOrSlug },
     json: params,
   });
 
@@ -41,8 +41,9 @@ export const updateWorkspace = async (idOrSlug: string, params: UpdateWorkspaceP
 };
 
 // Delete workspaces
-export const deleteWorkspaces = async (ids: string[]) => {
+export const deleteWorkspaces = async (ids: string[], orgIdOrSlug: string) => {
   const response = await client.index.$delete({
+    param: { orgIdOrSlug },
     query: { ids },
   });
 

@@ -1,7 +1,8 @@
+import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAllowedTo, isAuthenticated, splitByAllowance } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema } from '#/utils/schema/common-responses';
-import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+import { entityInOrgParamSchema, idOrSlugSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
 
 import { createWorkspaceBodySchema, updateWorkspaceBodySchema, workspaceSchema, workspaceWithProjectSchema } from './schema';
 
@@ -44,7 +45,7 @@ class WorkspaceRoutesConfig {
     summary: 'Get workspace',
     description: 'Get workspace by id or slug.',
     request: {
-      params: entityParamSchema,
+      params: entityInOrgParamSchema,
     },
     responses: {
       200: {
@@ -67,7 +68,7 @@ class WorkspaceRoutesConfig {
     summary: 'Update workspace',
     description: 'Update workspace by id or slug.',
     request: {
-      params: entityParamSchema,
+      params: entityInOrgParamSchema,
       body: {
         content: {
           'application/json': {
@@ -97,6 +98,7 @@ class WorkspaceRoutesConfig {
     summary: 'Delete workspaces',
     description: 'Delete workspaces by ids.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       query: idsQuerySchema,
     },
     responses: {

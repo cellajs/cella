@@ -14,7 +14,7 @@ interface Props {
 
 const DeleteWorkspaces = ({ workspaces, callback, dialog: isDialog }: Props) => {
   const { mutate: deleteWorkspaces, isPending } = useMutation({
-    mutationFn: baseDeleteWorkspaces,
+    mutationFn: async (ids: string[]) => await baseDeleteWorkspaces(ids, workspaces[0].organizationId),
     onSuccess: () => {
       for (const workspace of workspaces) {
         queryClient.invalidateQueries({

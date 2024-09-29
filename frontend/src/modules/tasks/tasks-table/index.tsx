@@ -46,6 +46,7 @@ const tasksQueryOptions = ({
   projectId,
   status,
   rowsLength = 0,
+  orgIdOrSlug,
 }: GetTasksParams & {
   rowsLength?: number;
 }) => {
@@ -70,6 +71,7 @@ const tasksQueryOptions = ({
           offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
           projectId,
           status,
+          orgIdOrSlug,
         },
         signal,
       ),
@@ -81,7 +83,7 @@ export default function TasksTable() {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId, workspace } = useWorkspaceStore();
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'createdAt'));
   const [selectedStatuses] = useState<number[]>(typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || []);
@@ -114,6 +116,7 @@ export default function TasksTable() {
       order,
       projectId: search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
       status: selectedStatuses.join('_'),
+      orgIdOrSlug: workspace.organizationId,
     }),
   );
 
@@ -220,7 +223,7 @@ export default function TasksTable() {
           if (!edge || !isSubTask) return;
           const newOrder: number = getRelativeTaskOrder(edge, rows, targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
           try {
-            const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+            const updatedTask = await updateTask(sourceData.item.id, workspace.organizationId, 'order', newOrder);
             callback([updatedTask], 'updateSubTask');
           } catch (err) {
             toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));

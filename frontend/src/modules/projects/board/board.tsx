@@ -127,7 +127,7 @@ export default function Board() {
 
     const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === projects[0].id);
     let newFocusedTask: { projectId: string; id: string } | undefined;
-    if (focusedTaskId) newFocusedTask = await getTask(focusedTaskId);
+    if (focusedTaskId) newFocusedTask = await getTask(focusedTaskId, workspace.organizationId);
     else {
       const { items: tasks } = queryClient.getQueryData(['boardTasks', projects[0].id]) as { items: Task[] };
       const { sortedTasks } = sortAndGetCounts(tasks, projectSettings?.expandAccepted || false, false);
@@ -147,7 +147,8 @@ export default function Board() {
     if (!projects.length) return;
     const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === projects[0].id);
     let newFocusedTask: { projectId: string } | undefined;
-    if (focusedTaskId) newFocusedTask = await getTask(focusedTaskId);
+    // TODO refactor this to use cache from query client instead of API?
+    if (focusedTaskId) newFocusedTask = await getTask(focusedTaskId, workspace.organizationId);
     else {
       const { items: tasks } = queryClient.getQueryData(['boardTasks', projects[0].id]) as { items: Task[] };
       const { sortedTasks } = sortAndGetCounts(tasks, projectSettings?.expandAccepted || false, false);
@@ -190,7 +191,7 @@ export default function Board() {
     if (!projects.length) return;
     if (!focusedTaskId) return dispatchCustomEvent('toggleCreateTaskForm', projects[0].id);
 
-    const focusedTask = await getTask(focusedTaskId);
+    const focusedTask = await getTask(focusedTaskId, workspace.organizationId);
     const project = projects.find((p) => p.id === focusedTask.projectId);
     dispatchCustomEvent('toggleCreateTaskForm', project?.id ?? projects[0].id);
   };
@@ -349,7 +350,7 @@ export default function Board() {
                 mainCallback([updatedTask], 'delete');
                 targetProjectCallback([updatedTask], 'create');
               } else {
-                const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+                const updatedTask = await updateTask(sourceData.item.id, workspace.organizationId, 'order', newOrder);
                 mainCallback([updatedTask], 'update');
               }
             } catch (err) {
@@ -360,7 +361,7 @@ export default function Board() {
           if (isSubTask) {
             const newOrder = getRelativeTaskOrder(edge, tasks, targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
             try {
-              const updatedTask = await updateTask(sourceData.item.id, 'order', newOrder);
+              const updatedTask = await updateTask(sourceData.item.id, workspace.organizationId, 'order', newOrder);
               mainCallback([updatedTask], 'updateSubTask');
             } catch (err) {
               toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));

@@ -1,9 +1,10 @@
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { idsQuerySchema, productParamSchema } from '#/utils/schema/common-schemas';
+import { idOrSlugSchema, idsQuerySchema, productParamSchema } from '#/utils/schema/common-schemas';
 
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated } from '#/middlewares/guard';
 
+import { z } from 'zod';
 import { getLabelsQuerySchema, labelSchema, updateLabelSchema } from './schema';
 
 class LabelsRoutesConfig {
@@ -15,6 +16,7 @@ class LabelsRoutesConfig {
     summary: 'Create new label',
     description: 'Create a new label with project bound.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       body: {
         required: true,
         content: {
@@ -45,6 +47,7 @@ class LabelsRoutesConfig {
     summary: 'Get list of labels',
     description: 'Get list of labels in a project.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       query: getLabelsQuerySchema,
     },
     responses: {
@@ -98,6 +101,7 @@ class LabelsRoutesConfig {
     summary: 'Delete labels',
     description: 'Delete labels by ids.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       query: idsQuerySchema,
     },
     responses: {

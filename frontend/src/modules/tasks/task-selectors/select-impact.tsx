@@ -39,7 +39,7 @@ interface SelectImpactProps {
 const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { focusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId, workspace } = useWorkspaceStore();
   const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(value !== null ? impacts[value] : null);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
@@ -48,7 +48,7 @@ const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: Select
     try {
       if (creationValueChange) return creationValueChange(newImpact);
       if (!focusedTaskId) return;
-      const updatedTask = await updateTask(focusedTaskId, 'impact', newImpact);
+      const updatedTask = await updateTask(focusedTaskId, workspace.organizationId, 'impact', newImpact);
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
