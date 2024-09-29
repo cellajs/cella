@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { type ContextEntity, type Entity, type UploadParams, UploadType } from '~/types/common';
+import { type Entity, type UploadParams, UploadType } from '~/types/common';
 import { generalHc } from '#/modules/general/hc';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 import { clientConfig, handleResponse } from '.';
@@ -85,51 +85,4 @@ export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps
 
   const json = await handleResponse(response);
   return json.success;
-};
-
-type RequiredGetMembersParams = {
-  idOrSlug: string;
-  entityType: ContextEntity;
-};
-
-type OptionalGetMembersParams = Partial<Omit<Parameters<(typeof client.members)['$get']>['0']['query'], 'limit' | 'offset'>> & {
-  limit?: number;
-  offset?: number;
-  page?: number;
-};
-
-// Combined type
-export type GetMembersParams = RequiredGetMembersParams & OptionalGetMembersParams;
-
-// Get a list of members in an entity
-export const getMembers = async (
-  { idOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50, offset }: GetMembersParams,
-  signal?: AbortSignal,
-) => {
-  const response = await client.members.$get(
-    {
-      query: {
-        idOrSlug,
-        entityType,
-        q,
-        sort,
-        order,
-        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
-        limit: String(limit),
-        role,
-      },
-    },
-    {
-      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
-        return fetch(input, {
-          ...init,
-          credentials: 'include',
-          signal,
-        });
-      },
-    },
-  );
-
-  const json = await handleResponse(response);
-  return json.data;
 };

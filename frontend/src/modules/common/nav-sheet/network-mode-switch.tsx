@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
-import { showToast } from '~/lib/taosts-show';
+import { showToast } from '~/lib/toasts';
 import { Switch } from '~/modules/ui/switch';
 import { useGeneralStore } from '~/store/general';
 

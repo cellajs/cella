@@ -9,15 +9,14 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
-import { getMembers } from '~/api/general';
-import { updateMembership } from '~/api/memberships';
+import { getMembers, updateMembership } from '~/api/memberships';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import { showToast } from '~/lib/taosts-show';
+import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -62,6 +61,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const [query, setQuery] = useState<MemberSearch['q']>(search.q);
   const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+
+  // Organization id
+  const organizationId = entity.organizationId || entity.id;
 
   // Search query options
   const q = useDebounce(query, 200);
@@ -127,9 +129,10 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   }, [selectedRows, rows]);
 
   const callback = useMutateInfiniteQueryData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
+
   // Update member role
   const { mutate: updateMemberRole } = useMutation({
-    mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role }),
+    mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role, organizationId }),
     onSuccess: (updatedMembership) => {
       showToast(t('common:success:user_role_updated'), 'success');
       callback([updatedMembership], 'updateMembership');
@@ -190,6 +193,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const openRemoveDialog = () => {
     dialog(
       <RemoveMembersForm
+        organizationId={organizationId}
         entityId={entity.id}
         entityType={entityType}
         dialog

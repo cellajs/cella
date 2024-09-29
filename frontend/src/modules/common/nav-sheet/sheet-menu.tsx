@@ -104,7 +104,11 @@ export const SheetMenu = memo(() => {
           } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
           else newOrder = (relativeItem.membership.order + targetData.order) / 2;
 
-          const updatedItem = await updateMembership({ membershipId: sourceData.item.membership.id, order: newOrder });
+          const updatedItem = await updateMembership({
+            membershipId: sourceData.item.membership.id,
+            order: newOrder,
+            organizationId: sourceData.item.organizationId || sourceData.item.id,
+          });
           const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
           if (idOrSlug === slug) callback([updatedItem], sourceData.item.parentSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
         },

@@ -50,8 +50,11 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
     if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     const role = item.membership.role;
-    if (state === 'archive') updateMembership({ membershipId: item.membership.id, role, archived: !isItemArchived });
-    if (state === 'mute') updateMembership({ membershipId: item.membership.id, role, muted: !isItemMuted });
+    const membershipId = item.membership.id;
+    const organizationId = item.organizationId || item.id;
+
+    if (state === 'archive') updateMembership({ membershipId, role, archived: !isItemArchived, organizationId });
+    if (state === 'mute') updateMembership({ membershipId, role, muted: !isItemMuted, organizationId });
   };
 
   return (

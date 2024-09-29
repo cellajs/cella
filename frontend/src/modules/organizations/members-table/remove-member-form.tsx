@@ -9,19 +9,20 @@ import type { ContextEntity, Member } from '~/types/common';
 
 interface Props {
   entityId: string;
-  entityType?: ContextEntity;
+  organizationId: string;
   members: Member[];
+  entityType?: ContextEntity;
   callback?: (members: Member[]) => void;
   dialog?: boolean;
 }
 
-const RemoveMembersForm = ({ members, entityId, entityType = 'organization', callback, dialog: isDialog }: Props) => {
+const RemoveMembersForm = ({ members, entityId, entityType = 'organization', organizationId, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
 
   const { mutate: removeMembers, isPending } = useMutation({
     mutationFn: baseRemoveMembers,
     onSuccess: () => {
-      // for (const member of members) {
+      // TODO for (const member of members) {
       //   queryClient.invalidateQueries({
       //     queryKey: ['members', member.id],
       //   });
@@ -35,8 +36,9 @@ const RemoveMembersForm = ({ members, entityId, entityType = 'organization', cal
     if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     removeMembers({
+      organizationId,
       idOrSlug: entityId,
-      entityType: entityType,
+      entityType,
       ids: members.map((member) => member.id),
     });
   };

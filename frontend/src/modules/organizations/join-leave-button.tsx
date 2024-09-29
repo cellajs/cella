@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { inviteMembers as baseInvite, removeMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/taosts-show';
+import { showToast } from '~/lib/toasts';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
@@ -53,6 +53,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
     if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
 
     leave({
+      organizationId: organization.id,
       idOrSlug: organization.id,
       entityType: 'organization',
       ids: [user.id],
