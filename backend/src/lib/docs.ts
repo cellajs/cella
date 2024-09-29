@@ -13,12 +13,14 @@ const commonModulesList = [
   },
   { name: 'organizations', description: 'Organizations - `organization` - are obviously a central `entity`.' },
   { name: 'requests', description: 'Receive public requests such as contact form, newsletter and waitlist requests.' },
-  { name: 'general', description: 'Endpoints that overlap multiple entities or are meant to support the system in general.' },
+  { name: 'general', description: 'Endpoints that are system-wide, system related or span multiple entities.' },
   {
     name: 'auth',
     description:
       'Multiple authentication methods are included: email/password combination, OAuth with Github. Other Oauth providers and passkey support are work in progress.',
   },
+  { name: 'attachments', description: 'EXPERIMENTAL. Be able to leverage different attachment types within an entity.' },
+  { name: 'metrics', description: 'EXPERIMENTAL. Observability endpoints.' },
 ];
 
 // Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
