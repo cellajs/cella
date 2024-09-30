@@ -30,19 +30,20 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
       return baseUpdateMembership(values);
     },
     onSuccess: (updatedMembership) => {
+      let toast: string | undefined;
       if (updatedMembership.archived !== isItemArchived) {
         const archived = updatedMembership.archived || !isItemArchived;
         archiveStateToggle(item, archived, parentItemSlug ? parentItemSlug : null);
         setItemArchived(archived);
-        // Triggers an event to handle actions for entities that have been archived or unarchived(default listens in nav-sheet/index)
-        dispatchCustomEvent('entityArchiveToggle', { entity: itemType, membership: updatedMembership });
+        toast = t(`common:success.${updatedMembership.archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${itemType}`) });
       }
       if (updatedMembership.muted !== isItemMuted) {
         const muted = updatedMembership.muted || !isItemMuted;
         setItemMuted(muted);
-        // Triggers an event to handle actions for entities that have been mute or unmuted (default listens in nav-sheet/index)
-        dispatchCustomEvent('entityMuteToggle', { entity: itemType, membership: updatedMembership });
+        toast = t(`common:success.${updatedMembership.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${itemType}`) });
       }
+      // Triggers an event to handle actions for menu entities that have been changed (default listens in nav-sheet/index)
+      dispatchCustomEvent('menuEntityChange', { entity: itemType, membership: updatedMembership, toast });
     },
   });
 

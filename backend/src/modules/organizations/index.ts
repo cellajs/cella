@@ -267,11 +267,10 @@ const organizationsRoutes = app
 
     // TODO simplify this? // For test purposes
     if (typeof env.SEND_ALL_TO_EMAIL === 'string' && env.NODE_ENV === 'development') {
-      const userFromDb = await getUserBy('id', user.id, 'unsafe');
+      const unsafeUser = await getUserBy('id', user.id, 'unsafe');
+      const unsubscribeToken = unsafeUser ? unsafeUser.unsubscribeToken : '';
+      const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`;
 
-      if (!userFromDb) return errorResponse(ctx, 404, 'User not found', 'warn', 'organization');
-
-      const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${userFromDb.unsubscribeToken}`;
       // generating email html
       const emailHtml = await render(
         organizationsNewsletter({ userLanguage: user.language, subject, content, unsubscribeLink, authorEmail: user.email, orgName: 'SOME NAME' }),

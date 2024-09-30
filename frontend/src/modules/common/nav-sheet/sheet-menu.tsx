@@ -6,12 +6,12 @@ import { useNavigationStore } from '~/store/navigation';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { useParams } from '@tanstack/react-router';
 import { config } from 'config';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
-import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
+import { dispatchCustomEvent } from '~/lib/custom-events';
+
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
@@ -40,8 +40,6 @@ export type SectionItem = {
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu, keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
-
-  const idOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 
@@ -74,8 +72,6 @@ export const SheetMenu = memo(() => {
       });
   }, [menu]);
 
-  const callback = useMutateWorkSpaceQueryData(['workspaces', idOrSlug]);
-
   // monitoring drop event
   useEffect(() => {
     return combine(
@@ -104,14 +100,12 @@ export const SheetMenu = memo(() => {
           } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
           else newOrder = (relativeItem.membership.order + targetData.order) / 2;
 
-          const updatedItem = await updateMembership({
+          const updatedMembership = await updateMembership({
             membershipId: sourceData.item.membership.id,
             order: newOrder,
             organizationId: sourceData.item.organizationId || sourceData.item.id,
           });
-          // TODO refactor this into a more generic entity event and align it with cella
-          const slug = sourceData.item.parentSlug ? sourceData.item.parentSlug : sourceData.item.slug;
-          if (idOrSlug === slug) callback([updatedItem], sourceData.item.parentSlug ? 'updateProjectMembership' : 'updateWorkspaceMembership');
+          dispatchCustomEvent('menuEntityChange', { entity: sourceData.item.entity, membership: updatedMembership });
         },
       }),
     );

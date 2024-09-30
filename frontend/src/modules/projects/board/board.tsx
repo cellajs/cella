@@ -306,7 +306,7 @@ export default function Board() {
   };
 
   useEventListener('changeTaskState', handleTaskState);
-  useEventListener('entityArchiveToggle', handleEntityUpdate);
+  useEventListener('menuEntityChange', handleEntityUpdate);
   useEventListener('taskOperation', handleTaskOperations);
   useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);

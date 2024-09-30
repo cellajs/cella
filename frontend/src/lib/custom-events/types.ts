@@ -3,8 +3,7 @@ import type { ContextEntity, Entity, Membership } from '~/types/common';
 
 export type CombinedCustomEventMap = AppCustomEventMap & {
   updateEntityCover: CustomEvent<{ bannerUrl: string; entity: Entity }>;
-  entityArchiveToggle: CustomEvent<{ membership: Membership; entity: ContextEntity }>;
-  entityMuteToggle: CustomEvent<{ membership: Membership; entity: ContextEntity }>;
+  menuEntityChange: CustomEvent<{ membership: Membership; entity: ContextEntity; toast?: string }>;
 };
 
 export type CustomEventsWithData = {
