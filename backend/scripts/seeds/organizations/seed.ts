@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { UniqueEnforcer } from 'enforce-unique';
 
 import { config } from 'config';
+import slugify from 'slugify';
 import { db } from '#/db/db';
 import { nanoid } from '#/utils/nanoid';
 
@@ -34,7 +35,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
     return {
       id: nanoid(),
       name,
-      slug: faker.helpers.slugify(name).toLowerCase(),
+      slug: slugify(name, { lower: true }),
       bannerUrl: null,
       color: faker.internet.color(),
       chatSupport: faker.datatype.boolean(),
@@ -69,17 +70,10 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
 
       const name = faker.person.fullName(firstAndLastName);
       const email = usersEmailUniqueEnforcer.enforce(() => faker.internet.email(firstAndLastName).toLocaleLowerCase());
-      const slug = usersSlugUniqueEnforcer.enforce(
-        () =>
-          faker.internet
-            .userName(firstAndLastName)
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '-'),
-        {
-          maxTime: 500,
-          maxRetries: 500,
-        },
-      );
+      const slug = usersSlugUniqueEnforcer.enforce(() => slugify(faker.internet.userName(firstAndLastName), { lower: true }), {
+        maxTime: 500,
+        maxRetries: 500,
+      });
 
       return {
         id: nanoid(),
