@@ -240,7 +240,7 @@ export default function Board() {
       dispatchCustomEvent('changeSubTaskState', { taskId: currentFocused, state: 'folded' });
 
       // Set the state of the previously focused task
-      setTaskState(currentFocused, tasksState[currentFocused] === 'folded' ? 'folded' : 'expanded');
+      setTaskState(currentFocused, tasksState[currentFocused] === 'folded' || !tasksState[currentFocused] ? 'folded' : 'expanded');
       // Set the state of the newly focused task
       setTaskState(newFocused, tasksState[newFocused] === 'expanded' ? 'editing' : 'expanded');
     }
@@ -312,7 +312,6 @@ export default function Board() {
   useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
   useEventListener('openTaskCardPreview', (event) => handleOpenTaskSheet(event.detail));
-  // useEventListener('toggleCreateTaskForm', handleTaskFormClick);
 
   useEffect(() => {
     if (q?.length) setSearchQuery(q);
