@@ -20,7 +20,7 @@ import type { ErrorType } from '#/lib/errors';
 import { AuthRoute } from './auth';
 
 // Lazy load main App component, which is behind authentication
-const App = lazy(() => import('~/modules/common/app'));
+const App = lazy(() => import('~/modules/common/main-app'));
 
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },

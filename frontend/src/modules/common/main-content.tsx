@@ -1,10 +1,10 @@
 import { Outlet } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 
-import AlertRenderer from '~/modules/common/app-alert/alert-render';
+import AlertRenderer from '~/modules/common/main-alert/alert-render';
 import { useNavigationStore } from '~/store/navigation';
 
-export const AppContent = () => {
+export const MainContent = () => {
   const { activeSheet, keepMenuOpen, setSheet, focusView } = useNavigationStore();
 
   const clickContentRef = useRef<HTMLDivElement>(null);
@@ -29,7 +29,7 @@ export const AppContent = () => {
   return (
     <div
       ref={clickContentRef}
-      id="app-content"
+      id="main-app-content"
       className={`transition-spacing duration-500 ease-in-out ${!focusView && addPadding} ${focusView && 'addPadding'}`}
     >
       <div
@@ -37,7 +37,7 @@ export const AppContent = () => {
           !focusView && 'sm:ml-16'
         }`}
       >
-        <main id="main-app-content" className="flex-1 flex flex-col" aria-label="Main Content">
+        <main id="main-block-app-content" className="flex-1 flex flex-col" aria-label="Main Content">
           <AlertRenderer />
 
           <Outlet />

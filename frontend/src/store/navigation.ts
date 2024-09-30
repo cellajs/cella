@@ -3,8 +3,9 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { NavItem } from '~/modules/common/app-nav';
+import type { NavItem } from '~/modules/common/main-nav';
 import { menuSections } from '~/nav-config';
+
 import type { UserMenu, UserMenuItem } from '~/types/common';
 import { objectKeys } from '~/utils/object';
 

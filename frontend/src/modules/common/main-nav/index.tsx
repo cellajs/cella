@@ -16,8 +16,8 @@ import { impersonationStop } from '~/api/auth';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import useMounted from '~/hooks/use-mounted';
 import router from '~/lib/router';
-import { NavButton } from '~/modules/common/app-nav-button';
-import { AppSearch } from '~/modules/common/app-search';
+import { NavButton } from '~/modules/common/main-nav/main-nav-button';
+import { MainSearch } from '~/modules/common/main-search';
 import { sheet } from '~/modules/common/sheeter/state';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { navItems } from '~/nav-config';
@@ -63,7 +63,7 @@ const AppNav = () => {
   const navButtonClick = (navItem: NavItem) => {
     // Search is a special case, it will open a dialog
     if (navItem.id === 'search') {
-      return dialog(<AppSearch />, {
+      return dialog(<MainSearch />, {
         className: 'sm:max-w-2xl p-0 border-0 mb-4',
         drawerOnMobile: false,
         refocus: false,
@@ -113,7 +113,7 @@ const AppNav = () => {
   return (
     <>
       <nav
-        id="app-nav"
+        id="main-nav"
         className={cn(
           'fixed z-[90] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16',
           navBackground,
