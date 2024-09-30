@@ -113,6 +113,7 @@ export async function create({
       console.log(`${colors.yellow('⚠')} --skip-git > Skip git init`)
     }
     
+    console.log()
     console.log(`${colors.green('Success')} Created ${projectName} at ${targetFolder}`)
     console.log()
 
