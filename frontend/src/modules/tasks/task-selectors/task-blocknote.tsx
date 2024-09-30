@@ -19,7 +19,6 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
-import { taskExpandable } from '~/modules/tasks/helpers';
 import UppyFilePanel from './uppy-file-panel';
 
 interface TaskBlockNoteProps {
@@ -54,18 +53,12 @@ export const TaskBlockNote = ({
   const { members, workspace } = useWorkspaceStore();
 
   const handleUpdateHTML = useCallback(
-    async (newContent: string, newSummary: string) => {
+    async (newContent: string) => {
       try {
-        // TODO Move this to api so that we need to do only one content request and derive summary and expandable from it
-        await updateTask(id, workspace.organizationId, 'summary', newSummary);
         const updatedTask = await updateTask(id, workspace.organizationId, 'description', newContent);
-        const expandable = taskExpandable(newSummary, newContent);
-
-        if (updatedTask.expandable !== expandable) updateTask(id, workspace.organizationId, 'expandable', expandable);
-
         const action = updatedTask.parentId ? 'updateSubTask' : 'update';
         const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-        dispatchCustomEvent(eventName, { array: [{ ...updatedTask, expandable }], action, projectId: updatedTask.projectId });
+        dispatchCustomEvent(eventName, { array: [updatedTask], action, projectId: updatedTask.projectId });
       } catch (err) {
         toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
       }
@@ -91,7 +84,7 @@ export const TaskBlockNote = ({
     const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (onChange) onChange(cleanDescription, cleanSummary);
-    else handleUpdateHTML(cleanDescription, cleanSummary);
+    else handleUpdateHTML(cleanDescription);
     const event = subTask ? 'changeSubTaskState' : 'changeTaskState';
     dispatchCustomEvent(event, { taskId: id, state: 'editing' });
   };

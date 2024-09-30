@@ -73,9 +73,9 @@ export type UpdateTaskParams = Parameters<(typeof client)[':id']['$put']>['0']['
 export const updateTask = async (
   id: string,
   orgIdOrSlug: string,
-  key: string,
-  data: string | string[] | number | null | boolean,
-  order?: number | null,
+  key: UpdateTaskParams['key'],
+  data: UpdateTaskParams['data'],
+  order?: UpdateTaskParams['order'],
 ) => {
   const newOrder = order || null;
   const response = await client[':id'].$put({

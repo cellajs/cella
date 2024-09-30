@@ -1,9 +1,10 @@
 import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 
+import { parse as parseHtml } from 'node-html-parser';
 import type { z } from 'zod';
 import { labelsTable } from '#/db/schema/labels';
-import { tasksTable } from '#/db/schema/tasks';
+import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
 import { usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
 import { errorResponse } from '#/lib/errors';
@@ -139,16 +140,35 @@ const tasksRoutes = app
     const user = ctx.get('user');
     const { key, data, order } = ctx.req.valid('json');
 
-    const [updatedTask] = await db
-      .update(tasksTable)
-      .set({
-        [key]: data,
-        modifiedAt: new Date(),
-        modifiedBy: user.id,
-        ...(order && { order: order }),
-      })
-      .where(eq(tasksTable.id, id))
-      .returning();
+    const updateValues: Partial<InsertTaskModel> = {
+      [key]: data,
+      modifiedAt: new Date(),
+      modifiedBy: user.id,
+      ...(order && { order: order }),
+    };
+
+    if (key === 'description' && data) {
+      const descriptionText = String(data);
+      const rootElement = parseHtml(descriptionText);
+      const groupElement = rootElement.querySelector('.bn-block-group');
+      if (groupElement) {
+        // Remove all child element except the first one
+        const children = groupElement.childNodes;
+        for (let i = 1; i < children.length; i++) {
+          groupElement.removeChild(children[i]);
+        }
+        const summaryText = rootElement.toString();
+        updateValues.summary = summaryText;
+
+        if (descriptionText.length === summaryText.length) {
+          updateValues.expandable = summaryText !== descriptionText;
+        } else {
+          updateValues.expandable = true;
+        }
+      }
+    }
+
+    const [updatedTask] = await db.update(tasksTable).set(updateValues).where(eq(tasksTable.id, id)).returning();
 
     const subTasks = await db.select().from(tasksTable).where(eq(tasksTable.parentId, updatedTask.id));
 

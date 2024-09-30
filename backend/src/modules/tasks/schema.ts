@@ -2,7 +2,9 @@ import { z } from 'zod';
 
 import { createSelectSchema } from 'drizzle-zod';
 import { tasksTable } from '#/db/schema/tasks';
+import { objectKeys } from '#/lib/object';
 import { paginationQuerySchema } from '#/utils/schema/common-schemas';
+import { constructZodLiteralUnionType } from '#/utils/zod';
 import { labelSchema } from '../labels/schema';
 import { userSchema } from '../users/schema';
 
@@ -22,7 +24,14 @@ export const createTaskSchema = z.object({
 });
 
 export const updateTaskSchema = z.object({
-  key: z.string(),
+  key: constructZodLiteralUnionType(
+    objectKeys(
+      createSelectSchema(tasksTable).omit({
+        expandable: true,
+        summary: true,
+      }).shape,
+    ).map((key) => z.literal(key)),
+  ),
   data: z.union([z.array(z.string()), z.string(), z.number(), z.boolean()]).nullable(),
   order: z.number().nullable(),
 });
