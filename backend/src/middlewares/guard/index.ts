@@ -32,7 +32,7 @@ export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response |
   const user = getContextUser();
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
 
-  if (!orgIdOrSlug) return errorResponse(ctx, 401, 'organization_scope_required', 'warn');
+  if (!orgIdOrSlug) return errorResponse(ctx, 400, 'organization_missing', 'warn');
 
   // Find the organization by id or slug
   const [organization] = await db
@@ -43,7 +43,7 @@ export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response |
   if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { orgIdOrSlug });
 
   // Check if the user is member of organization
-  const membership = await db
+  const [membership] = await db
     .select()
     .from(membershipsTable)
     .where(
@@ -51,6 +51,10 @@ export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response |
     );
 
   if (!membership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { orgIdOrSlug });
+  const organizationWithMembership = { ...organization, membership: membership };
+
+  // Set organization with membership in context
+  ctx.set('organization', organizationWithMembership);
 
   await next();
 }
