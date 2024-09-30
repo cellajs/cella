@@ -92,7 +92,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           >
             {/* <UserLanguage /> */}
 
-            <UserTheme className="max-xs:hidden scale-125 mr-2 !bg-background/30" />
+            <UserTheme className="max-xs:hidden mr-2 !bg-background/30" />
 
             <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
               {t('common:sign_in')}
@@ -112,7 +112,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           >
             <div className="flex justify-between mb-4">
               <HamburgerButton className="items-start w-42 ml-1 -mt-2 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
-              <UserTheme className="absolute top-7 right-5 xs:hidden scale-125" />
+              <UserTheme className="absolute top-5 right-5 xs:hidden" />
             </div>
             {renderNavItems()}
           </div>

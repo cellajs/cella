@@ -22,7 +22,7 @@ export const baseEntityRoutes = {
 // Here you declare main navigation items
 export const navItems: NavItem[] = [
   { id: 'menu', sheet: <SheetMenu />, icon: Menu, hiddenOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
-  { id: 'home', icon: Home, href: '/', hiddenOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
+  { id: 'home', icon: Home, href: '/home', hiddenOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
   { id: 'search', icon: Search, hiddenOn: ['/$orgIdOrSlug/workspaces/$idOrSlug/board'], visibilityMobileOnly: true },
   {
     id: 'account',
