@@ -10,9 +10,9 @@ import '~/lib/i18n';
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
-import { renderAscii } from '~/lib/ascii';
 import router from '~/lib/router';
 import { initSentry } from '~/lib/sentry';
+import { renderAscii } from '~/utils/ascii';
 import { QueryClientProvider } from './query-client-provider';
 
 // Render ASCII logo in console

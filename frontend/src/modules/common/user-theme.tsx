@@ -4,11 +4,11 @@ import { useThemeStore } from '~/store/theme';
 
 import { Ban, Circle, type LucideProps, Moon, Sun } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { objectEntries } from '~/lib/object';
-import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { Switch } from '~/modules/ui/switch';
+import { objectEntries } from '~/utils/object';
+import { cn } from '~/utils/utils';
 
 interface UserThemeProps {
   size?: number;

@@ -6,10 +6,10 @@
 
 import { X } from 'lucide-react';
 import * as React from 'react';
-import { cn } from '~/lib/utils';
 import { isEmail as isEmailFn } from '~/modules/common/multi-email/is-email';
 import { Badge } from '~/modules/ui/badge';
 import { inputClass } from '~/modules/ui/input';
+import { cn } from '~/utils/utils';
 
 export interface MultiEmailProps {
   id?: string;

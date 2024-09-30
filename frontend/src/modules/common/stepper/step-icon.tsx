@@ -1,9 +1,9 @@
 import { cva } from 'class-variance-authority';
 import { CheckIcon, Loader2, X } from 'lucide-react';
 import * as React from 'react';
-import { cn } from '~/lib/utils';
 import type { IconType } from '~/modules/common/stepper/types';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
+import { cn } from '~/utils/utils';
 
 interface StepIconProps {
   isCompletedStep?: boolean;

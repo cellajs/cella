@@ -3,10 +3,10 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { objectKeys } from '~/lib/object';
 import type { NavItem } from '~/modules/common/app-nav';
 import { menuSections } from '~/nav-config';
 import type { UserMenu, UserMenuItem } from '~/types/common';
+import { objectKeys } from '~/utils/object';
 
 type EntitySubList = Record<string, string[]>;
 export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: EntitySubList }>;

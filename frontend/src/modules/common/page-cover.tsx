@@ -4,10 +4,10 @@ import { Suspense, memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { getColorClass } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { UploadType } from '~/types/common';
+import { getColorClass } from '~/utils/utils';
 
 // Lazy load the upload component
 const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));

@@ -5,12 +5,12 @@ import { usersQuerySchema } from 'backend/modules/users/schema';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { queryClient } from '~/lib/router';
-import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import { requestsQueryOptions } from '~/modules/system/requests-table';
 import SystemPage from '~/modules/system/system-page';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
+import { noDirectAccess } from '~/utils/utils';
 import type { ErrorType } from '#/lib/errors';
 import { AppRoute } from './general';
 
