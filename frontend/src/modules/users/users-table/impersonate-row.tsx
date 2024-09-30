@@ -3,6 +3,7 @@ import type { MeUser, User } from '~/types/common';
 import { VenetianMask } from 'lucide-react';
 
 import { useNavigate } from '@tanstack/react-router';
+import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { impersonationStart } from '~/api/auth';
@@ -26,7 +27,7 @@ const ImpersonateRow = ({ user, tabIndex }: Props) => {
       await impersonationStart(user.id);
       await Promise.all([getAndSetMe(), getAndSetMenu()]);
       toast.success(t('common:success.impersonated'));
-      navigate({ to: '/', replace: true });
+      navigate({ to: config.defaultRedirectPath, replace: true });
     } catch (error) {
       toast.error(t('common:error.impersonation_failed'));
       console.error(error);
