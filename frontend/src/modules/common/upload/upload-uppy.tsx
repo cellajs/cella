@@ -15,6 +15,7 @@ import '@uppy/image-editor/dist/style.css';
 import '@uppy/screen-capture/dist/style.css';
 import '@uppy/webcam/dist/style.css';
 import '~/modules/common/upload/uppy.css';
+import { getImageEditorOptions } from './image-editor-options';
 
 interface UploadUppyProps {
   uploadType: UploadType;
@@ -44,87 +45,23 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, uppyOptions, 
       const imadoUppy = await ImadoUppy(uploadType, uppyOptions, {
         public: isPublic,
         organizationId: organizationId,
-        completionHandler: (result) => {
-          if (callback) {
-            callback(result);
-          }
+        statusEventHandler: {
+          onComplete: (mappedResult) => {
+            if (callback) {
+              callback(mappedResult);
+            }
+          },
+          onFileEditorComplete: () => {
+            // If in image mode, start upload directly after editing
+            if (imageMode) imadoUppy.upload();
+          },
         },
       });
 
-      // For more info on ImageEditorOptions, see: https://uppy.io/docs/image-editor/#options
-      const imageEditorOptions: ImageEditorOptions = {
-        quality: 0.9,
-      };
-
-      // In avatar mode, we want to restrict the image editor
-      if (imageMode === 'avatar') {
-        imageEditorOptions.cropperOptions = {
-          croppedCanvasOptions: {},
-          viewMode: 1,
-          background: false,
-          autoCropArea: 1,
-          responsive: true,
-          aspectRatio: 1,
-          guides: false,
-          center: false,
-          highlight: false,
-          movable: false,
-          rotatable: false,
-          scalable: false,
-          zoomable: false,
-          zoomOnTouch: false,
-          zoomOnWheel: false,
-        };
-        imageEditorOptions.actions = {
-          revert: false,
-          rotate: false,
-          granularRotate: false,
-          flip: false,
-          zoomIn: false,
-          zoomOut: false,
-          cropSquare: false,
-          cropWidescreen: false,
-          cropWidescreenVertical: false,
-        };
-      }
-
-      // In avatar mode, we want to restrict the image editor
-      if (imageMode === 'cover') {
-        imageEditorOptions.cropperOptions = {
-          croppedCanvasOptions: {},
-          viewMode: 1,
-          background: false,
-          autoCropArea: 1,
-          responsive: true,
-          aspectRatio: 3 / 1,
-          guides: false,
-          center: false,
-          highlight: false,
-          movable: false,
-          rotatable: false,
-          scalable: false,
-          zoomable: false,
-          zoomOnTouch: false,
-          zoomOnWheel: false,
-        };
-        imageEditorOptions.actions = {
-          revert: false,
-          rotate: false,
-          granularRotate: false,
-          flip: false,
-          zoomIn: false,
-          zoomOut: false,
-          cropSquare: false,
-          cropWidescreen: false,
-          cropWidescreenVertical: false,
-        };
-      }
+      const imageEditorOptions: ImageEditorOptions = getImageEditorOptions(imageMode);
 
       const webcamOptions: WebcamOptions<UppyMeta, UppyBody> = {
-        videoConstraints: {
-          width: 1280,
-          height: 720,
-        },
+        videoConstraints: { width: 1280, height: 720 },
       };
 
       if (imageMode) webcamOptions.modes = ['picture'];
@@ -141,7 +78,20 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, uppyOptions, 
     initializeUppy();
   }, []);
 
-  return <>{uppy && <Dashboard uppy={uppy} width="100%" height="400px" theme={mode} proudlyDisplayPoweredByUppy={false} />}</>;
+  return (
+    <>
+      {uppy && (
+        <Dashboard
+          uppy={uppy}
+          autoOpen={imageMode ? 'imageEditor' : null}
+          width="100%"
+          height="400px"
+          theme={mode}
+          proudlyDisplayPoweredByUppy={false}
+        />
+      )}
+    </>
+  );
 };
 
 export default UploadUppy;

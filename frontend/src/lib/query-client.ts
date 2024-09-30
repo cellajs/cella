@@ -19,8 +19,8 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 export const onError = (error: Error) => {
   if (error instanceof ApiError) {
     const statusCode = Number(error.status);
-    // Abort if /me or /menu, it should fail silently
-    if (error.path && ['/me', '/menu'].includes(error.path)) return;
+    // Abort if /me or /me/menu, it should fail silently
+    if (error.path && ['/me', '/me/menu'].includes(error.path)) return;
 
     const fallback = fallbackMessages(i18n.t);
 
