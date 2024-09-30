@@ -2,12 +2,12 @@ import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/prag
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useEffect, useRef, useState } from 'react';
-import { getDraggableItemData } from '~/lib/drag-drop';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
 import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
 import { ItemOption } from '~/modules/common/nav-sheet/sheet-menu-options/item-option';
 import type { UserMenuItem } from '~/types/common';
+import { getDraggableItemData } from '~/utils/drag-drop';
 import { isPageData } from '../sheet-menu';
 
 interface ComplexOptionElementProps {

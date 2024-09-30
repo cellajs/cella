@@ -99,7 +99,7 @@
       font-size: 18px;
     }
 
-    #app-root {
+    #main-app-root {
       margin: 0;
       display: flex;
       flex-direction: column;
@@ -108,7 +108,7 @@
       position: relative;
     }
 
-    #app-content {
+    #main-app-content {
       flex: 1;
       height: 100%;
       overflow-y: auto;

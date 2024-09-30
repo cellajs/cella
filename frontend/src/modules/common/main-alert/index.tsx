@@ -2,13 +2,13 @@ import type { VariantProps } from 'class-variance-authority';
 import { type LucideProps, X } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import type { alertVariants } from '~/modules/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
+import { cn } from '~/utils/utils';
 
-export type AppAlert = {
+export type MainAlert = {
   className?: string;
   id: string;
   Icon?: React.ElementType<LucideProps>;
@@ -17,7 +17,7 @@ export type AppAlert = {
   variant?: VariantProps<typeof alertVariants>['variant'];
 };
 
-export const AppAlert = ({ id, Icon, children, className = '', title = '', variant = 'default' }: AppAlert) => {
+export const MainAlert = ({ id, Icon, children, className = '', title = '', variant = 'default' }: MainAlert) => {
   const { t } = useTranslation();
   const { alertsSeen, setAlertSeen, downAlert } = useAlertStore();
   const showAlert = !alertsSeen.includes(id);

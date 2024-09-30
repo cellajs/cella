@@ -3,10 +3,10 @@ import type { Request } from '~/types/common';
 
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { dateShort } from '~/lib/utils';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import { dateShort } from '~/utils/utils';
 
 export const useColumns = () => {
   const { t } = useTranslation();

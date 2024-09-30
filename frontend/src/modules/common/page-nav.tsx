@@ -2,9 +2,9 @@ import { Link, type ToPathOption } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
-import { cn, nanoid } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
+import { cn, nanoid } from '~/utils/utils';
 
 export type PageNavTab = {
   id: string;

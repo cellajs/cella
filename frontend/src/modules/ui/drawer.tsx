@@ -1,7 +1,36 @@
+import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
 
-import { cn } from '~/lib/utils';
+import { cn } from '~/utils/utils';
+
+const DrawerVariants = cva('fixed z-[150] flex rounded-t-2.5 border bg-background', {
+  variants: {
+    direction: {
+      top: 'inset-x-0 top-0 mb-24 flex-col',
+      bottom: 'inset-x-0 bottom-0 mt-24 flex-col',
+      right: 'inset-y-0 right-0 min-w-[80vw] flex-row',
+      left: 'inset-y-0 left-0 min-w-[80vw] flex-row',
+    },
+  },
+  defaultVariants: {
+    direction: 'bottom',
+  },
+});
+
+const DrawerSliderVariants = cva('rounded-full bg-muted', {
+  variants: {
+    direction: {
+      top: 'mx-auto my-1.5 h-1 w-12',
+      bottom: 'mx-auto my-1.5 h-1 w-12',
+      right: 'mx-1.5 my-auto h-12 w-1',
+      left: 'mx-1.5 my-auto h-12 w-1 ',
+    },
+  },
+  defaultVariants: {
+    direction: 'bottom',
+  },
+});
 
 const Drawer = ({ shouldScaleBackground = true, ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
   <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
@@ -22,24 +51,21 @@ const DrawerOverlay = React.forwardRef<
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
-const DrawerContent = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => {
-  return (
-    <DrawerPortal>
-      <DrawerOverlay />
-      <DrawerPrimitive.Content
-        ref={ref}
-        className={cn('fixed inset-x-0 bottom-0 z-[150] mt-24 flex h-auto flex-col rounded-t-2.5 border bg-background', className)}
-        {...props}
-      >
-        <div className="mx-auto mt-1 h-1 w-24 rounded-full bg-muted" />
-        {children}
-      </DrawerPrimitive.Content>
-    </DrawerPortal>
-  );
-});
+export interface DrawerContentProps extends VariantProps<typeof DrawerVariants>, React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> {}
+
+const DrawerContent = React.forwardRef<React.ElementRef<typeof DrawerPrimitive.Content>, DrawerContentProps>(
+  ({ className, direction, children, ...props }, ref) => {
+    return (
+      <DrawerPortal>
+        <DrawerOverlay />
+        <DrawerPrimitive.Content ref={ref} className={cn(DrawerVariants({ direction }), className)} {...props}>
+          <div className={DrawerSliderVariants({ direction })} />
+          <div className="w-full h-full">{children}</div>
+        </DrawerPrimitive.Content>
+      </DrawerPortal>
+    );
+  },
+);
 
 DrawerContent.displayName = 'DrawerContent';
 
@@ -68,4 +94,4 @@ const DrawerDescription = React.forwardRef<
 ));
 DrawerDescription.displayName = DrawerPrimitive.Description.displayName;
 
-export { Drawer, DrawerPortal, DrawerOverlay, DrawerTrigger, DrawerClose, DrawerContent, DrawerHeader, DrawerFooter, DrawerTitle, DrawerDescription };
+export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerOverlay, DrawerPortal, DrawerTitle, DrawerTrigger };

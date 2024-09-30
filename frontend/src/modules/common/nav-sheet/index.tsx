@@ -1,7 +1,6 @@
 import type { VariantProps } from 'class-variance-authority';
 
 import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useKeyPress } from '~/hooks/use-key-press';
@@ -14,7 +13,6 @@ import { useNavigationStore } from '~/store/navigation';
 type SheetSideType = VariantProps<typeof sheetVariants>['side'];
 
 const NavSheet = () => {
-  const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { activeSheet, setSheet, keepMenuOpen } = useNavigationStore();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -33,16 +31,12 @@ const NavSheet = () => {
     hideShadow ? 'xl:shadow-none' : ''
   } h-[calc(100%-16)] max-w-md sm:max-w-xs duration-300 ease-in-out p-0 sm:left-16 sm:top-0 z-[130] sm:z-[85] data-[state=closed]:duration-300 data-[state=open]:duration-300 overflow-hidden`;
 
-  // Listeners triggered by entity muting or archiving.
-  // These listeners handle updates when an entity is muted or archived.
+  // Listeners triggered by entity menu changes.
+  // These listeners handle updates when an entity is muted, archived or order changed.
   // You can place them in areas where you need to update changes on pages related to these entities.
-  useEventListener('entityArchiveToggle', (e) => {
-    const { entity, membership } = e.detail;
-    showToast(t(`common:success.${membership.archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${entity}`) }), 'success');
-  });
-  useEventListener('entityMuteToggle', (e) => {
-    const { entity, membership } = e.detail;
-    showToast(t(`common:success.${membership.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${entity}`) }), 'success');
+  useEventListener('menuEntityChange', (e) => {
+    const { toast } = e.detail;
+    if (toast) showToast(toast, 'success');
   });
 
   useEffect(() => {

@@ -26,7 +26,7 @@ export interface SuggestionSection {
   type: Entity;
 }
 
-export const AppSearch = () => {
+export const MainSearch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);

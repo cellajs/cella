@@ -3,10 +3,11 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { objectKeys } from '~/lib/object';
-import type { NavItem } from '~/modules/common/app-nav';
+import type { NavItem } from '~/modules/common/main-nav';
 import { menuSections } from '~/nav-config';
+
 import type { UserMenu, UserMenuItem } from '~/types/common';
+import { objectKeys } from '~/utils/object';
 
 type EntitySubList = Record<string, string[]>;
 export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: EntitySubList }>;
@@ -142,7 +143,11 @@ export const useNavigationStore = create<NavigationState>()(
               state.finishedOnboarding = true;
             });
           },
-          clearNavigationStore: () => set(() => ({ ...initStore }), true),
+          clearNavigationStore: () =>
+            set((state) => ({
+              ...state,
+              ...initStore,
+            })),
         }),
         {
           version: 4,

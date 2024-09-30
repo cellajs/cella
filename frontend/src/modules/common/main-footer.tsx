@@ -1,13 +1,13 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/lib/utils';
+import Logo from '~/modules/app/logo';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import Logo from '~/modules/common/logo';
 import UserLanguage from '~/modules/common/user-language';
 import UserTheme from '~/modules/common/user-theme';
 import { Button } from '~/modules/ui/button';
 import { defaultFooterLinks } from '~/nav-config';
+import { cn } from '~/utils/utils';
 
 export interface FooterLinkProps {
   id: string;
@@ -62,7 +62,7 @@ export const FooterLinks = ({ links = defaultFooterLinks, className = '' }: Foot
 };
 
 // App Footer component
-export const AppFooter = ({ className = '' }) => {
+export const MainFooter = ({ className = '' }) => {
   return (
     <footer className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center gap-4">

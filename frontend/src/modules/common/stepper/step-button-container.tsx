@@ -1,7 +1,7 @@
-import { cn } from '~/lib/utils';
 import type { StepSharedProps } from '~/modules/common/stepper/types';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/utils';
 
 type StepButtonContainerProps = StepSharedProps & {
   children?: React.ReactNode;

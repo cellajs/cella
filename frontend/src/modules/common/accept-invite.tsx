@@ -11,11 +11,11 @@ import type { z } from 'zod';
 import type { ApiError } from '~/api';
 import { acceptInvite as baseAcceptInvite, checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
-import { cn } from '~/lib/utils';
 import AuthPage from '~/modules/auth/auth-page';
 import Spinner from '~/modules/common/spinner';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { acceptInviteRoute } from '~/routes/general';
+import { cn } from '~/utils/utils';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 

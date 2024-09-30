@@ -4,11 +4,11 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useEffect, useRef } from 'react';
-import { cn, getColorClass } from '~/lib/utils';
-import { AppFooter } from '~/modules/common/app-footer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { MainFooter } from '~/modules/common/main-footer';
 import { buttonVariants } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
+import { cn, getColorClass } from '~/utils/utils';
 
 type AccountButtonProps = {
   lucide: React.ElementType<LucideProps>;
@@ -66,7 +66,7 @@ export const SheetAccount = () => {
 
       <div className="grow border-b border-dashed" />
 
-      <AppFooter className="items-center" />
+      <MainFooter className="items-center" />
     </div>
   );
 };

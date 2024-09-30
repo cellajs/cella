@@ -2,10 +2,10 @@ import { useIsFetching } from '@tanstack/react-query';
 import { config } from 'config';
 import { Home } from 'lucide-react';
 import useMounted from '~/hooks/use-mounted';
-import Logo from '~/modules/common/logo';
+import Logo from '~/modules/app/logo';
 import { useNavigationStore } from '~/store/navigation';
 
-const AppNavLoader = () => {
+const MainNavLoader = () => {
   const { hasWaited } = useMounted();
   const { navLoading } = useNavigationStore();
   const isFetching = useIsFetching();
@@ -29,4 +29,4 @@ const AppNavLoader = () => {
   );
 };
 
-export default AppNavLoader;
+export default MainNavLoader;

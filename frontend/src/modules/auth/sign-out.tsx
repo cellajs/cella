@@ -4,21 +4,24 @@ import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api/auth';
 import { showToast } from '~/lib/toasts';
 import { useDraftStore } from '~/store/draft';
+import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { MeUser } from '~/types/common';
 
 export const signOutUser = async () => {
-  useUserStore.setState({ user: null as unknown as MeUser });
   await signOut();
-  useDraftStore.getState().clearForms(); // Clear all drafts when signing out
+  useUserStore.setState({ user: null as unknown as MeUser });
+  useDraftStore.getState().clearForms();
 };
 
 const SignOut = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { clearNavigationStore } = useNavigationStore();
 
   useEffect(() => {
     signOutUser().then(() => {
+      clearNavigationStore();
       showToast(t('common:success.signed_out'), 'success');
       navigate({ to: '/about', replace: true });
     });

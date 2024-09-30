@@ -9,13 +9,13 @@ import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/api';
 import { checkToken } from '~/api/general';
-import { cn } from '~/lib/utils';
 import AuthPage from '~/modules/auth/auth-page';
 import OauthOptions from '~/modules/auth/oauth-options';
 import { WaitListForm } from '~/modules/common/wait-list-form';
 import { buttonVariants } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
+import { cn } from '~/utils/utils';
 
 export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitList';
 

@@ -6,10 +6,10 @@ import { useUserStore } from '~/store/user';
 
 import { useTranslation } from 'react-i18next';
 
-import { cn } from '~/lib/utils';
-import type { NavItem } from '~/modules/common/app-nav';
-import AppNavLoader from '~/modules/common/app-nav-loader';
+import type { NavItem } from '~/modules/common/main-nav';
+import MainNavLoader from '~/modules/common/main-nav/main-nav-loader';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { cn } from '~/utils/utils';
 
 interface NavButtonProps {
   navItem: NavItem;
@@ -37,7 +37,7 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
             url={user.thumbnailUrl}
           />
         ) : navItem.id === 'home' ? (
-          <AppNavLoader />
+          <MainNavLoader />
         ) : (
           <navItem.icon className="group-hover:scale-110 transition-transform" strokeWidth={config.theme.strokeWidth} />
         )}

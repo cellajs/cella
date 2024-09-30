@@ -48,7 +48,7 @@ This document describes the high-level architecture of Cella.
 │   │   ├── lib               Init library code & important helpers
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
-│   │   └── types             
+│   │   └── types             Split between common and app-specific
 │   │   └── utils             
 ├── config                    Shared config: default, development, production
 ├── frontend                  Frontend SPA
@@ -61,7 +61,8 @@ This document describes the high-level architecture of Cella.
 │   │   ├── modules           Modular distribution of components
 │   │   ├── routes            Code-based routes
 │   │   ├── store             Zustand data stores
-│   │   ├── types             
+│   │   ├── types             Split between common and app-specific
+│   │   ├── utils             
 ├── info                      General info
 ├── locales                   Translations
 └── tus                       TUS server

@@ -3,13 +3,13 @@ import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
 
 import { Root } from '~/modules/common/root';
-import { useUserStore } from '~/store/user';
 
 import ErrorNotice from '~/modules/common/error-notice';
 
 import { queryClient } from '~/lib/router';
 import AcceptInvite from '~/modules/common/accept-invite';
 
+import { config } from 'config';
 import { Suspense, lazy } from 'react';
 import { onError } from '~/lib/query-client';
 import { Public } from '~/modules/common/public';
@@ -20,7 +20,7 @@ import type { ErrorType } from '#/lib/errors';
 import { AuthRoute } from './auth';
 
 // Lazy load main App component, which is behind authentication
-const App = lazy(() => import('~/modules/common/app'));
+const App = lazy(() => import('~/modules/common/main-app'));
 
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
@@ -46,43 +46,36 @@ export const AppRoute = createRoute({
   id: 'layout',
   staticData: { pageTitle: '', isAuth: false },
   getParentRoute: () => rootRoute,
-  beforeLoad: async ({ location, cause }) => {
-    const lastUser = useUserStore.getState().lastUser;
-
-    // If no stored user and no path requested, redirect to about
-    if (location.pathname === '/' && !lastUser) throw redirect({ to: '/about', replace: true });
-
-    if (cause !== 'enter') return;
-
-    // If just entered, fetch me and menu
-    try {
-      const getSelf = async () => {
-        return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
-      };
-
-      const getMenu = async () => {
-        return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu });
-      };
-
-      await Promise.all([getSelf(), getMenu()]);
-    } catch (error) {
-      if (error instanceof Error) {
-        // TODO put sentry and onError in a reusable wrapper to reuse it in frontend catch blocks
-        Sentry.captureException(error);
-        onError(error);
-      }
-
-      if (location.pathname.startsWith('/auth/')) return console.info('Not authenticated');
-
-      console.info('Not authenticated (silent check) -> redirect to sign in');
-      throw redirect({ to: '/auth/sign-in', replace: true, search: { fromRoot: true, redirect: location.pathname } });
-    }
-  },
   component: () => (
     <Suspense fallback={<Spinner />}>
       <App />
     </Suspense>
   ),
+  loader: async ({ location }) => {
+    try {
+      console.debug('Fetch me & menu in', location.pathname);
+      const getSelf = async () => {
+        return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe, gcTime: 1 });
+      };
+
+      const getMenu = async () => {
+        return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu, gcTime: 1 });
+      };
+
+      await Promise.all([getSelf(), getMenu()]);
+    } catch (error) {
+      if (error instanceof Error) {
+        Sentry.captureException(error);
+        onError(error);
+      }
+
+      console.info('Not authenticated -> redirect to sign in');
+      throw redirect({ to: '/auth/sign-in', replace: true, search: { fromRoot: true, redirect: location.pathname } });
+    }
+
+    // If location is root and has user, redirect to home
+    if (location.pathname === '/') throw redirect({ to: config.defaultRedirectPath, replace: true });
+  },
 });
 
 export const acceptInviteRoute = createRoute({

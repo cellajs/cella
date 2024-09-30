@@ -270,6 +270,7 @@ const organizationsRoutes = app
       const unsafeUser = await getUserBy('id', user.id, 'unsafe');
       const unsubscribeToken = unsafeUser ? unsafeUser.unsubscribeToken : '';
       const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`;
+
       // generating email html
       const emailHtml = await render(
         organizationsNewsletter({ userLanguage: user.language, subject, content, unsubscribeLink, authorEmail: user.email, orgName: 'SOME NAME' }),

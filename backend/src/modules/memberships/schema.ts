@@ -41,7 +41,7 @@ export const membershipInfoSchema = z.object({
   archived: membershipTableSchema.shape.archived,
   muted: membershipTableSchema.shape.muted,
   order: membershipTableSchema.shape.order,
-  organizationId: membershipTableSchema.shape.organizationId.nullable(),
+  organizationId: membershipTableSchema.shape.organizationId,
 });
 
 export type membershipInfoType = z.infer<typeof membershipInfoSchema>;

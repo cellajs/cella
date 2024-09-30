@@ -30,7 +30,7 @@ export const SignInRoute = createRoute({
     if (storedUser) throw redirect({ to: '/', replace: true });
 
     try {
-      await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+      await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe, retry: 0, gcTime: 1 });
       console.info('Authenticated -> go to home');
       throw redirect({ to: '/', replace: true });
     } catch (error) {

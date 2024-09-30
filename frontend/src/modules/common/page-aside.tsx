@@ -2,8 +2,8 @@ import { Link } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { cn } from '~/lib/utils';
 import { buttonVariants } from '~/modules/ui/button';
+import { cn } from '~/utils/utils';
 
 interface Tab {
   id: string;
@@ -26,7 +26,7 @@ export const PageAside = <T extends Tab>({ tabs, className }: PageAsideProps<T>)
   // TODO: perhaps move this somehow to useScrollSpy and add a stop when section is already in view
   // TODO2: add option to silently update the hash without scrolling on initial mount with sectionIds[0] (if no hash is present)
   // If the hash already matches but the user is not at the section, clear and re-set the hash
-  const handleMismatch = (e: React.MouseEvent<'a', MouseEvent>, target: string) => {
+  const handleMismatch = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, target: string) => {
     e.preventDefault();
     const element = document.getElementById(`${target}-anchor`);
     if (!element) return;

@@ -5,13 +5,13 @@ import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/lib/utils';
+import Logo from '~/modules/app/logo';
 import HamburgerButton from '~/modules/common/hamburger';
-import Logo from '~/modules/common/logo';
 import UserLanguage from '~/modules/common/user-language';
 import UserTheme from '~/modules/common/user-theme';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
+import { cn } from '~/utils/utils';
 
 const marketingNavConfig = [
   { id: 'features', url: '/about', hash: 'features' },

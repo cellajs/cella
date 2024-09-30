@@ -74,7 +74,8 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
         )}
         {config.enabledAuthenticationStrategies.includes('oauth') &&
           config.enabledOauthProviders.map((provider) => {
-            const url = mapOauthProviders.find((p) => p.id === provider);
+            const providerData = mapOauthProviders.find((p) => p.id === provider);
+            const url = providerData ? providerData.url : '';
             return (
               <Button
                 loading={loading}
