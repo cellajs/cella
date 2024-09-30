@@ -3,8 +3,8 @@ import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import useFocusById from '~/hooks/use-focus-by-id';
-import { AppAlert } from '~/modules/common/app-alert';
 import { dialog } from '~/modules/common/dialoger/state';
+import { MainAlert } from '~/modules/common/main-alert';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import InviteEmailForm from '~/modules/users/invite-email-form';
 import InviteSearchForm from '~/modules/users/invite-search-form';
@@ -87,9 +87,9 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
         )}
         {inviteMode && (
           <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
-            <AppAlert id={`invite_${inviteMode}`} variant="success" Icon={Info}>
+            <MainAlert id={`invite_${inviteMode}`} variant="success" Icon={Info}>
               {t(inviteMode === 'email' ? 'common:explain.invite_email.text' : 'common:explain.invite_search.text')}
-            </AppAlert>
+            </MainAlert>
             {inviteMode === 'email' ? (
               <InviteEmailForm entity={entity} callback={callback} dialog={isDialog}>
                 {children}

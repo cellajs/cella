@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import useMounted from '~/hooks/use-mounted';
-import { type FooterLinkProps, FooterLinks } from '~/modules/common/app-footer';
 import Logo from '~/modules/common/logo';
+import { type FooterLinkProps, FooterLinks } from '~/modules/common/main-footer';
 import { cn } from '~/utils/utils';
 
 interface AuthPageProps {

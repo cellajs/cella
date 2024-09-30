@@ -3,9 +3,9 @@ import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-reac
 import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppFooter } from '~/modules/common/app-footer';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
+import { MainFooter } from '~/modules/common/main-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { ErrorType } from '#/lib/errors';
@@ -122,7 +122,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
             )}
           </CardFooter>
         </Card>
-        {isRootLevel && <AppFooter className="items-center" />}
+        {isRootLevel && <MainFooter className="items-center" />}
       </div>
     </div>
   );

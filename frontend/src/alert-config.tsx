@@ -1,8 +1,8 @@
 // import { t } from 'i18next';
 // import { Info } from 'lucide-react';
-import type { AppAlert } from '~/modules/common/app-alert';
+import type { MainAlert } from '~/modules/common/main-alert';
 
-export const alertsConfig: AppAlert[] = [
+export const alertsConfig: MainAlert[] = [
   // {
   //   id: 'prerelease',
   //   children: (

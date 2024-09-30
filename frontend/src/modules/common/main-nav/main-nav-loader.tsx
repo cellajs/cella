@@ -5,7 +5,7 @@ import useMounted from '~/hooks/use-mounted';
 import Logo from '~/modules/common/logo';
 import { useNavigationStore } from '~/store/navigation';
 
-const AppNavLoader = () => {
+const MainNavLoader = () => {
   const { hasWaited } = useMounted();
   const { navLoading } = useNavigationStore();
   const isFetching = useIsFetching();
@@ -29,4 +29,4 @@ const AppNavLoader = () => {
   );
 };
 
-export default AppNavLoader;
+export default MainNavLoader;

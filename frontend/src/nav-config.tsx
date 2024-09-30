@@ -6,9 +6,9 @@ import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
 
-import type { FooterLinkProps } from '~/modules/common/app-footer';
-import type { NavItem } from '~/modules/common/app-nav';
-import type { SuggestionSection } from '~/modules/common/app-search';
+import type { FooterLinkProps } from '~/modules/common/main-footer';
+import type { NavItem } from '~/modules/common/main-nav';
+import type { SuggestionSection } from '~/modules/common/main-search';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
 
 // Set entities paths
