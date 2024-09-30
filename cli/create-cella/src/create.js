@@ -20,19 +20,22 @@ export async function create({
     skipClean,
     packageManager,
   }) {
-    const originalCwd = process.cwd()
+    // Save the original working directory
+    const originalCwd = process.cwd();
 
     console.log();
     
+    // Create the target folder if it doesn't exist
     const createFolderSpinner = yoctoSpinner({
-        text: 'creating project folder',
+        text: 'Creating project folder',
     }).start();
 
-    await mkdir(targetFolder, { recursive: true })
-    process.chdir(targetFolder)
+    await mkdir(targetFolder, { recursive: true });
+    process.chdir(targetFolder);
 
-    createFolderSpinner.success('project folder created')
+    createFolderSpinner.success('Project folder created');
 
+    // Download the template from the specified URL
     const downloadSpinner = yoctoSpinner({
       text: 'Downloading `cella` template',
     }).start();
@@ -43,12 +46,15 @@ export async function create({
         force: true,
         provider: "github",
     });
-    downloadSpinner.success('`cella` template downloaded')
 
+    downloadSpinner.success('`cella` template downloaded');
+
+    // Clean the template if the skipClean flag is not set
     if (!skipClean) {
       const cleanSpinner = yoctoSpinner({
         text: 'cleaning `cella` template',
-      }).start()
+      }).start();
+
       try {
         await cleanTemplate({ 
           targetFolder,
@@ -56,55 +62,60 @@ export async function create({
         })
         cleanSpinner.success('`cella` template cleaned')
       } catch (e) {
-        console.error(e)
-        cleanSpinner.error('failed to clean `cella` template')
-        process.exit(1)
+        console.error(e);
+        cleanSpinner.error('Failed to clean `cella` template');
+        process.exit(1);
       }
     } else {
       console.log(`${colors.yellow('⚠')} --skip-clean > Skip cleaning \`cella\` template'`)
     }
 
+    // Install dependencies if the skipInstall flag is not set
     if (!skipInstall) {
       const installSpinner = yoctoSpinner({
         text: 'installing dependencies',
-      }).start()
+      }).start();
+
       try {
         await install(packageManager)
-        installSpinner.success('dependencies installed')
+        installSpinner.success('Dependencies installed');
       } catch (e) {
-        console.error(e)
-        installSpinner.error('failed to install dependencies')
-        process.exit(1)
+        console.error(e);
+        installSpinner.error('Failed to install dependencies');
+        process.exit(1);
       }
     } else {
       console.log(`${colors.yellow('⚠')} --skip-install > Skip installing dependencies`)
     }
 
+    // Initialize Git repository if skipGit flag is not set
     if (!skipGit) {
       const gitSpinner = yoctoSpinner({
         text: 'initializing git repository',
-      }).start()
+      }).start();
 
-      const gitFolderPath = join(targetFolder, '.git')
+      const gitFolderPath = join(targetFolder, '.git');
 
       if (!existsSync(gitFolderPath)) {
         try {
-          await runGitCommand({ targetFolder, command: 'init' })
-          await runGitCommand({ targetFolder, command: 'add .' })
-          await runGitCommand({ targetFolder, command: 'commit -m "Initial commit"' })
+          // Run Git commands to initialize the repository and make the first commit
+          await runGitCommand({ targetFolder, command: 'init' });
+          await runGitCommand({ targetFolder, command: 'add .' });
+          await runGitCommand({ targetFolder, command: 'commit -m "Initial commit"' });
         
+          // If a new branch name is specified, create and checkout the branch
           if (newBranchName) {
-            await runGitCommand({ targetFolder, command: `branch ${newBranchName}` })
-            await runGitCommand({ targetFolder, command: `checkout ${newBranchName}` })
-            gitSpinner.success(`Git repository initialized, initial commit created and new branch ${newBranchName} created`)
+            await runGitCommand({ targetFolder, command: `branch ${newBranchName}` });
+            await runGitCommand({ targetFolder, command: `checkout ${newBranchName}` });
+            gitSpinner.success(`Git repository initialized, initial commit created, and new branch ${newBranchName} created`);
           } else {
-            gitSpinner.success('Git repository initialized and initial commit created')
+            gitSpinner.success('Git repository initialized and initial commit created');
           }
         
         } catch (e) {
-          console.error(e)
-          gitSpinner.error('Failed to initialize git repository or create branch')
-          process.exit(1)
+          console.error(e);
+          gitSpinner.error('Failed to initialize Git repository or create branch');
+          process.exit(1);
         }
       } else {
         gitSpinner.warning('Git repository already initialized > Skip git init')
@@ -113,11 +124,13 @@ export async function create({
       console.log(`${colors.yellow('⚠')} --skip-git > Skip git init`)
     }
     
+    // Final success message indicating project creation
     console.log()
     console.log(`${colors.green('Success')} Created ${projectName} at ${targetFolder}`)
     console.log()
 
-    const needsCd = originalCwd !== targetFolder
+    // Check if the working directory needs to be changed
+    const needsCd = originalCwd !== targetFolder;
     if (needsCd) {
       // Calculate the relative path between the original working directory and the target folder
       const relativePath = relative(originalCwd, targetFolder);
