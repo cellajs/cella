@@ -131,61 +131,61 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   }, [task]);
 
   return (
-    <motion.div layout>
-      {/* To prevent on expand animation */}
-      <motion.div
-        layout
-        transition={{ duration: 0 }}
-        ref={subTaskRef}
-        className={`relative flex items-start gap-1 p-1 mb-0.5 hover:bg-secondary/50 opacity-${dragging ? '30' : '100'} bg-secondary/40`}
-      >
-        <div className="flex flex-col gap-1">
-          <Checkbox
-            className={cn(
-              'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
-              'transition-all bg-background w-5 h-5 m-1.5',
-              `${task.status === 6 ? 'data-[state=checked]:bg-green-700 !text-white border-green-700' : 'border-gray-500'}`,
-            )}
-            checked={task.status === 6}
-            onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
-          />
-        </div>
-        <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
-          <div className={state !== 'folded' ? 'inline-flex items-center mt-1' : 'mt-1 flex flex-col items-start'}>
-            {state === 'folded' ? (
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
-              <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
-            ) : (
-              <>
-                {state === 'editing' || state === 'unsaved' ? (
-                  <TaskBlockNote
-                    id={task.id}
-                    projectId={task.projectId}
-                    html={task.description || ''}
-                    mode={mode}
-                    className="w-full pr-2 bg-transparent border-none"
-                    subTask
-                    taskToClose={task.parentId}
-                  />
-                ) : (
-                  <div className={'w-full bg-transparent pr-2 border-none bn-container bn-shadcn'} data-color-scheme={mode}>
-                    {/* biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend */}
-                    <div dangerouslySetInnerHTML={{ __html: task.description }} />
-                  </div>
-                )}
-                <TaskHeader task={task as Task} state={state} onRemove={onRemove} />
-              </>
-            )}
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+      ref={subTaskRef}
+      className={`relative flex items-start gap-1 p-1 mb-0.5 hover:bg-secondary/50 opacity-${dragging ? '30' : '100'} bg-secondary/40`}
+    >
+      <div className="flex flex-col gap-1">
+        <Checkbox
+          className={cn(
+            'group-[.is-selected]/column:opacity-100 group-[.is-selected]/column:z-30 group-[.is-selected]/column:pointer-events-auto',
+            'transition-all bg-background w-5 h-5 m-1.5',
+            `${task.status === 6 ? 'data-[state=checked]:bg-green-700 !text-white border-green-700' : 'border-gray-500'}`,
+          )}
+          checked={task.status === 6}
+          onCheckedChange={async (checkStatus) => await handleUpdateStatus(checkStatus ? 6 : 1)}
+        />
+      </div>
+      <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
+        <div className={state !== 'folded' ? 'inline-flex items-center mt-1' : 'mt-1 flex flex-col items-start'}>
+          {state === 'folded' ? (
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+            <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
+          ) : (
+            <>
+              {state === 'editing' || state === 'unsaved' ? (
+                <TaskBlockNote
+                  id={task.id}
+                  projectId={task.projectId}
+                  html={task.description || ''}
+                  mode={mode}
+                  className="w-full pr-2 bg-transparent border-none"
+                  subTask
+                  taskToClose={task.parentId}
+                />
+              ) : (
+                <div className={'w-full bg-transparent pr-2 border-none bn-container bn-shadcn'} data-color-scheme={mode}>
+                  {/* biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend */}
+                  <div dangerouslySetInnerHTML={{ __html: task.description }} />
+                </div>
+              )}
 
-            {task.expandable && state === 'folded' && (
-              <Button onClick={() => setState('expanded')} variant="link" size="micro" className="py-0 -mt-[0.15rem]">
-                {t('common:more').toLowerCase()}
-              </Button>
-            )}
-          </div>
+              <TaskHeader task={task as Task} state={state} onRemove={onRemove} />
+            </>
+          )}
+
+          {task.expandable && state === 'folded' && (
+            <Button onClick={() => setState('expanded')} variant="link" size="micro" className="py-0 -mt-[0.15rem]">
+              {t('common:more').toLowerCase()}
+            </Button>
+          )}
         </div>
-        {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
-      </motion.div>
+      </div>
+      {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
     </motion.div>
   );
 };

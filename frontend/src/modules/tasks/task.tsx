@@ -129,7 +129,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, stat
   }, [task, state]);
 
   return (
-    <motion.div layout transition={{ duration: 0.3 }}>
+    <motion.div layout transition={{ duration: state === 'editing' || !isFocused ? 0 : 0.3 }}>
       <Card
         id={task.id}
         onClick={handleCardClick}

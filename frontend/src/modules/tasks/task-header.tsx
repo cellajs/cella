@@ -29,7 +29,6 @@ export const TaskHeader = ({
   const { t } = useTranslation();
   const { user } = useUserStore();
   const isSubTask = task.parentId !== null;
-  const initialAndExitParams = { opacity: isSubTask ? 1 : 0, y: isSubTask ? 0 : -10 };
   const isEditing = state === 'editing' || state === 'unsaved';
 
   const buttonText = isEditing ? t(`app:${state}`) : t('common:edit');
@@ -49,9 +48,9 @@ export const TaskHeader = ({
       )}
       <motion.div
         className="flex flex-row gap-1 w-full items-center ml-1"
-        initial={initialAndExitParams}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={initialAndExitParams}
+        exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.3 }}
       >
         {!isSubTask && task.createdBy && (
