@@ -85,7 +85,7 @@
   },
   "devDependencies": {
     "@babel/preset-typescript": "^7.24.7",
-    "@faker-js/faker": "^8.4.1",
+    "@faker-js/faker": "^9.0.3",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.7.4",
     "@types/node-cron": "^3.0.11",

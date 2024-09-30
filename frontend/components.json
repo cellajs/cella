@@ -11,6 +11,6 @@
   },
   "aliases": {
     "components": "~/modules/ui",
-    "utils": "~/utils/utils"
+    "utils": "~/utils"
   }
 }

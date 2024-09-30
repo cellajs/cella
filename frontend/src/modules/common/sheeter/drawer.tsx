@@ -4,7 +4,7 @@ import { cn } from '~/utils/utils';
 
 export default function MobileSheet({ title, description, content, className, onOpenChange }: SheetProp) {
   return (
-    <Drawer open={true} onOpenChange={onOpenChange}>
+    <Drawer open={true} direction="right" noBodyStyles onOpenChange={onOpenChange}>
       <DrawerContent className={cn('min-h-[60vh]', className)}>
         <DrawerHeader className={`${description || title ? '' : 'hidden'}`}>
           <DrawerTitle className={`font-medium mb-2 ${title ? '' : 'hidden'}`}>{title}</DrawerTitle>
