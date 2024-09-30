@@ -2,7 +2,7 @@ import { useIsFetching } from '@tanstack/react-query';
 import { config } from 'config';
 import { Home } from 'lucide-react';
 import useMounted from '~/hooks/use-mounted';
-import Logo from '~/modules/common/logo';
+import Logo from '~/modules/app/logo';
 import { useNavigationStore } from '~/store/navigation';
 
 const MainNavLoader = () => {

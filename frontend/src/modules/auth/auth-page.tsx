@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import useMounted from '~/hooks/use-mounted';
-import Logo from '~/modules/common/logo';
+import Logo from '~/modules/app/logo';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/main-footer';
 import { cn } from '~/utils/utils';
 
@@ -13,7 +13,7 @@ interface AuthPageProps {
 const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: '/about' }];
 
 // Lazy load bg animation
-const BgAnimation = lazy(() => import('~/modules/common/bg-animation'));
+const BgAnimation = lazy(() => import('~/modules/app/bg-animation'));
 
 const AuthPage = ({ children }: AuthPageProps) => {
   const { hasStarted, hasWaited } = useMounted();
