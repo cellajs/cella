@@ -2,7 +2,7 @@ import { errorResponses, successWithDataSchema, successWithPaginationSchema, suc
 import { idOrSlugSchema, idsQuerySchema, productParamSchema } from '#/utils/schema/common-schemas';
 
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated } from '#/middlewares/guard';
+import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 
 import { z } from 'zod';
 import { getLabelsQuerySchema, labelSchema, updateLabelSchema } from './schema';
@@ -11,7 +11,7 @@ class LabelsRoutesConfig {
   public createLabel = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['labels'],
     summary: 'Create new label',
     description: 'Create a new label with project bound.',
@@ -42,7 +42,7 @@ class LabelsRoutesConfig {
   public getLabels = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['labels'],
     summary: 'Get list of labels',
     description: 'Get list of labels in a project.',
@@ -66,7 +66,7 @@ class LabelsRoutesConfig {
   public updateLabel = createRouteConfig({
     method: 'put',
     path: '/{id}',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['labels'],
     summary: 'Update label',
     description: 'Update label by id.',
@@ -96,7 +96,7 @@ class LabelsRoutesConfig {
   public deleteLabels = createRouteConfig({
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['labels'],
     summary: 'Delete labels',
     description: 'Delete labels by ids.',
