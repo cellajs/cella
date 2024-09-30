@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { objectEntries } from '~/lib/object';
-import { cn } from '~/lib/utils';
+import { objectEntries } from '~/utils/object';
+import { cn } from '~/utils/utils';
 
 // Lazy import for individual Recharts components
 const ResponsiveContainer = React.lazy(() => import('recharts').then((module) => ({ default: module.ResponsiveContainer })));

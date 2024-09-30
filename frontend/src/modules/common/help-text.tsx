@@ -1,8 +1,8 @@
 import { ChevronUp, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
-import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
+import { cn } from '~/utils/utils';
 
 interface HelpTextProps {
   children: React.ReactNode;

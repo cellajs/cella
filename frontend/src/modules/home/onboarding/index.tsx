@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import useMounted from '~/hooks/use-mounted';
-import { cn } from '~/lib/utils';
 import { Step, Stepper } from '~/modules/common/stepper';
 import { onDefaultBoardingSteps } from '~/modules/home/onboarding-config';
 import StepperFooter from '~/modules/home/onboarding/footer';
@@ -12,6 +11,7 @@ import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types/common';
+import { cn } from '~/utils/utils';
 
 export type OnboardingStates = 'start' | 'stepper' | 'completed';
 

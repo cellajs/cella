@@ -2,11 +2,11 @@ import type { VariantProps } from 'class-variance-authority';
 import { type LucideProps, X } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import type { alertVariants } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
+import { cn } from '~/utils/utils';
 
 export type AppAlert = {
   className?: string;

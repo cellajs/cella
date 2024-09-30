@@ -4,7 +4,7 @@ import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
-import { cn } from '~/lib/utils';
+import { cn } from '~/utils/utils';
 
 const Avatar = React.forwardRef<React.ElementRef<typeof AvatarPrimitive.Root>, React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>>(
   ({ className, ...props }, ref) => <AvatarPrimitive.Root ref={ref} className={cn('relative flex h-10 w-10 shrink-0', className)} {...props} />,

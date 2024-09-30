@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import useMounted from '~/hooks/use-mounted';
-import { cn } from '~/lib/utils';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/app-footer';
 import Logo from '~/modules/common/logo';
+import { cn } from '~/utils/utils';
 
 interface AuthPageProps {
   children?: React.ReactNode;

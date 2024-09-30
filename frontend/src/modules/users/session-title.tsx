@@ -1,10 +1,10 @@
 import { Monitor, Smartphone, ZapOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { dateShort } from '~/lib/utils';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import type { Session } from '~/types/common';
+import { dateShort } from '~/utils/utils';
 
 interface SessionTileProps {
   session: Session;

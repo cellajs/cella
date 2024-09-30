@@ -2,8 +2,8 @@ import { Link } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { cn } from '~/lib/utils';
 import { buttonVariants } from '~/modules/ui/button';
+import { cn } from '~/utils/utils';
 
 interface Tab {
   id: string;

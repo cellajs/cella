@@ -3,7 +3,7 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
-import { cn } from '~/lib/utils';
+import { cn } from '~/utils/utils';
 
 const Sheet = SheetPrimitive.Root;
 

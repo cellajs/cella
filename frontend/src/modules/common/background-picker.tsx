@@ -1,11 +1,11 @@
 import { Paintbrush } from 'lucide-react';
 import { useMemo } from 'react';
-import { cn } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
+import { cn } from '~/utils/utils';
 
 type PickerType = 'solid' | 'gradient' | 'image';
 

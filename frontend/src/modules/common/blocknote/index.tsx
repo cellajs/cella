@@ -3,8 +3,8 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
 import DOMPurify from 'dompurify';
 import { useLayoutEffect, useRef } from 'react';
-import { cn } from '~/lib/utils';
 import { useThemeStore } from '~/store/theme';
+import { cn } from '~/utils/utils';
 
 import {
   customFormattingToolBarConfig,

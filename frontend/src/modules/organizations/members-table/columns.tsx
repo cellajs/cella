@@ -4,12 +4,12 @@ import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import type { TFunction } from 'i18next';
 import { ChevronDown } from 'lucide-react';
-import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
+import { dateShort } from '~/utils/utils';
 
 export const useColumns = (
   t: TFunction<'translation', undefined>,
