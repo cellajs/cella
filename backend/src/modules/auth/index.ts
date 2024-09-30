@@ -86,7 +86,7 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
     }
 
-    // TODO explain what happens here??
+    // In invitation mode this form is used to complete registration.
     let tokenData: TokenData | undefined;
 
     if (token) {

@@ -67,7 +67,6 @@ export const AppRoute = createRoute({
       await Promise.all([getSelf(), getMenu()]);
     } catch (error) {
       if (error instanceof Error) {
-        // TODO put sentry and onError in a reusable wrapper to reuse it in frontend catch blocks
         Sentry.captureException(error);
         onError(error);
       }
