@@ -176,8 +176,8 @@ export const TaskBlockNote = ({
 
         <GridSuggestionMenuController
           triggerCharacter={':'}
-          // Changes the Emoji Picker to only have 10 columns & min length of 0.
-          columns={10}
+          // Changes the Emoji Picker to only have 5 columns & min length of 0.
+          columns={5}
           minQueryLength={0}
         />
 

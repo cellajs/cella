@@ -38,7 +38,10 @@ const TaskContent = ({ task, mode, state }: Props) => {
               <Button
                 variant="link"
                 size="micro"
-                onClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' })}
+                onClick={(e) => {
+                  e.preventDefault();
+                  dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
+                }}
                 className="inline-flex py-0 h-5"
               >
                 {t('common:more').toLowerCase()}

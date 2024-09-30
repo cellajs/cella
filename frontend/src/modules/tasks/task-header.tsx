@@ -75,6 +75,7 @@ export const TaskHeader = ({
             hideWhenDetached
           >
             <Button
+              id="edit-toggle"
               onClick={() => {
                 const event = isSubTask ? 'changeSubTaskState' : 'changeTaskState';
                 dispatchCustomEvent(event, { taskId: task.id, state: isEditing ? 'expanded' : 'editing' });
