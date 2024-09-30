@@ -10,6 +10,7 @@ import { config } from 'config';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
@@ -99,11 +100,12 @@ export const SheetMenu = memo(() => {
           } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
           else newOrder = (relativeItem.membership.order + targetData.order) / 2;
 
-          await updateMembership({
+          const updatedMembership = await updateMembership({
             membershipId: sourceData.item.membership.id,
             order: newOrder,
             organizationId: sourceData.item.organizationId || sourceData.item.id,
           });
+          dispatchCustomEvent('menuEntityChange', { entity: sourceData.item.entity, membership: updatedMembership });
         },
       }),
     );
