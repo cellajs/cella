@@ -18,13 +18,13 @@ const DrawerVariants = cva('fixed z-[150] flex rounded-t-2.5 border bg-backgroun
   },
 });
 
-const DrawerSliderVariants = cva('rounded-full bg-muted', {
+const DrawerSliderVariants = cva('rounded-full absolute z-10 bg-muted', {
   variants: {
     direction: {
-      top: 'mx-auto my-1.5 h-1 w-12',
-      bottom: 'mx-auto my-1.5 h-1 w-12',
-      right: 'mx-1.5 my-auto h-12 w-1',
-      left: 'mx-1.5 my-auto h-12 w-1 ',
+      top: 'mx-auto my-1 h-1 w-12 ml-[calc(50vw-2rem)]',
+      bottom: 'mx-auto my-1 h-1 w-12 ml-[calc(50vw-2rem)]',
+      right: 'mx-1 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
+      left: 'mx-1 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
     },
   },
   defaultVariants: {
