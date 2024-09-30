@@ -74,8 +74,10 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
         )}
         {config.enabledAuthenticationStrategies.includes('oauth') &&
           config.enabledOauthProviders.map((provider) => {
+            // Map the provider data
             const providerData = mapOauthProviders.find((p) => p.id === provider);
-            const url = providerData ? providerData.url : '';
+            if (!providerData) return;
+
             return (
               <Button
                 loading={loading}
@@ -90,7 +92,7 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
                       window.location.href = config.defaultRedirectPath;
                     });
                   } else {
-                    window.location.href = url + redirectQuery;
+                    window.location.href = providerData.url + redirectQuery;
                   }
                 }}
               >
@@ -100,7 +102,11 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
                   className={`w-4 h-4 ${provider === 'github' ? invertClass : ''}`}
                   loading="lazy"
                 />
-                {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in_with', { provider })}
+                {token
+                  ? t('common:accept')
+                  : actionType === 'signUp'
+                    ? t('common:sign_up')
+                    : t('common:sign_in_with', { provider: providerData.name })}
               </Button>
             );
           })}
