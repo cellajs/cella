@@ -52,6 +52,7 @@ export async function create({
       try {
         await cleanTemplate({ 
           targetFolder,
+          projectName,
         })
         cleanSpinner.success('`cella` template cleaned')
       } catch (e) {
