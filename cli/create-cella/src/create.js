@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs'
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import colors from 'picocolors';
 import { downloadTemplate } from "giget";
 import yoctoSpinner from 'yocto-spinner';
@@ -118,11 +118,17 @@ export async function create({
 
     const needsCd = originalCwd !== targetFolder
     if (needsCd) {
+      // Calculate the relative path between the original working directory and the target folder
+      const relativePath = relative(originalCwd, targetFolder);
+
       console.log('now go to your project using:')
-      console.log(colors.cyan(`  cd ${targetFolder}`))
+      console.log(colors.cyan(`  cd ./${relativePath}`)); // Adding './' to make it clear it's a relative path
       console.log()
     }
-    console.log(`${needsCd ? 'then ' : ''}start the development server via:`)
-    console.log(colors.cyan(`  ${packageManager} dev`))
+    console.log(`${needsCd ? 'then ' : ''}quick start with:`)
+    console.log(colors.cyan(`  ${packageManager} quick`))
     console.log()
+
+    console.log('Read the readme in project root for more info on how to get started!')
+    console.log(`Enjoy building ${projectName} using cella! 🎉`)
   }
