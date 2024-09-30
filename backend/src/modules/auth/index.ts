@@ -45,15 +45,13 @@ const githubScopes = { scopes: ['user:email'] };
 const googleScopes = { scopes: ['profile', 'email'] };
 const microsoftScopes = { scopes: ['profile', 'email'] };
 
-// TODO: Type guard
 function isOAuthEnabled(provider: EnabledOauthProviderOptions): boolean {
-  // Use a readonly array since enabledAuthenticationStrategies is readonly
   const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+  const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
 
-  // Check for 'oauth' in the readonly array
   if (!enabledStrategies.includes('oauth')) return false;
 
-  return config.enabledOauthProviders.includes(provider);
+  return enabledOauthProviders.includes(provider);
 }
 
 const app = new CustomHono();

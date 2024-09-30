@@ -64,30 +64,20 @@ export function Sheeter() {
 
   return (
     <>
-      {currentSheets.map((sheet) => (
-        <>
-          {isMobile ? (
-            <MobileSheet
-              key={sheet.id}
-              direction="right"
-              onOpenChange={onOpenChange(sheet.id)}
-              title={sheet.title}
-              description={sheet.text}
-              content={sheet.content}
-              className={sheet.className}
-            />
-          ) : (
-            <DesktopSheet
-              key={sheet.id}
-              onOpenChange={onOpenChange(sheet.id)}
-              title={sheet.title}
-              description={sheet.text}
-              content={sheet.content}
-              className={sheet.className}
-            />
-          )}
-        </>
-      ))}
+      {currentSheets.map((sheet) => {
+        const SheetComponent = isMobile ? MobileSheet : DesktopSheet;
+        return (
+          <SheetComponent
+            key={sheet.id}
+            onOpenChange={onOpenChange(sheet.id)}
+            title={sheet.title}
+            description={sheet.text}
+            content={sheet.content}
+            className={sheet.className}
+            {...(isMobile && { direction: 'right' })}
+          />
+        );
+      })}
     </>
   );
 }

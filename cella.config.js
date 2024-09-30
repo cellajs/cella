@@ -21,6 +21,7 @@ export const config = {
     'package.json',
     'pnpm-lock.yaml',
     'render.yaml',
+    'cella.config.js',
     'info/*',
     'config/default.ts',
     'config/development.ts',

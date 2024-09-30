@@ -13,13 +13,13 @@ import { useThemeStore } from '~/store/theme';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 import type { Step } from '.';
 
-const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
-
 export const mapOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
   { id: 'google', name: 'Google', url: googleSignInUrl },
   { id: 'microsoft', name: 'Microsoft', url: microsoftSignInUrl },
 ];
+
+const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
 interface OauthOptions {
   id: EnabledOauthProviderOptions;
@@ -61,7 +61,7 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
 
   return (
     <>
-      {(config.enabledOauthProviders.length || hasPasskey) && (
+      {(enabledStrategies.includes('oauth') || hasPasskey) && (
         <div className="relative flex justify-center text-xs uppercase">
           <span className="text-muted-foreground px-2">{t('common:or')}</span>
         </div>
