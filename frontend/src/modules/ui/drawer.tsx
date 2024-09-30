@@ -9,8 +9,8 @@ const DrawerVariants = cva('fixed z-[150] flex rounded-t-2.5 border bg-backgroun
     direction: {
       top: 'inset-x-0 top-0 mb-24 flex-col',
       bottom: 'inset-x-0 bottom-0 mt-24 flex-col',
-      right: 'inset-y-0 right-0 min-w-[80vw] flex-row',
-      left: 'inset-y-0 left-0 min-w-[80vw] flex-row',
+      right: 'inset-y-0 right-0 min-w-[95vw] flex-row',
+      left: 'inset-y-0 left-0 min-w-[95vw] flex-row',
     },
   },
   defaultVariants: {
@@ -21,10 +21,10 @@ const DrawerVariants = cva('fixed z-[150] flex rounded-t-2.5 border bg-backgroun
 const DrawerSliderVariants = cva('rounded-full absolute z-10 bg-muted', {
   variants: {
     direction: {
-      top: 'mx-auto my-1 h-1 w-12 ml-[calc(50vw-2rem)]',
-      bottom: 'mx-auto my-1 h-1 w-12 ml-[calc(50vw-2rem)]',
-      right: 'mx-1 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
-      left: 'mx-1 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
+      top: 'mx-auto my-0.5 h-1 w-12 ml-[calc(50vw-2rem)]',
+      bottom: 'mx-auto my-0.5 h-1 w-12 ml-[calc(50vw-2rem)]',
+      right: 'mx-0.5 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
+      left: 'mx-0.5 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
     },
   },
   defaultVariants: {
