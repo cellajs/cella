@@ -60,7 +60,7 @@ export async function create({
         process.exit(1)
       }
     } else {
-      console.log(`${colors.yellow('Skipped')} cleaning \`cella\` template'`)
+      console.log(`${colors.yellow('⚠')} --skip-clean > Skip cleaning \`cella\` template'`)
     }
 
     if (!skipInstall) {
@@ -76,7 +76,7 @@ export async function create({
         process.exit(1)
       }
     } else {
-      console.log(`${colors.yellow('Skipped')} installing dependencies`)
+      console.log(`${colors.yellow('⚠')} --skip-install > Skip installing dependencies`)
     }
 
     if (!skipGit) {
@@ -106,10 +106,10 @@ export async function create({
           process.exit(1)
         }
       } else {
-        gitSpinner.warning('Git repository already initialized, skipping git init')
+        gitSpinner.warning('Git repository already initialized > Skip git init')
       }
     } else {
-      console.log(`${colors.yellow('Skipped')} initializing git repository`)
+      console.log(`${colors.yellow('⚠')} --skip-git > Skip git init`)
     }
     
     console.log(`${colors.green('Success')} Created ${projectName} at ${targetFolder}`)
