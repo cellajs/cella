@@ -2,7 +2,7 @@ import { errorResponses, successWithDataSchema, successWithPaginationSchema, suc
 import { idOrSlugSchema, idsQuerySchema, productParamSchema } from '#/utils/schema/common-schemas';
 
 import { createRouteConfig } from '#/lib/route-config';
-import { isAllowedTo, isAuthenticated } from '#/middlewares/guard';
+import { hasOrgAccess, isAllowedTo, isAuthenticated } from '#/middlewares/guard';
 
 import { z } from 'zod';
 import { createTaskSchema, fullTaskSchema, getTasksQuerySchema, simpleTaskSchema, updateTaskSchema } from './schema';
@@ -11,7 +11,7 @@ class TaskRoutesConfig {
   public createTask = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: [isAuthenticated, isAllowedTo('create', 'task')],
+    guard: [isAuthenticated, hasOrgAccess, isAllowedTo('create', 'task')],
     tags: ['tasks'],
     summary: 'Create new task',
     description: 'Create a new task in a project.',
@@ -42,7 +42,7 @@ class TaskRoutesConfig {
   public getTasks = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['tasks'],
     summary: 'Get list of tasks',
     description: 'Get list of tasks for specific projects.',
@@ -66,7 +66,7 @@ class TaskRoutesConfig {
   public getTask = createRouteConfig({
     method: 'get',
     path: '/{id}',
-    guard: [isAuthenticated, isAllowedTo('read', 'task')],
+    guard: [isAuthenticated, hasOrgAccess, isAllowedTo('read', 'task')],
     tags: ['tasks'],
     summary: 'Get task',
     description: 'Get a task by id.',
@@ -89,7 +89,7 @@ class TaskRoutesConfig {
   public updateTask = createRouteConfig({
     method: 'put',
     path: '/{id}',
-    guard: [isAuthenticated, isAllowedTo('update', 'task')],
+    guard: [isAuthenticated, hasOrgAccess, isAllowedTo('update', 'task')],
     tags: ['tasks'],
     summary: 'Update task',
     description: 'Update task by id.',
@@ -119,7 +119,7 @@ class TaskRoutesConfig {
   public deleteTasks = createRouteConfig({
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['tasks'],
     summary: 'Delete tasks',
     description: 'Delete tasks by ids.',
