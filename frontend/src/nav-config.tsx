@@ -17,7 +17,7 @@ export const baseEntityRoutes = { user: '/user/$idOrSlug', organization: '/$idOr
 // Here you declare main navigation items
 export const navItems: NavItem[] = [
   { id: 'menu', sheet: <SheetMenu />, icon: Menu },
-  { id: 'home', icon: Home, href: '/' },
+  { id: 'home', icon: Home, href: '/home' },
   { id: 'search', icon: Search },
   { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
 ];

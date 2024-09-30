@@ -54,7 +54,7 @@ const AppNav = () => {
   const stopImpersonation = async () => {
     await impersonationStop();
     await Promise.all([getAndSetMe(), getAndSetMenu()]);
-    navigate({ to: '/', replace: true });
+    navigate({ to: config.defaultRedirectPath, replace: true });
     toast.success(t('common:success.stopped_impersonation'));
   };
 

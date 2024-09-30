@@ -39,15 +39,20 @@ import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
 
+export const supportedOauthProviders = ['github', 'google', 'microsoft'] as const;
+
 // Scopes for OAuth providers
 const githubScopes = { scopes: ['user:email'] };
 const googleScopes = { scopes: ['profile', 'email'] };
 const microsoftScopes = { scopes: ['profile', 'email'] };
 
-// TODO: Type guard
 function isOAuthEnabled(provider: EnabledOauthProviderOptions): boolean {
-  if (!config.enabledAuthenticationStrategies.includes('oauth')) return false;
-  return config.enabledOauthProviders.includes(provider);
+  const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+  const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
+
+  if (!enabledStrategies.includes('oauth')) return false;
+
+  return enabledOauthProviders.includes(provider);
 }
 
 const app = new CustomHono();

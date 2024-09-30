@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 
+import { config } from 'config';
 import { toast } from 'sonner';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -34,7 +35,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
         organizations={[organization]}
         callback={() => {
           toast.success(t('common:success.delete_resource', { resource: t('common:organization') }));
-          navigate({ to: '/', replace: true });
+          navigate({ to: config.defaultRedirectPath, replace: true });
         }}
       />,
       {

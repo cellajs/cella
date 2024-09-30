@@ -19,6 +19,8 @@ export const mapOauthProviders = [
   { id: 'microsoft', name: 'Microsoft', url: microsoftSignInUrl },
 ];
 
+const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+
 interface OauthOptions {
   id: EnabledOauthProviderOptions;
   name: string;
@@ -59,7 +61,7 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
 
   return (
     <>
-      {(config.enabledOauthProviders.length || hasPasskey) && (
+      {(enabledStrategies.includes('oauth') || hasPasskey) && (
         <div className="relative flex justify-center text-xs uppercase">
           <span className="text-muted-foreground px-2">{t('common:or')}</span>
         </div>
@@ -72,7 +74,7 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
             {t('common:passkey_sign_in')}
           </Button>
         )}
-        {config.enabledAuthenticationStrategies.includes('oauth') &&
+        {enabledStrategies.includes('oauth') &&
           config.enabledOauthProviders.map((provider) => {
             // Map the provider data
             const providerData = mapOauthProviders.find((p) => p.id === provider);
