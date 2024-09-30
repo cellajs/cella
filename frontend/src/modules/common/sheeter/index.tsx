@@ -69,6 +69,7 @@ export function Sheeter() {
           {isMobile ? (
             <MobileSheet
               key={sheet.id}
+              direction="right"
               onOpenChange={onOpenChange(sheet.id)}
               title={sheet.title}
               description={sheet.text}
