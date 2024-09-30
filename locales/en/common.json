@@ -115,6 +115,8 @@
   "error.not_found": "Not found",
   "error.not_found.text": "This resource does not exist or has been deleted.",
   "error.not_found.token": "Token is invalid. Please request a new one.",
+  "error.organization_missing": "Organization missing",
+  "error.organization_missing.text": "Organization slug or id is required to perform this action.",
   "error.passkey_add_failed": "Registering passkey failed. Try again later.",
   "error.passkey_remove_failed": "Removing passkey failed. Try again later.",
   "error.passkey_sign_in": "Passkey verification failed",
