@@ -6,7 +6,6 @@ import { config } from 'config';
 import { ChevronDown, UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
@@ -14,6 +13,7 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import UpdateRow from '~/modules/users/users-table/update-row';
+import { dateShort } from '~/utils/utils';
 import ImpersonateRow from './impersonate-row';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {

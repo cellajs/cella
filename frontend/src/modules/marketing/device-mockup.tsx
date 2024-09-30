@@ -3,10 +3,10 @@ import Autoplay from 'embla-carousel-autoplay';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
-import { cn } from '~/lib/utils';
 import { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { Dialog, DialogContent, DialogHeader } from '~/modules/ui/dialog';
 import { useThemeStore } from '~/store/theme';
+import { cn } from '~/utils/utils';
 
 type DeviceType = 'mobile' | 'tablet' | 'pc';
 

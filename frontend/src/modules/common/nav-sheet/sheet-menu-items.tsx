@@ -1,12 +1,12 @@
 import { Link, useParams } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { baseEntityRoutes } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenuItem } from '~/types/common';
+import { cn } from '~/utils/utils';
 
 interface SheetMenuItemProps {
   item: UserMenuItem;

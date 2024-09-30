@@ -5,10 +5,10 @@ import { Fragment, Suspense, lazy, useEffect, useMemo } from 'react';
 import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { cn } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import { NavSheet } from '~/modules/common/nav-sheet';
 import { useNavigationStore } from '~/store/navigation';
+import { cn } from '~/utils/utils';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

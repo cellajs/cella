@@ -1,9 +1,9 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 
-import { cn } from '~/lib/utils';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 import { buttonVariants } from '~/modules/ui/button';
+import { cn } from '~/utils/utils';
 
 import { ArrowDown, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';

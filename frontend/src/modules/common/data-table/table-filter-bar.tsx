@@ -4,7 +4,7 @@ import { Button } from '~/modules/ui/button';
 
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/lib/utils';
+import { cn } from '~/utils/utils';
 
 interface TableFilterBarProps {
   children: React.ReactNode;

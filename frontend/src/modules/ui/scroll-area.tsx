@@ -2,7 +2,7 @@ import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
-import { cn } from '~/lib/utils';
+import { cn } from '~/utils/utils';
 
 const scrollbarVariants = cva('flex touch-none transition-colors z-20', {
   variants: {

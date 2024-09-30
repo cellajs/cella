@@ -3,10 +3,10 @@ import type React from 'react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { showToast } from '~/lib/toasts';
-import { cn } from '~/lib/utils';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
+import { cn } from '~/utils/utils';
 
 import './style.css';
 

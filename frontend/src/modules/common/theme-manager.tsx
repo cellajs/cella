@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { useEffect } from 'react';
-import { hexToHsl } from '~/lib/hex-to-hsl';
 import { type Mode, type Theme, useThemeStore } from '~/store/theme';
+import { hexToHsl } from '~/utils/hex-to-hsl';
 
 const root = window.document.documentElement;
 
