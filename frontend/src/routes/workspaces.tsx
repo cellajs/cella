@@ -4,12 +4,12 @@ import type { ErrorType } from 'backend/lib/errors';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { queryClient } from '~/lib/router';
-import { noDirectAccess } from '~/lib/utils';
 import ErrorNotice from '~/modules/common/error-notice';
 import Overview from '~/modules/projects/overview';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import { baseEntityRoutes } from '~/nav-config';
 import { useWorkspaceStore } from '~/store/workspace';
+import { noDirectAccess } from '~/utils/utils';
 import { AppRoute } from './general';
 
 // Lazy-loaded components

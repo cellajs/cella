@@ -11,7 +11,6 @@ import { createProject } from '~/api/projects';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import { addMenuItem } from '~/lib/utils';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
@@ -24,6 +23,7 @@ import { useUserStore } from '~/store/user';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Workspace } from '~/types/app';
 import type { UserMenuItem } from '~/types/common';
+import { addMenuItem } from '~/utils/utils';
 
 interface CreateProjectFormProps {
   workspace: Workspace;

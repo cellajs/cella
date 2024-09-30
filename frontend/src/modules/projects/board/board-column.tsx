@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
 
-import { cn } from '~/lib/utils';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
@@ -25,6 +24,7 @@ import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
+import { cn } from '~/utils/utils';
 
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 

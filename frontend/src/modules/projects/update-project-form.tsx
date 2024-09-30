@@ -11,7 +11,6 @@ import { type UpdateProjectParams, updateProject } from '~/api/projects';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
-import { cleanUrl } from '~/lib/utils';
 import { dialog } from '~/modules/common/dialoger/state';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -23,6 +22,7 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types/app';
+import { cleanUrl } from '~/utils/utils';
 
 interface Props {
   project: Project;

@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { ChevronUp, Maximize2, Trash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { dateShort, dateTwitterFormat } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -12,6 +11,7 @@ import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import type { Task } from '~/types/app';
+import { dateShort, dateTwitterFormat } from '~/utils/utils';
 import HeaderInfo from './header-info';
 import type { TaskStates } from './types';
 

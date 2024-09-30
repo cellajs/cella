@@ -2,11 +2,11 @@ import { config } from 'config';
 import { t } from 'i18next';
 import { createProject } from '~/api/projects';
 import { createWorkspace } from '~/api/workspaces';
-import { addMenuItem } from '~/lib/utils';
 import type { StepItem } from '~/modules/common/stepper/types';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { UserMenuItem } from '~/types/common';
+import { addMenuItem } from '~/utils/utils';
 
 export const onDefaultBoardingSteps: StepItem[] = [
   {

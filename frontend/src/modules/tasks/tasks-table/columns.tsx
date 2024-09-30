@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { dateShort } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
@@ -19,6 +18,7 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
+import { dateShort } from '~/utils/utils';
 
 export const useColumns = () => {
   const { t } = useTranslation();

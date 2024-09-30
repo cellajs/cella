@@ -1,8 +1,8 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
-import { recentlyUsed } from '~/lib/utils.ts';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact';
 import { taskStatuses } from '~/modules/tasks/task-selectors/select-status';
 import type { Project, SubTask, Task } from '~/types/app';
+import { recentlyUsed } from '~/utils/utils';
 
 export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, id: string, parentId?: string, status?: number) => {
   let filteredTasks: Task[] | SubTask[] = [];

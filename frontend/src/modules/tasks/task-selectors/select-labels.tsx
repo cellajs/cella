@@ -9,7 +9,6 @@ import { updateTask } from '~/api/tasks.ts';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { nanoid, recentlyUsed } from '~/lib/utils.ts';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Badge } from '~/modules/ui/badge.tsx';
@@ -17,6 +16,7 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandL
 import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Label } from '~/types/app';
+import { nanoid, recentlyUsed } from '~/utils/utils';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};

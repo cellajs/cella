@@ -11,7 +11,6 @@ import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { nanoid } from '~/lib/utils.ts';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from '~/modules/tasks/helpers';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote.tsx';
 import { Button } from '~/modules/ui/button';
@@ -19,6 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types/app';
+import { nanoid } from '~/utils/utils';
 
 const formSchema = z.object({
   id: z.string(),

@@ -12,7 +12,6 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { cn, nanoid } from '~/lib/utils.ts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
@@ -34,6 +33,7 @@ import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Label, Task } from '~/types/app';
 import type { Member } from '~/types/common';
+import { cn, nanoid } from '~/utils/utils';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;

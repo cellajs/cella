@@ -6,7 +6,6 @@ import { updateTask } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { queryClient } from '~/lib/router';
-import { cn } from '~/lib/utils';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { getNewStatusTaskOrder } from '~/modules/tasks/helpers';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
@@ -18,6 +17,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Task } from '~/types/app';
+import { cn } from '~/utils/utils';
 
 interface TasksFooterProps {
   task: Task;

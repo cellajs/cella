@@ -1,11 +1,11 @@
 import { Dot, StickyNote } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { dateShort } from '~/lib/utils';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { Label } from '~/types/app';
+import { dateShort } from '~/utils/utils';
 import { badgeStyle } from '../task-selectors/select-labels';
 
 export const useColumns = () => {

@@ -4,10 +4,10 @@ import { Copy, Info } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
-import { dateShort } from '~/lib/utils';
 import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import type { Task } from '~/types/app';
+import { dateShort } from '~/utils/utils';
 import { AvatarWrap } from '../common/avatar-wrap';
 
 const HeaderInfo = ({ task }: { task: Task }) => {

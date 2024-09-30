@@ -1,8 +1,8 @@
 import { cva } from 'class-variance-authority';
 import { useEffect, useRef, useState } from 'react';
 
-import { cn } from '~/lib/utils.ts';
 import { Card, CardContent } from '~/modules/ui/card';
+import { cn } from '~/utils/utils';
 
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -11,7 +11,6 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { motion } from 'framer-motion';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { getDraggableItemData } from '~/lib/drag-drop';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
 import { isTaskData } from '~/modules/projects/board/board';
@@ -24,6 +23,7 @@ import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme.ts';
 import type { Task } from '~/types/app';
+import { getDraggableItemData } from '~/utils/drag-drop';
 import type { TaskStates } from './types';
 
 const variants = cva('task-card', {

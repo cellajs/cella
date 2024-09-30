@@ -3,10 +3,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dialog } from '~/modules/common/dialoger/state';
+import MobileSheet from '~/modules/common/sheeter/drawer';
+import DesktopSheet from '~/modules/common/sheeter/sheet';
 import { type SheetAction, SheetObserver, type SheetT, sheet } from '~/modules/common/sheeter/state';
 import { objectKeys } from '~/utils/object';
-import MobileSheet from './drawer';
-import DesktopSheet from './sheet';
 
 export function Sheeter() {
   const navigate = useNavigate();
@@ -69,6 +69,7 @@ export function Sheeter() {
           {isMobile ? (
             <MobileSheet
               key={sheet.id}
+              direction="right"
               onOpenChange={onOpenChange(sheet.id)}
               title={sheet.title}
               description={sheet.text}

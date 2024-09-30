@@ -12,8 +12,6 @@ import { deleteTasks, updateTask } from '~/api/tasks';
 import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { getDraggableItemData } from '~/lib/drag-drop';
-import { cn } from '~/lib/utils';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
@@ -21,6 +19,8 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { SubTask as BaseSubTask, Task } from '~/types/app';
+import { getDraggableItemData } from '~/utils/drag-drop';
+import { cn } from '~/utils/utils';
 import { isSubTaskData } from '../projects/board/board';
 import type { TaskStates } from './types';
 
