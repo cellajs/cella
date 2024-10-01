@@ -68,6 +68,7 @@ export const projectsQueryOptions = ({
 const LIMIT = 40;
 
 export default function ProjectsTable({ userId, organizationId, sheet: IsSheet }: { organizationId: string; sheet?: boolean; userId?: string }) {
+  console.log('🚀 ~ ProjectsTable ~ organizationId:', organizationId);
   const { t } = useTranslation();
 
   const [rows, setRows] = useState<Project[]>([]);

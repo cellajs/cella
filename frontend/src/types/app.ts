@@ -14,5 +14,4 @@ export type Task = z.infer<typeof fullTaskSchema>;
 export type SubTask = z.infer<typeof subTaskSchema>[number];
 export type Label = z.infer<typeof labelSchema>;
 
-// biome-ignore lint/complexity/noBannedTypes: necessary to decouple app-specific types
 export type AppCustomEventMap = TasksCustomEventMap;

@@ -20,15 +20,14 @@ const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-conte
 
 export const UserContext = createContext({} as UserContextValue);
 
-const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
+const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'> & { organizations?: { id: string }[] }; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const { user: currentUser, setUser } = useUserStore();
 
   const isSelf = currentUser.id === user.id;
-  //TODO: fix this
-  const organizationId = 'fixthis';
+  const organizationId = user.organizations?.[0].id;
 
   const { mutate } = useUpdateUserMutation(currentUser.id);
 
