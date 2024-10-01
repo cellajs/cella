@@ -5,7 +5,7 @@ import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAllowedTo, isAuthenticated } from '#/middlewares/guard';
 
 import { z } from 'zod';
-import { createTaskSchema, fullTaskSchema, getTasksQuerySchema, simpleTaskSchema, updateTaskSchema } from './schema';
+import { createTaskSchema, getTasksQuerySchema, simpleTaskSchema, taskWithSubTasksSchema, updateTaskSchema } from './schema';
 
 class TaskRoutesConfig {
   public createTask = createRouteConfig({
@@ -31,7 +31,7 @@ class TaskRoutesConfig {
         description: 'Task',
         content: {
           'application/json': {
-            schema: successWithDataSchema(fullTaskSchema),
+            schema: successWithDataSchema(taskWithSubTasksSchema),
           },
         },
       },
@@ -55,7 +55,7 @@ class TaskRoutesConfig {
         description: 'Tasks',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(fullTaskSchema),
+            schema: successWithPaginationSchema(taskWithSubTasksSchema),
           },
         },
       },
@@ -108,7 +108,7 @@ class TaskRoutesConfig {
         description: 'Task updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(fullTaskSchema),
+            schema: successWithDataSchema(taskWithSubTasksSchema),
           },
         },
       },

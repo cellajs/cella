@@ -49,6 +49,16 @@ export const simpleTaskSchema = z.object({
   modifiedAt: z.string().nullable(),
 });
 
+export enum TaskStatus {
+  Iced = 0,
+  Unstarted = 1,
+  Started = 2,
+  Finished = 3,
+  Delivered = 4,
+  Reviewed = 5,
+  Accepted = 6,
+}
+
 const taskSchema = z.object({
   ...createSelectSchema(tasksTable).omit({
     labels: true,
@@ -60,6 +70,7 @@ const taskSchema = z.object({
     createdAt: true,
   }).shape,
   labels: z.array(labelSchema),
+  status: z.nativeEnum(TaskStatus),
   assignedTo: z.array(userSchema.omit({ counts: true })),
   createdAt: z.string(),
   parentId: z.string().nullable(),
@@ -85,7 +96,7 @@ export const subTaskSchema = z.array(
   }),
 );
 
-export const fullTaskSchema = z.object({
+export const taskWithSubTasksSchema = z.object({
   ...taskSchema.shape,
   subTasks: subTaskSchema,
 });

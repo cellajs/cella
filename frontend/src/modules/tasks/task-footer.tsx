@@ -11,7 +11,7 @@ import { getNewStatusTaskOrder } from '~/modules/tasks/helpers';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact';
-import { type TaskStatus, statusVariants, taskStatuses } from '~/modules/tasks/task-selectors/select-status';
+import { statusVariants, taskStatuses } from '~/modules/tasks/task-selectors/select-status';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -36,8 +36,8 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
 
   const updateStatus = async (newStatus: number) => {
     try {
-      const query = queryClient.getQueryData(['boardTasks', task.projectId]) as { items: Task[] };
-      const newOrder = getNewStatusTaskOrder(task.status, newStatus, isSheet ? (tasks ?? []) : (query.items ?? []));
+      const query = queryClient.getQueryData<{ items: Task[] }>(['boardTasks', task.projectId]);
+      const newOrder = getNewStatusTaskOrder(task.status, newStatus, isSheet ? (tasks ?? []) : (query?.items ?? []));
       const updatedTask = await updateTask(task.id, task.organizationId, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: task.projectId });
@@ -142,15 +142,15 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
         <Button
           id={`status-${task.id}`}
           onClick={() => updateStatus(task.status + 1)}
-          disabled={(task.status as TaskStatus) === 6}
+          disabled={task.status === 6}
           variant="outlineGhost"
           size="xs"
           className={cn(
             'relative border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
-            statusVariants({ status: task.status as TaskStatus }),
+            statusVariants({ status: task.status }),
           )}
         >
-          {t(`app:${taskStatuses[task.status as TaskStatus].action}`)}
+          {t(`app:${taskStatuses[task.status].action}`)}
         </Button>
         <Button
           onClick={(event) => handleTaskDropDownClick(task, `status-${task.id}`, event.currentTarget)}
@@ -159,7 +159,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
           size="xs"
           className={cn(
             'relative rounded-none rounded-r -ml-2 px-2 [&:not(.absolute)]:active:translate-y-0',
-            statusVariants({ status: task.status as TaskStatus }),
+            statusVariants({ status: task.status }),
           )}
         >
           <ChevronDown size={12} className={`transition-transform ${isStatusDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
