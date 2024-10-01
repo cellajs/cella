@@ -6,7 +6,6 @@ import { getContextUser, getMemberships } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import permissionManager from '#/lib/permission-manager';
 export { isAuthenticated } from './is-authenticated';
-export { splitByAllowance } from './split-by-allowance';
 
 // System admin is a user with the 'admin' role in the users table.
 export async function isSystemAdmin(ctx: Context, next: Next): Promise<Response | undefined> {

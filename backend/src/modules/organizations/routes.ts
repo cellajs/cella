@@ -1,5 +1,5 @@
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isSystemAdmin, splitByAllowance } from '#/middlewares/guard';
+import { isAuthenticated, isSystemAdmin } from '#/middlewares/guard';
 import {
   errorResponses,
   successWithDataSchema,
@@ -156,7 +156,7 @@ class OrganizationRoutesConfig {
   public deleteOrganizations = createRouteConfig({
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, splitByAllowance('delete', 'organization')],
+    guard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Delete organizations',
     description: 'Delete organizations by ids.',

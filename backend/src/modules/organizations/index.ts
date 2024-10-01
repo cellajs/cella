@@ -7,8 +7,8 @@ import { config } from 'config';
 import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
-import { getAllowedIds, getContextUser, getDisallowedIds, getMemberships, getOrganization } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity';
+import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
+import { resolveEntities, resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
 import permissionManager from '#/lib/permission-manager';
@@ -242,12 +242,39 @@ const organizationsRoutes = app
    * Delete organizations by ids
    */
   .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
-    // Extract allowed and disallowed ids
-    const allowedIds = getAllowedIds();
-    const disallowedIds = getDisallowedIds();
+    const user = getContextUser();
+    const memberships = getMemberships();
 
-    // Map errors of organizations user is not allowed to delete
-    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
+    // Convert the ids to an array
+    const rawIds = ctx.req.query('ids');
+    const ids = (Array.isArray(rawIds) ? rawIds : [rawIds]).map(String);
+
+    // Check if ids are missing
+    if (!ids.length) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { user: user?.id });
+    }
+
+    // Resolve ids
+    const organizations = await resolveEntities('organization', ids);
+
+    // Logic to split ids based on permissions
+    const allowedIds: string[] = [];
+    const errors: ErrorType[] = [];
+
+    for (const organization of organizations) {
+      const isAllowed = permissionManager.isPermissionAllowed(memberships, 'delete', organization);
+
+      if (!isAllowed && user.role !== 'admin') {
+        errors.push(createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: organization.id }));
+      } else {
+        allowedIds.push(organization.id);
+      }
+    }
+
+    // Check if user or context is missing
+    if (!allowedIds.length) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { user: user.id });
+    }
 
     // Get members
     const organizationsMembers = await db
