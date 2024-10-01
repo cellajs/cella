@@ -239,6 +239,10 @@ const workspacesRoutes = app
 
     const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'workspace', toDeleteIds, memberships);
 
+    if (!allowedIds.length) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
+    }
+
     // Map errors of workspaces user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'workspace', { workspace: id }));
 
@@ -253,17 +257,16 @@ const workspacesRoutes = app
 
     // Send SSE events for the workspaces that were deleted
     for (const id of allowedIds) {
-      // Send the event to the user if they are a member of the workspace
-      if (workspaceMembers.length > 0) {
-        const membersId = workspaceMembers
-          .filter(({ workspaceId }) => workspaceId === id)
-          .map((member) => member.id)
-          .filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'workspace' });
-      }
+      if (!workspaceMembers.length) continue;
 
-      logEvent('Workspace deleted', { workspace: id });
+      const membersId = workspaceMembers
+        .filter(({ workspaceId }) => workspaceId === id)
+        .map((member) => member.id)
+        .filter(Boolean) as string[];
+      sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'workspace' });
     }
+
+    logEvent('Workspaces deleted', { ids: allowedIds.join() });
 
     return ctx.json({ success: true, errors: errors }, 200);
   });

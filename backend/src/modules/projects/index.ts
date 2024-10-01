@@ -219,6 +219,10 @@ const projectsRoutes = app
 
     const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'project', toDeleteIds, memberships);
 
+    if (!allowedIds.length) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
+    }
+
     // Map errors of projects user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'project', { project: id }));
 
@@ -228,22 +232,21 @@ const projectsRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'project'), inArray(membershipsTable.projectId, allowedIds)));
 
-    // Delete the projectId
+    // Delete the projects
     await db.delete(projectsTable).where(inArray(projectsTable.id, allowedIds));
 
     // Send SSE events for the projects that were deleted
     for (const id of allowedIds) {
-      // Send the event to the user if they are a member of the project
-      if (projectsMembers.length > 0) {
-        const membersId = projectsMembers
-          .filter(({ projectId }) => projectId === id)
-          .map((member) => member.id)
-          .filter(Boolean) as string[];
-        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'project' });
-      }
+      if (!projectsMembers.length) continue;
 
-      logEvent('Project deleted', { project: id });
+      const membersId = projectsMembers
+        .filter(({ projectId }) => projectId === id)
+        .map((member) => member.id)
+        .filter(Boolean) as string[];
+      sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'project' });
     }
+
+    logEvent('Projects deleted', { ids: allowedIds.join() });
 
     return ctx.json({ success: true, errors: errors }, 200);
   });
