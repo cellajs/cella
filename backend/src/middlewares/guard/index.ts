@@ -1,8 +1,6 @@
-import { eq, or } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
-import { db } from '#/db/db';
-import { organizationsTable } from '#/db/schema/organizations';
 import { getContextUser, getMemberships } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import permissionManager from '#/lib/permission-manager';
 export { isAuthenticated } from './is-authenticated';
@@ -33,10 +31,7 @@ export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response |
   if (!orgIdOrSlug) return errorResponse(ctx, 400, 'organization_missing', 'warn');
 
   // Find the organization by id or slug
-  const [organization] = await db
-    .select()
-    .from(organizationsTable)
-    .where(or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug)));
+  const organization = await resolveEntity('organization', orgIdOrSlug);
 
   if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { orgIdOrSlug });
 

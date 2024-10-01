@@ -221,17 +221,16 @@ const membershipsRoutes = app
   .openapi(membershipRouteConfig.deleteMemberships, async (ctx) => {
     const { idOrSlug, entityType, ids } = ctx.req.valid('query');
     const user = getContextUser();
+    const memberships = getMemberships();
 
     if (!config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
-    // Convert the member ids to an array
+    // Convert ids to an array
     const memberToDeleteIds = Array.isArray(ids) ? ids : [ids];
 
     // Check if the user has permission to delete the memberships
     const membershipContext = await resolveEntity(entityType, idOrSlug);
 
     if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
-
-    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', membershipContext);
 
@@ -243,27 +242,27 @@ const membershipsRoutes = app
 
     const filters = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable[`${entityType}Id`], membershipContext.id)));
 
-    // Get the user membership
+    // Get user membership
     const [currentUserMembership]: (MembershipModel | undefined)[] = await db
       .select()
       .from(membershipsTable)
       .where(and(filters, eq(membershipsTable.userId, user.id)))
       .limit(1);
 
-    // Get the memberships
+    // Get target memberships
     const targets = await db
       .select()
       .from(membershipsTable)
       .where(and(inArray(membershipsTable.userId, memberToDeleteIds), filters));
 
-    // Check if the memberships exist
+    // Check if membership exist
     for (const id of memberToDeleteIds) {
       if (!targets.some((target) => target.userId === id)) {
         errors.push(createError(ctx, 404, 'not_found', 'warn', entityType, { user: id }));
       }
     }
 
-    // Filter out memberships that the user doesn't have permission to delete
+    // Filter out what user doesn't have permission to delete
     const allowedTargets = targets.filter((target) => {
       if (user.role !== 'admin' && currentUserMembership?.role !== 'admin') {
         errors.push(
@@ -308,11 +307,14 @@ const membershipsRoutes = app
   .openapi(membershipRouteConfig.updateMembership, async (ctx) => {
     const { id: membershipId } = ctx.req.valid('param');
     const { role, archived, muted, order } = ctx.req.valid('json');
+
     const user = getContextUser();
+    const memberships = getMemberships();
 
     let orderToUpdate = order;
+
     // Get the membership
-    const [membershipToUpdate] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
+    const membershipToUpdate = memberships.find((membership) => membership.id === membershipId);
     if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { membership: membershipId });
 
     const updatedType = membershipToUpdate.type;
