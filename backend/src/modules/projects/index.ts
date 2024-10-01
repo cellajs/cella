@@ -3,12 +3,14 @@ import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { projectsTable } from '#/db/schema/projects';
 
-import { getAllowedIds, getContextUser, getDisallowedIds, getMemberships } from '#/lib/context';
+import { getContextUser, getMemberships } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
+import { splitByAllowance } from '#/utils/split-by-allowance';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import projectRoutesConfig from './routes';
@@ -60,8 +62,15 @@ const projectsRoutes = app
    * Get project by id or slug
    */
   .openapi(projectRoutesConfig.getProject, async (ctx) => {
-    const project = ctx.get('project');
+    const { idOrSlug } = ctx.req.valid('param');
     const memberships = getMemberships();
+
+    const project = await resolveEntity('project', idOrSlug);
+
+    if (!project) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'project', { id: idOrSlug });
+    }
+
     const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project') ?? null;
 
     return ctx.json(
@@ -133,13 +142,19 @@ const projectsRoutes = app
     );
   })
   /*
-   * Update project
+   * Update project by id or slug
    */
   .openapi(projectRoutesConfig.updateProject, async (ctx) => {
-    const user = getContextUser();
-    const project = ctx.get('project');
-
+    const { idOrSlug } = ctx.req.valid('param');
     const { name, thumbnailUrl, slug } = ctx.req.valid('json');
+
+    const user = getContextUser();
+
+    const project = await resolveEntity('project', idOrSlug);
+
+    if (!project) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'project', { id: idOrSlug });
+    }
 
     if (slug && slug !== project.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -191,11 +206,20 @@ const projectsRoutes = app
    * Delete projects
    */
   .openapi(projectRoutesConfig.deleteProjects, async (ctx) => {
-    // Extract allowed and disallowed ids
-    const allowedIds = getAllowedIds();
-    const disallowedIds = getDisallowedIds();
+    const { ids } = ctx.req.valid('query');
 
-    // Map errors of workspaces user is not allowed to delete
+    const memberships = getMemberships();
+
+    // Convert the ids to an array
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+
+    if (!toDeleteIds.length) {
+      return errorResponse(ctx, 400, 'invalid_request', 'warn', 'project');
+    }
+
+    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'project', toDeleteIds, memberships);
+
+    // Map errors of projects user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'project', { project: id }));
 
     // Get members
