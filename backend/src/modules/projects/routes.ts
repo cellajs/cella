@@ -1,9 +1,8 @@
 import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
-import { hasOrgAccess, isAllowedTo, isAuthenticated, splitByAllowance } from '#/middlewares/guard';
+import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
 import { entityInOrgParamSchema, idOrSlugSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
-import checkUserPermissions from './middlewares/userPermissionsCheck';
 
 import { createProjectBodySchema, createProjectQuerySchema, getProjectsQuerySchema, projectSchema, updateProjectBodySchema } from './schema';
 
@@ -11,7 +10,7 @@ class ProjectRoutesConfig {
   public createProject = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: [isAuthenticated, hasOrgAccess, isAllowedTo('create', 'project')],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['projects'],
     summary: 'Create new project',
     description: 'Create a new project in an organization. Creator will become admin and can invite other members.',
@@ -44,7 +43,7 @@ class ProjectRoutesConfig {
   public getProject = createRouteConfig({
     method: 'get',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, hasOrgAccess, checkUserPermissions, isAllowedTo('read', 'project')],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['projects'],
     summary: 'Get project',
     description: 'Get project by id or slug.',
@@ -67,7 +66,7 @@ class ProjectRoutesConfig {
   public getProjects = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, hasOrgAccess, checkUserPermissions],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['projects'],
     summary: 'Get list of projects',
     description: 'Get list of projects.',
@@ -91,7 +90,7 @@ class ProjectRoutesConfig {
   public updateProject = createRouteConfig({
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, hasOrgAccess, isAllowedTo('update', 'project')],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['projects'],
     summary: 'Update project',
     description: 'Update project by id or slug.',
@@ -121,7 +120,7 @@ class ProjectRoutesConfig {
   public deleteProjects = createRouteConfig({
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, hasOrgAccess, splitByAllowance('delete', 'project')],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['projects'],
     summary: 'Delete projects',
     description: 'Delete projects by ids.',

@@ -44,16 +44,16 @@ const MarkerWithInfowindow = ({ position }: { position: { lat: number; lng: numb
 
       {infowindowOpen && (
         <InfoWindow headerDisabled={true} anchor={marker}>
-          <div className="text-xs text-slate-800">
+          <div className="text-xs text-slate-800 min-w-32">
             <div className="flex justify-between items-center">
-              <strong className="text-primary text-sm ">{config.company.name}</strong>
+              <strong className="text-sm ">{config.company.name}</strong>
               <Button onClick={() => setInfowindowOpen(false)} size="micro" variant="ghost">
                 <X size={14} />
               </Button>
             </div>
             <span className="block">{config.company.streetAddress}</span>
             <span className="block">{config.company.country}</span>
-            <a href={config.company.googleMapsUrl} target="_blank" className="text-primary" rel="noreferrer">
+            <a href={config.company.googleMapsUrl} target="_blank" rel="noreferrer">
               {t('common:get_directions')}
             </a>
           </div>

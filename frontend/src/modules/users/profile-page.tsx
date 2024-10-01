@@ -37,7 +37,6 @@ const UserProfilePage = ({
   const { user: currentUser, setUser } = useUserStore();
 
   const isSelf = currentUser.id === user.id;
-
   const organizationId = isUserMember(user) ? user.membership.organizationId : user.organizations?.[0]?.id;
 
   const { mutate } = useUpdateUserMutation(currentUser.id);

@@ -33,17 +33,31 @@ export const PublicRoute = createRoute({
   staticData: { pageTitle: '', isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <Public />,
-});
+  beforeLoad: async ({ location, cause }) => {
+    if (cause !== 'enter') return;
 
-export const ErrorNoticeRoute = createRoute({
-  path: '/error',
-  staticData: { pageTitle: 'Error', isAuth: false },
-  getParentRoute: () => rootRoute,
-  component: () => <ErrorNotice />,
+    try {
+      console.debug('Fetch me & menu in while entering public page ', location.pathname);
+      const getSelf = async () => {
+        return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe, retry: 0 });
+      };
+
+      const getMenu = async () => {
+        return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu, retry: 0 });
+      };
+
+      await Promise.all([getSelf(), getMenu()]);
+    } catch (error) {
+      if (error instanceof Error) {
+        Sentry.captureException(error);
+        onError(error);
+      }
+    }
+  },
 });
 
 export const AppRoute = createRoute({
-  id: 'layout',
+  id: 'app-layout',
   staticData: { pageTitle: '', isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => (
@@ -53,13 +67,13 @@ export const AppRoute = createRoute({
   ),
   loader: async ({ location }) => {
     try {
-      console.debug('Fetch me & menu in', location.pathname);
+      console.debug('Fetch me & menu while entering app ', location.pathname);
       const getSelf = async () => {
-        return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe, gcTime: 1 });
+        return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe, retry: 0 });
       };
 
       const getMenu = async () => {
-        return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu, gcTime: 1 });
+        return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu, retry: 0 });
       };
 
       await Promise.all([getSelf(), getMenu()]);
@@ -69,6 +83,8 @@ export const AppRoute = createRoute({
         onError(error);
       }
 
+      if (location.pathname === '/') throw redirect({ to: '/about', replace: true });
+
       console.info('Not authenticated -> redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { fromRoot: true, redirect: location.pathname } });
     }
@@ -76,6 +92,13 @@ export const AppRoute = createRoute({
     // If location is root and has user, redirect to home
     if (location.pathname === '/') throw redirect({ to: config.defaultRedirectPath, replace: true });
   },
+});
+
+export const ErrorNoticeRoute = createRoute({
+  path: '/error',
+  staticData: { pageTitle: 'Error', isAuth: false },
+  getParentRoute: () => rootRoute,
+  component: () => <ErrorNotice />,
 });
 
 export const acceptInviteRoute = createRoute({

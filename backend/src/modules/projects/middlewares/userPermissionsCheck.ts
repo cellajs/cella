@@ -4,7 +4,6 @@ import { usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
 import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import { isAllowedTo } from '#/middlewares/guard/is-allowed-to';
 
 const checkUserPermissions: MiddlewareHandler = async (ctx, next) => {
   const requestUserId = ctx.req.query('userId');
@@ -17,7 +16,6 @@ const checkUserPermissions: MiddlewareHandler = async (ctx, next) => {
     return await next();
   }
 
-  isAllowedTo('read', 'project');
   await next();
 };
 
