@@ -214,9 +214,13 @@ const organizationsRoutes = app
 
     const organization = await resolveEntity('organization', idOrSlug);
 
+    if (!organization) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { id: idOrSlug });
+    }
+
     // If not allowed and not admin, return forbidden
     const canRead = permissionManager.isPermissionAllowed(memberships, 'read', organization);
-    if (!organization || (!canRead && user.role !== 'admin')) {
+    if (!canRead && user.role !== 'admin') {
       return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { user: user.id, id: idOrSlug });
     }
 
