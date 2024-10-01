@@ -3,6 +3,7 @@ import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { projectsTable } from '#/db/schema/projects';
 
+import { getAllowedIds, getContextUser, getDisallowedIds, getMemberships } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -23,7 +24,7 @@ const projectsRoutes = app
     const { name, slug, organizationId } = ctx.req.valid('json');
     const workspaceId = ctx.req.query('workspaceId');
 
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -60,7 +61,7 @@ const projectsRoutes = app
    */
   .openapi(projectRoutesConfig.getProject, async (ctx) => {
     const project = ctx.get('project');
-    const memberships = ctx.get('memberships');
+    const memberships = getMemberships();
     const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project') ?? null;
 
     return ctx.json(
@@ -80,7 +81,7 @@ const projectsRoutes = app
    */
   .openapi(projectRoutesConfig.getProjects, async (ctx) => {
     const { q, sort, order, offset, limit, organizationId } = ctx.req.valid('query');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     const projectsFilters: SQL[] = [];
     if (q) projectsFilters.push(ilike(projectsTable.name, `%${q}%`));
@@ -135,7 +136,7 @@ const projectsRoutes = app
    * Update project
    */
   .openapi(projectRoutesConfig.updateProject, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
     const project = ctx.get('project');
 
     const { name, thumbnailUrl, slug } = ctx.req.valid('json');
@@ -191,8 +192,8 @@ const projectsRoutes = app
    */
   .openapi(projectRoutesConfig.deleteProjects, async (ctx) => {
     // Extract allowed and disallowed ids
-    const allowedIds = ctx.get('allowedIds');
-    const disallowedIds = ctx.get('disallowedIds');
+    const allowedIds = getAllowedIds();
+    const disallowedIds = getDisallowedIds();
 
     // Map errors of workspaces user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'project', { project: id }));

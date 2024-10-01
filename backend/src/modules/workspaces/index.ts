@@ -6,6 +6,7 @@ import { workspacesTable } from '#/db/schema/workspaces';
 import { labelsTable } from '#/db/schema/labels';
 import { projectsTable } from '#/db/schema/projects';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
+import { getAllowedIds, getContextUser, getDisallowedIds, getMemberships } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -24,7 +25,7 @@ const workspacesRoutes = app
    */
   .openapi(workspaceRoutesConfig.createWorkspace, async (ctx) => {
     const { name, slug, organizationId } = ctx.req.valid('json');
-    const user = ctx.get('user');
+    const user = getContextUser();
 
     const slugAvailable = await checkSlugAvailable(slug);
 
@@ -62,8 +63,8 @@ const workspacesRoutes = app
    */
   .openapi(workspaceRoutesConfig.getWorkspace, async (ctx) => {
     const workspace = ctx.get('workspace');
-    const memberships = ctx.get('memberships');
-    const user = ctx.get('user');
+    const memberships = getMemberships();
+    const user = getContextUser();
     const membership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'workspace');
     const projectsWithMembership = await db
       .select({
@@ -151,7 +152,7 @@ const workspacesRoutes = app
    * Update workspace
    */
   .openapi(workspaceRoutesConfig.updateWorkspace, async (ctx) => {
-    const user = ctx.get('user');
+    const user = getContextUser();
     const workspace = ctx.get('workspace');
 
     const { name, slug, thumbnailUrl, bannerUrl } = ctx.req.valid('json');
@@ -210,8 +211,8 @@ const workspacesRoutes = app
    */
   .openapi(workspaceRoutesConfig.deleteWorkspaces, async (ctx) => {
     // Extract allowed and disallowed ids
-    const allowedIds = ctx.get('allowedIds');
-    const disallowedIds = ctx.get('disallowedIds');
+    const allowedIds = getAllowedIds();
+    const disallowedIds = getDisallowedIds();
 
     // Map errors of workspaces user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'workspace', { workspace: id }));

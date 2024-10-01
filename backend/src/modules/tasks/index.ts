@@ -7,11 +7,11 @@ import { labelsTable } from '#/db/schema/labels';
 import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
 import { usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
+import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
-import { transformDatabaseUser } from '../users/helpers/transform-database-user';
 import taskRoutesConfig from './routes';
 import type { subTaskSchema } from './schema';
 
@@ -24,7 +24,7 @@ const tasksRoutes = app
    */
   .openapi(taskRoutesConfig.createTask, async (ctx) => {
     const newTask = ctx.req.valid('json');
-    const user = ctx.get('user');
+    const user = getContextUser();
     const [createdTask] = await db.insert(tasksTable).values(newTask).returning();
 
     logEvent('Task created', { task: newTask.id });
@@ -36,7 +36,7 @@ const tasksRoutes = app
     const finalTask = {
       ...createdTask,
       subTasks: [] as z.infer<typeof subTaskSchema>,
-      createdBy: transformDatabaseUser(user),
+      createdBy: user,
       modifiedBy: null,
       assignedTo: assignedTo.filter((m) => createdTask.assignedTo.includes(m.id)),
       labels: labels.filter((m) => createdTask.labels.includes(m.id)),
@@ -137,7 +137,7 @@ const tasksRoutes = app
   .openapi(taskRoutesConfig.updateTask, async (ctx) => {
     const id = ctx.req.param('id');
     if (!id) return errorResponse(ctx, 404, 'not_found', 'warn');
-    const user = ctx.get('user');
+    const user = getContextUser();
     const { key, data, order } = ctx.req.valid('json');
 
     const updateValues: Partial<InsertTaskModel> = {
