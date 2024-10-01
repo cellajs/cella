@@ -7,9 +7,11 @@ import { config } from 'config';
 import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
-import { getAllowedIds, getContextUser, getDisallowedIds, getOrganization } from '#/lib/context';
+import { getAllowedIds, getContextUser, getDisallowedIds, getMemberships, getOrganization } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
+import permissionManager from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -139,7 +141,14 @@ const organizationsRoutes = app
    */
   .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
     const user = getContextUser();
+    const memberships = getMemberships();
     const organization = getOrganization();
+
+    // If not allowed and not admin, return forbidden
+    const canUpdate = permissionManager.isPermissionAllowed(memberships, 'update', organization);
+    if (!canUpdate && user.role !== 'admin') {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { user: user.id, id: organization.id });
+    }
 
     const updatedFields = ctx.req.valid('json');
     const slug = updatedFields.slug;
@@ -162,16 +171,16 @@ const organizationsRoutes = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
-    const memberships = await db
+    const membershipsToUpdate = await db
       .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
-    if (memberships.length > 0) {
-      memberships.map((membership) =>
+    if (membershipsToUpdate.length > 0) {
+      membershipsToUpdate.map((membership) =>
         sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedOrganization,
-          membership: memberships.find((m) => m.id === membership.id) ?? null,
+          membership: membershipsToUpdate.find((m) => m.id === membership.id) ?? null,
         }),
       );
     }
@@ -185,7 +194,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...updatedOrganization,
-          membership: memberships.find((m) => m.id === user.id) ?? null,
+          membership: membershipsToUpdate.find((m) => m.id === user.id) ?? null,
           counts: {
             memberships: memberCounts,
           },
@@ -198,16 +207,20 @@ const organizationsRoutes = app
    * Get organization by id or slug
    */
   .openapi(organizationRoutesConfig.getOrganization, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+
     const user = getContextUser();
-    const organization = getOrganization();
+    const memberships = getMemberships();
 
-    const [membership] = await db
-      .select(membershipSelect)
-      .from(membershipsTable)
-      .where(
-        and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
-      );
+    const organization = await resolveEntity('organization', idOrSlug);
 
+    // If not allowed and not admin, return forbidden
+    const canRead = permissionManager.isPermissionAllowed(memberships, 'read', organization);
+    if (!organization || (!canRead && user.role !== 'admin')) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { user: user.id, id: idOrSlug });
+    }
+
+    const membership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization') ?? null;
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
     return ctx.json(

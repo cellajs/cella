@@ -1,5 +1,5 @@
 import { createRouteConfig } from '#/lib/route-config';
-import { isAllowedTo, isAuthenticated, isSystemAdmin, splitByAllowance } from '#/middlewares/guard';
+import { isAuthenticated, isSystemAdmin, splitByAllowance } from '#/middlewares/guard';
 import {
   errorResponses,
   successWithDataSchema,
@@ -73,7 +73,7 @@ class OrganizationRoutesConfig {
   public updateOrganization = createRouteConfig({
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('update', 'organization')],
+    guard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Update organization',
     description: 'Update organization by id or slug.',
@@ -103,7 +103,7 @@ class OrganizationRoutesConfig {
   public getOrganization = createRouteConfig({
     method: 'get',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isAllowedTo('read', 'organization')],
+    guard: [isAuthenticated],
     tags: ['organizations'],
     summary: 'Get organization',
     description: 'Get an organization by id or slug.',
