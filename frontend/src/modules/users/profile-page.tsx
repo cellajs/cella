@@ -23,9 +23,12 @@ export const UserContext = createContext({} as UserContextValue);
 const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
   const { user: currentUser, setUser } = useUserStore();
 
   const isSelf = currentUser.id === user.id;
+  //TODO: fix this
+  const organizationId = 'fixthis';
 
   const { mutate } = useUpdateUserMutation(currentUser.id);
 
@@ -72,7 +75,7 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
         />
         <Suspense>
           <div className="container">
-            <ProfilePageContent userId={user.id} sheet={sheet} />
+            <ProfilePageContent organizationId={organizationId} userId={user.id} sheet={sheet} />
           </div>
         </Suspense>
       </UserContext.Provider>
