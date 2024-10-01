@@ -8,7 +8,7 @@ import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
-import { resolveEntities, resolveEntity } from '#/lib/entity';
+import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
 import permissionManager from '#/lib/permission-manager';
@@ -17,6 +17,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
+import { splitByAllowance } from '#/utils/split-by-allowance';
 import organizationsNewsletter from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -246,38 +247,24 @@ const organizationsRoutes = app
    * Delete organizations by ids
    */
   .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
-    const user = getContextUser();
+    const { ids } = ctx.req.valid('query');
+
     const memberships = getMemberships();
 
     // Convert the ids to an array
-    const rawIds = ctx.req.query('ids');
-    const ids = (Array.isArray(rawIds) ? rawIds : [rawIds]).map(String);
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
-    // Check if ids are missing
-    if (!ids.length) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { user: user?.id });
+    if (!toDeleteIds.length) {
+      return errorResponse(ctx, 400, 'invalid_request', 'warn', 'organization');
     }
 
-    // Resolve ids
-    const organizations = await resolveEntities('organization', ids);
+    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
 
-    // Logic to split ids based on permissions
-    const allowedIds: string[] = [];
-    const errors: ErrorType[] = [];
+    // Map errors of organization user is not allowed to delete
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
 
-    for (const organization of organizations) {
-      const isAllowed = permissionManager.isPermissionAllowed(memberships, 'delete', organization);
-
-      if (!isAllowed && user.role !== 'admin') {
-        errors.push(createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: organization.id }));
-      } else {
-        allowedIds.push(organization.id);
-      }
-    }
-
-    // Check if user or context is missing
     if (!allowedIds.length) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { user: user.id });
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
     }
 
     // Get members
@@ -291,14 +278,12 @@ const organizationsRoutes = app
 
     // Send SSE events for the organizations that were deleted
     for (const id of allowedIds) {
-      // Send the event to the user if they are a member of the organization
-      if (organizationsMembers.length > 0) {
-        const membersId = organizationsMembers.map((member) => member.id);
-        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'organization' });
-      }
+      if (!organizationsMembers.length) continue;
 
-      logEvent('Organization deleted', { organization: id });
+      const membersId = organizationsMembers.map((member) => member.id);
+      sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'organization' });
     }
+    logEvent('Organizations deleted', { ids: allowedIds.join() });
 
     return ctx.json({ success: true, errors: errors }, 200);
   })
