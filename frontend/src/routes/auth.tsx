@@ -1,12 +1,10 @@
 import { Outlet, createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { z } from 'zod';
-import { queryClient } from '~/lib/router';
 import SignIn from '~/modules/auth';
 import ResetPassword from '~/modules/auth/reset-password';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
-import { getAndSetMe } from '~/modules/users/helpers';
 import { useUserStore } from '~/store/user';
 import { PublicRoute } from './general';
 
@@ -28,15 +26,8 @@ export const SignInRoute = createRoute({
 
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
-    if (storedUser) throw redirect({ to: config.defaultRedirectPath, replace: true });
-
-    try {
-      await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe, retry: 0, gcTime: 1 });
-      console.info('Authenticated -> go to home');
-      throw redirect({ to: config.defaultRedirectPath, replace: true });
-    } catch (error) {
-      return console.info('Not authenticated (silent check)');
-    }
+    if (!storedUser) return;
+    throw redirect({ to: config.defaultRedirectPath, replace: true });
   },
   component: () => <SignIn />,
 });
