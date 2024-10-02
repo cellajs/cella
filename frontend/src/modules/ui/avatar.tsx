@@ -1,5 +1,3 @@
-'use client';
-
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
@@ -97,13 +95,20 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(({ childr
 AvatarGroup.displayName = 'AvatarGroup';
 
 const AvatarGroupList = ({ children }: { children?: React.ReactNode }) => {
-  const { limit, setCount } = useAvatarGroupContext();
+  const { limit, setCount, count } = useAvatarGroupContext();
 
   React.useEffect(() => {
     setCount?.(React.Children.count(children));
   }, [children, setCount]);
 
-  return <>{limit ? React.Children.toArray(children).slice(0, limit) : children}</>;
+  // Determine if we need to display an additional avatar  or overflow
+  // Ensures that we show the maximum number of avatars specified by 'limit'.
+  // If current count is less than or equal to limit, we display all the avatars.
+  // If count exceeds limit, we show only 'limit' avatars and an overflow indicator to represent the additional avatars.
+  const additionalCount = !limit || !count || count - 1 <= limit ? 1 : 0;
+
+  // Show only the first 'limit + additionalCount' children
+  return <>{limit ? React.Children.toArray(children).slice(0, limit + additionalCount) : children}</>;
 };
 
 export interface AvatarOverflowIndicatorProps extends React.HTMLAttributes<HTMLSpanElement> {}
@@ -111,7 +116,9 @@ export interface AvatarOverflowIndicatorProps extends React.HTMLAttributes<HTMLS
 const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement> & AvatarOverflowIndicatorProps>(
   ({ className, ...props }, ref) => {
     const { limit, count } = useAvatarGroupContext();
-    if (!limit || !count || count <= limit) return null;
+    // Determine if we need to display an additional avatar  or overflow
+    if (!limit || !count || count - 1 <= limit) return null;
+    // Show the overflow count
     return (
       <span
         ref={ref}
@@ -125,4 +132,4 @@ const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.HTMLAttr
 );
 AvatarOverflowIndicator.displayName = 'AvatarOverflowIndicator';
 
-export { Avatar, AvatarImage, AvatarFallback, AvatarBadge, AvatarGroup, AvatarGroupList, AvatarOverflowIndicator };
+export { Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupList, AvatarImage, AvatarOverflowIndicator };
