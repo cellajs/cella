@@ -17,6 +17,7 @@ import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuSearch } from '~/modules/common/nav-sheet/sheet-menu-search';
 import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
+import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
 import { menuSections } from '~/nav-config';
 import { NetworkModeSwitch } from './network-mode-switch';
@@ -112,41 +113,43 @@ export const SheetMenu = memo(() => {
   }, [menu]);
 
   return (
-    <>
-      <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
-      {searchTerm && (
-        <div className="search-results mt-6">
-          {searchResultsListItems().length > 0 ? (
-            searchResultsListItems()
-          ) : (
-            <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
-          )}
-        </div>
-      )}
-
-      {!searchTerm && (
-        <>
-          <div className="mt-2">{renderedSections}</div>
-          <div className="grow mt-4 border-b border-dashed" />
-          <div className="flex flex-col mt-6 mb-3 mx-2 gap-4">
-            <div className="max-xl:hidden flex items-center gap-4 ml-1">
-              <Switch size="xs" id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
-              <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
-                {t('common:keep_menu_open')}
-              </label>
-            </div>
-            {pwaEnabled && <NetworkModeSwitch />}
-            {menuSections.some((el) => el.isSubmenu) && (
-              <div className="flex items-center gap-4 ml-1">
-                <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
-                <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
-                  {t('common:nested_menu')}
-                </label>
-              </div>
+    <ScrollArea className="h-full" id="nav-sheet">
+      <div className="p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
+        <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
+        {searchTerm && (
+          <div className="search-results mt-6">
+            {searchResultsListItems().length > 0 ? (
+              searchResultsListItems()
+            ) : (
+              <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
             )}
           </div>
-        </>
-      )}
-    </>
+        )}
+
+        {!searchTerm && (
+          <>
+            <div className="mt-2">{renderedSections}</div>
+            <div className="grow mt-4 border-b border-dashed" />
+            <div className="flex flex-col mt-6 mb-3 mx-2 gap-4">
+              <div className="max-xl:hidden flex items-center gap-4 ml-1">
+                <Switch size="xs" id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
+                <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
+                  {t('common:keep_menu_open')}
+                </label>
+              </div>
+              {pwaEnabled && <NetworkModeSwitch />}
+              {menuSections.some((el) => el.isSubmenu) && (
+                <div className="flex items-center gap-4 ml-1">
+                  <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
+                  <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">
+                    {t('common:nested_menu')}
+                  </label>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </ScrollArea>
   );
 });

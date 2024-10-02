@@ -23,7 +23,7 @@ export async function create({
     // Save the original working directory
     const originalCwd = process.cwd();
 
-    console.log();
+    console.info();
     
     // Create the target folder if it doesn't exist
     const createFolderSpinner = yoctoSpinner({
@@ -67,7 +67,7 @@ export async function create({
         process.exit(1);
       }
     } else {
-      console.log(`${colors.yellow('⚠')} --skip-clean > Skip cleaning \`cella\` template'`)
+      console.info(`${colors.yellow('⚠')} --skip-clean > Skip cleaning \`cella\` template'`)
     }
 
     // Install dependencies if the skipInstall flag is not set
@@ -85,7 +85,7 @@ export async function create({
         process.exit(1);
       }
     } else {
-      console.log(`${colors.yellow('⚠')} --skip-install > Skip installing dependencies`)
+      console.info(`${colors.yellow('⚠')} --skip-install > Skip installing dependencies`)
     }
 
     // Initialize Git repository if skipGit flag is not set
@@ -121,13 +121,13 @@ export async function create({
         gitSpinner.warning('Git repository already initialized > Skip git init')
       }
     } else {
-      console.log(`${colors.yellow('⚠')} --skip-git > Skip git init`)
+      console.info(`${colors.yellow('⚠')} --skip-git > Skip git init`)
     }
     
     // Final success message indicating project creation
-    console.log()
-    console.log(`${colors.green('Success')} Created ${projectName} at ${targetFolder}`)
-    console.log()
+    console.info()
+    console.info(`${colors.green('Success')} Created ${projectName} at ${targetFolder}`)
+    console.info()
 
     // Check if the working directory needs to be changed
     const needsCd = originalCwd !== targetFolder;
@@ -135,14 +135,14 @@ export async function create({
       // Calculate the relative path between the original working directory and the target folder
       const relativePath = relative(originalCwd, targetFolder);
 
-      console.log('now go to your project using:')
-      console.log(colors.cyan(`  cd ./${relativePath}`)); // Adding './' to make it clear it's a relative path
-      console.log()
+      console.info('now go to your project using:')
+      console.info(colors.cyan(`  cd ./${relativePath}`)); // Adding './' to make it clear it's a relative path
+      console.info()
     }
-    console.log(`${needsCd ? 'then ' : ''}quick start with:`)
-    console.log(colors.cyan(`  ${packageManager} quick`))
-    console.log()
+    console.info(`${needsCd ? 'then ' : ''}quick start with:`)
+    console.info(colors.cyan(`  ${packageManager} quick`))
+    console.info()
 
-    console.log('Read the readme in project root for more info on how to get started!')
-    console.log(`Enjoy building ${projectName} using cella! 🎉`)
+    console.info('Read the readme in project root for more info on how to get started!')
+    console.info(`Enjoy building ${projectName} using cella! 🎉`)
   }

@@ -12,7 +12,7 @@ import { create } from './create.js'
 import { CELLA_TITLE } from './constants.js'
 
 async function main() {
-  console.log(CELLA_TITLE);
+  console.info(CELLA_TITLE);
 
   // Skip creating a new branch if --skipNewBranch flag is provided or git is skipped
   if (cli.options.skipNewBranch || cli.options.skipGit) {

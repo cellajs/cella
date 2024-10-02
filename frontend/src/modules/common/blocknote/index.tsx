@@ -109,7 +109,7 @@ export const BlockNote = ({
       slashMenu={customSlashMenu ? false : slashMenu}
       formattingToolbar={customFormattingToolbar ? false : formattingToolbar}
       emojiPicker={!emojiPicker}
-      className={cn('p-2 border rounded-lg', className)}
+      className={cn('p-3 border rounded-md', className)}
     >
       {customSlashMenu && <CustomSlashMenu editor={editor} />}
       {customFormattingToolbar && (

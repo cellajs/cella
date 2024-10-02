@@ -1,15 +1,16 @@
 import { config } from 'config';
-import { Menu, Undo } from 'lucide-react';
+import { Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ConfettiExplosion from 'react-confetti-explosion';
 import { useTranslation } from 'react-i18next';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
+import { sheet } from '~/modules/common/sheeter/state';
 import { onBoardingFinishCallback } from '~/modules/home/onboarding-config';
 import { useNavigationStore } from '~/store/navigation';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
-  const { menu, setSheet, setSectionsDefault, finishedOnboarding } = useNavigationStore();
+  const { menu, setSectionsDefault, finishedOnboarding } = useNavigationStore();
   const [isExploding, _] = useState(true);
   const effectRan = useRef(false);
 
@@ -26,7 +27,13 @@ export const OnboardingCompleted = () => {
     setSectionsDefault();
     setTimeout(
       () => {
-        setSheet({ id: 'menu', sheet: <SheetMenu />, icon: Menu });
+        sheet.create(<SheetMenu />, {
+          id: 'menu-nav',
+          side: 'left',
+          modal: false,
+          className:
+            'fixed sm:z-[80] inset-0 left-16 p-0 backdrop-blur-sm max-w-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+        });
         onBoardingFinishCallback();
       },
       finishedOnboarding ? 500 : 4000,

@@ -2,9 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import colors from 'picocolors';
 
-import { TO_CLEAN, TO_REMOVE, TO_COPY, README_TEMPLATE } from '../constants.js';
-
-import { TO_CLEAN, TO_REMOVE } from '../constants.js';
+import { TO_CLEAN, TO_REMOVE, TO_COPY } from '../constants.js';
 
 /**
  * Cleans the specified template by removing designated folders and files.
@@ -22,6 +20,13 @@ export async function cleanTemplate({
 
   return new Promise(async (resolve, reject) => {
     try {
+      // Copy specified files
+      for (const [src, dest] of Object.entries(TO_COPY)) {
+        const srcAbsolutePath = path.resolve(targetFolder, src);
+        const destAbsolutePath = path.resolve(targetFolder, dest);
+        await copyFile(srcAbsolutePath, destAbsolutePath);
+      }
+
       // Clean specified folder contents
       await Promise.all(TO_CLEAN.map(folderPath => {
         const absolutePath = path.resolve(targetFolder, folderPath);
@@ -33,16 +38,6 @@ export async function cleanTemplate({
         const absolutePath = path.resolve(targetFolder, filePath);
         return removeFileOrFolder(absolutePath);
       }));
-
-      // Copy specified files
-      for (const [src, dest] of Object.entries(TO_COPY)) {
-        const srcAbsolutePath = path.resolve(targetFolder, src);
-        const destAbsolutePath = path.resolve(targetFolder, dest);
-        await copyFile(srcAbsolutePath, destAbsolutePath);
-      }
-
-      // Write the README.md file
-      await writeReadme(targetFolder, {projectName});
 
       resolve();
     } catch (err) {
@@ -96,17 +91,9 @@ export async function copyFile(src, dest) {
     await fs.copyFile(src, dest);
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.log(`\n${colors.yellow('⚠')} Source file "${src}" does not exist > Skip copy`);
+      console.info(`\n${colors.yellow('⚠')} Source file "${src}" does not exist > Skip copy`);
     } else {
       throw err;
     }
   }
-}
-
-// Helper function to write README.md
-export async function writeReadme(targetFolder, { projectName } = opts) {
-  const readmePath = path.join(targetFolder, 'README.md');
-  
-  // Write or overwrite the README.md file
-  await fs.writeFile(readmePath, README_TEMPLATE.replace(`{{projectName}}`, projectName).trim(), 'utf8');
 }

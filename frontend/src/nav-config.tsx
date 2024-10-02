@@ -19,17 +19,14 @@ export const baseEntityRoutes = {
   project: '/$orgIdOrSlug/workspaces/$idOrSlug/board',
 } as const;
 
+export type NavItemId = (typeof navItems)[number]['id'];
+
 // Here you declare main navigation items
 export const navItems: NavItem[] = [
   { id: 'menu', sheet: <SheetMenu />, icon: Menu },
   { id: 'home', icon: Home, href: '/home' },
   { id: 'search', icon: Search },
-  {
-    id: 'account',
-    sheet: <SheetAccount />,
-    icon: User,
-    mirrorOnMobile: true,
-  },
+  { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
 ];
 
 // Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )

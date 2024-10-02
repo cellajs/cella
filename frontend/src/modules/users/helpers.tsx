@@ -21,13 +21,16 @@ export const registerPasskey = async () => {
     // this does not need to match the actual user ID
     const userId = new Uint8Array(20);
     crypto.getRandomValues(userId);
+
+    const userName = user.firstName || user.name;
+    const passkeyNameOnDevice = config.mode === 'development' ? `${userName} for ${config.name}` : userName;
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: decodeBase64(challengeBase64),
         user: {
           id: userId,
-          name: user.name,
-          displayName: user.firstName || user.name || 'No name provided',
+          name: passkeyNameOnDevice,
+          displayName: userName,
         },
         rp: {
           id: config.mode === 'development' ? 'localhost' : config.domain,

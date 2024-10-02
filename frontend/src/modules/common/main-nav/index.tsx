@@ -6,13 +6,13 @@ import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dialog } from '~/modules/common/dialoger/state';
-import { NavSheet } from '~/modules/common/nav-sheet';
 import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/utils';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { impersonationStop } from '~/api/auth';
+import useBodyClass from '~/hooks/use-body-class';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import useMounted from '~/hooks/use-mounted';
 import router from '~/lib/router';
@@ -20,7 +20,7 @@ import { NavButton } from '~/modules/common/main-nav/main-nav-button';
 import { MainSearch } from '~/modules/common/main-search';
 import { sheet } from '~/modules/common/sheeter/state';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
-import { navItems } from '~/nav-config';
+import { type NavItemId, navItems } from '~/nav-config';
 import { useUserStore } from '~/store/user';
 
 export type NavItem = {
@@ -37,13 +37,16 @@ const AppNav = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { hasStarted } = useMounted();
-  const isSmallScreen = useBreakpoints('max', 'xl');
+  const isMobile = useBreakpoints('max', 'sm');
 
-  const { activeSheet, setSheet, setLoading, setFocusView, focusView } = useNavigationStore();
+  const { setLoading, setFocusView, focusView, keepMenuOpen, navSheetOpen, setNavSheetOpen } = useNavigationStore();
   const { theme } = useThemeStore();
-
   const { user } = useUserStore();
+
   const currentSession = useMemo(() => user?.sessions.find((s) => s.isCurrent), [user]);
+
+  // Keep menu open
+  useBodyClass({ 'keep-nav-open': keepMenuOpen, 'nav-open': !!navSheetOpen });
 
   const stopImpersonation = async () => {
     await impersonationStop();
@@ -62,29 +65,43 @@ const AppNav = () => {
         drawerOnMobile: false,
         refocus: false,
         hideClose: true,
-        autoFocus: !isSmallScreen,
+        autoFocus: !isMobile,
       });
     }
 
+    const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
     // If its a route, navigate to it
     if (navItem.href) return navigate({ to: navItem.href });
 
-    // Open new sheet
-    const isNew = !activeSheet || activeSheet.id !== navItem.id;
-    setSheet(isNew ? navItem : null);
+    // Set nav sheet open
+    setNavSheetOpen(navItem.id);
+
+    // Create a sheet
+    sheet.create(navItem.sheet, {
+      id: `${navItem.id}-nav`,
+      side: sheetSide,
+      modal: isMobile,
+      className: 'fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16',
+      // onRemove: () => {
+      //   setNavSheetOpen(null);
+      // }
+    });
   };
 
-  const buttonsClick = (index: number) => {
-    if (sheet.getAll().length) return;
+  const clickNavItem = (id: NavItemId, index: number) => {
+    if (id === navSheetOpen) {
+      sheet.remove();
+      return setNavSheetOpen(null);
+    }
     if (dialog.haveOpenDialogs()) return;
     navButtonClick(navItems[index]);
   };
 
   useHotkeys([
-    ['Shift + A', () => buttonsClick(3)],
-    ['Shift + F', () => buttonsClick(2)],
-    ['Shift + H', () => buttonsClick(1)],
-    ['Shift + M', () => buttonsClick(0)],
+    ['Shift + A', () => clickNavItem('account', 3)],
+    ['Shift + F', () => clickNavItem('search', 2)],
+    ['Shift + H', () => clickNavItem('home', 1)],
+    ['Shift + M', () => clickNavItem('menu', 0)],
   ]);
 
   useEffect(() => {
@@ -93,9 +110,8 @@ const AppNav = () => {
         // Disable focus view
         setFocusView(false);
         // Remove sheets in content
-        sheet.remove();
-        // Remove navigation sheet
-        setSheet(null, 'routeChange');
+        sheet.remove(`${navSheetOpen}-nav`);
+        setNavSheetOpen(null);
       }
       pathChanged && setLoading(true);
     });
@@ -105,46 +121,45 @@ const AppNav = () => {
   }, []);
 
   return (
-    <>
-      <nav
-        id="main-nav"
-        className={cn(
-          'fixed z-[90] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16',
-          navBackground,
-          !hasStarted && 'max-sm:translate-y-full sm:-translate-x-full',
-          focusView && 'hidden',
-        )}
-      >
-        <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">
-          {navItems.map((navItem: NavItem, index: number) => {
-            const isSecondItem = index === 1;
-            const isActive = activeSheet?.id === navItem.id;
+    <nav
+      id="main-nav"
+      className={cn(
+        'fixed z-[90] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16',
+        navBackground,
+        !hasStarted && 'max-sm:translate-y-full sm:-translate-x-full',
+        focusView && 'hidden',
+      )}
+    >
+      <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">
+        {navItems.map((navItem: NavItem, index: number) => {
+          const isSecondItem = index === 1;
+          const isActive = sheet.get(navItem.id);
 
-            const listItemClass = isSecondItem
-              ? 'flex xs:absolute xs:left-1/2 sm:left-0 transform xs:-translate-x-1/2 sm:relative sm:transform-none sm:justify-start'
-              : 'flex justify-start';
+          const listItemClass = isSecondItem
+            ? 'flex xs:absolute xs:left-1/2 sm:left-0 transform xs:-translate-x-1/2 sm:relative sm:transform-none sm:justify-start'
+            : 'flex justify-start';
 
-            return (
-              <Fragment key={navItem.id}>
-                {isSecondItem && <div className="hidden xs:flex xs:grow sm:hidden" />}
-                <li className={cn('sm:grow-0', listItemClass)} key={navItem.id}>
-                  <NavButton navItem={navItem} isActive={isActive} onClick={() => navButtonClick(navItem)} />
-                </li>
-              </Fragment>
-            );
-          })}
-          {currentSession?.type === 'impersonation' && (
-            <Fragment>
-              <li className={cn('sm:grow-0', 'flex justify-start')}>
-                <NavButton navItem={{ id: 'stop_impersonation', icon: UserX }} onClick={stopImpersonation} isActive={false} />
+          return (
+            <Fragment key={navItem.id}>
+              {isSecondItem && <div className="hidden xs:flex xs:grow sm:hidden" />}
+              <li className={cn('sm:grow-0', listItemClass)} key={navItem.id}>
+                <Suspense>
+                  <NavButton navItem={navItem} isActive={isActive} onClick={() => clickNavItem(navItem.id, index)} />
+                </Suspense>
               </li>
             </Fragment>
-          )}
-        </ul>
-        <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
-      </nav>
-      <NavSheet />
-    </>
+          );
+        })}
+        {currentSession?.type === 'impersonation' && (
+          <Fragment>
+            <li className={cn('sm:grow-0', 'flex justify-start')}>
+              <NavButton navItem={{ id: 'stop_impersonation', icon: UserX }} onClick={stopImpersonation} isActive={false} />
+            </li>
+          </Fragment>
+        )}
+      </ul>
+      <Suspense>{DebugToolbars ? <DebugToolbars /> : null}</Suspense>
+    </nav>
   );
 };
 
