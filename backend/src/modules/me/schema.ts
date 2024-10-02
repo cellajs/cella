@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { config } from 'config';
+import { type StorageType, uniqueStorageTypes } from '#/entity-config';
 import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
@@ -50,7 +51,13 @@ export const menuItemsSchema = z.array(
   }),
 );
 
-export const userMenuSchema = z.object({
-  organizations: menuItemsSchema,
-  workspaces: menuItemsSchema,
-});
+// Create a menu schema based on entity storage types
+export const userMenuSchema = z.object(
+  uniqueStorageTypes.reduce(
+    (schema, storageType) => {
+      schema[storageType] = menuItemsSchema;
+      return schema;
+    },
+    {} as Record<StorageType, typeof menuItemsSchema>,
+  ),
+);

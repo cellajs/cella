@@ -14,6 +14,7 @@ import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
 // Set entities paths
 export const baseEntityRoutes = {
   user: '/user/$idOrSlug',
+  userInOrg: '/$orgIdOrSlug/user/$idOrSlug',
   organization: '/$idOrSlug',
   workspace: '/$orgIdOrSlug/workspaces/$idOrSlug',
   project: '/$orgIdOrSlug/workspaces/$idOrSlug/board',
