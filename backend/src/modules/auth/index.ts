@@ -40,7 +40,6 @@ import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
 
 export const supportedOauthProviders = ['github', 'google', 'microsoft'] as const;
-
 // Scopes for OAuth providers
 const githubScopes = { scopes: ['user:email'] };
 const googleScopes = { scopes: ['profile', 'email'] };
