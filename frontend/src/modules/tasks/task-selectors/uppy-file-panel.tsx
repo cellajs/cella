@@ -1,12 +1,19 @@
 import type { PartialBlock } from '@blocknote/core';
 import { type FilePanelProps, useBlockNoteEditor } from '@blocknote/react';
+import { createAttachment } from '~/api/attachments';
+import { useMutation } from '~/hooks/use-mutations';
 import UploadUppy from '~/modules/common/upload/upload-uppy';
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
 import { UploadType } from '~/types/common';
 
-const UppyFilePanel = (props: FilePanelProps) => {
+const UppyFilePanel = (taskId: string) => (props: FilePanelProps) => {
   const { block } = props;
   const editor = useBlockNoteEditor();
+
+  const { mutate } = useMutation({
+    mutationKey: ['attachments', 'create'],
+    mutationFn: createAttachment,
+  });
 
   return (
     <Dialog defaultOpen onOpenChange={() => editor.filePanel?.closeMenu()}>
@@ -29,6 +36,14 @@ const UppyFilePanel = (props: FilePanelProps) => {
           imageMode="cover"
           callback={async (result) => {
             for (const res of result) {
+              mutate({
+                url: res.url,
+                size: String(res.file.size || 0),
+                contentType: res.file.type,
+                filename: res.file.name || 'unknown',
+                taskId,
+              });
+
               const updateData: PartialBlock = {
                 props: {
                   name: res.file.name,

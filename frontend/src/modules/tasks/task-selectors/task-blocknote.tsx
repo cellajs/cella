@@ -1,7 +1,7 @@
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
-import { type KeyboardEventHandler, Suspense, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { type KeyboardEventHandler, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
@@ -51,6 +51,8 @@ export const TaskBlockNote = ({
 
   const { pathname } = useLocation();
   const { members, workspace } = useWorkspaceStore();
+
+  const filePanel = useMemo(() => UppyFilePanel(id), [id]);
 
   const handleUpdateHTML = useCallback(
     async (newContent: string) => {
@@ -182,7 +184,7 @@ export const TaskBlockNote = ({
         />
 
         {/* Replaces default file panel with Uppy one. */}
-        <FilePanelController filePanel={UppyFilePanel} />
+        <FilePanelController filePanel={filePanel} />
       </BlockNoteView>
     </Suspense>
   );
