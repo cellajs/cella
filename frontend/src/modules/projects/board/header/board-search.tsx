@@ -2,6 +2,7 @@ import { Search, XCircle } from 'lucide-react';
 import { type MouseEventHandler, useContext, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -11,9 +12,13 @@ const BoardSearch = ({ toggleFocus }: { toggleFocus: () => void }) => {
   // Reference with `useRef` to persist the same ref object during re-renders
   const inputRef = useRef<HTMLInputElement>(null);
   const { isFilterActive } = useContext(TableFilterBarContext);
-  const { selectedTasks, setSelectedTasks, searchQuery, setSearchQuery } = useWorkspaceStore();
+  const { selectedTasks, setSelectedTasks, searchQuery, setSearchQuery, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
 
   const handleClick = () => {
+    if (focusedTaskId) {
+      dispatchCustomEvent('changeSubTaskState', { taskId: focusedTaskId, state: 'folded' });
+      setFocusedTaskId(null);
+    }
     inputRef.current?.focus();
   };
 
