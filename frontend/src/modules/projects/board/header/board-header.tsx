@@ -37,7 +37,6 @@ const BoardHeader = () => {
     sheet.create(<LabelsTable />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('app:manage_labels'),
-      // text: '',
       id: 'workspace-preview-labels',
     });
   };
