@@ -8,9 +8,10 @@ interface WorkspaceActionsProps {
   createNewProject: () => void;
   openSettingsSheet: () => void;
   openLabelsSheet: () => void;
+  children?: React.ReactNode;
 }
 
-const WorkspaceActions = ({ createNewProject, openLabelsSheet, openSettingsSheet }: WorkspaceActionsProps) => {
+const WorkspaceActions = ({ createNewProject, openLabelsSheet, openSettingsSheet, children }: WorkspaceActionsProps) => {
   const { t } = useTranslation();
   return (
     <>
@@ -44,6 +45,7 @@ const WorkspaceActions = ({ createNewProject, openLabelsSheet, openSettingsSheet
             <Settings size={14} />
             <span>{t('common:resource_settings', { resource: t('app:workspace') })}</span>
           </DropdownMenuItem>
+          {children}
         </DropdownMenuContent>
       </DropdownMenu>
     </>

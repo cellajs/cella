@@ -1,7 +1,7 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ChevronDown, Palmtree, Plus, Search, Undo } from 'lucide-react';
-import { type MutableRefObject, lazy, useMemo, useRef, useState } from 'react';
+import { type MutableRefObject, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -9,11 +9,8 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
-import { SheetNav } from '~/modules/common/sheet-nav';
-import { sheet } from '~/modules/common/sheeter/state';
 import { BoardColumnHeader } from '~/modules/projects/board/board-column-header';
 import { ColumnSkeleton } from '~/modules/projects/board/column-skeleton';
-import { ProjectSettings } from '~/modules/projects/project-settings';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
@@ -25,8 +22,6 @@ import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
 import { cn } from '~/utils/utils';
-
-const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
 
 interface BoardColumnProps {
   tasksState: Record<string, TaskStates>;
@@ -127,33 +122,6 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
     });
   };
 
-  const openConfigSheet = () => {
-    const isAdmin = project.membership?.role === 'admin';
-    const projectTabs = [
-      ...(isAdmin
-        ? [
-            {
-              id: 'general',
-              label: 'common:general',
-              element: <ProjectSettings project={project as unknown as Project} sheet />,
-            },
-          ]
-        : []),
-      {
-        id: 'members',
-        label: 'common:members',
-        element: <MembersTable entity={project as unknown as Project} isSheet />,
-      },
-    ];
-
-    sheet.create(<SheetNav tabs={projectTabs} />, {
-      className: 'max-w-full lg:max-w-4xl',
-      id: isAdmin ? 'edit-project' : 'project-members',
-      title: isAdmin ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members'),
-      text: isAdmin ? t('common:resource_settings.text', { resource: t('app:project').toLowerCase() }) : '',
-    });
-  };
-
   const handleTaskChangeEventListener = (event: TaskChangeEvent) => {
     const { taskId, direction, projectId } = event.detail;
     if (projectId !== project.id) return;
@@ -191,13 +159,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
 
   return (
     <div ref={columnRef} className="flex flex-col h-full">
-      <BoardColumnHeader
-        id={project.id}
-        role={project.membership?.role || 'member'}
-        thumbnailUrl={project.thumbnailUrl}
-        name={project.name}
-        openConfig={openConfigSheet}
-      />
+      <BoardColumnHeader id={project.id} role={project.membership?.role || 'member'} thumbnailUrl={project.thumbnailUrl} name={project.name} />
       <div
         className={cn(
           'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b opacity-100',
