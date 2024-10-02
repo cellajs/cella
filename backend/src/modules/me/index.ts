@@ -111,6 +111,7 @@ const meRoutes = app
       return entity.map(({ entity, membership }) => ({
         slug: entity.slug,
         id: entity.id,
+        organizationId: 'organizationId' in entity ? entity.organizationId : undefined,
         createdAt: entity.createdAt.toDateString(),
         modifiedAt: entity.modifiedAt?.toDateString() ?? null,
         name: entity.name,

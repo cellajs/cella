@@ -4,6 +4,7 @@ import { type GetMembersParams, getMembers } from '~/api/memberships';
 // Build query to get members with infinite scroll
 export const membersQueryOptions = ({
   idOrSlug,
+  orgIdOrSlug,
   entityType,
   q,
   sort: initialSort,
@@ -33,6 +34,7 @@ export const membersQueryOptions = ({
           // Fetch more items than the limit if some items were deleted
           limit: limit + Math.max(page * limit - rowsLength, 0),
           idOrSlug,
+          orgIdOrSlug,
           entityType,
           // If some items were added, offset should be undefined, otherwise it should be the length of the rows
           offset: rowsLength - page * limit > 0 ? undefined : rowsLength,

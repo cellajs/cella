@@ -1,8 +1,8 @@
-import { onlineManager } from '@tanstack/react-query';
 import { createRoute, useParams } from '@tanstack/react-router';
 import { membersQuerySchema } from 'backend/modules/general/schema';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
+import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
@@ -28,9 +28,7 @@ export const OrganizationRoute = createRoute({
   getParentRoute: () => AppRoute,
   loader: ({ params: { idOrSlug } }) => {
     const queryOptions = organizationQueryOptions(idOrSlug);
-    const cachedData = queryClient.getQueryData(queryOptions.queryKey);
-    // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
-    return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchQuery(queryOptions) : undefined);
+    return offlineFetch(queryOptions);
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => (
@@ -51,10 +49,8 @@ export const OrganizationMembersRoute = createRoute({
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'organization';
-    const queryOptions = membersQueryOptions({ idOrSlug, entityType, q, sort, order, role, limit: 40 });
-    const cachedData = queryClient.getQueryData(queryOptions.queryKey);
-    // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
-    return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchInfiniteQuery(queryOptions) : undefined);
+    const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug: idOrSlug, entityType, q, sort, order, role, limit: 40 });
+    return offlineFetchInfinite(queryOptions);
   },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });

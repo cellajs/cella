@@ -66,6 +66,7 @@ export const updateMembership = async (values: UpdateMenuOptionsProp) => {
 
 type RequiredGetMembersParams = {
   idOrSlug: string;
+  orgIdOrSlug: string;
   entityType: ContextEntity;
 };
 
@@ -80,7 +81,7 @@ export type GetMembersParams = RequiredGetMembersParams & OptionalGetMembersPara
 
 // Get a list of members in an entity
 export const getMembers = async (
-  { idOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50, offset }: GetMembersParams,
+  { idOrSlug, orgIdOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50, offset }: GetMembersParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.members.$get(
@@ -95,7 +96,7 @@ export const getMembers = async (
         limit: String(limit),
         role,
       },
-      param: { orgIdOrSlug: idOrSlug },
+      param: { orgIdOrSlug },
     },
     {
       fetch: (input: RequestInfo | URL, init?: RequestInit) => {

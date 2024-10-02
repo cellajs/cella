@@ -29,8 +29,11 @@ export const WorkspaceRoute = createRoute({
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
   loader: ({ params: { idOrSlug, orgIdOrSlug } }) => {
+    console.log('idOrSlug', idOrSlug);
     const queryOptions = workspaceQueryOptions(idOrSlug, orgIdOrSlug);
     const cachedData = queryClient.getQueryData(queryOptions.queryKey);
+    console.log('queryOptions', queryOptions);
+    console.log('cachedData', cachedData);
     if (cachedData) {
       useWorkspaceStore.setState({
         workspace: cachedData.workspace,
