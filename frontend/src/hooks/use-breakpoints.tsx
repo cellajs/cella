@@ -58,7 +58,7 @@ export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: ValidBreakpoin
   const targetBreakpointIndex = sortedBreakpoints.indexOf(breakpoint);
 
   // Logic to determine if current matches 'min' or 'max'
-  if (mustBe === 'min') return currentBreakpointIndex >= targetBreakpointIndex;
+  if (mustBe === 'min') return currentBreakpointIndex - 1 >= targetBreakpointIndex;
   if (mustBe === 'max') return currentBreakpointIndex <= targetBreakpointIndex;
 
   return false;
