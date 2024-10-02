@@ -36,7 +36,6 @@ const AppNav = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { hasStarted } = useMounted();
-  const isSmallScreen = useBreakpoints('max', 'xl');
   const isMobile = useBreakpoints('max', 'sm');
 
   const { setLoading, setFocusView, focusView } = useNavigationStore();
@@ -62,7 +61,7 @@ const AppNav = () => {
         drawerOnMobile: false,
         refocus: false,
         hideClose: true,
-        autoFocus: !isSmallScreen,
+        autoFocus: !isMobile,
       });
     }
 
@@ -73,7 +72,7 @@ const AppNav = () => {
       id: `${navItem.id}-nav`,
       side: sheetSide,
       modal: isMobile,
-      className: `fixed sm:z-[80] p-0 ${isMobile ? '' : 'inset-0 max-w-80 left-16'}  backdrop-blur-sm`,
+      className: 'fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16',
     });
   };
 

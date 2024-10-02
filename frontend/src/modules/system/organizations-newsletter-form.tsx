@@ -67,7 +67,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 h-max">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 pb-8 h-max">
         <FormField
           control={form.control}
           name="subject"

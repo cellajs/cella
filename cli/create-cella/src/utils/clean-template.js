@@ -96,7 +96,7 @@ export async function copyFile(src, dest) {
     await fs.copyFile(src, dest);
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.log(`\n${colors.yellow('⚠')} Source file "${src}" does not exist > Skip copy`);
+      console.info(`\n${colors.yellow('⚠')} Source file "${src}" does not exist > Skip copy`);
     } else {
       throw err;
     }
