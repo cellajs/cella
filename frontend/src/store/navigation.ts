@@ -3,7 +3,7 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { NavItem } from '~/modules/common/main-nav';
+import { sheet } from '~/modules/common/sheeter/state';
 import { menuSections } from '~/nav-config';
 
 import type { UserMenu, UserMenuItem } from '~/types/common';
@@ -15,8 +15,6 @@ export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: 
 interface NavigationState {
   recentSearches: string[];
   setRecentSearches: (searchValue: string[]) => void;
-  activeSheet: NavItem | null;
-  setSheet: (activeSheet: NavItem | null, action?: 'force' | 'routeChange') => void;
   menu: UserMenu;
   keepMenuOpen: boolean;
   toggleKeepMenu: (status: boolean) => void;
@@ -38,7 +36,7 @@ interface NavigationState {
 interface InitStore
   extends Pick<
     NavigationState,
-    'recentSearches' | 'activeSheet' | 'keepMenuOpen' | 'hideSubmenu' | 'navLoading' | 'focusView' | 'menu' | 'activeSections' | 'finishedOnboarding'
+    'recentSearches' | 'keepMenuOpen' | 'hideSubmenu' | 'navLoading' | 'focusView' | 'menu' | 'activeSections' | 'finishedOnboarding'
   > {}
 
 const initialMenuState: UserMenu = menuSections
@@ -50,7 +48,6 @@ const initialMenuState: UserMenu = menuSections
 
 const initStore: InitStore = {
   recentSearches: [],
-  activeSheet: null,
   keepMenuOpen: false,
   hideSubmenu: false,
   navLoading: false,
@@ -71,20 +68,6 @@ export const useNavigationStore = create<NavigationState>()(
               state.recentSearches = searchValues;
             });
           },
-          setSheet: (component, action) => {
-            set((state) => {
-              // If the action is 'force', set the activeSheet to the provided component directly
-              if (action === 'force') state.activeSheet = component;
-              if (action === 'routeChange') {
-                const shouldStayOpen = state.activeSheet?.id === 'menu' && state.keepMenuOpen;
-                const smallScreen = window.innerWidth < 1280;
-                if (!shouldStayOpen || smallScreen) state.activeSheet = null;
-                return;
-              }
-              // For any other action, set the activeSheet to the provided component
-              state.activeSheet = component;
-            });
-          },
           toggleKeepMenu: (status) => {
             set((state) => {
               state.keepMenuOpen = status;
@@ -103,7 +86,7 @@ export const useNavigationStore = create<NavigationState>()(
           setFocusView: (status) => {
             set((state) => {
               state.focusView = status;
-              if (status) state.activeSheet = null;
+              sheet.remove();
             });
           },
           toggleSection: (section) => {
@@ -150,7 +133,7 @@ export const useNavigationStore = create<NavigationState>()(
             })),
         }),
         {
-          version: 4,
+          version: 5,
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
             menu: state.menu,
