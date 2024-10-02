@@ -8,16 +8,16 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
+import { openProjectConfigSheet } from './helpers';
 
 interface BoardColumnHeaderProps {
   id: string;
   name: string;
   role: 'admin' | 'member';
   thumbnailUrl: string | null;
-  openConfig: () => void;
 }
 
-export function BoardColumnHeader({ id, name, role, thumbnailUrl, openConfig }: BoardColumnHeaderProps) {
+export function BoardColumnHeader({ id, name, role, thumbnailUrl }: BoardColumnHeaderProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { changeColumn } = useWorkspaceUIStore();
@@ -63,7 +63,7 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl, openConfig }: 
         sideOffset={13}
         className="max-sm:hidden"
       >
-        <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={openConfig}>
+        <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={() => openProjectConfigSheet(projects[currentIndex])}>
           {role === 'admin' ? <Settings size={16} /> : <Users size={16} />}
         </Button>
       </TooltipButton>

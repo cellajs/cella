@@ -1,4 +1,4 @@
-import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
+import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
 import { idOrSlugSchema, idsQuerySchema, productParamSchema } from '#/utils/schema/common-schemas';
 
 import { createRouteConfig } from '#/lib/route-config';
@@ -132,7 +132,7 @@ class TaskRoutesConfig {
         description: 'Success',
         content: {
           'application/json': {
-            schema: successWithoutDataSchema,
+            schema: successWithErrorsSchema(),
           },
         },
       },

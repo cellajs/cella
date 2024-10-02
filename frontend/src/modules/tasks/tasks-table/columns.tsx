@@ -199,7 +199,7 @@ export const useColumns = () => {
         if (!project) return row.projectId;
         return (
           <Link
-            to={`/workspaces/${workspace.slug}/board?project=${project.slug}`}
+            to={`/${workspace.organizationId}/workspaces/${workspace.slug}/board?project=${project.slug}`}
             tabIndex={tabIndex}
             disabled={!project.workspaceId}
             className="flex space-x-2 items-center outline-0 ring-0 group truncate"

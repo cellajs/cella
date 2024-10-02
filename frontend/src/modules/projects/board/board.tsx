@@ -320,6 +320,18 @@ export default function Board() {
   useEventListener('openTaskCardPreview', (event) => handleOpenTaskSheet(event.detail));
 
   useEffect(() => {
+    if (focusedTaskId) return;
+    // new state object with updated values
+    const updatedTasksState = { ...tasksState };
+    const states = Object.entries(updatedTasksState);
+    // Find a key that has the value 'editing'
+    const key = states.find(([_, value]) => value === 'editing')?.[0];
+    if (!key) return;
+    updatedTasksState[key] = 'expanded';
+    setTasksState(updatedTasksState);
+  }, [focusedTaskId, tasksState]);
+
+  useEffect(() => {
     if (q?.length) setSearchQuery(q);
     if (taskIdPreview) handleOpenTaskSheet(taskIdPreview);
   }, []);
@@ -380,7 +392,7 @@ export default function Board() {
 
   return (
     <>
-      <BoardHeader />
+      <BoardHeader project={!isDesktopLayout ? mobileDeviceProject : null} />
       {!projects.length ? (
         <ContentPlaceholder
           className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"

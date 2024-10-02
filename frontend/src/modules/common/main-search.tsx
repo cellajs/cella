@@ -68,6 +68,7 @@ export const MainSearch = () => {
     initialData: { items: [], total: 0 },
     queryKey: ['search', searchValue],
     queryFn: () => getSuggestions(searchValue),
+    staleTime: 0,
     enabled: searchValue.length > 0,
   });
 

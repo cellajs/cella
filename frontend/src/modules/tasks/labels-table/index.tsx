@@ -118,7 +118,7 @@ const LabelsTable = () => {
       selectedLabels.map((l) => l.id),
       workspace.organizationId,
     ).then(() => {
-      toast.success(t(`app:success.delete_${selectedRows.size > 1 ? 'labels' : 'label'}`));
+      toast.success(t('common:success.delete_resource', { resource: t(`app:${selectedRows.size > 1 ? 'labels' : 'label'}`) }));
       setSelectedRows(new Set<string>());
     });
   };

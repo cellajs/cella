@@ -7,11 +7,12 @@ import { labelsTable } from '#/db/schema/labels';
 import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
 import { usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
-import { getContextUser } from '#/lib/context';
-import { errorResponse } from '#/lib/errors';
+import { getContextUser, getMemberships } from '#/lib/context';
+import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
+import { splitByAllowance } from '#/utils/split-by-allowance';
 import taskRoutesConfig from './routes';
 import type { subTaskSchema } from './schema';
 
@@ -199,12 +200,23 @@ const tasksRoutes = app
    */
   .openapi(taskRoutesConfig.deleteTasks, async (ctx) => {
     const { ids } = ctx.req.valid('query');
-    const idsArray = Array.isArray(ids) ? ids : [ids];
-    // Delete subTasks at first then delete the tasks
-    await db.delete(tasksTable).where(inArray(tasksTable.parentId, idsArray));
-    await db.delete(tasksTable).where(inArray(tasksTable.id, idsArray));
+    const memberships = getMemberships();
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
-    return ctx.json({ success: true }, 200);
+    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'task');
+
+    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'task', toDeleteIds, memberships);
+
+    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'task');
+
+    // Map errors of tasks user is not allowed to delete
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'task', { project: id }));
+
+    // Delete subTasks at first then delete the tasks
+    await db.delete(tasksTable).where(inArray(tasksTable.parentId, allowedIds));
+    await db.delete(tasksTable).where(inArray(tasksTable.id, allowedIds));
+
+    return ctx.json({ success: true, errors: errors }, 200);
   });
 
 export default tasksRoutes;

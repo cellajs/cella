@@ -1,4 +1,4 @@
-import { PanelTopClose, Plus } from 'lucide-react';
+import { PanelTopClose, Plus, Settings, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -13,11 +13,14 @@ import DisplayOptions from '~/modules/projects/board/header/display-options';
 import TaskSelectedTableButtons from '~/modules/projects/board/header/selected-buttons';
 import LabelsTable from '~/modules/tasks/labels-table';
 import { Button } from '~/modules/ui/button';
+import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
+import type { Project } from '~/types/app';
+import { openProjectConfigSheet } from '../helpers';
 
-const BoardHeader = () => {
+const BoardHeader = ({ project }: { project?: Project | null }) => {
   const { t } = useTranslation();
   const { setFocusView } = useNavigationStore();
   const { workspace, selectedTasks, showPageHeader, togglePageHeader } = useWorkspaceStore();
@@ -37,7 +40,6 @@ const BoardHeader = () => {
     sheet.create(<LabelsTable />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('app:manage_labels'),
-      // text: '',
       id: 'workspace-preview-labels',
     });
   };
@@ -80,7 +82,16 @@ const BoardHeader = () => {
           </Button>
         </TooltipButton>
       )}
-      <WorkspaceActions createNewProject={handleAddProjects} openSettingsSheet={openSettingsSheet} openLabelsSheet={openLabelsSheet} />
+      <WorkspaceActions createNewProject={handleAddProjects} openSettingsSheet={openSettingsSheet} openLabelsSheet={openLabelsSheet}>
+        {project && (
+          <DropdownMenuItem onClick={() => openProjectConfigSheet(project)} className="flex items-center gap-2">
+            {project.membership?.role === 'admin' ? <Settings size={14} /> : <Users size={14} />}
+            <span>
+              {project.membership?.role === 'admin' ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members')}
+            </span>
+          </DropdownMenuItem>
+        )}
+      </WorkspaceActions>
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />
     </div>

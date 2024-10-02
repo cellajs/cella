@@ -1,6 +1,6 @@
 import '@blocknote/shadcn/style.css';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import CreateSubTaskForm from '~/modules/tasks/create-sub-task-form';
@@ -22,6 +22,22 @@ const TaskContent = ({ task, mode, state }: Props) => {
   const [createSubTask, setCreateSubTask] = useState(false);
 
   const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none pl-9';
+
+  useEffect(() => {
+    if (state !== 'expanded') return;
+    // All elements with a data-url attribute
+    const blocks = document.querySelectorAll('[data-url]');
+    if (blocks.length < 1) return;
+
+    for (const block of blocks) {
+      const url = block.getAttribute('data-url');
+      const img = block.querySelector('img');
+
+      //set img src attribute if is inside the block
+      if (img && url) img.setAttribute('src', url);
+    }
+  }, [task.description, state]);
+
   return (
     <div className="flex flex-col grow gap-2">
       {state === 'folded' ? (

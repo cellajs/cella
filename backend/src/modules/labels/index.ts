@@ -2,10 +2,12 @@ import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 
 import { labelsTable } from '#/db/schema/labels';
-import { errorResponse } from '#/lib/errors';
+import { getMemberships } from '#/lib/context';
+import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
+import { splitByAllowance } from '#/utils/split-by-allowance';
 import labelsRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -78,10 +80,20 @@ const labelsRoutes = app
    */
   .openapi(labelsRoutesConfig.deleteLabels, async (ctx) => {
     const { ids } = ctx.req.valid('query');
-    const idsArray = Array.isArray(ids) ? ids : [ids];
+    const memberships = getMemberships();
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
-    await db.delete(labelsTable).where(inArray(labelsTable.id, idsArray));
-    return ctx.json({ success: true }, 200);
+    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'label');
+
+    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'label', toDeleteIds, memberships);
+
+    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'label');
+
+    // Map errors of labels user is not allowed to delete
+    const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'label', { project: id }));
+
+    await db.delete(labelsTable).where(inArray(labelsTable.id, allowedIds));
+    return ctx.json({ success: true, errors: errors }, 200);
   });
 
 export type AppLabelsType = typeof labelsRoutes;
