@@ -77,6 +77,8 @@ class SheetsStateObserver {
 
 export const SheetObserver = new SheetsStateObserver();
 
+// TODO this does not have type safety?
+// Also, it seems the sheet responds a bit slow when opening and closing programmatically
 export const sheet = Object.assign({
   create: SheetObserver.create,
   remove: SheetObserver.remove,

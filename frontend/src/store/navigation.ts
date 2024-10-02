@@ -16,6 +16,8 @@ interface NavigationState {
   recentSearches: string[];
   setRecentSearches: (searchValue: string[]) => void;
   menu: UserMenu;
+  navSheetOpen: string | null;
+  setNavSheetOpen: (sheet: string | null) => void;
   keepMenuOpen: boolean;
   toggleKeepMenu: (status: boolean) => void;
   hideSubmenu: boolean;
@@ -36,7 +38,7 @@ interface NavigationState {
 interface InitStore
   extends Pick<
     NavigationState,
-    'recentSearches' | 'keepMenuOpen' | 'hideSubmenu' | 'navLoading' | 'focusView' | 'menu' | 'activeSections' | 'finishedOnboarding'
+    'recentSearches' | 'keepMenuOpen' | 'hideSubmenu' | 'navLoading' | 'focusView' | 'menu' | 'activeSections' | 'finishedOnboarding' | 'navSheetOpen'
   > {}
 
 const initialMenuState: UserMenu = menuSections
@@ -48,6 +50,7 @@ const initialMenuState: UserMenu = menuSections
 
 const initStore: InitStore = {
   recentSearches: [],
+  navSheetOpen: null,
   keepMenuOpen: false,
   hideSubmenu: false,
   navLoading: false,
@@ -63,6 +66,11 @@ export const useNavigationStore = create<NavigationState>()(
       persist(
         (set) => ({
           ...initStore,
+          setNavSheetOpen: (sheet) => {
+            set((state) => {
+              state.navSheetOpen = sheet;
+            });
+          },
           setRecentSearches: (searchValues: string[]) => {
             set((state) => {
               state.recentSearches = searchValues;

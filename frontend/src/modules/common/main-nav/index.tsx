@@ -12,6 +12,7 @@ import { cn } from '~/utils/utils';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { impersonationStop } from '~/api/auth';
+import useBodyClass from '~/hooks/use-body-class';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import useMounted from '~/hooks/use-mounted';
 import router from '~/lib/router';
@@ -19,7 +20,7 @@ import { NavButton } from '~/modules/common/main-nav/main-nav-button';
 import { MainSearch } from '~/modules/common/main-search';
 import { sheet } from '~/modules/common/sheeter/state';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
-import { navItems } from '~/nav-config';
+import { type NavItemId, navItems } from '~/nav-config';
 import { useUserStore } from '~/store/user';
 
 export type NavItem = {
@@ -38,11 +39,14 @@ const AppNav = () => {
   const { hasStarted } = useMounted();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const { setLoading, setFocusView, focusView } = useNavigationStore();
+  const { setLoading, setFocusView, focusView, keepMenuOpen, navSheetOpen, setNavSheetOpen } = useNavigationStore();
   const { theme } = useThemeStore();
   const { user } = useUserStore();
 
   const currentSession = useMemo(() => user?.sessions.find((s) => s.isCurrent), [user]);
+
+  // Keep menu open
+  useBodyClass({ 'keep-nav-open': keepMenuOpen, 'nav-open': !!navSheetOpen });
 
   const stopImpersonation = async () => {
     await impersonationStop();
@@ -68,25 +72,36 @@ const AppNav = () => {
     const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
     // If its a route, navigate to it
     if (navItem.href) return navigate({ to: navItem.href });
+
+    // Set nav sheet open
+    setNavSheetOpen(navItem.id);
+
+    // Create a sheet
     sheet.create(navItem.sheet, {
       id: `${navItem.id}-nav`,
       side: sheetSide,
       modal: isMobile,
       className: 'fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16',
+      // onRemove: () => {
+      //   setNavSheetOpen(null);
+      // }
     });
   };
 
-  const buttonsClick = (index: number) => {
-    if (sheet.getAll().length) return;
+  const clickNavItem = (id: NavItemId, index: number) => {
+    if (id === navSheetOpen) {
+      sheet.remove();
+      return setNavSheetOpen(null);
+    }
     if (dialog.haveOpenDialogs()) return;
     navButtonClick(navItems[index]);
   };
 
   useHotkeys([
-    ['Shift + A', () => buttonsClick(3)],
-    ['Shift + F', () => buttonsClick(2)],
-    ['Shift + H', () => buttonsClick(1)],
-    ['Shift + M', () => buttonsClick(0)],
+    ['Shift + A', () => clickNavItem('account', 3)],
+    ['Shift + F', () => clickNavItem('search', 2)],
+    ['Shift + H', () => clickNavItem('home', 1)],
+    ['Shift + M', () => clickNavItem('menu', 0)],
   ]);
 
   useEffect(() => {
@@ -95,7 +110,8 @@ const AppNav = () => {
         // Disable focus view
         setFocusView(false);
         // Remove sheets in content
-        sheet.remove();
+        sheet.remove(`${navSheetOpen}-nav`);
+        setNavSheetOpen(null);
       }
       pathChanged && setLoading(true);
     });
@@ -128,7 +144,7 @@ const AppNav = () => {
               {isSecondItem && <div className="hidden xs:flex xs:grow sm:hidden" />}
               <li className={cn('sm:grow-0', listItemClass)} key={navItem.id}>
                 <Suspense>
-                  <NavButton navItem={navItem} isActive={isActive} onClick={() => buttonsClick(index)} />
+                  <NavButton navItem={navItem} isActive={isActive} onClick={() => clickNavItem(navItem.id, index)} />
                 </Suspense>
               </li>
             </Fragment>

@@ -22,6 +22,9 @@ export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: ValidBreakpoin
         const prevBreakpointSize = Number.parseInt(breakpoints[sortedBreakpoints[index - 1]], 10);
         const currentBreakpointSize = Number.parseInt(breakpoints[point], 10);
 
+        // Add the current breakpoint if window is larger
+        if (width > currentBreakpointSize) return matchedBreakpoints.push(point);
+
         // Add the current breakpoint if window width is between this and the previous breakpoint
         if (width >= prevBreakpointSize && width < currentBreakpointSize) {
           matchedBreakpoints.push(point);

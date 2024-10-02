@@ -9,6 +9,7 @@ import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/utils';
 
 import './style.css';
+import useBodyClass from '~/hooks/use-body-class';
 
 interface FocusViewProps {
   className?: string;
@@ -17,11 +18,12 @@ interface FocusViewProps {
 
 export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const { t } = useTranslation();
-  const { focusView, setFocusView } = useNavigationStore();
+  const { focusView, setFocusView, setNavSheetOpen } = useNavigationStore();
 
   const toggleFocus = () => {
     showToast(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');
     setFocusView(!focusView);
+    setNavSheetOpen(null);
     window.scrollTo(0, 0);
   };
 
@@ -38,15 +40,9 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
 export const FocusViewContainer = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
   const { focusView, setFocusView } = useNavigationStore();
 
-  useEffect(() => {
-    const body = document.body.classList;
-    focusView ? body.add('focus-view') : body.remove('focus-view');
+  useBodyClass({ 'focus-view': focusView });
 
-    return () => {
-      body.remove('focus-view');
-    };
-  }, [focusView]);
-
+  // Reset focus view on unmount
   useEffect(() => {
     return () => {
       setFocusView(false);
