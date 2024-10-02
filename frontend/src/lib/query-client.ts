@@ -66,37 +66,16 @@ const onSuccess = () => {
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any>) => {
-  console.log('allCachedData', queryClient.getQueryCache().getAll());
   const cachedData = queryClient.getQueryData(options.queryKey);
-  console.log('cachedData', {
-    cachedData,
-    queryKey: options.queryKey,
-  });
   // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
-  return (
-    cachedData ??
-    (onlineManager.isOnline()
-      ? queryClient.fetchQuery({
-          ...options,
-          gcTime: 24 * 60 * 60 * 1000, // 24 hours
-        })
-      : undefined)
-  );
+  return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchQuery(options) : undefined);
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>) => {
   const cachedData = queryClient.getQueryData(options.queryKey);
   // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
-  return (
-    cachedData ??
-    (onlineManager.isOnline()
-      ? queryClient.fetchInfiniteQuery({
-          ...options,
-          gcTime: 24 * 60 * 60 * 1000, // 24 hours
-        })
-      : undefined)
-  );
+  return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchInfiniteQuery(options) : undefined);
 };
 
 export const queryClientConfig = { onError, onSuccess };

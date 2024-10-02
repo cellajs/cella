@@ -1,6 +1,8 @@
-import { QueryClientProvider as ReactQueryClientProvider, type UseInfiniteQueryOptions, type UseQueryOptions } from '@tanstack/react-query';
+import type { UseInfiniteQueryOptions, UseQueryOptions } from '@tanstack/react-query';
+import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
-import { queryClient } from '~/lib/router';
+import { persister, queryClient } from '~/lib/router';
 import { offlineFetch, offlineFetchInfinite } from './lib/query-client';
 import { membersQueryOptions } from './modules/organizations/members-table/helpers/query-options';
 import { organizationQueryOptions } from './modules/organizations/organization-page';
@@ -18,22 +20,10 @@ async function prefetchQuery<T extends UseQueryOptions<any, any, any, any>>(opti
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
 async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryOptions) {
-  // const preparedOptions = { ...options, gcTime: GC_TIME };
-  // await queryClient.invalidateQueries({
-  //   queryKey: preparedOptions.queryKey,
-  // });
   if ('getNextPageParam' in options) {
     return offlineFetchInfinite(options);
-    // return queryClient.fetchInfiniteQuery({
-    //   ...options,
-    //   gcTime: GC_TIME,
-    // });
   }
   return offlineFetch(options);
-  // return queryClient.fetchQuery({
-  //   ...options,
-  //   gcTime: GC_TIME,
-  // });
 }
 
 const prefetchMembers = async (
@@ -47,7 +37,7 @@ const prefetchMembers = async (
   prefetchQuery(membersOptions);
 };
 
-const Prefetcher = ({ children }: { children: React.ReactNode }) => {
+export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { networkMode } = useGeneralStore();
 
   useEffect(() => {
@@ -60,7 +50,6 @@ const Prefetcher = ({ children }: { children: React.ReactNode }) => {
         queryFn: getAndSetMe,
         gcTime: GC_TIME,
       };
-      console.log('meQueryOptions', meQueryOptions);
       prefetchQuery(meQueryOptions);
       const menuQueryOptions = {
         queryKey: ['menu'],
@@ -68,7 +57,6 @@ const Prefetcher = ({ children }: { children: React.ReactNode }) => {
         gcTime: GC_TIME,
       } satisfies UseQueryOptions;
       const menu = await prefetchQuery(menuQueryOptions);
-      console.log('menu', menu);
 
       // TODO can we make this dynamic by adding more props in an entity map?
       for (const section of Object.values(menu)) {
@@ -100,13 +88,13 @@ const Prefetcher = ({ children }: { children: React.ReactNode }) => {
     })();
   }, [networkMode]);
 
-  return children;
-};
+  if (networkMode === 'online') {
+    return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
+  }
 
-export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ReactQueryClientProvider client={queryClient}>
-      <Prefetcher>{children}</Prefetcher>
-    </ReactQueryClientProvider>
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+      {children}
+    </PersistQueryClientProvider>
   );
 };

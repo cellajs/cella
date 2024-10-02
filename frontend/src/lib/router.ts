@@ -1,5 +1,5 @@
 import { MutationCache, QueryCache, QueryClient, onlineManager } from '@tanstack/react-query';
-import { type PersistedClient, type Persister, persistQueryClient } from '@tanstack/react-query-persist-client';
+import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { createRouter } from '@tanstack/react-router';
 import { del, get, set } from 'idb-keyval';
 import { queryClientConfig } from '~/lib/query-client';
@@ -25,8 +25,8 @@ export const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 60 * 24, // 24 hours
       staleTime: 1000 * 60 * 5, // 5 minutes
 
-      // refetchOnWindowFocus: true, // Refetch on window focus
-      // refetchOnReconnect: true, // Refetch on reconnect
+      refetchOnWindowFocus: true, // Refetch on window focus
+      refetchOnReconnect: true, // Refetch on reconnect
       retry: 1, // Retry once on failure
     },
   },
@@ -46,13 +46,7 @@ function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery') {
   } as Persister;
 }
 
-const persister = createIDBPersister();
-
-persistQueryClient({
-  queryClient,
-  persister,
-  maxAge: 1000 * 60 * 60 * 24, // 24 hours
-});
+export const persister = createIDBPersister();
 
 // Set up a Router instance
 // https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
