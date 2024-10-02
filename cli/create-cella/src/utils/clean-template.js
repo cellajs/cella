@@ -4,8 +4,6 @@ import colors from 'picocolors';
 
 import { TO_CLEAN, TO_REMOVE, TO_COPY, README_TEMPLATE } from '../constants.js';
 
-import { TO_CLEAN, TO_REMOVE } from '../constants.js';
-
 /**
  * Cleans the specified template by removing designated folders and files.
  * @param {Object} params - Parameters containing targetFolder.
