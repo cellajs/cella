@@ -62,7 +62,6 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
 
   const cancel = () => {
     form.reset();
-    if (isSheet) sheet.remove();
   };
 
   return (
