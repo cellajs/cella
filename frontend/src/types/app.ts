@@ -15,3 +15,5 @@ export type SubTask = z.infer<typeof subTaskSchema>[number];
 export type Label = z.infer<typeof labelSchema>;
 
 export type AppCustomEventMap = TasksCustomEventMap;
+
+export type DraggableItemType = 'menuItem' | 'task' | 'subTask';

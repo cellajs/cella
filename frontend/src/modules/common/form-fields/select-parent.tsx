@@ -5,14 +5,14 @@ import { useTranslation } from 'react-i18next';
 import Combobox from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
-import type { ContextEntity, UserMenuItem } from '~/types/common';
+import type { ContextEntity, UserMenu, UserMenuItem } from '~/types/common';
 
 interface Props {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   control: Control<any>;
   name: string;
   label: string;
-  collection: 'organizations' | 'workspaces';
+  collection: keyof UserMenu;
   type: ContextEntity;
   placeholder?: string;
   required?: boolean;
