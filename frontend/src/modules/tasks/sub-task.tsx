@@ -89,6 +89,21 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
     }
   });
 
+  useEffect(() => {
+    if (state !== 'expanded') return;
+    // All elements with a data-url attribute
+    const blocks = document.querySelectorAll('[data-url]');
+    if (blocks.length < 1) return;
+
+    for (const block of blocks) {
+      const url = block.getAttribute('data-url');
+      const img = block.querySelector('img');
+
+      //set img src attribute if is inside the block
+      if (img && url) img.setAttribute('src', url);
+    }
+  }, [task.description, state]);
+
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
     const data = getDraggableItemData<BaseSubTask>(task, task.order, 'subTask', 'project');
