@@ -34,8 +34,6 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
   };
 
   const handleAskForHelp = () => {
-    // Not on every page we have footer e.g. workspace
-    // if (!window.Gleap) return document.dispatchEvent(new CustomEvent('openContactForm'));
     if (!window.Gleap) {
       return dialog(<ContactForm dialog />, {
         id: 'contact-form',

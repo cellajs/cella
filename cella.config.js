@@ -54,6 +54,7 @@ export const config = {
     'backend/src/routes.ts',
     'backend/src/types/app.ts',
     'backend/src/entity-config.ts',
+    'backend/src/lib/permission-manager.ts',
     'locales/en/about.json',
     'locales/en/app.json',
   ],
