@@ -11,7 +11,7 @@ import AcceptInvite from '~/modules/common/accept-invite';
 
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
-import { onError } from '~/lib/query-client';
+import { offlineFetch, onError } from '~/lib/query-client';
 import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
 import UnsubscribePage from '~/modules/common/unsubscribe-page';
@@ -69,11 +69,13 @@ export const AppRoute = createRoute({
     try {
       console.debug('Fetch me & menu while entering app ', location.pathname);
       const getSelf = async () => {
-        return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe, retry: 0 });
+        const queryKey = ['me'];
+        return offlineFetch({ queryKey, queryFn: getAndSetMe });
       };
 
       const getMenu = async () => {
-        return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu, retry: 0 });
+        const queryKey = ['menu'];
+        return offlineFetch({ queryKey, queryFn: getAndSetMenu });
       };
 
       await Promise.all([getSelf(), getMenu()]);

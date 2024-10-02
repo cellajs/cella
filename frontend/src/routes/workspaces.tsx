@@ -1,14 +1,12 @@
-import { onlineManager } from '@tanstack/react-query';
 import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import { queryClient } from '~/lib/router';
+import { offlineFetch } from '~/lib/query-client';
 import ErrorNotice from '~/modules/common/error-notice';
 import Overview from '~/modules/projects/overview';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import { baseEntityRoutes } from '~/nav-config';
-import { useWorkspaceStore } from '~/store/workspace';
 import { noDirectAccess } from '~/utils/utils';
 import { AppRoute } from './general';
 
@@ -30,29 +28,7 @@ export const WorkspaceRoute = createRoute({
   getParentRoute: () => AppRoute,
   loader: ({ params: { idOrSlug, orgIdOrSlug } }) => {
     const queryOptions = workspaceQueryOptions(idOrSlug, orgIdOrSlug);
-    const cachedData = queryClient.getQueryData(queryOptions.queryKey);
-    if (cachedData) {
-      useWorkspaceStore.setState({
-        workspace: cachedData.workspace,
-        projects: cachedData.projects,
-        labels: cachedData.labels,
-        members: cachedData.members,
-      });
-    }
-    // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
-    return (
-      cachedData ??
-      (onlineManager.isOnline()
-        ? queryClient.fetchQuery(queryOptions).then((data) => {
-            useWorkspaceStore.setState({
-              workspace: data.workspace,
-              projects: data.projects,
-              labels: data.labels,
-              members: data.members,
-            });
-          })
-        : undefined)
-    );
+    return offlineFetch(queryOptions);
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
@@ -77,7 +53,11 @@ export const tasksSearchSchema = z.object({
 export const WorkspaceBoardRoute = createRoute({
   path: '/board',
   staticData: { pageTitle: 'Board', isAuth: true },
-  validateSearch: z.object({ project: z.string().optional(), q: z.string().optional(), taskIdPreview: z.string().optional() }),
+  validateSearch: z.object({
+    project: z.string().optional(),
+    q: z.string().optional(),
+    taskIdPreview: z.string().optional(),
+  }),
   getParentRoute: () => WorkspaceRoute,
   component: () => (
     <Suspense>

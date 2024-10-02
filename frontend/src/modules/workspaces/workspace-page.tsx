@@ -14,11 +14,17 @@ import { useWorkspaceStore } from '~/store/workspace';
 
 const WorkspacePage = () => {
   const { t } = useTranslation();
-  const { showPageHeader, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
+  const { showPageHeader, setSelectedTasks, setSearchQuery, setWorkspace } = useWorkspaceStore();
   const { idOrSlug, orgIdOrSlug } = useParams({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
 
-  const workspaceData = useSuspenseQuery(workspaceQueryOptions(idOrSlug, orgIdOrSlug)).data;
+  const workspaceData = useSuspenseQuery({
+    ...workspaceQueryOptions(idOrSlug, orgIdOrSlug),
+    select: (data) => {
+      setWorkspace(data.workspace, data.projects, data.labels, data.members);
+      return data;
+    },
+  }).data;
   const workspace = workspaceData.workspace;
 
   const isAdmin = workspace.membership?.role === 'admin';
