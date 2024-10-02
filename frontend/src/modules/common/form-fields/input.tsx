@@ -20,6 +20,7 @@ interface Props<TFieldValues extends FieldValues> {
   required?: boolean;
   disabled?: boolean;
   icon?: ReactNode;
+  autoFocus?: boolean;
   inputClassName?: string;
 }
 
@@ -38,6 +39,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
   prefix,
   disabled,
   icon,
+  autoFocus,
   inputClassName,
 }: Props<TFieldValues>) => {
   const { setFocus } = useFormContext();
@@ -94,6 +96,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                   placeholder={placeholder}
                   onFocus={onFocus}
                   autoResize={true}
+                  autoFocus={autoFocus}
                   defaultValue={defaultValue}
                   value={value || formFieldValue || ''}
                   disabled={disabled}
@@ -104,6 +107,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                   className={inputClassName}
                   style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '', paddingRight: subComponentPadding }}
                   type={type}
+                  autoFocus={autoFocus}
                   onFocus={onFocus}
                   placeholder={placeholder}
                   defaultValue={defaultValue}

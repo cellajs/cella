@@ -32,9 +32,9 @@ extract_from_ts() {
 
 # Function to extract paths from .js or .ts using node (with dynamic import for ES modules)
 extract_from_js() {
-    IGNORE_FILE=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.ignoreFile))")
-    IGNORE_LIST=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.ignoreList.join('\n')))") 
-    UPSTREAM_BRANCH=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.upstreamBranch))" || echo "$UPSTREAM_BRANCH")
+    IGNORE_FILE=$(node -e "import('./$CONFIG_FILE').then(m => console.info(m.config.ignoreFile))")
+    IGNORE_LIST=$(node -e "import('./$CONFIG_FILE').then(m => console.info(m.config.ignoreList.join('\n')))") 
+    UPSTREAM_BRANCH=$(node -e "import('./$CONFIG_FILE').then(m => console.info(m.config.upstreamBranch))" || echo "$UPSTREAM_BRANCH")
 }
 
 # Extract values based on the file extension

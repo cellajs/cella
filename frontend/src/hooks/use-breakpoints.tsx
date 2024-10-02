@@ -3,56 +3,63 @@ import { useEffect, useState } from 'react';
 
 type ValidBreakpoints = keyof typeof config.theme.screenSizes;
 
-// This hook is used to conditionally render components based on the current screen width
 export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: ValidBreakpoints): boolean => {
   const breakpoints: { [key: string]: string } = config.theme.screenSizes;
+
   // Sort breakpoints by their pixel value in ascending order
   const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10));
-  const smallestBreakpoint = sortedBreakpoints[0];
 
-  // Determine the current breakpoint based on window width
-  const getBreakpoint = () => {
-    const matchedBreakpoints = sortedBreakpoints.filter((point) => {
-      const breakpointSize = Number.parseInt(breakpoints[point], 10);
-      return !Number.isNaN(breakpointSize) && window.innerWidth >= breakpointSize;
+  // Helper function to get the current matched breakpoints based on window width
+  const getMatchedBreakpoints = () => {
+    const width = window.innerWidth;
+
+    // Start with the first breakpoint by default
+    const matchedBreakpoints = [sortedBreakpoints[0]];
+
+    // Loop through the breakpoints and check if the window width is between two breakpoints
+    sortedBreakpoints.forEach((point, index) => {
+      if (index > 0) {
+        const prevBreakpointSize = Number.parseInt(breakpoints[sortedBreakpoints[index - 1]], 10);
+        const currentBreakpointSize = Number.parseInt(breakpoints[point], 10);
+
+        // Add the current breakpoint if window is larger
+        if (width > currentBreakpointSize) return matchedBreakpoints.push(point);
+
+        // Add the current breakpoint if window width is between this and the previous breakpoint
+        if (width >= prevBreakpointSize && width < currentBreakpointSize) {
+          matchedBreakpoints.push(point);
+        }
+      }
     });
 
-    // Return the highest matched breakpoint or the smallest breakpoint if none matched
-    return matchedBreakpoints.pop() || smallestBreakpoint;
+    return matchedBreakpoints;
   };
 
-  const [currentBreakpoint, setCurrentBreakpoint] = useState(getBreakpoint());
+  const [currentBreakpoints, setCurrentBreakpoints] = useState(getMatchedBreakpoints());
 
+  // Update breakpoints on window resize
   useEffect(() => {
-    let debounceTimeout: ReturnType<typeof setTimeout>;
-
-    // Check and update the current breakpoint
-    const checkBreakpoint = () => {
-      const newBreakpoint = getBreakpoint();
-      if (newBreakpoint !== currentBreakpoint) setCurrentBreakpoint(newBreakpoint);
+    const updateBreakpoints = () => {
+      setCurrentBreakpoints(getMatchedBreakpoints());
     };
 
-    checkBreakpoint();
+    // Initial call to set breakpoints
+    updateBreakpoints();
 
-    // Debounced function to handle window resize events
-    const debouncedCheckBreakpoint = () => {
-      clearTimeout(debounceTimeout);
-      debounceTimeout = setTimeout(checkBreakpoint, 100);
-    };
+    // Attach resize listener
+    window.addEventListener('resize', updateBreakpoints);
 
-    window.addEventListener('resize', debouncedCheckBreakpoint);
+    // Cleanup on unmount
+    return () => window.removeEventListener('resize', updateBreakpoints);
+  }, [breakpoints]);
 
-    return () => {
-      window.removeEventListener('resize', debouncedCheckBreakpoint);
-      clearTimeout(debounceTimeout);
-    };
-  }, [breakpoints, currentBreakpoint]);
+  // Get the index of the current largest matched breakpoint and target breakpoint
+  const currentBreakpointIndex = sortedBreakpoints.indexOf(currentBreakpoints[currentBreakpoints.length - 1]);
+  const targetBreakpointIndex = sortedBreakpoints.indexOf(breakpoint);
 
-  // Determine if the current breakpoint matches the criteria
-  const currentBreakpointIndex = sortedBreakpoints.indexOf(currentBreakpoint);
-  const breakpointIndex = sortedBreakpoints.indexOf(breakpoint);
-  const higher = currentBreakpointIndex > breakpointIndex;
-  const lower = currentBreakpointIndex < breakpointIndex;
+  // Logic to determine if current matches 'min' or 'max'
+  if (mustBe === 'min') return currentBreakpointIndex - 1 >= targetBreakpointIndex;
+  if (mustBe === 'max') return currentBreakpointIndex <= targetBreakpointIndex;
 
-  return (mustBe === 'min' && higher) || (mustBe === 'max' && lower) || (!higher && !lower);
+  return false;
 };

@@ -8,7 +8,5 @@ export type Env = {
     user: User;
     organization: OrganizationModel;
     memberships: [MembershipModel];
-    allowedIds: Array<string>;
-    disallowedIds: Array<string>;
   };
 };

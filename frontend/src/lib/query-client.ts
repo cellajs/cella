@@ -1,11 +1,11 @@
+import { type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
 import i18next from 'i18next';
 import { toast } from 'sonner';
 import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
-import router from '~/lib/router';
+import router, { queryClient } from '~/lib/router';
+import { flushStoresAndCache } from '~/modules/auth/sign-out';
 import { useAlertStore } from '~/store/alert';
-import { useUserStore } from '~/store/user';
-import type { MeUser } from '~/types/common';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -40,16 +40,20 @@ export const onError = (error: Error) => {
     if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');
     else if (statusCode === 504) useAlertStore.getState().setDownAlert('offline');
 
-    if (statusCode === 401) {
+    // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
+    if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
       // Redirect to sign-in page if the user is not authenticated (except for /me)
-      const redirectOptions: { to: string; replace: boolean; search?: { redirect: string } } = { to: '/auth/sign-in', replace: true };
+      const redirectOptions: { to: string; replace: boolean; search?: { redirect: string } } = {
+        to: '/auth/sign-in',
+        replace: true,
+      };
 
-      // If the path is not /auth/*, save the current path as a redirect
-      if (location.pathname?.length > 2 && !location.pathname.startsWith('/auth/')) {
+      // Save the current path as a redirect
+      if (location.pathname?.length > 2) {
         redirectOptions.search = { redirect: location.pathname };
       }
 
-      useUserStore.setState({ user: null as unknown as MeUser });
+      flushStoresAndCache();
       router.navigate(redirectOptions);
     }
   }
@@ -58,6 +62,20 @@ export const onError = (error: Error) => {
 const onSuccess = () => {
   // Clear down alerts
   useAlertStore.getState().setDownAlert(null);
+};
+
+// biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
+export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any>) => {
+  const cachedData = queryClient.getQueryData(options.queryKey);
+  // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
+  return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchQuery(options) : undefined);
+};
+
+// biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
+export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>) => {
+  const cachedData = queryClient.getQueryData(options.queryKey);
+  // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
+  return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchInfiniteQuery(options) : undefined);
 };
 
 export const queryClientConfig = { onError, onSuccess };

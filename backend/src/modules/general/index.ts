@@ -11,7 +11,7 @@ import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import { env } from '../../../env';
 
 import { db } from '#/db/db';
-import { getContextUser } from '#/lib/context';
+import { getContextUser, getMemberships } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
@@ -259,9 +259,7 @@ const generalRoutes = app
   .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
     const user = getContextUser();
-
-    // Retrieve user memberships to filter suggestions by relevant organization,  admin users see everything
-    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+    const memberships = getMemberships();
 
     // Retrieve organizationIds for non-admin users and check if the user has at least one organization membership
     let organizationIds: string[] = [];

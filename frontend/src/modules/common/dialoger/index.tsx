@@ -103,7 +103,7 @@ export function Dialoger() {
             <DrawerDescription className={`${dialog.text ? '' : 'hidden'}`}>{dialog.text}</DrawerDescription>
           </DrawerHeader>
 
-          <div className="flex flex-col px-4 pb-8 gap-4">{dialog.content}</div>
+          <div className="flex flex-col gap-4">{dialog.content}</div>
         </DrawerContent>
       </Drawer>
     );

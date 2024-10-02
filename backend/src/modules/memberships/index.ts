@@ -12,7 +12,7 @@ import { InviteMemberEmail } from '../../../emails/member-invite';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
-import { getContextUser } from '#/lib/context';
+import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
@@ -36,7 +36,10 @@ const membershipsRoutes = app
     // TODO get full organization here from context
     const { idOrSlug, entityType } = ctx.req.valid('query');
     const { emails, role } = ctx.req.valid('json');
+
+    const organization = getOrganization();
     const user = getContextUser();
+    const memberships = getMemberships();
 
     // Check params
     if (!entityType || !config.contextEntityTypes.includes(entityType) || !idOrSlug) {
@@ -44,14 +47,10 @@ const membershipsRoutes = app
     }
 
     // Fetch organization, user memberships, and context from the database
-    const [organization, memberships, context] = await Promise.all([
-      resolveEntity('organization', idOrSlug),
-      db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)),
-      resolveEntity(entityType, idOrSlug),
-    ]);
+    const context = await resolveEntity(entityType, idOrSlug);
 
     // Check if the user is allowed to perform an update action in the organization
-    const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', organization);
+    const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', context);
 
     if (!context || !organization || (!isAllowed && user.role !== 'admin')) {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
@@ -222,17 +221,16 @@ const membershipsRoutes = app
   .openapi(membershipRouteConfig.deleteMemberships, async (ctx) => {
     const { idOrSlug, entityType, ids } = ctx.req.valid('query');
     const user = getContextUser();
+    const memberships = getMemberships();
 
     if (!config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
-    // Convert the member ids to an array
+    // Convert ids to an array
     const memberToDeleteIds = Array.isArray(ids) ? ids : [ids];
 
     // Check if the user has permission to delete the memberships
     const membershipContext = await resolveEntity(entityType, idOrSlug);
 
     if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
-
-    const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
 
     const isAllowed = permissionManager.isPermissionAllowed(memberships, 'update', membershipContext);
 
@@ -244,27 +242,27 @@ const membershipsRoutes = app
 
     const filters = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable[`${entityType}Id`], membershipContext.id)));
 
-    // Get the user membership
+    // Get user membership
     const [currentUserMembership]: (MembershipModel | undefined)[] = await db
       .select()
       .from(membershipsTable)
       .where(and(filters, eq(membershipsTable.userId, user.id)))
       .limit(1);
 
-    // Get the memberships
+    // Get target memberships
     const targets = await db
       .select()
       .from(membershipsTable)
       .where(and(inArray(membershipsTable.userId, memberToDeleteIds), filters));
 
-    // Check if the memberships exist
+    // Check if membership exist
     for (const id of memberToDeleteIds) {
       if (!targets.some((target) => target.userId === id)) {
         errors.push(createError(ctx, 404, 'not_found', 'warn', entityType, { user: id }));
       }
     }
 
-    // Filter out memberships that the user doesn't have permission to delete
+    // Filter out what user doesn't have permission to delete
     const allowedTargets = targets.filter((target) => {
       if (user.role !== 'admin' && currentUserMembership?.role !== 'admin') {
         errors.push(
@@ -309,11 +307,14 @@ const membershipsRoutes = app
   .openapi(membershipRouteConfig.updateMembership, async (ctx) => {
     const { id: membershipId } = ctx.req.valid('param');
     const { role, archived, muted, order } = ctx.req.valid('json');
+
     const user = getContextUser();
+    const memberships = getMemberships();
 
     let orderToUpdate = order;
+
     // Get the membership
-    const [membershipToUpdate] = await db.select().from(membershipsTable).where(eq(membershipsTable.id, membershipId));
+    const membershipToUpdate = memberships.find((membership) => membership.id === membershipId);
     if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { membership: membershipId });
 
     const updatedType = membershipToUpdate.type;

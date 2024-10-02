@@ -4,6 +4,8 @@ export type SheetT = {
   text?: React.ReactNode;
   className?: string;
   content?: React.ReactNode;
+  modal?: boolean;
+  side?: 'bottom' | 'top' | 'right' | 'left';
 };
 
 export type SheetAction = {
@@ -66,14 +68,17 @@ class SheetsStateObserver {
 
   // Create a new sheet with the given content and optional additional data
   create = (content: React.ReactNode, data?: Omit<SheetT, 'content'>) => {
+    const modal = data?.modal || true;
     const id = data?.id || Date.now().toString(); // Use existing ID or generate a new one
-    this.set({ id, content, ...data });
+    this.set({ id, modal, content, ...data });
     return id;
   };
 }
 
 export const SheetObserver = new SheetsStateObserver();
 
+// TODO this does not have type safety?
+// Also, it seems the sheet responds a bit slow when opening and closing programmatically
 export const sheet = Object.assign({
   create: SheetObserver.create,
   remove: SheetObserver.remove,

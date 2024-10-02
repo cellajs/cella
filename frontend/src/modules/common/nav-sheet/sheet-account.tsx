@@ -6,7 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { useEffect, useRef } from 'react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { MainFooter } from '~/modules/common/main-footer';
+import { sheet } from '~/modules/common/sheeter/state';
 import { buttonVariants } from '~/modules/ui/button';
+import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUserStore } from '~/store/user';
 import { cn, getColorClass } from '~/utils/utils';
 
@@ -22,7 +24,7 @@ const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, 
   const btnClass = `${id === 'btn-signout' && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`;
 
   return (
-    <Link id={id} to={action} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}>
+    <Link id={id} to={action} onClick={() => sheet.remove()} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}>
       <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
       {label}
     </Link>
@@ -44,29 +46,31 @@ export const SheetAccount = () => {
   }, []);
 
   return (
-    <div ref={buttonWrapper} className="flex flex-col gap-4 min-h-[calc(100vh-2rem)]">
-      <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
-        <div className={bannerClass} style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}>
-          <AvatarWrap
-            className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 border-bg border-2 rounded-full"
-            type="user"
-            id={user.id}
-            name={user.name}
-            url={user.thumbnailUrl}
-          />
+    <ScrollArea className="h-full" id="nav-sheet">
+      <div ref={buttonWrapper} className="p-3 flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
+        <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
+          <div className={bannerClass} style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}>
+            <AvatarWrap
+              className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 border-bg border-2 rounded-full"
+              type="user"
+              id={user.id}
+              name={user.name}
+              url={user.thumbnailUrl}
+            />
+          </div>
+        </Link>
+
+        <div className="flex flex-col gap-1 max-sm:mt-4">
+          <AccountButton lucide={CircleUserRound} id="btn-profile" label={t('common:view_profile')} action={`/user/${user.slug}`} />
+          <AccountButton lucide={UserCog} id="btn-account" label={t('common:settings')} action="/user/settings" />
+          {isSystemAdmin && <AccountButton lucide={Wrench} id="btn-system" label={t('common:system_panel')} action="/system/users" />}
+          <AccountButton lucide={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
         </div>
-      </Link>
 
-      <div className="flex flex-col gap-1 max-sm:mt-4">
-        <AccountButton lucide={CircleUserRound} id="btn-profile" label={t('common:view_profile')} action={`/user/${user.slug}`} />
-        <AccountButton lucide={UserCog} id="btn-account" label={t('common:settings')} action="/user/settings" />
-        {isSystemAdmin && <AccountButton lucide={Wrench} id="btn-system" label={t('common:system_panel')} action="/system/users" />}
-        <AccountButton lucide={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
+        <div className="grow border-b border-dashed" />
+
+        <MainFooter className="items-center" />
       </div>
-
-      <div className="grow border-b border-dashed" />
-
-      <MainFooter className="items-center" />
-    </div>
+    </ScrollArea>
   );
 };

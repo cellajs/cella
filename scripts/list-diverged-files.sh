@@ -36,18 +36,18 @@ extract_from_ts() {
 # Function to extract paths from .js or .ts using node (with dynamic import for ES modules)
 extract_from_js() {
     # Use node to run a script that dynamically imports the JavaScript/TypeScript configuration and outputs the values
-    DIVERGED_FILE=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.divergedFile))")
-    IGNORE_FILE=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.ignoreFile))")
+    DIVERGED_FILE=$(node -e "import('./$CONFIG_FILE').then(m => console.info(m.config.divergedFile))")
+    IGNORE_FILE=$(node -e "import('./$CONFIG_FILE').then(m => console.info(m.config.ignoreFile))")
     IGNORE_LIST=$(node -e "
         import('./$CONFIG_FILE').then(m => {
             if (Array.isArray(m.config.ignoreList)) {
-                console.log(m.config.ignoreList.join(','));
+                console.info(m.config.ignoreList.join(','));
             } else {
-                console.log('');
+                console.info('');
             }
         })
     ")
-    UPSTREAM_BRANCH=$(node -e "import('./$CONFIG_FILE').then(m => console.log(m.config.upstreamBranch))" || echo "$UPSTREAM_BRANCH")
+    UPSTREAM_BRANCH=$(node -e "import('./$CONFIG_FILE').then(m => console.info(m.config.upstreamBranch))" || echo "$UPSTREAM_BRANCH")
 }
 
 # Extract values based on the file extension

@@ -1,4 +1,4 @@
-import { and, asc, count, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
@@ -18,7 +18,7 @@ import type { z } from 'zod';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { entityMenuSections, entityTables } from '#/entity-config';
-import { getContextUser } from '#/lib/context';
+import { getContextUser, getMemberships } from '#/lib/context';
 import { getPreparedSessions } from './helpers/get-sessions';
 import type { menuItemsSchema, userMenuSchema } from './schema';
 
@@ -31,13 +31,7 @@ const meRoutes = app
    */
   .openapi(meRoutesConfig.getSelf, async (ctx) => {
     const user = getContextUser();
-
-    const [{ memberships }] = await db
-      .select({
-        memberships: count(),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, user.id));
+    const memberships = getMemberships();
 
     const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
@@ -58,7 +52,7 @@ const meRoutes = app
       {
         success: true,
         data: {
-          ...transformDatabaseUserWithCount(user, memberships),
+          ...transformDatabaseUserWithCount(user, memberships.length),
           oauth: validOAuthAccounts,
           passkey: !!passkey.length,
           sessions: await getPreparedSessions(user.id, ctx),
@@ -181,6 +175,7 @@ const meRoutes = app
    */
   .openapi(meRoutesConfig.updateSelf, async (ctx) => {
     const user = getContextUser();
+    const memberships = getMemberships();
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
@@ -210,13 +205,6 @@ const meRoutes = app
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    const [{ memberships }] = await db
-      .select({
-        memberships: count(),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, user.id));
-
     const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
     const oauthAccounts = await db
@@ -235,7 +223,7 @@ const meRoutes = app
       {
         success: true,
         data: {
-          ...transformDatabaseUserWithCount(updatedUser, memberships),
+          ...transformDatabaseUserWithCount(updatedUser, memberships.length),
           oauth: validOAuthAccounts,
           passkey: !!passkey.length,
         },
@@ -248,6 +236,7 @@ const meRoutes = app
    */
   .openapi(meRoutesConfig.deleteSelf, async (ctx) => {
     const user = getContextUser();
+
     // Check if user exists
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
@@ -261,6 +250,7 @@ const meRoutes = app
 
     return ctx.json({ success: true }, 200);
   })
+
   /*
    * Delete passkey of self
    */

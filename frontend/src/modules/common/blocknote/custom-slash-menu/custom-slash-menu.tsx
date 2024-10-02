@@ -1,11 +1,12 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { customSlashIndexedItems, customSlashNotIndexedItems } from '~/modules/common/blocknote/blocknote-config';
 
 const sortList = [...customSlashIndexedItems, ...customSlashNotIndexedItems];
 
 export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>) => {
   const { items, selectedIndex, onItemClick } = props;
+  const [inputValue, setInputValue] = useState('');
 
   // Create a mapping from title to index for quick lookup
   const sortOrder = new Map((sortList as string[]).map((title, index) => [title, index]));
@@ -21,15 +22,21 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
   const handleKeyPress = useCallback(
     (e: KeyboardEvent) => {
       const pressedKey = e.key;
+
+      // Handle backspace key
+      if (pressedKey === 'Backspace') return setInputValue((prev) => prev.slice(0, -1)); // Remove last character
+
+      // If the pressed key is alphabetical, update inputValue
+      if (pressedKey.length === 1) setInputValue((prev) => prev + pressedKey); // Append the pressed key
+
       // Convert pressed key to an index
       const itemIndex = Number.parseInt(pressedKey, 10) - 1;
       // Check if the pressed key corresponds to an item
-      if (!Number.isNaN(itemIndex) && itemIndex >= 0 && itemIndex < customSlashIndexedItems.length) {
+      if (!Number.isNaN(itemIndex) && itemIndex >= 0 && itemIndex < customSlashIndexedItems.length && inputValue.length === 0) {
         const item = sortedItems[itemIndex];
-        if (item) {
-          onItemClick?.(item);
-          e.preventDefault();
-        }
+        if (!item) return;
+        onItemClick?.(item);
+        e.preventDefault();
       }
     },
     [sortedItems, onItemClick],
@@ -61,7 +68,7 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
                 {item.icon}
                 {item.title}
               </div>
-              {index < customSlashIndexedItems.length && <span className="slash-menu-item-badge">{index + 1}</span>}
+              {!inputValue.length && index < customSlashIndexedItems.length && <span className="slash-menu-item-badge">{index + 1}</span>}
             </div>
           </div>
         );

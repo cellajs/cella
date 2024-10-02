@@ -1,13 +1,9 @@
-import { and, eq, or } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
-import { db } from '#/db/db';
-import { membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
-import { getContextUser } from '#/lib/context';
+import { getContextUser, getMemberships } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
-export { isAllowedTo } from './is-allowed-to';
+import permissionManager from '#/lib/permission-manager';
 export { isAuthenticated } from './is-authenticated';
-export { splitByAllowance } from './split-by-allowance';
 
 // System admin is a user with the 'admin' role in the users table.
 export async function isSystemAdmin(ctx: Context, next: Next): Promise<Response | undefined> {
@@ -29,32 +25,22 @@ export async function isPublicAccess(_: Context, next: Next): Promise<void> {
 
 // Organization access is a hard check for accessing organization-scoped routes.
 export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response | undefined> {
-  const user = getContextUser();
+  const memberships = getMemberships();
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
 
   if (!orgIdOrSlug) return errorResponse(ctx, 400, 'organization_missing', 'warn');
 
   // Find the organization by id or slug
-  const [organization] = await db
-    .select()
-    .from(organizationsTable)
-    .where(or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug)));
+  const organization = await resolveEntity('organization', orgIdOrSlug);
 
   if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { orgIdOrSlug });
 
-  // Check if the user is member of organization
-  const [membership] = await db
-    .select()
-    .from(membershipsTable)
-    .where(
-      and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
-    );
-
-  if (!membership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { orgIdOrSlug });
-  const organizationWithMembership = { ...organization, membership: membership };
+  // Check if user is allowed to read organization
+  const canReadOrg = permissionManager.isPermissionAllowed(memberships, 'read', organization);
+  if (!canReadOrg) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { orgIdOrSlug });
 
   // Set organization with membership in context
-  ctx.set('organization', organizationWithMembership);
+  ctx.set('organization', organization);
 
   await next();
 }

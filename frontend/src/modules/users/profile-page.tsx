@@ -1,31 +1,43 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Suspense, createContext, lazy } from 'react';
 
-import type { User } from '~/types/common';
+import type { Member, User } from '~/types/common';
 
 import { UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import type { z } from 'zod';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page-header';
 import { Button } from '~/modules/ui/button';
 import { useUpdateUserMutation } from '~/modules/users/update-user-form';
 import { useUserStore } from '~/store/user';
+import type { entitySuggestionSchema } from '#/modules/general/schema';
 
 interface UserContextValue {
   user: Omit<User, 'counts'>;
 }
 
+type OrganizationSuggestions = z.infer<typeof entitySuggestionSchema>;
+
+const isUserMember = (user: Omit<User, 'counts'> | Member): user is Member => {
+  return 'membership' in user && user.membership !== undefined;
+};
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
 export const UserContext = createContext({} as UserContextValue);
 
-const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: boolean }) => {
+const UserProfilePage = ({
+  user,
+  sheet,
+}: { user: (Omit<User, 'counts'> & { organizations?: OrganizationSuggestions[] }) | Member; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
   const { user: currentUser, setUser } = useUserStore();
 
   const isSelf = currentUser.id === user.id;
+  const organizationId = isUserMember(user) ? user.membership.organizationId : user.organizations?.[0]?.id;
 
   const { mutate } = useUpdateUserMutation(currentUser.id);
 
@@ -72,7 +84,7 @@ const UserProfilePage = ({ user, sheet }: { user: Omit<User, 'counts'>; sheet?: 
         />
         <Suspense>
           <div className="container">
-            <ProfilePageContent userId={user.id} sheet={sheet} />
+            <ProfilePageContent organizationId={organizationId} userId={user.id} sheet={sheet} />
           </div>
         </Suspense>
       </UserContext.Provider>

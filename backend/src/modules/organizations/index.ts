@@ -7,14 +7,17 @@ import { config } from 'config';
 import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
-import { getAllowedIds, getContextUser, getDisallowedIds, getOrganization } from '#/lib/context';
+import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
+import permissionManager from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
+import { splitByAllowance } from '#/utils/split-by-allowance';
 import organizationsNewsletter from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -139,7 +142,14 @@ const organizationsRoutes = app
    */
   .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
     const user = getContextUser();
+    const memberships = getMemberships();
     const organization = getOrganization();
+
+    // If not allowed and not admin, return forbidden
+    const canUpdate = permissionManager.isPermissionAllowed(memberships, 'update', organization);
+    if (!canUpdate && user.role !== 'admin') {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { user: user.id, id: organization.id });
+    }
 
     const updatedFields = ctx.req.valid('json');
     const slug = updatedFields.slug;
@@ -162,16 +172,16 @@ const organizationsRoutes = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
-    const memberships = await db
+    const membershipsToUpdate = await db
       .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
-    if (memberships.length > 0) {
-      memberships.map((membership) =>
+    if (membershipsToUpdate.length > 0) {
+      membershipsToUpdate.map((membership) =>
         sendSSEToUsers([membership.userId], 'update_entity', {
           ...updatedOrganization,
-          membership: memberships.find((m) => m.id === membership.id) ?? null,
+          membership: membershipsToUpdate.find((m) => m.id === membership.id) ?? null,
         }),
       );
     }
@@ -185,7 +195,7 @@ const organizationsRoutes = app
         success: true,
         data: {
           ...updatedOrganization,
-          membership: memberships.find((m) => m.id === user.id) ?? null,
+          membership: membershipsToUpdate.find((m) => m.id === user.id) ?? null,
           counts: {
             memberships: memberCounts,
           },
@@ -198,16 +208,24 @@ const organizationsRoutes = app
    * Get organization by id or slug
    */
   .openapi(organizationRoutesConfig.getOrganization, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+
     const user = getContextUser();
-    const organization = getOrganization();
+    const memberships = getMemberships();
 
-    const [membership] = await db
-      .select(membershipSelect)
-      .from(membershipsTable)
-      .where(
-        and(eq(membershipsTable.userId, user.id), eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')),
-      );
+    const organization = await resolveEntity('organization', idOrSlug);
 
+    if (!organization) {
+      return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { id: idOrSlug });
+    }
+
+    // If not allowed and not admin, return forbidden
+    const canRead = permissionManager.isPermissionAllowed(memberships, 'read', organization);
+    if (!canRead && user.role !== 'admin') {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { user: user.id, id: idOrSlug });
+    }
+
+    const membership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization') ?? null;
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
     return ctx.json(
@@ -229,12 +247,25 @@ const organizationsRoutes = app
    * Delete organizations by ids
    */
   .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
-    // Extract allowed and disallowed ids
-    const allowedIds = getAllowedIds();
-    const disallowedIds = getDisallowedIds();
+    const { ids } = ctx.req.valid('query');
 
-    // Map errors of organizations user is not allowed to delete
+    const memberships = getMemberships();
+
+    // Convert the ids to an array
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+
+    if (!toDeleteIds.length) {
+      return errorResponse(ctx, 400, 'invalid_request', 'warn', 'organization');
+    }
+
+    const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
+
+    // Map errors of organization user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
+
+    if (!allowedIds.length) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+    }
 
     // Get members
     const organizationsMembers = await db
@@ -247,14 +278,12 @@ const organizationsRoutes = app
 
     // Send SSE events for the organizations that were deleted
     for (const id of allowedIds) {
-      // Send the event to the user if they are a member of the organization
-      if (organizationsMembers.length > 0) {
-        const membersId = organizationsMembers.map((member) => member.id);
-        sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'organization' });
-      }
+      if (!organizationsMembers.length) continue;
 
-      logEvent('Organization deleted', { organization: id });
+      const membersId = organizationsMembers.map((member) => member.id);
+      sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'organization' });
     }
+    logEvent('Organizations deleted', { ids: allowedIds.join() });
 
     return ctx.json({ success: true, errors: errors }, 200);
   })

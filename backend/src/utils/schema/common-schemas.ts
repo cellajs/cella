@@ -89,7 +89,9 @@ export const validDomainsSchema = z
 
 export const entityParamSchema = z.object({ idOrSlug: idOrSlugSchema });
 
-export const productParamSchema = z.object({ id: idSchema });
+export const entityInOrgParamSchema = z.object({ idOrSlug: idOrSlugSchema, orgIdOrSlug: idOrSlugSchema });
+
+export const productParamSchema = z.object({ id: idSchema, orgIdOrSlug: idOrSlugSchema });
 
 export const membershipsCountSchema = z.object({
   memberships: z.object({

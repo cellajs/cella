@@ -1,5 +1,8 @@
+import { eq } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
+import { db } from '#/db/db';
 import { auth as luciaAuth } from '#/db/lucia';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { errorResponse } from '#/lib/errors';
 import { removeSessionCookie } from '#/modules/auth/helpers/cookies';
 
@@ -29,6 +32,10 @@ export async function isAuthenticated(ctx: Context, next: Next): Promise<Respons
   }
 
   ctx.set('user', user);
+
+  // Fetch user's memberships from the database
+  const memberships = await db.select(membershipSelect).from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+  ctx.set('memberships', memberships);
 
   await next();
 }

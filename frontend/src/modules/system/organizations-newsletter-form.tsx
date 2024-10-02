@@ -62,12 +62,11 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
 
   const cancel = () => {
     form.reset();
-    if (isSheet) sheet.remove();
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 h-max pl-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 pb-8 h-max">
         <FormField
           control={form.control}
           name="subject"
@@ -98,7 +97,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
                     customSideMenu={true}
                     customSlashMenu={true}
                     customFormattingToolbar={true}
-                    className="min-h-20 pl-10"
+                    className="min-h-20 pl-10 pr-6"
                   />
                 </Suspense>
               </FormControl>

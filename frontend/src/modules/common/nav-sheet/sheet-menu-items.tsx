@@ -11,7 +11,7 @@ import { cn } from '~/utils/utils';
 interface SheetMenuItemProps {
   item: UserMenuItem;
   type: ContextEntity;
-  mainItemIdOrSlug?: string;
+  mainItemIdOrSlug?: string | null;
   className?: string;
   searchResults?: boolean;
 }
@@ -27,6 +27,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
   const queryParams = mainItemIdOrSlug ? `?${type}=${item.slug}` : '';
   const path = `${basePath}${queryParams}`;
   const idOrSlug = mainItemIdOrSlug ?? item.slug;
+  const orgIdOrSlug = item.membership.organizationId;
 
   return (
     <Link
@@ -40,7 +41,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
       )}
       aria-label={item.name}
       to={path}
-      params={{ idOrSlug }}
+      params={{ idOrSlug, orgIdOrSlug }}
     >
       <AvatarWrap
         className={`${mainItemIdOrSlug && !searchResults ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} z-[1] items-center`}
@@ -59,7 +60,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(type)}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {item.submenu?.length
-              ? `${item.submenu?.length} ${t(`common:${item.submenu?.length > 1 ? 'subitems' : 'subitem'}`).toLowerCase()}`
+              ? `${item.submenu?.length} ${t(`app:${item.submenu?.length > 1 ? `${item.submenu[0].entity}s` : item.submenu[0].entity}`).toLowerCase()}`
               : item.membership.role
                 ? t(item.membership.role)
                 : ''}
