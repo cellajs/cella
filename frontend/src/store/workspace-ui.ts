@@ -6,7 +6,6 @@ import type { Label } from '~/types/app';
 
 type Column = {
   columnId: string;
-  width: string;
   minimized: boolean;
   expandAccepted: boolean;
   expandIced: boolean;
@@ -15,17 +14,13 @@ type Column = {
 };
 
 type WorkspaceUIById = {
-  [key: string]: { columns: Column[] };
+  [workspaceId: string]: { [columnId: string]: Column };
+};
+type workspacesPanels = {
+  [workspaceId: string]: string;
 };
 
-interface WorkspaceUIState {
-  workspaces: WorkspaceUIById;
-  changeColumn: (workspaceId: string, columnId: string, column: Partial<Column>) => void;
-  addNewColumn: (workspaceId: string, column: Column) => void;
-}
-
 const defaultColumnValues = {
-  width: '19rem',
   minimized: false,
   expandAccepted: false,
   expandIced: false,
@@ -33,49 +28,61 @@ const defaultColumnValues = {
   taskIds: [] as string[],
 };
 
+interface WorkspaceUIState {
+  workspaces: WorkspaceUIById;
+  workspacesPanels: workspacesPanels;
+  changePanels: (workspaceId: string, panels: string) => void;
+  addNewColumn: (workspaceId: string, columnId: string, column: Column) => void;
+  changeColumn: (workspaceId: string, columnId: string, column: Partial<Column>) => void;
+}
+
 export const useWorkspaceUIStore = create<WorkspaceUIState>()(
   devtools(
     persist(
       immer((set) => ({
         workspaces: {},
-        addNewColumn: (workspaceId: string, column: Column) => {
+        workspacesPanels: {},
+        addNewColumn: (workspaceId: string, columnId: string, column: Column) => {
           set((state) => {
-            const workspace = state.workspaces[workspaceId];
-            if (!workspace) {
-              state.workspaces[workspaceId] = {
-                columns: [column],
-              };
-            } else {
-              workspace.columns.push(column);
+            if (!state.workspaces[workspaceId]) {
+              // Initialize the workspace if it doesn't exist
+              state.workspaces[workspaceId] = {};
             }
+            state.workspaces[workspaceId][columnId] = { ...defaultColumnValues, ...column };
           });
         },
+        // Modify an existing column or add it if it doesn't exist
         changeColumn: (workspaceId: string, columnId: string, newColumn: Partial<Column>) => {
           set((state) => {
-            const workspace = state.workspaces[workspaceId];
-            if (!workspace) return;
-
-            const columnIndex = workspace.columns.findIndex((column) => column.columnId === columnId);
-            if (columnIndex === -1) {
-              // If the column doesn't exist, create a new one
-              state.workspaces[workspaceId].columns.push({ columnId, ...defaultColumnValues, ...newColumn });
-            } else {
-              // If the column exists, update it
-              const updatedColumn = {
-                ...workspace.columns[columnIndex],
-                ...newColumn,
-              };
-              state.workspaces[workspaceId].columns[columnIndex] = updatedColumn;
+            if (!state.workspaces[workspaceId]) {
+              // Initialize the workspace if it doesn't exist
+              state.workspaces[workspaceId] = {};
             }
+            if (!state.workspaces[workspaceId][columnId]) {
+              // Add a new column if it doesn't exist
+              state.workspaces[workspaceId][columnId] = { ...defaultColumnValues, columnId };
+            }
+            // Update the existing column with new values
+            state.workspaces[workspaceId][columnId] = {
+              ...state.workspaces[workspaceId][columnId],
+              ...newColumn,
+            };
+          });
+        },
+        changePanels: (workspaceId: string, panel: string) => {
+          set((state) => {
+            // Update the panels for the specified workspace
+            state.workspacesPanels[workspaceId] = panel;
           });
         },
       })),
 
       {
-        version: 1,
+        version: 2,
         name: `${config.slug}-workspace-ui`,
         partialize: (state) => ({
           workspaces: state.workspaces,
+          workspacesPanels: state.workspacesPanels,
         }),
         storage: createJSONStorage(() => localStorage),
       },

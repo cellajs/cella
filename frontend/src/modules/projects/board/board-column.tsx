@@ -58,7 +58,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
   const projectLabels = labels.filter((l) => l.projectId === project.id);
-  const currentProjectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === project.id);
+  const currentProjectSettings = workspaces[workspace.id]?.[project.id];
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
   const [mouseX, setMouseX] = useState(0);

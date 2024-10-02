@@ -63,17 +63,36 @@ function BoardDesktop({
   workspaceId: string;
 }) {
   const { ref, bounds } = useMeasure();
+  const { changePanels, workspacesPanels } = useWorkspaceUIStore();
   const scrollerWidth = getScrollerWidth(bounds.width, projects.length);
   const panelMinSize = typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
 
+  const panelStorage = useMemo(
+    () => ({
+      getItem: (_: string) => {
+        const panel = workspacesPanels[workspaceId];
+        return panel ?? null;
+      },
+      setItem: (_: string, value: string) => {
+        changePanels(workspaceId, value);
+      },
+    }),
+    [],
+  );
   return (
     <div className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto" ref={ref as LegacyRef<HTMLDivElement>}>
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
-        <ResizablePanelGroup direction="horizontal" className="flex gap-2 group/board" id="project-panels" autoSaveId={workspaceId}>
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="flex gap-2 group/board"
+          id="project-panels"
+          storage={panelStorage}
+          autoSaveId={workspaceId}
+        >
           {projects.map((project, index) => (
             <Fragment key={project.id}>
-              <ResizablePanel key={project.id} id={project.id} order={index} minSize={panelMinSize}>
-                <BoardColumn tasksState={tasksState} key={project.id} project={project} />
+              <ResizablePanel id={project.id} order={project.membership?.order || index} minSize={panelMinSize}>
+                <BoardColumn tasksState={tasksState} project={project} />
               </ResizablePanel>
               {projects.length > index + 1 && (
                 <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
@@ -124,7 +143,7 @@ export default function Board() {
   const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
     if (!projects.length || (focusedTaskId && (tasksState[focusedTaskId] === 'editing' || tasksState[focusedTaskId] === 'unsaved'))) return;
 
-    const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === projects[0].id);
+    const projectSettings = workspaces[workspace.id]?.[projects[0].id];
     let newFocusedTask: { projectId: string; id: string } | undefined;
     if (focusedTaskId) {
       newFocusedTask = tasks.find((t) => t.id === focusedTaskId);
@@ -145,7 +164,7 @@ export default function Board() {
 
   const handleHorizontalArrowKeyDown = async (event: KeyboardEvent) => {
     if (!projects.length) return;
-    const projectSettings = workspaces[workspace.id]?.columns.find((el) => el.columnId === projects[0].id);
+    const projectSettings = workspaces[workspace.id]?.[projects[0].id];
     let newFocusedTask: { projectId: string } | undefined;
     if (focusedTaskId) {
       newFocusedTask = tasks.find((t) => t.id === focusedTaskId);
