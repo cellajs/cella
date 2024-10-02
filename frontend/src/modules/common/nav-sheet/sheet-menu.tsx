@@ -11,6 +11,7 @@ import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { updateMembership } from '~/api/memberships';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
@@ -40,7 +41,6 @@ export type SectionItem = {
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
   const { menu, keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
-
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 

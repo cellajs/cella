@@ -79,6 +79,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     membersQueryOptions({
       idOrSlug: entity.slug,
       entityType,
+      orgIdOrSlug: organizationId,
       q,
       sort,
       order,
@@ -174,6 +175,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
       role,
       limit,
       idOrSlug: entity.id,
+      orgIdOrSlug: organizationId,
       entityType,
     });
     return data.items;

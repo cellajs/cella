@@ -12,7 +12,11 @@ import type { SuggestionSection } from '~/modules/common/main-search';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
 
 // Set entities paths
-export const baseEntityRoutes = { user: '/user/$idOrSlug', organization: '/$idOrSlug' } as const;
+export const baseEntityRoutes = {
+  user: '/user/$idOrSlug',
+  userInOrg: '/$orgIdOrSlug/user/$idOrSlug',
+  organization: '/$idOrSlug',
+} as const;
 
 export type NavItemId = (typeof navItems)[number]['id'];
 

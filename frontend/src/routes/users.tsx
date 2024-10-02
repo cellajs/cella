@@ -36,6 +36,25 @@ export const UserProfileRoute = createRoute({
   },
 });
 
+export const UserInOrgProfileRoute = createRoute({
+  path: baseEntityRoutes.userInOrg,
+  staticData: { pageTitle: 'Profile', isAuth: true },
+  getParentRoute: () => AppRoute,
+  loader: async ({ params: { idOrSlug } }) => {
+    queryClient.ensureQueryData(userQueryOptions(idOrSlug));
+  },
+  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
+  component: () => {
+    const { idOrSlug } = useParams({ from: UserProfileRoute.id });
+    const userQuery = useSuspenseQuery(userQueryOptions(idOrSlug));
+    return (
+      <Suspense>
+        <UserProfilePage user={userQuery.data} />
+      </Suspense>
+    );
+  },
+});
+
 export const UserSettingsRoute = createRoute({
   path: '/user/settings',
   staticData: { pageTitle: 'Settings', isAuth: true },
