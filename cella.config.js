@@ -15,7 +15,7 @@
  */
 export const config = {
   upstreamBranch: 'development',
-  divergedFile: 'scripts/cella.diverged.txt',
+  divergedFile: 'cella.diverged.txt',
   ignoreList: [
     'README.md',
     'package.json',
