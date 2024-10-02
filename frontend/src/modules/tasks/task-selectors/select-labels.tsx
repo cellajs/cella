@@ -119,6 +119,12 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
     await updateTaskLabels(updatedLabels);
   };
 
+  //when removing selectedLabels, switch to recent labels mode
+  useEffect(() => {
+    if (selectedLabels.length) return;
+    setIsRecent(true);
+  }, [selectedLabels]);
+
   useEffect(() => {
     setSelectedLabels(value);
   }, [value]);
