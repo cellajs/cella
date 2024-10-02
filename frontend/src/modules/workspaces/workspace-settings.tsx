@@ -29,7 +29,7 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
         callback={() => {
           if (isSheet) sheet.remove('edit-workspace');
           toast.success(t('success.delete_resource', { resource: t('app:workspace') }));
-          navigate({ to: '/', replace: true });
+          navigate({ to: '.', replace: true });
         }}
       />,
       {
