@@ -73,7 +73,7 @@ const AppNav = () => {
       id: `${navItem.id}-nav`,
       side: sheetSide,
       modal: isMobile,
-      className: `fixed sm:z-[80] p-0 ${isMobile ? '' : 'left-16 inset-0 max-w-80'} backdrop-blur-sm`,
+      className: `fixed sm:z-[80] p-0 ${isMobile ? '' : 'inset-0 max-w-80 left-16'}  backdrop-blur-sm`,
     });
   };
 
