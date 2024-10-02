@@ -111,7 +111,7 @@ export default function Board() {
   const navigate = useNavigate();
   const { menu } = useNavigationStore();
   const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
-  const isDesktopLayout = useBreakpoints('min', 'sm');
+  const isMobile = useBreakpoints('max', 'sm');
   const { workspaces } = useWorkspaceUIStore();
 
   const [tasksState, setTasksState] = useState<Record<string, TaskStates>>({});
@@ -411,7 +411,7 @@ export default function Board() {
 
   return (
     <>
-      <BoardHeader project={!isDesktopLayout ? mobileDeviceProject : null} />
+      <BoardHeader project={isMobile ? mobileDeviceProject : null} />
       {!projects.length ? (
         <ContentPlaceholder
           className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"
@@ -434,10 +434,10 @@ export default function Board() {
         />
       ) : (
         <>
-          {isDesktopLayout ? (
-            <BoardDesktop tasksState={tasksState} projects={projects} workspaceId={workspace.id} />
-          ) : (
+          {isMobile ? (
             <BoardColumn tasksState={tasksState} project={mobileDeviceProject} />
+          ) : (
+            <BoardDesktop tasksState={tasksState} projects={projects} workspaceId={workspace.id} />
           )}
         </>
       )}

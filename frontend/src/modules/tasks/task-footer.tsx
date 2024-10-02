@@ -99,11 +99,11 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
             <div className="flex truncate flex-wrap gap-[.07rem]">
               {task.labels.map(({ name, id }) => {
                 return (
-                  <div key={id} className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full px-0 bg-border">
+                  <div key={id} className="flex flex-wrap max-w-24 align-center justify-center items-center rounded-full px-0">
                     <Badge
                       variant="outline"
                       key={id}
-                      className="inline-block border-0 max-w-32 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
+                      className="inline-block border-0 max-w-32 opacity-75 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
                     >
                       {name}
                     </Badge>
