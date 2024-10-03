@@ -59,7 +59,7 @@ const BoardHeader = ({ project }: { project?: Project | null }) => {
 
   return (
     <div className="flex items-center max-sm:justify-between gap-2 z-[60] bg-background p-2 -m-2 md:p-3 md:-m-3">
-      {!selectedTasks.length && (
+      {!searchFocused && !selectedTasks.length && (
         <div className="flex gap-2">
           <TooltipButton toolTipContent={t('common:page_view')}>
             <Button variant="outline" className="h-10 w-10 min-w-10" size="auto" onClick={handleTogglePageHeader}>
@@ -75,23 +75,26 @@ const BoardHeader = ({ project }: { project?: Project | null }) => {
       {!!selectedTasks.length && <TaskSelectedTableButtons />}
       <BoardSearch toggleFocus={() => setSearchFocused(!searchFocused)} />
       {!searchFocused && (
-        <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_resource', { resource: t('app:project').toLowerCase() })}>
-          <Button variant="plain" onClick={handleAddProjects}>
-            <Plus size={16} />
-            <span className="max-lg:hidden ml-1">{t('common:add')}</span>
-          </Button>
-        </TooltipButton>
+        <>
+          <TooltipButton className="max-md:hidden" toolTipContent={t('common:add_resource', { resource: t('app:project').toLowerCase() })}>
+            <Button variant="plain" onClick={handleAddProjects}>
+              <Plus size={16} />
+              <span className="max-lg:hidden ml-1">{t('common:add')}</span>
+            </Button>
+          </TooltipButton>
+
+          <WorkspaceActions createNewProject={handleAddProjects} openSettingsSheet={openSettingsSheet} openLabelsSheet={openLabelsSheet}>
+            {project && (
+              <DropdownMenuItem onClick={() => openProjectConfigSheet(project)} className="flex items-center gap-2">
+                {project.membership?.role === 'admin' ? <Settings size={14} /> : <Users size={14} />}
+                <span>
+                  {project.membership?.role === 'admin' ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members')}
+                </span>
+              </DropdownMenuItem>
+            )}
+          </WorkspaceActions>
+        </>
       )}
-      <WorkspaceActions createNewProject={handleAddProjects} openSettingsSheet={openSettingsSheet} openLabelsSheet={openLabelsSheet}>
-        {project && (
-          <DropdownMenuItem onClick={() => openProjectConfigSheet(project)} className="flex items-center gap-2">
-            {project.membership?.role === 'admin' ? <Settings size={14} /> : <Users size={14} />}
-            <span>
-              {project.membership?.role === 'admin' ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members')}
-            </span>
-          </DropdownMenuItem>
-        )}
-      </WorkspaceActions>
       <DisplayOptions className="max-sm:hidden" />
       <FocusView iconOnly />
     </div>

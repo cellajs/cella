@@ -57,5 +57,6 @@ export const config = {
     'backend/src/lib/permission-manager.ts',
     'locales/en/about.json',
     'locales/en/app.json',
+    'locales/nl/common.json',
   ],
 };

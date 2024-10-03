@@ -51,17 +51,19 @@ const TaskContent = ({ task, mode, state }: Props) => {
 
           {(task.expandable || task.subTasks.length > 0) && (
             <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 pl-2 -mt-[0.15rem]">
-              <Button
-                variant="link"
-                size="micro"
-                onClick={(e) => {
-                  e.preventDefault();
-                  dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
-                }}
-                className="inline-flex py-0 h-5"
-              >
-                {t('common:more').toLowerCase()}
-              </Button>
+              {task.expandable && (
+                <Button
+                  variant="link"
+                  size="micro"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
+                  }}
+                  className="inline-flex py-0 h-5"
+                >
+                  {t('common:more').toLowerCase()}
+                </Button>
+              )}
               {task.subTasks.length > 0 && (
                 <div className="inline-flex py-0.5 text-xs h-5 ml-1 gap-[.1rem] cursor-pointer">
                   <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>
