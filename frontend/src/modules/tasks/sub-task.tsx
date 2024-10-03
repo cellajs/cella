@@ -23,12 +23,14 @@ import type { SubTask as BaseSubTask, Task } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { getDraggableItemData } from '~/utils/drag-drop';
 import type { TaskStates } from './types';
+import { useRenderInSummary } from './use-render-in-summary';
 
 const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   const { t } = useTranslation();
 
   const { pathname } = useLocation();
   const subTaskRef = useRef<HTMLDivElement>(null);
+  const subTaskSummaryRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TaskStates>('folded');
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -36,7 +38,11 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   const onRemove = (subTaskId: string) => {
     deleteTasks([subTaskId], task.organizationId).then((resp) => {
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-      dispatchCustomEvent(eventName, { array: [{ id: subTaskId }], action: 'deleteSubTask', projectId: task.projectId });
+      dispatchCustomEvent(eventName, {
+        array: [{ id: subTaskId }],
+        action: 'deleteSubTask',
+        projectId: task.projectId,
+      });
       if (resp) toast.success(t('common:success.delete_resources', { resources: t('app:todos') }));
       else toast.error(t('common:error.delete_resources', { resources: t('app:todos') }));
     });
@@ -56,6 +62,8 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
       toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
     }
   };
+
+  useRenderInSummary(subTaskSummaryRef, `subtask-${task.id}-summary-buttons`, <SummaryButtons task={task} setState={setState} />);
 
   useDoubleClick({
     onSingleClick: () => {
@@ -169,7 +177,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
         <div className={state !== 'folded' ? 'inline-flex items-center mt-1' : 'mt-1 flex flex-col items-start'}>
           {state === 'folded' ? (
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
-            <div dangerouslySetInnerHTML={{ __html: task.summary as string }} className="mr-1.5" />
+            <div ref={subTaskSummaryRef} dangerouslySetInnerHTML={{ __html: task.summary }} className="mr-1.5" />
           ) : (
             <>
               {state === 'editing' || state === 'unsaved' ? (
@@ -192,12 +200,6 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
               <TaskHeader task={task as Task} state={state} onRemove={onRemove} />
             </>
           )}
-
-          {task.expandable && state === 'folded' && (
-            <Button onClick={() => setState('expanded')} variant="link" size="micro" className="py-0 -mt-[0.15rem]">
-              {t('common:more').toLowerCase()}
-            </Button>
-          )}
         </div>
       </div>
       {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
@@ -206,3 +208,17 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 };
 
 export default SubTask;
+
+const SummaryButtons = ({ task, setState }: { task: BaseSubTask; setState: (state: TaskStates) => void }) => {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      {task.expandable && (
+        <Button onClick={() => setState('expanded')} variant="link" size="micro" className="p-0 pl-2 h-5 -mt-[0.15rem]">
+          {t('common:more').toLowerCase()}
+        </Button>
+      )}
+    </>
+  );
+};
