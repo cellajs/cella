@@ -48,7 +48,7 @@ export const TaskBlockNote = ({
   const { t } = useTranslation();
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock: false });
 
-  const wasInitial = useRef(false);
+  const canChangeState = useRef(false);
 
   const { pathname } = useLocation();
   const { members, workspace } = useWorkspaceStore();
@@ -87,9 +87,12 @@ export const TaskBlockNote = ({
     const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (onChange) onChange(cleanDescription, cleanSummary);
-    else handleUpdateHTML(cleanDescription);
-    const event = subTask ? 'changeSubTaskState' : 'changeTaskState';
-    dispatchCustomEvent(event, { taskId: id, state: 'editing' });
+    else {
+      handleUpdateHTML(cleanDescription);
+      const event = subTask ? 'changeSubTaskState' : 'changeTaskState';
+      dispatchCustomEvent(event, { taskId: id, state: 'editing' });
+    }
+    canChangeState.current = false;
   };
 
   const handleKeyDown: KeyboardEventHandler = async (event) => {
@@ -131,8 +134,8 @@ export const TaskBlockNote = ({
       if (currentBlocks !== newBlocksContent || html === '' || subTaskCreation) {
         editor.replaceBlocks(editor.document, blocks);
         triggerFocus(subTask ? `blocknote-subtask-${id}` : `blocknote-${id}`);
-        if (!wasInitial.current) wasInitial.current = true;
       }
+      if (!canChangeState.current) canChangeState.current = true;
     };
     blockUpdate(html);
   }, [html]);
@@ -148,7 +151,7 @@ export const TaskBlockNote = ({
         id={subTask ? `blocknote-subtask-${id}` : `blocknote-${id}`}
         // Defer onChange, onFocus and onBlur  to run after rendering
         onChange={() => {
-          if (!onChange && wasInitial.current) {
+          if (!onChange && canChangeState.current) {
             const event = subTask ? 'changeSubTaskState' : 'changeTaskState';
             dispatchCustomEvent(event, { taskId: id, state: 'unsaved' });
           }

@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { ChevronUp, Maximize2, Trash } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -29,10 +30,15 @@ export const TaskHeader = ({
 }) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
+  const [isHovered, setIsHovered] = useState(false);
   const isSubTask = task.parentId !== null;
   const isEditing = state === 'editing' || state === 'unsaved';
 
-  const buttonText = isEditing ? t(`app:${state}`) : t('common:edit');
+  const getButtonText = () => {
+    if (isHovered && state === 'unsaved') return t('common:save');
+    return isEditing ? t(`app:${state}`) : t('common:edit');
+  };
+
   return (
     <StickyBox enabled={false} className="flex flex-row z-100 w-full justify-between">
       {!isSubTask && task.createdBy && (
@@ -77,16 +83,18 @@ export const TaskHeader = ({
           >
             <Button
               id="edit-toggle"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
               onClick={() => {
                 const event = isSubTask ? 'changeSubTaskState' : 'changeTaskState';
                 dispatchCustomEvent(event, { taskId: task.id, state: isEditing ? 'expanded' : 'editing' });
               }}
               aria-label="Edit"
               variant="ghost"
-              className="flex flex-row items-center gap-1 font-light"
+              className={`flex  min-w-20 flex-row items-center gap-1 font-light ${state === 'unsaved' ? 'hover:text-green-500' : ''}`}
               size="xs"
             >
-              {isEditing ? <span className="italic">{buttonText}</span> : buttonText}
+              <span className={isEditing ? 'italic' : ''}>{getButtonText()}</span>
             </Button>
           </TooltipButton>
         )}

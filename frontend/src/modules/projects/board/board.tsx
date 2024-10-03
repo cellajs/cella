@@ -258,10 +258,11 @@ export default function Board() {
     // Check if the clicked element is a button or inside a button,
     // if so, set the new focused task and return early (no need to fold/expand in this case)
     if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) {
-      if (clickTarget.id === 'edit-toggle' && currentFocused) {
+      if (currentFocused) {
         // Set the state of the previously focused task after edit button clicked
         setTaskState(currentFocused, tasksState[currentFocused] === 'folded' || !tasksState[currentFocused] ? 'folded' : 'expanded');
       }
+
       return setFocusedTaskId(newFocused);
     }
 
