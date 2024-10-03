@@ -10,7 +10,7 @@ import { organizationsQueryOptions } from '~/modules/organizations/organizations
 import { requestsQueryOptions } from '~/modules/system/requests-table';
 import SystemPage from '~/modules/system/system-page';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
-import { noDirectAccess } from '~/utils/utils';
+import { noDirectAccess } from '~/utils/no-direct-access';
 import type { ErrorType } from '#/lib/errors';
 import { AppRoute } from './general';
 

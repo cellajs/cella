@@ -28,7 +28,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useUserStore } from '~/store/user';
-import { cleanUrl } from '~/utils/utils';
+import { cleanUrl } from '~/utils/clean-url';
 
 interface UpdateUserFormProps {
   user: User;

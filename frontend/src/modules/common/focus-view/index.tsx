@@ -6,7 +6,7 @@ import { showToast } from '~/lib/toasts';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 import './style.css';
 import useBodyClass from '~/hooks/use-body-class';

@@ -13,7 +13,7 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import UpdateRow from '~/modules/users/users-table/update-row';
-import { dateShort } from '~/utils/utils';
+import { dateShort } from '~/utils/date-short';
 import ImpersonateRow from './impersonate-row';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {

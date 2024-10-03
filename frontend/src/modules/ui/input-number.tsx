@@ -2,7 +2,7 @@ import { Minus, Plus } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 enum NumberEvents {
   PLUS = 'plus',

@@ -1,11 +1,11 @@
 import { type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
 import i18next from 'i18next';
-import { toast } from 'sonner';
 import { ApiError } from '~/api';
 import { i18n } from '~/lib/i18n';
 import router, { queryClient } from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
 import { useAlertStore } from '~/store/alert';
+import { showToast } from './toasts';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -33,8 +33,8 @@ export const onError = (error: Error) => {
           : fallback[statusCode as keyof typeof fallback];
 
     // Show toast
-    if (error.severity === 'info') toast.info(errorMessage || error.message);
-    else toast.error(errorMessage || error.message);
+    if (error.severity === 'info') showToast(errorMessage || error.message, 'info');
+    else showToast(errorMessage || error.message, 'error');
 
     // Set down alerts
     if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');

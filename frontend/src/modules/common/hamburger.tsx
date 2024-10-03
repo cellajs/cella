@@ -1,5 +1,5 @@
 import { useThemeStore } from '~/store/theme';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface HamburgerButtonProps {
   isOpen: boolean;

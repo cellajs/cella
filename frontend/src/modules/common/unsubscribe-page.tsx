@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { buttonVariants } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 function UnsubscribePage() {
   const { t } = useTranslation();

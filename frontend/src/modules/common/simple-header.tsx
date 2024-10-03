@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface SimpleHeaderProps {
   heading?: string;

@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
@@ -52,9 +52,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
     const [canScrollNext, setCanScrollNext] = React.useState(false);
 
     const onSelect = React.useCallback((api: CarouselApi) => {
-      if (!api) {
-        return;
-      }
+      if (!api) return;
 
       setCanScrollPrev(api.canScrollPrev());
       setCanScrollNext(api.canScrollNext());
@@ -160,7 +158,7 @@ const CarouselItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLD
 CarouselItem.displayName = 'CarouselItem';
 
 const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
-  ({ className, variant = 'outline', size = 'icon', ...props }, ref) => {
+  ({ className, variant = 'outline', size = 'icon', onClick: passedOnClick, ...props }, ref) => {
     const { orientation, scrollPrev, canScrollPrev } = useCarousel();
 
     return (
@@ -174,7 +172,10 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
           className,
         )}
         disabled={!canScrollPrev}
-        onClick={scrollPrev}
+        onClick={(e) => {
+          passedOnClick?.(e);
+          scrollPrev();
+        }}
         {...props}
       >
         <ArrowLeft className="h-4 w-4" />
@@ -186,7 +187,7 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
 CarouselPrevious.displayName = 'CarouselPrevious';
 
 const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof Button>>(
-  ({ className, variant = 'outline', size = 'icon', ...props }, ref) => {
+  ({ className, variant = 'outline', size = 'icon', onClick: passedOnClick, ...props }, ref) => {
     const { orientation, scrollNext, canScrollNext } = useCarousel();
 
     return (
@@ -200,7 +201,10 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
           className,
         )}
         disabled={!canScrollNext}
-        onClick={scrollNext}
+        onClick={(e) => {
+          passedOnClick?.(e);
+          scrollNext();
+        }}
         {...props}
       >
         <ArrowRight className="h-4 w-4" />
@@ -249,7 +253,7 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: <explanation>
-    <div ref={ref} role="tablist" className={cn('my-2 flex justify-center', className)} {...props}>
+    <div ref={ref} role="tablist" className={cn('mx-2 flex justify-center cursor-default', className)} {...props}>
       {Array.from({ length }).map((_, index) => (
         <button
           type="button"
@@ -261,7 +265,11 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
           aria-selected={current === index ? 'true' : 'false'}
           aria-label={`Slide ${index + 1}`}
           onClick={() => api?.scrollTo(index)}
-          className={cn(dotsVariants({ size, gap, className }), current === index ? 'bg-muted-foreground' : 'bg-muted-foreground/40')}
+          className={cn(
+            dotsVariants({ size, gap, className }),
+            'cursor-pointer',
+            current === index ? 'bg-muted-foreground' : 'bg-muted-foreground/40',
+          )}
         />
       ))}
     </div>
@@ -269,4 +277,4 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
 });
 CarouselDots.displayName = 'CarouselDots';
 
-export { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi };
+export { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious, useCarousel, type CarouselApi };
