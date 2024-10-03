@@ -15,6 +15,7 @@ class WorkspaceRoutesConfig {
     summary: 'Create new workspace',
     description: 'Create personal workspace to organize projects and tasks.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       body: {
         required: true,
         content: {

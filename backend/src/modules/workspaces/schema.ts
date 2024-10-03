@@ -34,7 +34,6 @@ export const workspaceWithProjectSchema = z.object({
 export const createWorkspaceBodySchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
-  organizationId: idSchema,
 });
 
 export const updateWorkspaceBodySchema = createInsertSchema(workspacesTable, {

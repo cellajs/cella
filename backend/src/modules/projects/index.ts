@@ -3,7 +3,7 @@ import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { projectsTable } from '#/db/schema/projects';
 
-import { getContextUser, getMemberships } from '#/lib/context';
+import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -23,9 +23,10 @@ const projectsRoutes = app
    * Create project
    */
   .openapi(projectRoutesConfig.createProject, async (ctx) => {
-    const { name, slug, organizationId } = ctx.req.valid('json');
+    const { name, slug } = ctx.req.valid('json');
     const workspaceId = ctx.req.query('workspaceId');
 
+    const organization = getOrganization();
     const user = getContextUser();
 
     const slugAvailable = await checkSlugAvailable(slug);
@@ -37,7 +38,7 @@ const projectsRoutes = app
     const [project] = await db
       .insert(projectsTable)
       .values({
-        organizationId,
+        organizationId: organization.id,
         name,
         slug,
         parentId: workspaceId ?? null,
@@ -89,12 +90,11 @@ const projectsRoutes = app
    * Get list of projects
    */
   .openapi(projectRoutesConfig.getProjects, async (ctx) => {
-    const { q, sort, order, offset, limit, organizationId } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = getContextUser();
 
     const projectsFilters: SQL[] = [];
     if (q) projectsFilters.push(ilike(projectsTable.name, `%${q}%`));
-    if (organizationId) projectsFilters.push(eq(projectsTable.organizationId, organizationId));
 
     const projectsQuery = db
       .select()

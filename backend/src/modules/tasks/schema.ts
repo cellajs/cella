@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { createSelectSchema } from 'drizzle-zod';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { tasksTable } from '#/db/schema/tasks';
 import { objectKeys } from '#/lib/object';
 import { paginationQuerySchema } from '#/utils/schema/common-schemas';
@@ -9,9 +9,11 @@ import { labelSchema } from '../labels/schema';
 import { userSchema } from '../users/schema';
 
 export const createTaskSchema = z.object({
-  ...createSelectSchema(tasksTable).omit({
+  ...createInsertSchema(tasksTable).omit({
+    id: true,
     labels: true,
     entity: true,
+    organizationId: true,
     assignedTo: true,
     modifiedAt: true,
     modifiedBy: true,

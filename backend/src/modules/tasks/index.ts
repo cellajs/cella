@@ -7,7 +7,7 @@ import { labelsTable } from '#/db/schema/labels';
 import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
 import { usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
-import { getContextUser, getMemberships } from '#/lib/context';
+import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -26,10 +26,14 @@ const tasksRoutes = app
    */
   .openapi(taskRoutesConfig.createTask, async (ctx) => {
     const newTask = ctx.req.valid('json');
+    const organization = getOrganization();
     const user = getContextUser();
-    const [createdTask] = await db.insert(tasksTable).values(newTask).returning();
+    const [createdTask] = await db
+      .insert(tasksTable)
+      .values({ ...newTask, organizationId: organization.id })
+      .returning();
 
-    logEvent('Task created', { task: newTask.id });
+    logEvent('Task created', { task: createdTask.id });
 
     const uniqueAssignedUserIds = [...new Set(createdTask.assignedTo)];
     const assignedTo = await getUsersByConditions([inArray(usersTable.id, uniqueAssignedUserIds)]);

@@ -6,13 +6,14 @@ import { clientConfig, handleResponse } from '.';
 export const client = projectsHc(config.backendUrl, clientConfig);
 
 export type CreateProjectParams = Parameters<(typeof client.index)['$post']>['0']['json'] & {
+  workspaceId: string;
   organizationId: string;
 };
 
 // Create a new project
-export const createProject = async (workspaceId: string, { ...project }: CreateProjectParams) => {
+export const createProject = async ({ workspaceId, organizationId, ...project }: CreateProjectParams) => {
   const response = await client.index.$post({
-    param: { orgIdOrSlug: project.organizationId },
+    param: { orgIdOrSlug: organizationId },
     query: { workspaceId },
     json: project,
   });
@@ -40,7 +41,7 @@ export type GetProjectsParams = Omit<Parameters<(typeof client.index)['$get']>['
 
 // Get a list of projects
 export const getProjects = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, organizationId, userId, offset, orgIdOrSlug }: GetProjectsParams,
+  { q, sort = 'id', order = 'asc', page = 0, limit = 50, userId, offset, orgIdOrSlug }: GetProjectsParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(
@@ -52,7 +53,6 @@ export const getProjects = async (
         order,
         offset: typeof offset === 'number' ? String(offset) : String(page * limit),
         limit: String(limit),
-        organizationId,
         userId,
       },
     },

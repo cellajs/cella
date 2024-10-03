@@ -6,7 +6,7 @@ import { workspacesTable } from '#/db/schema/workspaces';
 import { labelsTable } from '#/db/schema/labels';
 import { projectsTable } from '#/db/schema/projects';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
-import { getContextUser, getMemberships } from '#/lib/context';
+import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -26,7 +26,8 @@ const workspacesRoutes = app
    * Create workspace
    */
   .openapi(workspaceRoutesConfig.createWorkspace, async (ctx) => {
-    const { name, slug, organizationId } = ctx.req.valid('json');
+    const { name, slug } = ctx.req.valid('json');
+    const organization = getOrganization();
     const user = getContextUser();
 
     const slugAvailable = await checkSlugAvailable(slug);
@@ -38,7 +39,7 @@ const workspacesRoutes = app
     const [workspace] = await db
       .insert(workspacesTable)
       .values({
-        organizationId,
+        organizationId: organization.id,
         name,
         slug,
       })

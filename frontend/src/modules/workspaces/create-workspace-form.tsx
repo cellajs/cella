@@ -25,13 +25,14 @@ import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types/app';
 import type { Organization, UserMenuItem } from '~/types/common';
+import { idSchema } from '#/utils/schema/common-schemas';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;
   dialog?: boolean;
 }
 
-const formSchema = createWorkspaceBodySchema;
+const formSchema = createWorkspaceBodySchema.setKey('organizationId', idSchema);
 
 type FormValues = z.infer<typeof formSchema>;
 

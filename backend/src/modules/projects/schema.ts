@@ -16,7 +16,6 @@ export const projectSchema = z.object({
 export const createProjectBodySchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,
-  organizationId: idSchema,
 });
 
 export const createProjectQuerySchema = z.object({
@@ -26,7 +25,6 @@ export const createProjectQuerySchema = z.object({
 export const getProjectsQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'userRole', 'createdAt']).default('createdAt').optional(),
-    organizationId: idSchema.optional(),
     userId: idSchema.optional(),
   }),
 );

@@ -11,7 +11,7 @@ import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 
 import { z } from 'zod';
-import { getLabelsQuerySchema, labelSchema, updateLabelSchema } from './schema';
+import { createLabelSchema, getLabelsQuerySchema, labelSchema, updateLabelSchema } from './schema';
 
 class LabelsRoutesConfig {
   public createLabel = createRouteConfig({
@@ -27,7 +27,7 @@ class LabelsRoutesConfig {
         required: true,
         content: {
           'application/json': {
-            schema: labelSchema,
+            schema: createLabelSchema,
           },
         },
       },

@@ -2,7 +2,7 @@ import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
 import { db } from '#/db/db';
 
 import { labelsTable } from '#/db/schema/labels';
-import { getMemberships } from '#/lib/context';
+import { getMemberships, getOrganization } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -18,11 +18,12 @@ const labelsRoutes = app
    * Create label
    */
   .openapi(labelsRoutesConfig.createLabel, async (ctx) => {
+    const organization = getOrganization();
     const newLabel = ctx.req.valid('json');
 
     const [createdLabel] = await db
       .insert(labelsTable)
-      .values({ ...newLabel, ...{ lastUsed: new Date(newLabel.lastUsed) } })
+      .values({ ...newLabel, organizationId: organization.id })
       .returning();
 
     logEvent('Label created', { task: createdLabel.id });

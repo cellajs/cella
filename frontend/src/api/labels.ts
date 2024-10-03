@@ -14,7 +14,7 @@ export const createLabel = async (label: CreateLabelParams, orgIdOrSlug: string)
     json: label,
   });
   const json = await handleResponse(response);
-  return json.success;
+  return json.data;
 };
 
 export type GetLabelsParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {

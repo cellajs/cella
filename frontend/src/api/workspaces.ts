@@ -5,12 +5,15 @@ import { clientConfig, handleResponse } from '.';
 // Create Hono clients to make requests to the backend
 export const client = workspacesHc(config.backendUrl, clientConfig);
 
-export type CreateWorkspaceParams = Parameters<(typeof client.index)['$post']>['0']['json'];
+export type CreateWorkspaceParams = Parameters<(typeof client.index)['$post']>['0']['json'] & {
+  organizationId: string;
+};
 
 // Create new workspace
-export const createWorkspace = async ({ ...rest }: CreateWorkspaceParams) => {
+export const createWorkspace = async ({ organizationId, ...workspace }: CreateWorkspaceParams) => {
   const response = await client.index.$post({
-    json: rest,
+    param: { orgIdOrSlug: organizationId },
+    json: workspace,
   });
 
   const json = await handleResponse(response);

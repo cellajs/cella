@@ -7,7 +7,6 @@
 @tailwind utilities;
 
 @layer base {
-
   .bn-container.bn-shadcn,
   :root {
     --chart-1: 12 76% 61%;

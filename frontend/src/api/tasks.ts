@@ -5,12 +5,14 @@ import { clientConfig, handleResponse } from '.';
 // Create Hono clients to make requests to the backend
 export const client = tasksHc(config.backendUrl, clientConfig);
 
-type CreateTaskParams = Parameters<(typeof client.index)['$post']>['0']['json'];
+type CreateTaskParams = Parameters<(typeof client.index)['$post']>['0']['json'] & {
+  organizationId: string;
+};
 
 // Create a new task
-export const createTask = async (task: CreateTaskParams) => {
+export const createTask = async ({ organizationId, ...task }: CreateTaskParams) => {
   const response = await client.index.$post({
-    param: { orgIdOrSlug: task.organizationId },
+    param: { orgIdOrSlug: organizationId },
     json: task,
   });
   const json = await handleResponse(response);

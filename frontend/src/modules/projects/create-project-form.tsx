@@ -47,7 +47,6 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
         name: '',
         slug: '',
         workspaceId: workspace.id,
-        organizationId: workspace.organizationId,
       },
     }),
     [],
@@ -61,7 +60,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace,
   const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
   const { mutate: create, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
-      return createProject(workspace.id, values);
+      return createProject({ ...values, workspaceId: workspace.id, organizationId: workspace.organizationId });
     },
     onSuccess: (createdProject) => {
       form.reset();
