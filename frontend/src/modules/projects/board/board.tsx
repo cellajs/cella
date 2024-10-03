@@ -34,7 +34,7 @@ import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
 // TODO empty space width should be dynamic based on window width and amount of projects and width of each project?
-const PANEL_MIN_WIDTH = 350;
+const PANEL_MIN_WIDTH = 400;
 // Allow resizing of panels
 const EMPTY_SPACE_WIDTH = 600;
 
