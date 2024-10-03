@@ -127,7 +127,7 @@ export const TaskBlockNote = ({
       // Only replace blocks if the content actually changes
       if (currentBlocks !== newBlocksContent || html === '') {
         editor.replaceBlocks(editor.document, blocks);
-        triggerFocus(subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`);
+        triggerFocus(subTask ? `blocknote-subtask-${id}` : `blocknote-${id}`);
         if (!wasInitial.current) wasInitial.current = true;
       }
     };
@@ -142,7 +142,7 @@ export const TaskBlockNote = ({
   return (
     <Suspense>
       <BlockNoteView
-        id={subTask ? `blocknote-${id}` : `blocknote-subtask-${id}`}
+        id={subTask ? `blocknote-subtask-${id}` : `blocknote-${id}`}
         // Defer onChange, onFocus and onBlur  to run after rendering
         onChange={() => {
           if (!onChange && wasInitial.current) {

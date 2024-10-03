@@ -193,6 +193,14 @@ export default function Board() {
 
   const handleEscKeyPress = () => {
     if (!focusedTaskId) return;
+    // check if creation of subtask open
+    const subTaskCreation = !!document.getElementById('create-sub-task');
+    if (subTaskCreation) return;
+
+    // check if some of the subtasks editing
+    const subTasksEditing = document.querySelectorAll(`[id^="blocknote-subtask-"]`);
+    if (subTasksEditing.length) return dispatchCustomEvent('changeSubTaskState', { taskId: focusedTaskId, state: 'removeEditing' });
+
     const taskState = tasksState[focusedTaskId];
     if (!taskState || taskState === 'folded') return;
     if (taskState === 'editing' || taskState === 'unsaved') return setTaskState(focusedTaskId, 'expanded');
@@ -202,7 +210,7 @@ export default function Board() {
   const handleEnterKeyPress = () => {
     if (!focusedTaskId) return;
     const taskState = tasksState[focusedTaskId];
-    if (taskState === 'folded') setTaskState(focusedTaskId, 'expanded');
+    if (!taskState || taskState === 'folded') setTaskState(focusedTaskId, 'expanded');
     if (taskState === 'expanded') setTaskState(focusedTaskId, 'editing');
   };
 

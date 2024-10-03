@@ -5,11 +5,11 @@ import { z } from 'zod';
 
 import { useLocation } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
+import { useHotkeys } from '~/hooks/use-hot-keys';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from '~/modules/tasks/helpers';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote.tsx';
@@ -45,10 +45,6 @@ export const CreateSubTaskForm = ({
   const { mode } = useThemeStore();
   const { pathname } = useLocation();
   const { user } = useUserStore();
-
-  const handleHotKeysKeyPress = useCallback(() => {
-    setFormState(false);
-  }, [setFormState]);
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -127,7 +123,7 @@ export const CreateSubTaskForm = ({
     return true;
   };
 
-  useHotkeys([['Escape', handleHotKeysKeyPress]]);
+  useHotkeys([['Escape', () => setFormState(false)]]);
 
   if (!formOpen)
     return (

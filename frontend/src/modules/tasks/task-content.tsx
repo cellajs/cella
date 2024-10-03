@@ -55,7 +55,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
   }, [task.description, state]);
 
   return (
-    <div ref={taskContentRef} className="flex flex-col grow gap-2">
+    <div className="flex flex-col grow gap-2">
       {state === 'folded' ? (
         <div className="mt-1 inline-flex">
           <div
@@ -99,7 +99,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
           {state === 'editing' || state === 'unsaved' ? (
             <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
           ) : (
-            <div className={`${expandedStyle} bn-container bn-shadcn`} data-color-scheme={mode}>
+            <div ref={taskContentRef} className={`${expandedStyle} bn-container bn-shadcn`} data-color-scheme={mode}>
               <div
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
                 dangerouslySetInnerHTML={{ __html: task.description }}

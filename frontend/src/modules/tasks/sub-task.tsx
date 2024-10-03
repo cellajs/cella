@@ -179,7 +179,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
                   html={task.description || ''}
                   mode={mode}
                   className="w-full pr-2 bg-transparent border-none"
-                  subTask
+                  subTask={true}
                   taskToClose={task.parentId}
                 />
               ) : (
