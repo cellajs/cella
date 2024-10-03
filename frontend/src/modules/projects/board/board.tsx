@@ -33,9 +33,10 @@ import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
-const PANEL_MIN_WIDTH = 300;
+// TODO empty space width should be dynamic based on window width and amount of projects and width of each project?
+const PANEL_MIN_WIDTH = 350;
 // Allow resizing of panels
-const EMPTY_SPACE_WIDTH = 300;
+const EMPTY_SPACE_WIDTH = 600;
 
 // TODO can this be simplified or moved?
 export type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
