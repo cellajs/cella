@@ -66,7 +66,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
       if (state === 'editing' || state === 'unsaved') return;
       setState('editing');
     },
-    allowedTargets: ['p', 'div'],
+    allowedTargets: ['p', 'div', 'img'],
     ref: subTaskRef,
   });
 

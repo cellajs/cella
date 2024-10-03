@@ -35,7 +35,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
       if (state === 'editing' || state === 'unsaved') return;
       dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'editing' });
     },
-    allowedTargets: ['p', 'div'],
+    allowedTargets: ['p', 'div', 'img'],
     ref: taskContentRef,
   });
 
