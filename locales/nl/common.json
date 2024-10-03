@@ -118,7 +118,7 @@
   "error.passkey_add_failed": "Registratie van passkey mislukt. Probeer het later opnieuw.",
   "error.passkey_remove_failed": "Verwijderen van passkey mislukt. Probeer het later opnieuw.",
   "error.passkey_sign_in": "Passkey-verificatie mislukt",
-  "error.reorder_resources": "Herordenen van {{resource}} mislukt",
+  "error.reorder_resource": "Herordenen van {{resource}} mislukt",
   "error.reported_try_later": "Er is een fout gerapporteerd. Probeer het later opnieuw.",
   "error.reported_try_or_contact": "Er is een fout gerapporteerd. Probeer het later opnieuw en neem contact op met de ondersteuning als het probleem aanhoudt.",
   "error.resource_forbidden": "Verboden",

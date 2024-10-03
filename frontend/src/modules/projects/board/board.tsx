@@ -401,7 +401,7 @@ export default function Board() {
                 mainCallback([updatedTask], 'update');
               }
             } catch (err) {
-              toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));
+              toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
             }
           }
 
@@ -411,7 +411,7 @@ export default function Board() {
               const updatedTask = await updateTask(sourceData.item.id, workspace.organizationId, 'order', newOrder);
               mainCallback([updatedTask], 'updateSubTask');
             } catch (err) {
-              toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));
+              toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
             }
           }
         },

@@ -226,7 +226,7 @@ export default function TasksTable() {
             const updatedTask = await updateTask(sourceData.item.id, workspace.organizationId, 'order', newOrder);
             callback([updatedTask], 'updateSubTask');
           } catch (err) {
-            toast.error(t('common:error.reorder_resources', { resources: t('app:todo') }));
+            toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
           }
         },
       }),

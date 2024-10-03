@@ -121,7 +121,7 @@
   "error.passkey_add_failed": "Registering passkey failed. Try again later.",
   "error.passkey_remove_failed": "Removing passkey failed. Try again later.",
   "error.passkey_sign_in": "Passkey verification failed.",
-  "error.reorder_resources": "{{resource}} reorder failed.",
+  "error.reorder_resource": "{{resource}} reorder failed.",
   "error.reported_try_later": "An error has been reported. Please try again later.",
   "error.reported_try_or_contact": "An error has been reported. Please try again later and contact support if the problem persists.",
   "error.request_email_is_user": "This email is already linked to an account. Please use a different one!",
