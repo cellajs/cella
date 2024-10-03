@@ -8,7 +8,8 @@ import { db } from '#/db/db';
 import { labelsTable } from '#/db/schema/labels';
 import { projectsTable } from '#/db/schema/projects';
 import { tasksTable } from '#/db/schema/tasks';
-import { extractKeywords, getLabels, getSubTask, getTaskLabels } from './helper';
+import { extractKeywords } from '#/modules/tasks/helpers';
+import { getLabels, getSubTask, getTaskLabels } from './helper';
 import type { PivotalTask, Subtask } from './type';
 
 const program = new Command().option('--file <file>', 'Zip file to upload').option('--project <project>', 'Project to upload tasks to').parse();
@@ -74,7 +75,7 @@ zip.loadAsync(data).then(async (zip) => {
       organizationId: project.organizationId,
       projectId: project.id,
       expandable: true,
-      keywords: extractKeywords(task.Description.length ? task.Description : task.Title),
+      keywords: extractKeywords(task.Description + task.Title),
       impact: ['0', '1', '2', '3'].includes(task.Estimate) ? +task.Estimate : 0,
       description: `<div class="bn-block-content"><p class="bn-inline-content">${task.Title}</p></div><div class="bn-block-content"><p class="bn-inline-content">${task.Description}</p></div>`,
       labels: labelsIds,

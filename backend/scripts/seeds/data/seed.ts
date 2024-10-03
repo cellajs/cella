@@ -13,9 +13,9 @@ import { type InsertWorkspaceModel, workspacesTable } from '#/db/schema/workspac
 import { and, eq } from 'drizzle-orm';
 import { UniqueEnforcer } from 'enforce-unique';
 import slugify from 'slugify';
+import { extractKeywords } from '#/modules/tasks/helpers';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
-import { extractKeywords } from './helpers';
 
 export const dataSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
@@ -191,7 +191,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
                 organizationId: organization.id,
                 projectId: project.id,
                 summary: `<div class="bn-block-content"><p class="bn-inline-content">${subTaskName}</p></div>`,
-                keywords: extractKeywords(subTaskDescription),
+                keywords: extractKeywords(subTaskName + subTaskDescription),
                 expandable: true,
                 parentId: mainTaskId,
                 slug: slugify(subTaskName, { lower: true }),
@@ -214,7 +214,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             organizationId: organization.id,
             projectId: project.id,
             summary: `<div class="bn-block-content"><p class="bn-inline-content">${name}</p></div>`,
-            keywords: extractKeywords(taskDescription),
+            keywords: extractKeywords(name + taskDescription),
             expandable: true,
             // Selection 1-2 random members
             assignedTo: projectMemberships

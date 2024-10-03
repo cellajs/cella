@@ -13,6 +13,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
+import { extractKeywords } from './helpers';
 import taskRoutesConfig from './routes';
 import type { subTaskSchema } from './schema';
 
@@ -150,6 +151,7 @@ const tasksRoutes = app
 
     if (key === 'description' && data) {
       const descriptionText = String(data);
+      updateValues.keywords = extractKeywords(descriptionText);
       const rootElement = parseHtml(descriptionText);
       const groupElement = rootElement.querySelector('.bn-block-group');
       if (groupElement) {
