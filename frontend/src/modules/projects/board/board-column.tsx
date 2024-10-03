@@ -159,7 +159,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
 
   return (
     <div ref={columnRef} className="flex flex-col h-full">
-      <BoardColumnHeader id={project.id} role={project.membership?.role || 'member'} thumbnailUrl={project.thumbnailUrl} name={project.name} />
+      <BoardColumnHeader project={project} />
       <div
         className={cn(
           'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b opacity-100',

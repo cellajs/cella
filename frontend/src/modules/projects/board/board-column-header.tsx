@@ -1,29 +1,15 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight, Minimize2, Plus, Settings, Users } from 'lucide-react';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { dispatchCustomEvent } from '~/lib/custom-events';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
-import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
-import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import { openProjectConfigSheet } from './helpers';
+import type { Project } from '~/types/app';
+import ProjectActions from './board-culumn-header-actions';
 
-interface BoardColumnHeaderProps {
-  id: string;
-  name: string;
-  role: 'admin' | 'member';
-  thumbnailUrl: string | null;
-}
-
-export function BoardColumnHeader({ id, name, role, thumbnailUrl }: BoardColumnHeaderProps) {
-  const { t } = useTranslation();
+export function BoardColumnHeader({ project }: { project: Project }) {
   const navigate = useNavigate();
-  const { changeColumn } = useWorkspaceUIStore();
-  const { workspace, projects } = useWorkspaceStore();
-  const [minimize, setMinimize] = useState(false);
-  const currentIndex = projects.findIndex((p) => p.id === id);
+  const { projects } = useWorkspaceStore();
+  const currentIndex = projects.findIndex((p) => p.id === project.id);
 
   const params = useParams({
     strict: false,
@@ -43,13 +29,6 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl }: BoardColumnH
     });
   };
 
-  const MinimizeClick = () => {
-    setMinimize(!minimize);
-    changeColumn(workspace.id, id, {
-      minimized: !minimize,
-    });
-  };
-
   const stickyStyles = 'sticky sm:relative top-2 sm:top-0 bg-background z-50';
 
   return (
@@ -58,25 +37,11 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl }: BoardColumnH
         <ArrowLeft size={14} />
       </Button>
       <div className="grow sm:hidden" />
+      <AvatarWrap className="h-6 w-6 text-xs" id={project.id} type="project" name={project.name} url={project.thumbnailUrl} />
+      <div className="truncate leading-6">{project.name}</div>
 
-      <AvatarWrap className="h-6 w-6 text-xs" id={id} type="project" name={name} url={thumbnailUrl} />
-      <div className="truncate leading-6">{name}</div>
-      <div className="grow" />
-      <TooltipButton
-        toolTipContent={role === 'admin' ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members')}
-        side="bottom"
-        sideOffset={13}
-        className="max-sm:hidden"
-      >
-        <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={() => openProjectConfigSheet(projects[currentIndex])}>
-          {role === 'admin' ? <Settings size={16} /> : <Users size={16} />}
-        </Button>
-      </TooltipButton>
-      <TooltipButton toolTipContent={t('common:minimize')} side="bottom" sideOffset={13} className="hidden">
-        <Button variant="ghost" size="sm" className="text-sm p-2 h-8" onClick={MinimizeClick}>
-          <Minimize2 size={16} />
-        </Button>
-      </TooltipButton>
+      <ProjectActions project={project} />
+
       <Button
         disabled={currentIndex === projects.length - 1}
         variant="plain"
@@ -85,10 +50,6 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl }: BoardColumnH
         onClick={() => ArrowClick('right')}
       >
         <ArrowRight size={14} />
-      </Button>
-      <Button variant="plain" size="xs" className="rounded hidden sm:inline-flex" onClick={() => dispatchCustomEvent('toggleCreateTaskForm', id)}>
-        <Plus size={16} />
-        <span className="ml-1">{t('app:task')}</span>
       </Button>
     </div>
   );

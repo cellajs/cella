@@ -5,12 +5,13 @@ export default function MobileSheet({ id, side = 'right', title, description, mo
   return (
     <Drawer modal={modal} open={true} onClose={removeSheet} direction={side} noBodyStyles>
       <DrawerContent
-        onEscapeKeyDown={removeSheet}
         onInteractOutside={(e) => {
-          if (modal) return removeSheet();
           // to prevent reopen on menu nav click
           const target = e.target as HTMLElement;
-          if (!target) return;
+          //to prevent close after dropdownselect
+          if (!target || target.dataset.state === 'closed') return;
+          if (modal) return removeSheet();
+
           // Find the button element based on its id or any child element
           const button = document.getElementById(id);
           // Check if the click event target is the button itself or any of its children
