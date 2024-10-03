@@ -68,16 +68,16 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
             continue;
           }
 
-          if (item.entity === 'workspace') {
-            const options = workspaceQueryOptions(item.slug, item.organizationId || item.slug);
+          if (item.entity === 'workspace' && item.organizationId) {
+            const options = workspaceQueryOptions(item.slug, item.organizationId);
             prefetchQuery(options);
-            prefetchMembers(item, item.organizationId || item.slug);
+            prefetchMembers(item, item.organizationId);
 
             for (const subItem of item.submenu ?? []) {
               if (subItem.entity === 'project') {
                 const options = tasksQueryOptions({
                   projectId: subItem.id,
-                  orgIdOrSlug: item.organizationId || item.slug,
+                  orgIdOrSlug: item.organizationId,
                 });
                 prefetchQuery(options);
               }
