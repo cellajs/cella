@@ -10,7 +10,7 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import UpdateRow from '~/modules/organizations/organizations-table/update-row';
-import { dateShort } from '~/utils/utils';
+import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();

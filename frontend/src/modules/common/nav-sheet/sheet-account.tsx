@@ -10,7 +10,8 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { buttonVariants } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUserStore } from '~/store/user';
-import { cn, getColorClass } from '~/utils/utils';
+import { cn } from '~/utils/cn';
+import { numberToColorClass } from '~/utils/number-to-color-class';
 
 type AccountButtonProps = {
   lucide: React.ElementType<LucideProps>;
@@ -37,7 +38,7 @@ export const SheetAccount = () => {
 
   const isSystemAdmin = user.role === 'admin';
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
-  const bgClass = user.bannerUrl ? 'bg-background' : getColorClass(user.id);
+  const bgClass = user.bannerUrl ? 'bg-background' : numberToColorClass(user.id);
   const bannerClass = `relative transition-all duration-300 hover:bg-opacity-50 hover:-mx-8 -mx-4 -mt-4 bg-cover bg-center h-24 ${bgClass} bg-opacity-80`;
 
   useEffect(() => {

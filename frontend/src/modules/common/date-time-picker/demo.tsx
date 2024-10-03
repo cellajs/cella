@@ -11,7 +11,7 @@ import { Calendar } from '~/modules/ui/calendar';
 import { FormControl, FormField, FormItem, FormLabel } from '~/modules/ui/form';
 import { Form } from '~/modules/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 const formSchema = z.object({
   dateTime: z.date(),

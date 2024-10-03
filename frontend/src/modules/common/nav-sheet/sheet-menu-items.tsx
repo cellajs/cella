@@ -6,7 +6,7 @@ import { Button } from '~/modules/ui/button';
 import { baseEntityRoutes } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenuItem } from '~/types/common';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface SheetMenuItemProps {
   item: UserMenuItem;

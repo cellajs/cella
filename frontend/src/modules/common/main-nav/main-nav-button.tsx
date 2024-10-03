@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import type { NavItem } from '~/modules/common/main-nav';
 import MainNavLoader from '~/modules/common/main-nav/main-nav-loader';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface NavButtonProps {
   navItem: NavItem;

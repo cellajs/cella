@@ -4,7 +4,7 @@ import '@blocknote/shadcn/style.css';
 import DOMPurify from 'dompurify';
 import { useLayoutEffect, useRef } from 'react';
 import { useThemeStore } from '~/store/theme';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 import {
   customFormattingToolBarConfig,

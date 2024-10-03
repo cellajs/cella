@@ -25,7 +25,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { cleanUrl } from '~/utils/utils';
+import { cleanUrl } from '~/utils/clean-url';
 
 interface Props {
   organization: Organization;

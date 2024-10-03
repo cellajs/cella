@@ -7,7 +7,7 @@ import { useThemeStore } from '~/store/theme';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useNavigationStore } from '~/store/navigation';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';

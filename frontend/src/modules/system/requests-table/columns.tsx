@@ -6,7 +6,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import { dateShort } from '~/utils/utils';
+import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
   const { t } = useTranslation();

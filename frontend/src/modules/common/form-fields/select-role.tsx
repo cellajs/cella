@@ -2,7 +2,7 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import type { ContextEntity } from '~/types/common';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface SelectRoleProps {
   entityType?: ContextEntity;

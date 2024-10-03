@@ -3,7 +3,7 @@
 import React from 'react';
 import { type TimePickerType, getArrowByType, getDateByType, setDateByType } from '~/modules/common/date-time-picker/time-picker-utils';
 import { Input } from '~/modules/ui/input';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export interface TimePickerInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   picker: TimePickerType;

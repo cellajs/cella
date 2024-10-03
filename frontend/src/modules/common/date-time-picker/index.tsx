@@ -8,7 +8,7 @@ import { TimePicker } from '~/modules/common/date-time-picker/time-picker';
 import { Button } from '~/modules/ui/button';
 import { Calendar } from '~/modules/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export function DateTimePicker() {
   const [date, setDate] = React.useState<Date>();

@@ -1,6 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import type React from 'react';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface DropIndicatorProps {
   edge: Edge;

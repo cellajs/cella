@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
-import { nanoid } from '~/utils/utils';
+import { nanoid } from '~/utils/nanoid';
 
 interface Props {
   tabs: { id: string; label: string; element: React.ReactNode }[];

@@ -11,7 +11,7 @@ import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types/common';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export type OnboardingStates = 'start' | 'stepper' | 'completed';
 

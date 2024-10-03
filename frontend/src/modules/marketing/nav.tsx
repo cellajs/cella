@@ -11,7 +11,7 @@ import UserLanguage from '~/modules/common/user-language';
 import UserTheme from '~/modules/common/user-theme';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 const marketingNavConfig = [
   { id: 'features', url: '/about', hash: 'features' },

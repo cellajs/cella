@@ -2,7 +2,8 @@ import type { AvatarProps } from '@radix-ui/react-avatar';
 import type { Entity } from 'backend/types/common';
 import { memo, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '~/modules/ui/avatar';
-import { cn, getColorClass } from '~/utils/utils';
+import { cn } from '~/utils/cn';
+import { numberToColorClass } from '~/utils/number-to-color-class';
 
 export interface AvatarWrapProps extends AvatarProps {
   id?: string;
@@ -13,7 +14,7 @@ export interface AvatarWrapProps extends AvatarProps {
 }
 
 const AvatarWrap = memo(({ type, id, name, url, className, ...props }: AvatarWrapProps) => {
-  const avatarBackground = useMemo(() => getColorClass(id), [id]);
+  const avatarBackground = useMemo(() => numberToColorClass(id), [id]);
   return (
     <Avatar {...props} className={className}>
       {url ? (
