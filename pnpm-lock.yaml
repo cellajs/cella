@@ -265,6 +265,30 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0
 
+  cli/sync-cella:
+    dependencies:
+      '@inquirer/prompts':
+        specifier: ^6.0.1
+        version: 6.0.1
+      commander:
+        specifier: ^12.1.0
+        version: 12.1.0
+      cross-spawn:
+        specifier: ^7.0.3
+        version: 7.0.3
+      inquirer-file-selector:
+        specifier: ^0.4.0
+        version: 0.4.0
+      picocolors:
+        specifier: ^1.1.0
+        version: 1.1.0
+      validate-npm-package-name:
+        specifier: ^5.0.1
+        version: 5.0.1
+      yocto-spinner:
+        specifier: ^0.1.0
+        version: 0.1.0
+
   config: {}
 
   frontend:
@@ -2537,7 +2561,6 @@ packages:
 
   '@evilmartians/lefthook@1.7.18':
     resolution: {integrity: sha512-BIJBQtC7xKOedxESlB0wVG6M32ftjK+5vnID9I5CjRDE/6KcCpcK366AyG0eHGdPK1TVty81QalxZqSTxWRXPw==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -6992,6 +7015,10 @@ packages:
 
   inline-style-parser@0.2.4:
     resolution: {integrity: sha512-0aO8FkhNZlj/ZIbNi7Lxxr12obT7cL1moPfE4tg1LkX7LlLfC6DeX4l2ZEud1ukP9jNQyNnfzQVqwbwmAATY4Q==}
+
+  inquirer-file-selector@0.4.0:
+    resolution: {integrity: sha512-h1x6Nq9ovd/SQCxQhaMZ1NdLn1HI0B36v16B0ho9Omp0rMzbbFvygS3UOSJhobIKcC084ujYNhpi25S793M6Wg==}
+    engines: {node: '>=18'}
 
   internal-slot@1.0.7:
     resolution: {integrity: sha512-NGnrKwXzSms2qUUih/ILZ5JBqNTSa1+ZmP6flaIp6KmSElgE9qdndzS3cqjrDovwFdmwsGsLdeFgB6suw+1e9g==}
@@ -17670,6 +17697,12 @@ snapshots:
   ini@1.3.8: {}
 
   inline-style-parser@0.2.4: {}
+
+  inquirer-file-selector@0.4.0:
+    dependencies:
+      '@inquirer/core': 9.2.1
+      '@inquirer/figures': 1.0.6
+      chalk: 5.3.0
 
   internal-slot@1.0.7:
     dependencies:
