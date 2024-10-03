@@ -179,7 +179,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
             <div ref={subTaskSummaryRef} dangerouslySetInnerHTML={{ __html: task.summary }} className="mr-1.5" />
           ) : (
-            <>
+            <div className="flex w-full flex-col">
               {state === 'editing' || state === 'unsaved' ? (
                 <TaskBlockNote
                   id={task.id}
@@ -198,7 +198,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
               )}
 
               <TaskHeader task={task as Task} state={state} onRemove={onRemove} />
-            </>
+            </div>
           )}
         </div>
       </div>
