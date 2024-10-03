@@ -4,7 +4,7 @@ import { StepIcon } from '~/modules/common/stepper/step-icon';
 import { StepLabel } from '~/modules/common/stepper/step-label';
 import type { StepSharedProps } from '~/modules/common/stepper/types';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>((props, ref) => {
   const {

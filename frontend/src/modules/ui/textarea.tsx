@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import { useAutoResize } from '~/hooks/use-auto-resize';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   autoResize?: boolean;

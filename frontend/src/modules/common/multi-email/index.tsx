@@ -9,7 +9,7 @@ import * as React from 'react';
 import { isEmail as isEmailFn } from '~/modules/common/multi-email/is-email';
 import { Badge } from '~/modules/ui/badge';
 import { inputClass } from '~/modules/ui/input';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export interface MultiEmailProps {
   id?: string;

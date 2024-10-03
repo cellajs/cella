@@ -5,7 +5,10 @@ import ReactDOM from 'react-dom/client';
 import { ThemeManager } from '~/modules/common/theme-manager';
 
 import { RouterProvider } from '@tanstack/react-router';
+
+// Boot with i18n & dayjs
 import '~/lib/i18n';
+import '~/lib/dayjs';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');

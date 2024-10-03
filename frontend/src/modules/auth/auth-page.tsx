@@ -3,7 +3,7 @@ import { Suspense, lazy } from 'react';
 import useMounted from '~/hooks/use-mounted';
 import Logo from '~/modules/app/logo';
 import { type FooterLinkProps, FooterLinks } from '~/modules/common/main-footer';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface AuthPageProps {
   children?: React.ReactNode;

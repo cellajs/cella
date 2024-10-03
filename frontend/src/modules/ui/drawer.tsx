@@ -2,7 +2,7 @@ import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
 
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 const DrawerVariants = cva('fixed z-[150] p-4 overflow-y-auto flex flex-col rounded-t-2.5 border bg-background', {
   variants: {

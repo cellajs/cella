@@ -15,7 +15,7 @@ import { ChevronUp, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
 import { Label } from '~/modules/ui/label';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export type LabelDirectionType = 'top' | 'left';
 const LabelDirectionContext = React.createContext<LabelDirectionType | string>('top');

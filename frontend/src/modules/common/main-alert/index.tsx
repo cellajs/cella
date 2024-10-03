@@ -6,7 +6,7 @@ import type { alertVariants } from '~/modules/ui/alert';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export type MainAlert = {
   className?: string;

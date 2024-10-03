@@ -5,7 +5,7 @@ import { Input } from '~/modules/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/modules/ui/tabs';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 type PickerType = 'solid' | 'gradient' | 'image';
 

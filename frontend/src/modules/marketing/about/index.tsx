@@ -3,7 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 import { buttonVariants } from '~/modules/ui/button';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 import { config } from 'config';
 import { ArrowDown } from 'lucide-react';

@@ -4,7 +4,7 @@ import { Search, XCircle } from 'lucide-react';
 import * as React from 'react';
 
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 const Command = React.forwardRef<React.ElementRef<typeof CommandPrimitive>, React.ComponentPropsWithoutRef<typeof CommandPrimitive>>(
   ({ className, ...props }, ref) => (

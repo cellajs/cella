@@ -4,7 +4,7 @@ import '@blocknote/shadcn/style.css';
 import DOMPurify from 'dompurify';
 import { useLayoutEffect, useRef } from 'react';
 import { useThemeStore } from '~/store/theme';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 import {
   customFormattingToolBarConfig,
@@ -16,7 +16,6 @@ import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { triggerFocus } from '~/modules/common/blocknote/helpers';
 import type { Member } from '~/types/common';
 
 import './styles.css';
@@ -83,7 +82,9 @@ export const BlockNote = ({
       // Only replace blocks if the content actually changes
       if (currentBlocks !== newBlocksContent || html === '') {
         editor.replaceBlocks(editor.document, blocks);
-        triggerFocus(id);
+        const lastBlock = editor.document[editor.document.length - 1];
+        editor.focus();
+        editor.setTextCursorPosition(lastBlock.id, 'end');
         if (!wasInitial.current) wasInitial.current = true;
       }
     };

@@ -15,7 +15,7 @@ import AuthPage from '~/modules/auth/auth-page';
 import Spinner from '~/modules/common/spinner';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { acceptInviteRoute } from '~/routes/general';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 

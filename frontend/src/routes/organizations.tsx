@@ -9,7 +9,7 @@ import { membersQueryOptions } from '~/modules/organizations/members-table/helpe
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { baseEntityRoutes } from '~/nav-config';
 import type { Organization as OrganizationType } from '~/types/common';
-import { noDirectAccess } from '~/utils/utils';
+import { noDirectAccess } from '~/utils/no-direct-access';
 import type { ErrorType } from '#/lib/errors';
 import { AppRoute } from './general';
 

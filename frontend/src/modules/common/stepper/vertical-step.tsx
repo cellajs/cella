@@ -6,7 +6,7 @@ import { StepLabel } from '~/modules/common/stepper/step-label';
 import type { StepSharedProps } from '~/modules/common/stepper/types';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 type VerticalStepProps = StepSharedProps & {
   children?: React.ReactNode;

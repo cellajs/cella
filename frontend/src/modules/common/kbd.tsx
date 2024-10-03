@@ -1,4 +1,4 @@
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export const Kbd = ({ className = '', value = '' }) => {
   return (

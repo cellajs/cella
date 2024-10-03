@@ -15,7 +15,7 @@ import { WaitListForm } from '~/modules/common/wait-list-form';
 import { buttonVariants } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitList';
 

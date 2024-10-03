@@ -4,7 +4,7 @@ import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
 import { Check } from 'lucide-react';
 import * as React from 'react';
 
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 const RadioGroup = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Root>,

@@ -17,13 +17,13 @@ import { useMutation } from '~/hooks/use-mutations';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { addMenuItem } from '~/modules/common/nav-sheet/helpers/add-menu-item';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization, UserMenuItem } from '~/types/common';
-import { addMenuItem } from '~/utils/utils';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;

@@ -3,7 +3,7 @@ import type { LucideProps } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { buttonVariants } from '~/modules/ui/button';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface Tab {
   id: string;

@@ -7,7 +7,7 @@ import UserLanguage from '~/modules/common/user-language';
 import UserTheme from '~/modules/common/user-theme';
 import { Button } from '~/modules/ui/button';
 import { defaultFooterLinks } from '~/nav-config';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 export interface FooterLinkProps {
   id: string;
