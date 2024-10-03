@@ -267,7 +267,7 @@ export default function Board() {
       // Set the state of the previously focused task
       setTaskState(currentFocused, tasksState[currentFocused] === 'folded' || !tasksState[currentFocused] ? 'folded' : 'expanded');
       // Set the state of the newly focused task
-      setTaskState(newFocused, tasksState[newFocused] === 'expanded' ? 'editing' : 'expanded');
+      setTaskState(newFocused, 'expanded');
     }
 
     // If there's no currently focused task, expand the newly focused task
