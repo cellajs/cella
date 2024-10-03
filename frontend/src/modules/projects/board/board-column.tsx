@@ -186,7 +186,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
                       size="sm"
                       className="flex relative justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-xs -mt-[.07rem]"
                     >
-                      <span className="w-6 mr-1 text-center">{acceptedCount}</span>
+                      <span className="w-6 mr-1.5 text-center">{acceptedCount}</span>
                       <span>{t('app:accepted').toLowerCase()}</span>
                       {!!acceptedCount && (
                         <ChevronDown
@@ -245,7 +245,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
                       size="sm"
                       className="flex relative justify-start w-full rounded-none gap-1 ring-inset text-sky-500 bg-sky-500/5 hover:bg-sky-500/10 text-xs -mt-[.07rem]"
                     >
-                      <span className="w-6 mr-1 text-center">{icedCount}</span>
+                      <span className="w-6 mr-1.5 text-center">{icedCount}</span>
                       <span> {t('app:iced').toLowerCase()}</span>
                       {!!icedCount && (
                         <ChevronDown
