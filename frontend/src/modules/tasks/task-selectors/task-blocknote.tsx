@@ -18,7 +18,7 @@ import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { getContentAsString, triggerFocus } from '~/modules/common/blocknote/helpers';
+import { getContentAsString } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
 import UppyFilePanel from './uppy-file-panel';
 
@@ -128,12 +128,14 @@ export const TaskBlockNote = ({
       const currentBlocks = getContentAsString(editor.document as Block[]);
       const newBlocksContent = getContentAsString(blocks as Block[]);
 
-      const subTaskCreation = subTask && !!blocks[0].content?.toString().length && onChange;
+      const subTaskCreation = subTask && onChange;
 
       // Only replace blocks if the content actually changes
       if (currentBlocks !== newBlocksContent || html === '' || subTaskCreation) {
         editor.replaceBlocks(editor.document, blocks);
-        triggerFocus(subTask ? `blocknote-subtask-${id}` : `blocknote-${id}`);
+        const lastBlock = editor.document[editor.document.length - 1];
+        editor.focus();
+        editor.setTextCursorPosition(lastBlock.id, 'end');
       }
       if (!canChangeState.current) canChangeState.current = true;
     };
