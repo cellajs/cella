@@ -11,6 +11,7 @@ import WorkspaceActions from '~/modules/projects/board/header/board-header-actio
 import BoardSearch from '~/modules/projects/board/header/board-search';
 import DisplayOptions from '~/modules/projects/board/header/display-options';
 import TaskSelectedTableButtons from '~/modules/projects/board/header/selected-buttons';
+import { openProjectConfigSheet } from '~/modules/projects/board/helpers';
 import LabelsTable from '~/modules/tasks/labels-table';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
@@ -18,7 +19,6 @@ import { WorkspaceSettings } from '~/modules/workspaces/workspace-settings';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types/app';
-import { openProjectConfigSheet } from '../helpers';
 
 const BoardHeader = ({ project }: { project?: Project | null }) => {
   const { t } = useTranslation();
@@ -45,7 +45,8 @@ const BoardHeader = ({ project }: { project?: Project | null }) => {
   };
 
   const handleAddProjects = () => {
-    dialog(<AddProjects dialog workspace={workspace} />, {
+    // TODO: change mode when add projects without workspace
+    dialog(<AddProjects dialog workspace={workspace} mode="create" />, {
       className: 'md:max-w-4xl',
       id: 'add-projects',
       title: t('common:add_resource', { resource: t('app:projects').toLowerCase() }),

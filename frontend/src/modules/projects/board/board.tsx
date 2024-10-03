@@ -197,7 +197,7 @@ export default function Board() {
     const subTaskCreation = !!document.getElementById('create-sub-task');
     if (subTaskCreation) return;
 
-    // check if some of the subtasks editing
+    // check if creation of subtask open or  some of the subtasks editing
     const subTasksEditing = document.querySelectorAll(`[id^="blocknote-subtask-"]`);
     if (subTasksEditing.length) return dispatchCustomEvent('changeSubTaskState', { taskId: focusedTaskId, state: 'removeEditing' });
 

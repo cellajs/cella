@@ -12,12 +12,13 @@ import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import type { Block } from '@blocknote/core';
 import { customFormattingToolBarConfig, customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { triggerFocus } from '~/modules/common/blocknote/helpers';
+import { getContentAsString, triggerFocus } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
 import UppyFilePanel from './uppy-file-panel';
 
@@ -121,11 +122,13 @@ export const TaskBlockNote = ({
   useLayoutEffect(() => {
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
-      const currentBlocks = editor.document.map((block) => block.content?.toString()).join('');
-      const newBlocksContent = blocks.map((block) => block.content?.toString()).join('');
+      const currentBlocks = getContentAsString(editor.document as Block[]);
+      const newBlocksContent = getContentAsString(blocks as Block[]);
+
+      const subTaskCreation = subTask && !!blocks[0].content?.toString().length && onChange;
 
       // Only replace blocks if the content actually changes
-      if (currentBlocks !== newBlocksContent || html === '') {
+      if (currentBlocks !== newBlocksContent || html === '' || subTaskCreation) {
         editor.replaceBlocks(editor.document, blocks);
         triggerFocus(subTask ? `blocknote-subtask-${id}` : `blocknote-${id}`);
         if (!wasInitial.current) wasInitial.current = true;

@@ -101,7 +101,13 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, stat
         getInitialData: () => data,
         onDragStart: () => setDragging(true),
         onDrop: () => setDragging(false),
-        canDrag: () => state === 'folded' || state === 'expanded',
+        canDrag: () => {
+          if (!taskDragRef.current) return false;
+          // Check if there are any sub taskEditing in current task
+          const subTasksEditing = taskDragRef.current.querySelectorAll(`[id^="blocknote-subtask-"]`);
+
+          return !subTasksEditing.length || state === 'folded' || (state === 'expanded' && !subTasksEditing.length);
+        },
       }),
       dropTargetForExternal({
         element,

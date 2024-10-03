@@ -145,7 +145,7 @@ export const CreateSubTaskForm = ({
                   <TaskBlockNote
                     id={parentTask.id}
                     projectId={parentTask.projectId}
-                    html={value || ''}
+                    html={value}
                     onChange={(description, summary) => {
                       onChange(description);
                       form.setValue('summary', summary);
