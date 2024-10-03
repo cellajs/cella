@@ -54,6 +54,11 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl }: BoardColumnH
 
   return (
     <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
+      <Button disabled={currentIndex === 0} variant="plain" size="xs" className="rounded sm:hidden" onClick={() => ArrowClick('left')}>
+        <ArrowLeft size={14} />
+      </Button>
+      <div className="grow sm:hidden" />
+
       <AvatarWrap className="h-6 w-6 text-xs" id={id} type="project" name={name} url={thumbnailUrl} />
       <div className="truncate leading-6">{name}</div>
       <div className="grow" />
@@ -72,9 +77,6 @@ export function BoardColumnHeader({ id, name, role, thumbnailUrl }: BoardColumnH
           <Minimize2 size={16} />
         </Button>
       </TooltipButton>
-      <Button disabled={currentIndex === 0} variant="plain" size="xs" className="rounded sm:hidden" onClick={() => ArrowClick('left')}>
-        <ArrowLeft size={14} />
-      </Button>
       <Button
         disabled={currentIndex === projects.length - 1}
         variant="plain"
