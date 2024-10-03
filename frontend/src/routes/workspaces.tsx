@@ -7,7 +7,7 @@ import ErrorNotice from '~/modules/common/error-notice';
 import Overview from '~/modules/projects/overview';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import { baseEntityRoutes } from '~/nav-config';
-import { noDirectAccess } from '~/utils/utils';
+import { noDirectAccess } from '~/utils/no-direct-access';
 import { AppRoute } from './general';
 
 // Lazy-loaded components

@@ -20,8 +20,8 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { SubTask as BaseSubTask, Task } from '~/types/app';
+import { cn } from '~/utils/cn';
 import { getDraggableItemData } from '~/utils/drag-drop';
-import { cn } from '~/utils/utils';
 import type { TaskStates } from './types';
 
 const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {

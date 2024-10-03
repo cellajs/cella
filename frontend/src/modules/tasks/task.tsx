@@ -2,7 +2,7 @@ import { cva } from 'class-variance-authority';
 import { useEffect, useRef, useState } from 'react';
 
 import { Card, CardContent } from '~/modules/ui/card';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';

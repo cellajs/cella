@@ -33,7 +33,8 @@ import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Label, Task } from '~/types/app';
 import type { Member } from '~/types/common';
-import { cn, nanoid } from '~/utils/utils';
+import { cn } from '~/utils/cn';
+import { nanoid } from '~/utils/nanoid';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;

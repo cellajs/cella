@@ -16,7 +16,8 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandL
 import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Label } from '~/types/app';
-import { nanoid, recentlyUsed } from '~/utils/utils';
+import { dateIsRecent } from '~/utils/date-is-recent';
+import { nanoid } from '~/utils/nanoid';
 
 export const badgeStyle = (color?: string | null) => {
   if (!color) return {};
@@ -56,7 +57,7 @@ const SetLabels = ({ value, projectId, organizationId, creationValueChange, trig
     if (!isRecent) return selectedLabels;
     // save to recent labels all labels that used in past 3 days
     changeColumn(workspace.id, projectId, {
-      recentLabels: orderedLabels.filter((l) => recentlyUsed(l.lastUsed, 3)),
+      recentLabels: orderedLabels.filter((l) => dateIsRecent(l.lastUsed, 3)),
     });
     return orderedLabels.slice(0, 8);
   }, [isRecent, searchValue, orderedLabels, selectedLabels]);

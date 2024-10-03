@@ -15,6 +15,7 @@ import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { addMenuItem } from '~/modules/common/nav-sheet/helpers/add-menu-item';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
@@ -23,7 +24,6 @@ import { useUserStore } from '~/store/user';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Workspace } from '~/types/app';
 import type { UserMenuItem } from '~/types/common';
-import { addMenuItem } from '~/utils/utils';
 
 interface CreateProjectFormProps {
   workspace: Workspace;

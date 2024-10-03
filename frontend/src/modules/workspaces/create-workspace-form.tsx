@@ -16,6 +16,7 @@ import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state
 import InputFormField from '~/modules/common/form-fields/input';
 import SelectParentFormField from '~/modules/common/form-fields/select-parent';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { addMenuItem } from '~/modules/common/nav-sheet/helpers/add-menu-item';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
@@ -24,7 +25,6 @@ import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types/app';
 import type { Organization, UserMenuItem } from '~/types/common';
-import { addMenuItem } from '~/utils/utils';
 
 interface CreateWorkspaceFormProps {
   callback?: (workspace: Workspace) => void;

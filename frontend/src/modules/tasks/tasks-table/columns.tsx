@@ -18,7 +18,7 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
-import { dateShort } from '~/utils/utils';
+import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
   const { t } = useTranslation();

@@ -3,7 +3,7 @@ import { Grid2X2, Rows4, SquareKanban } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface Props {
   className?: string;

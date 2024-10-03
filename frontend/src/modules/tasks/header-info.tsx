@@ -7,7 +7,7 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import type { Task } from '~/types/app';
-import { dateShort } from '~/utils/utils';
+import { dateShort } from '~/utils/date-short';
 import { AvatarWrap } from '../common/avatar-wrap';
 
 const HeaderInfo = ({ task }: { task: Task }) => {

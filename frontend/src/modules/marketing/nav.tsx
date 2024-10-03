@@ -9,7 +9,7 @@ import HamburgerButton from '~/modules/common/hamburger';
 import UserTheme from '~/modules/common/user-theme';
 import { buttonVariants } from '~/modules/ui/button';
 import { Sheet, SheetContent, SheetHiddenTitle } from '~/modules/ui/sheet';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 const marketingNavConfig = [
   { id: 'product', url: '/about', hash: 'product' },

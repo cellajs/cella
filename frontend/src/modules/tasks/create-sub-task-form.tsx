@@ -18,7 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types/app';
-import { nanoid } from '~/utils/utils';
+import { nanoid } from '~/utils/nanoid';
 
 const formSchema = z.object({
   id: z.string(),

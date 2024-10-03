@@ -11,7 +11,7 @@ import type { TaskType } from '~/modules/tasks/create-task-form';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceStore } from '~/store/workspace';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];

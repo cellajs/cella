@@ -21,7 +21,7 @@ import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface BoardColumnProps {
   tasksState: Record<string, TaskStates>;

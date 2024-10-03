@@ -2,7 +2,7 @@ import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact';
 import { taskStatuses } from '~/modules/tasks/task-selectors/select-status';
 import type { Project, SubTask, Task } from '~/types/app';
-import { recentlyUsed } from '~/utils/utils';
+import { dateIsRecent } from '~/utils/date-is-recent';
 
 export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, id: string, parentId?: string, status?: number) => {
   let filteredTasks: Task[] | SubTask[] = [];
@@ -38,7 +38,7 @@ const sortTaskOrder = (task1: Pick<Task, 'status' | 'order'>, task2: Pick<Task, 
 export const getNewStatusTaskOrder = (oldStatus: number, newStatus: number, tasks: Task[]) => {
   const direction = newStatus - oldStatus;
   const [task] = tasks
-    .filter((t) => t.status === newStatus && (t.status !== 6 || recentlyUsed(t.modifiedAt, 30)))
+    .filter((t) => t.status === newStatus && (t.status !== 6 || dateIsRecent(t.modifiedAt, 30)))
     .sort((a, b) => sortTaskOrder(a, b, direction > 0));
   return task ? (direction > 0 ? task.order / 2 : task.order + 1) : 1;
 };
@@ -95,10 +95,10 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
 
   const filteredTasks = tasks.filter((task) => {
     // Count accepted in past 30 days and iced tasks
-    if (task.status === 6 && recentlyUsed(task.modifiedAt, 30)) acceptedCount += 1;
+    if (task.status === 6 && dateIsRecent(task.modifiedAt, 30)) acceptedCount += 1;
     if (task.status === 0) icedCount += 1;
     // Filter based on showAccepted in past 30 days and showIced
-    if (showAccepted && recentlyUsed(task.modifiedAt, 30) && task.status === 6) return true;
+    if (showAccepted && dateIsRecent(task.modifiedAt, 30) && task.status === 6) return true;
     if (showIced && task.status === 0) return true;
     return task.status !== 0 && task.status !== 6;
   });

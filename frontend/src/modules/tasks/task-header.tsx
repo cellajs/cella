@@ -11,7 +11,8 @@ import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
 import type { Task } from '~/types/app';
-import { dateShort, dateTwitterFormat } from '~/utils/utils';
+import { dateMini } from '~/utils/date-mini';
+import { dateShort } from '~/utils/date-short';
 import HeaderInfo from './header-info';
 import type { TaskStates } from './types';
 
@@ -57,7 +58,7 @@ export const TaskHeader = ({
           <>
             <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
             <TooltipButton toolTipContent={dateShort(task.createdAt)} side="bottom" sideOffset={5} hideWhenDetached>
-              <span className="ml-1 opacity-50 text-sm text-center font-light">{dateTwitterFormat(task.createdAt, user.language, 'ago')}</span>
+              <span className="ml-1 opacity-50 text-sm text-center font-light">{dateMini(task.createdAt, user.language, 'ago')}</span>
             </TooltipButton>
             <HeaderInfo task={task} />
             {/*  in development: show subtask order number to debug drag */}

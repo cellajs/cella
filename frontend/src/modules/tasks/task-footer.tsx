@@ -17,7 +17,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Task } from '~/types/app';
-import { cn } from '~/utils/utils';
+import { cn } from '~/utils/cn';
 
 interface TasksFooterProps {
   task: Task;
