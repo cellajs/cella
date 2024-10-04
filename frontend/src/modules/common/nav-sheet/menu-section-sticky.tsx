@@ -60,7 +60,13 @@ export const MenuSectionSticky = ({
           <AnimatePresence mode="popLayout">
             {isSectionVisible && data.length && (
               <TooltipButton toolTipContent={t('common:manage_content')} side="bottom" sideOffset={10}>
-                <Button className="w-12 px-3" variant={optionsView ? 'plain' : 'secondary'} size="icon" onClick={() => toggleOptionsView()} asChild>
+                <Button
+                  className="w-12 px-3 max-sm:hidden"
+                  variant={optionsView ? 'plain' : 'secondary'}
+                  size="icon"
+                  onClick={() => toggleOptionsView()}
+                  asChild
+                >
                   <motion.button
                     key={`sheet-menu-settings-${sectionType}`}
                     transition={{ bounce: 0, duration: 0.2 }}
