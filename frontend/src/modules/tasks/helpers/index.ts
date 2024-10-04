@@ -4,19 +4,36 @@ import { taskStatuses } from '~/modules/tasks/task-selectors/select-status';
 import type { Project, SubTask, Task } from '~/types/app';
 import { dateIsRecent } from '~/utils/date-is-recent';
 
+const orderIncrease = (order: number) => {
+  if (Number.isInteger(order)) return order + 1;
+  return Math.ceil(order);
+};
+
+const orderDecrease = (order: number) => {
+  if (order > 1 && Number.isInteger(order)) return order - 1;
+  return order / 2;
+};
+
 export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, id: string, parentId?: string, status?: number) => {
   let filteredTasks: Task[] | SubTask[] = [];
 
   if (parentId) filteredTasks = tasks.find((t) => t.id === parentId)?.subTasks || [];
   if (status) filteredTasks = tasks.filter((t) => t.status === status).sort((a, b) => b.order - a.order);
+  // Find the relative task based on the order
   const relativeTask = filteredTasks.find((t) =>
     parentId ? (edge === 'top' ? t.order < order : t.order > order) : edge === 'top' ? t.order > order : t.order < order,
   );
   let newOrder: number;
 
+  // Determine new order based on relative task presence and conditions
   if (!relativeTask || relativeTask.order === order) {
-    if (parentId) newOrder = edge === 'top' ? order / 2 : order + 1;
-    else newOrder = edge === 'top' ? order + 1 : order / 2;
+    newOrder = parentId
+      ? edge === 'top'
+        ? orderDecrease(order)
+        : orderIncrease(order)
+      : edge === 'top'
+        ? orderIncrease(order)
+        : orderDecrease(order);
   } else if (relativeTask.id === id) {
     newOrder = relativeTask.order;
   } else {

@@ -12,7 +12,6 @@ import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
 import type { TaskStates } from './types';
-import { useRenderInSummary } from './use-render-in-summary';
 
 interface Props {
   task: Task;
@@ -22,13 +21,9 @@ interface Props {
 
 const TaskContent = ({ task, mode, state }: Props) => {
   const taskContentRef = useRef<HTMLDivElement>(null);
-  const taskSummaryRef = useRef<HTMLDivElement>(null);
-
   const [createSubTask, setCreateSubTask] = useState(false);
 
   const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none pl-9';
-
-  useRenderInSummary(taskSummaryRef, `task-${task.id}-summary-buttons`, <SummaryButtons task={task} />);
 
   useDoubleClick({
     onSingleClick: () => {
@@ -61,14 +56,14 @@ const TaskContent = ({ task, mode, state }: Props) => {
   return (
     <div className="flex flex-col grow gap-2">
       {state === 'folded' ? (
-        <div className="mt-1 inline-flex">
+        <div className="mt-1 inline-flex items-center">
           <div
-            ref={taskSummaryRef}
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
             dangerouslySetInnerHTML={{ __html: task.summary }}
             data-color-scheme={mode}
             className="bn-container bn-shadcn pl-1"
           />
+          <SummaryButtons task={task} />
         </div>
       ) : (
         <motion.div initial={{ y: -10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.3 }}>
@@ -127,14 +122,14 @@ const SummaryButtons = ({ task }: { task: Task }) => {
               <span className="font-light">{task.subTasks.length}</span>
             </div>
           )}
-          {/*  in development: show subtask order number to debug drag */}
-          {config.mode === 'development' && <span className="ml-1 opacity-15 text-sm text-center font-light">#{task.order}</span>}
           {/* <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
          <Paperclip size={10} className="transition-transform -rotate-45" />
          <span>3</span>
        </Button> */}
         </div>
       )}
+      {/*  in development: show subtask order number to debug drag */}
+      {config.mode === 'development' && <span className="ml-2 opacity-15 text-sm text-center font-light">#{task.order}</span>}
     </>
   );
 };

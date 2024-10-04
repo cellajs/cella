@@ -13,23 +13,17 @@ import BoardHeader from '~/modules/projects/board/header/board-header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Project, SubTask, Task } from '~/types/app';
-import type { ContextEntity, DraggableItemData, Membership } from '~/types/common';
+import type { Project, Task } from '~/types/app';
+import type { ContextEntity, Membership } from '~/types/common';
 
-import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { toast } from 'sonner';
-import { updateTask } from '~/api/tasks';
 import { useMutateTasksQueryData, useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
-import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
+import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, TaskOperationEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
-import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
@@ -37,17 +31,6 @@ import { useWorkspaceUIStore } from '~/store/workspace-ui';
 const PANEL_MIN_WIDTH = 400;
 // Allow resizing of panels
 const EMPTY_SPACE_WIDTH = 600;
-
-// TODO can this be simplified or moved?
-export type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
-export type SubTaskDraggableItemData = DraggableItemData<SubTask> & { type: 'subTask' };
-
-export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
-};
-export const isSubTaskData = (data: Record<string | symbol, unknown>): data is SubTaskDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'subTask';
-};
 
 function getScrollerWidth(containerWidth: number, projectsLength: number) {
   if (containerWidth === 0) return '100%';
@@ -110,7 +93,6 @@ export default function Board() {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const navigate = useNavigate();
-  const { menu } = useNavigationStore();
   const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const isMobile = useBreakpoints('max', 'sm');
   const { workspaces } = useWorkspaceUIStore();
@@ -364,60 +346,6 @@ export default function Board() {
     if (q?.length) setSearchQuery(q);
     if (taskIdPreview) handleOpenTaskSheet(taskIdPreview);
   }, []);
-
-  useEffect(() => {
-    return combine(
-      monitorForElements({
-        canMonitor({ source }) {
-          return (isTaskData(source.data) || isSubTaskData(source.data)) && !sheet.getAll().length;
-        },
-        async onDrop({ location, source }) {
-          const target = location.current.dropTargets[0];
-          if (!target) return;
-          const sourceData = source.data;
-          const targetData = target.data;
-
-          const edge: Edge | null = extractClosestEdge(targetData);
-          if (!edge) return;
-
-          const isTask = isTaskData(sourceData) && isTaskData(targetData);
-          const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
-
-          if (!isTask && !isSubTask) return;
-
-          const { items: tasks } = queryClient.getQueryData(['boardTasks', sourceData.item.projectId]) as { items: Task[] };
-          const mainCallback = useMutateTasksQueryData(['boardTasks', sourceData.item.projectId]);
-          if (isTask) {
-            const newOrder: number = getRelativeTaskOrder(edge, tasks, targetData.order, sourceData.item.id, undefined, sourceData.item.status);
-
-            try {
-              if (sourceData.item.projectId !== targetData.item.projectId) {
-                const updatedTask = await updateTask(sourceData.item.id, workspace.organizationId, 'projectId', targetData.item.projectId, newOrder);
-                const targetProjectCallback = useMutateTasksQueryData(['boardTasks', targetData.item.projectId]);
-                mainCallback([updatedTask], 'delete');
-                targetProjectCallback([updatedTask], 'create');
-              } else {
-                const updatedTask = await updateTask(sourceData.item.id, workspace.organizationId, 'order', newOrder);
-                mainCallback([updatedTask], 'update');
-              }
-            } catch (err) {
-              toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
-            }
-          }
-
-          if (isSubTask) {
-            const newOrder = getRelativeTaskOrder(edge, tasks, targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
-            try {
-              const updatedTask = await updateTask(sourceData.item.id, workspace.organizationId, 'order', newOrder);
-              mainCallback([updatedTask], 'updateSubTask');
-            } catch (err) {
-              toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
-            }
-          }
-        },
-      }),
-    );
-  }, [menu]);
 
   return (
     <>

@@ -13,7 +13,7 @@ import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { DropIndicator } from '~/modules/common/drop-indicator';
-import { isSubTaskData } from '~/modules/projects/board/board';
+import { isSubTaskData } from '~/modules/projects/board/helpers';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
 import { Button } from '~/modules/ui/button';
@@ -23,14 +23,12 @@ import type { SubTask as BaseSubTask, Task } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { getDraggableItemData } from '~/utils/drag-drop';
 import type { TaskStates } from './types';
-import { useRenderInSummary } from './use-render-in-summary';
 
 const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   const { t } = useTranslation();
 
   const { pathname } = useLocation();
   const subTaskRef = useRef<HTMLDivElement>(null);
-  const subTaskSummaryRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TaskStates>('folded');
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -62,8 +60,6 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
       toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
     }
   };
-
-  useRenderInSummary(subTaskSummaryRef, `subtask-${task.id}-summary-buttons`, <SummaryButtons task={task} setState={setState} />);
 
   useDoubleClick({
     onSingleClick: () => {
@@ -176,8 +172,13 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
         <div className={state !== 'folded' ? 'inline-flex items-center mt-1' : 'mt-1 flex flex-col items-start'}>
           {state === 'folded' ? (
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
-            <div ref={subTaskSummaryRef} dangerouslySetInnerHTML={{ __html: task.summary }} className="mr-1.5" />
+            <div className="mr-1.5 inline-flex items-center">
+              <div
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
+                dangerouslySetInnerHTML={{ __html: task.summary }}
+              />
+              <SummaryButtons task={task} setState={setState} />
+            </div>
           ) : (
             <div className="flex w-full flex-col">
               {state === 'editing' || state === 'unsaved' ? (

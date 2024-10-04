@@ -23,7 +23,7 @@ import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns'
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
-import { isSubTaskData } from '~/modules/projects/board/board';
+import { isSubTaskData } from '~/modules/projects/board/helpers';
 import { configureForExport, getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';

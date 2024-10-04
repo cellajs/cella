@@ -13,7 +13,7 @@ import { motion } from 'framer-motion';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
-import { isTaskData } from '~/modules/projects/board/board';
+import { isTaskData } from '~/modules/projects/board/helpers';
 import TaskDescription from '~/modules/tasks/task-content.tsx';
 import { TaskFooter } from '~/modules/tasks/task-footer';
 import { TaskHeader } from '~/modules/tasks/task-header';
