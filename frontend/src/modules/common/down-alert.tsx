@@ -15,7 +15,7 @@ export const DownAlert = () => {
   const { networkMode } = useGeneralStore();
   const { isOnline } = useOnlineManager();
   const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
-  const storageName = useAlertStore.persist.getOptions().name;
+
   // Check if the user is offline or online and handle accordingly
   useEffect(() => {
     (async () => {
