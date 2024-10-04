@@ -17,6 +17,27 @@ export async function mergeUpstream({
   // Fetch upstream changes and checkout local branch
   await fetchUpstream({ localBranch });
 
+  // Check if there are local changes
+  const statusSpinner = yoctoSpinner({
+    text: 'Checking for local changes that might be overridden by the merge',
+  }).start()
+
+  // Check for local changes
+  try {
+    const statusOutput = await runGitCommand({ targetFolder, command: 'status --porcelain' });
+  
+    if (statusOutput.trim() !== '') {
+      statusSpinner.error('Local changes detected. Please commit or stash your changes before merging.');
+      process.exit(1);
+    } else {
+      statusSpinner.success('No local changes detected, proceeding with merge.');
+    }
+  } catch (error) {
+    console.error(error);
+    statusSpinner.error('Failed to check for local changes.');
+    process.exit(1);
+  }
+
   // Merge upstream changes without committing
   const mergeSpinner = yoctoSpinner({
     text: `Merging upstream/${upstreamBranch} changes into ${localBranch} without committing`,
