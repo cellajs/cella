@@ -37,7 +37,7 @@ async function main() {
   }
 
   // Ask for the config file and extract the values
-  const { problems, selectedFile, divergentFile, ignoreFile, ignoreList, upstreamBranch } = await askForConfigFile(cli.configFile)
+  const { problems, selectedFile, divergedFile, ignoreFile, ignoreList, upstreamBranch } = await askForConfigFile(cli.configFile)
 
   if (problems) {
     console.error('Invalid config file: ' + problems[0]);
@@ -48,8 +48,8 @@ async function main() {
     cli.configFile = selectedFile;
   }
   
-  if (divergentFile) {
-    cli.divergentFile = divergentFile;
+  if (divergedFile) {
+    cli.divergedFile = divergedFile;
   }
 
   if (ignoreFile) {
@@ -72,10 +72,10 @@ async function main() {
     })
   }
 
-  // Ask for the divergent file if not provided
-  if (!cli.divergentFile) {
-    cli.divergentFile = await input({
-      message: 'Enter the path for the divergent file:',
+  // Ask for the diverged file if not provided
+  if (!cli.divergedFile) {
+    cli.divergedFile = await input({
+      message: 'Enter the path for the diverged file:',
       default: DEFAULT_DIVERGED_FILE,
     })
   }
@@ -96,7 +96,7 @@ async function main() {
 
   // Run the selected sync service and pass the options
   const options = {
-    divergentFile: cli.divergentFile,
+    divergedFile: cli.divergedFile,
     ignoreFile: cli.ignoreFile,
     ignoreList: cli.ignoreList,
     upstreamBranch: cli.upstreamBranch,
@@ -171,14 +171,14 @@ async function askForConfigFile(configFile) {
 
   // Extract the values from the selected file
   if (selectedFile && selectedFile !== 'canceled') {
-    const { problems, divergentFile, ignoreFile, ignoreList, upstreamBranch } = await extractValues(selectedFile);
+    const { problems, divergedFile, ignoreFile, ignoreList, upstreamBranch } = await extractValues(selectedFile);
 
     if (problems) {
       console.error('Invalid config file: ' + problems[0]);
       return await askForConfigFile();
     }
 
-    return { selectedFile, divergentFile, ignoreFile, ignoreList, upstreamBranch }; 
+    return { selectedFile, divergedFile, ignoreFile, ignoreList, upstreamBranch }; 
   } else {
     return await askForConfigFile(); 
   }
