@@ -38,19 +38,6 @@ export const updateTaskSchema = z.object({
   order: z.number().nullable(),
 });
 
-export const simpleTaskSchema = z.object({
-  ...createSelectSchema(tasksTable).omit({
-    labels: true,
-    assignedTo: true,
-    modifiedAt: true,
-    createdAt: true,
-  }).shape,
-  labels: z.array(z.string()).optional(),
-  assignedTo: z.array(z.string()).optional(),
-  createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
-});
-
 export enum TaskStatus {
   Iced = 0,
   Unstarted = 1,

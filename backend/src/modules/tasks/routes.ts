@@ -5,7 +5,7 @@ import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 
 import { z } from 'zod';
-import { createTaskSchema, getTasksQuerySchema, simpleTaskSchema, taskWithSubTasksSchema, updateTaskSchema } from './schema';
+import { createTaskSchema, getTasksQuerySchema, taskWithSubTasksSchema, updateTaskSchema } from './schema';
 
 class TaskRoutesConfig {
   public createTask = createRouteConfig({
@@ -56,29 +56,6 @@ class TaskRoutesConfig {
         content: {
           'application/json': {
             schema: successWithPaginationSchema(taskWithSubTasksSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getTask = createRouteConfig({
-    method: 'get',
-    path: '/{id}',
-    guard: [isAuthenticated, hasOrgAccess],
-    tags: ['tasks'],
-    summary: 'Get task',
-    description: 'Get a task by id.',
-    request: {
-      params: productParamSchema,
-    },
-    responses: {
-      200: {
-        description: 'Task',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(simpleTaskSchema),
           },
         },
       },

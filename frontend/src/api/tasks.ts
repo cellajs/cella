@@ -59,16 +59,6 @@ export const getTasksList = async (
   return json.data;
 };
 
-// Get a task by its ID
-export const getTask = async (id: string, orgIdOrSlug: string) => {
-  const response = await client[':id'].$get({
-    param: { id, orgIdOrSlug },
-  });
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
 export type UpdateTaskParams = Parameters<(typeof client)[':id']['$put']>['0']['json'];
 
 // Update task by its ID

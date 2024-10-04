@@ -226,7 +226,6 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
               .sort(() => 0.5 - Math.random())
               .slice(0, Math.floor(Math.random() * 3) + 2)
               .map((l) => l.id),
-            slug: slugify(name, { lower: true }),
             order: index + 1,
             // random integer between 0 and 6
             status: Math.floor(Math.random() * 7),
