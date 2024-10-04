@@ -101,6 +101,7 @@ async function main() {
     ignoreList: cli.ignoreList,
     upstreamBranch: cli.upstreamBranch,
     localBranch: cli.localBranch,
+    useRebase: cli.options.useRebase,
   };
 
   if (cli.syncService === 'diverged') {

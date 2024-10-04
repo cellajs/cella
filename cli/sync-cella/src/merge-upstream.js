@@ -10,6 +10,7 @@ export async function mergeUpstream({
   ignoreList,
   upstreamBranch,
   localBranch,
+  useRebase,
 }) {
   const targetFolder = process.cwd()
   console.log();
@@ -38,18 +39,34 @@ export async function mergeUpstream({
     process.exit(1);
   }
 
-  // Merge upstream changes without committing
-  const mergeSpinner = yoctoSpinner({
-    text: `Merging upstream/${upstreamBranch} changes into ${localBranch} without committing`,
-  }).start()
+  if (!useRebase) {
+    // Merge upstream changes without committing
+    const mergeSpinner = yoctoSpinner({
+      text: `Merging upstream/${upstreamBranch} changes into ${localBranch} without committing`,
+    }).start()
 
-  try {
-    await runGitCommand({ targetFolder, command: `merge --no-commit upstream/${upstreamBranch}` });
-    mergeSpinner.success(`Successfully merged upstream/${upstreamBranch} into ${localBranch} without committing.`);
-  }catch(e) {
-    console.error(e)
-    mergeSpinner.error('Failed to merge upstream changes without committing.');
-    process.exit(1)
+    try {
+      await runGitCommand({ targetFolder, command: `merge --no-commit upstream/${upstreamBranch}` });
+      mergeSpinner.success(`Successfully merged upstream/${upstreamBranch} into ${localBranch} without committing.`);
+    }catch(e) {
+      console.error(e)
+      mergeSpinner.error('Failed to merge upstream changes without committing.');
+      process.exit(1)
+    }
+  } else {
+    // Rebase upstream changes into local branch
+    const rebaseSpinner = yoctoSpinner({
+      text: `Rebasing upstream/${upstreamBranch} changes into ${localBranch}`,
+    }).start();
+
+    try {
+      await runGitCommand({ targetFolder, command: `rebase upstream/${upstreamBranch}` });
+      rebaseSpinner.success(`Successfully rebased upstream/${upstreamBranch} into ${localBranch}.`);
+    } catch (e) {
+      console.error(e);
+      rebaseSpinner.error('Failed to rebase upstream changes.');
+      process.exit(1);
+    }
   }
 
   // Create and apply ignore patterns
