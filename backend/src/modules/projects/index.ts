@@ -90,8 +90,10 @@ const projectsRoutes = app
    * Get list of projects
    */
   .openapi(projectRoutesConfig.getProjects, async (ctx) => {
-    const { q, sort, order, offset, limit } = ctx.req.valid('query');
+    const { q, sort, order, offset, limit, userId: requestUserId } = ctx.req.valid('query');
     const user = getContextUser();
+
+    const userId = requestUserId ?? user.id;
 
     const projectsFilters: SQL[] = [];
     if (q) projectsFilters.push(ilike(projectsTable.name, `%${q}%`));
@@ -101,7 +103,7 @@ const projectsRoutes = app
       .from(projectsTable)
       .where(and(...projectsFilters));
 
-    const memberships = db.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id)).as('memberships');
+    const memberships = db.select().from(membershipsTable).where(eq(membershipsTable.userId, userId)).as('memberships');
 
     const orderColumn = getOrderColumn(
       {

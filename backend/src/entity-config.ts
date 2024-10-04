@@ -21,6 +21,15 @@ export const entityTables = {
   task: tasksTable,
 } as const;
 
+export const entityIdFields = {
+  user: 'userId',
+  organization: 'organizationId',
+  workspace: 'workspaceId',
+  project: 'projectId',
+  label: 'labelId',
+  task: 'taskId',
+} as const;
+
 // Define how entities are rendered in user menu
 export const entityMenuSections = [
   {

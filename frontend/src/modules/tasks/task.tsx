@@ -106,7 +106,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, stat
           // Check if there are any sub taskEditing in current task
           const subTasksEditing = taskDragRef.current.querySelectorAll(`[id^="blocknote-subtask-"]`);
 
-          return !subTasksEditing.length || state === 'folded' || (state === 'expanded' && !subTasksEditing.length);
+          return state === 'folded' || (state === 'expanded' && !subTasksEditing.length);
         },
       }),
       dropTargetForExternal({

@@ -10,6 +10,7 @@ export type DialogT = {
   container?: HTMLElement | null;
   className?: string;
   refocus?: boolean;
+  containerBackdrop?: boolean;
   autoFocus?: boolean;
   hideClose?: boolean;
   content?: React.ReactNode;
@@ -125,6 +126,7 @@ const dialogFunction = (content: React.ReactNode, data?: ExternalDialog) => {
   DialogState.set({
     content,
     drawerOnMobile: true,
+    containerBackdrop: true,
     refocus: true,
     autoFocus: true,
     hideClose: false,

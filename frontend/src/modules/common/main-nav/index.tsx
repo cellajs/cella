@@ -82,9 +82,9 @@ const AppNav = () => {
       side: sheetSide,
       modal: isMobile,
       className: 'fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16',
-      // onRemove: () => {
-      //   setNavSheetOpen(null);
-      // }
+      removeCallback: () => {
+        setNavSheetOpen(null);
+      },
     });
   };
 

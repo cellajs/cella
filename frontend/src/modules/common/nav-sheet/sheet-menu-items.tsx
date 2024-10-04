@@ -37,7 +37,7 @@ export const SheetMenuItem = ({ item, type, className, mainItemIdOrSlug, searchR
           mainItemIdOrSlug && !searchResults ? 'h-12 relative menu-item-sub' : 'h-14'
         } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
         className,
-        isActive && 'ring-transparent after:right-0 after:top-0 after:w-1 after:bg-primary after:h-full after:rounded-sm',
+        isActive && 'ring-transparent bg-accent',
       )}
       aria-label={item.name}
       to={path}

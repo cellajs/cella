@@ -1,4 +1,3 @@
-import { config } from 'config';
 import { motion } from 'framer-motion';
 import { ChevronUp, Maximize2, Trash } from 'lucide-react';
 import { useState } from 'react';
@@ -62,13 +61,11 @@ export const TaskHeader = ({
       >
         {!isSubTask && task.createdBy && (
           <>
-            <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-6 w-6 text-xs" />
+            <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-5 w-5 text-xs" />
             <TooltipButton toolTipContent={dateShort(task.createdAt)} side="bottom" sideOffset={5} hideWhenDetached>
               <span className="ml-1 opacity-50 text-sm text-center font-light">{dateMini(task.createdAt, user.language, 'ago')}</span>
             </TooltipButton>
             <HeaderInfo task={task} />
-            {/*  in development: show subtask order number to debug drag */}
-            {config.mode === 'development' && isSubTask && <span className="ml-1 opacity-50 text-sm text-center font-light">{task.order}</span>}
           </>
         )}
 

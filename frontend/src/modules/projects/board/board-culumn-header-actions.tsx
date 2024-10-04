@@ -29,7 +29,7 @@ const ProjectActions = ({ project }: { project: Project }) => {
       <div className="grow hidden sm:block" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" aria-label="Workspace options">
+          <Button variant="ghost" className="max-sm:hidden" aria-label="Workspace options">
             <EllipsisVertical size={16} />
           </Button>
         </DropdownMenuTrigger>

@@ -2,6 +2,7 @@ import { eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
+import { entityIdFields } from '#/entity-config';
 import { logEvent } from '#/middlewares/logger/log-event';
 import type { BaseEntityModel, ContextEntity } from '#/types/common';
 
@@ -34,8 +35,10 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
   };
   // If inserted membership is not organization
   newMembership.organizationId = entity.organizationId ?? entity.id;
+  const entityIdField = entityIdFields[entity.entity];
+
   // If you add more entities to membership
-  newMembership[`${entity.entity}Id`] = entity.id;
+  newMembership[entityIdField] = entity.id;
 
   // Insert
   const [result] = await db.insert(membershipsTable).values(newMembership).returning({

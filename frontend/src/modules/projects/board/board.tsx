@@ -421,7 +421,7 @@ export default function Board() {
 
   return (
     <>
-      <BoardHeader project={isMobile ? mobileDeviceProject : null} />
+      <BoardHeader />
       {!projects.length ? (
         <ContentPlaceholder
           className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"

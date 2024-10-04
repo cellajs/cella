@@ -1,4 +1,5 @@
 import { config } from 'config';
+import type { InferResponseType } from 'hono/client';
 import { workspacesHc } from '#/modules/workspaces/hc';
 import { clientConfig, handleResponse } from '.';
 
@@ -19,6 +20,8 @@ export const createWorkspace = async ({ organizationId, ...workspace }: CreateWo
   const json = await handleResponse(response);
   return json.data;
 };
+
+export type GetWorkspaceResponse = Extract<InferResponseType<(typeof client)[':idOrSlug']['$get']>, { data: unknown }>['data'];
 
 // Get workspace by its slug or ID
 export const getWorkspace = async (idOrSlug: string, orgIdOrSlug: string) => {
