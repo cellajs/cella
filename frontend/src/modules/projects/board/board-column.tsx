@@ -64,10 +64,9 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
 
   const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
-  const { workspace, searchQuery, selectedTasks, projects, focusedTaskId, setFocusedTaskId, labels } = useWorkspaceStore();
+  const { workspace, searchQuery, selectedTasks, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
-  const projectLabels = labels.filter((l) => l.projectId === project.id);
   const currentProjectSettings = workspaces[workspace.id]?.[project.id];
   const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
   const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
@@ -124,7 +123,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
   };
 
   const openCreateTaskDialog = (ref: MutableRefObject<HTMLDivElement | null>) => {
-    dialog(<CreateTaskForm projectId={project.id} organizationId={project.organizationId} tasks={showingTasks} labels={projectLabels} dialog />, {
+    dialog(<CreateTaskForm projectIdOrSlug={project.id} tasks={showingTasks} dialog />, {
       id: `create-task-form-${project.id}`,
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[50] p-0 rounded-none border-y-0 mt-0 max-w-4xl',

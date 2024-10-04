@@ -18,6 +18,7 @@ import useMounted from '~/hooks/use-mounted';
 import router from '~/lib/router';
 import { NavButton } from '~/modules/common/main-nav/main-nav-button';
 import { sheet } from '~/modules/common/sheeter/state';
+import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { type NavItemId, baseNavItems, navItems } from '~/nav-config';
 import { useUserStore } from '~/store/user';
@@ -69,6 +70,15 @@ const AppNav = () => {
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
 
   const navButtonClick = (navItem: NavItem) => {
+    if (navItem.id === 'workspace-add-task') {
+      return dialog(<CreateTaskForm projectIdOrSlug={router.state.location.search.project ?? ''} dialog />, {
+        drawerOnMobile: false,
+        refocus: false,
+        hideClose: true,
+        autoFocus: !isMobile,
+      });
+    }
+
     // If its a have dialog, open it
     if (navItem.dialog) {
       return dialog(navItem.dialog, {

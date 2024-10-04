@@ -10,7 +10,6 @@ import type { FooterLinkProps } from '~/modules/common/main-footer';
 import type { NavItem } from '~/modules/common/main-nav';
 import { MainSearch, type SuggestionSection } from '~/modules/common/main-search';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
-import { CreateProjectForm } from './modules/projects/create-project-form';
 
 // Set entities paths
 export const baseEntityRoutes = {
@@ -21,7 +20,7 @@ export const baseEntityRoutes = {
   project: '/$orgIdOrSlug/workspaces/$idOrSlug/board',
 } as const;
 
-export type NavItemId = 'menu' | 'home' | 'search' | 'account' | 'workspace-menu' | 'workspace-add-project' | 'stop_impersonation';
+export type NavItemId = 'menu' | 'home' | 'search' | 'account' | 'workspace-menu' | 'workspace-add-task' | 'stop_impersonation';
 
 // Here you declare your base shown main navigation items
 export const baseNavItems: NavItemId[] = ['menu', 'home', 'search', 'account'];
@@ -33,7 +32,7 @@ export const navItems: NavItem[] = [
   { id: 'search', icon: Search, dialog: <MainSearch /> },
   { id: 'account', icon: User, sheet: <SheetAccount />, mirrorOnMobile: true },
   { id: 'workspace-menu', icon: CircleEqual, sheet: <SheetMenu /> },
-  { id: 'workspace-add-project', icon: CirclePlus, dialog: <CreateProjectForm dialog /> },
+  { id: 'workspace-add-task', icon: CirclePlus },
 ];
 
 // Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )
