@@ -1,4 +1,5 @@
 import '@blocknote/shadcn/style.css';
+import { config } from 'config';
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -126,6 +127,8 @@ const SummaryButtons = ({ task }: { task: Task }) => {
               <span className="font-light">{task.subTasks.length}</span>
             </div>
           )}
+          {/*  in development: show subtask order number to debug drag */}
+          {config.mode === 'development' && <span className="ml-1 opacity-15 text-sm text-center font-light">#{task.order}</span>}
           {/* <Button variant="ghost" size="micro" onClick={() => setIsExpanded(true)} className="inline-flex py-0 h-5 ml-1 gap-[.07rem]">
          <Paperclip size={10} className="transition-transform -rotate-45" />
          <span>3</span>
