@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { useEffect, useRef } from 'react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { MainFooter } from '~/modules/common/main-footer';
-import { sheet } from '~/modules/common/sheeter/state';
 import { buttonVariants } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUserStore } from '~/store/user';
@@ -25,7 +24,7 @@ const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, 
   const btnClass = `${id === 'btn-signout' && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`;
 
   return (
-    <Link id={id} to={action} onClick={() => sheet.remove()} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}>
+    <Link id={id} to={action} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}>
       <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
       {label}
     </Link>
