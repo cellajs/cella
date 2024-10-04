@@ -15,7 +15,7 @@ export const DownAlert = () => {
   const { networkMode } = useGeneralStore();
   const { isOnline } = useOnlineManager();
   const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
-  const storageName = useAlertStore.persist.getOptions().name;
+
   // Check if the user is offline or online and handle accordingly
   useEffect(() => {
     (async () => {
@@ -35,20 +35,9 @@ export const DownAlert = () => {
   }, [downAlert, isOnline, networkMode, isNetworkAlertClosed]);
 
   const cancelAlert = () => {
-    if (!storageName) return;
-    const storage = localStorage.getItem(storageName);
-    if (!storage) return;
-    const currentState = JSON.parse(storage);
-    currentState.state.downAlert = null;
-    localStorage.setItem(storageName, JSON.stringify(currentState));
-  };
-
-  const closeNetworkAlert = () => {
-    cancelAlert();
+    setDownAlert(null);
     setIsNetworkAlertClosed(true);
   };
-
-  if (!downAlert || (storageName && !JSON.parse(localStorage.getItem(storageName) || '').state.downAlert)) return null;
 
   const offlineText =
     networkMode === 'offline' ? (
@@ -56,12 +45,14 @@ export const DownAlert = () => {
         i18nKey="common:offline_mode.text"
         t={t}
         components={{
-          site_anchor: <button type="button" className="underline" onClick={closeNetworkAlert} />,
+          site_anchor: <button type="button" className="underline" onClick={cancelAlert} />,
         }}
       />
     ) : (
       t('common:offline.text')
     );
+
+  if (!downAlert) return <></>;
 
   return (
     <div className="fixed z-[2000] max-sm:bottom-20 bottom-4 left-4 right-4 border-0 justify-center">
@@ -76,8 +67,7 @@ export const DownAlert = () => {
           <span className="max-sm:hidden mx-2">&#183;</span>
           <span className="max-sm:hidden">{downAlert === 'maintenance' ? t('common:maintenance_mode.text') : offlineText}</span>
           {config.statusUrl && (
-            <span>
-              <span className="max-sm:hidden ml-1">Try again later or check our server</span>
+            <>
               <span className="sm:hidden mx-2">&#183;</span>
               <a
                 href={config.statusUrl}
@@ -85,10 +75,10 @@ export const DownAlert = () => {
                 target="_blank"
                 rel="noreferrer"
               >
-                status
+                {t('common:status_page')}
               </a>
               <span className="max-sm:hidden">.</span>
-            </span>
+            </>
           )}
         </AlertDescription>
       </Alert>

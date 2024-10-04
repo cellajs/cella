@@ -238,7 +238,7 @@
   "oauth": "OAuth providers",
   "oauth.text": "Connect your account with a popular identity provider.",
   "offline": "Offline",
-  "offline.text": "Connection lost. Severely limited functionality remains.",
+  "offline.text": "Connection lost. Limited functionality remains.",
   "offline_mode": "Offline access",
   "offline_mode.text": "Connection lost. <site_anchor>Continue</site_anchor> in offline mode.",
   "offline_mode_off.text": "{{appName}} cleared offline cache and stopped syncing.",
@@ -426,5 +426,7 @@
   "welcome_back": "Welcome back",
   "without_color": "Without color",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "status": "Status",
+  "status_page": "Status page"
 }
