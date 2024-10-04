@@ -71,7 +71,10 @@ export function Sheeter() {
             modal={sheet.modal}
             className={sheet.className}
             side={sheet.side}
-            removeSheet={removeSheet}
+            removeSheet={() => {
+              removeSheet();
+              sheet.removeCallback?.();
+            }}
           />
         );
       })}

@@ -22,15 +22,16 @@ export default function DesktopSheet({ id, title, description, modal = true, sid
       <SheetContent
         id={id}
         onEscapeKeyDown={removeSheet}
-        onInteractOutside={(e) => {
-          if (modal) return removeSheet();
-          // to prevent reopen on menu nav click
-          const target = e.target as HTMLElement;
-          if (!target) return;
-          // Find the button element based on its id or any child element
-          const button = document.getElementById(id);
-          // Check if the click event target is the button itself or any of its children
-          if (button && (button === target || button.contains(target))) return;
+        onPointerDownOutside={(e) => {
+          if (!modal) {
+            // to prevent reopen on menu nav click
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            // Find the button element based on its id or any child element
+            const button = document.getElementById(id);
+            // Check if the click event target is the button itself or any of its children
+            if (button && (button === target || button.contains(target))) return;
+          }
           removeSheet();
         }}
         side={side}
