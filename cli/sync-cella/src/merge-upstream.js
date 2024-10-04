@@ -50,10 +50,13 @@ export async function mergeUpstream({
       const files = (await runGitCommand({ targetFolder, command: 'ls-files' })).split('\n');
       const filteredFiles = applyIgnorePatterns(files, ignorePatterns);
 
-      // Reset and checkout the filtered files
-      for (const file of filteredFiles) {
-        await runGitCommand({ targetFolder, command: `reset ${file}` });
-        await runGitCommand({ targetFolder, command: `checkout --ours -- ${file}` });
+      // Join the list of files into a space-separated string
+      const filesToReset = filteredFiles.join(' ');
+
+      // Run the reset and checkout commands with all files at once
+      if (filesToReset.length > 0) {
+        await runGitCommand({ targetFolder, command: `reset ${filesToReset}` });
+        await runGitCommand({ targetFolder, command: `checkout --ours -- ${filesToReset}` });
       }
 
       applyIgnoreSpinner.success('Successfully applied reset/checkout for ignored files.');
