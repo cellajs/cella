@@ -15,7 +15,7 @@ export const DownAlert = () => {
   const { networkMode } = useGeneralStore();
   const { isOnline } = useOnlineManager();
   const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
-
+  const storageName = useAlertStore.persist.getOptions().name;
   // Check if the user is offline or online and handle accordingly
   useEffect(() => {
     (async () => {
@@ -35,7 +35,12 @@ export const DownAlert = () => {
   }, [downAlert, isOnline, networkMode, isNetworkAlertClosed]);
 
   const cancelAlert = () => {
-    setDownAlert(null);
+    if (!storageName) return;
+    const storage = localStorage.getItem(storageName);
+    if (!storage) return;
+    const currentState = JSON.parse(storage);
+    currentState.state.downAlert = null;
+    localStorage.setItem(storageName, JSON.stringify(currentState));
   };
 
   const closeNetworkAlert = () => {
@@ -43,7 +48,7 @@ export const DownAlert = () => {
     setIsNetworkAlertClosed(true);
   };
 
-  if (!downAlert) return;
+  if (!downAlert || (storageName && !JSON.parse(localStorage.getItem(storageName) || '').state.downAlert)) return null;
 
   const offlineText =
     networkMode === 'offline' ? (
