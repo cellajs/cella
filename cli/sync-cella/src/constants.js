@@ -1,7 +1,7 @@
 export const NAME = 'sync-cella'
 
 // Url to the Cella repository
-export const CELLA_REMOTE_URL = 'https://github.com/cellajs/cella.git';
+export const CELLA_REMOTE_URL = 'github.com/cellajs/cella.git';
 
 // Default cella config file
 export const DEFAULT_CONFIG_FILE = 'cella.config.js';

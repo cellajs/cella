@@ -7,12 +7,12 @@ async function extractFromJson(configFile) {
     const fileContent = await readFile(configFile, 'utf-8');
     const config = JSON.parse(fileContent);
 
-    const divergentFile = config.divergent_file;
+    const divergedFile = config.diverged_file;
     const ignoreFile = config.ignore_file;
     const ignoreList = Array.isArray(config.ignore_list) ? config.ignore_list : [];
     const upstreamBranch = config.upstream_branch;
 
-    return { divergentFile, ignoreFile, ignoreList, upstreamBranch };
+    return { divergedFile, ignoreFile, ignoreList, upstreamBranch };
   } catch (error) {
     return { problems: [`Error reading or parsing JSON file:: ${error}`] };
   }
@@ -23,7 +23,7 @@ async function extractFromTs(configFile) {
   try {
     const fileContent = await readFile(configFile, 'utf-8');
 
-    const divergentFile = fileContent.match(/divergentFile:\s*"([^"]+)"/)?.[1];
+    const divergedFile = fileContent.match(/divergedFile:\s*"([^"]+)"/)?.[1];
     const ignoreFile = fileContent.match(/ignoreFile:\s*"([^"]+)"/)?.[1];
     const ignoreListMatch = fileContent.match(/ignoreList:\s*\[([^\]]*)\]/);
     const ignoreList = ignoreListMatch
@@ -31,7 +31,7 @@ async function extractFromTs(configFile) {
       : [];
     const upstreamBranch = fileContent.match(/upstreamBranch:\s*"([^"]+)"/)?.[1];
 
-    return { divergentFile, ignoreFile, ignoreList, upstreamBranch };
+    return { divergedFile, ignoreFile, ignoreList, upstreamBranch };
   } catch (error) {
     return { problems: [`Error reading or parsing TS file: ${error}`] };
   }
@@ -42,12 +42,12 @@ async function extractFromJsUsingDynamicImport(configFile) {
   try {
     const { config } = await import(resolve(configFile));
 
-    const divergentFile = config.divergentFile || null;
+    const divergedFile = config.divergedFile || null;
     const ignoreFile = config.ignoreFile || null;
     const ignoreList = Array.isArray(config.ignoreList) ? config.ignoreList : [];
     const upstreamBranch = config.upstreamBranch;
 
-    return { divergentFile, ignoreFile, ignoreList, upstreamBranch };
+    return { divergedFile, ignoreFile, ignoreList, upstreamBranch };
   } catch (error) {
     return { problems: [`Error dynamically importing JS file: ${error}
 `] };

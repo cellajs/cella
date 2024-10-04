@@ -7,7 +7,7 @@ import { runGitCommand } from './utils/run-git-command.js'
 import { extractIgnorePatterns, applyIgnorePatterns } from './utils/ignore-patterns.js'
 
 export async function diverged({
-  divergentFile,
+  divergedFile,
   ignoreFile,
   ignoreList,
   upstreamBranch,
@@ -46,21 +46,21 @@ export async function diverged({
     process.exit(1);
   }
 
-  // Spinner for finding divergent files between upstream and local branch
+  // Spinner for finding diverged files between upstream and local branch
   const divergedSpinner = yoctoSpinner({
-    text: 'Finding divergent files between upstream and local branch',
+    text: 'Finding diverged files between upstream and local branch',
   }).start()
 
-  let divergentFiles;
+  let divergedFiles;
 
   try {
-    // Get the list of divergent files by comparing local branch and upstream branch
-    divergentFiles = await runGitCommand({ targetFolder, command: `diff --name-only ${localBranch} upstream/${upstreamBranch}` });
+    // Get the list of diverged files by comparing local branch and upstream branch
+    divergedFiles = await runGitCommand({ targetFolder, command: `diff --name-only ${localBranch} upstream/${upstreamBranch}` });
 
-    divergedSpinner.success('Successfully found divergent files between upstream and local branch.');
+    divergedSpinner.success('Successfully found diverged files between upstream and local branch.');
   } catch (error) {
     console.error(error);
-    divergedSpinner.error('Failed to find divergent files between upstream and local branch.');
+    divergedSpinner.error('Failed to find diverged files between upstream and local branch.');
     process.exit(1);
   }
 
@@ -77,10 +77,10 @@ export async function diverged({
   }
 
   const filterSpinnen = yoctoSpinner({
-    text: 'Filtering divergent files',
+    text: 'Filtering diverged files',
   }).start()
 
-  let filteredFiles = divergentFiles
+  let filteredFiles = divergedFiles
     .split("\n")
     .filter((file) => commonFiles.includes(file));
 
@@ -88,20 +88,20 @@ export async function diverged({
   if (ignorePatterns.length > 0) {
     filteredFiles = applyIgnorePatterns(filteredFiles, ignorePatterns);
   }
-  filterSpinnen.success('Successfully filtered divergent files.');
+  filterSpinnen.success('Successfully filtered diverged files.');
 
   const writeSpinner = yoctoSpinner({
-    text: 'Writing divergent files to file',
+    text: 'Writing diverged files to file',
   }).start()
 
-  // Write the final list of divergent files to the specified file
+  // Write the final list of diverged files to the specified file
   if (filteredFiles.length > 0) {
-    await writeFile(divergentFile, filteredFiles.join("\n"), "utf-8");
-    writeSpinner.success(`Divergent files successfully written to ${divergentFile}.`);
+    await writeFile(divergedFile, filteredFiles.join("\n"), "utf-8");
+    writeSpinner.success(`Diverged files successfully written to ${divergedFile}.`);
   } else {
     writeSpinner.success("No files have diverged between the upstream and local branch that are not ignored.");
-    // Optionally remove the divergent file if empty
-    await rm(divergentFile, { force: true });
+    // Optionally remove the Diverged file if empty
+    await rm(divergedFile, { force: true });
   }
 
   console.log(`${colors.green('Success')} Successfully completed the diverged command.`);
