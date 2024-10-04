@@ -1,4 +1,4 @@
-import { Home, Menu, Search, User } from 'lucide-react';
+import { CircleEqual, CirclePlus, Home, Menu, Search, User } from 'lucide-react';
 
 import { SheetAccount } from '~/modules/common/nav-sheet/sheet-account';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
@@ -8,8 +8,9 @@ import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
 
 import type { FooterLinkProps } from '~/modules/common/main-footer';
 import type { NavItem } from '~/modules/common/main-nav';
-import type { SuggestionSection } from '~/modules/common/main-search';
+import { MainSearch, type SuggestionSection } from '~/modules/common/main-search';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
+import { CreateProjectForm } from './modules/projects/create-project-form';
 
 // Set entities paths
 export const baseEntityRoutes = {
@@ -20,14 +21,19 @@ export const baseEntityRoutes = {
   project: '/$orgIdOrSlug/workspaces/$idOrSlug/board',
 } as const;
 
-export type NavItemId = (typeof navItems)[number]['id'];
+export type NavItemId = 'menu' | 'home' | 'search' | 'account' | 'workspace-menu' | 'workspace-add-project' | 'stop_impersonation';
 
-// Here you declare main navigation items
+// Here you declare your base shown main navigation items
+export const baseNavItems: NavItemId[] = ['menu', 'home', 'search', 'account'];
+
+// Here you declare all of your main navigation items
 export const navItems: NavItem[] = [
-  { id: 'menu', sheet: <SheetMenu />, icon: Menu },
+  { id: 'menu', icon: Menu, sheet: <SheetMenu /> },
   { id: 'home', icon: Home, href: '/home' },
-  { id: 'search', icon: Search },
-  { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
+  { id: 'search', icon: Search, dialog: <MainSearch /> },
+  { id: 'account', icon: User, sheet: <SheetAccount />, mirrorOnMobile: true },
+  { id: 'workspace-menu', icon: CircleEqual, sheet: <SheetMenu /> },
+  { id: 'workspace-add-project', icon: CirclePlus, dialog: <CreateProjectForm dialog /> },
 ];
 
 // Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )

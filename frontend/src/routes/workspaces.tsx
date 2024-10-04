@@ -66,7 +66,7 @@ export const tasksSearchSchema = z.object({
 
 export const WorkspaceBoardRoute = createRoute({
   path: '/board',
-  staticData: { pageTitle: 'Board', isAuth: true },
+  staticData: { pageTitle: 'Board', isAuth: true, showedMobileNavButtons: ['workspace-menu', 'workspace-add-project'] },
   validateSearch: z.object({
     project: z.string().optional(),
     q: z.string().optional(),

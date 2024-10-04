@@ -6,18 +6,16 @@ import useFocusById from '~/hooks/use-focus-by-id';
 import { dialog } from '~/modules/common/dialoger/state';
 import { CreateProjectForm } from '~/modules/projects/create-project-form';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
-import type { Workspace } from '~/types/app';
 import type { Organization } from '~/types/common';
 
 interface AddProjectsProps {
-  workspace: Workspace;
   organization?: Organization | null;
   callback?: () => void;
   dialog?: boolean;
   mode?: 'create' | 'select' | null;
 }
 
-const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
+const AddProjects = ({ mode }: AddProjectsProps) => {
   //organization, callback, dialog: isDialog,
   const { t } = useTranslation();
 
@@ -93,7 +91,7 @@ const AddProjects = ({ workspace, mode }: AddProjectsProps) => {
         )}
         {creationMode && (
           <motion.div key="add-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
-            {creationMode === 'create' ? <CreateProjectForm workspace={workspace} dialog /> : <>Not yet ready</>}
+            {creationMode === 'create' ? <CreateProjectForm dialog /> : <>Not yet ready</>}
           </motion.div>
         )}
       </AnimatePresence>

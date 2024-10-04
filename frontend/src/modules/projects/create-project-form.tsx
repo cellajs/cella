@@ -22,11 +22,9 @@ import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Workspace } from '~/types/app';
 import type { UserMenuItem } from '~/types/common';
 
 interface CreateProjectFormProps {
-  workspace: Workspace;
   callback?: () => void;
   dialog?: boolean;
 }
@@ -35,10 +33,10 @@ const formSchema = createProjectBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ workspace, dialog: isDialog }) => {
+export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ dialog: isDialog }) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
-  const { setWorkspace, projects } = useWorkspaceStore();
+  const { setWorkspace, projects, workspace } = useWorkspaceStore();
   const type = 'project';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({

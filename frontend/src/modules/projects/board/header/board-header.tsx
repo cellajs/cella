@@ -46,7 +46,7 @@ const BoardHeader = ({ project }: { project?: Project | null }) => {
 
   const handleAddProjects = () => {
     // TODO: change mode when add projects without workspace
-    dialog(<AddProjects dialog workspace={workspace} mode="create" />, {
+    dialog(<AddProjects dialog mode="create" />, {
       className: 'md:max-w-4xl',
       id: 'add-projects',
       title: t('common:add_resource', { resource: t('app:projects').toLowerCase() }),

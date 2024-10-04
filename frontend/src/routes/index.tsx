@@ -1,3 +1,4 @@
+import type { NavItemId } from '~/nav-config';
 import { AuthRoute, ResetPasswordRoute, SignInRoute, SignOutRoute, VerifyEmailRoute, VerifyEmailWithTokenRoute } from '~/routes/auth';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
 import { AboutRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
@@ -30,3 +31,10 @@ export const routeTree = rootRoute.addChildren([
     OrganizationRoute.addChildren([OrganizationMembersRoute, OrganizationSettingsRoute]),
   ]),
 ]);
+
+declare module '@tanstack/react-router' {
+  interface StaticDataRouteOption {
+    showedDesktopNavButtons?: NavItemId[];
+    showedMobileNavButtons?: NavItemId[];
+  }
+}
