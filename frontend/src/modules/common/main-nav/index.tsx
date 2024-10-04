@@ -69,11 +69,12 @@ const AppNav = () => {
       });
     }
 
-    const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
     // If its a route, navigate to it
     if (navItem.href) return navigate({ to: navItem.href });
 
-    // Set nav sheet open
+    // Set nav sheet
+    const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
+
     setNavSheetOpen(navItem.id);
 
     // Create a sheet
@@ -89,11 +90,14 @@ const AppNav = () => {
   };
 
   const clickNavItem = (id: NavItemId, index: number) => {
+    // If the nav item is already open, close it
     if (id === navSheetOpen) {
       sheet.remove();
       return setNavSheetOpen(null);
     }
+
     if (dialog.haveOpenDialogs()) return;
+
     navButtonClick(navItems[index]);
   };
 

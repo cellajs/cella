@@ -61,6 +61,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
   useEffect(() => {
     setSelected(value);
   }, [value]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
