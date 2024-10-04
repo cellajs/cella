@@ -50,6 +50,7 @@ export const useAlertStore = create<AlertState>()(
           name: `${config.slug}-alerts-seen`,
           partialize: (state) => ({
             alertsSeen: state.alertsSeen,
+            downAlert: state.downAlert,
           }),
           storage: createJSONStorage(() => localStorage),
         },
