@@ -7,13 +7,15 @@ import type { TasksCustomEventMap } from '~/modules/tasks/types';
 
 import type { z } from 'zod';
 
+// Entities
 export type Workspace = z.infer<typeof workspaceSchema>;
-
 export type Project = z.infer<typeof projectSchema>;
 export type Task = z.infer<typeof taskWithSubTasksSchema>;
 export type SubTask = z.infer<typeof subTaskSchema>[number];
 export type Label = z.infer<typeof labelSchema>;
 
+// Custom Event Map
 export type AppCustomEventMap = TasksCustomEventMap;
 
+// Draggable Item Type
 export type DraggableItemType = 'menuItem' | 'task' | 'subTask';
