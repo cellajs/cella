@@ -29,12 +29,17 @@ export async function fetchUpstream({
         }
     }
 
-    // Add upstream remote if it doesn't exist or differs from CELLA_REMOTE_URL
-    if (!upstream || CELLA_REMOTE_URL !== upstream) {
-        await runGitCommand({ targetFolder, command: `remote add upstream ${CELLA_REMOTE_URL}` });
-        upstreamSpinner.success('Upstream remote added successfully.');
+    // Add or update the upstream remote if it doesn't exist or differs from CELLA_REMOTE_URL
+    if (!upstream) {
+      await runGitCommand({ targetFolder, command: `remote add upstream ${CELLA_REMOTE_URL}` });
+      upstreamSpinner.success('Upstream remote added successfully.');
+    } else if (upstream !== CELLA_REMOTE_URL) {
+      // Remove existing upstream and set the new URL
+      await runGitCommand({ targetFolder, command: 'remote remove upstream' });
+      await runGitCommand({ targetFolder, command: `remote add upstream ${CELLA_REMOTE_URL}` });
+      upstreamSpinner.success('Upstream remote updated successfully.');
     } else {
-        upstreamSpinner.success('Upstream remote is already configured.');
+      upstreamSpinner.success('Upstream remote is already configured correctly.');
     }
   } catch (error) {
     console.error(error);
