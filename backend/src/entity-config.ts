@@ -26,8 +26,8 @@ export const entityIdFields = {
   organization: 'organizationId',
   workspace: 'workspaceId',
   project: 'projectId',
-  label: 'labelsId',
-  task: 'tasksId',
+  label: 'labelId',
+  task: 'taskId',
 } as const;
 
 // Define how entities are rendered in user menu

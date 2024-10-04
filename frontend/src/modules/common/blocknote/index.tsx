@@ -18,6 +18,8 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import type { Member } from '~/types/common';
 
+import type { Block } from '@blocknote/core';
+import { getContentAsString } from './helpers';
 import './styles.css';
 
 type BlockNoteProps = {
@@ -76,8 +78,8 @@ export const BlockNote = ({
   useLayoutEffect(() => {
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
-      const currentBlocks = editor.document.map((block) => block.content?.toString()).join('');
-      const newBlocksContent = blocks.map((block) => block.content?.toString()).join('');
+      const currentBlocks = getContentAsString(editor.document as Block[]);
+      const newBlocksContent = getContentAsString(blocks as Block[]);
 
       // Only replace blocks if the content actually changes
       if (currentBlocks !== newBlocksContent || html === '') {

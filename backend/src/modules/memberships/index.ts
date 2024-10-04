@@ -12,6 +12,7 @@ import { InviteMemberEmail } from '../../../emails/member-invite';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
+import { entityIdFields } from '#/entity-config';
 import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -55,6 +56,7 @@ const membershipsRoutes = app
     if (!context || !organization || (!isAllowed && user.role !== 'admin')) {
       return errorResponse(ctx, 403, 'forbidden', 'warn');
     }
+    const contextEntityIdField = entityIdFields[context.entity];
 
     // Normalize emails for consistent comparison
     const normalizedEmails = emails.map((email) => email.toLowerCase());
@@ -70,7 +72,7 @@ const membershipsRoutes = app
       // Prepare conditions for fetching existing memberships
       const $where = [
         and(
-          eq(membershipsTable[`${context.entity}Id`], context.id),
+          eq(membershipsTable[contextEntityIdField], context.id),
           eq(membershipsTable.type, context.entity),
           inArray(
             membershipsTable.userId,
@@ -222,6 +224,7 @@ const membershipsRoutes = app
     const { idOrSlug, entityType, ids } = ctx.req.valid('query');
     const user = getContextUser();
     const memberships = getMemberships();
+    const entityIdField = entityIdFields[entityType];
 
     if (!config.contextEntityTypes.includes(entityType)) return errorResponse(ctx, 404, 'not_found', 'warn');
     // Convert ids to an array
@@ -240,7 +243,7 @@ const membershipsRoutes = app
 
     const errors: ErrorType[] = [];
 
-    const filters = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable[`${entityType}Id`], membershipContext.id)));
+    const filters = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable[entityIdField], membershipContext.id)));
 
     // Get user membership
     const [currentUserMembership]: (MembershipModel | undefined)[] = await db
@@ -318,6 +321,7 @@ const membershipsRoutes = app
     if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { membership: membershipId });
 
     const updatedType = membershipToUpdate.type;
+    const updatedEntityIdField = entityIdFields[updatedType];
 
     // on restore item set last order in memberships
     if (archived === false) {
@@ -331,7 +335,11 @@ const membershipsRoutes = app
       orderToUpdate = lastOrderMembership.order === ceilOrder ? ceilOrder + 1 : ceilOrder;
     }
 
-    const membershipContext = await resolveEntity(updatedType, membershipToUpdate[`${updatedType}Id`] || '');
+    const membershipContextId = membershipToUpdate[updatedEntityIdField];
+
+    if (!membershipContextId) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
+
+    const membershipContext = await resolveEntity(updatedType, membershipContextId);
 
     if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
 
@@ -384,13 +392,13 @@ const membershipsRoutes = app
 
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
 
+    const entityIdField = entityIdFields[entity.entity];
+
     // TODO use filter query helper to avoid code duplication. Also, this specific filter is missing name search?
     const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
 
     const usersQuery = db.select().from(usersTable).where(filter).as('users');
-
-    // TODO refactor this to use agnostic entity mapping to use 'entityType'+Id in a clean way
-    const membersFilters = [eq(membershipsTable.organizationId, entity.id), eq(membershipsTable.type, entityType)];
+    const membersFilters = [eq(membershipsTable[entityIdField], entity.id), eq(membershipsTable.type, entityType)];
 
     if (role) membersFilters.push(eq(membershipsTable.role, role));
 
