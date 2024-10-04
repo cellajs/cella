@@ -121,23 +121,6 @@ const tasksRoutes = app
     );
   })
   /*
-   * Get task by id
-   */
-  .openapi(taskRoutesConfig.getTask, async (ctx) => {
-    const id = ctx.req.param('id');
-    if (!id) return errorResponse(ctx, 404, 'not_found', 'warn');
-
-    const [task] = await db.select().from(tasksTable).where(eq(tasksTable.id, id));
-
-    return ctx.json(
-      {
-        success: true,
-        data: task,
-      },
-      200,
-    );
-  })
-  /*
    * Update task
    */
   .openapi(taskRoutesConfig.updateTask, async (ctx) => {
