@@ -44,7 +44,7 @@ export async function mergeUpstream({
   }).start()
 
   try {
-    await runGitCommand({ targetFolder, command: `merge --no-commit upstream/${upstreamBranch}` });
+    await runGitCommand({ targetFolder, command: `merge --squash --no-commit upstream/${upstreamBranch}` });
     mergeSpinner.success(`Successfully merged upstream/${upstreamBranch} into ${localBranch} without committing.`);
   }catch(e) {
     console.error(e)

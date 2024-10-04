@@ -28,11 +28,6 @@ export const command = new Command(NAME)
             configFile = name
       })
       .option(
-        '--use-rebase',
-        'Instead of merge, use rebase to apply upstream changes.',
-        false,
-      )
-      .option(
         `--upstream-branch <name>`,
         `Explicitly tell the CLI to use this upstream-branch.`,
         (name) => {
