@@ -11,7 +11,6 @@ export function Sheeter() {
   const isMobile = useBreakpoints('max', 'sm');
   const navigate = useNavigate();
 
-  const initialized = useRef(false);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
   const [currentSheets, setCurrentSheets] = useState<SheetT[]>([]);
   const handleRemoveSheet = useCallback((id: string) => {
@@ -36,11 +35,8 @@ export function Sheeter() {
   };
 
   useEffect(() => {
-    if (!initialized.current) {
-      // To triggers sheets that opens on mount
-      setCurrentSheets(sheet.getAll());
-      initialized.current = true;
-    }
+    // To triggers sheets that opens on mount
+    setCurrentSheets(sheet.getAll());
 
     const handleAction = (action: SheetAction & SheetT) => {
       if (action.remove) handleRemoveSheet(action.id);
