@@ -1,6 +1,6 @@
 {
   "name": "@cellajs/create-cella",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": false,
   "license": "MIT",
   "description": "Intuivive TypeScript template to build local-first web apps. Implementation-ready. MIT license.",
