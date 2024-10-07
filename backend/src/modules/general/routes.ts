@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
+import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
@@ -123,7 +123,7 @@ class GeneralRoutesConfig {
   public createInvite = createRouteConfig({
     method: 'post',
     path: '/invite',
-    guard: [isAuthenticated, isSystemAdmin],
+    guard: [isAuthenticated, systemGuard],
     middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
     tags: ['general'],
     summary: 'Invite to system',

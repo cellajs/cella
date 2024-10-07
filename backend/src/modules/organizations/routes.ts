@@ -1,5 +1,5 @@
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isSystemAdmin } from '#/middlewares/guard';
+import { isAuthenticated, systemGuard } from '#/middlewares/guard';
 import {
   errorResponses,
   successWithDataSchema,
@@ -50,7 +50,7 @@ class OrganizationRoutesConfig {
   public getOrganizations = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, isSystemAdmin],
+    guard: [isAuthenticated, systemGuard],
     tags: ['organizations'],
     summary: 'Get list of organizations',
     description: 'Get list of organizations. Currently only available to system admins.',
@@ -126,7 +126,7 @@ class OrganizationRoutesConfig {
   public sendNewsletterEmail = createRouteConfig({
     method: 'post',
     path: '/send-newsletter',
-    guard: [isAuthenticated, isSystemAdmin],
+    guard: [isAuthenticated, systemGuard],
     tags: ['organizations'],
     summary: 'Newsletter for members',
     description: 'Sends to requested organizations members, a newsletter.',

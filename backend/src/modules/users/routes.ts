@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isSystemAdmin } from '#/middlewares/guard';
+import { isAuthenticated, systemGuard } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
 import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
 import { entitySuggestionSchema } from '../general/schema';
@@ -10,7 +10,7 @@ class UsersRoutesConfig {
   public getUsers = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, isSystemAdmin],
+    guard: [isAuthenticated, systemGuard],
     tags: ['users'],
     summary: 'Get list of users',
     description: 'Get a list of users on system level.',
@@ -33,7 +33,7 @@ class UsersRoutesConfig {
   public deleteUsers = createRouteConfig({
     method: 'delete',
     path: '/',
-    guard: [isAuthenticated, isSystemAdmin],
+    guard: [isAuthenticated, systemGuard],
     tags: ['users'],
     summary: 'Delete users',
     description: 'Delete users from system by list of ids.',
@@ -79,7 +79,7 @@ class UsersRoutesConfig {
   public updateUser = createRouteConfig({
     method: 'put',
     path: '/{idOrSlug}',
-    guard: [isAuthenticated, isSystemAdmin],
+    guard: [isAuthenticated, systemGuard],
     tags: ['users'],
     summary: 'Update user',
     description: 'Update a user by id or slug.',

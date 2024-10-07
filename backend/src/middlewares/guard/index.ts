@@ -1,24 +1,37 @@
 import type { Context, Next } from 'hono';
 import { getContextUser, getMemberships } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { errorResponse } from '#/lib/errors';
 import permissionManager from '#/lib/permission-manager';
 export { isAuthenticated } from './is-authenticated';
+
+import { getConnInfo } from '@hono/node-server/conninfo';
+import { every } from 'hono/combine';
+import { ipRestriction } from 'hono/ip-restriction';
+import { errorResponse } from '#/lib/errors';
+
+import { env } from './../../../env';
+
+const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
 
 // System admin is a user with the 'admin' role in the users table.
 export async function isSystemAdmin(ctx: Context, next: Next): Promise<Response | undefined> {
   const user = getContextUser();
 
   const isSystemAdmin = user?.role.includes('admin');
-
   if (!isSystemAdmin) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
-
-  // TODO: Add more checks for system admin, such as IP address
 
   await next();
 }
 
-// Public access is a placeholder for routes accessible to everyone. Default rate limits apply.
+// Combine system admin check with IP restriction.
+export const systemGuard = every(
+  isSystemAdmin,
+  ipRestriction(getConnInfo, { allowList }, async (_, c) => {
+    return errorResponse(c, 422, 'forbidden', 'warn', undefined);
+  }),
+);
+
+// Public access is a placeholder for routes accessible to everyone. Default rate limits still apply.
 export async function isPublicAccess(_: Context, next: Next): Promise<void> {
   await next();
 }
