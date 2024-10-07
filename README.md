@@ -51,23 +51,23 @@
 <br>
 
 ## Create your own app
-Want to use cella to build your next web app? We made it simple:
+Want to use cella to build your next web app? We made it simple using a short create CLI:
 
 ```bash
-pnpm create @cellajs/cella
+pnpm create @cellajs/cella@latest
 ```
 
-Then run your app:
+Follow the steps in create CLI and then run your app:
 
 ```bash
-pnpm install && pnpm quick
+pnpm quick
 ```
 
 You now have an implementation-ready web app. 🤯! But ... without any unique functionality 🤓. Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
 
 
 ## Installation
-For those that simply want to try cella or participate in development:
+For those that want to participate in development:
 
 ```bash
 git clone git@github.com:cellajs/cella.git && cd cella
@@ -80,7 +80,7 @@ pnpm install && pnpm quick
 ```
 
 ### B. Full setup
-Or, for a full setup - with Postgres instead of pglite - you need Docker. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
+For a full setup - with Postgres instead of pglite - you need Docker. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
 pnpm install
