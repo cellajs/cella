@@ -5,7 +5,7 @@ import colors from 'picocolors';
 import { downloadTemplate } from "giget";
 import yoctoSpinner from 'yocto-spinner';
 
-import { TEMPLATE_URL, VERSION, WEBSITE, AUTHOR } from './constants.js';
+import { TEMPLATE_URL } from './constants.js';
 
 import { install, generate } from './utils/run-package-manager-command.js';
 import { cleanTemplate } from './utils/clean-template.js';
