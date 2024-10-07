@@ -7,7 +7,7 @@ import { useUserStore } from '~/store/user';
 import { useTranslation } from 'react-i18next';
 
 import type { NavItem } from '~/modules/common/main-nav';
-import MainNavLoader from '~/modules/common/main-nav/main-nav-loader';
+import MainNavLoader from '~/modules/common/main-nav/bar-nav/bar-nav-loader';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { cn } from '~/utils/cn';
 

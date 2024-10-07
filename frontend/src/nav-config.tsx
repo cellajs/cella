@@ -1,4 +1,4 @@
-import { CircleEqual, CirclePlus, Home, Menu, Search, User } from 'lucide-react';
+import { Home, Menu, Plus, Search, User } from 'lucide-react';
 
 import { SheetAccount } from '~/modules/common/nav-sheet/sheet-account';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
@@ -31,8 +31,7 @@ export const navItems: NavItem[] = [
   { id: 'home', icon: Home, href: '/home' },
   { id: 'search', icon: Search, dialog: <MainSearch /> },
   { id: 'account', icon: User, sheet: <SheetAccount />, mirrorOnMobile: true },
-  { id: 'workspace-menu', icon: CircleEqual, sheet: <SheetMenu /> },
-  { id: 'workspace-add-task', icon: CirclePlus },
+  { id: 'workspace-add-task', icon: Plus },
 ];
 
 // Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )
