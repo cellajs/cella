@@ -4,9 +4,9 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useEffect, useRef } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { MainFooter } from '~/modules/common/main-footer';
-import { sheet } from '~/modules/common/sheeter/state';
 import { buttonVariants } from '~/modules/ui/button';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { useUserStore } from '~/store/user';
@@ -25,7 +25,7 @@ const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, 
   const btnClass = `${id === 'btn-signout' && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`;
 
   return (
-    <Link id={id} to={action} onClick={() => sheet.remove()} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}>
+    <Link id={id} to={action} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}>
       <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
       {label}
     </Link>
@@ -35,6 +35,7 @@ const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, 
 export const SheetAccount = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
+  const isMobile = useBreakpoints('max', 'sm');
 
   const isSystemAdmin = user.role === 'admin';
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
@@ -42,6 +43,7 @@ export const SheetAccount = () => {
   const bannerClass = `relative transition-all duration-300 hover:bg-opacity-50 hover:-mx-8 -mx-4 -mt-4 bg-cover bg-center h-24 ${bgClass} bg-opacity-80`;
 
   useEffect(() => {
+    if (isMobile) return;
     const firstRow = buttonWrapper.current?.querySelector<HTMLElement>('#btn-profile');
     firstRow?.focus();
   }, []);

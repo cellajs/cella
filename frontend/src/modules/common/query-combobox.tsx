@@ -48,6 +48,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
   const { data, isLoading: isLoadingOrig } = useQuery({
     queryKey: ['search', debouncedSearchQuery],
     queryFn: () => getSuggestions(debouncedSearchQuery, 'user'),
+    staleTime: 0,
     enabled: !!debouncedSearchQuery,
   });
   // To get around this https://github.com/TanStack/query/issues/3584
@@ -60,6 +61,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
   useEffect(() => {
     setSelected(value);
   }, [value]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

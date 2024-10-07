@@ -19,7 +19,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
-import { entityTables } from '#/entity-config';
+import { entityIdFields, entityTables } from '#/entity-config';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
@@ -278,6 +278,7 @@ const generalRoutes = app
     for (const entityType of entityTypes) {
       const table = entityTables[entityType];
       if (!table) continue;
+      const entityIdField = entityIdFields[entityType];
 
       // Basic selection setup
       const baseSelect = {
@@ -309,7 +310,7 @@ const generalRoutes = app
         const uniqueValuesSet = new Set<string>();
 
         for (const member of memberships) {
-          const id = member[`${entityType}Id`];
+          const id = member[entityIdField];
           if (id) uniqueValuesSet.add(id);
         }
 

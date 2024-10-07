@@ -31,6 +31,10 @@ p.bn-inline-content code {
   text-decoration: underline;
 }
 
+.bn-container.bn-shadcn b, .bn-container.bn-shadcn strong {
+  font-weight: 500;
+}
+
 .bn-shadcn .bn-side-menu {
   position: relative;
   left: -0.6rem;

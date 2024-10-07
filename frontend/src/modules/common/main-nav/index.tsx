@@ -17,16 +17,16 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import useMounted from '~/hooks/use-mounted';
 import router from '~/lib/router';
 import { NavButton } from '~/modules/common/main-nav/main-nav-button';
-import { MainSearch } from '~/modules/common/main-search';
 import { sheet } from '~/modules/common/sheeter/state';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
-import { type NavItemId, navItems } from '~/nav-config';
+import { type NavItemId, baseNavItems, navItems } from '~/nav-config';
 import { useUserStore } from '~/store/user';
 
 export type NavItem = {
-  id: string;
+  id: NavItemId;
   icon: React.ElementType<LucideProps>;
   sheet?: React.ReactNode;
+  dialog?: React.ReactNode;
   href?: string;
   mirrorOnMobile?: boolean;
 };
@@ -45,6 +45,17 @@ const AppNav = () => {
 
   const currentSession = useMemo(() => user?.sessions.find((s) => s.isCurrent), [user]);
 
+  const showedNavButtons = useMemo(() => {
+    const desktop = router.state.matches.flatMap((el) => el.staticData.showedDesktopNavButtons || []);
+    const mobile = router.state.matches.flatMap((el) => el.staticData.showedMobileNavButtons || []);
+    return isMobile ? mobile : desktop;
+  }, [router.state.matches, isMobile]);
+
+  const renderedItems = useMemo(() => {
+    const itemsIds = showedNavButtons.length ? showedNavButtons : baseNavItems;
+    return navItems.filter(({ id }) => itemsIds.includes(id));
+  }, [showedNavButtons]);
+
   // Keep menu open
   useBodyClass({ 'keep-nav-open': keepMenuOpen, 'nav-open': !!navSheetOpen });
 
@@ -58,10 +69,10 @@ const AppNav = () => {
   const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
 
   const navButtonClick = (navItem: NavItem) => {
-    // Search is a special case, it will open a dialog
-    if (navItem.id === 'search') {
-      return dialog(<MainSearch />, {
-        className: 'sm:max-w-2xl p-0 border-0 mb-4',
+    // If its a have dialog, open it
+    if (navItem.dialog) {
+      return dialog(navItem.dialog, {
+        className: navItem.id === 'search' ? 'sm:max-w-2xl p-0 border-0 mb-4' : '',
         drawerOnMobile: false,
         refocus: false,
         hideClose: true,
@@ -69,11 +80,12 @@ const AppNav = () => {
       });
     }
 
-    const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
     // If its a route, navigate to it
     if (navItem.href) return navigate({ to: navItem.href });
 
-    // Set nav sheet open
+    // Set nav sheet
+    const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
+
     setNavSheetOpen(navItem.id);
 
     // Create a sheet
@@ -82,19 +94,22 @@ const AppNav = () => {
       side: sheetSide,
       modal: isMobile,
       className: 'fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16',
-      // onRemove: () => {
-      //   setNavSheetOpen(null);
-      // }
+      removeCallback: () => {
+        setNavSheetOpen(null);
+      },
     });
   };
 
   const clickNavItem = (id: NavItemId, index: number) => {
+    // If the nav item is already open, close it
     if (id === navSheetOpen) {
       sheet.remove();
       return setNavSheetOpen(null);
     }
+
     if (dialog.haveOpenDialogs()) return;
-    navButtonClick(navItems[index]);
+
+    navButtonClick(renderedItems[index]);
   };
 
   useHotkeys([
@@ -131,13 +146,14 @@ const AppNav = () => {
       )}
     >
       <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">
-        {navItems.map((navItem: NavItem, index: number) => {
+        {renderedItems.map((navItem: NavItem, index: number) => {
           const isSecondItem = index === 1;
           const isActive = sheet.get(navItem.id);
 
-          const listItemClass = isSecondItem
-            ? 'flex xs:absolute xs:left-1/2 sm:left-0 transform xs:-translate-x-1/2 sm:relative sm:transform-none sm:justify-start'
-            : 'flex justify-start';
+          const listItemClass =
+            renderedItems.length > 2 && isSecondItem
+              ? 'flex xs:absolute xs:left-1/2 sm:left-0 transform xs:-translate-x-1/2 sm:relative sm:transform-none sm:justify-start'
+              : 'flex justify-start';
 
           return (
             <Fragment key={navItem.id}>

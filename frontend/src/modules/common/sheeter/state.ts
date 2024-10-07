@@ -6,6 +6,7 @@ export type SheetT = {
   content?: React.ReactNode;
   modal?: boolean;
   side?: 'bottom' | 'top' | 'right' | 'left';
+  removeCallback?: () => void;
 };
 
 export type SheetAction = {

@@ -8,7 +8,7 @@ import CreateOrganizationForm from '~/modules/organizations/create-organization-
 import { config } from 'config';
 import type { FooterLinkProps } from '~/modules/common/main-footer';
 import type { NavItem } from '~/modules/common/main-nav';
-import type { SuggestionSection } from '~/modules/common/main-search';
+import { MainSearch, type SuggestionSection } from '~/modules/common/main-search';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
 
 // Set entities paths
@@ -18,15 +18,18 @@ export const baseEntityRoutes = {
   organization: '/$idOrSlug',
 } as const;
 
-export type NavItemId = (typeof navItems)[number]['id'];
+export type NavItemId = 'menu' | 'home' | 'search' | 'account' | 'workspace-menu' | 'workspace-add-task' | 'stop_impersonation';
 
-// Here you declare main navigation items
+// Here you declare your base shown main navigation items
+export const baseNavItems: NavItemId[] = ['menu', 'home', 'search', 'account'];
+
+// Here you declare all of your main navigation items
 export const navItems: NavItem[] = [
-  { id: 'menu', sheet: <SheetMenu />, icon: Menu },
+  { id: 'menu', icon: Menu, sheet: <SheetMenu /> },
   { id: 'home', icon: Home, href: '/home' },
-  { id: 'search', icon: Search },
-  { id: 'account', sheet: <SheetAccount />, icon: User, mirrorOnMobile: true },
-] as const;
+  { id: 'search', icon: Search, dialog: <MainSearch /> },
+  { id: 'account', icon: User, sheet: <SheetAccount />, mirrorOnMobile: true },
+];
 
 // Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )
 export const menuSections: SectionItem[] = [

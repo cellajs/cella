@@ -63,10 +63,13 @@ export function Dialoger() {
     if (!isMobile || !dialog.drawerOnMobile) {
       return (
         <Dialog key={dialog.id} open={true} onOpenChange={onOpenChange(dialog)} modal={!dialog.container}>
-          {dialog.container && (
+          {dialog.container && dialog.containerBackdrop && (
             <div className="fixed inset-0 z-[100] bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
           )}
           <DialogContent
+            onInteractOutside={(e) => {
+              if (dialog.container && !dialog.containerBackdrop) e.preventDefault();
+            }}
             hideClose={dialog.hideClose}
             onOpenAutoFocus={(event: Event) => {
               if (!dialog.autoFocus) event.preventDefault();

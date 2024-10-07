@@ -13,6 +13,11 @@ export const entityTables = {
   organization: organizationsTable,
 } as const;
 
+export const entityIdFields = {
+  user: 'userId',
+  organization: 'organizationId',
+} as const;
+
 // Define how entities are rendered in user menu
 export const entityMenuSections = [
   {

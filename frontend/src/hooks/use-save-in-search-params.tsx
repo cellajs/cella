@@ -26,7 +26,8 @@ const useSaveInSearchParams = (values: SearchParams, defaultValues?: SearchParam
             [key]: defaultValue,
           };
         } else {
-          delete searchParams[key];
+          // Remove from searchParams in url
+          searchParams[key] = undefined;
         }
       }
       if (currentSearchParams[key] === searchParams[key]) {

@@ -56,6 +56,6 @@ export const command = new Command(NAME)
       })
     .parse();
 
-const options = command.opts({  })
+const options = command.opts({ useRebase: false });
 
 export const cli = { options, args: command.args, syncService, upstreamBranch, configFile, packageManager, localBranch }

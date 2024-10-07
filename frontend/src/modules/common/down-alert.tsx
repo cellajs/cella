@@ -36,14 +36,8 @@ export const DownAlert = () => {
 
   const cancelAlert = () => {
     setDownAlert(null);
-  };
-
-  const closeNetworkAlert = () => {
-    cancelAlert();
     setIsNetworkAlertClosed(true);
   };
-
-  if (!downAlert) return;
 
   const offlineText =
     networkMode === 'offline' ? (
@@ -51,12 +45,14 @@ export const DownAlert = () => {
         i18nKey="common:offline_mode.text"
         t={t}
         components={{
-          site_anchor: <button type="button" className="underline" onClick={closeNetworkAlert} />,
+          site_anchor: <button type="button" className="underline" onClick={cancelAlert} />,
         }}
       />
     ) : (
       t('common:offline.text')
     );
+
+  if (!downAlert) return <></>;
 
   return (
     <div className="fixed z-[2000] max-sm:bottom-20 bottom-4 left-4 right-4 border-0 justify-center">
@@ -71,8 +67,7 @@ export const DownAlert = () => {
           <span className="max-sm:hidden mx-2">&#183;</span>
           <span className="max-sm:hidden">{downAlert === 'maintenance' ? t('common:maintenance_mode.text') : offlineText}</span>
           {config.statusUrl && (
-            <span>
-              <span className="max-sm:hidden ml-1">Try again later or check our server</span>
+            <>
               <span className="sm:hidden mx-2">&#183;</span>
               <a
                 href={config.statusUrl}
@@ -80,10 +75,10 @@ export const DownAlert = () => {
                 target="_blank"
                 rel="noreferrer"
               >
-                status
+                {t('common:status_page')}
               </a>
               <span className="max-sm:hidden">.</span>
-            </span>
+            </>
           )}
         </AlertDescription>
       </Alert>

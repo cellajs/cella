@@ -17,6 +17,27 @@ export async function mergeUpstream({
   // Fetch upstream changes and checkout local branch
   await fetchUpstream({ localBranch });
 
+  // Check if there are local changes
+  const statusSpinner = yoctoSpinner({
+    text: 'Checking for local changes that might be overridden by the merge',
+  }).start()
+
+  // Check for local changes
+  try {
+    const statusOutput = await runGitCommand({ targetFolder, command: 'status --porcelain' });
+  
+    if (statusOutput.trim() !== '') {
+      statusSpinner.error('Local changes detected. Please commit or stash your changes before merging.');
+      process.exit(1);
+    } else {
+      statusSpinner.success('No local changes detected, proceeding with merge.');
+    }
+  } catch (error) {
+    console.error(error);
+    statusSpinner.error('Failed to check for local changes.');
+    process.exit(1);
+  }
+
   // Merge upstream changes without committing
   const mergeSpinner = yoctoSpinner({
     text: `Merging upstream/${upstreamBranch} changes into ${localBranch} without committing`,
@@ -50,10 +71,13 @@ export async function mergeUpstream({
       const files = (await runGitCommand({ targetFolder, command: 'ls-files' })).split('\n');
       const filteredFiles = applyIgnorePatterns(files, ignorePatterns);
 
-      // Reset and checkout the filtered files
-      for (const file of filteredFiles) {
-        await runGitCommand({ targetFolder, command: `reset ${file}` });
-        await runGitCommand({ targetFolder, command: `checkout --ours -- ${file}` });
+      // Join the list of files into a space-separated string
+      const filesToReset = filteredFiles.join(' ');
+
+      // Run the reset and checkout commands with all files at once
+      if (filesToReset.length > 0) {
+        await runGitCommand({ targetFolder, command: `reset ${filesToReset}` });
+        await runGitCommand({ targetFolder, command: `checkout --ours -- ${filesToReset}` });
       }
 
       applyIgnoreSpinner.success('Successfully applied reset/checkout for ignored files.');

@@ -21,10 +21,10 @@ const DrawerVariants = cva('fixed z-[150] p-4 overflow-y-auto flex flex-col roun
 const DrawerSliderVariants = cva('rounded-full absolute z-10 bg-muted', {
   variants: {
     direction: {
-      top: 'bottom-1 mx-auto my-0.5 h-1 w-12 ml-[calc(50vw-2rem)]',
-      bottom: 'top-1 mx-auto my-0.5 h-1 w-12 ml-[calc(50vw-2rem)]',
-      right: 'left-1 mx-0.5 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
-      left: 'right-1 mx-0.5 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
+      top: 'bottom-0.5 mx-auto my-0.5 h-1 w-12 ml-[calc(50vw-2rem)]',
+      bottom: 'top-0.5 mx-auto my-0.5 h-1 w-12 ml-[calc(50vw-2rem)]',
+      right: 'left-0.5 mx-0.5 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
+      left: 'right-0.5 mx-0.5 my-auto h-16 w-1 mt-[calc(50vh-2.5rem)]',
     },
   },
   defaultVariants: {

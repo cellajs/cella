@@ -17,30 +17,17 @@ export interface SheetProp {
 export default function DesktopSheet({ id, title, description, modal = true, side = 'right', content, className, removeSheet }: SheetProp) {
   const { t } = useTranslation();
 
+  const handleClose = (state: boolean) => {
+    if (!state) removeSheet();
+  };
+
   return (
-    <Sheet open={true} modal={modal}>
-      <SheetContent
-        id={id}
-        onEscapeKeyDown={removeSheet}
-        onInteractOutside={(e) => {
-          if (modal) return removeSheet();
-          // to prevent reopen on menu nav click
-          const target = e.target as HTMLElement;
-          if (!target) return;
-          // Find the button element based on its id or any child element
-          const button = document.getElementById(id);
-          // Check if the click event target is the button itself or any of its children
-          if (button && (button === target || button.contains(target))) return;
-          removeSheet();
-        }}
-        side={side}
-        aria-describedby={undefined}
-        className={`${className} items-start`}
-      >
+    <Sheet open={true} onOpenChange={handleClose} modal={modal}>
+      <SheetContent id={id} onEscapeKeyDown={removeSheet} side={side} aria-describedby={undefined} className={`${className} items-start`}>
         <StickyBox className={`z-10 flex items-center justify-between bg-background py-4 ${title ? '' : 'hidden'}`}>
           <SheetTitle>{title}</SheetTitle>
 
-          <SheetClose onClick={removeSheet} className="mr-1 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none">
+          <SheetClose onClick={removeSheet} className="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none">
             <X size={24} strokeWidth={1.25} />
             <span className="sr-only">{t('common:close')}</span>
           </SheetClose>
