@@ -63,8 +63,7 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
       className={`group flex relative items-center ${parentItemSlug ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 pr-2 justify-start rounded focus:outline-none
-        ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
-        ${!item.membership.archived && 'ring-1 cursor-grab'} `}
+        ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 cursor-grab`}
     >
       {status === 'pending' ? (
         <div className={`${parentItemSlug ? 'my-2 mx-3 h-8 w-8' : 'm-2'} p-2 ${item.membership.archived && 'opacity-70'}`}>
