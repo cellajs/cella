@@ -285,7 +285,7 @@
   "profile_picture": "Profile picture",
   "question.already_have_account": "Already have an account?",
   "question.dont_have_account": "Don't have an account?",
-  "refresh_pwa_app.text": "New version available. Click on reload button to update.",
+  "refresh_pwa_app.text": "New version available. Reload page for optimal use.",
   "reload": "Reload",
   "remove": "Remove",
   "remove_resource": "Remove {{resource}}",
