@@ -29,6 +29,11 @@ export const command = new Command(NAME)
     false,
   )
   .option(
+    '--skip-generate',
+    'Skip generating SQL files.',
+    false,
+  )
+  .option(
     '--skip-clean',
     'Skip cleaning the `cella` template.',
     false,
@@ -75,6 +80,7 @@ const options = command.opts({
   skipClean: false,
   skipGit: false, 
   skipInstall: false,
+  skipGenerate: false,
  });
 
  // Export the CLI configuration for use in other modules

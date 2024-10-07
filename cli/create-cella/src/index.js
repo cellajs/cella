@@ -9,15 +9,27 @@ import { cli } from './cli.js'
 import { validateProjectName } from './utils/validate-project-name.js'
 import { isEmptyDirectory } from './utils/is-empty-directory.js'
 import { create } from './create.js'
-import { CELLA_TITLE } from './constants.js'
+import { CELLA_TITLE, VERSION, WEBSITE, AUTHOR } from './constants.js'
 
 async function main() {
   console.info(CELLA_TITLE);
+
+  // Display CLI version and created by information
+  console.info();
+  console.info(`Cella CLI: ${VERSION}`);
+  console.info(`Created by: ${AUTHOR}`);
+  console.info(`Website: ${WEBSITE}`);
+  console.info();
 
   // Skip creating a new branch if --skipNewBranch flag is provided or git is skipped
   if (cli.options.skipNewBranch || cli.options.skipGit) {
     cli.createNewBranch = false;
     cli.newBranchName = null;
+  }
+
+  // Skip generating sql files if --skipGenerate flag is provided
+  if (cli.options.skipGenerate === true) { 
+    cli.options.skipGenerate = true;
   }
 
   // Skip installing packages if --skipInstall flag is provided
@@ -95,6 +107,7 @@ async function main() {
     skipInstall: cli.options.skipInstall,
     skipGit: cli.options.skipGit,
     skipClean: cli.options.skipClean,
+    skipGenerate: cli.options.skipGenerate,
     packageManager: cli.packageManager,
   });
 }

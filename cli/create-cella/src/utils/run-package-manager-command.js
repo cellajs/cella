@@ -54,3 +54,15 @@ export async function install(packageManager) {
     NODE_ENV: 'development',
   });
 }
+
+/**
+ * Generates sql files using the specified package manager.
+ * 
+ * @param {string} packageManager - The package manager to use for generation (e.g., 'pnpm').
+ * @returns {Promise<void>} - A promise that resolves if the generation completes successfully; otherwise, it rejects with an error.
+ */
+export async function generate (packageManager) {
+  return runPackageManagerCommand(packageManager, ['generate'], {
+    NODE_ENV: 'development',
+  });
+}

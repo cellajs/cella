@@ -3,6 +3,14 @@ export const NAME = 'create-cella'
 // URL of the template repository
 export const TEMPLATE_URL = 'github:cellajs/cella';
 
+// Import package.json dynamically for version and website information
+import packageJson from '../package.json' with { type: 'json' };
+
+// Export version, website and author from package.json
+export const VERSION = packageJson.version;
+export const AUTHOR = packageJson.author;
+export const WEBSITE = packageJson.homepage;
+
 // Files or folders to be removed from the template after downloading
 export const TO_REMOVE = [
     'info',
