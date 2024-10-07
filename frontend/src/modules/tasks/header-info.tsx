@@ -1,7 +1,8 @@
 import { useLocation } from '@tanstack/react-router';
 import { config } from 'config';
-import { Copy, Info, Link, Pencil } from 'lucide-react';
+import { Check, Copy, Info, Link, Pencil } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -10,11 +11,18 @@ import { dateShort } from '~/utils/date-short';
 import { AvatarWrap } from '../common/avatar-wrap';
 
 const HeaderInfo = ({ task }: { task: Task }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { copyToClipboard } = useCopyToClipboard();
 
   const [open, setOpen] = useState(false);
+  const [copyClicked, setCopyClicked] = useState(false);
 
+  const handleCopy = () => {
+    copyToClipboard(shareLink);
+    setCopyClicked(true);
+    setTimeout(() => setCopyClicked(false), 2000);
+  };
   const user = task.modifiedBy;
   const shareLink = `${config.frontendUrl}${location.pathname}?taskIdPreview=${task.id}`;
   return (
@@ -38,9 +46,11 @@ const HeaderInfo = ({ task }: { task: Task }) => {
         </div>
         <div className="flex items-center">
           <Link size={14} className="opacity-50 mr-2 w-4 h-4" />
-          <Button onClick={() => copyToClipboard(shareLink)} aria-label="Copy" variant="ghost" className="py-1 cursor-pointer" size="xs">
-            <Copy size={12} className="mr-2" />
-            {task.id}
+          <Button onClick={handleCopy} aria-label="Copy" variant="ghost" className="py-1 cursor-pointer" size="xs">
+            <div className="inline-flex gap-2 items-center">
+              {copyClicked ? <Check className="text-success" size={14} /> : <Copy size={12} />}
+              {copyClicked ? <span className="text-success">{t('app:copied')}!</span> : <span>{task.id}</span>}
+            </div>
           </Button>
         </div>
       </PopoverContent>
