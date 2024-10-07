@@ -29,7 +29,7 @@ pnpm diverged
 ```
 
 ### 2. Pull upstream
-Pull upstream changes from cella. Changes in files that are ignored will automatically be removed after the pulling, to reduce conflicts.
+Pull upstream changes from cella. Changes in files that are ignored will automatically be undone, to reduce conflicts.
 
 ```bash
 pnpm run upstream:pull
