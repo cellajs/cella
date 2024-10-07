@@ -89,6 +89,24 @@ export async function create({
       console.info(`${colors.yellow('⚠')} --skip-install > Skip installing dependencies`)
     }
 
+    // Generate SQL files if the skipGenerate flag is not set
+    if (!skipGenerate) {
+      const installSpinner = yoctoSpinner({
+        text: 'generating SQL files',
+      }).start();
+
+      try {
+        await generate(packageManager)
+        installSpinner.success('SQL files generated');
+      } catch (e) {
+        console.error(e);
+        installSpinner.error('Failed to generate SQL files');
+        process.exit(1);
+      }
+    } else {
+      console.info(`${colors.yellow('⚠')} --skip-generate > Skip generating SQL files`)
+    }
+
     // Initialize Git repository if skipGit flag is not set
     if (!skipGit) {
       const gitSpinner = yoctoSpinner({
@@ -123,24 +141,6 @@ export async function create({
       }
     } else {
       console.info(`${colors.yellow('⚠')} --skip-git > Skip git init`)
-    }
-
-    // Install dependencies if the skipInstall flag is not set
-    if (!skipGenerate) {
-      const installSpinner = yoctoSpinner({
-        text: 'generating SQL files',
-      }).start();
-
-      try {
-        await generate(packageManager)
-        installSpinner.success('SQL files generated');
-      } catch (e) {
-        console.error(e);
-        installSpinner.error('Failed to generate SQL files');
-        process.exit(1);
-      }
-    } else {
-      console.info(`${colors.yellow('⚠')} --skip-generate > Skip generating SQL files`)
     }
     
     // Final success message indicating project creation
