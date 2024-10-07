@@ -38,8 +38,7 @@ const MainNav = () => {
     return navItems.filter(({ id }) => itemsIds.includes(id));
   }, [showedNavButtons]);
 
-  // Conditional rendering for MobileNavButtons
-  const showMobileNavButtons = renderedItems.length > 0 && renderedItems.length <= 2;
+  const showFloatNav = renderedItems.length > 0 && renderedItems.length <= 2;
 
   const navButtonClick = (navItem: NavItem) => {
     if (navItem.id === 'workspace-add-task') {
@@ -117,7 +116,7 @@ const MainNav = () => {
     });
   }, []);
 
-  const NavComponent = showMobileNavButtons ? FloatNav : BarNav;
+  const NavComponent = showFloatNav ? FloatNav : BarNav;
   return <NavComponent items={renderedItems} onClick={clickNavItem} />;
 };
 
