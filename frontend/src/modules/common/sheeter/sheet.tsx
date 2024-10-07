@@ -22,18 +22,19 @@ export default function DesktopSheet({ id, title, description, modal = true, sid
       <SheetContent
         id={id}
         onEscapeKeyDown={removeSheet}
-        onPointerDownOutside={(e) => {
-          if (!modal) {
-            // to prevent reopen on menu nav click
-            const target = e.target as HTMLElement | null;
-            if (!target) return;
-            // Find the button element based on its id or any child element
-            const button = document.getElementById(id);
-            // Check if the click event target is the button itself or any of its children
-            if (button && (button === target || button.contains(target))) return;
-          }
-          removeSheet();
-        }}
+        // TODO: I think this can go away because there are other ways to close the sheet. for nav sheet we use route listener.
+        // onPointerDownOutside={(e) => {
+        //   if (!modal) {
+        //     // to prevent reopen on menu nav click
+        //     const target = e.target as HTMLElement | null;
+        //     if (!target) return;
+        //     // Find the button element based on its id or any child element
+        //     const button = document.getElementById(id);
+        //     // Check if the click event target is the button itself or any of its children
+        //     if (button && (button === target || button.contains(target))) return;
+        //   }
+        //   removeSheet();
+        // }}
         side={side}
         aria-describedby={undefined}
         className={`${className} items-start`}
@@ -41,7 +42,7 @@ export default function DesktopSheet({ id, title, description, modal = true, sid
         <StickyBox className={`z-10 flex items-center justify-between bg-background py-4 ${title ? '' : 'hidden'}`}>
           <SheetTitle>{title}</SheetTitle>
 
-          <SheetClose onClick={removeSheet} className="mr-1 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none">
+          <SheetClose onClick={removeSheet} className="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none">
             <X size={24} strokeWidth={1.25} />
             <span className="sr-only">{t('common:close')}</span>
           </SheetClose>

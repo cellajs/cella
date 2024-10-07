@@ -4,6 +4,7 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useEffect, useRef } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { MainFooter } from '~/modules/common/main-footer';
 import { buttonVariants } from '~/modules/ui/button';
@@ -34,6 +35,7 @@ const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, 
 export const SheetAccount = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
+  const isMobile = useBreakpoints('max', 'sm');
 
   const isSystemAdmin = user.role === 'admin';
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
@@ -41,6 +43,7 @@ export const SheetAccount = () => {
   const bannerClass = `relative transition-all duration-300 hover:bg-opacity-50 hover:-mx-8 -mx-4 -mt-4 bg-cover bg-center h-24 ${bgClass} bg-opacity-80`;
 
   useEffect(() => {
+    if (isMobile) return;
     const firstRow = buttonWrapper.current?.querySelector<HTMLElement>('#btn-profile');
     firstRow?.focus();
   }, []);

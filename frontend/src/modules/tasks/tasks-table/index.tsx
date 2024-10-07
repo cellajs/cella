@@ -150,7 +150,7 @@ export default function TasksTable() {
     const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
     sheet.create(<TaskCard mode={mode} task={currentTask} tasks={rows} state="editing" isSelected={false} isFocused={true} isSheet />, {
       className: 'max-w-full lg:max-w-4xl',
-      title: <span className="pl-4">{t('app:task')}</span>,
+      title: t('app:task'),
       id: `task-preview-${taskId}`,
     });
     setFocusedTaskId(taskId);
