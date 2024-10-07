@@ -3,47 +3,33 @@ This document describes how to develop your own app based on Cella, after forkin
 
 Also read the [architecture](./ARCHITECTURE.md) info.
 
--- Quickstart will soon be finished. We will be working on a `pnpm create` script to make it easy to get started
 
-# Quickstart Guide for Cella Scripts
-
-This guide will help you use the two scripts, **list diverged files** and **pull upstream**, to manage changes in your Cella project.
-
-### Prerequisites
-If you haven't already, point your upstream to the Cella repository:
-```bash
-git remote add upstream https://github.com/cellajs/cella.git
-```
-
-Ensure both scripts are executable:
-```bash
-chmod +x path/to/list-diverged-files.sh
-chmod +x path/to/pull-upstream.sh
-```
-
-## 1. List Divergent Files
-
-The `list-diverged-files.sh` script lists all files that have diverged from the upstream `cella` repository and writes the output to `cella.config.changed_files`. 
-It only includes changed files that are present in both your development branch and the upstream repository. 
-Additionally, files specified in `cella.config.ignore_file` will be excluded from the results.
-
-### Run the Script
-
-Execute the script using `pnpm`:
+## Run it
 
 ```bash
-pnpm run diverged
+pnpm install
+pnpm quick
 ```
 
-## 2. Pull Upstream
+## Customize
+1. Customize your config in `/config/default.ts`
+2. Update package.json with your own data
+3. Look at you .env file to understand what is required and update accordingly 
+4. There are many config files, which end with '-config.ts'. Here you can set for example your entity structure or your navigation structure.
 
-The `pull-upstream.sh` script fetches and merges changes from the upstream `cella` repository. 
-It will skip files listed in `cella.config.ignore_file` to help prevent endless merge conflicts.
 
+## Cella CLI
+Currently, Cella CLI is limited to creating a project (which you already used), listing diverged files and pulling upstream changes. Both commands will use your config in cella.config.js.
 
-### Run the Script
+### 1. List diverged
+Receive a list of files that have diverged from cella itself. The files you have ignored in cella.config.js will not be listed.
 
-Execute the script using `pnpm`:
+```bash
+pnpm diverged
+```
+
+### 2. Pull upstream
+Pull upstream changes from cella. Changes in files that are ignored will automatically be removed after the pulling, to reduce conflicts.
 
 ```bash
 pnpm run upstream:pull
