@@ -75,13 +75,13 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
   const [isMouseNearBottom, setIsMouseNearBottom] = useState(false);
 
   // Query tasks
-  const tasksQuery = useSuspenseQuery(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }));
+  const { data, isLoading } = useSuspenseQuery(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }));
 
   const tasks = useMemo(() => {
-    const respTasks = tasksQuery.data?.items || [];
+    const respTasks = data?.items || [];
     if (!searchQuery.length) return respTasks;
     return respTasks.filter((t) => t.keywords.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [tasksQuery.data, searchQuery]);
+  }, [data, searchQuery]);
 
   const {
     sortedTasks: showingTasks,
@@ -220,7 +220,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
         },
       }),
     );
-  }, [menu]);
+  }, [menu, data]);
 
   return (
     <div ref={columnRef} className="flex flex-col h-full">
@@ -234,7 +234,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
         {stickyBackground}
 
         <div className="h-full border-l border-r">
-          {tasksQuery.isLoading ? (
+          {isLoading ? (
             <ColumnSkeleton />
           ) : (
             <ScrollArea id={project.id} className="h-full mx-[-.07rem]">
