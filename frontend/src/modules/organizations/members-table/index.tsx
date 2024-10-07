@@ -189,7 +189,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
       container: containerRef.current,
       containerBackdrop: false,
       title: t('common:invite'),
-      text: `${t('common:invite_users.text')}`,
+      description: `${t('common:invite_users.text')}`,
     });
   };
 
@@ -209,7 +209,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
       {
         className: 'max-w-xl',
         title: t('common:remove_resource', { resource: t('member').toLowerCase() }),
-        text: (
+        description: (
           <Trans
             i18nKey="common:confirm.remove_members"
             values={{

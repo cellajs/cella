@@ -148,7 +148,7 @@ const AppNav = () => {
       <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">
         {renderedItems.map((navItem: NavItem, index: number) => {
           const isSecondItem = index === 1;
-          const isActive = sheet.get(navItem.id);
+          const isActive = !!sheet.get(navItem.id);
 
           const listItemClass =
             renderedItems.length > 2 && isSecondItem

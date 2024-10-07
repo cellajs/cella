@@ -21,7 +21,7 @@ const Pricing = () => {
         drawerOnMobile: false,
         className: 'sm:max-w-5xl',
         title: t('common:contact_us'),
-        text: t('common:contact_us.text'),
+        description: t('common:contact_us.text'),
       });
     }
     if (action === 'sign_in') {
@@ -33,7 +33,7 @@ const Pricing = () => {
         drawerOnMobile: true,
         className: 'sm:max-w-2xl',
         title: t('common:waitlist_request'),
-        text: t('common:waitlist_request.text', { appName: config.name }),
+        description: t('common:waitlist_request.text', { appName: config.name }),
       });
     }
   };

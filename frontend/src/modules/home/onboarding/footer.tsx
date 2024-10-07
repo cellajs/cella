@@ -28,7 +28,7 @@ const StepperFooter = ({
       dialog(<SkipOrganizationCreation />, {
         className: 'md:max-w-xl',
         title: `${t('common:skip')} ${t('common:create_resource', { resource: t('common:organization') }).toLowerCase()}`,
-        text: t('common:skip_org_creation.text'),
+        description: t('common:skip_org_creation.text'),
         id: 'skip_org_creation',
       });
       return;

@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import MobileSheet from '~/modules/common/sheeter/drawer';
@@ -8,15 +8,11 @@ import { type SheetAction, SheetObserver, type SheetT, sheet } from '~/modules/c
 import { objectKeys } from '~/utils/object';
 
 export function Sheeter() {
-  const isMobile = useBreakpoints('max', 'sm');
   const navigate = useNavigate();
-
+  const isMobile = useBreakpoints('max', 'sm');
   const prevFocusedElement = useRef<HTMLElement | null>(null);
+
   const [currentSheets, setCurrentSheets] = useState<SheetT[]>([]);
-  const handleRemoveSheet = useCallback((id: string) => {
-    setCurrentSheets((prevSheets) => prevSheets.filter((sheet) => sheet.id !== id));
-    if (prevFocusedElement.current) setTimeout(() => prevFocusedElement.current?.focus(), 1);
-  }, []);
 
   const removeSheet = () => {
     navigate({
@@ -35,20 +31,18 @@ export function Sheeter() {
   };
 
   useEffect(() => {
-    // To triggers sheets that opens on mount
-    setCurrentSheets(sheet.getAll());
-
-    const handleAction = (action: SheetAction & SheetT) => {
-      if (action.remove) handleRemoveSheet(action.id);
-      else {
-        prevFocusedElement.current = document.activeElement as HTMLElement;
-        setCurrentSheets((prevSheets) => {
-          const updatedSheets = prevSheets.filter((sheet) => sheet.id !== action.id);
-          return [...updatedSheets, action];
-        });
+    return SheetObserver.subscribe((action: SheetAction & SheetT) => {
+      if ('remove' in action) {
+        setCurrentSheets((prevSheets) => prevSheets.filter((sheet) => sheet.id !== action.id));
+        if (prevFocusedElement.current) setTimeout(() => prevFocusedElement.current?.focus(), 1);
+        return;
       }
-    };
-    return SheetObserver.subscribe(handleAction);
+      prevFocusedElement.current = document.activeElement as HTMLElement;
+      setCurrentSheets((prevSheets) => {
+        const updatedSheets = prevSheets.filter((sheet) => sheet.id !== action.id);
+        return [...updatedSheets, action];
+      });
+    });
   }, []);
 
   if (!currentSheets.length) return null;
@@ -57,22 +51,7 @@ export function Sheeter() {
     <>
       {currentSheets.map((sheet) => {
         const SheetComponent = isMobile ? MobileSheet : DesktopSheet;
-        return (
-          <SheetComponent
-            id={sheet.id}
-            key={sheet.id}
-            title={sheet.title}
-            description={sheet.text}
-            content={sheet.content}
-            modal={sheet.modal}
-            className={sheet.className}
-            side={sheet.side}
-            removeSheet={() => {
-              removeSheet();
-              sheet.removeCallback?.();
-            }}
-          />
-        );
+        return <SheetComponent key={sheet.id} sheet={sheet} removeSheet={removeSheet} />;
       })}
     </>
   );

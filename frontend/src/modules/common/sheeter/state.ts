@@ -1,9 +1,10 @@
 export type SheetT = {
   id: string;
   title?: string | React.ReactNode;
-  text?: React.ReactNode;
+  description?: React.ReactNode;
   className?: string;
   content?: React.ReactNode;
+  hideClose?: boolean;
   modal?: boolean;
   side?: 'bottom' | 'top' | 'right' | 'left';
   removeCallback?: () => void;
@@ -15,10 +16,8 @@ export type SheetAction = {
 };
 
 class SheetsStateObserver {
-  // Array to store the current sheets
-  private sheets: SheetT[] = [];
-  // Array to store subscribers that will be notified of changes
-  private subscribers: Array<(action: SheetAction & SheetT) => void> = [];
+  private sheets: SheetT[] = []; // Array to store the current sheets
+  private subscribers: Array<(action: SheetAction & SheetT) => void> = []; // Store subscribers that will be notified of changes
 
   // Method to subscribe to changes
   subscribe = (subscriber: (action: SheetAction & SheetT) => void) => {
@@ -33,11 +32,9 @@ class SheetsStateObserver {
     for (const sub of this.subscribers) sub(action);
   };
 
-  // Retrieve a sheet by its ID
-  get = (id: string) => this.sheets.find((sheet) => sheet.id === id);
+  get = (id: string) => this.sheets.find((sheet) => sheet.id === id); // Retrieve a sheet by its ID
 
-  // Retrieve a all sheets
-  getAll = () => this.sheets;
+  getAll = () => this.sheets; // Retrieve a all sheets
 
   // Add or update a sheet and notify subscribers
   set = (sheet: SheetT) => {
@@ -48,11 +45,9 @@ class SheetsStateObserver {
   // Remove a sheet by its ID or clear all sheets and notify subscribers
   remove = (id?: string) => {
     if (id) {
-      // Remove a specific sheet by ID
       this.sheets = this.sheets.filter((sheet) => sheet.id !== id);
       this.notifySubscribers({ id, remove: true });
     } else {
-      // Remove all sheets
       for (const sheet of this.sheets) this.notifySubscribers({ id: sheet.id, remove: true });
       this.sheets = [];
     }
@@ -78,12 +73,10 @@ class SheetsStateObserver {
 
 export const SheetObserver = new SheetsStateObserver();
 
-// TODO this does not have type safety?
-// Also, it seems the sheet responds a bit slow when opening and closing programmatically
-export const sheet = Object.assign({
-  create: SheetObserver.create,
-  remove: SheetObserver.remove,
-  update: SheetObserver.update,
-  get: SheetObserver.get,
-  getAll: SheetObserver.getAll,
-});
+export const sheet = {
+  create: SheetObserver.create.bind(SheetObserver),
+  remove: SheetObserver.remove.bind(SheetObserver),
+  update: SheetObserver.update.bind(SheetObserver),
+  get: SheetObserver.get.bind(SheetObserver),
+  getAll: SheetObserver.getAll.bind(SheetObserver),
+};

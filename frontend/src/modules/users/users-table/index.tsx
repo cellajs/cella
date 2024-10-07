@@ -140,7 +140,7 @@ const UsersTable = () => {
       container: containerRef.current,
       containerBackdrop: false,
       title: t('common:invite'),
-      text: `${t('common:invite_users.text')}`,
+      description: `${t('common:invite_users.text')}`,
     });
   };
 
@@ -158,7 +158,7 @@ const UsersTable = () => {
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('common:confirm.delete_resource', {
+        description: t('common:confirm.delete_resource', {
           name: selectedUsers.map((u) => u.email).join(', '),
           resource: selectedUsers.length > 1 ? t('common:users').toLowerCase() : t('common:user').toLowerCase(),
         }),

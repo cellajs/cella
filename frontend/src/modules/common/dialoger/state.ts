@@ -5,7 +5,7 @@ let dialogsCounter = 1;
 export type DialogT = {
   id: number | string;
   title?: string | React.ReactNode;
-  text?: React.ReactNode;
+  description?: React.ReactNode;
   drawerOnMobile?: boolean;
   container?: HTMLElement | null;
   className?: string;
@@ -18,6 +18,7 @@ export type DialogT = {
   addToTitle?: boolean;
   useDefaultTitle?: boolean;
   open?: boolean;
+  removeCallback?: () => void;
 };
 
 export type DialogToRemove = {
@@ -93,7 +94,6 @@ class Observer {
       this.dialogs = this.dialogs.filter((dialog) => dialog.id !== id);
       return;
     }
-
     // Remove all dialogs
     for (const dialog of this.dialogs) this.publish({ id: dialog.id, remove: true, refocus });
     this.dialogs = [];
