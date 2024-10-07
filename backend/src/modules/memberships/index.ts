@@ -1,4 +1,4 @@
-import { type SQL, and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 
@@ -323,18 +323,16 @@ const membershipsRoutes = app
     const updatedType = membershipToUpdate.type;
     const updatedEntityIdField = entityIdFields[updatedType];
 
-    // on restore item set last order in memberships
-    if (archived === false) {
-      const [lastOrderMembership] = await db
-        .select()
-        .from(membershipsTable)
-        .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable.userId, user.id)))
-        .orderBy(desc(membershipsTable.order))
-        .limit(1);
-      const ceilOrder = Math.ceil(lastOrderMembership.order);
-      orderToUpdate = lastOrderMembership.order === ceilOrder ? ceilOrder + 1 : ceilOrder;
-    }
+    // if archived changed, set lowest order in relevant memberships
+    if (archived !== undefined && archived !== membershipToUpdate.archived) {
+      const relevantMemberships = memberships.filter((membership) => membership.type === updatedType && membership.archived === archived);
 
+      const lastOrderMembership = relevantMemberships.sort((a, b) => b.order - a.order)[0];
+
+      const ceilOrder = lastOrderMembership ? Math.ceil(lastOrderMembership.order) : 0;
+
+      orderToUpdate = ceilOrder + 1;
+    }
     const membershipContext = await resolveEntity(updatedType, membershipToUpdate[updatedEntityIdField]);
 
     if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);

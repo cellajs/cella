@@ -1,8 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
 import type { ContextEntity } from 'backend/types/common';
+import { config } from 'config';
 import { motion } from 'framer-motion';
-import { Archive, ArchiveRestore, Bell, BellOff, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
@@ -12,6 +12,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { UserMenuItem } from '~/types/common';
+import Spinner from '../../spinner';
 
 interface ItemOptionProps {
   item: UserMenuItem;
@@ -21,55 +22,57 @@ interface ItemOptionProps {
 
 export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) => {
   const { t } = useTranslation();
-  const [isItemArchived, setItemArchived] = useState(item.membership.archived);
-  const [isItemMuted, setItemMuted] = useState(item.membership.muted);
-
   const { archiveStateToggle } = useNavigationStore();
   const { mutate: updateMembership, status } = useMutation({
-    mutationFn: (values: UpdateMenuOptionsProp) => {
-      return baseUpdateMembership(values);
-    },
+    mutationFn: (values: UpdateMenuOptionsProp) => baseUpdateMembership(values),
     onSuccess: (updatedMembership) => {
-      let toast: string | undefined;
-      if (updatedMembership.archived !== isItemArchived) {
-        const archived = updatedMembership.archived || !isItemArchived;
+      let toastMessage: string | undefined;
+
+      if (updatedMembership.archived !== item.membership.archived) {
+        const archived = updatedMembership.archived || !item.membership.archived;
         archiveStateToggle(item, archived, parentItemSlug ? parentItemSlug : null);
-        setItemArchived(archived);
-        toast = t(`common:success.${updatedMembership.archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${itemType}`) });
+        item.membership.archived = archived;
+        toastMessage = t(`common:success.${updatedMembership.archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${itemType}`) });
       }
-      if (updatedMembership.muted !== isItemMuted) {
-        const muted = updatedMembership.muted || !isItemMuted;
-        setItemMuted(muted);
-        toast = t(`common:success.${updatedMembership.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${itemType}`) });
+
+      if (updatedMembership.muted !== item.membership.muted) {
+        const muted = updatedMembership.muted || !item.membership.muted;
+        item.membership.muted = muted;
+        toastMessage = t(`common:success.${updatedMembership.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${itemType}`) });
       }
-      // Triggers an event to handle actions for menu entities that have been changed (default listens in nav-sheet/index)
-      dispatchCustomEvent('menuEntityChange', { entity: itemType, membership: updatedMembership, toast });
+
+      dispatchCustomEvent('menuEntityChange', { entity: itemType, membership: updatedMembership, toast: toastMessage });
     },
   });
 
-  const itemOptionStatesHandle = (state: 'archive' | 'mute') => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+  const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {
+    if (!onlineManager.isOnline()) {
+      toast.warning(t('common:action.offline.text'));
+      return;
+    }
 
-    const role = item.membership.role;
-    const membershipId = item.membership.id;
-    const organizationId = item.organizationId || item.id;
+    const { role, id: membershipId, organizationId, archived, muted } = item.membership;
+    const membership = { membershipId, role, muted, archived, organizationId };
 
-    if (state === 'archive') updateMembership({ membershipId, role, archived: !isItemArchived, organizationId });
-    if (state === 'mute') updateMembership({ membershipId, role, muted: !isItemMuted, organizationId });
+    if (key === 'archive') membership.archived = !item.membership.archived;
+    if (key === 'mute') membership.muted = !item.membership.muted;
+    updateMembership(membership);
   };
 
   return (
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
-      className={`group flex relative items-center ${parentItemSlug ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 pr-2 justify-start rounded  focus:outline-none
+      className={`group flex relative items-center ${parentItemSlug ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 pr-2 justify-start rounded focus:outline-none
         ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
-        ${!isItemArchived && 'ring-1 cursor-grab'} `}
+        ${!item.membership.archived && 'ring-1 cursor-grab'} `}
     >
       {status === 'pending' ? (
-        <Loader2 className="text-muted-foreground h-8 w-8 mx-3 my-2 animate-spin" />
+        <div className={`${parentItemSlug ? 'my-2 mx-3 h-8 w-8' : 'm-2'} p-2 ${item.membership.archived && 'opacity-70'}`}>
+          <Spinner inline />
+        </div>
       ) : (
         <AvatarWrap
-          className={`${parentItemSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${isItemArchived && 'opacity-70'}`}
+          className={`${parentItemSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${item.membership.archived && 'opacity-70'}`}
           type={itemType}
           id={item.id}
           name={item.name}
@@ -78,18 +81,20 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
       )}
 
       <div className="truncate grow py-2 pl-1 text-left">
-        <div className={`truncate ${parentItemSlug ? 'text-sm' : 'text-base mb-1'} leading-5 ${isItemArchived && 'opacity-70'}`}>{item.name}</div>
+        <div className={`truncate ${parentItemSlug ? 'text-sm' : 'text-base mb-1'} leading-5 ${item.membership.archived && 'opacity-70'}`}>
+          {item.name} {config.mode === 'development' && <span className="text-muted">#{item.membership.order}</span>}
+        </div>
         <div className="flex items-center gap-4 transition-opacity delay-500">
           <OptionButtons
-            Icon={isItemArchived ? ArchiveRestore : Archive}
-            title={isItemArchived ? t('common:restore') : t('common:archive')}
-            onClick={() => itemOptionStatesHandle('archive')}
+            Icon={item.membership.archived ? ArchiveRestore : Archive}
+            title={item.membership.archived ? t('common:restore') : t('common:archive')}
+            onClick={() => handleUpdateMembershipKey('archive')}
             subTask={!!parentItemSlug}
           />
           <OptionButtons
-            Icon={isItemMuted ? Bell : BellOff}
-            title={isItemMuted ? t('common:unmute') : t('common:mute')}
-            onClick={() => itemOptionStatesHandle('mute')}
+            Icon={item.membership.muted ? Bell : BellOff}
+            title={item.membership.muted ? t('common:unmute') : t('common:mute')}
+            onClick={() => handleUpdateMembershipKey('mute')}
             subTask={!!parentItemSlug}
           />
         </div>
