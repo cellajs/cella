@@ -44,21 +44,17 @@
 - [Roadmap](/info/ROADMAP.md)
 - [Deployment](/info/DEPLOYMENT.md)
 
-
 ## Requirements
 - Make sure you have node installed with `node -v`. Install Node 20.x or 22.x. (ie. [Volta](https://docs.volta.sh/guide/)).
 - Ideally you work with [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
 
 <br>
 
-## Fork & build your app! (EXPERIMENTAL)
-
-Want to use cella to build your next web app? Click the fork button. Then follow these steps in your project:
+## Create your own app
+Want to use cella to build your next web app? We made it simple:
 
 ```bash
-git remote add upstream git@github.com:cellajs/cella.git
-git fetch upstream
-git merge upstream/main
+pnpm create @cellajs/cella
 ```
 
 Then run your app:
@@ -67,7 +63,7 @@ Then run your app:
 pnpm install && pnpm quick
 ```
 
-You now have an implementation-ready web app 🤯! But ... without any unique functionality 🤓. Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
+You now have an implementation-ready web app. 🤯! But ... without any unique functionality 🤓. Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
 
 
 ## Installation
