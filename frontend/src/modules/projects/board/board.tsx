@@ -290,11 +290,16 @@ export default function Board() {
           ...{ taskIdPreview: taskId },
         }),
       });
-      sheet.create(<TaskCard mode={mode} task={currentTask} tasks={tasks} state={'editing'} isSelected={false} isFocused={true} isSheet />, {
-        className: 'max-w-full lg:max-w-4xl',
-        title: t('app:task'),
-        id: `task-preview-${taskId}`,
-      });
+      sheet.create(
+        <div className="-mx-4">
+          <TaskCard mode={mode} task={currentTask} tasks={tasks} state={'editing'} isSelected={false} isFocused={true} isSheet />
+        </div>,
+        {
+          className: 'max-w-full lg:max-w-4xl',
+          title: t('app:task'),
+          id: `task-preview-${taskId}`,
+        },
+      );
     },
     [currentTask, focusedTaskId, tasks],
   );
