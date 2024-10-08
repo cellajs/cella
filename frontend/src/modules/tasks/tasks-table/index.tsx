@@ -24,7 +24,7 @@ import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import { isSubTaskData } from '~/modules/projects/board/helpers';
-import { configureForExport, getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
+import { configureForExport, getRelativeTaskOrder } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
@@ -35,6 +35,7 @@ import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
+import { dateIsRecent } from '~/utils/date-is-recent';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -129,10 +130,13 @@ export default function TasksTable() {
     order,
   ]);
 
-  const tasks = useMemo(() => tasksQuery.data?.pages[0].items || [], [tasksQuery.data]);
-
-  const { sortedTasks: rows } = useMemo(() => sortAndGetCounts(tasks, true, true), [tasks]);
-
+  // hide accepted > then 30 days ago
+  const rows = useMemo(() => {
+    const tasks = tasksQuery.data?.pages[0].items || [];
+    return tasks.filter((t) => {
+      return t.status !== 6 || dateIsRecent(t.modifiedAt, 30);
+    });
+  }, [tasksQuery.data]);
   const totalCount = rows.length;
 
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {

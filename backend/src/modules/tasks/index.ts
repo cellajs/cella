@@ -91,23 +91,24 @@ const tasksRoutes = app
     const uniqueLabelIds = Array.from(new Set([...tasks.flatMap((t) => t.labels)]));
 
     const users = await getUsersByConditions([inArray(usersTable.id, uniqueAssignedUserIds)]);
-
     const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, uniqueLabelIds));
 
-    const tasksWithSubtasks = tasks
-      .filter((t) => !t.parentId)
-      .map((task) => ({
-        ...task,
-        subTasks: tasks.filter((st) => st.parentId === task.id).sort((a, b) => a.order - b.order),
-      }));
+    const userMap = new Map(users.map((user) => [user.id, user]));
 
-    const finalTasks = tasksWithSubtasks.map((task) => ({
-      ...task,
-      createdBy: users.find((m) => m.id === task.createdBy) || null,
-      modifiedBy: users.find((m) => m.id === task.modifiedBy) || null,
-      assignedTo: users.filter((m) => task.assignedTo.includes(m.id)),
-      labels: labels.filter((m) => task.labels.includes(m.id)),
-    }));
+    const finalTasks = tasks
+      .map((task) => {
+        const subtasks = tasks.filter((st) => st.parentId === task.id).sort((a, b) => a.order - b.order);
+
+        return {
+          ...task,
+          subTasks: subtasks,
+          createdBy: userMap.get(task.createdBy) || null,
+          modifiedBy: userMap.get(task.modifiedBy || '') || null,
+          assignedTo: users.filter((m) => task.assignedTo.includes(m.id)),
+          labels: labels.filter((m) => task.labels.includes(m.id)),
+        };
+      })
+      .filter((task) => !task.parentId); // Filter out subtasks
 
     return ctx.json(
       {
