@@ -47,7 +47,7 @@ export const TaskHeader = ({
           aria-label="Set type"
           variant="ghost"
           size="xs"
-          className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
+          className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
         >
           {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
         </Button>

@@ -143,7 +143,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, stat
         tabIndex={0}
         ref={taskRef}
         className={cn(
-          `group/task relative rounded-none border-0 border-b bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
+          `group/task rounded-none border-0 border-b bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
         focus-visible:none border-l-2 via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} 
         ${dragOver ? 'bg-card/20' : ''} 
         ${isFocused && !isSheet ? 'border-l-primary is-focused' : 'border-l-transparent'}
@@ -165,7 +165,7 @@ export function TaskCard({ style, task, tasks, mode, isSelected, isFocused, stat
                   aria-label="Set type"
                   variant="ghost"
                   size="xs"
-                  className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
+                  className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
                 >
                   {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
                 </Button>
