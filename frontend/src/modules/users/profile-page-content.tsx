@@ -22,11 +22,7 @@ const ProfilePageContent = ({ sheet, userId, organizationId }: { userId: string;
 
   console.debug('data available in profile page content:', sheet, userId, organizationId);
 
-  return (
-    <div className="container">
-      <ContentPlaceholder Icon={Squirrel} title={'Default user page'} />
-    </div>
-  );
+  return <ContentPlaceholder Icon={Squirrel} title={'Default user page'} />;
 };
 
 export default ProfilePageContent;
