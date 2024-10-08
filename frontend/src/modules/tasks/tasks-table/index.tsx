@@ -2,7 +2,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Bird } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
@@ -83,6 +83,8 @@ const tasksQueryOptions = ({
 export default function TasksTable() {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
+  const navigate = useNavigate();
+
   const search = useSearch({ from: WorkspaceTableRoute.id });
   const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId, workspace } = useWorkspaceStore();
 
@@ -201,7 +203,7 @@ export default function TasksTable() {
     if (search.taskIdPreview) return handleOpenPreview(search.taskIdPreview);
     if (search.userIdPreview) {
       const [{ createdBy }] = rows.filter((t) => t.createdBy?.id === search.userIdPreview);
-      if (createdBy) openUserPreviewSheet(createdBy);
+      if (createdBy) openUserPreviewSheet(createdBy, navigate);
     }
   }, [rows]);
 
@@ -214,7 +216,7 @@ export default function TasksTable() {
     return combine(
       monitorForElements({
         canMonitor({ source }) {
-          return isSubTaskData(source.data) && sheet.getAll().length;
+          return isSubTaskData(source.data);
         },
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];

@@ -5,7 +5,7 @@ import type { z } from 'zod';
 import type { Workspace } from '~/types/app';
 
 import { updateWorkspaceBodySchema } from 'backend/modules/workspaces/schema';
-import { useEffect } from 'react';
+import { isValidElement, useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { type UpdateWorkspaceParams, updateWorkspace } from '~/api/workspaces';
@@ -80,13 +80,16 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
   useEffect(() => {
     if (!isSheet) return;
     if (form.unsavedChanges) {
-      const targetSheet = sheet.get('edit-workspace');
-      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
-        sheet.update('edit-workspace', {
-          title: <UnsavedBadge title={targetSheet?.title} />,
-        });
-        return;
-      }
+      const targetSheet = sheet.get('update-user');
+
+      if (!targetSheet || !isValidElement(targetSheet.title)) return;
+      // Check if the title's type is a function (React component) and not a string
+      const { type: tittleType } = targetSheet.title;
+
+      if (typeof tittleType !== 'function' || tittleType.name === 'UnsavedBadge') return;
+      sheet.update('update-user', {
+        title: <UnsavedBadge title={targetSheet.title} />,
+      });
     }
   }, [form.unsavedChanges]);
 

@@ -127,7 +127,7 @@ export default function ProjectsTable({ userId, organizationId, sheet: IsSheet }
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('common:confirm.delete_resources', { resources: t('app:projects').toLowerCase() }),
+        description: t('common:confirm.delete_resources', { resources: t('app:projects').toLowerCase() }),
       },
     );
   };

@@ -31,7 +31,7 @@ const BoardHeader = ({ project }: { project?: Project | null }) => {
     sheet.create(<WorkspaceSettings sheet />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:resource_settings', { resource: t('app:workspace') }),
-      text: t('common:resource_settings.text', { resource: t('app:workspace').toLowerCase() }),
+      description: t('common:resource_settings.text', { resource: t('app:workspace').toLowerCase() }),
       id: 'edit-workspace',
     });
   };

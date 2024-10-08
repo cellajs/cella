@@ -26,17 +26,6 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm');
   const { projects, workspace } = useWorkspaceStore();
 
-  const setPreviewSearch = (id: string, key: string) => {
-    navigate({
-      to: '.',
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({
-        ...prev,
-        ...{ [`${key}Preview`]: id },
-      }),
-    });
-  };
   const columns: ColumnOrColumnGroup<Task>[] = [
     CheckboxColumn,
     {
@@ -51,10 +40,7 @@ export const useColumns = () => {
           variant="none"
           tabIndex={tabIndex}
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
-          onClick={() => {
-            setPreviewSearch(row.id, 'taskId');
-            dispatchCustomEvent('openTaskCardPreview', row.id);
-          }}
+          onClick={() => dispatchCustomEvent('openTaskCardPreview', row.id)}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">
             {row.summary ? (
@@ -238,8 +224,7 @@ export const useColumns = () => {
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
-              setPreviewSearch(user.id, 'userId');
-              openUserPreviewSheet(user);
+              openUserPreviewSheet(user, navigate, true);
             }}
           >
             <AvatarWrap type="user" className="h-6 w-6" id={user.id} name={user.name} url={user.thumbnailUrl} />
@@ -276,8 +261,7 @@ export const useColumns = () => {
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
-              setPreviewSearch(user.id, 'userId');
-              openUserPreviewSheet(user);
+              openUserPreviewSheet(user, navigate, true);
             }}
           >
             <AvatarWrap type="user" className="h-6 w-6" id={user.id} name={user.name} url={user.thumbnailUrl} />

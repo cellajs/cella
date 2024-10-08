@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
 import { updateProjectBodySchema } from 'backend/modules/projects/schema';
-import { useEffect } from 'react';
+import { isValidElement, useEffect } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { type UpdateProjectParams, updateProject } from '~/api/projects';
@@ -77,7 +77,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
     mutate(values, {
       onSuccess: (updatedProject) => {
         if (isDialog) dialog.remove();
-        if (isSheet) sheet.remove();
+        if (isSheet) sheet.remove('edit-project');
         form.reset(updatedProject);
         toast.success(t('common:success.update_resource', { resource: t('app:project') }));
         setWorkspace(
@@ -97,13 +97,16 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
   useEffect(() => {
     if (!isSheet) return;
     if (form.unsavedChanges) {
-      const targetSheet = sheet.get('edit-project');
-      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
-        sheet.update('edit-project', {
-          title: <UnsavedBadge title={targetSheet?.title} />,
-        });
-        return;
-      }
+      const targetSheet = sheet.get('update-user');
+
+      if (!targetSheet || !isValidElement(targetSheet.title)) return;
+      // Check if the title's type is a function (React component) and not a string
+      const { type: tittleType } = targetSheet.title;
+
+      if (typeof tittleType !== 'function' || tittleType.name === 'UnsavedBadge') return;
+      sheet.update('update-user', {
+        title: <UnsavedBadge title={targetSheet.title} />,
+      });
     }
   }, [form.unsavedChanges]);
 

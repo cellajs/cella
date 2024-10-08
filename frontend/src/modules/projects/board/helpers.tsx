@@ -39,6 +39,6 @@ export const openProjectConfigSheet = (project: Project) => {
     className: 'max-w-full lg:max-w-4xl',
     id: isAdmin ? 'edit-project' : 'project-members',
     title: isAdmin ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members'),
-    text: isAdmin ? t('common:resource_settings.text', { resource: t('app:project').toLowerCase() }) : '',
+    description: isAdmin ? t('common:resource_settings.text', { resource: t('app:project').toLowerCase() }) : '',
   });
 };

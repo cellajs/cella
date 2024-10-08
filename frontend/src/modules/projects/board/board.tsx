@@ -26,6 +26,7 @@ import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-dow
 import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, TaskOperationEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
+import { objectKeys } from '~/utils/object';
 
 // TODO empty space width should be dynamic based on window width and amount of projects and width of each project?
 const PANEL_MIN_WIDTH = 400;
@@ -298,6 +299,21 @@ export default function Board() {
           className: 'max-w-full lg:max-w-4xl',
           title: t('app:task'),
           id: `task-preview-${taskId}`,
+          removeCallback: () => {
+            navigate({
+              to: '.',
+              replace: true,
+              resetScroll: false,
+              search: (prev) => {
+                const newSearch = { ...prev };
+                for (const key of objectKeys(newSearch)) {
+                  if (key.includes('Preview')) delete newSearch[key];
+                }
+                return newSearch;
+              },
+            });
+            sheet.remove(`task-preview-${taskId}`);
+          },
         },
       );
     },
