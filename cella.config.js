@@ -26,6 +26,7 @@ export const config = {
     'config/default.ts',
     'config/development.ts',
     'config/tunnel.ts',
+    'cli/create-cella/*',
     'frontend/vite.config.ts',
     'frontend/public/favicon.ico',
     'frontend/public/static/icons/*',

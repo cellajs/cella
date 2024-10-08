@@ -3,21 +3,7 @@
   "version": "0.0.3",
   "private": false,
   "license": "MIT",
-  "description": "Intuivive TypeScript template to build local-first web apps. Implementation-ready. MIT license.",
-  "keywords": [
-    "template",
-    "monorepo",
-    "fullstack",
-    "typescript",
-    "hono",
-    "drizzle",
-    "shadcn",
-    "postgres",
-    "react",
-    "vite",
-    "pwa",
-    "cli"
-  ],
+  "description": "Create your own app in seconds with Cella: a TypeScript template for local-first web apps.",
   "publishConfig": {
     "access": "public"
   },

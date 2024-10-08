@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import type { entitySuggestionSchema } from 'backend/modules/general/schema';
 import type { Entity } from 'backend/types/common';
 import { config } from 'config';
-import { History, Loader2, Search, X } from 'lucide-react';
+import { History, Search, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -17,6 +17,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { baseEntityRoutes, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { Button } from '../ui/button';
+import Spinner from './spinner';
 
 type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
@@ -116,8 +117,8 @@ export const MainSearch = () => {
       />
       <ScrollArea id={'suggestion-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
         {isFetching && (
-          <CommandLoading>
-            <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
+          <CommandLoading className="mt-2">
+            <Spinner inline />
           </CommandLoading>
         )}
         {
