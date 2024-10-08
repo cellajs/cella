@@ -1,26 +1,9 @@
 {
   "name": "@cella/sync-cella",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "private": false,
   "license": "MIT",
-  "description": "Intuivive TypeScript template to build local-first web apps. Implementation-ready. MIT license.",
-  "keywords": [
-    "template",
-    "monorepo",
-    "fullstack",
-    "typescript",
-    "hono",
-    "drizzle",
-    "shadcn",
-    "postgres",
-    "react",
-    "vite",
-    "pwa",
-    "cli",
-    "sync",
-    "fetch",
-    "upstream"
-  ],
+  "description": "Receive updates from cella while reducing conflicts.",
   "repository": {
     "type": "git",
     "url": "https://github.com/cellajs/cella",

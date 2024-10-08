@@ -1,4 +1,4 @@
-import { Check, ChevronsUpDown, Loader2, Search, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
 
 import { useQuery } from '@tanstack/react-query';
 import { config } from 'config';
@@ -13,6 +13,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import Spinner from './spinner';
 
 export function QueryCombobox({ onChange, value }: { value: string[]; onChange: (items: string[]) => void }) {
   const { t } = useTranslation();
@@ -106,8 +107,8 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
             placeholder={t('common:placeholder.type_name')}
           />
           {isLoading && (
-            <CommandLoading>
-              <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
+            <CommandLoading className="mt-2">
+              <Spinner inline />
             </CommandLoading>
           )}
           <CommandList className="px-1 h-full">

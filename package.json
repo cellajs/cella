@@ -13,7 +13,7 @@
     "node": ">=20.14.0"
   },
   "scripts": {
-    "prepare": "cross-env [ $NODE_ENV=development ] && lefthook install && code --install-extension biomejs.biome; exit 0",
+    "prepare": "node prepare.js",
     "quick": "pnpm --filter backend run quick & turbo dev --filter frontend --filter tus",
     "docker": "pnpm --filter backend run docker:up --detach",
     "generate": "pnpm --filter backend run generate",
@@ -37,5 +37,8 @@
     "turbo": "^2.1.3",
     "typescript": "^5.6.2"
   },
-  "packageManager": "pnpm@9.1.2"
+  "packageManager": "pnpm@9.1.2",
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
 }

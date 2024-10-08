@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
+import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { authRateLimiter } from '#/middlewares/rate-limiter';
 import { signInRateLimiter } from '#/middlewares/rate-limiter/sign-in';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
@@ -12,7 +12,7 @@ class AuthRoutesConfig {
   public impersonationSignIn = createRouteConfig({
     method: 'get',
     path: '/impersonation/start',
-    guard: [isAuthenticated, isSystemAdmin],
+    guard: [isAuthenticated, systemGuard],
     tags: ['auth'],
     summary: 'Start impersonating',
     description: 'System admin impersonates a selected user by id by receiving a special impersonation session.',

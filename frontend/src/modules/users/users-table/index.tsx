@@ -1,5 +1,5 @@
 import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
 
@@ -44,6 +44,8 @@ type SystemRoles = (typeof config.rolesByType.systemRoles)[number] | undefined;
 
 const UsersTable = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
   const search = useSearch({ from: UsersTableRoute.id });
   const containerRef = useRef(null);
 
@@ -140,7 +142,7 @@ const UsersTable = () => {
       container: containerRef.current,
       containerBackdrop: false,
       title: t('common:invite'),
-      text: `${t('common:invite_users.text')}`,
+      description: `${t('common:invite_users.text')}`,
     });
   };
 
@@ -158,7 +160,7 @@ const UsersTable = () => {
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('common:confirm.delete_resource', {
+        description: t('common:confirm.delete_resource', {
           name: selectedUsers.map((u) => u.email).join(', '),
           resource: selectedUsers.length > 1 ? t('common:users').toLowerCase() : t('common:user').toLowerCase(),
         }),
@@ -169,7 +171,7 @@ const UsersTable = () => {
   useEffect(() => {
     if (!rows.length || !search.userIdPreview) return;
     const user = rows.find((t) => t.id === search.userIdPreview);
-    if (user) openUserPreviewSheet(user);
+    if (user) openUserPreviewSheet(user, navigate);
   }, [rows]);
 
   return (

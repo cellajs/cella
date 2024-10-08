@@ -24,13 +24,15 @@
 > Raak is an implementation project based upon the template [Cella](https://github/com/cellajs/cella) (prerelease).
 
 ## Installation
+
 - You need node. Check with `node -v`. Install Node 20.x or 22.x. (ie. [Volta](https://docs.volta.sh/guide/)).
 - Use [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
-<br></br>
+  <br></br>
 
 ```bash
 git clone git@github.com:cellajs/raak.git && cd raak
 ```
+
 ```bash
 pnpm install && pnpm quick
 ```

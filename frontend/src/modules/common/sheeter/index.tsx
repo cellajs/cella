@@ -1,78 +1,36 @@
-import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import MobileSheet from '~/modules/common/sheeter/drawer';
 import DesktopSheet from '~/modules/common/sheeter/sheet';
-import { type SheetAction, SheetObserver, type SheetT, sheet } from '~/modules/common/sheeter/state';
-import { objectKeys } from '~/utils/object';
+import { type SheetAction, SheetObserver, type SheetT } from '~/modules/common/sheeter/state';
 
 export function Sheeter() {
   const isMobile = useBreakpoints('max', 'sm');
-  const navigate = useNavigate();
-
   const prevFocusedElement = useRef<HTMLElement | null>(null);
-  const [currentSheets, setCurrentSheets] = useState<SheetT[]>([]);
-  const handleRemoveSheet = useCallback((id: string) => {
-    setCurrentSheets((prevSheets) => prevSheets.filter((sheet) => sheet.id !== id));
+
+  const [sheets, setSheets] = useState<SheetT[]>([]);
+
+  const removeSheet = useCallback((sheet: SheetT) => {
+    setSheets((currentSheets) => currentSheets.filter(({ id }) => id !== sheet.id));
     if (prevFocusedElement.current) setTimeout(() => prevFocusedElement.current?.focus(), 1);
   }, []);
 
-  const removeSheet = () => {
-    navigate({
-      to: '.',
-      replace: true,
-      resetScroll: false,
-      search: (prev) => {
-        const newSearch = { ...prev };
-        for (const key of objectKeys(newSearch)) {
-          if (key.includes('Preview')) delete newSearch[key];
-        }
-        return newSearch;
-      },
-    });
-    sheet.remove();
-  };
-
   useEffect(() => {
-    // To triggers sheets that opens on mount
-    setCurrentSheets(sheet.getAll());
-
-    const handleAction = (action: SheetAction & SheetT) => {
-      if (action.remove) handleRemoveSheet(action.id);
-      else {
-        prevFocusedElement.current = document.activeElement as HTMLElement;
-        setCurrentSheets((prevSheets) => {
-          const updatedSheets = prevSheets.filter((sheet) => sheet.id !== action.id);
-          return [...updatedSheets, action];
-        });
-      }
-    };
-    return SheetObserver.subscribe(handleAction);
+    return SheetObserver.subscribe((action: SheetAction & SheetT) => {
+      if ('remove' in action) removeSheet(action);
+      prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
+      setSheets((prevSheets) => [...prevSheets.filter((sheet) => sheet.id !== action.id), action]);
+    });
   }, []);
 
-  if (!currentSheets.length) return null;
+  if (!sheets.length) return null;
 
   return (
     <>
-      {currentSheets.map((sheet) => {
+      {sheets.map((sheet) => {
         const SheetComponent = isMobile ? MobileSheet : DesktopSheet;
-        return (
-          <SheetComponent
-            id={sheet.id}
-            key={sheet.id}
-            title={sheet.title}
-            description={sheet.text}
-            content={sheet.content}
-            modal={sheet.modal}
-            className={sheet.className}
-            side={sheet.side}
-            removeSheet={() => {
-              removeSheet();
-              sheet.removeCallback?.();
-            }}
-          />
-        );
+        return <SheetComponent key={sheet.id} sheet={sheet} removeSheet={removeSheet} />;
       })}
     </>
   );

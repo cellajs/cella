@@ -170,7 +170,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
         id: 'send-reset-password',
         className: 'md:max-w-xl',
         title: t('common:reset_password'),
-        text: t('common:reset_password.text'),
+        description: t('common:reset_password.text'),
       },
     );
   };

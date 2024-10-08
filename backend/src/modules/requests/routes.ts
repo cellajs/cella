@@ -1,5 +1,5 @@
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated, isPublicAccess, isSystemAdmin } from '#/middlewares/guard';
+import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { authRateLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
@@ -39,7 +39,7 @@ class RequestsRoutesConfig {
   public getRequests = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: [isAuthenticated, isSystemAdmin],
+    guard: [isAuthenticated, systemGuard],
     tags: ['requests'],
     summary: 'Get list of requests',
     description: 'Get list of requests on system level for waitlist, contact form or newsletter.',

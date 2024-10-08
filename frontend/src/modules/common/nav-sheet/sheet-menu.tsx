@@ -89,7 +89,7 @@ export const SheetMenu = memo(() => {
           if (!isPageData(targetData) || !isPageData(sourceData)) return;
 
           const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
-          const neededItems = findRelatedItemsByType(menu, sourceData.item.entity);
+          const neededItems = findRelatedItemsByType(menu, sourceData.item.entity, sourceData.item.membership.archived);
           const targetItemIndex = neededItems.findIndex((i) => i.id === targetData.item.id);
           const relativeItemIndex = closestEdgeOfTarget === 'top' ? targetItemIndex - 1 : targetItemIndex + 1;
 
