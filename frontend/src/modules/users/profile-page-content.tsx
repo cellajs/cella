@@ -17,11 +17,7 @@ const ProfilePageContent = ({ sheet, userId, organizationId }: { userId: string;
   // Don't render anything until `orgId` is available
   if (!orgId) return null;
 
-  return (
-    <div className="container">
-      <ProjectsTable organizationId={orgId} userId={userId} sheet={sheet} />
-    </div>
-  );
+  return <ProjectsTable organizationId={orgId} userId={userId} sheet={sheet} />;
 };
 
 export default ProfilePageContent;
