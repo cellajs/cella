@@ -4,7 +4,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types/app';
-import ProjectActions from './board-culumn-header-actions';
+import ProjectActions from './project-actions';
 
 export function BoardColumnHeader({ project }: { project: Project }) {
   const navigate = useNavigate();

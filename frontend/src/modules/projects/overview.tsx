@@ -4,7 +4,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { FocusView } from '~/modules/common/focus-view';
 import StickyBox from '~/modules/common/sticky-box';
-import DisplayOptions from '~/modules/projects/board/header/display-options';
+import DisplayOptions from '~/modules/tasks/tasks-display-header/display-options';
 import { useWorkspaceStore } from '~/store/workspace';
 
 const Overview = () => {

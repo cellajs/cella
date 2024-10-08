@@ -8,13 +8,19 @@ import { queryClient } from '~/lib/router';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { useWorkspaceStore } from '~/store/workspace';
-import type { Task } from '~/types/app';
+import type { Task, Workspace } from '~/types/app';
 
-const TaskSelectedTableButtons = () => {
+interface TaskSelectedButtonsProps {
+  workspace: Workspace;
+  selectedTasks: string[];
+  setSelectedTasks: (taskIds: string[]) => void;
+}
+
+const TaskSelectedButtons = ({ workspace, selectedTasks, setSelectedTasks }: TaskSelectedButtonsProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { selectedTasks, setSelectedTasks, workspace } = useWorkspaceStore();
+
+  const removeSelect = () => setSelectedTasks([]);
 
   const queries = queryClient.getQueriesData({ queryKey: ['boardTasks'] });
 
@@ -36,7 +42,7 @@ const TaskSelectedTableButtons = () => {
               dispatchCustomEvent('taskOperation', { array: selectedIds, action: 'delete', projectId });
             });
           }
-          setSelectedTasks([]);
+          removeSelect();
         }
         if (!resp) toast.error(t('common:error.delete_resources', { resources: t('app:tasks') }));
       })
@@ -53,7 +59,7 @@ const TaskSelectedTableButtons = () => {
         </Button>
       </TooltipButton>
       <TooltipButton toolTipContent={t('common:clear_selection')}>
-        <Button variant="ghost" className="relative" onClick={() => setSelectedTasks([])}>
+        <Button variant="ghost" className="relative" onClick={removeSelect}>
           <XSquare size={16} />
           <span className="ml-1 max-xs:hidden">{t('common:clear')}</span>
         </Button>
@@ -62,4 +68,4 @@ const TaskSelectedTableButtons = () => {
   );
 };
 
-export default TaskSelectedTableButtons;
+export default TaskSelectedButtons;

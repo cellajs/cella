@@ -9,7 +9,7 @@ import { useMeasure } from '~/hooks/use-measure';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { BoardColumn } from '~/modules/projects/board/board-column';
-import BoardHeader from '~/modules/projects/board/header/board-header';
+import BoardHeader from '~/modules/tasks/tasks-display-header/header';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '~/modules/ui/resizable';
 import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -20,6 +20,7 @@ import { useMutateTasksQueryData, useMutateWorkSpaceQueryData } from '~/hooks/us
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
+import WorkspaceActions from '~/modules/projects/board/workspace-actions';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
@@ -370,7 +371,9 @@ export default function Board() {
 
   return (
     <>
-      <BoardHeader project={mobileDeviceProject} />
+      <BoardHeader>
+        <WorkspaceActions project={mobileDeviceProject} />
+      </BoardHeader>
       {!projects.length ? (
         <ContentPlaceholder
           className=" h-[calc(100vh-4rem-4rem)] sm:h-[calc(100vh-4.88rem)]"

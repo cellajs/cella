@@ -27,9 +27,8 @@ import { isSubTaskData } from '~/modules/projects/board/helpers';
 import { configureForExport, getRelativeTaskOrder } from '~/modules/tasks/helpers';
 import { TaskCard } from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
+import TableHeader from '~/modules/tasks/tasks-display-header/header';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
-import TableHeader from '~/modules/tasks/tasks-table/header/table-header';
-import { TaskTableSearch } from '~/modules/tasks/tasks-table/header/table-search';
 import type { TaskTableOperationEvent } from '~/modules/tasks/types';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme';
@@ -242,7 +241,6 @@ export default function TasksTable() {
   return (
     <>
       <TableHeader>
-        <TaskTableSearch />
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
         <Export
           className="max-lg:hidden"
