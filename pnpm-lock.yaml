@@ -301,14 +301,14 @@ importers:
         specifier: ^1.0.3
         version: 1.0.3
       '@blocknote/core':
-        specifier: ^0.15.11
-        version: 0.15.11
+        specifier: ^0.16.0
+        version: 0.16.0
       '@blocknote/react':
-        specifier: ^0.15.11
-        version: 0.15.11(@tiptap/pm@2.8.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^0.16.0
+        version: 0.16.0(@tiptap/pm@2.8.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@blocknote/shadcn':
-        specifier: ^0.15.11
-        version: 0.15.11(@tiptap/pm@2.8.0)(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))
+        specifier: ^0.16.0
+        version: 0.16.0(@tiptap/pm@2.8.0)(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))
       '@github/mini-throttle':
         specifier: ^2.1.1
         version: 2.1.1
@@ -409,11 +409,11 @@ importers:
         specifier: ^5.59.0
         version: 5.59.0(@tanstack/react-query@5.59.0(react@18.3.1))(react@18.3.1)
       '@tanstack/react-router':
-        specifier: ^1.58.17
-        version: 1.58.17(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^1.63.2
+        version: 1.63.2(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/router-devtools':
-        specifier: ^1.58.17
-        version: 1.58.17(@tanstack/react-router@1.58.17(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(csstype@3.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^1.63.2
+        version: 1.63.2(@tanstack/react-router@1.63.2(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(csstype@3.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@uppy/audio':
         specifier: ^2.0.1
         version: 2.0.1(@uppy/core@4.2.1)
@@ -1556,17 +1556,17 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@blocknote/core@0.15.11':
-    resolution: {integrity: sha512-IVOypyKkqZxONLVCc2Q2+NBvFCzmh57IrdZDOhWtIroq2qfAgvPp+aVoFlU2EZK9scJwFMqzarHHHpBxl+5f1A==}
+  '@blocknote/core@0.16.0':
+    resolution: {integrity: sha512-egX+GjlAB8r/zaox278zNTTUMNVRHVQ2qVlPHQZgGOXSDq2Z+Lm7i4xKYMz/UT/IdrL7iGxnHrAsbc0H/kqc9A==}
 
-  '@blocknote/react@0.15.11':
-    resolution: {integrity: sha512-HGNvVW80pZd+qhHhgYM9O/qGRrHRLxr4pAju78tK/treUzX8qV+uOV9IPMBfhASzizLfsLCWJC95XGCEKBJrFQ==}
+  '@blocknote/react@0.16.0':
+    resolution: {integrity: sha512-vEwAp4z1FBqcH75OEbEW/yd4nj8XcSKAzCElV7aL6nVhPiKgYzrzG/WVckTq1h9lMaGeAuYqLErww4IIsbiawg==}
     peerDependencies:
       react: ^18
       react-dom: ^18
 
-  '@blocknote/shadcn@0.15.11':
-    resolution: {integrity: sha512-VuaRMIWWU2cYjo+14exwKb0Qz01scsSxL2tS4Eo2pxHoFzDdxlCteCrWtAaldpZAnJJDkM3X279U3BICmxDLPA==}
+  '@blocknote/shadcn@0.16.0':
+    resolution: {integrity: sha512-4mqvtvZgFBKyFtYrgWWokP+SbkRjaZJsEMsxKlnVb+XlYkT+KKzgvYjXQioySwcNOMhgAjOWK2bleZ7CfPT1Ww==}
     peerDependencies:
       react: ^18
       react-dom: ^18
@@ -2564,7 +2564,6 @@ packages:
 
   '@evilmartians/lefthook@1.7.18':
     resolution: {integrity: sha512-BIJBQtC7xKOedxESlB0wVG6M32ftjK+5vnID9I5CjRDE/6KcCpcK366AyG0eHGdPK1TVty81QalxZqSTxWRXPw==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -4836,8 +4835,8 @@ packages:
     peerDependencies:
       tailwindcss: '>=3.0.0 || insiders || >=4.0.0-alpha.20'
 
-  '@tanstack/history@1.58.15':
-    resolution: {integrity: sha512-M36Ke2Q2v8Iv4Cx0xw04iVkixuOligiFLOifH35DqGnzXe9PAtTHIooieQowqYkAjC09KuLo5j6sgvwKTZ+U5Q==}
+  '@tanstack/history@1.61.1':
+    resolution: {integrity: sha512-2CqERleeqO3hkhJmyJm37tiL3LYgeOpmo8szqdjgtnnG0z7ZpvzkZz6HkfOr9Ca/ha7mhAiouSvLYuLkM37AMg==}
     engines: {node: '>=12'}
 
   '@tanstack/query-core@5.59.0':
@@ -4869,8 +4868,8 @@ packages:
     peerDependencies:
       react: ^18 || ^19
 
-  '@tanstack/react-router@1.58.17':
-    resolution: {integrity: sha512-t9QDunhRywq043ArnwWo6OgJh99jHkTJRQS+Yl25CLalfbi7qyNvTXSQuAzwIKz0GK0JjkD4eGf7ZtTayaOZ1w==}
+  '@tanstack/react-router@1.63.2':
+    resolution: {integrity: sha512-6Bla8LK4cu4L0atBZNNIUhQpiCgXNIa2XnrybHVbqTipWlfRJ0I71pXWuSVqGP487wNGZgVG5ITZFLR+y+NhKg==}
     engines: {node: '>=12'}
     peerDependencies:
       '@tanstack/router-generator': 1.58.12
@@ -4886,11 +4885,11 @@ packages:
       react: ^17.0.0 || ^18.0.0
       react-dom: ^17.0.0 || ^18.0.0
 
-  '@tanstack/router-devtools@1.58.17':
-    resolution: {integrity: sha512-VdvVldHigm9E49Q0FOSz2mLqf67SY7F8TF3TAbLlr06iI99QBMcnEU7u+pGsO/wlX8hSirliX1Lbj+9zDY57Ow==}
+  '@tanstack/router-devtools@1.63.2':
+    resolution: {integrity: sha512-qNtjl6fbgjybVyvxPNHgx91F2JqiWLIuIoCTLVN6yX/WRGH6SfWT4SxEfWGYieHTT9YX8fsFo44F15WeStFHVg==}
     engines: {node: '>=12'}
     peerDependencies:
-      '@tanstack/react-router': ^1.58.17
+      '@tanstack/react-router': ^1.63.2
       react: '>=18'
       react-dom: '>=18'
 
@@ -11513,7 +11512,7 @@ snapshots:
   '@biomejs/cli-win32-x64@1.9.3':
     optional: true
 
-  '@blocknote/core@0.15.11':
+  '@blocknote/core@0.16.0':
     dependencies:
       '@emoji-mart/data': 1.2.1
       '@tiptap/core': 2.8.0(@tiptap/pm@2.8.0)
@@ -11559,9 +11558,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@blocknote/react@0.15.11(@tiptap/pm@2.8.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@blocknote/react@0.16.0(@tiptap/pm@2.8.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@blocknote/core': 0.15.11
+      '@blocknote/core': 0.16.0
       '@floating-ui/react': 0.26.24(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tiptap/core': 2.8.0(@tiptap/pm@2.8.0)
       '@tiptap/react': 2.8.0(@tiptap/core@2.8.0(@tiptap/pm@2.8.0))(@tiptap/pm@2.8.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11573,10 +11572,10 @@ snapshots:
       - '@tiptap/pm'
       - supports-color
 
-  '@blocknote/shadcn@0.15.11(@tiptap/pm@2.8.0)(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))':
+  '@blocknote/shadcn@0.16.0(@tiptap/pm@2.8.0)(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))':
     dependencies:
-      '@blocknote/core': 0.15.11
-      '@blocknote/react': 0.15.11(@tiptap/pm@2.8.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@blocknote/core': 0.16.0
+      '@blocknote/react': 0.16.0(@tiptap/pm@2.8.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@hookform/resolvers': 3.9.0(react-hook-form@7.53.0(react@18.3.1))
       '@radix-ui/react-dropdown-menu': 2.1.2(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-label': 2.1.0(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11594,7 +11593,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-hook-form: 7.53.0(react@18.3.1)
-      tailwind-merge: 2.5.2
+      tailwind-merge: 2.5.3
       tailwindcss: 3.4.13(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))
       tailwindcss-animate: 1.0.7(tailwindcss@3.4.13(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2)))
       zod: 3.23.8
@@ -15065,7 +15064,7 @@ snapshots:
       postcss-selector-parser: 6.0.10
       tailwindcss: 3.4.13(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))
 
-  '@tanstack/history@1.58.15': {}
+  '@tanstack/history@1.61.1': {}
 
   '@tanstack/query-core@5.59.0': {}
 
@@ -15097,9 +15096,9 @@ snapshots:
       '@tanstack/query-core': 5.59.0
       react: 18.3.1
 
-  '@tanstack/react-router@1.58.17(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tanstack/react-router@1.63.2(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@tanstack/history': 1.58.15
+      '@tanstack/history': 1.61.1
       '@tanstack/react-store': 0.5.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -15115,9 +15114,9 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       use-sync-external-store: 1.2.2(react@18.3.1)
 
-  '@tanstack/router-devtools@1.58.17(@tanstack/react-router@1.58.17(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(csstype@3.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tanstack/router-devtools@1.63.2(@tanstack/react-router@1.63.2(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(csstype@3.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@tanstack/react-router': 1.58.17(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-router': 1.63.2(@tanstack/router-generator@1.58.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       clsx: 2.1.1
       goober: 2.1.14(csstype@3.1.3)
       react: 18.3.1
