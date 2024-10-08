@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { useWorkspaceStore } from '~/store/workspace';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
 import { openProjectConfigSheet } from './helpers';
@@ -13,7 +13,9 @@ const ProjectActions = ({ project }: { project: Project }) => {
   const { t } = useTranslation();
   const { changeColumn } = useWorkspaceUIStore();
 
-  const { workspace } = useWorkspaceStore();
+  const {
+    data: { workspace },
+  } = useWorkspaceQuery();
   const [minimize, setMinimize] = useState(false);
   const role = project.membership?.role || 'member';
 

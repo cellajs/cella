@@ -35,6 +35,7 @@ import type { Label, Task } from '~/types/app';
 import type { Member } from '~/types/common';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
+import { useWorkspaceQuery } from '../workspaces/use-workspace';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
@@ -82,7 +83,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks 
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore();
-  const { focusedTaskId, projects } = useWorkspaceStore();
+  const { focusedTaskId } = useWorkspaceStore();
+  const {
+    data: { projects },
+  } = useWorkspaceQuery();
   const { id: projectId, organizationId } = projects.find((p) => p.id === projectIdOrSlug || p.slug === projectIdOrSlug) ?? projects[0];
 
   const defaultId = nanoid();

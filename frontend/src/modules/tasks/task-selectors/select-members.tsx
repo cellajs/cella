@@ -12,6 +12,7 @@ import { Kbd } from '~/modules/common/kbd';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { User } from '~/types/common';
 
@@ -27,7 +28,10 @@ interface AssignMembersProps {
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { focusedTaskId, members, workspace } = useWorkspaceStore();
+  const { focusedTaskId } = useWorkspaceStore();
+  const {
+    data: { workspace, members },
+  } = useWorkspaceQuery();
   const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);

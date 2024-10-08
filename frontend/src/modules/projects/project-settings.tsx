@@ -8,12 +8,14 @@ import DeleteProjects from '~/modules/projects/delete-projects';
 import UpdateProjectForm from '~/modules/projects/update-project-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types/app';
+import { useWorkspaceQuery } from '../workspaces/use-workspace';
 
 export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();
-  const { workspace } = useWorkspaceStore();
+  const {
+    data: { workspace },
+  } = useWorkspaceQuery();
   const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
 
   const openDeleteDialog = () => {

@@ -21,8 +21,8 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import { useWorkspaceStore } from '~/store/workspace';
 import type { UserMenuItem } from '~/types/common';
+import { useWorkspaceQuery } from '../workspaces/use-workspace';
 
 interface CreateProjectFormProps {
   callback?: () => void;
@@ -36,7 +36,10 @@ type FormValues = z.infer<typeof formSchema>;
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ dialog: isDialog }) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
-  const { setWorkspace, projects, workspace } = useWorkspaceStore();
+  const {
+    data: { workspace },
+    addProject,
+  } = useWorkspaceQuery();
   const type = 'project';
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -64,7 +67,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ dialog: is
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type}`) }));
       if (isDialog) dialog.remove();
-      setWorkspace(workspace, [...projects, createdProject]);
+      addProject(createdProject);
       useNavigationStore.setState({
         menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
       });

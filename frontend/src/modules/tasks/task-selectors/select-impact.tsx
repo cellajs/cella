@@ -14,6 +14,7 @@ import { LowIcon } from '~/modules/tasks/task-selectors/impact-icons/low';
 import { MediumIcon } from '~/modules/tasks/task-selectors/impact-icons/medium';
 import { NoneIcon } from '~/modules/tasks/task-selectors/impact-icons/none';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useWorkspaceStore } from '~/store/workspace';
 
 type ImpactOption = {
@@ -39,7 +40,10 @@ interface SelectImpactProps {
 const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { focusedTaskId, workspace } = useWorkspaceStore();
+  const { focusedTaskId } = useWorkspaceStore();
+  const {
+    data: { workspace },
+  } = useWorkspaceQuery();
   const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(value !== null ? impacts[value] : null);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;

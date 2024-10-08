@@ -2,13 +2,15 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { useWorkspaceStore } from '~/store/workspace';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import type { Project } from '~/types/app';
 import ProjectActions from './project-actions';
 
 export function BoardColumnHeader({ project }: { project: Project }) {
   const navigate = useNavigate();
-  const { projects } = useWorkspaceStore();
+  const {
+    data: { projects },
+  } = useWorkspaceQuery();
   const currentIndex = projects.findIndex((p) => p.id === project.id);
 
   const params = useParams({
