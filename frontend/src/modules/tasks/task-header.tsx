@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { ChevronUp, Maximize2, Trash } from 'lucide-react';
 import { useState } from 'react';
@@ -9,26 +10,31 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
+import type { Mode } from '~/store/theme';
 import { useUserStore } from '~/store/user';
 import type { Task } from '~/types/app';
 import { dateMini } from '~/utils/date-mini';
 import { dateShort } from '~/utils/date-short';
 import HeaderInfo from './header-info';
+import { openTaskPreviewSheet } from './helpers/helper';
 import type { TaskStates } from './types';
 
 export const TaskHeader = ({
   task,
   state,
+  mode,
   isSheet,
   onRemove,
 }: {
   task: Task;
   state: TaskStates;
+  mode?: Mode;
   isSheet?: boolean;
   onRemove?: (subTaskId: string) => void;
 }) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const isSubTask = task.parentId !== null;
   const isEditing = state === 'editing' || state === 'unsaved';
@@ -107,7 +113,7 @@ export const TaskHeader = ({
             <Button
               onClick={() => {
                 if (isEditing) dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
-                dispatchCustomEvent('openTaskCardPreview', task.id);
+                openTaskPreviewSheet(task, mode ?? 'dark', navigate, true);
               }}
               aria-label="OpenTaskSheet"
               variant="ghost"

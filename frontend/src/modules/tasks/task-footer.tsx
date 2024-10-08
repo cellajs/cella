@@ -22,12 +22,11 @@ import { cn } from '~/utils/cn';
 interface TasksFooterProps {
   task: Task;
   isSelected: boolean;
-  tasks?: Task[];
   isSheet?: boolean;
   isStatusDropdownOpen: boolean;
 }
 
-export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSheet = false }: TasksFooterProps) => {
+export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = false }: TasksFooterProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const isMobile = useBreakpoints('max', 'sm');
@@ -37,7 +36,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, tasks, isSh
   const updateStatus = async (newStatus: number) => {
     try {
       const query = queryClient.getQueryData<{ items: Task[] }>(['boardTasks', task.projectId]);
-      const newOrder = getNewStatusTaskOrder(task.status, newStatus, isSheet ? (tasks ?? []) : (query?.items ?? []));
+      const newOrder = getNewStatusTaskOrder(task.status, newStatus, query?.items ?? []);
       const updatedTask = await updateTask(task.id, task.organizationId, 'status', newStatus, newOrder);
       const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
       dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: task.projectId });

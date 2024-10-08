@@ -25,7 +25,8 @@ import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import { isSubTaskData } from '~/modules/projects/board/helpers';
 import { configureForExport, getRelativeTaskOrder } from '~/modules/tasks/helpers';
-import { TaskCard } from '~/modules/tasks/task';
+import { openTaskPreviewSheet } from '~/modules/tasks/helpers/helper';
+import TaskCard from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import TableHeader from '~/modules/tasks/tasks-display-header/header';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
@@ -150,18 +151,7 @@ export default function TasksTable() {
   //   setSelectedStatuses([]);
   // };
 
-  const handleOpenPreview = (taskId: string) => {
-    const relativeTasks = rows.filter((t) => t.id === taskId || t.parentId === taskId);
-    const [currentTask] = relativeTasks.filter((t) => t.id === taskId);
-    sheet.create(<TaskCard mode={mode} task={currentTask} tasks={rows} state="editing" isSelected={false} isFocused={true} isSheet />, {
-      className: 'max-w-full lg:max-w-4xl',
-      title: t('app:task'),
-      id: `task-preview-${taskId}`,
-    });
-    setFocusedTaskId(taskId);
-  };
-
-  const handleCRUD = (event: TaskTableOperationEvent) => {
+  const handleTaskOperations = (event: TaskTableOperationEvent) => {
     const { array, action } = event.detail;
     callback(array, action);
   };
@@ -185,21 +175,26 @@ export default function TasksTable() {
     ['S', () => hotKeyPress(`status-${focusedTaskId}`)],
     ['T', () => hotKeyPress('type')],
   ]);
-  useEventListener('openTaskCardPreview', (event) => handleOpenPreview(event.detail));
-  useEventListener('taskTableOperation', handleCRUD);
+
+  useEventListener('taskTableOperation', handleTaskOperations);
 
   useEffect(() => {
     if (!rows.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
     const relativeTasks = rows.filter((t) => t.id === focusedTaskId || t.parentId === focusedTaskId);
     const [currentTask] = relativeTasks.filter((t) => t.id === focusedTaskId);
     sheet.update(`task-preview-${currentTask.id}`, {
-      content: <TaskCard mode={mode} task={currentTask} tasks={rows} state="editing" isSelected={false} isFocused={true} isSheet />,
+      content: <TaskCard mode={mode} task={currentTask} state="editing" isSelected={false} isFocused={true} isSheet />,
     });
   }, [rows, focusedTaskId]);
 
   useEffect(() => {
     if (!rows.length) return;
-    if (search.taskIdPreview) return handleOpenPreview(search.taskIdPreview);
+    if (search.taskIdPreview) {
+      const [task] = rows.filter((t) => t.id === search.taskIdPreview);
+      setFocusedTaskId(search.taskIdPreview);
+      openTaskPreviewSheet(task, mode, navigate);
+      return;
+    }
     if (search.userIdPreview) {
       const [{ createdBy }] = rows.filter((t) => t.createdBy?.id === search.userIdPreview);
       if (createdBy) openUserPreviewSheet(createdBy, navigate);

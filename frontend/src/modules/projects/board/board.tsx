@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
-import { Fragment, type LegacyRef, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -22,12 +22,12 @@ import { dropdowner } from '~/modules/common/dropdowner/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import WorkspaceActions from '~/modules/projects/board/workspace-actions';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
-import { TaskCard } from '~/modules/tasks/task';
+import { openTaskPreviewSheet } from '~/modules/tasks/helpers/helper';
+import TaskCard from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, TaskOperationEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
-import { objectKeys } from '~/utils/object';
 
 // TODO empty space width should be dynamic based on window width and amount of projects and width of each project?
 const PANEL_MIN_WIDTH = 400;
@@ -280,47 +280,6 @@ export default function Board() {
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
-  const handleOpenTaskSheet = useCallback(
-    (taskId: string) => {
-      if (!focusedTaskId || focusedTaskId !== taskId) setFocusedTaskId(taskId);
-      navigate({
-        to: '.',
-        replace: true,
-        resetScroll: false,
-        search: (prev) => ({
-          ...prev,
-          ...{ taskIdPreview: taskId },
-        }),
-      });
-      sheet.create(
-        <div className="-mx-4">
-          <TaskCard mode={mode} task={currentTask} tasks={tasks} state={'editing'} isSelected={false} isFocused={true} isSheet />
-        </div>,
-        {
-          className: 'max-w-full lg:max-w-4xl',
-          title: t('app:task'),
-          id: `task-preview-${taskId}`,
-          removeCallback: () => {
-            navigate({
-              to: '.',
-              replace: true,
-              resetScroll: false,
-              search: (prev) => {
-                const newSearch = { ...prev };
-                for (const key of objectKeys(newSearch)) {
-                  if (key.includes('Preview')) delete newSearch[key];
-                }
-                return newSearch;
-              },
-            });
-            sheet.remove(`task-preview-${taskId}`);
-          },
-        },
-      );
-    },
-    [currentTask, focusedTaskId, tasks],
-  );
-
   const handleTaskOperations = (event: TaskOperationEvent) => {
     const { array, action, projectId } = event.detail;
     const callback = useMutateTasksQueryData(['boardTasks', projectId]);
@@ -329,7 +288,7 @@ export default function Board() {
     if (!tasks.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
     const [sheetTask] = tasks.filter((t) => t.id === focusedTaskId);
     sheet.update(`task-preview-${sheetTask.id}`, {
-      content: <TaskCard mode={mode} task={sheetTask} tasks={tasks} state={'editing'} isSelected={false} isFocused={true} isSheet />,
+      content: <TaskCard mode={mode} task={sheetTask} state={'editing'} isSelected={false} isFocused={true} isSheet />,
     });
   };
 
@@ -350,7 +309,6 @@ export default function Board() {
   useEventListener('taskOperation', handleTaskOperations);
   useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
-  useEventListener('openTaskCardPreview', (event) => handleOpenTaskSheet(event.detail));
 
   useEffect(() => {
     if (focusedTaskId) return;
@@ -365,9 +323,11 @@ export default function Board() {
   }, [focusedTaskId, tasksState]);
 
   useEffect(() => {
+    if (!currentTask) return;
     if (q?.length) setSearchQuery(q);
-    if (taskIdPreview) handleOpenTaskSheet(taskIdPreview);
-  }, []);
+    // to open sheet after initial sheet.remove triggers
+    if (taskIdPreview) setTimeout(() => openTaskPreviewSheet(currentTask, mode, navigate), 0);
+  }, [currentTask]);
 
   return (
     <>

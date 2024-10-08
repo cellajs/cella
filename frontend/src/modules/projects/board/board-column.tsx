@@ -20,7 +20,7 @@ import { ColumnSkeleton } from '~/modules/projects/board/column-skeleton';
 import { isSubTaskData, isTaskData } from '~/modules/projects/board/helpers';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
-import { TaskCard } from '~/modules/tasks/task';
+import TaskCard from '~/modules/tasks/task';
 import type { CustomEventDetailId, TaskChangeEvent, TaskStates } from '~/modules/tasks/types';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';

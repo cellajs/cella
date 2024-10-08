@@ -28,7 +28,7 @@ interface NavigationState {
   navLoading: boolean;
   setLoading: (status: boolean) => void;
   focusView: boolean;
-  setFocusView: (status: boolean) => void;
+  setFocusView: (status: boolean, triggerRemoveSheet?: boolean) => void;
   archiveStateToggle: (item: UserMenuItem, active: boolean, parentId?: string | null) => void;
   finishedOnboarding: boolean;
   setFinishedOnboarding: () => void;
@@ -91,10 +91,10 @@ export const useNavigationStore = create<NavigationState>()(
               state.navLoading = status;
             });
           },
-          setFocusView: (status) => {
+          setFocusView: (status, triggerRemoveSheet = true) => {
             set((state) => {
               state.focusView = status;
-              sheet.remove();
+              if (triggerRemoveSheet) sheet.remove();
             });
           },
           toggleSection: (section) => {

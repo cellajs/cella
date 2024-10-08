@@ -62,7 +62,7 @@ export const getNewStatusTaskOrder = (oldStatus: number, newStatus: number, task
   const [task] = tasks
     .filter((t) => t.status === newStatus && (t.status !== 6 || dateIsRecent(t.modifiedAt, 30)))
     .sort((a, b) => sortTaskOrder(a, b, direction > 0));
-  return task ? (direction > 0 ? task.order / 2 : task.order + 1) : 1;
+  return task ? (direction > 0 ? orderDecrease(task.order) : orderIncrease(task.order)) : 0.1;
 };
 
 // return task order for new created Tasks

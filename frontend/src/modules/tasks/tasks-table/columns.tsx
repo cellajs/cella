@@ -3,12 +3,12 @@ import { Dot } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import { openTaskPreviewSheet } from '~/modules/tasks/helpers/helper';
 import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact';
 import { badgeStyle } from '~/modules/tasks/task-selectors/select-labels';
@@ -16,6 +16,7 @@ import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } fro
 import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
+import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 import { dateShort } from '~/utils/date-short';
@@ -24,7 +25,8 @@ export const useColumns = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
-  const { projects, workspace } = useWorkspaceStore();
+  const { projects, workspace, setFocusedTaskId } = useWorkspaceStore();
+  const { mode } = useThemeStore();
 
   const columns: ColumnOrColumnGroup<Task>[] = [
     CheckboxColumn,
@@ -40,7 +42,10 @@ export const useColumns = () => {
           variant="none"
           tabIndex={tabIndex}
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
-          onClick={() => dispatchCustomEvent('openTaskCardPreview', row.id)}
+          onClick={() => {
+            setFocusedTaskId(row.id);
+            openTaskPreviewSheet(row, mode, navigate, true);
+          }}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">
             {row.summary ? (

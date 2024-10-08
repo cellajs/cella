@@ -105,10 +105,7 @@ const MainNav = () => {
   useEffect(() => {
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
       if (toLocation.pathname !== fromLocation.pathname) {
-        // Disable focus view
-        setFocusView(false);
-        // Remove sheets in content
-        sheet.remove(`${navSheetOpen}-nav`);
+        setFocusView(false); // Disable focus view
         setNavSheetOpen(null);
       }
       pathChanged && setLoading(true);

@@ -8,8 +8,8 @@ import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
 
-import './style.css';
 import useBodyClass from '~/hooks/use-body-class';
+import './style.css';
 
 interface FocusViewProps {
   className?: string;
@@ -45,7 +45,7 @@ export const FocusViewContainer = ({ children, className = '' }: { children: Rea
   // Reset focus view on unmount
   useEffect(() => {
     return () => {
-      setFocusView(false);
+      setFocusView(false, false);
     };
   }, []);
 
