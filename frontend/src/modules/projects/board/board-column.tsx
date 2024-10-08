@@ -223,17 +223,17 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
   }, [menu, data]);
 
   return (
-    <div ref={columnRef} className="flex flex-col h-full">
+    <div ref={columnRef} className="flex flex-col h-full max-sm:-mx-1.5 max-sm:pb-28">
       <BoardColumnHeader project={project} />
       <div
         className={cn(
-          'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center border-b opacity-100',
+          'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center sm:border-b opacity-100',
           selectedTasks.length && 'is-selected',
         )}
       >
         {stickyBackground}
 
-        <div className="h-full border-l border-r">
+        <div className="h-full sm:border-l sm:border-r">
           {isLoading ? (
             <ColumnSkeleton />
           ) : (
@@ -333,9 +333,10 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
                           strokeWidth={0.2}
                           className="max-md:hidden absolute scale-x-0 scale-y-75 rotate-180 text-primary top-4 right-4 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/column:opacity-100 group-hover/column:scale-x-100 group-hover/column:translate-y-0 group-hover/column:rotate-[130deg]"
                         />
-                        <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
+                        <p className="inline-flex gap-1 sm:opacity-0 duration-500 transition-opacity group-hover/column:opacity-100">
                           <span>{t('common:click')}</span>
-                          <span className="text-primary">{`+ ${t('app:task')}`}</span>
+                          <span className="text-primary">+</span>
+                          <span className="max-sm:hidden text-primary">{t('app:task')}</span>
                           <span>{t('app:no_tasks.text')}</span>
                         </p>
                       </>

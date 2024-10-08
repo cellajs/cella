@@ -211,13 +211,11 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 export default SubTask;
 
 const SummaryButtons = ({ task, setState }: { task: BaseSubTask; setState: (state: TaskStates) => void }) => {
-  const { t } = useTranslation();
-
   return (
     <>
       {task.expandable && (
         <Button onClick={() => setState('expanded')} variant="link" size="micro" className="p-0 pl-2 h-5 -mt-[0.15rem]">
-          {t('common:more').toLowerCase()}
+          ...
         </Button>
       )}
     </>

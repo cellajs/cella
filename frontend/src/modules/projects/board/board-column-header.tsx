@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -32,24 +32,22 @@ export function BoardColumnHeader({ project }: { project: Project }) {
   const stickyStyles = 'sticky sm:relative top-2 sm:top-0 bg-background z-50';
 
   return (
-    <div className={`border p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-2 space-between items-center ${stickyStyles}`}>
-      <Button disabled={currentIndex === 0} variant="plain" size="xs" className="rounded sm:hidden" onClick={() => ArrowClick('left')}>
-        <ArrowLeft size={14} />
+    <div
+      className={`sm:border p-1 sm:p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-1 sm:gap-2 space-between items-center ${stickyStyles}`}
+    >
+      <Button disabled={currentIndex === 0} variant="ghost" className="sm:hidden" onClick={() => ArrowClick('left')}>
+        <ChevronLeft size={16} />
       </Button>
+
       <div className="grow sm:hidden" />
-      <AvatarWrap className="h-6 w-6 text-xs" id={project.id} type="project" name={project.name} url={project.thumbnailUrl} />
+
+      <AvatarWrap className="max-sm:hidden h-6 w-6 text-xs" id={project.id} type="project" name={project.name} url={project.thumbnailUrl} />
       <div className="truncate leading-6">{project.name}</div>
 
       <ProjectActions project={project} />
 
-      <Button
-        disabled={currentIndex === projects.length - 1}
-        variant="plain"
-        size="xs"
-        className="rounded sm:hidden"
-        onClick={() => ArrowClick('right')}
-      >
-        <ArrowRight size={14} />
+      <Button disabled={currentIndex === projects.length - 1} variant="ghost" className="sm:hidden" onClick={() => ArrowClick('right')}>
+        <ChevronRight size={16} />
       </Button>
     </div>
   );

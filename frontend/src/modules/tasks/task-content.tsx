@@ -2,13 +2,11 @@ import '@blocknote/shadcn/style.css';
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import useDoubleClick from '~/hooks/use-double-click';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import CreateSubTaskForm from '~/modules/tasks/create-sub-task-form';
 import SubTask from '~/modules/tasks/sub-task';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
-import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
 import type { TaskStates } from './types';
@@ -96,25 +94,11 @@ const TaskContent = ({ task, mode, state }: Props) => {
 export default TaskContent;
 
 const SummaryButtons = ({ task }: { task: Task }) => {
-  const { t } = useTranslation();
-
   return (
     <>
       {(task.expandable || task.subTasks.length > 0) && (
-        <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 pl-2 -mt-[0.15rem]">
-          {task.expandable && (
-            <Button
-              variant="link"
-              size="micro"
-              onClick={(e) => {
-                e.preventDefault();
-                dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
-              }}
-              className="inline-flex py-0 h-5"
-            >
-              {t('common:more').toLowerCase()}
-            </Button>
-          )}
+        <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 -mt-[0.15rem]">
+          {task.expandable && <div className="inline-flex px-1 text-sm cursor-pointer py-0 h-5">...</div>}
           {task.subTasks.length > 0 && (
             <div className="inline-flex py-0.5 text-xs h-5 ml-1 gap-[.1rem] cursor-pointer">
               <span className="text-success">{task.subTasks.filter((t) => t.status === 6).length}</span>

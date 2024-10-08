@@ -61,7 +61,13 @@ export const TaskHeader = ({
       >
         {!isSubTask && task.createdBy && (
           <>
-            <AvatarWrap type="user" id={task.createdBy.id} name={task.createdBy.name} url={task.createdBy.thumbnailUrl} className="h-5 w-5 text-xs" />
+            <AvatarWrap
+              type="user"
+              id={task.createdBy.id}
+              name={task.createdBy.name}
+              url={task.createdBy.thumbnailUrl}
+              className="max-sm:hidden h-5 w-5 text-xs"
+            />
             <TooltipButton toolTipContent={dateShort(task.createdAt)} side="bottom" sideOffset={5} hideWhenDetached>
               <span className="ml-1 opacity-50 text-sm text-center font-light">{dateMini(task.createdAt, user.language, 'ago')}</span>
             </TooltipButton>
