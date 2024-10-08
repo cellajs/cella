@@ -126,7 +126,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
     dialog(<CreateTaskForm projectIdOrSlug={project.id} tasks={showingTasks} dialog />, {
       id: `create-task-form-${project.id}`,
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-[50] p-0 rounded-none border-y-0 mt-0 max-w-4xl',
+      className: 'w-auto shadow-none relative z-[50] p-0 rounded-none border-y-0 mt-0 max-w-none',
       container: ref.current,
       containerBackdrop: false,
     });

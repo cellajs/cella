@@ -42,10 +42,11 @@ const MainNav = () => {
 
   const navButtonClick = (navItem: NavItem) => {
     if (navItem.id === 'workspace-add-task') {
-      return dialog(<CreateTaskForm projectIdOrSlug={router.state.location.search.project ?? ''} dialog />, {
+      return dialog(<CreateTaskForm projectIdOrSlug={router.state.location.search.project ?? ''} className="border-b-0" dialog />, {
         drawerOnMobile: false,
+        title: 'Create task',
+        className: 'p-0',
         refocus: false,
-        hideClose: true,
         autoFocus: !isMobile,
       });
     }
