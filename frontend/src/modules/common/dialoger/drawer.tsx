@@ -1,8 +1,17 @@
 import type { DialogProp } from '~/modules/common/dialoger/dialog';
+import { dialog as dialogState } from '~/modules/common/dialoger/state';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
-export default function DrawerDialog({ dialog, onOpenChange }: DialogProp) {
+export default function DrawerDialog({ dialog, removeDialog }: DialogProp) {
   const { id, content, open, description, title, className } = dialog;
+
+  const onOpenChange = (open: boolean) => {
+    dialogState.update(dialog.id, { open });
+    if (!open) {
+      removeDialog(dialog);
+      dialog.removeCallback?.();
+    }
+  };
 
   return (
     <Drawer key={id} open={open} onOpenChange={onOpenChange}>

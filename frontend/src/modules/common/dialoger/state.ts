@@ -61,9 +61,7 @@ class Observer {
   };
 
   publish = (data: DialogT | DialogToRemove | DialogToReset) => {
-    for (const subscriber of this.subscribers) {
-      subscriber(data);
-    }
+    for (const subscriber of this.subscribers) subscriber(data);
   };
 
   set = (data: DialogT) => {
@@ -71,22 +69,15 @@ class Observer {
     const existingDialogIndex = this.dialogs.findIndex((dialog) => dialog.id === data.id);
 
     // If it exists, replace it, otherwise add it
-    if (existingDialogIndex > -1) {
-      this.dialogs[existingDialogIndex] = data;
-    } else {
-      this.dialogs = [...this.dialogs, data];
-    }
+    if (existingDialogIndex > -1) this.dialogs[existingDialogIndex] = data;
+    else this.dialogs = [...this.dialogs, data];
 
     this.publish(data);
   };
 
-  get = (id: number | string) => {
-    return this.dialogs.find((dialog) => dialog.id === id);
-  };
+  get = (id: number | string) => this.dialogs.find((dialog) => dialog.id === id);
 
-  haveOpenDialogs = () => {
-    return this.dialogs.some((d) => isDialog(d) && d.open);
-  };
+  haveOpenDialogs = () => this.dialogs.some((d) => isDialog(d) && d.open);
 
   remove = (refocus = true, id?: number | string) => {
     if (id) {

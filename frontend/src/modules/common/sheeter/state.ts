@@ -5,6 +5,8 @@ export type SheetT = {
   className?: string;
   content?: React.ReactNode;
   hideClose?: boolean;
+  open?: boolean;
+  canToggle?: boolean;
   modal?: boolean;
   side?: 'bottom' | 'top' | 'right' | 'left';
   removeCallback?: () => void;
@@ -16,7 +18,7 @@ export type SheetAction = {
 };
 
 class SheetsStateObserver {
-  private sheets: SheetT[] = []; // Array to store the current sheets
+  public sheets: SheetT[] = []; // Array to store the current sheets
   private subscribers: Array<(action: SheetAction & SheetT) => void> = []; // Store subscribers that will be notified of changes
 
   // Method to subscribe to changes
@@ -34,7 +36,7 @@ class SheetsStateObserver {
 
   get = (id: string) => this.sheets.find((sheet) => sheet.id === id); // Retrieve a sheet by its ID
 
-  getAll = () => this.sheets; // Retrieve a all sheets
+  haveOpenSheets = () => this.sheets.some((s) => s.open);
 
   // Add or update a sheet and notify subscribers
   set = (sheet: SheetT) => {
@@ -47,10 +49,10 @@ class SheetsStateObserver {
     if (id) {
       this.sheets = this.sheets.filter((sheet) => sheet.id !== id);
       this.notifySubscribers({ id, remove: true });
-    } else {
-      for (const sheet of this.sheets) this.notifySubscribers({ id: sheet.id, remove: true });
-      this.sheets = [];
+      return;
     }
+    for (const sheet of this.sheets) this.notifySubscribers({ id: sheet.id, remove: true });
+    this.sheets = [];
   };
 
   // Update an existing sheet or create a new one with the provided updates
@@ -65,8 +67,9 @@ class SheetsStateObserver {
   // Create a new sheet with the given content and optional additional data
   create = (content: React.ReactNode, data?: Omit<SheetT, 'content'>) => {
     const modal = data?.modal || true;
+    const open = data?.open || true;
     const id = data?.id || Date.now().toString(); // Use existing ID or generate a new one
-    this.set({ id, modal, content, ...data });
+    this.set({ id, modal, content, open, ...data });
     return id;
   };
 }
@@ -78,5 +81,5 @@ export const sheet = {
   remove: SheetObserver.remove.bind(SheetObserver),
   update: SheetObserver.update.bind(SheetObserver),
   get: SheetObserver.get.bind(SheetObserver),
-  getAll: SheetObserver.getAll.bind(SheetObserver),
+  haveOpenSheets: SheetObserver.haveOpenSheets.bind(SheetObserver),
 };

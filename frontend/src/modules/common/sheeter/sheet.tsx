@@ -1,26 +1,28 @@
 import StickyBox from '~/modules/common/sticky-box';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
-import type { SheetT } from './state';
-
+import { type SheetT, sheet as sheetState } from './state';
 export interface SheetProp {
   sheet: SheetT;
-  removeSheet: () => void;
+  removeSheet: (sheet: SheetT) => void;
 }
 
 export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
-  const { modal = true, side = 'right', description, title, hideClose = true, className, content } = sheet;
+  const { id, modal = true, side = 'right', open, description, title, hideClose = true, className, content } = sheet;
+  const closeSheet = () => {
+    removeSheet(sheet);
+    sheet.removeCallback?.();
+  };
 
-  const handleClose = (state: boolean) => {
-    if (!state) {
-      removeSheet();
-      sheet.removeCallback?.();
-    }
+  const onOpenChange = (open: boolean) => {
+    if (!modal) return;
+    sheetState.update(id, { open });
+    if (!open) closeSheet();
   };
 
   return (
-    <Sheet open={true} onOpenChange={handleClose} modal={modal}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={modal}>
       <SheetContent
-        onEscapeKeyDown={removeSheet}
+        onEscapeKeyDown={closeSheet}
         side={side}
         hideClose={hideClose}
         aria-describedby={undefined}

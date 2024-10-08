@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { NavItem } from '~/modules/common/main-nav';
-import type { NavItemId } from '~/nav-config';
 import MobileNavButton from './button-container';
 
-const FloatNav = ({ items, onClick }: { items: NavItem[]; onClick: (id: NavItemId, index: number) => void }) => {
+const FloatNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number) => void }) => {
   const [showButtons, setShowButtons] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -36,14 +35,7 @@ const FloatNav = ({ items, onClick }: { items: NavItem[]; onClick: (id: NavItemI
       {showButtons &&
         items.map((navItem: NavItem, idx: number) => {
           const firstButton = items.length > 1 && idx === 0;
-          return (
-            <MobileNavButton
-              key={navItem.id}
-              Icon={navItem.icon}
-              onClick={() => onClick(navItem.id, idx)}
-              direction={firstButton ? 'left' : 'right'}
-            />
-          );
+          return <MobileNavButton key={navItem.id} Icon={navItem.icon} onClick={() => onClick(idx)} direction={firstButton ? 'left' : 'right'} />;
         })}
     </nav>
   );

@@ -1,5 +1,5 @@
 import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
 
@@ -44,6 +44,8 @@ type SystemRoles = (typeof config.rolesByType.systemRoles)[number] | undefined;
 
 const UsersTable = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
   const search = useSearch({ from: UsersTableRoute.id });
   const containerRef = useRef(null);
 
@@ -169,7 +171,7 @@ const UsersTable = () => {
   useEffect(() => {
     if (!rows.length || !search.userIdPreview) return;
     const user = rows.find((t) => t.id === search.userIdPreview);
-    if (user) openUserPreviewSheet(user);
+    if (user) openUserPreviewSheet(user, navigate);
   }, [rows]);
 
   return (

@@ -93,16 +93,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const totalCount = queryResult.data?.pages[0].total;
 
   const openUserPreview = (user: Member) => {
-    openUserPreviewSheet(user);
-    navigate({
-      to: '.',
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({
-        ...prev,
-        ...{ userIdPreview: user.id },
-      }),
-    });
+    openUserPreviewSheet(user, navigate, true);
   };
 
   // Build columns
@@ -229,7 +220,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   useEffect(() => {
     if (!rows.length || !('userIdPreview' in search) || !search.userIdPreview) return;
     const user = rows.find((t) => t.id === search.userIdPreview);
-    if (user) openUserPreviewSheet(user);
+    if (user) openUserPreviewSheet(user, navigate);
   }, [rows]);
 
   return (

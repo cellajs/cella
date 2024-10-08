@@ -38,16 +38,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
-              navigate({
-                to: '.',
-                replace: true,
-                resetScroll: false,
-                search: (prev) => ({
-                  ...prev,
-                  ...{ userIdPreview: row.id },
-                }),
-              });
-              openUserPreviewSheet(row);
+              openUserPreviewSheet(row, navigate, true);
             }}
           >
             <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />

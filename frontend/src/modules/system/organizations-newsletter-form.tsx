@@ -12,11 +12,11 @@ import { toast } from 'sonner';
 import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
+import { BlockNote } from '~/modules/common/blocknote';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { BlockNote } from '../common/blocknote';
 
 interface NewsletterFormProps {
   organizationIds: string[];
@@ -46,7 +46,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
       form.reset();
       toast.success(t('common:success.create_newsletter'));
       dropSelectedOrganization?.();
-      if (isSheet) sheet.remove();
+      if (isSheet) sheet.remove('newsletter-form');
     },
   });
 
