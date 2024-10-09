@@ -45,7 +45,7 @@ export const tasksSearchSchema = z.object({
   sort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
   order: z.enum(['asc', 'desc']).default('asc').optional(),
   projectId: z.string().optional(),
-  status: z.number().or(z.string()).optional(),
+  status: z.string().optional(),
   taskIdPreview: z.string().optional(),
   userIdPreview: z.string().optional(),
 });

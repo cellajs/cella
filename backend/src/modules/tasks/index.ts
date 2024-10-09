@@ -56,7 +56,8 @@ const tasksRoutes = app
   .openapi(taskRoutesConfig.getTasks, async (ctx) => {
     const { q, sort, order, offset, limit, projectId, status } = ctx.req.valid('query');
 
-    const tasksFilters: SQL[] = [inArray(tasksTable.projectId, projectId.split('_'))];
+    const tasksFilters: SQL[] = [];
+    if (projectId) tasksFilters.push(inArray(tasksTable.projectId, projectId.split('_')));
     if (q) tasksFilters.push(ilike(tasksTable.keywords, `%${q}%`));
     if (status) tasksFilters.push(inArray(tasksTable.status, status.split('_').map(Number)));
 

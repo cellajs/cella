@@ -11,13 +11,13 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@electric-sql/client';
 import { config } from 'config';
 import { toast } from 'sonner';
-import { updateTask } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { queryClient } from '~/lib/router';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
+import { taskKeys, useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { BoardColumnHeader } from '~/modules/projects/board/board-column-header';
 import { ColumnSkeleton } from '~/modules/projects/board/column-skeleton';
 import { isSubTaskData, isTaskData } from '~/modules/projects/board/helpers';
@@ -73,7 +73,7 @@ const taskShape = (projectId?: string): ShapeStreamOptions => ({
 
 export const tasksQueryOptions = ({ projectId, orgIdOrSlug }: GetTasksParams) => {
   return queryOptions({
-    queryKey: ['boardTasks', projectId],
+    queryKey: taskKeys.list({ projectId, orgIdOrSlug }),
     queryFn: async () =>
       await getTasksList({
         orgIdOrSlug,
@@ -118,6 +118,8 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
 
   // Query tasks
   const { data, isLoading } = useSuspenseQuery(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }));
+
+  const taskMutation = useTaskMutation();
 
   // Subscribe to task updates
   useEffect(() => {
@@ -297,11 +299,24 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
             const newOrder: number = getRelativeTaskOrder(edge, showingTasks, targetData.order, sourceItem.id, undefined, sourceItem.status);
             try {
               if (project.id !== targetItem.projectId) {
-                const updatedTask = await updateTask(sourceItem.id, workspace.organizationId, 'projectId', targetItem.projectId, newOrder);
+                const updatedTask = await taskMutation.mutateAsync({
+                  id: sourceItem.id,
+                  orgIdOrSlug: workspace.organizationId,
+                  key: 'projectId',
+                  data: targetItem.projectId,
+                  order: newOrder,
+                  projectId: project.id,
+                });
                 dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'delete', projectId: project.id });
                 dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'create', projectId: targetItem.projectId });
               } else {
-                const updatedTask = await updateTask(sourceItem.id, workspace.organizationId, 'order', newOrder);
+                const updatedTask = await taskMutation.mutateAsync({
+                  id: sourceItem.id,
+                  orgIdOrSlug: workspace.organizationId,
+                  key: 'order',
+                  data: newOrder,
+                  projectId: project.id,
+                });
                 dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: project.id });
               }
             } catch (err) {
@@ -312,7 +327,12 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
           if (isSubTask) {
             const newOrder = getRelativeTaskOrder(edge, showingTasks, targetData.order, sourceItem.id, targetItem.parentId ?? undefined);
             try {
-              const updatedTask = await updateTask(sourceItem.id, workspace.organizationId, 'order', newOrder);
+              const updatedTask = await taskMutation.mutateAsync({
+                id: sourceItem.id,
+                orgIdOrSlug: workspace.organizationId,
+                key: 'order',
+                data: newOrder,
+              });
               dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'updateSubTask', projectId: project.id });
             } catch (err) {
               toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));

@@ -2,10 +2,10 @@ import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
+import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import type { TaskImpact } from '~/modules/tasks/create-task-form';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { HighIcon } from '~/modules/tasks/task-selectors/impact-icons/high';
@@ -32,11 +32,12 @@ export const impacts = [
 
 interface SelectImpactProps {
   value: TaskImpact;
+  projectId: string;
   triggerWidth?: number;
   creationValueChange?: (newValue: TaskImpact) => void;
 }
 
-const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
+const SelectImpact = ({ value, projectId, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
   const { t } = useTranslation();
   const { focusedTaskId } = useWorkspaceStore();
   const {
@@ -46,12 +47,19 @@ const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: Select
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
+  const taskMutation = useTaskMutation();
+
   const changeTaskImpact = async (newImpact: TaskImpact) => {
     try {
       if (creationValueChange) return creationValueChange(newImpact);
       if (!focusedTaskId) return;
-      const updatedTask = await updateTask(focusedTaskId, workspace.organizationId, 'impact', newImpact);
-
+      const updatedTask = await taskMutation.mutateAsync({
+        id: focusedTaskId,
+        orgIdOrSlug: workspace.organizationId,
+        key: 'impact',
+        data: newImpact,
+        projectId,
+      });
       dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));

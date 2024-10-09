@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { deleteTasks } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { queryClient } from '~/lib/router';
+import { taskKeys } from '~/modules/common/query-client-provider/tasks';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -22,7 +23,7 @@ const TaskSelectedButtons = ({ workspace, selectedTasks, setSelectedTasks }: Tas
 
   const removeSelect = () => setSelectedTasks([]);
 
-  const queries = queryClient.getQueriesData({ queryKey: ['boardTasks'] });
+  const queries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
 
   const onRemove = () => {
     deleteTasks(selectedTasks, workspace.organizationId)

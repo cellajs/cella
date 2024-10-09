@@ -20,6 +20,7 @@ import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { useMutateTasksQueryData, useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
+import { taskKeys } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
 import WorkspaceActions from '~/modules/projects/board/workspace-actions';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
@@ -142,7 +143,7 @@ export default function Board() {
     return projects[0];
   }, [project, projects]);
 
-  const queries = queryClient.getQueriesData({ queryKey: ['boardTasks'] });
+  const queries = queryClient.getQueriesData({ queryKey: taskKeys.lists() });
 
   const tasks = useMemo(() => {
     return queries.flatMap((el) => {
@@ -311,7 +312,7 @@ export default function Board() {
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
-  const projectCallback = (projectId: string) => useMutateTasksQueryData(['boardTasks', projectId]);
+  const projectCallback = (projectId: string) => useMutateTasksQueryData(taskKeys.list({ projectId, orgIdOrSlug: workspace.organizationId }));
 
   const handleTaskOperations = (event: TaskOperationEvent) => {
     const { array, action, projectId } = event.detail;
