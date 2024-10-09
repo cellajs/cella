@@ -29,6 +29,7 @@
   "move_task": "Move task",
   "no_projects.text": "to start your first project.",
   "no_tasks.text": "to get started.",
+  "no_minimize_last": "You can't minimize the last remaining unminimized project.",
   "onboarding_completed.text": "Have a look at the demo workspace in your menu.",
   "organization_required.text": "An organization is required for workspaces. Please create an organization first or ask to be invited to an existing organization.",
   "placeholder.assign": "Assign to ...",

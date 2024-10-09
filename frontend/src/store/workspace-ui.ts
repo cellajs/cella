@@ -4,7 +4,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { Label } from '~/types/app';
 
-type Column = {
+export type Column = {
   columnId: string;
   minimized: boolean;
   createTaskForm: boolean;
@@ -21,7 +21,7 @@ type workspacesPanels = {
   [workspaceId: string]: string;
 };
 
-const defaultColumnValues = {
+export const defaultColumnValues = {
   createTaskForm: false,
   minimized: false,
   expandAccepted: false,

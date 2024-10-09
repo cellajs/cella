@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
-import { Fragment, type LegacyRef, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -16,6 +16,7 @@ import { useWorkspaceStore } from '~/store/workspace';
 import type { Project, Task } from '~/types/app';
 import type { ContextEntity, Membership } from '~/types/common';
 
+import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { useMutateTasksQueryData, useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -50,24 +51,41 @@ function BoardDesktop({
   workspaceId: string;
 }) {
   const { ref, bounds } = useMeasure();
-  const { changePanels, workspacesPanels } = useWorkspaceUIStore();
+  const panelRefs = useRef<Record<string, ImperativePanelHandle | null>>({});
+  const { changePanels, workspacesPanels, workspaces } = useWorkspaceUIStore();
+
   const scrollerWidth = getScrollerWidth(bounds.width, projects.length);
-  const panelMinSize = typeof scrollerWidth === 'number' ? (PANEL_MIN_WIDTH / scrollerWidth) * 100 : 100 / (projects.length + 1); // + 1 so that the panel can be resized to be bigger or smaller
+  const panelMinSize = useMemo(() => {
+    if (typeof scrollerWidth === 'number') {
+      return (PANEL_MIN_WIDTH / scrollerWidth) * 100;
+    }
+    return 100 / (projects.length + 1); // + 1 to allow resizing
+  }, [scrollerWidth, projects.length]);
 
   const panelStorage = useMemo(
     () => ({
-      getItem: (_: string) => {
-        const panel = workspacesPanels[workspaceId];
-        return panel ?? null;
-      },
-      setItem: (_: string, value: string) => {
-        changePanels(workspaceId, value);
-      },
+      getItem: (_: string) => workspacesPanels[workspaceId] ?? null,
+      setItem: (_: string, value: string) => changePanels(workspaceId, value),
     }),
-    [],
+    [workspacesPanels, workspaceId],
   );
+
+  const projectSettingsMap = useMemo(() => {
+    return projects.map((project) => ({
+      project,
+      settings: workspaces[workspaceId]?.[project.id],
+    }));
+  }, [projects, workspaces, workspaceId]);
+
+  useEffect(() => {
+    for (const { project, settings } of projectSettingsMap) {
+      const panel = panelRefs.current[project.id];
+      if (panel) settings?.minimized ? panel.collapse() : panel.expand();
+    }
+  }, [projectSettingsMap]);
+
   return (
-    <div className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto" ref={ref as LegacyRef<HTMLDivElement>}>
+    <div className="transition sm:h-[calc(100vh-4rem)] md:h-[calc(100vh-4.88rem)] overflow-x-auto" ref={ref as React.Ref<HTMLDivElement>}>
       <div className="h-[inherit]" style={{ width: scrollerWidth }}>
         <ResizablePanelGroup
           direction="horizontal"
@@ -76,12 +94,20 @@ function BoardDesktop({
           storage={panelStorage}
           autoSaveId={workspaceId}
         >
-          {projects.map((project, index) => (
+          {projectSettingsMap.map(({ project, settings }, index) => (
             <Fragment key={project.id}>
-              <ResizablePanel id={project.id} order={project.membership?.order || index} minSize={panelMinSize}>
-                <BoardColumn tasksState={tasksState} project={project} />
+              <ResizablePanel
+                // biome-ignore lint/suspicious/noAssignInExpressions: need to minimize
+                ref={(el) => (panelRefs.current[project.id] = el)}
+                id={project.id}
+                order={project.membership?.order || index}
+                collapsedSize={5}
+                minSize={panelMinSize}
+                collapsible
+              >
+                <BoardColumn tasksState={tasksState} project={project} settings={settings} />
               </ResizablePanel>
-              {projects.length > index + 1 && (
+              {index < projects.length - 1 && (
                 <ResizableHandle className="w-1.5 rounded border border-background -mx-2 bg-transparent hover:bg-primary/50 data-[resize-handle-state=drag]:bg-primary transition-all" />
               )}
             </Fragment>
@@ -362,7 +388,7 @@ export default function Board() {
       ) : (
         <>
           {isMobile ? (
-            <BoardColumn tasksState={tasksState} project={mobileDeviceProject} />
+            <BoardColumn tasksState={tasksState} project={mobileDeviceProject} settings={workspaces[workspace.id]?.[mobileDeviceProject.id]} />
           ) : (
             <BoardDesktop tasksState={tasksState} projects={projects} workspaceId={workspace.id} />
           )}

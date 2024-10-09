@@ -11,6 +11,7 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
@@ -28,13 +29,15 @@ import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
-import { useWorkspaceUIStore } from '~/store/workspace-ui';
+import type { Column } from '~/store/workspace-ui';
+import { defaultColumnValues, useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
 import { cn } from '~/utils/cn';
 
 interface BoardColumnProps {
   tasksState: Record<string, TaskStates>;
   project: Project;
+  settings?: Column;
 }
 
 export const tasksQueryOptions = ({ projectId, orgIdOrSlug }: GetTasksParams) => {
@@ -54,7 +57,7 @@ const taskVariants = {
   exit: { opacity: 0, height: 0 },
 };
 
-export function BoardColumn({ project, tasksState }: BoardColumnProps) {
+export function BoardColumn({ project, tasksState, settings }: BoardColumnProps) {
   const { t } = useTranslation();
   const defaultTaskFormRef = useRef<HTMLDivElement | null>(null);
   const afterRef = useRef<HTMLDivElement | null>(null);
@@ -64,15 +67,20 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
 
   const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
+  const isMobile = useBreakpoints('max', 'sm');
   const { searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
   const {
     data: { workspace },
   } = useWorkspaceQuery();
-  const { workspaces, changeColumn } = useWorkspaceUIStore();
+  const { changeColumn } = useWorkspaceUIStore();
 
-  const currentProjectSettings = workspaces[workspace.id]?.[project.id];
-  const [showIced, setShowIced] = useState(currentProjectSettings?.expandIced || false);
-  const [showAccepted, setShowAccepted] = useState(currentProjectSettings?.expandAccepted || false);
+  const {
+    expandIced: showIced,
+    expandAccepted: showAccepted,
+    minimized,
+    createTaskForm,
+  } = useMemo(() => settings || defaultColumnValues, [settings]);
+
   const [mouseX, setMouseX] = useState(0);
   const [isMouseNearTop, setIsMouseNearTop] = useState(false);
   const [isMouseNearBottom, setIsMouseNearBottom] = useState(false);
@@ -113,13 +121,18 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
   };
 
   const handleIcedClick = () => {
-    setShowIced(!showIced);
     changeColumn(workspace.id, project.id, {
       expandIced: !showIced,
     });
   };
+
+  const handleExpand = () => {
+    changeColumn(workspace.id, project.id, {
+      minimized: false,
+    });
+  };
+
   const handleAcceptedClick = () => {
-    setShowAccepted(!showAccepted);
     changeColumn(workspace.id, project.id, {
       expandAccepted: !showAccepted,
     });
@@ -180,12 +193,16 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
   useEffect(() => {
-    if (!currentProjectSettings?.createTaskForm) {
+    if (!createTaskForm) {
       dialog.remove(true, `create-task-form-${project.id}`);
     } else {
       openCreateTaskDialog(defaultTaskFormRef);
     }
-  }, [currentProjectSettings]);
+  }, [createTaskForm]);
+
+  useEffect(() => {
+    if (isMobile && minimized) handleExpand();
+  }, [minimized, isMobile]);
 
   useEffect(() => {
     return combine(
@@ -239,6 +256,14 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
       }),
     );
   }, [menu, data]);
+
+  if (minimized)
+    return (
+      <div ref={columnRef} className="flex flex-col h-full max-sm:-mx-1.5 max-sm:pb-28">
+        <BoardColumnHeader project={project} />
+        <div className="border h-full" onClick={handleExpand} onKeyDown={() => {}} />
+      </div>
+    );
 
   return (
     <div ref={columnRef} className="flex flex-col h-full max-sm:-mx-1.5 max-sm:pb-28">

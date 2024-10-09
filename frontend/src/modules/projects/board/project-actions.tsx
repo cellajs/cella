@@ -1,5 +1,6 @@
 import { EllipsisVertical, Minimize2, Plus, Settings, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { showToast } from '~/lib/toasts';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
@@ -12,7 +13,7 @@ const ProjectActions = ({ project }: { project: Project }) => {
   const { changeColumn, workspaces } = useWorkspaceUIStore();
 
   const {
-    data: { workspace },
+    data: { workspace, projects },
   } = useWorkspaceQuery();
 
   const { minimized, createTaskForm } = workspaces[workspace.id]?.[project.id] || { minimized: false, createTaskForm: false };
@@ -20,15 +21,26 @@ const ProjectActions = ({ project }: { project: Project }) => {
   const role = project.membership?.role || 'member';
 
   const minimizeClick = () => {
+    // Check if all other projects are minimized
+    const allOtherMinimized = projects.every((p) => {
+      return p.id === project.id || workspaces[workspace.id]?.[p.id]?.minimized;
+    });
+
+    if (allOtherMinimized) return showToast(t('app:no_minimize_last'), 'error');
+
+    // Proceed with minimizing the current project
     changeColumn(workspace.id, project.id, {
-      minimized: !minimized,
+      minimized: true,
     });
   };
+
   const createTaskClick = () => {
     changeColumn(workspace.id, project.id, {
       createTaskForm: !createTaskForm,
     });
   };
+
+  if (minimized) return null;
 
   return (
     <>
