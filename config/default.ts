@@ -157,7 +157,7 @@ export const config = {
   },
 
   // UI settings
-  navLogoAnimation: 'animate-spin-slow',
+  navLogoAnimation: 'animate-hflip',
 
   // Common countries
   common: {
