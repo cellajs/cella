@@ -29,7 +29,7 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
   const currentSession = useMemo(() => user?.sessions.find((s) => s.isCurrent), [user]);
 
   // Keep menu open
-  useBodyClass({ 'keep-nav-open': keepMenuOpen, 'nav-open': !!navSheetOpen });
+  useBodyClass({ 'keep-nav-open': keepMenuOpen, 'nav-open': navSheetOpen === 'menu' });
 
   const stopImpersonation = async () => {
     await impersonationStop();

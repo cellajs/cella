@@ -24,8 +24,9 @@ export type NavItem = {
 const MainNav = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
+  const isDesktop = useBreakpoints('min', 'xl');
 
-  const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen } = useNavigationStore();
+  const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen, keepMenuOpen } = useNavigationStore();
 
   const showedNavButtons = useMemo(() => {
     const desktop = router.state.matches.flatMap((el) => el.staticData.showedDesktopNavButtons || []);
@@ -107,7 +108,11 @@ const MainNav = () => {
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
       if (toLocation.pathname !== fromLocation.pathname) {
         setFocusView(false); // Disable focus view
-        setNavSheetOpen(null);
+        // If keepMenuOpen is false or screen is not desktop, remove the nav sheet
+        if (!keepMenuOpen || !isDesktop) {
+          sheet.remove('nav-sheet');
+          setNavSheetOpen(null);
+        }
       }
       pathChanged && setLoading(true);
     });
@@ -115,6 +120,11 @@ const MainNav = () => {
       setLoading(false);
     });
   }, []);
+
+  //if we need reopen on reload
+  // useEffect(() => {
+  //   if (keepMenuOpen && isDesktop) setTimeout(() => clickNavItem(0), 0);
+  // }, []);
 
   const NavComponent = showFloatNav ? FloatNav : BarNav;
   return <NavComponent items={renderedItems} onClick={clickNavItem} />;

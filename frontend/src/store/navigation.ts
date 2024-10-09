@@ -3,7 +3,6 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { sheet } from '~/modules/common/sheeter/state';
 import { menuSections } from '~/nav-config';
 
 import type { UserMenu, UserMenuItem } from '~/types/common';
@@ -28,7 +27,7 @@ interface NavigationState {
   navLoading: boolean;
   setLoading: (status: boolean) => void;
   focusView: boolean;
-  setFocusView: (status: boolean, triggerRemoveSheet?: boolean) => void;
+  setFocusView: (status: boolean) => void;
   archiveStateToggle: (item: UserMenuItem, active: boolean, parentId?: string | null) => void;
   finishedOnboarding: boolean;
   setFinishedOnboarding: () => void;
@@ -91,10 +90,9 @@ export const useNavigationStore = create<NavigationState>()(
               state.navLoading = status;
             });
           },
-          setFocusView: (status, triggerRemoveSheet = true) => {
+          setFocusView: (status) => {
             set((state) => {
               state.focusView = status;
-              if (triggerRemoveSheet) sheet.remove();
             });
           },
           toggleSection: (section) => {
