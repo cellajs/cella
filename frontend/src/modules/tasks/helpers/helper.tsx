@@ -4,7 +4,6 @@ import { Suspense, lazy } from 'react';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
-import { objectKeys } from '~/utils/object';
 
 const TaskCard = lazy(() => import('~/modules/tasks/task'));
 
@@ -34,11 +33,8 @@ export const openTaskPreviewSheet = (task: Task, mode: Mode, navigate: NavigateF
           replace: true,
           resetScroll: false,
           search: (prev) => {
-            const newSearch = { ...prev };
-            for (const key of objectKeys(newSearch)) {
-              if (key.includes('Preview')) delete newSearch[key];
-            }
-            return newSearch;
+            const { taskIdPreview: _, ...nextSearch } = prev;
+            return nextSearch;
           },
         });
         sheet.remove(`task-preview-${task.id}`);

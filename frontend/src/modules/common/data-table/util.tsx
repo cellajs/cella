@@ -2,7 +2,6 @@ import type { NavigateFn } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { User } from '~/types/common';
-import { objectKeys } from '~/utils/object';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 
@@ -31,11 +30,8 @@ export const openUserPreviewSheet = (user: Omit<User, 'counts'>, navigate: Navig
           replace: true,
           resetScroll: false,
           search: (prev) => {
-            const newSearch = { ...prev };
-            for (const key of objectKeys(newSearch)) {
-              if (key.includes('Preview')) delete newSearch[key];
-            }
-            return newSearch;
+            const { userIdPreview: _, ...nextSearch } = prev;
+            return nextSearch;
           },
         });
         sheet.remove(`user-preview-${user.id}`);

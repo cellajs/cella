@@ -391,7 +391,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks 
                       );
                     }}
                   >
-                    <div className="flex truncate flex-wrap gap-[.07rem]">
+                    <div className="flex truncate items-center flex-wrap gap-[.07rem]">
                       {value.length > 0 ? (
                         (value as Label[]).map(({ name, id }) => {
                           return (
