@@ -5,6 +5,7 @@ import { Dialoger } from '~/modules/common/dialoger';
 import { DropDowner } from '~/modules/common/dropdowner';
 import ErrorNotice from '~/modules/common/error-notice';
 import MainNav from '~/modules/common/main-nav';
+import { SetBody } from '~/modules/common/set-body';
 import { Sheeter } from '~/modules/common/sheeter';
 import SSE from '~/modules/common/sse';
 import { SSEProvider } from '~/modules/common/sse/provider';
@@ -17,6 +18,7 @@ const App = () => {
       >
         <SSEProvider>
           <MainNav />
+          <SetBody />
           <SSE />
           <MainContent />
           <Dialoger />

@@ -8,7 +8,7 @@ export interface SheetProp {
 }
 
 export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
-  const { id, modal = true, side = 'right', open, description, title, hideClose = true, className, content } = sheet;
+  const { id, modal = true, side, open, description, title, hideClose = true, className, content } = sheet;
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const closeSheet = () => {
@@ -32,6 +32,9 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
 
   // Close sheet if clicked outside and not in modal
   const handleInteractOutside = (event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>) => {
+    const bodyClassList = document.body.classList;
+    if (bodyClassList.contains('keep-menu-open') && bodyClassList.contains('menu-sheet-open')) return;
+
     const mainContentElement = document.getElementById('main-block-app-content');
     if (!modal && mainContentElement?.contains(event.target as Node)) {
       return closeSheet();

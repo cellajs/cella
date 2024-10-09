@@ -5,7 +5,6 @@ import { Fragment, Suspense, lazy, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { impersonationStop } from '~/api/auth';
-import useBodyClass from '~/hooks/use-body-class';
 import useMounted from '~/hooks/use-mounted';
 import type { NavItem } from '~/modules/common/main-nav';
 import { NavButton } from '~/modules/common/main-nav/bar-nav/bar-nav-button';
@@ -24,12 +23,9 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
 
   const { user } = useUserStore();
   const { theme } = useThemeStore();
-  const { focusView, keepMenuOpen, navSheetOpen } = useNavigationStore();
+  const { navSheetOpen } = useNavigationStore();
 
   const currentSession = useMemo(() => user?.sessions.find((s) => s.isCurrent), [user]);
-
-  // Keep menu open
-  useBodyClass({ 'keep-nav-open': keepMenuOpen, 'nav-open': !!navSheetOpen });
 
   const stopImpersonation = async () => {
     await impersonationStop();
@@ -43,10 +39,9 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
     <nav
       id="main-nav"
       className={cn(
-        'fixed z-[90] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16',
+        'fixed z-[90] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden',
         navBackground,
         !hasStarted && 'max-sm:translate-y-full sm:-translate-x-full',
-        focusView && 'hidden',
       )}
     >
       <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">

@@ -24,7 +24,7 @@ const MainNav = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen } = useNavigationStore();
+  const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen, keepMenuOpen } = useNavigationStore();
 
   const showedNavButtons = useMemo(() => {
     const desktop = router.state.matches.flatMap((el) => el.staticData.showedDesktopNavButtons || []);
@@ -52,8 +52,13 @@ const MainNav = () => {
     }
 
     // If its a route, navigate to it
-    if (navItem.href) return navigate({ to: navItem.href });
-
+    if (navItem.href) {
+      if (!keepMenuOpen) {
+        setNavSheetOpen(null);
+        sheet.update('nav-sheet', { open: false });
+      }
+      return navigate({ to: navItem.href });
+    }
     // Set nav sheet
     const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
 
@@ -64,7 +69,7 @@ const MainNav = () => {
       id: 'nav-sheet',
       side: sheetSide,
       modal: isMobile,
-      className: 'fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16',
+      className: `fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
       removeCallback: () => {
         setNavSheetOpen(null);
       },
@@ -95,11 +100,13 @@ const MainNav = () => {
   useEffect(() => {
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
       if (toLocation.pathname !== fromLocation.pathname) {
-        // Disable focus view
         setFocusView(false);
+
         // Remove sheets in content
-        sheet.remove(`${navSheetOpen}-nav`);
-        setNavSheetOpen(null);
+        if (!keepMenuOpen) {
+          setNavSheetOpen(null);
+          sheet.update('nav-sheet', { open: false });
+        }
       }
       pathChanged && setLoading(true);
     });
