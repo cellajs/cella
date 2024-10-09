@@ -96,7 +96,7 @@ const SelectStatus = ({
   const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
   const {
-    data: { workspace },
+    data: { workspace, projects },
   } = useWorkspaceQuery();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
@@ -116,7 +116,7 @@ const SelectStatus = ({
       const queryKeys = !isTable
         ? taskKeys.list({ projectId, orgIdOrSlug: workspace.organizationId })
         : taskKeys.list({
-            projectId,
+            projectId: projectId ?? projects.map((p) => p.id).join('_'),
             orgIdOrSlug: workspace.organizationId,
             status: tableSearch.status,
             q: tableSearch.q,
