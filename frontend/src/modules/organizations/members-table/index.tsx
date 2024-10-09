@@ -178,7 +178,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[60] max-w-4xl',
       container: containerRef.current,
-      containerBackdrop: false,
+      containerBackdrop: true,
+      containerBackdropClassName: 'z-50',
       title: t('common:invite'),
       description: `${t('common:invite_users.text')}`,
     });

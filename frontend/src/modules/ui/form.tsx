@@ -161,7 +161,7 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
             {collapsed && <HelpCircle size={16} />}
             {!collapsed && <ChevronUp size={16} />}
           </Button>
-          {!collapsed && <span>{children}</span>}
+          {!collapsed && <span className="py-1">{children}</span>}
         </div>
       </div>
     );
