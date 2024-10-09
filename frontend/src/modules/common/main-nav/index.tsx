@@ -45,6 +45,7 @@ const MainNav = () => {
       return dialog(<CreateTaskForm projectIdOrSlug={router.state.location.search.project ?? ''} dialog />, {
         drawerOnMobile: false,
         title: 'Create task',
+        className: 'px-0',
         refocus: false,
         autoFocus: !isMobile,
       });
