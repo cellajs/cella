@@ -51,6 +51,7 @@ export const config = {
     'frontend/src/modules/users/profile-page-content.tsx',
     'backend/package.json',
     'backend/drizzle/*',
+    'backend/scripts/README.md',
     'backend/scripts/seeds/data/*',
     'backend/src/routes.ts',
     'backend/src/types/app.ts',

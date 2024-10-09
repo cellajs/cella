@@ -5,12 +5,12 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
 import { dialog } from '~/modules/common/dialoger/state';
+import BarNav from '~/modules/common/main-nav/bar-nav';
+import FloatNav from '~/modules/common/main-nav/float-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { type NavItemId, baseNavItems, navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import BarNav from './bar-nav';
-import FloatNav from './float-nav';
 
 export type NavItem = {
   id: NavItemId;
@@ -24,7 +24,6 @@ export type NavItem = {
 const MainNav = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
-  const isDesktop = useBreakpoints('min', 'xl');
 
   const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen } = useNavigationStore();
 
@@ -127,11 +126,6 @@ const MainNav = () => {
       setLoading(false);
     });
   }, []);
-
-  //if we need reopen on reload
-  // useEffect(() => {
-  //   if (keepMenuOpen && isDesktop) setTimeout(() => clickNavItem(0), 0);
-  // }, []);
 
   const NavComponent = showFloatNav ? FloatNav : BarNav;
   return <NavComponent items={renderedItems} onClick={clickNavItem} />;

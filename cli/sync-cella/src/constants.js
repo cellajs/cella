@@ -7,7 +7,7 @@ export const CELLA_REMOTE_URL = 'git@github.com:cellajs/cella.git';
 export const DEFAULT_CONFIG_FILE = 'cella.config.js';
 
 // Default diverged file
-export const DEFAULT_DIVERGED_FILE = 'cella.divergent.txt';
+export const DEFAULT_DIVERGED_FILE = 'cella.diverged.txt';
 
 // Default upstream branch
 export const DEFAULT_UPSTREAM_BRANCH = 'development';
