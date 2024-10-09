@@ -31,11 +31,8 @@ export const openUserPreviewSheet = (user: Omit<User, 'counts'>, navigate: Navig
           replace: true,
           resetScroll: false,
           search: (prev) => {
-            const newSearch = { ...prev };
-            for (const key of objectKeys(newSearch)) {
-              if (key.includes('Preview')) delete newSearch[key];
-            }
-            return newSearch;
+            const { userIdPreview: _, ...nextSearch } = prev;
+            return nextSearch;
           },
         });
         sheet.remove(`user-preview-${user.id}`);
