@@ -8,7 +8,6 @@ import { dialog } from '~/modules/common/dialoger/state';
 import BarNav from '~/modules/common/main-nav/bar-nav';
 import FloatNav from '~/modules/common/main-nav/float-nav';
 import { sheet } from '~/modules/common/sheeter/state';
-import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { type NavItemId, baseNavItems, navItems } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 
@@ -41,16 +40,6 @@ const MainNav = () => {
   const showFloatNav = renderedItems.length > 0 && renderedItems.length <= 2;
 
   const navButtonClick = (navItem: NavItem) => {
-    if (navItem.id === 'workspace-add-task') {
-      return dialog(<CreateTaskForm projectIdOrSlug={router.state.location.search.project ?? ''} dialog />, {
-        drawerOnMobile: false,
-        title: 'Create task',
-        className: 'px-0',
-        refocus: false,
-        autoFocus: !isMobile,
-      });
-    }
-
     // If its a have dialog, open it
     if (navItem.dialog) {
       return dialog(navItem.dialog, {
@@ -79,6 +68,7 @@ const MainNav = () => {
     sheet.create(navItem.sheet, {
       id: 'nav-sheet',
       side: sheetSide,
+      closeOnRouteChange: false,
       modal: isMobile,
       className: `fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
       removeCallback: () => {
@@ -114,11 +104,11 @@ const MainNav = () => {
       if (toLocation.pathname !== fromLocation.pathname) {
         if (useNavigationStore.getState().focusView) setFocusView(false);
 
-        // Remove sheets in content
+        // Remove all sheets in content or
         if (sheetOpen && (sheetOpen !== 'menu' || !useNavigationStore.getState().keepMenuOpen)) {
           setNavSheetOpen(null);
-          sheet.remove('nav-sheet');
-        }
+          sheet.remove();
+        } else sheet.remove(undefined, 'nav-sheet');
       }
       pathChanged && setLoading(true);
     });
