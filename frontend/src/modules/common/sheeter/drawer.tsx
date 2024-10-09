@@ -3,7 +3,7 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } f
 import { sheet as sheetState } from './state';
 
 export default function MobileSheet({ sheet, removeSheet }: SheetProp) {
-  const { modal = true, side = 'right', description, title, className, content, open } = sheet;
+  const { modal = true, side, description, title, className, content, open } = sheet;
 
   const closeSheet = () => {
     removeSheet(sheet);

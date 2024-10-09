@@ -40,7 +40,7 @@ export type SectionItem = {
 
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
-  const { menu, keepMenuOpen, hideSubmenu, toggleHideSubmenu, toggleKeepMenu } = useNavigationStore();
+  const { menu, keepOpenPreference, hideSubmenu, toggleHideSubmenu, toggleKeepOpenPreference } = useNavigationStore();
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 
@@ -132,7 +132,13 @@ export const SheetMenu = memo(() => {
             <div className="grow mt-4 border-b border-dashed" />
             <div className="flex flex-col mt-6 mb-1 mx-2 gap-4">
               <div className="max-xl:hidden flex items-center gap-4 ml-1">
-                <Switch size="xs" id="keepMenuOpen" checked={keepMenuOpen} onCheckedChange={toggleKeepMenu} aria-label={t('common:keep_menu_open')} />
+                <Switch
+                  size="xs"
+                  id="keepMenuOpen"
+                  checked={keepOpenPreference}
+                  onCheckedChange={toggleKeepOpenPreference}
+                  aria-label={t('common:keep_menu_open')}
+                />
                 <label htmlFor="keepMenuOpen" className="cursor-pointer select-none text-sm font-medium leading-none">
                   {t('common:keep_menu_open')}
                 </label>
