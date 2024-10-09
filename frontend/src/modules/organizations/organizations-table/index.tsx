@@ -135,7 +135,7 @@ const OrganizationsTable = () => {
         drawerOnMobile: false,
         className: 'max-w-xl',
         title: t('common:delete'),
-        text: t('common:confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
+        description: t('common:confirm.delete_resources', { resources: t('common:organizations').toLowerCase() }),
       },
     );
   };
@@ -150,7 +150,7 @@ const OrganizationsTable = () => {
       {
         className: 'max-w-full lg:max-w-4xl',
         title: t('common:newsletter'),
-        text: t('common:newsletter.text'),
+        description: t('common:newsletter.text'),
         id: 'newsletter-form',
       },
     );

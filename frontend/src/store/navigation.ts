@@ -19,7 +19,9 @@ interface NavigationState {
   navSheetOpen: string | null;
   setNavSheetOpen: (sheet: string | null) => void;
   keepMenuOpen: boolean;
-  toggleKeepMenu: (status: boolean) => void;
+  setKeepMenuOpen: (status: boolean) => void;
+  keepOpenPreference: boolean;
+  toggleKeepOpenPreference: (status: boolean) => void;
   hideSubmenu: boolean;
   toggleHideSubmenu: (status: boolean) => void;
   activeSections: Record<string, boolean> | null;
@@ -38,7 +40,16 @@ interface NavigationState {
 interface InitStore
   extends Pick<
     NavigationState,
-    'recentSearches' | 'keepMenuOpen' | 'hideSubmenu' | 'navLoading' | 'focusView' | 'menu' | 'activeSections' | 'finishedOnboarding' | 'navSheetOpen'
+    | 'recentSearches'
+    | 'keepMenuOpen'
+    | 'hideSubmenu'
+    | 'navLoading'
+    | 'focusView'
+    | 'menu'
+    | 'activeSections'
+    | 'finishedOnboarding'
+    | 'navSheetOpen'
+    | 'keepOpenPreference'
   > {}
 
 const initialMenuState: UserMenu = menuSections
@@ -51,7 +62,8 @@ const initialMenuState: UserMenu = menuSections
 const initStore: InitStore = {
   recentSearches: [],
   navSheetOpen: null,
-  keepMenuOpen: false,
+  keepMenuOpen: window.innerWidth > 1280,
+  keepOpenPreference: false,
   hideSubmenu: false,
   navLoading: false,
   focusView: false,
@@ -76,9 +88,14 @@ export const useNavigationStore = create<NavigationState>()(
               state.recentSearches = searchValues;
             });
           },
-          toggleKeepMenu: (status) => {
+          setKeepMenuOpen: (status) => {
             set((state) => {
               state.keepMenuOpen = status;
+            });
+          },
+          toggleKeepOpenPreference: (status) => {
+            set((state) => {
+              state.keepOpenPreference = status;
             });
           },
           toggleHideSubmenu: (status) => {
@@ -141,11 +158,11 @@ export const useNavigationStore = create<NavigationState>()(
             })),
         }),
         {
-          version: 5,
+          version: 6,
           name: `${config.slug}-navigation`,
           partialize: (state) => ({
             menu: state.menu,
-            keepMenuOpen: state.keepMenuOpen,
+            keepOpenPreference: state.keepOpenPreference,
             hideSubmenu: state.hideSubmenu,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,

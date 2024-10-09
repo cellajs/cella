@@ -1,9 +1,12 @@
 export type SheetT = {
   id: string;
   title?: string | React.ReactNode;
-  text?: React.ReactNode;
+  description?: React.ReactNode;
   className?: string;
   content?: React.ReactNode;
+  hideClose?: boolean;
+  open?: boolean;
+  canToggle?: boolean;
   modal?: boolean;
   side?: 'bottom' | 'top' | 'right' | 'left';
   removeCallback?: () => void;
@@ -15,10 +18,8 @@ export type SheetAction = {
 };
 
 class SheetsStateObserver {
-  // Array to store the current sheets
-  private sheets: SheetT[] = [];
-  // Array to store subscribers that will be notified of changes
-  private subscribers: Array<(action: SheetAction & SheetT) => void> = [];
+  public sheets: SheetT[] = []; // Array to store the current sheets
+  private subscribers: Array<(action: SheetAction & SheetT) => void> = []; // Store subscribers that will be notified of changes
 
   // Method to subscribe to changes
   subscribe = (subscriber: (action: SheetAction & SheetT) => void) => {
@@ -33,11 +34,9 @@ class SheetsStateObserver {
     for (const sub of this.subscribers) sub(action);
   };
 
-  // Retrieve a sheet by its ID
-  get = (id: string) => this.sheets.find((sheet) => sheet.id === id);
+  get = (id: string) => this.sheets.find((sheet) => sheet.id === id); // Retrieve a sheet by its ID
 
-  // Retrieve a all sheets
-  getAll = () => this.sheets;
+  haveOpenSheets = () => this.sheets.some((s) => s.open);
 
   // Add or update a sheet and notify subscribers
   set = (sheet: SheetT) => {
@@ -48,14 +47,12 @@ class SheetsStateObserver {
   // Remove a sheet by its ID or clear all sheets and notify subscribers
   remove = (id?: string) => {
     if (id) {
-      // Remove a specific sheet by ID
       this.sheets = this.sheets.filter((sheet) => sheet.id !== id);
       this.notifySubscribers({ id, remove: true });
-    } else {
-      // Remove all sheets
-      for (const sheet of this.sheets) this.notifySubscribers({ id: sheet.id, remove: true });
-      this.sheets = [];
+      return;
     }
+    for (const sheet of this.sheets) this.notifySubscribers({ id: sheet.id, remove: true });
+    this.sheets = [];
   };
 
   // Update an existing sheet or create a new one with the provided updates
@@ -70,20 +67,19 @@ class SheetsStateObserver {
   // Create a new sheet with the given content and optional additional data
   create = (content: React.ReactNode, data?: Omit<SheetT, 'content'>) => {
     const modal = data?.modal || true;
+    const open = data?.open || true;
     const id = data?.id || Date.now().toString(); // Use existing ID or generate a new one
-    this.set({ id, modal, content, ...data });
+    this.set({ id, modal, content, open, ...data });
     return id;
   };
 }
 
 export const SheetObserver = new SheetsStateObserver();
 
-// TODO this does not have type safety?
-// Also, it seems the sheet responds a bit slow when opening and closing programmatically
-export const sheet = Object.assign({
-  create: SheetObserver.create,
-  remove: SheetObserver.remove,
-  update: SheetObserver.update,
-  get: SheetObserver.get,
-  getAll: SheetObserver.getAll,
-});
+export const sheet = {
+  create: SheetObserver.create.bind(SheetObserver),
+  remove: SheetObserver.remove.bind(SheetObserver),
+  update: SheetObserver.update.bind(SheetObserver),
+  get: SheetObserver.get.bind(SheetObserver),
+  haveOpenSheets: SheetObserver.haveOpenSheets.bind(SheetObserver),
+};

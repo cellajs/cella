@@ -7,7 +7,7 @@ import { type UpdateOrganizationParams, updateOrganization } from '~/api/organiz
 import type { Organization } from '~/types/common';
 
 import { config } from 'config';
-import { useEffect } from 'react';
+import { isValidElement, useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
@@ -113,12 +113,16 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-organization');
-      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
-        sheet.update('update-organization', {
-          title: <UnsavedBadge title={targetSheet?.title} />,
-        });
-      }
-      return;
+
+      if (!targetSheet || !isValidElement(targetSheet.title)) return;
+      // Check if the title's type is a function (React component) and not a string
+      const { type: tittleType } = targetSheet.title;
+
+      if (typeof tittleType !== 'function' || tittleType.name === 'UnsavedBadge') return;
+
+      sheet.update('update-organization', {
+        title: <UnsavedBadge title={targetSheet?.title} />,
+      });
     }
   }, [form.unsavedChanges]);
 

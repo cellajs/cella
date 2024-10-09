@@ -1,6 +1,5 @@
 import { Expand, Shrink } from 'lucide-react';
 import type React from 'react';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { showToast } from '~/lib/toasts';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -38,16 +37,9 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
 };
 
 export const FocusViewContainer = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
-  const { focusView, setFocusView } = useNavigationStore();
+  const { focusView } = useNavigationStore();
 
   useBodyClass({ 'focus-view': focusView });
-
-  // Reset focus view on unmount
-  useEffect(() => {
-    return () => {
-      setFocusView(false);
-    };
-  }, []);
 
   return <div className={cn('focus-view-container', className, focusView ? 'w-full h-full max-w-none min-w-full min-h-full' : '')}>{children}</div>;
 };

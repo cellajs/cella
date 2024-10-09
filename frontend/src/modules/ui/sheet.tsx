@@ -1,6 +1,7 @@
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { type VariantProps, cva } from 'class-variance-authority';
+import { X } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '~/utils/cn';
@@ -27,8 +28,9 @@ const SheetOverlay = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Ove
 );
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
+// Removed the animate out classes since sheeter has state issues in remove step
 export const sheetVariants = cva(
-  'z-[100] fixed gap-4 bg-background px-4 pb-4 shadow-lg transition ease-in-out overflow-y-auto data-[state=closed]:duration-300 data-[state=open]:duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out',
+  'z-[100] fixed gap-4 bg-background px-4 pb-4 shadow-lg transition ease-in-out overflow-y-auto data-[state=open]:duration-300 data-[state=open]:animate-in',
   {
     variants: {
       side: {
@@ -48,15 +50,25 @@ export const sheetVariants = cva(
 
 interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>, VariantProps<typeof sheetVariants> {
   onClick?: () => void; // Adding onClick prop
+  hideClose?: boolean;
 }
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
-  ({ side = 'right', className, children, onClick, ...props }, ref) => (
+  ({ side = 'right', className, children, hideClose = true, onClick, ...props }, ref) => (
     <>
       <SheetOverlay
         onClick={onClick} // Using the passed onClick function
       />
       <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
         {children}
+        {!hideClose && (
+          <SheetPrimitive.Close
+            onClick={onClick}
+            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-3 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none"
+          >
+            <X className="h-6 w-6" strokeWidth={1.25} />
+            <span className="sr-only">Close</span>
+          </SheetPrimitive.Close>
+        )}
       </SheetPrimitive.Content>
     </>
   ),

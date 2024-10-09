@@ -164,6 +164,9 @@ export const config = {
     },
   },
 
+  // UI settings
+  navLogoAnimation: 'animate-spin-slow',
+
   // Common countries
   common: {
     countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
