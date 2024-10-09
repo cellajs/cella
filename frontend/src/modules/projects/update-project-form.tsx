@@ -20,9 +20,9 @@ import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
-import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types/app';
 import { cleanUrl } from '~/utils/clean-url';
+import { useWorkspaceQuery } from '../workspaces/use-workspace';
 
 interface Props {
   project: Project;
@@ -51,7 +51,7 @@ export const useUpdateProjectMutation = (idOrSlug: string, orgIdOrSlug: string) 
 
 const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet }: Props) => {
   const { t } = useTranslation();
-  const { setWorkspace, workspace, projects } = useWorkspaceStore();
+  const { updateProject } = useWorkspaceQuery();
   const { mutate, isPending } = useUpdateProjectMutation(project.id, project.organizationId);
 
   const formOptions: UseFormProps<FormValues> = {
@@ -80,14 +80,7 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
         if (isSheet) sheet.remove('edit-project');
         form.reset(updatedProject);
         toast.success(t('common:success.update_resource', { resource: t('app:project') }));
-        setWorkspace(
-          workspace,
-          [...projects.filter((p) => p.id !== updatedProject.id), updatedProject].sort((a, b) => {
-            const orderA = a.membership ? a.membership.order : 0; // Default value if membership is null
-            const orderB = b.membership ? b.membership.order : 0;
-            return orderA - orderB;
-          }),
-        );
+        updateProject(updatedProject);
         callback?.(updatedProject as Project);
       },
     });

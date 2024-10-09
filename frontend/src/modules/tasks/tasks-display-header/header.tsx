@@ -5,6 +5,7 @@ import DisplayOptions from '~/modules/tasks/tasks-display-header/display-options
 import PageView from '~/modules/tasks/tasks-display-header/page-view';
 import TasksSearch from '~/modules/tasks/tasks-display-header/search';
 import TaskSelectedButtons from '~/modules/tasks/tasks-display-header/selected-buttons';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 
@@ -14,7 +15,10 @@ const Header = ({
   children?: React.ReactNode;
 }) => {
   const { setFocusView } = useNavigationStore();
-  const { workspace, selectedTasks, setSelectedTasks, showPageHeader, togglePageHeader } = useWorkspaceStore();
+  const { selectedTasks, setSelectedTasks, showPageHeader, togglePageHeader } = useWorkspaceStore();
+  const {
+    data: { workspace },
+  } = useWorkspaceQuery();
 
   const [searchFocused, setSearchFocused] = useState(false);
 

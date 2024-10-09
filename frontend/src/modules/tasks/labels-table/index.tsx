@@ -17,8 +17,8 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { useColumns } from '~/modules/tasks/labels-table/columns';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import type { labelsSearchSchema } from '~/routes/workspaces';
-import { useWorkspaceStore } from '~/store/workspace';
 import type { Label } from '~/types/app';
 
 export const labelsQueryOptions = ({
@@ -64,7 +64,9 @@ type LabelsSearch = z.infer<typeof labelsSearchSchema>;
 const LabelsTable = () => {
   const { t } = useTranslation();
   const [columns] = useColumns();
-  const { projects, workspace } = useWorkspaceStore();
+  const {
+    data: { workspace, projects },
+  } = useWorkspaceQuery();
 
   const [rows, setRows] = useState<Label[]>([]);
   const [query, setQuery] = useState<LabelsSearch['q']>('');

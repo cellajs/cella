@@ -16,6 +16,7 @@ import { type TaskStatus, statusFillColors, statusTextColors, taskStatuses } fro
 import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
@@ -25,8 +26,11 @@ export const useColumns = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
-  const { projects, workspace, setFocusedTaskId } = useWorkspaceStore();
+  const { setFocusedTaskId } = useWorkspaceStore();
   const { mode } = useThemeStore();
+  const {
+    data: { workspace, projects },
+  } = useWorkspaceQuery();
 
   const columns: ColumnOrColumnGroup<Task>[] = [
     CheckboxColumn,

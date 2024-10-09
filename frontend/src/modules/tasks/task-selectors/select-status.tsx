@@ -20,6 +20,7 @@ import { StartedIcon } from '~/modules/tasks/task-selectors/status-icons/started
 import { UnstartedIcon } from '~/modules/tasks/task-selectors/status-icons/unstarted';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { WorkspaceRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
@@ -94,7 +95,10 @@ const SelectStatus = ({
 
   const search = useSearch({ from: WorkspaceRoute.id });
   const { pathname } = useLocation();
-  const { focusedTaskId, projects, workspace } = useWorkspaceStore();
+  const { focusedTaskId } = useWorkspaceStore();
+  const {
+    data: { workspace, projects },
+  } = useWorkspaceQuery();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
 

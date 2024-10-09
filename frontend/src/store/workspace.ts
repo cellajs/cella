@@ -1,15 +1,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { Label, Project, Workspace } from '~/types/app';
-import type { Member } from '~/types/common';
+import type { Workspace } from '~/types/app';
 
 interface WorkspaceState {
-  workspace: Workspace;
-  projects: Project[];
-  members: Member[];
-  labels: Label[];
-  setWorkspace: (workspace: Workspace, projects?: Project[], labels?: Label[], members?: Member[]) => void;
   selectedTasks: string[];
   setSelectedTasks: (tasks: string[]) => void;
   searchQuery: string;
@@ -31,14 +25,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       searchQuery: '',
       focusedTaskId: null,
       showPageHeader: false,
-      setWorkspace: (workspace, projects, labels, members) => {
-        set((state) => {
-          state.workspace = workspace;
-          if (projects) state.projects = projects;
-          if (labels) state.labels = labels;
-          if (members) state.members = members;
-        });
-      },
       setSelectedTasks: (tasks) => {
         set((state) => {
           state.selectedTasks = tasks;

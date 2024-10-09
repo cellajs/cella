@@ -2,13 +2,11 @@ import { createRoute } from '@tanstack/react-router';
 import type { ErrorType } from 'backend/lib/errors';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
-import type { GetWorkspaceResponse } from '~/api/workspaces';
 import { offlineFetch } from '~/lib/query-client';
 import ErrorNotice from '~/modules/common/error-notice';
 import Overview from '~/modules/projects/overview';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import { baseEntityRoutes } from '~/nav-config';
-import { useWorkspaceStore } from '~/store/workspace';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { AppRoute } from './general';
 
@@ -30,19 +28,7 @@ export const WorkspaceRoute = createRoute({
   getParentRoute: () => AppRoute,
   loader: ({ params: { idOrSlug, orgIdOrSlug } }) => {
     const queryOptions = workspaceQueryOptions(idOrSlug, orgIdOrSlug);
-    const offlineFetchResult = offlineFetch(queryOptions);
-    offlineFetchResult.then((data) => {
-      if (!data) return;
-      const { workspace, projects, labels, members } = data as GetWorkspaceResponse;
-      useWorkspaceStore.setState({
-        workspace,
-        projects,
-        labels,
-        members,
-      });
-    });
-
-    return offlineFetchResult;
+    return offlineFetch(queryOptions);
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {

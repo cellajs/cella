@@ -24,6 +24,7 @@ import TaskCard from '~/modules/tasks/task';
 import type { CustomEventDetailId, TaskChangeEvent, TaskStates } from '~/modules/tasks/types';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -63,7 +64,10 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
 
   const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
-  const { workspace, searchQuery, selectedTasks, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
+  const { searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
+  const {
+    data: { workspace, projects },
+  } = useWorkspaceQuery();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
   const currentProjectSettings = workspaces[workspace.id]?.[project.id];

@@ -10,13 +10,16 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import DeleteWorkspaces from '~/modules/workspaces/delete-workspace';
 import UpdateWorkspaceForm from '~/modules/workspaces/update-workspace-form';
-import { useWorkspaceStore } from '~/store/workspace';
+import { useWorkspaceQuery } from './use-workspace';
 
 export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { workspace, setWorkspace } = useWorkspaceStore();
+  const {
+    data: { workspace },
+    updateWorkspace,
+  } = useWorkspaceQuery();
 
   const { idOrSlug }: { idOrSlug: string } = useParams({ strict: false });
   const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
@@ -50,7 +53,7 @@ export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
           <UpdateWorkspaceForm
             workspace={workspace}
             callback={(updatedWorkspace) => {
-              setWorkspace(updatedWorkspace, undefined, undefined, undefined);
+              updateWorkspace(updatedWorkspace);
 
               if (idOrSlug !== updatedWorkspace.slug) {
                 navigate({
