@@ -145,7 +145,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
           variant="outlineGhost"
           size="xs"
           className={cn(
-            'relative border-r-0 rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
+            'relative sm:border-r-0 sm:rounded-r-none font-normal [&:not(.absolute)]:active:translate-y-0 disabled:opacity-100 mr-1',
             statusVariants({ status: task.status }),
           )}
         >
@@ -157,7 +157,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
           variant="outlineGhost"
           size="xs"
           className={cn(
-            'relative rounded-none rounded-r -ml-2 px-2 [&:not(.absolute)]:active:translate-y-0',
+            'max-sm:hidden relative rounded-none rounded-r -ml-2 px-2 [&:not(.absolute)]:active:translate-y-0',
             statusVariants({ status: task.status }),
           )}
         >
