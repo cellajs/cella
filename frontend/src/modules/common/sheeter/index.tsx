@@ -18,7 +18,6 @@ export function Sheeter() {
 
   useEffect(() => {
     return SheetObserver.subscribe((action: SheetAction & SheetT) => {
-      console.log('SheetObserver', action);
       if ('remove' in action) removeSheet(action);
       prevFocusedElement.current = (document.activeElement || document.body) as HTMLElement;
       setSheets((prevSheets) => [...prevSheets.filter((sheet) => sheet.id !== action.id), action]);

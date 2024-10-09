@@ -4,15 +4,11 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/store/navigation';
 
 export const SetBody = () => {
-  const { navSheetOpen, setKeepMenuOpen, keepOpenPreference } = useNavigationStore() as {
-    navSheetOpen: 'menu' | 'account' | null;
-    setKeepMenuOpen: (value: boolean) => void;
-    keepOpenPreference: boolean;
-  };
+  const { navSheetOpen, setKeepMenuOpen, keepOpenPreference } = useNavigationStore();
   const isDesktop = useBreakpoints('min', 'xl', true);
 
   // useRef to store the previous value of navSheetOpen
-  const prevSheetRef = useRef<'menu' | 'account' | null>(null);
+  const prevSheetRef = useRef<string | null>(null);
 
   // Update the previous sheet when navSheetOpen changes
   useEffect(() => {
@@ -27,7 +23,7 @@ export const SetBody = () => {
   // Maintain keep menu open state to use elsewhere
   useEffect(() => {
     setKeepMenuOpen(shouldKeepMenuOpen);
-  }, [shouldKeepMenuOpen, setKeepMenuOpen]);
+  }, [shouldKeepMenuOpen]);
 
   // Apply body classes for menu state
   useBodyClass({

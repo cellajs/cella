@@ -26,7 +26,7 @@ const MainNav = () => {
   const isMobile = useBreakpoints('max', 'sm');
   const isDesktop = useBreakpoints('min', 'xl');
 
-  const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen, keepMenuOpen } = useNavigationStore();
+  const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen } = useNavigationStore();
 
   const showedNavButtons = useMemo(() => {
     const desktop = router.state.matches.flatMap((el) => el.staticData.showedDesktopNavButtons || []);
@@ -65,7 +65,7 @@ const MainNav = () => {
 
     // If its a route, navigate to it
     if (navItem.href) {
-      if (!keepMenuOpen) {
+      if (!useNavigationStore.getState().keepMenuOpen) {
         setNavSheetOpen(null);
         sheet.update('nav-sheet', { open: false });
       }
@@ -111,13 +111,14 @@ const MainNav = () => {
 
   useEffect(() => {
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
+      const sheetOpen = useNavigationStore.getState().navSheetOpen;
       if (toLocation.pathname !== fromLocation.pathname) {
-        setFocusView(false);
+        if (useNavigationStore.getState().focusView) setFocusView(false);
 
         // Remove sheets in content
-        if (!keepMenuOpen) {
+        if (sheetOpen && (sheetOpen !== 'menu' || !useNavigationStore.getState().keepMenuOpen)) {
           setNavSheetOpen(null);
-          sheet.update('nav-sheet', { open: false });
+          sheet.remove('nav-sheet');
         }
       }
       pathChanged && setLoading(true);
