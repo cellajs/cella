@@ -52,7 +52,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
       )}
       {task.type !== 'bug' && (
         <Button
-          id="impact"
+          id={`impact-${task.id}`}
           onClick={(event) => handleTaskDropDownClick(task, 'impact', event.currentTarget)}
           aria-label="Set impact"
           variant="ghost"
@@ -68,7 +68,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
       )}
 
       <Button
-        id="labels"
+        id={`labels-${task.id}`}
         onClick={(event) => handleTaskDropDownClick(task, 'labels', event.currentTarget)}
         aria-label="Set labels"
         variant="ghost"
@@ -114,7 +114,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
       </Button>
       <div className="flex gap-1 ml-auto">
         <Button
-          id="assignedTo"
+          id={`assignedTo-${task.id}`}
           onClick={(event) => handleTaskDropDownClick(task, 'assignedTo', event.currentTarget)}
           aria-label="Assign"
           variant="ghost"

@@ -396,7 +396,6 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                               {/* Conditionally render "+ Task" button for first and last task */}
                               {((index === firstUpstartedIndex && isMouseNearTop) || (index === lastUpstartedIndex && isMouseNearBottom)) && (
                                 <Button
-                                  id="iced-task-creation"
                                   variant="plain"
                                   size="xs"
                                   style={{ left: `${mouseX}px` }}

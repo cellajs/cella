@@ -48,7 +48,7 @@ export const TaskHeader = ({
     <StickyBox enabled={false} className="flex flex-row z-100 w-full justify-between">
       {!isSubTask && task.createdBy && (
         <Button
-          id="type"
+          id={`type-${task.id}`}
           onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
           aria-label="Set type"
           variant="ghost"
@@ -91,7 +91,7 @@ export const TaskHeader = ({
             hideWhenDetached
           >
             <Button
-              id="edit-toggle"
+              id={`edit-toggle-${task.id}`}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               onClick={() => {

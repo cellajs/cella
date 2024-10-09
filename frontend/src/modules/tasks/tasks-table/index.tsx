@@ -162,6 +162,7 @@ export default function TasksTable() {
 
   // Open on key press
   const hotKeyPress = (field: string) => {
+    console.log(22);
     const focusedTask = rows.find((t) => t.id === focusedTaskId);
     if (!focusedTask) return;
     const taskCard = document.getElementById(focusedTask.id);
@@ -173,11 +174,11 @@ export default function TasksTable() {
   };
 
   useHotkeys([
-    ['A', () => hotKeyPress('assignedTo')],
-    ['I', () => hotKeyPress('impact')],
-    ['L', () => hotKeyPress('labels')],
+    ['A', () => hotKeyPress(`assignedTo-${focusedTaskId}`)],
+    ['I', () => hotKeyPress(`impact-${focusedTaskId}`)],
+    ['L', () => hotKeyPress(`labels-${focusedTaskId}`)],
     ['S', () => hotKeyPress(`status-${focusedTaskId}`)],
-    ['T', () => hotKeyPress('type')],
+    ['T', () => hotKeyPress(`type-${focusedTaskId}`)],
   ]);
 
   useEventListener('taskOperation', handleTaskOperations);

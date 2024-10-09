@@ -159,7 +159,7 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
             <div className="flex flex-row gap-1 w-full">
               {state === 'folded' && (
                 <Button
-                  id="type"
+                  id={`type-${task.id}`}
                   onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
                   aria-label="Set type"
                   variant="ghost"

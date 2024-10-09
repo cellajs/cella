@@ -196,7 +196,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks 
     <Form {...form}>
       <form
         ref={ref as LegacyRef<HTMLFormElement>}
-        id="create-task"
+        id={`create-task-${projectIdOrSlug}`}
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn(className, `p-3 sm:pl-11 ${isDialog ? '' : 'border-b'} flex gap-2 flex-col shadow-inner`)}
       >

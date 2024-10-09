@@ -265,11 +265,11 @@ export default function Board() {
     ['Escape', handleEscKeyPress],
     ['Enter', handleEnterKeyPress],
     ['N', handleNKeyDown],
-    ['A', () => hotKeyPress('assignedTo')],
-    ['I', () => hotKeyPress('impact')],
-    ['L', () => hotKeyPress('labels')],
+    ['A', () => hotKeyPress(`assignedTo-${focusedTaskId}`)],
+    ['I', () => hotKeyPress(`impact-${focusedTaskId}`)],
+    ['L', () => hotKeyPress(`labels-${focusedTaskId}`)],
     ['S', () => hotKeyPress(`status-${focusedTaskId}`)],
-    ['T', () => hotKeyPress('type')],
+    ['T', () => hotKeyPress(`type-${focusedTaskId}`)],
   ]);
 
   const handleTaskClick = (event: TaskCardFocusEvent) => {
@@ -283,10 +283,8 @@ export default function Board() {
         // Set the state of the previously focused task after edit button clicked
         setTaskState(currentFocused, tasksState[currentFocused] === 'folded' || !tasksState[currentFocused] ? 'folded' : 'expanded');
       }
-
       return setFocusedTaskId(newFocused);
     }
-
     // If the task clicked is already focused
     if (currentFocused === newFocused) return setTaskState(currentFocused, 'expanded');
 
@@ -294,20 +292,16 @@ export default function Board() {
     if (currentFocused && currentFocused !== newFocused) {
       //change the state of previously focused subtasks
       dispatchCustomEvent('changeSubTaskState', { taskId: currentFocused, state: 'folded' });
-
       // Set the state of the previously focused task
       setTaskState(currentFocused, tasksState[currentFocused] === 'folded' || !tasksState[currentFocused] ? 'folded' : 'expanded');
       // Set the state of the newly focused task
       setTaskState(newFocused, 'expanded');
     }
-
     // If there's no currently focused task, expand the newly focused task
     if (!currentFocused) setTaskState(newFocused, 'expanded');
-
     // ensure newly focused task receives focus
     const taskCard = document.getElementById(newFocused);
     if (taskCard && document.activeElement !== taskCard) taskCard.focus();
-    // Set the new focused task ID
     setFocusedTaskId(newFocused);
   };
 
