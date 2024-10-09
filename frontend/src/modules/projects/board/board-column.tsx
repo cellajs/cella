@@ -4,7 +4,6 @@ import { ChevronDown, Palmtree, Plus, Search, Undo } from 'lucide-react';
 import { type MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
-import { useEventListener } from '~/hooks/use-event-listener';
 
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
@@ -22,7 +21,7 @@ import { isSubTaskData, isTaskData } from '~/modules/projects/board/helpers';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
 import TaskCard from '~/modules/tasks/task';
-import type { CustomEventDetailId, TaskChangeEvent, TaskStates } from '~/modules/tasks/types';
+import type { TaskStates } from '~/modules/tasks/types';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
@@ -68,7 +67,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
   const isMobile = useBreakpoints('max', 'sm');
-  const { searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
+  const { searchQuery, selectedTasks, focusedTaskId } = useWorkspaceStore();
   const {
     data: { workspace },
   } = useWorkspaceQuery();
@@ -164,29 +163,6 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     // Scroll to the element inside the ref when the dialog opens
     if (ref.current) ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
-
-  const handleTaskChangeEventListener = (event: TaskChangeEvent) => {
-    const { taskId, direction, projectId } = event.detail;
-    if (projectId !== project.id) return;
-    const currentFocusedIndex = showingTasks.findIndex((t) => t.id === taskId);
-    if (!showingTasks[currentFocusedIndex + direction]) return;
-    const { id } = showingTasks[currentFocusedIndex + direction];
-    const taskCard = document.getElementById(id);
-    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
-
-    setFocusedTaskId(id);
-  };
-
-  const handleProjectChangeEventListener = (event: CustomEventDetailId) => {
-    if (event.detail !== project.id) return;
-    const { id } = showingTasks[0];
-    const taskCard = document.getElementById(id);
-    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
-    setFocusedTaskId(id);
-  };
-
-  useEventListener('focusedTaskChange', handleTaskChangeEventListener);
-  useEventListener('focusedProjectChange', handleProjectChangeEventListener);
 
   // Hides underscroll elements
   // 4rem refers to the header height

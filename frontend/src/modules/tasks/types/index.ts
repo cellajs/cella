@@ -2,13 +2,11 @@ import type { SubTask, Task } from '~/types/app';
 
 export interface TasksCustomEventMap {
   changeTaskState: CustomEvent<{ taskId: string; state: TaskStates }>;
-  focusedProjectChange: CustomEvent<string>;
-  focusedTaskChange: CustomEvent<{ taskId: string; direction: number; projectId: string }>;
-  toggleTaskCard: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
   changeSubTaskState: CustomEvent<{ taskId: string; state: TaskStates | 'removeEditing' }>;
+  toggleTaskCard: CustomEvent<{ taskId: string; clickTarget: HTMLElement }>;
   toggleSelectTask: CustomEvent<{ selected: boolean; taskId: string }>;
-  taskTableOperation: CustomEvent<TaskQueryInfo>;
   taskOperation: CustomEvent<TaskQueryInfo & { projectId: string }>;
+  taskTableOperation: CustomEvent<TaskQueryInfo>;
 }
 
 export type TaskStates = 'folded' | 'editing' | 'expanded' | 'unsaved';
@@ -44,23 +42,4 @@ export interface TaskCardToggleSelectEvent extends Event {
     taskId: string;
     selected: boolean;
   };
-}
-
-export interface TaskChangeEvent extends Event {
-  detail: {
-    taskId: string;
-    projectId: string;
-    direction: number;
-  };
-}
-
-export interface TaskEditToggleEvent extends Event {
-  detail: {
-    id: string;
-    state: boolean;
-  };
-}
-
-export interface CustomEventDetailId extends Event {
-  detail: string;
 }
