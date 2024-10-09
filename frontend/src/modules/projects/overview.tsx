@@ -5,10 +5,12 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { FocusView } from '~/modules/common/focus-view';
 import StickyBox from '~/modules/common/sticky-box';
 import DisplayOptions from '~/modules/tasks/tasks-display-header/display-options';
-import { useWorkspaceStore } from '~/store/workspace';
+import { useWorkspaceQuery } from '../workspaces/use-workspace';
 
 const Overview = () => {
-  const { workspace } = useWorkspaceStore();
+  const {
+    data: { workspace },
+  } = useWorkspaceQuery();
 
   return (
     <>

@@ -2,7 +2,7 @@ import { EllipsisVertical, Minimize2, Plus, Settings, Users } from 'lucide-react
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { useWorkspaceStore } from '~/store/workspace';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
 import { openProjectConfigSheet } from './helpers';
@@ -11,7 +11,10 @@ const ProjectActions = ({ project }: { project: Project }) => {
   const { t } = useTranslation();
   const { changeColumn, workspaces } = useWorkspaceUIStore();
 
-  const { workspace } = useWorkspaceStore();
+  const {
+    data: { workspace },
+  } = useWorkspaceQuery();
+
   const { minimized, createTaskForm } = workspaces[workspace.id]?.[project.id] || { minimized: false, createTaskForm: false };
 
   const role = project.membership?.role || 'member';

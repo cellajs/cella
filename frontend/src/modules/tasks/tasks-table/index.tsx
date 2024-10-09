@@ -30,12 +30,13 @@ import TaskCard from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import TableHeader from '~/modules/tasks/tasks-display-header/header';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
-import type { TaskTableOperationEvent } from '~/modules/tasks/types';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 import { dateIsRecent } from '~/utils/date-is-recent';
+import type { TaskTableOperationEvent } from '../types';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -86,7 +87,10 @@ export default function TasksTable() {
   const navigate = useNavigate();
 
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, projects, setFocusedTaskId, workspace } = useWorkspaceStore();
+  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, setFocusedTaskId } = useWorkspaceStore();
+  const {
+    data: { workspace, projects },
+  } = useWorkspaceQuery();
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'createdAt'));
   const [selectedStatuses] = useState<number[]>(typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || []);

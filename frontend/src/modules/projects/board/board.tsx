@@ -26,6 +26,7 @@ import { openTaskPreviewSheet } from '~/modules/tasks/helpers/helper';
 import TaskCard from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, TaskOperationEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 
@@ -95,7 +96,10 @@ export default function Board() {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const navigate = useNavigate();
-  const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
+  const { focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
+  const {
+    data: { workspace, projects },
+  } = useWorkspaceQuery();
   const isMobile = useBreakpoints('max', 'sm');
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 

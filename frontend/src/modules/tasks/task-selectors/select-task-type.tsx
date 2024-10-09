@@ -10,6 +10,7 @@ import { Kbd } from '~/modules/common/kbd';
 import type { TaskType } from '~/modules/tasks/create-task-form';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useWorkspaceStore } from '~/store/workspace';
 import { cn } from '~/utils/cn';
 
@@ -33,7 +34,10 @@ export interface SelectTaskTypeProps {
 const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { focusedTaskId, workspace } = useWorkspaceStore();
+  const { focusedTaskId } = useWorkspaceStore();
+  const {
+    data: { workspace },
+  } = useWorkspaceQuery();
   const [selectedType, setSelectedType] = useState<Type | undefined>(taskTypes[taskTypes.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;

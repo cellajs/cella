@@ -3,8 +3,8 @@ import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useWorkspaceStore } from '~/store/workspace';
 import type { Project } from '~/types/app';
+import { useWorkspaceQuery } from '../workspaces/use-workspace';
 
 interface Props {
   projects: Project[];
@@ -13,7 +13,10 @@ interface Props {
 }
 
 const DeleteProjects = ({ projects, callback, dialog: isDialog }: Props) => {
-  const { setWorkspace, workspace, projects: currentProjects } = useWorkspaceStore();
+  const {
+    data: { workspace },
+    removeProjects,
+  } = useWorkspaceQuery();
 
   const { mutate: deleteProjects, isPending } = useMutation({
     mutationFn: async (ids: string[]) => await baseDeleteProjects(ids, workspace.organizationId),
@@ -25,8 +28,7 @@ const DeleteProjects = ({ projects, callback, dialog: isDialog }: Props) => {
       }
       if (isDialog) dialog.remove();
       const deletedIds = projects.map((p) => p.id);
-      setWorkspace(workspace, [...currentProjects.filter((p) => !deletedIds.includes(p.id))]);
-
+      removeProjects(deletedIds);
       callback?.(projects);
     },
   });

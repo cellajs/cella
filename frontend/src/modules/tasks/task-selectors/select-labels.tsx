@@ -13,6 +13,7 @@ import { Kbd } from '~/modules/common/kbd.tsx';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command.tsx';
+import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
 import { useWorkspaceStore } from '~/store/workspace.ts';
 import type { Label } from '~/types/app';
@@ -37,7 +38,10 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 280 }
   const isMobile = useBreakpoints('max', 'sm');
   const { changeColumn } = useWorkspaceUIStore();
   const inputRef = useRef<HTMLInputElement>(null);
-  const { focusedTaskId, workspace, labels, projects } = useWorkspaceStore();
+  const { focusedTaskId } = useWorkspaceStore();
+  const {
+    data: { workspace, projects, labels },
+  } = useWorkspaceQuery();
   const callback = useMutateQueryData(['labels', projects.map((p) => p.id).join('_')]);
 
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
