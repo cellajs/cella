@@ -25,7 +25,7 @@ const MainNav = () => {
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen, keepMenuOpen } = useNavigationStore();
+  const { setLoading, setFocusView, navSheetOpen, setNavSheetOpen } = useNavigationStore();
 
   const showedNavButtons = useMemo(() => {
     const desktop = router.state.matches.flatMap((el) => el.staticData.showedDesktopNavButtons || []);
