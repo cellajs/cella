@@ -4,12 +4,11 @@ import { Check, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import type { z } from 'zod';
-import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
+import { taskKeys, useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { getNewStatusTaskOrder, inNumbersArray } from '~/modules/tasks/helpers';
 import { AcceptedIcon } from '~/modules/tasks/task-selectors/status-icons/accepted';
 import { DeliveredIcon } from '~/modules/tasks/task-selectors/status-icons/delivered';
@@ -21,7 +20,7 @@ import { UnstartedIcon } from '~/modules/tasks/task-selectors/status-icons/unsta
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
-import { WorkspaceRoute, type tasksSearchSchema } from '~/routes/workspaces';
+import { WorkspaceTableRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 
@@ -93,7 +92,7 @@ const SelectStatus = ({
 }: { taskStatus: TaskStatus; projectId: string; creationValueChange?: (newValue: number) => void }) => {
   const { t } = useTranslation();
 
-  const search = useSearch({ from: WorkspaceRoute.id });
+  const tableSearch = useSearch({ from: WorkspaceTableRoute.id });
   const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
   const {
@@ -101,6 +100,7 @@ const SelectStatus = ({
   } = useWorkspaceQuery();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
+  const taskMutation = useTaskMutation();
 
   const showedStatuses = useMemo(() => {
     if (searchValue.length) return taskStatuses.filter((s) => s.status.includes(searchValue.toLowerCase()));
@@ -113,22 +113,28 @@ const SelectStatus = ({
     if (!focusedTaskId) return;
     try {
       const isTable = pathname.includes('/table');
-      const tableSearch = search as z.infer<typeof tasksSearchSchema>;
       const queryKeys = !isTable
-        ? ['boardTasks', projectId]
-        : [
-            'tasks',
-            tableSearch.projectId ?? projects.map((p) => p.id).join('_'),
-            tableSearch.status ?? '',
-            tableSearch.q ?? '',
-            tableSearch.sort,
-            tableSearch.order,
-          ];
+        ? taskKeys.list({ projectId, orgIdOrSlug: workspace.organizationId })
+        : taskKeys.list({
+            projectId: projectId ?? projects.map((p) => p.id).join('_'),
+            orgIdOrSlug: workspace.organizationId,
+            status: tableSearch.status,
+            q: tableSearch.q,
+            sort: tableSearch.sort,
+            order: tableSearch.order,
+          });
 
       const query: Query | undefined = queryClient.getQueryData(queryKeys);
       const tasks: Task[] = query ? (isTable ? query.pages?.[0]?.items || [] : query.items || []) : [];
       const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
-      const updatedTask = await updateTask(focusedTaskId, workspace.organizationId, 'status', newStatus, newOrder);
+      const updatedTask = await taskMutation.mutateAsync({
+        id: focusedTaskId,
+        orgIdOrSlug: workspace.organizationId,
+        key: 'status',
+        data: newStatus,
+        order: newOrder,
+        projectId,
+      });
       dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));

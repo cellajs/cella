@@ -1,7 +1,6 @@
 import { ChevronDown, Tag, UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { updateTask } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { queryClient } from '~/lib/router';
@@ -17,6 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Task } from '~/types/app';
 import { cn } from '~/utils/cn';
+import { taskKeys, useTaskMutation } from '../common/query-client-provider/tasks';
 
 interface TasksFooterProps {
   task: Task;
@@ -29,13 +29,23 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
+  const taskMutation = useTaskMutation();
+
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   const updateStatus = async (newStatus: number) => {
     try {
-      const query = queryClient.getQueryData<{ items: Task[] }>(['boardTasks', task.projectId]);
+      const queryKey = taskKeys.list({ projectId: task.projectId, orgIdOrSlug: task.organizationId });
+      const query = queryClient.getQueryData<{ items: Task[] }>(queryKey);
       const newOrder = getNewStatusTaskOrder(task.status, newStatus, query?.items ?? []);
-      const updatedTask = await updateTask(task.id, task.organizationId, 'status', newStatus, newOrder);
+      const updatedTask = await taskMutation.mutateAsync({
+        id: task.id,
+        orgIdOrSlug: task.organizationId,
+        key: 'status',
+        data: newStatus,
+        order: newOrder,
+        projectId: task.projectId,
+      });
       dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: task.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));

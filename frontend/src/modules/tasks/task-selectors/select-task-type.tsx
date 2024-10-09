@@ -2,10 +2,10 @@ import { Bolt, Bug, Check, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
+import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import type { TaskType } from '~/modules/tasks/create-task-form';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
@@ -27,10 +27,11 @@ export const taskTypes = [
 
 export interface SelectTaskTypeProps {
   currentType: TaskType;
+  projectId: string;
   className?: string;
 }
 
-const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) => {
+const SelectTaskType = ({ currentType, projectId, className = '' }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
   const { focusedTaskId } = useWorkspaceStore();
   const {
@@ -39,11 +40,18 @@ const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) =>
   const [selectedType, setSelectedType] = useState<Type | undefined>(taskTypes[taskTypes.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
+  const taskMutation = useTaskMutation();
 
   const changeTaskType = async (newType: TaskType) => {
     if (!focusedTaskId) return;
     try {
-      const updatedTask = await updateTask(focusedTaskId, workspace.organizationId, 'type', newType);
+      const updatedTask = await taskMutation.mutateAsync({
+        id: focusedTaskId,
+        orgIdOrSlug: workspace.organizationId,
+        key: 'type',
+        data: newType,
+        projectId,
+      });
       dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));

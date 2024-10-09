@@ -95,7 +95,7 @@ export const getTasksQuerySchema = paginationQuerySchema.merge(
     q: z.string().optional(),
     sort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
     order: z.enum(['asc', 'desc']).default('asc').optional(),
-    projectId: z.string(),
+    projectId: z.string().optional(),
     status: z.string().optional(),
   }),
 );

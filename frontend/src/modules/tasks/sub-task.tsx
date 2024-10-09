@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { deleteTasks, updateTask } from '~/api/tasks';
+import { deleteTasks } from '~/api/tasks';
 import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -22,6 +22,7 @@ import type { Mode } from '~/store/theme';
 import type { SubTask as BaseSubTask, Task } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { getDraggableItemData } from '~/utils/drag-drop';
+import { useTaskMutation } from '../common/query-client-provider/tasks';
 import type { TaskStates } from './types';
 
 const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
@@ -31,6 +32,8 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   const [state, setState] = useState<TaskStates>('folded');
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+
+  const taskMutation = useTaskMutation();
 
   const onRemove = (subTaskId: string) => {
     deleteTasks([subTaskId], task.organizationId).then((resp) => {
@@ -51,7 +54,13 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 
   const handleUpdateStatus = async (newStatus: number) => {
     try {
-      const updatedTask = await updateTask(task.id, task.organizationId, 'status', newStatus);
+      const updatedTask = await taskMutation.mutateAsync({
+        id: task.id,
+        orgIdOrSlug: task.organizationId,
+        key: 'status',
+        data: newStatus,
+        projectId: task.projectId,
+      });
       dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'updateSubTask', projectId: task.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:todo') }));

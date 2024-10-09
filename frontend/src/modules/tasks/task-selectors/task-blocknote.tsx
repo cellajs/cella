@@ -2,7 +2,6 @@ import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote }
 import { BlockNoteView } from '@blocknote/shadcn';
 import { useLocation } from '@tanstack/react-router';
 import { type KeyboardEventHandler, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { updateTask } from '~/api/tasks';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
 import type { Mode } from '~/store/theme';
@@ -19,6 +18,7 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { getContentAsString } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
+import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import UppyFilePanel from './uppy-file-panel';
 
@@ -55,12 +55,20 @@ export const TaskBlockNote = ({
     data: { members, workspace },
   } = useWorkspaceQuery();
 
+  const taskMutation = useTaskMutation();
+
   const filePanel = useMemo(() => UppyFilePanel(id), [id]);
 
   const handleUpdateHTML = useCallback(
     async (newContent: string) => {
       try {
-        const updatedTask = await updateTask(id, workspace.organizationId, 'description', newContent);
+        const updatedTask = await taskMutation.mutateAsync({
+          id,
+          orgIdOrSlug: workspace.organizationId,
+          key: 'description',
+          data: newContent,
+          projectId,
+        });
         const action = updatedTask.parentId ? 'updateSubTask' : 'update';
         dispatchCustomEvent('taskOperation', { array: [updatedTask], action, projectId: updatedTask.projectId });
       } catch (err) {
