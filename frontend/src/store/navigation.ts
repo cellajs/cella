@@ -3,7 +3,6 @@ import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { sheet } from '~/modules/common/sheeter/state';
 import { menuSections } from '~/nav-config';
 
 import type { UserMenu, UserMenuItem } from '~/types/common';
@@ -111,7 +110,6 @@ export const useNavigationStore = create<NavigationState>()(
           setFocusView: (status) => {
             set((state) => {
               state.focusView = status;
-              sheet.remove();
             });
           },
           toggleSection: (section) => {

@@ -81,7 +81,7 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
 
       <div className="truncate grow py-2 pl-1 text-left">
         <div className={`truncate ${parentItemSlug ? 'text-sm' : 'text-base mb-1'} leading-5 ${item.membership.archived && 'opacity-70'}`}>
-          {item.name} {config.mode === 'development' && <span className="text-muted">#{item.membership.order}</span>}
+          {item.name} {config.debug && <span className="text-muted">#{item.membership.order}</span>}
         </div>
         <div className="flex items-center gap-4 transition-opacity delay-500">
           <OptionButtons

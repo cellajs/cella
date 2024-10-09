@@ -7,8 +7,9 @@ import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import { cn } from '~/utils/cn';
 
-import './style.css';
 import useBodyClass from '~/hooks/use-body-class';
+import { sheet } from '~/modules/common/sheeter/state';
+import './style.css';
 
 interface FocusViewProps {
   className?: string;
@@ -22,6 +23,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const toggleFocus = () => {
     showToast(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');
     setFocusView(!focusView);
+    sheet.remove('nav-sheet');
     setNavSheetOpen(null);
     window.scrollTo(0, 0);
   };

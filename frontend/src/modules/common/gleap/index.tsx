@@ -1,12 +1,13 @@
 import { config } from 'config';
 import Gleap from 'gleap';
+import { useEffect } from 'react';
 import '~/modules/common/gleap/style.css';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types/common';
 
 declare global {
   interface Window {
-    Gleap: typeof Gleap;
+    Gleap: typeof Gleap | undefined;
   }
 }
 
@@ -20,28 +21,40 @@ const setGleapUser = (user: User) => {
   if (window.Gleap.isUserIdentified()) {
     window.Gleap.updateContact({ email: user.email, name: user.name || user.email });
   } else {
-    window.Gleap.identify(user.id, { email: user.email, name: user.name || user.email, createdAt: new Date(user.createdAt) });
+    window.Gleap.identify(user.id, {
+      email: user.email,
+      name: user.name || user.email,
+      createdAt: new Date(user.createdAt),
+    });
   }
 };
 
 const GleapSupport = () => {
-  window.Gleap = Gleap;
   const { user } = useUserStore();
 
-  // Set Gleap user on mount
-  if (user && window.Gleap && !window.Gleap.isUserIdentified()) setGleapUser(user);
+  useEffect(() => {
+    window.Gleap = Gleap;
 
-  // Update Gleap user on user change
-  useUserStore.subscribe((state) => {
-    const user: User = state.user;
+    // Set Gleap user on mount
+    if (user && window.Gleap && !window.Gleap.isUserIdentified()) setGleapUser(user);
 
-    if (user) return setGleapUser(user);
+    // Update Gleap user on user change
+    useUserStore.subscribe((state) => {
+      const user: User = state.user;
 
-    // Clear Gleap user on sign out
-    window.Gleap.clearIdentity();
-  });
+      if (user) return setGleapUser(user);
 
-  return <></>;
+      // Clear Gleap user on sign out
+      window.Gleap?.clearIdentity();
+    });
+
+    return () => {
+      window.Gleap?.destroy();
+      window.Gleap = undefined;
+    };
+  }, []);
+
+  return null;
 };
 
 export default GleapSupport;
