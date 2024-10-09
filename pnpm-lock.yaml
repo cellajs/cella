@@ -288,6 +288,12 @@ importers:
       '@blocknote/shadcn':
         specifier: ^0.16.0
         version: 0.16.0(@tiptap/pm@2.8.0)(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))
+      '@electric-sql/client':
+        specifier: ^0.6.1
+        version: 0.6.1
+      '@electric-sql/react':
+        specifier: ^0.4.3
+        version: 0.4.3(react@18.3.1)
       '@github/mini-throttle':
         specifier: ^2.1.1
         version: 2.1.1
@@ -1819,8 +1825,19 @@ packages:
   '@drizzle-team/brocli@0.10.1':
     resolution: {integrity: sha512-AHy0vjc+n/4w/8Mif+w86qpppHuF3AyXbcWW+R/W7GNA3F5/p2nuhlkCJaTXSLZheB4l1rtHzOfr9A7NwoR/Zg==}
 
+  '@electric-sql/client@0.6.1':
+    resolution: {integrity: sha512-fINCVS66lqxm9AMnIOK+qOXp89GoKjSMCVX3UQ+PxGtYwtk3SJUrsDTuPslQNZt/0hKyUMi7sHAPI2peaBpn9Q==}
+
   '@electric-sql/pglite@0.2.10':
     resolution: {integrity: sha512-0TJF/1ouBweCtyZC4oHwx+dHGn/lP16KfEO/3q22RDuZUsV2saTuYAwb6eK3gBLzVdXG4dj4xZilvmBYEM/WQg==}
+
+  '@electric-sql/react@0.4.3':
+    resolution: {integrity: sha512-n2kAhMQOlLg9qH0EAzI1v7G3TJlFePN0toiOiN7oc0yUDk452ba+qyp1byXdSe2AVXT2qDB5Of2mBR/r+2VXNw==}
+    peerDependencies:
+      react: ^18.3.1
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@emnapi/core@0.45.0':
     resolution: {integrity: sha512-DPWjcUDQkCeEM4VnljEOEcXdAD7pp8zSZsgOujk/LGIwCXWbXJngin+MO4zbH429lzeC3WbYLGjE2MaUOwzpyw==}
@@ -2543,6 +2560,7 @@ packages:
 
   '@evilmartians/lefthook@1.7.18':
     resolution: {integrity: sha512-BIJBQtC7xKOedxESlB0wVG6M32ftjK+5vnID9I5CjRDE/6KcCpcK366AyG0eHGdPK1TVty81QalxZqSTxWRXPw==}
+    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -11781,7 +11799,18 @@ snapshots:
 
   '@drizzle-team/brocli@0.10.1': {}
 
+  '@electric-sql/client@0.6.1':
+    optionalDependencies:
+      '@rollup/rollup-darwin-arm64': 4.24.0
+
   '@electric-sql/pglite@0.2.10': {}
+
+  '@electric-sql/react@0.4.3(react@18.3.1)':
+    dependencies:
+      '@electric-sql/client': 0.6.1
+      use-sync-external-store: 1.2.2(react@18.3.1)
+    optionalDependencies:
+      react: 18.3.1
 
   '@emnapi/core@0.45.0':
     dependencies:
