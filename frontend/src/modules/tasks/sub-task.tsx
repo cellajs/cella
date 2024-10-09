@@ -3,7 +3,6 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
-import { useLocation } from '@tanstack/react-router';
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
@@ -28,7 +27,6 @@ import type { TaskStates } from './types';
 const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   const { t } = useTranslation();
 
-  const { pathname } = useLocation();
   const subTaskRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TaskStates>('folded');
   const [dragging, setDragging] = useState(false);
@@ -36,8 +34,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 
   const onRemove = (subTaskId: string) => {
     deleteTasks([subTaskId], task.organizationId).then((resp) => {
-      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-      dispatchCustomEvent(eventName, {
+      dispatchCustomEvent('taskOperation', {
         array: [{ id: subTaskId }],
         action: 'deleteSubTask',
         projectId: task.projectId,
@@ -55,8 +52,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   const handleUpdateStatus = async (newStatus: number) => {
     try {
       const updatedTask = await updateTask(task.id, task.organizationId, 'status', newStatus);
-      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'updateSubTask', projectId: task.projectId });
+      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'updateSubTask', projectId: task.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
     }
@@ -77,7 +73,6 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 
   useEventListener('changeSubTaskState', (e) => {
     const { taskId, state: newState } = e.detail;
-
     // The logic ensures that tasks are expanded from 'editing' or 'unsaved' states when 'removeEditing' is triggered
     if ((task.parentId === taskId || (task.parentId !== taskId && task.id !== taskId)) && newState === 'removeEditing') {
       if (state === 'editing' || state === 'unsaved') return setState('expanded');

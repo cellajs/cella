@@ -30,13 +30,13 @@ import TaskCard from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import TableHeader from '~/modules/tasks/tasks-display-header/header';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
+import type { TaskOperationEvent } from '~/modules/tasks/types';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 import { dateIsRecent } from '~/utils/date-is-recent';
-import type { TaskTableOperationEvent } from '../types';
 
 type TasksSearch = z.infer<typeof tasksSearchSchema>;
 
@@ -155,7 +155,7 @@ export default function TasksTable() {
   //   setSelectedStatuses([]);
   // };
 
-  const handleTaskOperations = (event: TaskTableOperationEvent) => {
+  const handleTaskOperations = (event: TaskOperationEvent) => {
     const { array, action } = event.detail;
     callback(array, action);
   };
@@ -180,7 +180,7 @@ export default function TasksTable() {
     ['T', () => hotKeyPress('type')],
   ]);
 
-  useEventListener('taskTableOperation', handleTaskOperations);
+  useEventListener('taskOperation', handleTaskOperations);
 
   useEffect(() => {
     if (!rows.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;

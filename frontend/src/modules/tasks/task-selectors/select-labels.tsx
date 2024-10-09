@@ -1,4 +1,3 @@
-import { useLocation } from '@tanstack/react-router';
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, History, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -34,7 +33,6 @@ interface SetLabelsProps {
 
 const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 280 }: SetLabelsProps) => {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
   const isMobile = useBreakpoints('max', 'sm');
   const { changeColumn } = useWorkspaceUIStore();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -70,8 +68,7 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 280 }
     try {
       const labelIds = labels.map((l) => l.id);
       const updatedTask = await updateTask(focusedTaskId, workspace.organizationId, 'labels', labelIds);
-      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
+      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
       return;
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));

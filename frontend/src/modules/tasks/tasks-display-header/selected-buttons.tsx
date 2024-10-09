@@ -36,7 +36,7 @@ const TaskSelectedButtons = ({ workspace, selectedTasks, setSelectedTasks }: Tas
           const selectedIds = selectedTasks.map((id) => ({ id }));
           const projectIds = [...new Set(tasks.filter((t) => selectedTasks.includes(t.id)).map((t) => t.projectId))];
           if (!pathname.includes('/board')) {
-            dispatchCustomEvent('taskTableOperation', { array: selectedIds, action: 'delete' });
+            dispatchCustomEvent('taskOperation', { array: selectedIds, action: 'delete' });
           } else {
             projectIds.map((projectId) => {
               dispatchCustomEvent('taskOperation', { array: selectedIds, action: 'delete', projectId });

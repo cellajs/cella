@@ -317,23 +317,28 @@ export default function Board() {
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
+  const projectCallback = (projectId: string) => useMutateTasksQueryData(['boardTasks', projectId]);
+
   const handleTaskOperations = (event: TaskOperationEvent) => {
     const { array, action, projectId } = event.detail;
-    const callback = useMutateTasksQueryData(['boardTasks', projectId]);
-    callback(array, action);
-    const { items: tasks } = queryClient.getQueryData(['boardTasks', projectId]) as { items: Task[] };
+    if (!projectId) return;
+    // Trigger the mutation callback for the specific project
+    projectCallback(projectId)(array, action);
+
+    // If no tasks exist or if the focused task sheet does not exist, return early
     if (!tasks.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
     const [sheetTask] = tasks.filter((t) => t.id === focusedTaskId);
+    // If a focused task is found, update the corresponding sheet with new content
     sheet.update(`task-preview-${sheetTask.id}`, {
-      content: <TaskCard mode={mode} task={sheetTask} state={'editing'} isSelected={false} isFocused={true} isSheet />,
+      content: <TaskCard mode={mode} task={sheetTask} state="editing" isSelected={false} isFocused={true} isSheet />,
     });
   };
 
-  const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
+  const workspaceCallback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
   const handleEntityUpdate = (event: { detail: { membership: Membership; entity: ContextEntity } }) => {
     const { entity, membership } = event.detail;
     if (entity !== 'workspace' && entity !== 'project') return;
-    callback([membership], entity === 'project' ? 'updateProjectMembership' : 'updateWorkspaceMembership');
+    workspaceCallback([membership], entity === 'project' ? 'updateProjectMembership' : 'updateWorkspaceMembership');
   };
 
   const handleTaskState = (event: TaskStatesChangeEvent) => {
@@ -341,8 +346,8 @@ export default function Board() {
     setTaskState(taskId, state);
   };
 
-  useEventListener('changeTaskState', handleTaskState);
   useEventListener('menuEntityChange', handleEntityUpdate);
+  useEventListener('changeTaskState', handleTaskState);
   useEventListener('taskOperation', handleTaskOperations);
   useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);

@@ -1,4 +1,3 @@
-import { useLocation } from '@tanstack/react-router';
 import { Check, XCircle } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,7 +26,6 @@ interface AssignMembersProps {
 
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
   const {
     data: { workspace, members },
@@ -61,8 +59,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
         'assignedTo',
         members.map((user) => user.id),
       );
-      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
+      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }

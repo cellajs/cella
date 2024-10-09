@@ -3,7 +3,6 @@ import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-import { useLocation } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { toast } from 'sonner';
@@ -43,7 +42,6 @@ export const CreateSubTaskForm = ({
 }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
-  const { pathname } = useLocation();
   const { user } = useUserStore();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -99,8 +97,7 @@ export const CreateSubTaskForm = ({
         if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:todo') }));
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('app:todo') }));
-        const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-        dispatchCustomEvent(eventName, { array: [newSubTask], action: 'createSubTask', projectId: parentTask.projectId });
+        dispatchCustomEvent('taskOperation', { array: [newSubTask], action: 'createSubTask', projectId: parentTask.projectId });
         setFormState(false);
       })
       .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:todo') })));

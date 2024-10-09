@@ -62,8 +62,7 @@ export const TaskBlockNote = ({
       try {
         const updatedTask = await updateTask(id, workspace.organizationId, 'description', newContent);
         const action = updatedTask.parentId ? 'updateSubTask' : 'update';
-        const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-        dispatchCustomEvent(eventName, { array: [updatedTask], action, projectId: updatedTask.projectId });
+        dispatchCustomEvent('taskOperation', { array: [updatedTask], action, projectId: updatedTask.projectId });
       } catch (err) {
         toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
       }

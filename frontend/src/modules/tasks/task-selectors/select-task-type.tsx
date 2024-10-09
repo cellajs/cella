@@ -1,4 +1,3 @@
-import { useLocation } from '@tanstack/react-router';
 import { Bolt, Bug, Check, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +32,6 @@ export interface SelectTaskTypeProps {
 
 const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
   const {
     data: { workspace },
@@ -46,8 +44,7 @@ const SelectTaskType = ({ currentType, className = '' }: SelectTaskTypeProps) =>
     if (!focusedTaskId) return;
     try {
       const updatedTask = await updateTask(focusedTaskId, workspace.organizationId, 'type', newType);
-      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
+      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }

@@ -1,4 +1,3 @@
-import { useLocation } from '@tanstack/react-router';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +38,6 @@ interface SelectImpactProps {
 
 const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
   const {
     data: { workspace },
@@ -53,8 +51,8 @@ const SelectImpact = ({ value, triggerWidth = 192, creationValueChange }: Select
       if (creationValueChange) return creationValueChange(newImpact);
       if (!focusedTaskId) return;
       const updatedTask = await updateTask(focusedTaskId, workspace.organizationId, 'impact', newImpact);
-      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
+
+      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }

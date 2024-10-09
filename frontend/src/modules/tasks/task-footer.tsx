@@ -1,4 +1,3 @@
-import { useLocation } from '@tanstack/react-router';
 import { ChevronDown, Tag, UserX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -28,7 +27,6 @@ interface TasksFooterProps {
 
 export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = false }: TasksFooterProps) => {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
   const isMobile = useBreakpoints('max', 'sm');
 
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
@@ -38,8 +36,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
       const query = queryClient.getQueryData<{ items: Task[] }>(['boardTasks', task.projectId]);
       const newOrder = getNewStatusTaskOrder(task.status, newStatus, query?.items ?? []);
       const updatedTask = await updateTask(task.id, task.organizationId, 'status', newStatus, newOrder);
-      const eventName = pathname.includes('/board') ? 'taskOperation' : 'taskTableOperation';
-      dispatchCustomEvent(eventName, { array: [updatedTask], action: 'update', projectId: task.projectId });
+      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: task.projectId });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
