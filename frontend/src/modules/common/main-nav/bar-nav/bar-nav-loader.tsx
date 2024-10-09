@@ -17,7 +17,7 @@ const MainNavLoader = () => {
     <>
       <Logo
         iconOnly
-        className={`${isLoading && 'animate-spin-slow'} w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0 ${
+        className={`${isLoading && config.navLogoAnimation} w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0 ${
           hasWaited && !isLoading && 'ease-in-out opacity-0 scale-0'
         }`}
       />
