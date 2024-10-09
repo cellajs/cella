@@ -100,6 +100,19 @@ export default {
           '60%': { transform: 'rotate(0.0deg)' },
           '100%': { transform: 'rotate(0.0deg)' },
         },
+        heartbeat: {
+          '0%': { transform: 'scale(1);' },
+          '14%': { transform: 'scale(1.3);' },
+          '28%': { transform: 'scale(1);' },
+          '42%': { transform: 'scale(1.3);' },
+          '70%': { transform: 'scale(1);' },
+        },
+        'flip-horizontal': {
+          '50%': { transform: 'rotateY(180deg)' },
+        },
+        'flip-vertical': {
+          '50%': { transform: 'rotateX(180deg)' },
+        },
       },
       animation: {
         'waving-hand': 'wave 2s linear infinite',
@@ -108,6 +121,9 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'collapsible-down': 'collapsible-down 0.2s ease-out',
         'collapsible-up': 'collapsible-up 0.2s ease-out',
+        heartbeat: 'heartbeat 1s infinite',
+        hflip: 'flip-horizontal 2s infinite',
+        vflip: 'flip-certical 2s infinite',
       },
     },
   },
