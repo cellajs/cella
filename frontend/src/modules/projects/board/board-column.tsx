@@ -9,10 +9,13 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@electric-sql/client';
+import { config } from 'config';
 import { toast } from 'sonner';
 import { updateTask } from '~/api/tasks';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { queryClient } from '~/lib/router';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
@@ -26,6 +29,7 @@ import type { CustomEventDetailId, TaskChangeEvent, TaskStates } from '~/modules
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -33,12 +37,40 @@ import type { Column } from '~/store/workspace-ui';
 import { defaultColumnValues, useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
 import { cn } from '~/utils/cn';
+import { objectKeys } from '~/utils/object';
 
 interface BoardColumnProps {
   tasksState: Record<string, TaskStates>;
   project: Project;
   settings?: Column;
 }
+
+type RawTask = {
+  id: string;
+  description: string;
+  keywords: string;
+  expandable: boolean;
+  entity: 'task';
+  summary: string;
+  type: 'bug' | 'feature' | 'chore';
+  impact: number;
+  sort_order: number;
+  status: number;
+  parent_id: string;
+  labels: string[];
+  assigned_to: string[];
+  organization_id: string;
+  project_id: string;
+  created_at: string;
+  created_by: string;
+  modified_at: string;
+  modified_by: string;
+};
+
+const taskShape = (projectId?: string): ShapeStreamOptions => ({
+  url: new URL('/v1/shape/tasks', config.electricUrl).href,
+  where: projectId ? `project_id = '${projectId}'` : undefined,
+});
 
 export const tasksQueryOptions = ({ projectId, orgIdOrSlug }: GetTasksParams) => {
   return queryOptions({
@@ -70,10 +102,10 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   const isMobile = useBreakpoints('max', 'sm');
   const { searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
   const {
-    data: { workspace },
+    data: { workspace, labels, members },
   } = useWorkspaceQuery();
   const { changeColumn } = useWorkspaceUIStore();
-
+  const { networkMode } = useGeneralStore();
   const {
     expandIced: showIced,
     expandAccepted: showAccepted,
@@ -87,6 +119,64 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
 
   // Query tasks
   const { data, isLoading } = useSuspenseQuery(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }));
+
+  // Subscribe to task updates
+  useEffect(() => {
+    if (networkMode !== 'online') return;
+
+    const shapeStream = new ShapeStream<RawTask>(taskShape(project.id));
+    const unsubscribe = shapeStream.subscribe((messages) => {
+      const updateMessage = messages.find((m) => m.headers.operation === 'update') as ChangeMessage<RawTask> | undefined;
+      if (updateMessage) {
+        const value = updateMessage.value;
+        queryClient.setQueryData(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }).queryKey, (data) => {
+          if (!data) return;
+          return {
+            ...data,
+            items: data.items.map((task) => {
+              if (task.id === value.id) {
+                const updatedTask = {
+                  ...task,
+                };
+                // TODO: Refactor
+                for (const key of objectKeys(value)) {
+                  if (key === 'sort_order') {
+                    updatedTask.order = value[key];
+                  } else if (key === 'organization_id') {
+                    updatedTask.organizationId = value[key];
+                  } else if (key === 'created_at') {
+                    updatedTask.createdAt = value[key];
+                  } else if (key === 'created_by') {
+                    updatedTask.createdBy = members.find((m) => m.id === value[key]) ?? null;
+                  } else if (key === 'parent_id') {
+                    updatedTask.parentId = value[key];
+                  } else if (key === 'assigned_to') {
+                    updatedTask.assignedTo = members.filter((m) => value[key].includes(m.id));
+                  } else if (key === 'modified_at') {
+                    updatedTask.modifiedAt = value[key];
+                  } else if (key === 'modified_by') {
+                    updatedTask.modifiedBy = members.find((m) => m.id === value[key]) ?? null;
+                  } else if (key === 'project_id') {
+                    updatedTask.projectId = value[key];
+                  } else if (key === 'labels') {
+                    updatedTask.labels = labels.filter((l) => value[key].includes(l.id));
+                  } else {
+                    updatedTask[key] = value[key] as never;
+                  }
+                }
+                return updatedTask;
+              }
+
+              return task;
+            }),
+          };
+        });
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [networkMode]);
 
   const tasks = useMemo(() => {
     const respTasks = data?.items || [];

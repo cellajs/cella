@@ -12,6 +12,7 @@ export default {
   backendUrl: 'http://localhost:4004',
   backendAuthUrl: 'http://localhost:4004/auth',
   tusUrl: 'http://localhost:1080',
+  electricUrl: 'http://localhost:3000',
 
   // Hide chat widget in development
   gleapToken: undefined,

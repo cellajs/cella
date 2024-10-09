@@ -8,6 +8,7 @@ export const config = {
   backendUrl: 'https://api.raak.io',
   backendAuthUrl: 'https://api.raak.io/auth',
   tusUrl: 'https://tus.raak.io',
+  electricUrl: 'https://electric.raak.io',
 
   defaultRedirectPath: '/home',
   firstSignInRedirectPath: '/welcome',
