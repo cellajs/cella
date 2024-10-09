@@ -97,7 +97,7 @@ export default function Board() {
   const navigate = useNavigate();
   const { workspace, projects, focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const isMobile = useBreakpoints('max', 'sm');
-  const { workspaces } = useWorkspaceUIStore();
+  const { workspaces, changeColumn } = useWorkspaceUIStore();
 
   const [tasksState, setTasksState] = useState<Record<string, TaskStates>>({});
 
@@ -201,12 +201,13 @@ export default function Board() {
 
   const handleNKeyDown = async () => {
     if (!projects.length) return;
-    if (!focusedTaskId) return dispatchCustomEvent('toggleCreateTaskForm', projects[0].id);
-
     const focusedTask = tasks.find((t) => t.id === focusedTaskId);
-    if (!focusedTask) return;
-    const project = projects.find((p) => p.id === focusedTask.projectId);
-    dispatchCustomEvent('toggleCreateTaskForm', project?.id ?? projects[0].id);
+    const project = projects.find((p) => p.id === focusedTask?.projectId);
+    const projectId = project?.id ?? projects[0].id;
+    const projectSettings = workspaces[workspace.id]?.[projectId];
+    changeColumn(workspace.id, projectId, {
+      createTaskForm: !projectSettings.createTaskForm,
+    });
   };
 
   // Open on key press

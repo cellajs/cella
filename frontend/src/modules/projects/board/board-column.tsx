@@ -63,7 +63,7 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
 
   const { menu } = useNavigationStore();
   const { mode } = useThemeStore();
-  const { workspace, searchQuery, selectedTasks, projects, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
+  const { workspace, searchQuery, selectedTasks, focusedTaskId, setFocusedTaskId } = useWorkspaceStore();
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
   const currentProjectSettings = workspaces[workspace.id]?.[project.id];
@@ -121,14 +121,31 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
     });
   };
 
-  const openCreateTaskDialog = (ref: MutableRefObject<HTMLDivElement | null>) => {
-    dialog(<CreateTaskForm projectIdOrSlug={project.id} tasks={showingTasks} dialog />, {
-      id: `create-task-form-${project.id}`,
-      drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-[50] p-0 rounded-none border-y-0 mt-0 max-w-none',
-      container: ref.current,
-      containerBackdrop: false,
-    });
+  const openCreateTaskDialog = (ref: MutableRefObject<HTMLDivElement | null>, mode: 'top' | 'embed' | undefined = 'top') => {
+    dialog(
+      <CreateTaskForm
+        projectIdOrSlug={project.id}
+        tasks={showingTasks}
+        dialog
+        onCloseForm={() =>
+          changeColumn(workspace.id, project.id, {
+            createTaskForm: false,
+          })
+        }
+        defaultValues={mode === 'embed' ? { status: 0 } : {}}
+      />,
+      {
+        id: `create-task-form-${project.id}`,
+        drawerOnMobile: false,
+        ...(mode === 'embed' && { title: 'Create Iced task' }),
+        className: `${mode === 'embed' ? 'p-2' : 'p-0'} w-auto shadow-none relative z-[50] rounded-none border-t-0 border-r-0  mt-0 mr-2 max-w-none`,
+        container: ref.current,
+        containerBackdrop: false,
+        hideClose: mode === 'top',
+      },
+    );
+    // Scroll to the element inside the ref when the dialog opens
+    if (ref.current) ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleTaskChangeEventListener = (event: TaskChangeEvent) => {
@@ -151,20 +168,20 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
     setFocusedTaskId(id);
   };
 
-  const handleTaskFormClick = (e: { detail: string | null }) => {
-    const { detail: idOrSlug } = e;
-    if (idOrSlug && project.id !== idOrSlug && project.slug !== idOrSlug) return;
-    if (!idOrSlug && projects[0].id !== project.id) return;
-    openCreateTaskDialog(defaultTaskFormRef);
-  };
-
-  useEventListener('toggleCreateTaskForm', handleTaskFormClick);
   useEventListener('focusedTaskChange', handleTaskChangeEventListener);
   useEventListener('focusedProjectChange', handleProjectChangeEventListener);
 
   // Hides underscroll elements
   // 4rem refers to the header height
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
+
+  useEffect(() => {
+    if (!currentProjectSettings?.createTaskForm) {
+      dialog.remove(true, `create-task-form-${project.id}`);
+    } else {
+      openCreateTaskDialog(defaultTaskFormRef);
+    }
+  }, [currentProjectSettings]);
 
   useEffect(() => {
     return combine(
@@ -284,11 +301,12 @@ export function BoardColumn({ project, tasksState }: BoardColumnProps) {
                               {/* Conditionally render "+ Task" button for first and last task */}
                               {((index === firstUpstartedIndex && isMouseNearTop) || (index === lastUpstartedIndex && isMouseNearBottom)) && (
                                 <Button
+                                  id="iced-task-creation"
                                   variant="plain"
                                   size="xs"
                                   style={{ left: `${mouseX}px` }}
-                                  className={`absolute bg-background hover:bg-background transform -translate-y-1/2 opacity-1 rounded hidden sm:inline-flex ${index === firstUpstartedIndex ? 'top' : 'bottom'}-2`}
-                                  onClick={() => openCreateTaskDialog(index === firstUpstartedIndex ? beforeRef : afterRef)}
+                                  className={`absolute bg-background hover:bg-background transform -translate-y-1/2 opacity-1 rounded hidden sm:inline-flex ${isMouseNearTop ? 'top' : 'bottom'}-2`}
+                                  onClick={() => openCreateTaskDialog(isMouseNearTop ? beforeRef : afterRef, 'embed')}
                                 >
                                   <Plus size={16} />
                                   <span className="ml-1">{t('app:task')}</span>

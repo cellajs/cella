@@ -44,6 +44,7 @@ interface CreateTaskFormProps {
   className?: string;
   tasks?: Task[];
   dialog?: boolean;
+  defaultValues?: Partial<FormValues>;
   onCloseForm?: () => void;
   onFormSubmit?: (task: Task, isNew?: boolean, toStatus?: TaskStatus) => void;
 }
@@ -78,7 +79,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks = [], className, dialog: isDialog, onCloseForm }) => {
+const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks = [], defaultValues, className, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore();
@@ -102,16 +103,19 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks 
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: defaultId,
-        description: '',
-        summary: '',
-        type: 'feature',
-        impact: null,
-        assignedTo: [],
-        labels: [],
-        status: 1,
-        expandable: false,
-        keywords: '',
+        ...{
+          id: defaultId,
+          description: '',
+          summary: '',
+          type: 'feature',
+          impact: null,
+          assignedTo: [],
+          labels: [],
+          status: 1,
+          expandable: false,
+          keywords: '',
+        },
+        ...defaultValues,
       },
     }),
     [],

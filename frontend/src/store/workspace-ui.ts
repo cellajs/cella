@@ -7,6 +7,7 @@ import type { Label } from '~/types/app';
 type Column = {
   columnId: string;
   minimized: boolean;
+  createTaskForm: boolean;
   expandAccepted: boolean;
   expandIced: boolean;
   recentLabels: Label[];
@@ -21,6 +22,7 @@ type workspacesPanels = {
 };
 
 const defaultColumnValues = {
+  createTaskForm: false,
   minimized: false,
   expandAccepted: false,
   expandIced: false,
@@ -78,7 +80,7 @@ export const useWorkspaceUIStore = create<WorkspaceUIState>()(
       })),
 
       {
-        version: 2,
+        version: 3,
         name: `${config.slug}-workspace-ui`,
         partialize: (state) => ({
           workspaces: state.workspaces,
