@@ -60,7 +60,7 @@ const TasksSearch = ({ toggleFocus }: { toggleFocus: () => void }) => {
       {!!searchQuery.length && (
         <XCircle
           size={16}
-          className="absolute right-4 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+          className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
           onMouseDown={(e) => {
             preventInputBlur(e);
             setSearchQuery('');
