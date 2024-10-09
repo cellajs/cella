@@ -84,12 +84,12 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
               <Badge
                 variant="outline"
                 key={task.labels[0].id}
-                className="inline-block bg-border px-2 max-w-24 h-5 border-0 last:mr-0 font-normal leading-4 truncate"
+                className="inline-block bg-transparent px-1 py-0 max-w-24 h-4 border-0 last:mr-0 font-normal leading-4 truncate"
               >
                 {task.labels[0].name}
               </Badge>
               {task.labels.length > 1 && (
-                <Badge variant="outline" className="px-1 h-5 flex bg-border border-0 font-normal justify-center">
+                <Badge variant="outline" className="px-1 h-4 py-0 flex bg-transparent border-0 font-normal justify-center">
                   +{task.labels.length - 1}
                 </Badge>
               )}
@@ -102,7 +102,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
                     <Badge
                       variant="outline"
                       key={id}
-                      className="inline-block border-0 max-w-32 opacity-75 truncate font-normal text-[.75rem] h-5 bg-transparent last:mr-0 leading-4"
+                      className="inline-block border-0 max-w-32 opacity-75 py-0 px-1 truncate font-normal text-[.75rem] h-4 bg-transparent last:mr-0 leading-4"
                     >
                       {name}
                     </Badge>

@@ -219,7 +219,8 @@ const SummaryButtons = ({ task, setState }: { task: BaseSubTask; setState: (stat
           ...
         </Button>
       )}
-      {config.mode === 'development' && <span className="ml-2 opacity-15 text-sm text-center font-light">#{task.order}</span>}
+      {/*  in debug mode: show order number to debug drag */}
+      {config.debug && <span className="ml-2 opacity-15 text-sm text-center font-light">#{task.order}</span>}
     </>
   );
 };

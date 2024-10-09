@@ -164,7 +164,7 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
                   aria-label="Set type"
                   variant="ghost"
                   size="xs"
-                  className="group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
+                  className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
                 >
                   {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
                 </Button>

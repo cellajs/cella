@@ -112,8 +112,8 @@ const SummaryButtons = ({ task }: { task: Task }) => {
        </Button> */}
         </div>
       )}
-      {/*  in development: show subtask order number to debug drag */}
-      {config.mode === 'development' && <span className="ml-2 opacity-15 text-sm text-center font-light">#{task.order}</span>}
+      {/*  in debug mode: show order number to debug drag */}
+      {config.debug && <span className="ml-2 opacity-15 text-sm text-center font-light">#{task.order}</span>}
     </>
   );
 };
