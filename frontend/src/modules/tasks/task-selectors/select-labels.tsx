@@ -159,11 +159,6 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
               <Loader2 className="text-muted-foreground h-6 w-6 mx-auto mt-2 animate-spin" />
             </CommandLoading>
           )}
-          {labels.length === 0 && (
-            <CommandEmpty className="text-muted-foreground text-sm flex items-center justify-center px-3 py-2">
-              {t('common:no_resource_yet', { resource: t('app:labels').toLowerCase() })}
-            </CommandEmpty>
-          )}
           {showedLabels.map((label, index) => (
             <CommandItem
               key={label.id}
@@ -186,7 +181,7 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
               {!isSearching && <span className="max-sm:hidden text-xs opacity-50 mx-1">{index + 1}</span>}
             </CommandItem>
           ))}
-          {isRecent && showedLabels.length === 0 && (
+          {showedLabels.length === 0 && (
             <CommandEmpty className="text-muted text-sm flex items-center justify-center px-3 py-1.5">
               {t('common:no_resource_yet', { resource: t('app:labels').toLowerCase() })}
             </CommandEmpty>

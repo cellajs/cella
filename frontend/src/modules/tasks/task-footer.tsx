@@ -31,6 +31,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
 
   const taskMutation = useTaskMutation();
 
+  console.log('task');
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 
   const updateStatus = async (newStatus: number) => {

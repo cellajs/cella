@@ -1,7 +1,7 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ChevronDown, Palmtree, Plus, Search, Undo } from 'lucide-react';
-import { type MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
+import { type MutableRefObject, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
 
@@ -15,7 +15,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router, { queryClient } from '~/lib/router';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { type DialogT, dialog } from '~/modules/common/dialoger/state';
+import { dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
 import { taskKeys, useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { BoardColumnHeader } from '~/modules/projects/board/board-column-header';
@@ -117,10 +117,6 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     createTaskForm,
   } = useMemo(() => settings || defaultColumnValues, [settings]);
 
-  const [mouseX, setMouseX] = useState(0);
-  const [isMouseNearTop, setIsMouseNearTop] = useState(false);
-  const [isMouseNearBottom, setIsMouseNearBottom] = useState(false);
-
   // Query tasks
   const { data, isLoading } = useSuspenseQuery(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }));
 
@@ -198,23 +194,6 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
 
   const firstUpstartedIndex = useMemo(() => showingTasks.findIndex((t) => t.status === 1), [showingTasks]);
   const lastUpstartedIndex = useMemo(() => showingTasks.findLastIndex((t) => t.status === 1), [showingTasks]);
-
-  const handleMouseMove = (e: React.MouseEvent, index: number) => {
-    if (index !== firstUpstartedIndex && index !== lastUpstartedIndex) return;
-    const isOpenDialog = dialog.get(`create-task-form-${project.id}`);
-    if (isOpenDialog && (isOpenDialog as DialogT)?.open) return;
-    const target = e.currentTarget as HTMLElement;
-    const { top, left } = target.getBoundingClientRect();
-    const mouseY = e.clientY - top;
-    const mouseX = e.clientX - left;
-    // to match half button width
-    setMouseX(mouseX - 30);
-    // mouse in the edge of 5% of the task card
-    const isNearTop = mouseY < target.offsetHeight * 0.05;
-    const isNearBottom = mouseY > target.offsetHeight * 0.95;
-    if (index === firstUpstartedIndex) setIsMouseNearTop(isNearTop);
-    if (index === lastUpstartedIndex) setIsMouseNearBottom(isNearBottom);
-  };
 
   const handleIcedClick = () => {
     changeColumn(workspace.id, project.id, {
@@ -405,11 +384,6 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                             animate="visible"
                             exit="exit"
                             className={cn((index === firstUpstartedIndex || index === lastUpstartedIndex) && 'group relative')}
-                            onMouseMove={(e) => handleMouseMove(e, index)} // track mouse movement
-                            onMouseLeave={() => {
-                              setIsMouseNearTop(false);
-                              setIsMouseNearBottom(false);
-                            }}
                           >
                             <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                               <TaskCard
@@ -420,7 +394,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                                 mode={mode}
                               />
                               {/* Conditionally render "+ Task" button for first and last task */}
-                              {((index === firstUpstartedIndex && isMouseNearTop) || (index === lastUpstartedIndex && isMouseNearBottom)) && (
+                              {/* {((index === firstUpstartedIndex && isMouseNearTop) || (index === lastUpstartedIndex && isMouseNearBottom)) && (
                                 <Button
                                   variant="plain"
                                   size="xs"
@@ -431,7 +405,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                                   <Plus size={16} />
                                   <span className="ml-1">{t('app:task')}</span>
                                 </Button>
-                              )}
+                              )} */}
                             </FocusTrap>
                           </motion.div>
                           {index === lastUpstartedIndex && <div className="z-[250]" ref={afterRef} />}
