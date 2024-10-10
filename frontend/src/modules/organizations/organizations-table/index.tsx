@@ -152,6 +152,7 @@ const OrganizationsTable = () => {
         title: t('common:newsletter'),
         description: t('common:newsletter.text'),
         id: 'newsletter-form',
+        side: 'right',
       },
     );
   };
