@@ -17,7 +17,6 @@ import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { isSubTaskData } from '~/modules/projects/board/helpers';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
-import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { SubTask as BaseSubTask, Task } from '~/types/app';
@@ -67,11 +66,12 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
     }
   };
 
+  const handleCardClick = () => {
+    if (state !== 'folded') return;
+    setState('expanded');
+  };
+
   useDoubleClick({
-    onSingleClick: () => {
-      if (state !== 'folded') return;
-      setState('expanded');
-    },
     onDoubleClick: () => {
       if (state === 'editing' || state === 'unsaved') return;
       setState('editing');
@@ -161,6 +161,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
       ref={subTaskRef}
+      onClick={handleCardClick}
       className={`flex items-start gap-1 p-1 mb-0.5 hover:bg-secondary/50 opacity-${dragging ? '30' : '100'} bg-secondary/25`}
     >
       <div className="flex flex-col gap-1">
@@ -182,7 +183,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
                 dangerouslySetInnerHTML={{ __html: task.summary }}
               />
-              <SummaryButtons task={task} setState={setState} />
+              <SummaryButtons task={task} />
             </div>
           ) : (
             <div className="flex w-full flex-col">
@@ -215,14 +216,10 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 
 export default SubTask;
 
-const SummaryButtons = ({ task, setState }: { task: BaseSubTask; setState: (state: TaskStates) => void }) => {
+const SummaryButtons = ({ task }: { task: BaseSubTask }) => {
   return (
     <>
-      {task.expandable && (
-        <Button onClick={() => setState('expanded')} variant="link" size="micro" className="p-0 pl-2 h-5 -mt-[0.15rem]">
-          ...
-        </Button>
-      )}
+      {task.expandable && <div className="inline-flex px-1 text-sm cursor-pointer py-0 h-5">...</div>}
       {/*  in debug mode: show order number to debug drag */}
       {config.debug && <span className="ml-2 opacity-15 text-sm text-center font-light">#{task.order}</span>}
     </>

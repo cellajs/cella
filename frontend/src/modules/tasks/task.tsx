@@ -78,7 +78,19 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
   const handleCardClick = () => {
     if (isFocused) return;
     setTaskCardFocus(task.id);
+    if (state !== 'folded') return;
+    dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
   };
+
+  useDoubleClick({
+    onDoubleClick: () => {
+      if (state === 'editing' || state === 'unsaved') return;
+      dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'editing' });
+    },
+    allowedTargets: ['p', 'div', 'img'],
+    excludeIds: [`subtask-container-${task.id}`],
+    ref: taskRef,
+  });
 
   useEffect(() => {
     const unsubscribe = dropdownerState.subscribe((dropdowner) => {
@@ -134,25 +146,11 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
     );
   }, [task, state]);
 
-  useDoubleClick({
-    onSingleClick: () => {
-      if (state !== 'folded' && isFocused) return;
-      dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
-    },
-    onDoubleClick: () => {
-      if (state === 'editing' || state === 'unsaved') return;
-      dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'editing' });
-    },
-    allowedTargets: ['p', 'div', 'img'],
-    excludeIds: [`subtask-container-${task.id}`],
-    ref: taskRef,
-  });
-
   return (
     <motion.div layout transition={{ duration: state === 'editing' || !isFocused ? 0 : 0.3 }}>
       <Card
         id={isSheet ? `sheet-card-${task.id}` : task.id}
-        onMouseDown={handleCardClick}
+        onClick={handleCardClick}
         style={style}
         tabIndex={0}
         ref={taskRef}
