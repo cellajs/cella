@@ -89,7 +89,7 @@ const SelectTaskType = ({ currentType, projectId, className = '' }: SelectTaskTy
       {!isSearching && <Kbd value="T" className="max-sm:hidden absolute top-3 right-2.5" />}
       <CommandList>
         {!!searchValue.length && (
-          <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+          <CommandEmpty className="flex justify-center text-muted items-center p-2 text-sm">
             {t('common:no_resource_found', { resource: t('app:type').toLowerCase() })}
           </CommandEmpty>
         )}
@@ -105,16 +105,12 @@ const SelectTaskType = ({ currentType, projectId, className = '' }: SelectTaskTy
                 if (changeTaskType) changeTaskType(taskTypes[indexType].value);
                 dropdowner.remove();
               }}
-              className="group rounded-md flex justify-between items-center w-full leading-normal"
+              className="group rounded-md flex gap-2 justify-between items-center w-full leading-normal"
             >
-              <div className="flex items-center gap-2">
-                {Type.icon()}
-                <span>{Type.label}</span>
-              </div>
-              <div className="flex items-center">
-                <Check size={16} className={`text-success ${!selectedType || (selectedType.value !== Type.value && 'invisible')}`} />
-                {!isSearching && <span className="max-sm:hidden text-xs ml-3 opacity-50 mr-1">{index + 1}</span>}
-              </div>
+              <div>{Type.icon()}</div>
+              <div className="grow">{Type.label}</div>
+              <Check size={16} className={`text-success ${!selectedType || (selectedType.value !== Type.value && 'invisible')}`} />
+              {!isSearching && <span className="max-sm:hidden text-xs opacity-50 mx-1">{index + 1}</span>}
             </CommandItem>
           ))}
         </CommandGroup>

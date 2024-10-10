@@ -1,5 +1,5 @@
 import { CommandEmpty } from 'cmdk';
-import { Check, Dot, History, Loader2 } from 'lucide-react';
+import { Check, Dot, Loader2, Tag } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -31,7 +31,7 @@ interface SetLabelsProps {
   creationValueChange?: (labels: Label[]) => void;
 }
 
-const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 280 }: SetLabelsProps) => {
+const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }: SetLabelsProps) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { changeColumn } = useWorkspaceUIStore();
@@ -140,7 +140,7 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 280 }
     <Command className="relative rounded-lg max-h-[44vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
         ref={inputRef}
-        autoFocus={true}
+        autoFocus={!isMobile}
         value={searchValue}
         onValueChange={(searchValue) => {
           // If the label types a number, select the label like useHotkeys
@@ -171,22 +171,26 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 280 }
               onSelect={(value) => {
                 handleSelectClick(value);
               }}
-              className="group rounded-md flex justify-between items-center w-full leading-normal"
+              className="group rounded-md flex gap-2 justify-between items-center w-full leading-normal"
             >
-              <div className="flex items-center gap-2">
-                {isSearching || !isRecent ? (
-                  <Dot className="rounded-md" size={16} style={badgeStyle(label.color)} strokeWidth={8} />
-                ) : (
-                  <History size={16} />
-                )}
-                <span>{label.name}</span>
-              </div>
-              <div className="flex items-center">
-                <Check size={16} className={`text-success ${!selectedLabels.some((l) => l.id === label.id) && 'invisible'}`} />
-                {!isSearching && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
-              </div>
+              {isSearching || !isRecent ? (
+                <Dot className="rounded-md text-white" size={14} style={badgeStyle(label.color)} strokeWidth={10} />
+              ) : (
+                <Tag
+                  size={16}
+                  className={`${selectedLabels.find((l) => l.id === label.id) ? 'opacity-100' : 'opacity-50'} group-hover:opacity-100`}
+                />
+              )}
+              <div className="grow">{label.name}</div>
+              <Check size={16} className={`text-success ${!selectedLabels.some((l) => l.id === label.id) && 'invisible'}`} />
+              {!isSearching && <span className="max-sm:hidden text-xs opacity-50 mx-1">{index + 1}</span>}
             </CommandItem>
           ))}
+          {isRecent && showedLabels.length === 0 && (
+            <CommandEmpty className="text-muted text-sm flex items-center justify-center px-3 py-1.5">
+              {t('common:no_resource_yet', { resource: t('app:labels').toLowerCase() })}
+            </CommandEmpty>
+          )}
         </CommandGroup>
         {!isSearching && selectedLabels.length && creationValueChange === undefined ? (
           <CommandItem

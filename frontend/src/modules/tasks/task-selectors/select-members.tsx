@@ -9,8 +9,7 @@ import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { inNumbersArray } from '~/modules/tasks/helpers';
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
-import { Input } from '~/modules/ui/input';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { User } from '~/types/common';
@@ -91,14 +90,13 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
 
   return (
     <Command className="relative rounded-lg max-h-[44vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
-      <Input
+      <CommandInput
         ref={inputRef}
         className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden min-h-10"
         placeholder={t('app:placeholder.assign')}
         value={searchValue}
         autoFocus={true}
-        onChange={(e) => {
-          const searchValue = e.target.value;
+        onValueChange={(searchValue) => {
           // If the user types a number, select status like useHotkeys
           if (!showAll && inNumbersArray(6, searchValue)) return handleSelectClick(projectMembers[Number.parseInt(searchValue) - 1]?.id);
           setSearchValue(searchValue);
@@ -120,7 +118,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
 
       <CommandList>
         {!!searchValue.length && (
-          <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+          <CommandEmpty className="flex justify-center items-center text-muted p-2 text-sm">
             {t('common:no_resource_found', { resource: t('common:members').toLowerCase() })}
           </CommandEmpty>
         )}
@@ -135,17 +133,19 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
                   dropdowner.remove();
                   setSearchValue('');
                 }}
-                className="group rounded-md flex justify-between items-center w-full leading-normal"
+                className="group rounded-md flex gap-2 justify-between items-center w-full leading-normal"
               >
-                <div className="flex items-center gap-3">
-                  <AvatarWrap type="user" id={user.id} name={user.name} url={user.thumbnailUrl} className="h-6 w-6 text-xs" />
-                  <span>{user.name}</span>
-                </div>
+                <AvatarWrap
+                  type="user"
+                  id={user.id}
+                  name={user.name}
+                  url={user.thumbnailUrl}
+                  className={`h-6 w-6 text-xs ${selectedMembers.find((u) => u.id === user.id) ? 'opacity-100' : 'opacity-50'}`}
+                />
+                <div className="grow">{user.name}</div>
 
-                <div className="flex items-center">
-                  <Check size={16} className={`text-success ${!selectedMembers.some((u) => u.id === user.id) && 'invisible'}`} />
-                  {!searchValue.length && !showAll && <span className="max-sm:hidden text-xs opacity-50 ml-3 mr-1">{index + 1}</span>}
-                </div>
+                <Check size={16} className={`text-success ${!selectedMembers.some((u) => u.id === user.id) && 'invisible'}`} />
+                {!searchValue.length && !showAll && <span className="max-sm:hidden text-xs opacity-50 mx-1">{index + 1}</span>}
               </CommandItem>
             ))}
             {showedMembers.length > 5 && !searchValue.length && (
