@@ -75,10 +75,11 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
     setClosestEdge(extractClosestEdge(self.data));
   };
 
-  const handleCardClick = () => {
+  const handleCardClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (isFocused) return;
     setTaskCardFocus(task.id);
-    if (state !== 'folded') return;
+    const clickTarget = event.target as HTMLElement;
+    if (state !== 'folded' || clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return;
     dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
   };
 
