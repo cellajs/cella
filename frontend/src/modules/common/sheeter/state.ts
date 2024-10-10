@@ -7,7 +7,6 @@ export type SheetT = {
   hideClose?: boolean;
   open?: boolean;
   canToggle?: boolean;
-  closeOnRouteChange?: boolean;
   modal?: boolean;
   side?: 'bottom' | 'top' | 'right' | 'left';
   removeCallback?: () => void;

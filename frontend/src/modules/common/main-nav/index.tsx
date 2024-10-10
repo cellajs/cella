@@ -68,7 +68,6 @@ const MainNav = () => {
     sheet.create(navItem.sheet, {
       id: 'nav-sheet',
       side: sheetSide,
-      closeOnRouteChange: false,
       modal: isMobile,
       className: `fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
       removeCallback: () => {
