@@ -119,11 +119,12 @@ const authRoutes = app
       slug,
       name: slug,
       email: email,
+      emailVerified: isEmailVerified,
       language: config.defaultLanguage,
       hashedPassword,
     };
 
-    return await handleCreateUser(ctx, newUser, { isInvite: !!tokenData, isEmailVerified });
+    return await handleCreateUser(ctx, newUser, { isInvite: !!tokenData });
   })
   /*
    * Send verification email
@@ -316,7 +317,13 @@ const authRoutes = app
 
     let tokenData: TokenData | undefined;
     if (token) {
-      const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path.replace('{token}', token)}`);
+      const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
 
       const data: CheckTokenResponse = await response.json();
       tokenData = data?.data;
@@ -610,7 +617,6 @@ const authRoutes = app
             userId: String(githubUser.id),
           },
           isInvite: !!inviteToken,
-          isEmailVerified: primaryEmail.verified,
           redirectUrl: redirectNewUserUrl,
         },
       );
@@ -704,6 +710,7 @@ const authRoutes = app
           slug: slugFromEmail(user.email),
           email: user.email.toLowerCase(),
           name: user.given_name,
+          emailVerified: user.email_verified,
           language: config.defaultLanguage,
           thumbnailUrl: user.picture,
           firstName: user.given_name,
@@ -714,7 +721,6 @@ const authRoutes = app
             id: strategy,
             userId: user.sub,
           },
-          isEmailVerified: user.email_verified,
           redirectUrl: redirectNewUserUrl,
         },
       );
@@ -808,6 +814,7 @@ const authRoutes = app
           slug: slugFromEmail(user.email),
           language: config.defaultLanguage,
           email: user.email.toLowerCase(),
+          emailVerified: false,
           name: user.given_name,
           thumbnailUrl: user.picture,
           firstName: user.given_name,
@@ -818,7 +825,6 @@ const authRoutes = app
             id: strategy,
             userId: user.sub,
           },
-          isEmailVerified: false,
           redirectUrl: redirectNewUserUrl,
         },
       );

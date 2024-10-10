@@ -21,7 +21,6 @@ export const handleCreateUser = async (
       id: OauthProviderOptions;
       userId: string;
     };
-    isEmailVerified?: boolean;
     redirectUrl?: string;
   },
 ) => {
@@ -39,6 +38,7 @@ export const handleCreateUser = async (
         id: data.id,
         slug: slugAvailable ? data.slug : `${data.slug}-${data.id}`,
         firstName: data.firstName,
+        emailVerified: data.emailVerified,
         email: data.email.toLowerCase(),
         name: data.name,
         unsubscribeToken: generateUnsubscribeToken(data.email),
@@ -54,7 +54,7 @@ export const handleCreateUser = async (
     }
 
     // If the email is not verified, send a verification email
-    if (!options?.isEmailVerified) {
+    if (!data.emailVerified) {
       sendVerificationEmail(data.email);
     } else {
       await setSessionCookie(ctx, user.id, 'password');
