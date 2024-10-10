@@ -89,7 +89,7 @@ const SelectImpact = ({ value, projectId, triggerWidth = 192, creationValueChang
       />
       {!isSearching && <Kbd value="I" className="max-sm:hidden absolute top-3 right-2.5" />}
       {isSearching && (
-        <CommandEmpty className="flex justify-center items-center p-2 text-sm">
+        <CommandEmpty className="flex justify-center items-center p-2 text-muted text-sm">
           {t('common:no_resource_found', { resource: t('app:impact').toLowerCase() })}
         </CommandEmpty>
       )}
@@ -106,16 +106,15 @@ const SelectImpact = ({ value, projectId, triggerWidth = 192, creationValueChang
                 if (changeTaskImpact) changeTaskImpact(impacts.findIndex((impact) => impact.value === value) as TaskImpact);
                 dropdowner.remove();
               }}
-              className="group rounded-md flex justify-between items-center w-full leading-normal"
+              className="group rounded-md flex gap-2 justify-between items-center w-full leading-normal"
             >
-              <div className="flex items-center">
-                <Impact.icon className={`mr-2 size-4 fill-current ${selectedImpact?.value === Impact.value ? 'fill-primary' : ''} `} />
-                <span>{Impact.label}</span>
-              </div>
-              <div className="flex items-center">
-                <Check size={16} className={`text-success ${(!selectedImpact || selectedImpact.value !== Impact.value) && 'invisible'}`} />
-                {!isSearching && <span className="max-sm:hidden text-xs ml-3 opacity-50 mr-1">{index + 1}</span>}
-              </div>
+              <Impact.icon
+                className={`mr-2 size-4 fill-current group-hover:opacity-100 ${selectedImpact?.value === Impact.value ? 'fill-primary' : 'opacity-70'} `}
+              />
+              <div className="grow">{Impact.label}</div>
+
+              <Check size={16} className={`text-success ${(!selectedImpact || selectedImpact.value !== Impact.value) && 'invisible'}`} />
+              {!isSearching && <span className="max-sm:hidden text-xs opacity-50 mx-1">{index + 1}</span>}
             </CommandItem>
           ))}
         </CommandGroup>
