@@ -140,7 +140,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
                   id={user.id}
                   name={user.name}
                   url={user.thumbnailUrl}
-                  className={`h-6 w-6 text-xs ${selectedMembers.find((u) => u.id === user.id) ? 'opacity-100' : 'opacity-50'}`}
+                  className={`h-6 w-6 text-xs ${selectedMembers.find((u) => u.id === user.id) ? 'opacity-100' : 'opacity-50'} group-hover:opacity-100`}
                 />
                 <div className="grow">{user.name}</div>
 
