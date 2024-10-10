@@ -13,7 +13,7 @@ import { config } from 'config';
 import { toast } from 'sonner';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { queryClient } from '~/lib/router';
+import router, { queryClient } from '~/lib/router';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
@@ -265,16 +265,18 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
   useEffect(() => {
-    if (!createTaskForm) {
-      dialog.remove(true, `create-task-form-${project.id}`);
-    } else {
-      openCreateTaskDialog(defaultTaskFormRef);
-    }
+    if (!createTaskForm) dialog.remove(true, `create-task-form-${project.id}`);
+    else setTimeout(() => openCreateTaskDialog(defaultTaskFormRef), 0);
   }, [createTaskForm]);
 
   useEffect(() => {
     if (isMobile && minimized) handleExpand();
   }, [minimized, isMobile]);
+
+  useEffect(() => {
+    const unsubscribe = router.subscribe('onBeforeLoad', () => dialog.remove(false, `create-task-form-${project.id}`));
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     return combine(
