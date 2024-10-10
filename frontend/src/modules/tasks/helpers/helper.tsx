@@ -28,6 +28,7 @@ export const openTaskPreviewSheet = (task: Task, mode: Mode, navigate: NavigateF
       className: 'max-w-full lg:max-w-4xl px-0',
       title: <span className="px-4">{t('app:task')}</span>,
       id: `task-preview-${task.id}`,
+      side: 'right',
       removeCallback: () => {
         navigate({
           to: '.',
