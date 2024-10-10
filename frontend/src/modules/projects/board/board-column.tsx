@@ -69,6 +69,11 @@ type RawTask = {
 const taskShape = (projectId?: string): ShapeStreamOptions => ({
   url: new URL('/v1/shape/tasks', config.electricUrl).href,
   where: projectId ? `project_id = '${projectId}'` : undefined,
+  backoffOptions: {
+    initialDelay: 500,
+    maxDelay: 32000,
+    multiplier: 2,
+  },
 });
 
 export const tasksQueryOptions = ({ projectId, orgIdOrSlug }: GetTasksParams) => {
