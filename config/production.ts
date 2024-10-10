@@ -4,5 +4,5 @@ export default {
   mode: 'production',
   maintenance: false,
 
-  googleMapsKey: 'AIzaSyAGx1ZAPoNIu8tUWD4F0D2B3XwAOaSMMH8',
+  googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 } satisfies Config;

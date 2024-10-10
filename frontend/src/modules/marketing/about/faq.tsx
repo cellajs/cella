@@ -15,7 +15,7 @@ const FAQ = () => {
           return (
             <AccordionItem key={faq.id} value={faq.id}>
               <AccordionTrigger>
-                <span className="text-lg">{t(question)}</span>
+                <span className="text-lg text-left">{t(question)}</span>
               </AccordionTrigger>
               <AccordionContent>
                 <Trans
