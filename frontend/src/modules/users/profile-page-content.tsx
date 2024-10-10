@@ -1,18 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getUser } from '~/api/users';
 import ProjectsTable from '~/modules/projects/projects-table';
 
 const ProfilePageContent = ({ sheet, userId, organizationId }: { userId: string; organizationId?: string; sheet?: boolean }) => {
-  const [orgId, setOrgId] = useState(organizationId);
+  const { data: user } = useQuery({
+    queryKey: ['users', userId],
+    queryFn: () => getUser(userId),
+    // Disable the query when `organizationId` is available
+    enabled: !organizationId,
+  });
 
-  useEffect(() => {
-    // If `orgId` is already provided, no need to fetch
-    if (orgId) return;
-    (async () => {
-      const { organizations } = await getUser(userId);
-      if (organizations.length > 0) setOrgId(organizations[0].id);
-    })();
-  }, [orgId]);
+  const orgId = organizationId || user?.organizations?.[0]?.id;
 
   // Don't render anything until `orgId` is available
   if (!orgId) return null;
