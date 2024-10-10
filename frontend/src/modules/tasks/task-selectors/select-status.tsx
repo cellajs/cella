@@ -20,7 +20,6 @@ import { UnstartedIcon } from '~/modules/tasks/task-selectors/status-icons/unsta
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Input } from '~/modules/ui/input';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
-import { WorkspaceTableRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 
@@ -92,7 +91,7 @@ const SelectStatus = ({
 }: { taskStatus: TaskStatus; projectId: string; creationValueChange?: (newValue: number) => void }) => {
   const { t } = useTranslation();
 
-  const tableSearch = useSearch({ from: WorkspaceTableRoute.id });
+  const tableSearch = useSearch({ strict: false });
   const { pathname } = useLocation();
   const { focusedTaskId } = useWorkspaceStore();
   const {
@@ -112,6 +111,8 @@ const SelectStatus = ({
     if (creationValueChange) creationValueChange(newStatus);
     if (!focusedTaskId) return;
     try {
+      const cleanTaskId = focusedTaskId.replace('sheet-card-', '');
+
       const isTable = pathname.includes('/table');
       const queryKeys = !isTable
         ? taskKeys.list({ projectId, orgIdOrSlug: workspace.organizationId })
@@ -128,7 +129,7 @@ const SelectStatus = ({
       const tasks: Task[] = query ? (isTable ? query.pages?.[0]?.items || [] : query.items || []) : [];
       const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
       const updatedTask = await taskMutation.mutateAsync({
-        id: focusedTaskId,
+        id: cleanTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'status',
         data: newStatus,

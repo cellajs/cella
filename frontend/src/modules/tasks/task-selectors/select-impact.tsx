@@ -53,8 +53,9 @@ const SelectImpact = ({ value, projectId, triggerWidth = 192, creationValueChang
     try {
       if (creationValueChange) return creationValueChange(newImpact);
       if (!focusedTaskId) return;
+      const cleanTaskId = focusedTaskId.replace('sheet-card-', '');
       const updatedTask = await taskMutation.mutateAsync({
-        id: focusedTaskId,
+        id: cleanTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'impact',
         data: newImpact,

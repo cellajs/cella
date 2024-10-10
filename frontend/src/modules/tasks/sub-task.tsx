@@ -66,8 +66,9 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
     }
   };
 
-  const handleCardClick = () => {
-    if (state !== 'folded') return;
+  const handleCardClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const clickTarget = event.target as HTMLElement;
+    if (state !== 'folded' || clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return;
     setState('expanded');
   };
 

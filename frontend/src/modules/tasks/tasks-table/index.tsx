@@ -88,10 +88,12 @@ export default function TasksTable() {
   const navigate = useNavigate();
 
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { focusedTaskId, searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, setFocusedTaskId } = useWorkspaceStore();
+  const { searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, setFocusedTaskId } = useWorkspaceStore();
   const {
     data: { workspace, projects },
   } = useWorkspaceQuery();
+
+  const focusedTaskId = search.taskIdPreview;
 
   const taskMutation = useTaskMutation();
 
@@ -167,10 +169,9 @@ export default function TasksTable() {
 
   // Open on key press
   const hotKeyPress = (field: string) => {
-    console.log(22);
     const focusedTask = rows.find((t) => t.id === focusedTaskId);
     if (!focusedTask) return;
-    const taskCard = document.getElementById(focusedTask.id);
+    const taskCard = document.getElementById(`sheet-card-${focusedTask.id}`);
     if (!taskCard) return;
     if (taskCard && document.activeElement !== taskCard) taskCard.focus();
     const trigger = taskCard.querySelector(`#${field}`);
@@ -201,7 +202,6 @@ export default function TasksTable() {
     if (!rows.length) return;
     if (search.taskIdPreview) {
       const [task] = rows.filter((t) => t.id === search.taskIdPreview);
-      setFocusedTaskId(search.taskIdPreview);
       openTaskPreviewSheet(task, mode, navigate);
       return;
     }

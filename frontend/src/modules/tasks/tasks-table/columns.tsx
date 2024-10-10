@@ -18,7 +18,6 @@ import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useThemeStore } from '~/store/theme';
-import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 import { dateShort } from '~/utils/date-short';
 
@@ -26,7 +25,6 @@ export const useColumns = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
-  const { setFocusedTaskId } = useWorkspaceStore();
   const { mode } = useThemeStore();
   const {
     data: { workspace, projects },
@@ -47,7 +45,6 @@ export const useColumns = () => {
           tabIndex={tabIndex}
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
           onClick={() => {
-            setFocusedTaskId(row.id);
             openTaskPreviewSheet(row, mode, navigate, true);
           }}
         >

@@ -44,9 +44,11 @@ const SelectTaskType = ({ currentType, projectId, className = '' }: SelectTaskTy
 
   const changeTaskType = async (newType: TaskType) => {
     if (!focusedTaskId) return;
+    const cleanTaskId = focusedTaskId.replace('sheet-card-', '');
+
     try {
       const updatedTask = await taskMutation.mutateAsync({
-        id: focusedTaskId,
+        id: cleanTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'type',
         data: newType,

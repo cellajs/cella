@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -281,20 +281,26 @@ export default function Board() {
 
   const projectCallback = (projectId: string) => useMutateTasksQueryData(taskKeys.list({ projectId, orgIdOrSlug: workspace.organizationId }));
 
-  const handleTaskOperations = (event: TaskOperationEvent) => {
-    const { array, action, projectId } = event.detail;
-    if (!projectId) return;
-    // Trigger the mutation callback for the specific project
-    projectCallback(projectId)(array, action);
+  const handleTaskOperations = useCallback(
+    (event: TaskOperationEvent) => {
+      const { array, action, projectId } = event.detail;
+      if (!projectId) return;
+      // Trigger the mutation callback for the specific project
+      projectCallback(projectId)(array, action);
 
-    // If no tasks exist or if the focused task sheet does not exist, return early
-    if (!tasks.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
-    const [sheetTask] = tasks.filter((t) => t.id === focusedTaskId);
-    // If a focused task is found, update the corresponding sheet with new content
-    sheet.update(`task-preview-${sheetTask.id}`, {
-      content: <TaskCard mode={mode} task={sheetTask} state="editing" isSelected={false} isFocused={true} isSheet />,
-    });
-  };
+      const cleanFocused = focusedTaskId?.replace('sheet-card-', '');
+
+      // If no tasks exist or if the focused task sheet does not exist, return early
+      if (action !== 'update' || !sheet.get(`task-preview-${cleanFocused}`)) return;
+
+      const [sheetTask] = array;
+      // If a focused task is found, update the corresponding sheet with new content
+      sheet.update(`task-preview-${cleanFocused}`, {
+        content: <TaskCard mode={mode} task={sheetTask as Task} state="editing" isSelected={false} isFocused={true} isSheet />,
+      });
+    },
+    [focusedTaskId],
+  );
 
   const workspaceCallback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
   const handleEntityUpdate = (event: { detail: { membership: Membership; entity: ContextEntity } }) => {

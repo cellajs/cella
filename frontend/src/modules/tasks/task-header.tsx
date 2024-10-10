@@ -112,7 +112,6 @@ export const TaskHeader = ({
           <TooltipButton toolTipContent={t('common:expand')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {
-                if (isEditing) dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
                 openTaskPreviewSheet(task, mode ?? 'dark', navigate, true);
               }}
               aria-label="OpenTaskSheet"

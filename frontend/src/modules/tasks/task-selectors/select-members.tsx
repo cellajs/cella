@@ -53,9 +53,10 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
 
   const changeAssignedTo = async (members: AssignableMember[]) => {
     if (!focusedTaskId) return;
+    const cleanTaskId = focusedTaskId.replace('sheet-card-', '');
     try {
       const updatedTask = await taskMutation.mutateAsync({
-        id: focusedTaskId,
+        id: cleanTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'assignedTo',
         data: members.map((user) => user.id),

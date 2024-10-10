@@ -76,8 +76,9 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
   };
 
   const handleCardClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (isFocused) return;
-    setTaskCardFocus(task.id);
+    if (isSheet) return;
+
+    if (!isFocused) setTaskCardFocus(task.id);
     const clickTarget = event.target as HTMLElement;
     if (state !== 'folded' || clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return;
     dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });

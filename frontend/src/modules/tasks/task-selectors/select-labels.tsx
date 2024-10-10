@@ -66,10 +66,11 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 280 }
 
   const updateTaskLabels = async (labels: Label[]) => {
     if (!focusedTaskId) return;
+    const cleanTaskId = focusedTaskId.replace('sheet-card-', '');
     try {
       const labelIds = labels.map((l) => l.id);
       const updatedTask = await taskMutation.mutateAsync({
-        id: focusedTaskId,
+        id: cleanTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'labels',
         data: labelIds,
