@@ -68,6 +68,7 @@ const MainNav = () => {
     sheet.create(navItem.sheet, {
       id: 'nav-sheet',
       side: sheetSide,
+      closeOnRouteChange: false,
       modal: isMobile,
       className: `fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
       removeCallback: () => {
@@ -103,11 +104,11 @@ const MainNav = () => {
       if (toLocation.pathname !== fromLocation.pathname) {
         if (useNavigationStore.getState().focusView) setFocusView(false);
 
-        // Remove sheets in content
+        // Remove all sheets in content or
         if (sheetOpen && (sheetOpen !== 'menu' || !useNavigationStore.getState().keepMenuOpen)) {
           setNavSheetOpen(null);
-          sheet.remove('nav-sheet');
-        }
+          sheet.remove();
+        } else sheet.remove(undefined, 'nav-sheet');
       }
       pathChanged && setLoading(true);
     });

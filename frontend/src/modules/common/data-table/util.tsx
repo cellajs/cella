@@ -24,6 +24,7 @@ export const openUserPreviewSheet = (user: Omit<User, 'counts'>, navigate: Navig
     {
       className: 'max-w-full lg:max-w-4xl p-0',
       id: `user-preview-${user.id}`,
+      side: 'right',
       removeCallback: () => {
         navigate({
           to: '.',

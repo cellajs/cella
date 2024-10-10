@@ -29,6 +29,7 @@ const UpdateRow = ({ user, callback, tabIndex }: Props) => {
       </Card>,
       {
         id: 'update-user',
+        side: 'right',
         className: 'max-w-full lg:max-w-4xl',
         title: t('common:edit_resource', { resource: t('common:user').toLowerCase() }),
       },
