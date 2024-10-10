@@ -16,6 +16,7 @@ export const handleCreateUser = async (
   ctx: Context,
   data: Omit<InsertUserModel, 'unsubscribeToken'>,
   options?: {
+    isInvite?: boolean;
     provider?: {
       id: OauthProviderOptions;
       userId: string;
@@ -25,7 +26,7 @@ export const handleCreateUser = async (
   },
 ) => {
   // If sign up is disabled, return an error
-  if (!config.has.registrationEnabled) return errorResponse(ctx, 403, 'sign_up_disabled', 'warn', undefined);
+  if (!config.has.registrationEnabled && !options?.isInvite) return errorResponse(ctx, 403, 'sign_up_disabled', 'warn');
 
   // Check if the slug is available
   const slugAvailable = await checkSlugAvailable(data.slug);
@@ -63,7 +64,7 @@ export const handleCreateUser = async (
   } catch (error) {
     // If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {
-      return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
+      return errorResponse(ctx, 409, 'email_exists', 'warn');
     }
 
     if (error instanceof Error) {

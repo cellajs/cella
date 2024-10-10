@@ -81,7 +81,7 @@ const generalRoutes = app
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, token)));
-    // if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
+    if (!tokenRecord) return errorResponse(ctx, 404, 'not_found', 'warn');
 
     // const user = await getUserBy('email', tokenRecord.email);
     // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');

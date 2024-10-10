@@ -94,7 +94,13 @@ const authRoutes = app
     let tokenData: TokenData | undefined;
 
     if (token) {
-      const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path.replace('{token}', token)}`);
+      const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      });
 
       const data: CheckTokenResponse = await response.json();
       tokenData = data?.data;
@@ -117,9 +123,7 @@ const authRoutes = app
       hashedPassword,
     };
 
-    await handleCreateUser(ctx, newUser, { isEmailVerified });
-
-    return ctx.json({ success: true }, 200);
+    return await handleCreateUser(ctx, newUser, { isInvite: !!tokenData, isEmailVerified });
   })
   /*
    * Send verification email
@@ -605,6 +609,7 @@ const authRoutes = app
             id: strategy,
             userId: String(githubUser.id),
           },
+          isInvite: !!inviteToken,
           isEmailVerified: primaryEmail.verified,
           redirectUrl: redirectNewUserUrl,
         },
