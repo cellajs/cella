@@ -1,0 +1,133 @@
+diff --git a/frontend/src/modules/common/dialoger/dialog.tsx b/frontend/src/modules/common/dialoger/dialog.tsx
+index e1bc8ef4..278d4cf2 100644
+--- a/frontend/src/modules/common/dialoger/dialog.tsx
++++ b/frontend/src/modules/common/dialoger/dialog.tsx
+@@ -2,6 +2,8 @@ import { type DialogT, dialog as dialogState } from '~/modules/common/dialoger/s
+ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
+ import { cn } from '~/utils/cn';
+ 
++type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
++
+ export interface DialogProp {
+   dialog: DialogT;
+   removeDialog: (dialog: DialogT) => void;
+@@ -18,6 +20,10 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
+     if (!open) closeDialog();
+   };
+ 
++  const handleInteractOutside = (event: CustomInteractOutsideEvent) => {
++    if (container && !containerBackdrop) event.preventDefault();
++  };
++
+   return (
+     <Dialog key={id} open={open} onOpenChange={onOpenChange} modal={!container}>
+       {container && containerBackdrop && (
+@@ -31,6 +37,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
+       <DialogContent
+         onEscapeKeyDown={closeDialog}
+         hideClose={hideClose}
++        onInteractOutside={handleInteractOutside}
+         onOpenAutoFocus={(event: Event) => {
+           if (!autoFocus) event.preventDefault();
+         }}
+diff --git a/frontend/src/modules/common/main-nav/bar-nav/index.tsx b/frontend/src/modules/common/main-nav/bar-nav/index.tsx
+index 2e7954c1..9188afa6 100644
+--- a/frontend/src/modules/common/main-nav/bar-nav/index.tsx
++++ b/frontend/src/modules/common/main-nav/bar-nav/index.tsx
+@@ -39,7 +39,7 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
+     <nav
+       id="main-nav"
+       className={cn(
+-        'fixed z-[90] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden',
++        'fixed z-[100] sm:z-[110] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden',
+         navBackground,
+         !hasStarted && 'max-sm:translate-y-full sm:-translate-x-full',
+       )}
+diff --git a/frontend/src/modules/common/main-nav/index.tsx b/frontend/src/modules/common/main-nav/index.tsx
+index 4e5bb5fa..16511bfc 100644
+--- a/frontend/src/modules/common/main-nav/index.tsx
++++ b/frontend/src/modules/common/main-nav/index.tsx
+@@ -69,7 +69,7 @@ const MainNav = () => {
+       id: 'nav-sheet',
+       side: sheetSide,
+       modal: isMobile,
+-      className: `fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
++      className: `fixed sm:z-[105] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
+       removeCallback: () => {
+         setNavSheetOpen(null);
+       },
+@@ -85,8 +85,6 @@ const MainNav = () => {
+       return;
+     }
+ 
+-    if (dialog.haveOpenDialogs()) return;
+-
+     navButtonClick(renderedItems[index]);
+   };
+ 
+diff --git a/frontend/src/modules/ui/dialog.tsx b/frontend/src/modules/ui/dialog.tsx
+index 57c86c20..9df37ebc 100644
+--- a/frontend/src/modules/ui/dialog.tsx
++++ b/frontend/src/modules/ui/dialog.tsx
+@@ -23,7 +23,7 @@ const DialogOverlay = React.forwardRef<
+     className={cn(
+       disabled
+         ? ''
+-        : 'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[100] sm:grid place-items-center overflow-y-auto bg-background/40 backdrop-blur-sm',
++        : 'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[120] sm:grid place-items-center overflow-y-auto bg-background/40 backdrop-blur-sm',
+       className,
+     )}
+     {...props}
+@@ -39,7 +39,7 @@ const DialogContent = React.forwardRef<
+     <DialogPrimitive.Content
+       ref={ref}
+       className={cn(
+-        'overflow-x-clip overflow-y-clip bg-background mt-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 relative z-[160] grid w-[95vw] gap-4 border p-4 shadow-lg duration-200 rounded-lg mx-auto',
++        'overflow-x-clip overflow-y-clip bg-background mt-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 relative z-[125] grid w-[95vw] gap-4 border p-4 shadow-lg duration-200 rounded-lg mx-auto',
+         className,
+       )}
+       {...props}
+diff --git a/frontend/src/modules/ui/drawer.tsx b/frontend/src/modules/ui/drawer.tsx
+index 7b25a9dc..49693d2a 100644
+--- a/frontend/src/modules/ui/drawer.tsx
++++ b/frontend/src/modules/ui/drawer.tsx
+@@ -4,7 +4,7 @@ import { Drawer as DrawerPrimitive } from 'vaul';
+ 
+ import { cn } from '~/utils/cn';
+ 
+-const DrawerVariants = cva('fixed z-[150] p-4 overflow-y-auto flex flex-col rounded-t-2.5 border bg-background', {
++const DrawerVariants = cva('fixed z-[115] p-4 overflow-y-auto flex flex-col rounded-t-2.5 border bg-background', {
+   variants: {
+     direction: {
+       top: 'inset-x-0 top-0 mb-24 flex-col',
+@@ -47,7 +47,7 @@ const DrawerOverlay = React.forwardRef<
+   React.ElementRef<typeof DrawerPrimitive.Overlay>,
+   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
+ >(({ className, ...props }, ref) => (
+-  <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-[140] bg-background/40 backdrop-blur-sm', className)} {...props} />
++  <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-[110] bg-background/40 backdrop-blur-sm', className)} {...props} />
+ ));
+ DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
+ 
+diff --git a/frontend/src/modules/ui/sheet.tsx b/frontend/src/modules/ui/sheet.tsx
+index b32cf4c2..f5175fbd 100644
+--- a/frontend/src/modules/ui/sheet.tsx
++++ b/frontend/src/modules/ui/sheet.tsx
+@@ -18,7 +18,7 @@ const SheetOverlay = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Ove
+   ({ className, ...props }, ref) => (
+     <SheetPrimitive.Overlay
+       className={cn(
+-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[100] bg-background/40 backdrop-blur-sm',
++        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[113] bg-background/40 backdrop-blur-sm',
+         className,
+       )}
+       {...props}
+@@ -30,7 +30,7 @@ SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
+ 
+ // Removed the animate out classes since sheeter has state issues in remove step
+ export const sheetVariants = cva(
+-  'z-[100] fixed gap-4 bg-background px-4 pb-4 shadow-lg transition ease-in-out overflow-y-auto data-[state=open]:duration-300 data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=closed]:animate-out',
++  'z-[114] fixed gap-4 bg-background px-4 pb-4 shadow-lg transition ease-in-out overflow-y-auto data-[state=open]:duration-300 data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=closed]:animate-out',
+   {
+     variants: {
+       side: {

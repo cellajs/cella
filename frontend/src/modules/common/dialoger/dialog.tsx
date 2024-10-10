@@ -2,6 +2,8 @@ import { type DialogT, dialog as dialogState } from '~/modules/common/dialoger/s
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
+type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
+
 export interface DialogProp {
   dialog: DialogT;
   removeDialog: (dialog: DialogT) => void;
@@ -18,6 +20,10 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
     if (!open) closeDialog();
   };
 
+  const handleInteractOutside = (event: CustomInteractOutsideEvent) => {
+    if (container && !containerBackdrop) event.preventDefault();
+  };
+
   return (
     <Dialog key={id} open={open} onOpenChange={onOpenChange} modal={!container}>
       {container && containerBackdrop && (
@@ -31,6 +37,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
       <DialogContent
         onEscapeKeyDown={closeDialog}
         hideClose={hideClose}
+        onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
           if (!autoFocus) event.preventDefault();
         }}

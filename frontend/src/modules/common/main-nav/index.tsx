@@ -69,7 +69,7 @@ const MainNav = () => {
       id: 'nav-sheet',
       side: sheetSide,
       modal: isMobile,
-      className: `fixed sm:z-[80] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
+      className: `fixed sm:z-[105] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
       removeCallback: () => {
         setNavSheetOpen(null);
       },
@@ -84,8 +84,6 @@ const MainNav = () => {
       sheet.update('nav-sheet', { open: false });
       return;
     }
-
-    if (dialog.haveOpenDialogs()) return;
 
     navButtonClick(renderedItems[index]);
   };
