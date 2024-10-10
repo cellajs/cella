@@ -27,6 +27,7 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
     // Don't close sheet if not in modal and active element is not in sheet
     if (!modal && !sheetRef.current?.contains(activeElement)) return;
     e.preventDefault();
+    e.stopPropagation();
     closeSheet();
   };
 

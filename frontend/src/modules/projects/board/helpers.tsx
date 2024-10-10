@@ -3,7 +3,6 @@ import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import MembersTable from '~/modules/organizations/members-table';
 import { ProjectSettings } from '~/modules/projects/project-settings';
-import { useWorkspaceStore } from '~/store/workspace';
 import type { Project, SubTask, Task } from '~/types/app';
 import type { DraggableItemData } from '~/types/common';
 
@@ -15,14 +14,6 @@ export const isTaskData = (data: Record<string | symbol, unknown>): data is Task
 };
 export const isSubTaskData = (data: Record<string | symbol, unknown>): data is SubTaskDraggableItemData => {
   return data.dragItem === true && typeof data.order === 'number' && data.type === 'subTask';
-};
-
-export const setTaskCardFocus = (id: string) => {
-  const taskCard = document.getElementById(id);
-  if (taskCard && document.activeElement !== taskCard) taskCard.focus();
-  useWorkspaceStore.setState((state) => {
-    state.focusedTaskId = id;
-  });
 };
 
 export const openProjectConfigSheet = (project: Project) => {

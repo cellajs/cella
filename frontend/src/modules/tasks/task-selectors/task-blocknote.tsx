@@ -47,8 +47,11 @@ export const TaskBlockNote = ({
 }: TaskBlockNoteProps) => {
   const { t } = useTranslation();
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock: false });
-
   const canChangeState = useRef(false);
+
+  const isCreationMode = !!onChange;
+  const subTaskCreation = subTask && isCreationMode;
+  const stateEvent = subTask ? 'changeSubTaskState' : 'changeTaskState';
 
   const { pathname } = useLocation();
   const {
@@ -62,6 +65,9 @@ export const TaskBlockNote = ({
   const handleUpdateHTML = useCallback(
     async (newContent: string) => {
       try {
+        dispatchCustomEvent(stateEvent, { taskId: id, state: 'editing' });
+        canChangeState.current = false;
+
         const updatedTask = await taskMutation.mutateAsync({
           id,
           orgIdOrSlug: workspace.organizationId,
@@ -84,9 +90,8 @@ export const TaskBlockNote = ({
     // Remove Task editing state if focused not task itself
     if (taskToClose) dispatchCustomEvent('changeTaskState', { taskId: taskToClose, state: 'expanded' });
   };
-
   const updateData = async () => {
-    //if user in Formatting Toolbar does not update
+    // if user in Formatting Toolbar does not update
     if (editor.getSelection()) return;
 
     const descriptionHtml = await editor.blocksToFullHTML(editor.document);
@@ -95,13 +100,9 @@ export const TaskBlockNote = ({
     const summaryHTML = await editor.blocksToFullHTML([summary ?? editor.document[0]]);
     const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
-    if (onChange) onChange(cleanDescription, cleanSummary);
-    else {
-      handleUpdateHTML(cleanDescription);
-      const event = subTask ? 'changeSubTaskState' : 'changeTaskState';
-      dispatchCustomEvent(event, { taskId: id, state: 'editing' });
-    }
-    canChangeState.current = false;
+
+    if (isCreationMode) onChange(cleanDescription, cleanSummary);
+    else await handleUpdateHTML(cleanDescription);
   };
 
   const handleKeyDown: KeyboardEventHandler = async (event) => {
@@ -137,8 +138,6 @@ export const TaskBlockNote = ({
       const currentBlocks = getContentAsString(editor.document as Block[]);
       const newBlocksContent = getContentAsString(blocks as Block[]);
 
-      const subTaskCreation = subTask && onChange;
-
       // Only replace blocks if the content actually changes
       if (currentBlocks !== newBlocksContent || html === '' || subTaskCreation) {
         editor.replaceBlocks(editor.document, blocks);
@@ -162,12 +161,11 @@ export const TaskBlockNote = ({
         id={subTask ? `blocknote-subtask-${id}` : `blocknote-${id}`}
         // Defer onChange, onFocus and onBlur  to run after rendering
         onChange={() => {
-          if (!onChange && canChangeState.current) {
-            const event = subTask ? 'changeSubTaskState' : 'changeTaskState';
-            dispatchCustomEvent(event, { taskId: id, state: 'unsaved' });
-          }
+          if (!isCreationMode && canChangeState.current) dispatchCustomEvent(stateEvent, { taskId: id, state: 'unsaved' });
+
           // to avoid update if content empty, so from draft shown
-          if (!onChange || editor.document[0].content?.toString() === '') return;
+          if (!isCreationMode || editor.document[0].content?.toString() === '') return;
+
           queueMicrotask(() => updateData());
         }}
         onFocus={() => queueMicrotask(() => handleEditorFocus())}

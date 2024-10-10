@@ -10,6 +10,7 @@ import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-d
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
 import { motion } from 'framer-motion';
+import useDoubleClick from '~/hooks/use-double-click';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
@@ -24,6 +25,7 @@ import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme.ts';
 import type { Task } from '~/types/app';
 import { getDraggableItemData } from '~/utils/drag-drop';
+import { setTaskCardFocus } from './helpers/helper';
 import type { TaskStates } from './types';
 
 const variants = cva('task-card', {
@@ -73,10 +75,9 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
     setClosestEdge(extractClosestEdge(self.data));
   };
 
-  const handleCardClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    const target = event.target as HTMLElement;
-    if (state !== 'folded' && isFocused) return;
-    dispatchCustomEvent('toggleTaskCard', { taskId: task.id, clickTarget: target });
+  const handleCardClick = () => {
+    if (isFocused) return;
+    setTaskCardFocus(task.id);
   };
 
   useEffect(() => {
@@ -133,11 +134,25 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
     );
   }, [task, state]);
 
+  useDoubleClick({
+    onSingleClick: () => {
+      if (state !== 'folded' && isFocused) return;
+      dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
+    },
+    onDoubleClick: () => {
+      if (state === 'editing' || state === 'unsaved') return;
+      dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'editing' });
+    },
+    allowedTargets: ['p', 'div', 'img'],
+    excludeIds: [`subtask-container-${task.id}`],
+    ref: taskRef,
+  });
+
   return (
     <motion.div layout transition={{ duration: state === 'editing' || !isFocused ? 0 : 0.3 }}>
       <Card
         id={task.id}
-        onClick={handleCardClick}
+        onMouseDown={handleCardClick}
         style={style}
         tabIndex={0}
         ref={taskRef}

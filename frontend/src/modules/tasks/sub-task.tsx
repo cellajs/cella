@@ -13,6 +13,7 @@ import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { isSubTaskData } from '~/modules/projects/board/helpers';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
@@ -22,7 +23,6 @@ import type { Mode } from '~/store/theme';
 import type { SubTask as BaseSubTask, Task } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { getDraggableItemData } from '~/utils/drag-drop';
-import { useTaskMutation } from '../common/query-client-provider/tasks';
 import type { TaskStates } from './types';
 
 const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {

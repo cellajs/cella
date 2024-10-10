@@ -3,7 +3,6 @@ import type { SubTask, Task } from '~/types/app';
 export interface TasksCustomEventMap {
   changeTaskState: CustomEvent<TaskStateInfo>;
   changeSubTaskState: CustomEvent<{ taskId: string; state: TaskStates | 'removeEditing' }>;
-  toggleTaskCard: CustomEvent<TaskCardInfo>;
   toggleSelectTask: CustomEvent<TaskSelectInfo>;
   taskOperation: CustomEvent<TaskQueryInfo>;
 }
@@ -24,11 +23,6 @@ type TaskSelectInfo = {
   selected: boolean;
 };
 
-type TaskCardInfo = {
-  taskId: string;
-  clickTarget: HTMLElement;
-};
-
 export type TaskStates = 'folded' | 'editing' | 'expanded' | 'unsaved';
 
 export type TaskQueryActions = 'create' | 'update' | 'delete' | 'createSubTask' | 'updateSubTask' | 'deleteSubTask';
@@ -43,8 +37,4 @@ export interface TaskOperationEvent extends Event {
 
 export interface TaskCardToggleSelectEvent extends Event {
   detail: TaskSelectInfo;
-}
-
-export interface TaskCardFocusEvent extends Event {
-  detail: TaskCardInfo;
 }

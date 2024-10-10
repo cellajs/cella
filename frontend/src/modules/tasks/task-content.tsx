@@ -2,8 +2,6 @@ import '@blocknote/shadcn/style.css';
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import useDoubleClick from '~/hooks/use-double-click';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import CreateSubTaskForm from '~/modules/tasks/create-sub-task-form';
 import SubTask from '~/modules/tasks/sub-task';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote';
@@ -22,19 +20,6 @@ const TaskContent = ({ task, mode, state }: Props) => {
   const [createSubTask, setCreateSubTask] = useState(false);
 
   const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none pl-9';
-
-  useDoubleClick({
-    onSingleClick: () => {
-      if (state !== 'folded') return;
-      dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' });
-    },
-    onDoubleClick: () => {
-      if (state === 'editing' || state === 'unsaved') return;
-      dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'editing' });
-    },
-    allowedTargets: ['p', 'div', 'img'],
-    ref: taskContentRef,
-  });
 
   useEffect(() => {
     if (state !== 'expanded') return;
@@ -76,7 +61,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
             </div>
           )}
 
-          <div className="-mx-2 mt-2 w-[calc(100%+1.25rem)]">
+          <div id={`subtask-container-${task.id}`} className="-mx-2 mt-2 w-[calc(100%+1.25rem)]">
             <div className="flex flex-col">
               {task.subTasks.map((task) => (
                 <SubTask mode={mode} key={task.id} task={task} />

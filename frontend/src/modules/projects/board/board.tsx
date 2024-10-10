@@ -24,14 +24,13 @@ import { taskKeys } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
 import WorkspaceActions from '~/modules/projects/board/workspace-actions';
 import { sortAndGetCounts } from '~/modules/tasks/helpers';
-import { openTaskPreviewSheet } from '~/modules/tasks/helpers/helper';
+import { openTaskPreviewSheet, setTaskCardFocus } from '~/modules/tasks/helpers/helper';
 import TaskCard from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
-import type { TaskCardFocusEvent, TaskCardToggleSelectEvent, TaskOperationEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
+import type { TaskCardToggleSelectEvent, TaskOperationEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useThemeStore } from '~/store/theme';
 import { defaultColumnValues, useWorkspaceUIStore } from '~/store/workspace-ui';
-import { setTaskCardFocus } from './helpers';
 
 // TODO empty space width should be dynamic based on window width and amount of projects and width of each project?
 const PANEL_MIN_WIDTH = 400;
@@ -124,7 +123,8 @@ export default function Board() {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const navigate = useNavigate();
-  const { focusedTaskId, selectedTasks, setFocusedTaskId, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
+  const { focusedTaskId, selectedTasks, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
+  const prevFocusedRef = useRef<string | null>(focusedTaskId);
   const {
     data: { workspace, projects },
   } = useWorkspaceQuery();
@@ -273,39 +273,6 @@ export default function Board() {
     ['T', () => hotKeyPress(`type-${focusedTaskId}`)],
   ]);
 
-  const handleTaskClick = (event: TaskCardFocusEvent) => {
-    const { taskId: newFocused, clickTarget } = event.detail;
-    const currentFocused = focusedTaskId;
-
-    // Check if the clicked element is a button or inside a button,
-    // if so, set the new focused task and return early (no need to fold/expand in this case)
-    if (clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) {
-      if (currentFocused) {
-        // Set the state of the previously focused task after edit button clicked
-        setTaskState(currentFocused, tasksState[currentFocused] === 'folded' || !tasksState[currentFocused] ? 'folded' : 'expanded');
-      }
-      return setFocusedTaskId(newFocused);
-    }
-    // If the task clicked is already focused
-    if (currentFocused === newFocused) return setTaskState(currentFocused, 'expanded');
-
-    // If there's a different task already focused
-    if (currentFocused && currentFocused !== newFocused) {
-      //change the state of previously focused subtasks
-      dispatchCustomEvent('changeSubTaskState', { taskId: currentFocused, state: 'folded' });
-      // Set the state of the previously focused task
-      setTaskState(currentFocused, tasksState[currentFocused] === 'folded' || !tasksState[currentFocused] ? 'folded' : 'expanded');
-      // Set the state of the newly focused task
-      setTaskState(newFocused, 'expanded');
-    }
-    // If there's no currently focused task, expand the newly focused task
-    if (!currentFocused) setTaskState(newFocused, 'expanded');
-    // ensure newly focused task receives focus
-    const taskCard = document.getElementById(newFocused);
-    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
-    setFocusedTaskId(newFocused);
-  };
-
   const handleToggleTaskSelect = (event: TaskCardToggleSelectEvent) => {
     const { selected, taskId } = event.detail;
     if (selected) return setSelectedTasks([...selectedTasks, taskId]);
@@ -344,20 +311,27 @@ export default function Board() {
   useEventListener('menuEntityChange', handleEntityUpdate);
   useEventListener('changeTaskState', handleTaskState);
   useEventListener('taskOperation', handleTaskOperations);
-  useEventListener('toggleTaskCard', handleTaskClick);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
 
   useEffect(() => {
-    if (focusedTaskId) return;
-    // new state object with updated values
-    const updatedTasksState = { ...tasksState };
-    const states = Object.entries(updatedTasksState);
-    // Find a key that has the value 'editing'
-    const key = states.find(([_, value]) => value === 'editing')?.[0];
-    if (!key) return;
-    updatedTasksState[key] = 'expanded';
-    setTasksState(updatedTasksState);
-  }, [focusedTaskId, tasksState]);
+    const { current: prevFocused } = prevFocusedRef;
+
+    // Prevent state change if the focused task hasn't changed
+    if (prevFocused === focusedTaskId) return;
+
+    // Check if the previously focused task exists
+    if (prevFocused) {
+      const currentState = tasksState[prevFocused];
+      const newState = currentState === 'folded' || !currentState ? 'folded' : 'expanded';
+
+      setTimeout(() => setTaskState(prevFocused, newState), 0);
+      // Fold the subtasks of the previously focused task
+      dispatchCustomEvent('changeSubTaskState', { taskId: prevFocused, state: 'folded' });
+    }
+
+    // Update the previous focused task ID
+    prevFocusedRef.current = focusedTaskId;
+  }, [focusedTaskId, tasksState, setTaskState]);
 
   useEffect(() => {
     if (!currentTask) return;
