@@ -52,10 +52,10 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
     }
   };
   return (
-    <div className="flex flex-row items-center gap-1 pl-1">
+    <div className="flex flex-row items-center sm:gap-1">
       {!isSheet && (
         <Checkbox
-          className="group-hover/task:opacity-100 border-foreground/40 mr-1 data-[state=checked]:border-primary group-[.is-focused]/task:opacity-100 opacity-80"
+          className="max-sm:hidden group-hover/task:opacity-100 border-foreground/40 mx-1 data-[state=checked]:border-primary group-[.is-focused]/task:opacity-100 opacity-80"
           checked={isSelected}
           onCheckedChange={(checked) => dispatchCustomEvent('toggleSelectTask', { selected: !!checked, taskId: task.id })}
         />
