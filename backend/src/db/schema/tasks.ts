@@ -37,12 +37,9 @@ export const tasksTable = pgTable(
         onDelete: 'cascade',
       }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    createdBy: varchar('created_by')
-      .notNull()
-      .default('unknown')
-      .references(() => usersTable.id, {
-        onDelete: 'set default',
-      }),
+    createdBy: varchar('created_by').references(() => usersTable.id, {
+      onDelete: 'set null',
+    }),
     modifiedAt: timestamp('modified_at'),
     modifiedBy: varchar('modified_by').references(() => usersTable.id, {
       onDelete: 'set null',

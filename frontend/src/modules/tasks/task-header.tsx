@@ -46,7 +46,7 @@ export const TaskHeader = ({
 
   return (
     <StickyBox enabled={false} className="flex flex-row z-100 w-full justify-between">
-      {!isSubTask && task.createdBy && (
+      {!isSubTask && (
         <Button
           id={`type-${task.id}`}
           onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}

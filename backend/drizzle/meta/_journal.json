@@ -15,6 +15,13 @@
       "when": 1728049999295,
       "tag": "0001_sticky_scarecrow",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1728573019286,
+      "tag": "0002_solid_warpath",
+      "breakpoints": true
     }
   ]
 }

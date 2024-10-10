@@ -7,10 +7,10 @@ import papaparse from 'papaparse';
 import { db } from '#/db/db';
 import { labelsTable } from '#/db/schema/labels';
 import { projectsTable } from '#/db/schema/projects';
-import { tasksTable } from '#/db/schema/tasks';
+import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
 import { extractKeywords } from '#/modules/tasks/helpers';
 import { getLabels, getSubTask, getTaskLabels } from './helper';
-import type { PivotalTask, Subtask } from './type';
+import type { PivotalTask } from './type';
 
 const program = new Command().option('--file <file>', 'Zip file to upload').option('--project <project>', 'Project to upload tasks to').parse();
 
@@ -58,45 +58,44 @@ zip.loadAsync(data).then(async (zip) => {
   >(promises as any);
 
   const labelsToInsert = getLabels(tasks, project.organizationId, project.id);
-  const subtasksToInsert: Subtask[] = [];
-  const tasksToInsert = tasks.map((task, index) => {
-    const taskId = nanoid();
-    const labelsIds = getTaskLabels(task, labelsToInsert);
-    const subtasks = getSubTask(task, taskId, project.organizationId, project.id);
-    if (subtasks.length) subtasksToInsert.push(...subtasks);
-    return {
-      id: taskId,
-      slug: task.Id,
-      summary:
-        `<div class="bn-block-content"><p class="bn-inline-content">${task.Title}</p></div>` ||
-        '<div class="bn-block-content"><p class="bn-inline-content">No title</p></div>',
-      type: (task.Type || 'chore') as 'feature' | 'bug' | 'chore',
-      createdBy: 'pivotal',
-      organizationId: project.organizationId,
-      projectId: project.id,
-      expandable: true,
-      keywords: extractKeywords(task.Description + task.Title),
-      impact: ['0', '1', '2', '3'].includes(task.Estimate) ? +task.Estimate : 0,
-      description: `<div class="bn-block-content"><p class="bn-inline-content">${task.Title}</p></div><div class="bn-block-content"><p class="bn-inline-content">${task.Description}</p></div>`,
-      labels: labelsIds,
-      status:
-        task['Current State'] === 'accepted'
-          ? 6
-          : task['Current State'] === 'reviewed'
-            ? 5
-            : task['Current State'] === 'delivered'
-              ? 4
-              : task['Current State'] === 'finished'
-                ? 3
-                : task['Current State'] === 'started'
-                  ? 2
-                  : task['Current State'] === 'unstarted'
-                    ? 1
-                    : 0,
-      order: index,
-      createdAt: new Date(),
-    };
-  });
+  const subtasksToInsert: InsertTaskModel[] = [];
+  const tasksToInsert = tasks
+    // Filter out accepted tasks
+    .filter((task) => task['Current State'] !== 'accepted')
+    .map((task, index) => {
+      const taskId = nanoid();
+      const labelsIds = getTaskLabels(task, labelsToInsert);
+      const subtasks = getSubTask(task, taskId, project.organizationId, project.id);
+      if (subtasks.length) subtasksToInsert.push(...subtasks);
+      return {
+        id: taskId,
+        summary: `<div class="bn-block-content"><p class="bn-inline-content">${task.Title}</p></div>`,
+        type: (task.Type || 'chore') as 'feature' | 'bug' | 'chore',
+        organizationId: project.organizationId,
+        projectId: project.id,
+        expandable: true,
+        keywords: task.Description || task.Title ? extractKeywords(task.Description + task.Title) : '',
+        impact: ['0', '1', '2', '3'].includes(task.Estimate) ? +task.Estimate : 0,
+        description: `<div class="bn-block-content"><p class="bn-inline-content">${task.Title}</p></div><div class="bn-block-content"><p class="bn-inline-content">${task.Description}</p></div>`,
+        labels: labelsIds,
+        status:
+          task['Current State'] === 'accepted'
+            ? 6
+            : task['Current State'] === 'reviewed'
+              ? 5
+              : task['Current State'] === 'delivered'
+                ? 4
+                : task['Current State'] === 'finished'
+                  ? 3
+                  : task['Current State'] === 'started'
+                    ? 2
+                    : task['Current State'] === 'unstarted'
+                      ? 1
+                      : 0,
+        order: index,
+        createdAt: new Date(),
+      } satisfies InsertTaskModel;
+    });
   await db.insert(labelsTable).values(labelsToInsert);
   await db.insert(tasksTable).values(tasksToInsert).onConflictDoNothing();
   if (subtasksToInsert.length) await db.insert(tasksTable).values(subtasksToInsert);

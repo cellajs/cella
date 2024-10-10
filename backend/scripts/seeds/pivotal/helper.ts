@@ -1,21 +1,20 @@
 import { nanoid } from 'nanoid';
+import type { InsertTaskModel } from '#/db/schema/tasks';
 import { extractKeywords } from '#/modules/tasks/helpers';
-import type { Labels, PivotalTask, Subtask } from './type';
+import type { Labels, PivotalTask } from './type';
 
 export const getSubTask = (task: PivotalTask, taskId: string, organizationId: string, projectId: string) => {
-  const subtasks: Subtask[] = [];
+  const subtasks: InsertTaskModel[] = [];
   for (let i = 0; i <= 27; i++) {
     const taskKey = `Task_${i}` as keyof PivotalTask;
     const statusKey = `Task Status_${i}` as keyof PivotalTask;
     if (task[taskKey] && task[statusKey]) {
       subtasks.push({
         id: nanoid(),
-        slug: `${task.Id}_${i}`,
         summary: `<div class="bn-block-content"><p class="bn-inline-content">${task[taskKey]}</p></div>`,
         type: 'chore' as const,
         keywords: extractKeywords(task[taskKey]),
         parentId: taskId,
-        createdBy: 'pivotal',
         organizationId: organizationId,
         projectId: projectId,
         impact: 0,

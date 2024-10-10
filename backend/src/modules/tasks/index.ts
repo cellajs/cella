@@ -85,7 +85,7 @@ const tasksRoutes = app
     const uniqueAssignedUserIds = Array.from(
       new Set([
         ...tasks.flatMap((t) => t.assignedTo),
-        ...tasks.map((t) => t.createdBy),
+        ...tasks.map((t) => t.createdBy).filter((id) => id !== null),
         ...tasks.map((t) => t.modifiedBy).filter((id) => id !== null),
       ]),
     );
@@ -103,7 +103,7 @@ const tasksRoutes = app
         return {
           ...task,
           subTasks: subtasks,
-          createdBy: userMap.get(task.createdBy) || null,
+          createdBy: task.createdBy ? userMap.get(task.createdBy) || null : null,
           modifiedBy: userMap.get(task.modifiedBy || '') || null,
           assignedTo: users.filter((m) => task.assignedTo.includes(m.id)),
           labels: labels.filter((m) => task.labels.includes(m.id)),
@@ -164,7 +164,8 @@ const tasksRoutes = app
 
     const subTasks = await db.select().from(tasksTable).where(eq(tasksTable.parentId, updatedTask.id));
 
-    const uniqueAssignedUserIds = Array.from(new Set([...updatedTask.assignedTo, updatedTask.createdBy]));
+    const uniqueAssignedUserIds = [...updatedTask.assignedTo];
+    if (updatedTask.createdBy) uniqueAssignedUserIds.push(updatedTask.createdBy);
     if (updatedTask.modifiedBy) uniqueAssignedUserIds.push(updatedTask.modifiedBy);
     const users = await getUsersByConditions([inArray(usersTable.id, uniqueAssignedUserIds)]);
     const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, updatedTask.labels));
