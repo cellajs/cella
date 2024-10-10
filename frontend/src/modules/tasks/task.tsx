@@ -151,7 +151,7 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
   return (
     <motion.div layout transition={{ duration: state === 'editing' || !isFocused ? 0 : 0.3 }}>
       <Card
-        id={task.id}
+        id={isSheet ? `sheet-card-${task.id}` : task.id}
         onMouseDown={handleCardClick}
         style={style}
         tabIndex={0}

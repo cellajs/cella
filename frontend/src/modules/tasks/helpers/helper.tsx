@@ -22,7 +22,7 @@ export const openTaskPreviewSheet = (task: Task, mode: Mode, navigate: NavigateF
   }
   sheet.create(
     <Suspense>
-      <TaskCard mode={mode} task={task} state={'editing'} isSelected={false} isFocused={true} isSheet />
+      <TaskCard mode={mode} task={task} state="editing" isSelected={false} isFocused={true} isSheet />
     </Suspense>,
     {
       className: 'max-w-full lg:max-w-4xl px-0',
@@ -42,6 +42,7 @@ export const openTaskPreviewSheet = (task: Task, mode: Mode, navigate: NavigateF
       },
     },
   );
+  setTaskCardFocus(`sheet-card-${task.id}`);
 };
 
 export const setTaskCardFocus = (id: string) => {

@@ -1,6 +1,6 @@
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { useLocation } from '@tanstack/react-router';
+import { useLocation, useSearch } from '@tanstack/react-router';
 import { type KeyboardEventHandler, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
@@ -48,6 +48,7 @@ export const TaskBlockNote = ({
   const { t } = useTranslation();
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock: false });
   const canChangeState = useRef(false);
+  const { taskIdPreview } = useSearch({ strict: false });
 
   const isCreationMode = !!onChange;
   const subTaskCreation = subTask && isCreationMode;
@@ -65,7 +66,7 @@ export const TaskBlockNote = ({
   const handleUpdateHTML = useCallback(
     async (newContent: string) => {
       try {
-        dispatchCustomEvent(stateEvent, { taskId: id, state: 'editing' });
+        if (!taskIdPreview) dispatchCustomEvent(stateEvent, { taskId: id, state: 'editing' });
         canChangeState.current = false;
 
         const updatedTask = await taskMutation.mutateAsync({
@@ -161,7 +162,7 @@ export const TaskBlockNote = ({
         id={subTask ? `blocknote-subtask-${id}` : `blocknote-${id}`}
         // Defer onChange, onFocus and onBlur  to run after rendering
         onChange={() => {
-          if (!isCreationMode && canChangeState.current) dispatchCustomEvent(stateEvent, { taskId: id, state: 'unsaved' });
+          if (!isCreationMode && canChangeState.current && !taskIdPreview) dispatchCustomEvent(stateEvent, { taskId: id, state: 'unsaved' });
 
           // to avoid update if content empty, so from draft shown
           if (!isCreationMode || editor.document[0].content?.toString() === '') return;
