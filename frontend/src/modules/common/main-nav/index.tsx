@@ -70,7 +70,6 @@ const MainNav = () => {
       side: sheetSide,
       hideClose: true,
       modal: isMobile,
-      hideClose: true,
       className: `fixed sm:z-[105] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
       removeCallback: () => {
         setNavSheetOpen(null);
