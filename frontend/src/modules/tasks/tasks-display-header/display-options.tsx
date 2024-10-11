@@ -25,7 +25,7 @@ const DisplayOptions = ({ className = '' }: Props) => {
   return (
     <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)} onValueChange={handleItemChange}>
       {['board', 'table', 'overview'].map((value) => (
-        <TooltipButton key={value} portal={true} toolTipContent={t(`common:${value}_view`)}>
+        <TooltipButton key={value} toolTipContent={t(`common:${value}_view`)}>
           <ToggleGroupItem key={value} value={value} className={`${pathname.includes(value) ? 'bg-accent' : ''}`}>
             {value === 'board' && <SquareKanban size={16} />}
             {value === 'table' && <Rows4 size={16} />}
