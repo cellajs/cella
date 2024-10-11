@@ -16,7 +16,7 @@ import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { getContentAsString } from '~/modules/common/blocknote/helpers';
+import { focusEditor, getContentAsString, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
@@ -48,10 +48,11 @@ export const TaskBlockNote = ({
   const { t } = useTranslation();
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock: false });
   const canChangeState = useRef(false);
-  const { pathname, search } = useLocation();
+  const wasInitial = useRef(false);
+
+  const { search } = useLocation();
 
   const isCreationMode = !!onChange;
-  const subTaskCreation = subTask && isCreationMode;
   const stateEvent = subTask ? 'changeSubTaskState' : 'changeTaskState';
   const isSheet = !!search.taskIdPreview;
 
@@ -79,7 +80,7 @@ export const TaskBlockNote = ({
         toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
       }
     },
-    [pathname],
+    [search.taskIdPreview],
   );
 
   const handleEditorFocus = () => {
@@ -106,24 +107,15 @@ export const TaskBlockNote = ({
   const handleKeyDown: KeyboardEventHandler = async (event) => {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault();
-      const blocks = editor.document;
       // to ensure that blocknote have description
       if (
-        blocks?.some((block) => {
+        editor.document?.some((block) => {
           const content = block.content;
           return Array.isArray(content) && (content as { text: string }[])[0]?.text.trim() !== '';
         })
       ) {
-        // Get the last block and modify its content so we remove last \n
-        const lastBlock = blocks[blocks.length - 1];
-        if (Array.isArray(lastBlock.content)) {
-          const lastBlockContent = lastBlock.content as { text: string }[];
-          if (lastBlockContent.length > 0) lastBlockContent[0].text = lastBlockContent[0].text.replace(/\n$/, ''); // Remove the last newline character
-          const updatedLastBlock = { ...lastBlock, content: lastBlockContent };
-          // Replace blocks with the updated last block
-          editor.replaceBlocks(editor.document, [...blocks.slice(0, -1), updatedLastBlock] as typeof editor.document);
-        }
-
+        const blocksToUpdate = handleSubmitOnEnter(editor);
+        if (blocksToUpdate) editor.replaceBlocks(editor.document, blocksToUpdate);
         updateData();
         callback?.();
       }
@@ -131,18 +123,18 @@ export const TaskBlockNote = ({
   };
 
   useLayoutEffect(() => {
+    if (html === '') return;
+
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
-      const currentBlocks = getContentAsString(editor.document as Block[]);
-      const newBlocksContent = getContentAsString(blocks as Block[]);
-
-      // Only replace blocks if the content actually changes
-      if (currentBlocks !== newBlocksContent || html === '' || subTaskCreation) {
-        editor.replaceBlocks(editor.document, blocks);
-        const lastBlock = editor.document[editor.document.length - 1];
-        editor.focus();
-        editor.setTextCursorPosition(lastBlock.id, 'end');
-      }
+      // If the current content is the same as the new content or if this is the initial update, exit early.
+      if (wasInitial.current) return;
+      editor.replaceBlocks(editor.document, blocks);
+      // Replace the existing blocks in the editor with the new blocks.
+      focusEditor(editor);
+      // Set the initial state flag to true to indicate that the first update has occurred.
+      wasInitial.current = true;
+      // If state change is not allowed yet, allow it now.
       if (!canChangeState.current) canChangeState.current = true;
     };
     blockUpdate(html);
@@ -161,9 +153,9 @@ export const TaskBlockNote = ({
         onChange={() => {
           if (!isCreationMode && canChangeState.current && !isSheet) dispatchCustomEvent(stateEvent, { taskId: id, state: 'unsaved' });
 
+          const blockContent = getContentAsString(editor.document as Block[]);
           // to avoid update if content empty, so from draft shown
-          if (!isCreationMode || editor.document[0].content?.toString() === '') return;
-
+          if (!isCreationMode || blockContent === '') return;
           queueMicrotask(() => updateData());
         }}
         onFocus={() => queueMicrotask(() => handleEditorFocus())}
