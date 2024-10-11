@@ -406,9 +406,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                               <Badge variant="outline" key={id} className="border-0 font-normal px-1 text-[.75rem] text-sm h-6 last:mr-0">
                                 {name}
                               </Badge>
-
-                              <button
-                                type="button"
+                              <div
                                 className={cn(
                                   buttonVariants({ size: 'micro', variant: 'ghost' }),
                                   'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0',
@@ -417,9 +415,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                                   e.preventDefault();
                                   onChange(value.filter((l) => l.name !== name));
                                 }}
+                                onKeyDown={() => {}}
                               >
                                 <X size={16} strokeWidth={3} />
-                              </button>
+                              </div>
                             </div>
                           );
                         })
