@@ -70,14 +70,14 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
   };
   return (
     <div
-      className={`relative bg-cover bg-muted bg-center ${bannerHeight} ${bannerClass}`}
+      className={`relative flex bg-cover bg-muted bg-center ${bannerHeight} ${bannerClass}`}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && (
         <Button
           variant="secondary"
           size="sm"
-          className="absolute top-3 right-3 opacity-50 hover:opacity-80 hover:bg-secondary"
+          className="relative top-3 mx-auto opacity-50 hover:opacity-80 hover:bg-secondary"
           onClick={openUploadDialog}
           onMouseOver={() => UploadUppy.preload()}
         >
