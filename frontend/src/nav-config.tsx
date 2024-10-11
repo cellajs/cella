@@ -6,10 +6,13 @@ import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
 
+import { Suspense, lazy } from 'react';
 import type { FooterLinkProps } from '~/modules/common/main-footer';
 import type { NavItem } from '~/modules/common/main-nav';
 import { MainSearch, type SuggestionSection } from '~/modules/common/main-search';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
+
+const CreateTaskForm = lazy(() => import('~/modules/tasks/create-task-form'));
 
 // Set entities paths
 export const baseEntityRoutes = {
@@ -31,7 +34,15 @@ export const navItems: NavItem[] = [
   { id: 'home', icon: Home, href: '/home' },
   { id: 'search', icon: Search, dialog: <MainSearch /> },
   { id: 'account', icon: User, sheet: <SheetAccount />, mirrorOnMobile: true },
-  { id: 'workspace-add-task', icon: Plus },
+  {
+    id: 'workspace-add-task',
+    icon: Plus,
+    dialog: (
+      <Suspense>
+        <CreateTaskForm projectIdOrSlug={''} dialog />
+      </Suspense>
+    ),
+  },
 ];
 
 // Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )
