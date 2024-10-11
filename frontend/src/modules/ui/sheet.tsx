@@ -53,7 +53,7 @@ interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetP
   hideClose?: boolean;
 }
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
-  ({ side = 'right', className, children, hideClose = true, onClick, ...props }, ref) => (
+  ({ side = 'right', className, children, hideClose = false, onClick, ...props }, ref) => (
     <>
       <SheetOverlay
         onClick={onClick} // Using the passed onClick function
