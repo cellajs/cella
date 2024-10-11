@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { dispatchCustomEvent } from '~/lib/custom-events';
+import { queryClient } from '~/lib/router';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from '~/modules/tasks/helpers';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote.tsx';
 import { Button } from '~/modules/ui/button';
@@ -93,11 +93,11 @@ export const CreateSubTaskForm = ({
     };
 
     createTask(newSubTask)
-      .then((resp) => {
+      .then(async (resp) => {
         if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:todo') }));
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('app:todo') }));
-        dispatchCustomEvent('taskOperation', { array: [newSubTask], action: 'createSubTask', projectId: parentTask.projectId });
+        await queryClient.invalidateQueries({ refetchType: 'active' });
         setFormState(false);
       })
       .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:todo') })));

@@ -38,7 +38,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
       const queryKey = taskKeys.list({ projectId: task.projectId, orgIdOrSlug: task.organizationId });
       const query = queryClient.getQueryData<{ items: Task[] }>(queryKey);
       const newOrder = getNewStatusTaskOrder(task.status, newStatus, query?.items ?? []);
-      const updatedTask = await taskMutation.mutateAsync({
+      await taskMutation.mutateAsync({
         id: task.id,
         orgIdOrSlug: task.organizationId,
         key: 'status',
@@ -46,7 +46,11 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
         order: newOrder,
         projectId: task.projectId,
       });
-      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: task.projectId });
+      if (isSheet) {
+        await queryClient.invalidateQueries({
+          refetchType: 'active',
+        });
+      }
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }

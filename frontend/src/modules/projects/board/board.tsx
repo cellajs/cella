@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Bird, Redo } from 'lucide-react';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -17,7 +17,7 @@ import type { Project, Task } from '~/types/app';
 import type { ContextEntity, Membership } from '~/types/common';
 
 import type { ImperativePanelHandle } from 'react-resizable-panels';
-import { useMutateTasksQueryData, useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { taskKeys } from '~/modules/common/query-client-provider/tasks';
@@ -27,7 +27,7 @@ import { sortAndGetCounts } from '~/modules/tasks/helpers';
 import { openTaskPreviewSheet, setTaskCardFocus } from '~/modules/tasks/helpers/helper';
 import TaskCard from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
-import type { TaskCardToggleSelectEvent, TaskOperationEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
+import type { TaskCardToggleSelectEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { useThemeStore } from '~/store/theme';
 import { defaultColumnValues, useWorkspaceUIStore } from '~/store/workspace-ui';
@@ -279,29 +279,6 @@ export default function Board() {
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
-  const projectCallback = (projectId: string) => useMutateTasksQueryData(taskKeys.list({ projectId, orgIdOrSlug: workspace.organizationId }));
-
-  const handleTaskOperations = useCallback(
-    (event: TaskOperationEvent) => {
-      const { array, action, projectId } = event.detail;
-      if (!projectId) return;
-      // Trigger the mutation callback for the specific project
-      projectCallback(projectId)(array, action);
-
-      const cleanFocused = focusedTaskId?.replace('sheet-card-', '');
-
-      // If no tasks exist or if the focused task sheet does not exist, return early
-      if (action !== 'update' || !sheet.get(`task-preview-${cleanFocused}`)) return;
-
-      const [sheetTask] = array;
-      // If a focused task is found, update the corresponding sheet with new content
-      sheet.update(`task-preview-${cleanFocused}`, {
-        content: <TaskCard mode={mode} task={sheetTask as Task} state="editing" isSelected={false} isFocused={true} isSheet />,
-      });
-    },
-    [focusedTaskId],
-  );
-
   const workspaceCallback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
   const handleEntityUpdate = (event: { detail: { membership: Membership; entity: ContextEntity } }) => {
     const { entity, membership } = event.detail;
@@ -316,7 +293,6 @@ export default function Board() {
 
   useEventListener('menuEntityChange', handleEntityUpdate);
   useEventListener('changeTaskState', handleTaskState);
-  useEventListener('taskOperation', handleTaskOperations);
   useEventListener('toggleSelectTask', handleToggleTaskSelect);
 
   useEffect(() => {
@@ -343,7 +319,13 @@ export default function Board() {
     if (!currentTask) return;
     if (q?.length) setSearchQuery(q);
     // to open sheet after initial sheet.remove triggers
-    if (taskIdPreview) setTimeout(() => openTaskPreviewSheet(currentTask, mode, navigate), 0);
+    if (taskIdPreview) {
+      if (sheet.get(`task-preview-${taskIdPreview}`)) {
+        sheet.update(`task-preview-${taskIdPreview}`, {
+          content: <TaskCard mode={mode} task={currentTask} state="editing" isSelected={false} isFocused={true} isSheet />,
+        });
+      } else setTimeout(() => openTaskPreviewSheet(currentTask, mode, navigate), 0);
+    }
   }, [currentTask]);
 
   return (

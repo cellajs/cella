@@ -1,8 +1,9 @@
+import { useSearch } from '@tanstack/react-router';
 import { Bolt, Bug, Check, Star } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { dispatchCustomEvent } from '~/lib/custom-events';
+import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
@@ -10,6 +11,7 @@ import type { TaskType } from '~/modules/tasks/create-task-form';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import { cn } from '~/utils/cn';
 
@@ -33,7 +35,7 @@ export interface SelectTaskTypeProps {
 
 const SelectTaskType = ({ currentType, projectId, className = '' }: SelectTaskTypeProps) => {
   const { t } = useTranslation();
-  const { focusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId: storeFocusedId } = useWorkspaceStore();
   const {
     data: { workspace },
   } = useWorkspaceQuery();
@@ -42,19 +44,24 @@ const SelectTaskType = ({ currentType, projectId, className = '' }: SelectTaskTy
   const isSearching = searchValue.length > 0;
   const taskMutation = useTaskMutation();
 
+  const { taskIdPreview } = useSearch({
+    from: WorkspaceRoute.id,
+  });
+
+  const focusedTaskId = useMemo(() => (taskIdPreview ? taskIdPreview : storeFocusedId), [storeFocusedId, taskIdPreview]);
+
   const changeTaskType = async (newType: TaskType) => {
     if (!focusedTaskId) return;
-    const cleanTaskId = focusedTaskId.replace('sheet-card-', '');
 
     try {
-      const updatedTask = await taskMutation.mutateAsync({
-        id: cleanTaskId,
+      await taskMutation.mutateAsync({
+        id: focusedTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'type',
         data: newType,
         projectId,
       });
-      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
+      if (taskIdPreview) await queryClient.invalidateQueries({ refetchType: 'active' });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }

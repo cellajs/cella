@@ -11,7 +11,7 @@ import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure';
-import { dispatchCustomEvent } from '~/lib/custom-events';
+import { queryClient } from '~/lib/router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
@@ -155,16 +155,12 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks 
     };
 
     createTask(newTask)
-      .then((resp) => {
+      .then(async (resp) => {
         if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:task') }));
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('app:task') }));
         handleCloseForm();
-        dispatchCustomEvent('taskOperation', {
-          array: [resp],
-          action: 'create',
-          projectId: projectId,
-        });
+        await queryClient.invalidateQueries({ refetchType: 'active' });
       })
       .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:task') })));
   };

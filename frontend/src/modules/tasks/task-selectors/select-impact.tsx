@@ -1,8 +1,9 @@
+import { useSearch } from '@tanstack/react-router';
 import { Check } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { dispatchCustomEvent } from '~/lib/custom-events';
+import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
@@ -14,6 +15,7 @@ import { MediumIcon } from '~/modules/tasks/task-selectors/impact-icons/medium';
 import { NoneIcon } from '~/modules/tasks/task-selectors/impact-icons/none';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 
 type ImpactOption = {
@@ -39,7 +41,11 @@ interface SelectImpactProps {
 
 const SelectImpact = ({ value, projectId, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
   const { t } = useTranslation();
-  const { focusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId: storeFocusedId } = useWorkspaceStore();
+  const { taskIdPreview } = useSearch({
+    from: WorkspaceRoute.id,
+  });
+
   const {
     data: { workspace },
   } = useWorkspaceQuery();
@@ -47,21 +53,22 @@ const SelectImpact = ({ value, projectId, triggerWidth = 192, creationValueChang
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
+  const focusedTaskId = useMemo(() => (taskIdPreview ? taskIdPreview : storeFocusedId), [storeFocusedId, taskIdPreview]);
   const taskMutation = useTaskMutation();
 
   const changeTaskImpact = async (newImpact: TaskImpact) => {
     try {
       if (creationValueChange) return creationValueChange(newImpact);
       if (!focusedTaskId) return;
-      const cleanTaskId = focusedTaskId.replace('sheet-card-', '');
-      const updatedTask = await taskMutation.mutateAsync({
-        id: cleanTaskId,
+
+      await taskMutation.mutateAsync({
+        id: focusedTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'impact',
         data: newImpact,
         projectId,
       });
-      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
+      if (taskIdPreview) await queryClient.invalidateQueries({ refetchType: 'active' });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }

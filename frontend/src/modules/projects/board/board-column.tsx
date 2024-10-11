@@ -12,7 +12,6 @@ import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@elect
 import { config } from 'config';
 import { toast } from 'sonner';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import router, { queryClient } from '~/lib/router';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -283,46 +282,33 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
           if (isTask) {
             const newOrder: number = getRelativeTaskOrder(edge, showingTasks, targetData.order, sourceItem.id, undefined, sourceItem.status);
             try {
-              if (project.id !== targetItem.projectId) {
-                const updatedTask = await taskMutation.mutateAsync({
-                  id: sourceItem.id,
-                  orgIdOrSlug: workspace.organizationId,
-                  key: 'projectId',
-                  data: targetItem.projectId,
-                  order: newOrder,
-                  projectId: project.id,
-                });
-                dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'delete', projectId: project.id });
-                dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'create', projectId: targetItem.projectId });
-              } else {
-                const updatedTask = await taskMutation.mutateAsync({
-                  id: sourceItem.id,
-                  orgIdOrSlug: workspace.organizationId,
-                  key: 'order',
-                  data: newOrder,
-                  projectId: project.id,
-                });
-                dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: project.id });
-              }
+              await taskMutation.mutateAsync({
+                id: sourceItem.id,
+                orgIdOrSlug: workspace.organizationId,
+                key: project.id !== targetItem.projectId ? 'projectId' : 'order',
+                data: project.id !== targetItem.projectId ? targetItem.projectId : newOrder,
+                ...(project.id !== targetItem.projectId && { order: newOrder }),
+                projectId: project.id,
+              });
             } catch (err) {
-              toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
+              return toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
             }
           }
 
           if (isSubTask) {
             const newOrder = getRelativeTaskOrder(edge, showingTasks, targetData.order, sourceItem.id, targetItem.parentId ?? undefined);
             try {
-              const updatedTask = await taskMutation.mutateAsync({
+              await taskMutation.mutateAsync({
                 id: sourceItem.id,
                 orgIdOrSlug: workspace.organizationId,
                 key: 'order',
                 data: newOrder,
               });
-              dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'updateSubTask', projectId: project.id });
             } catch (err) {
-              toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
+              return toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
             }
           }
+          await queryClient.invalidateQueries({ refetchType: 'active' });
         },
       }),
     );

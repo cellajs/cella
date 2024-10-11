@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { deleteTasks } from '~/api/tasks';
 import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { dispatchCustomEvent } from '~/lib/custom-events';
+import { queryClient } from '~/lib/router';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { isSubTaskData } from '~/modules/projects/board/helpers';
@@ -22,6 +22,7 @@ import type { Mode } from '~/store/theme';
 import type { SubTask as BaseSubTask, Task } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { getDraggableItemData } from '~/utils/drag-drop';
+import { sheet } from '../common/sheeter/state';
 import type { TaskStates } from './types';
 
 const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
@@ -31,15 +32,16 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   const [state, setState] = useState<TaskStates>('folded');
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
+  // const { taskIdPreview } = useSearch({
+  //   from: WorkspaceRoute.id,
+  // });
 
   const taskMutation = useTaskMutation();
 
   const onRemove = (subTaskId: string) => {
-    deleteTasks([subTaskId], task.organizationId).then((resp) => {
-      dispatchCustomEvent('taskOperation', {
-        array: [{ id: subTaskId }],
-        action: 'deleteSubTask',
-        projectId: task.projectId,
+    deleteTasks([subTaskId], task.organizationId).then(async (resp) => {
+      await queryClient.invalidateQueries({
+        refetchType: 'active',
       });
       if (resp) toast.success(t('common:success.delete_resources', { resources: t('app:todos') }));
       else toast.error(t('common:error.delete_resources', { resources: t('app:todos') }));
@@ -53,14 +55,14 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 
   const handleUpdateStatus = async (newStatus: number) => {
     try {
-      const updatedTask = await taskMutation.mutateAsync({
+      await taskMutation.mutateAsync({
         id: task.id,
         orgIdOrSlug: task.organizationId,
         key: 'status',
         data: newStatus,
         projectId: task.projectId,
       });
-      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'updateSubTask', projectId: task.projectId });
+      if (sheet.get(`task-preview-${task.parentId}`)) await queryClient.invalidateQueries({ refetchType: 'active' });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
     }

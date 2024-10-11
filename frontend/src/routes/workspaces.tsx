@@ -15,6 +15,22 @@ const WorkspacePage = lazy(() => import('~/modules/workspaces/workspace-page'));
 const Board = lazy(() => import('~/modules/projects/board/board'));
 const TasksTable = lazy(() => import('~/modules/tasks/tasks-table'));
 
+export const tasksSearchSchema = z.object({
+  q: z.string().optional(),
+  sort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
+  order: z.enum(['asc', 'desc']).default('asc').optional(),
+  projectId: z.string().optional(),
+  status: z.string().optional(),
+  taskIdPreview: z.string().optional(),
+  userIdPreview: z.string().optional(),
+});
+
+export const boardSearchSchema = z.object({
+  project: z.string().optional(),
+  q: z.string().optional(),
+  taskIdPreview: z.string().optional(),
+});
+
 export const labelsSearchSchema = z.object({
   q: z.string().optional(),
   sort: z.enum(['name', 'useCount', 'lastUsed']).default('name').optional(),
@@ -23,6 +39,10 @@ export const labelsSearchSchema = z.object({
 
 export const WorkspaceRoute = createRoute({
   path: baseEntityRoutes.workspace,
+  validateSearch: z.object({
+    ...boardSearchSchema.shape,
+    ...tasksSearchSchema.shape,
+  }),
   staticData: { pageTitle: 'Workspace', isAuth: true },
   beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/board'),
   getParentRoute: () => AppRoute,
@@ -40,24 +60,10 @@ export const WorkspaceRoute = createRoute({
   },
 });
 
-export const tasksSearchSchema = z.object({
-  q: z.string().optional(),
-  sort: z.enum(['projectId', 'status', 'createdBy', 'type', 'modifiedAt', 'createdAt']).default('createdAt').optional(),
-  order: z.enum(['asc', 'desc']).default('asc').optional(),
-  projectId: z.string().optional(),
-  status: z.string().optional(),
-  taskIdPreview: z.string().optional(),
-  userIdPreview: z.string().optional(),
-});
-
 export const WorkspaceBoardRoute = createRoute({
   path: '/board',
   staticData: { pageTitle: 'Board', isAuth: true, showedMobileNavButtons: ['menu', 'workspace-add-task'] },
-  validateSearch: z.object({
-    project: z.string().optional(),
-    q: z.string().optional(),
-    taskIdPreview: z.string().optional(),
-  }),
+  validateSearch: boardSearchSchema,
   getParentRoute: () => WorkspaceRoute,
   component: () => (
     <Suspense>

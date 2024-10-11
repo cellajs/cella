@@ -68,16 +68,13 @@ export const TaskBlockNote = ({
       try {
         if (!isSheet) dispatchCustomEvent(stateEvent, { taskId: id, state: 'editing' });
         canChangeState.current = false;
-
-        const updatedTask = await taskMutation.mutateAsync({
+        await taskMutation.mutateAsync({
           id,
           orgIdOrSlug: workspace.organizationId,
           key: 'description',
           data: newContent,
           projectId,
         });
-        const action = updatedTask.parentId ? 'updateSubTask' : 'update';
-        dispatchCustomEvent('taskOperation', { array: [updatedTask], action, projectId: updatedTask.projectId });
       } catch (err) {
         toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
       }

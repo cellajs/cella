@@ -10,10 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
-import { useEventListener } from '~/hooks/use-event-listener';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useMutateInfiniteTaskQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import { queryClient } from '~/lib/router';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -31,7 +30,6 @@ import TaskCard from '~/modules/tasks/task';
 import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import TableHeader from '~/modules/tasks/tasks-display-header/header';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
-import type { TaskOperationEvent } from '~/modules/tasks/types';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme';
@@ -132,17 +130,6 @@ export default function TasksTable() {
     }),
   );
 
-  const callback = useMutateInfiniteTaskQueryData(
-    taskKeys.list({
-      orgIdOrSlug: workspace.organizationId,
-      projectId: search.projectId ? search.projectId : projects.map((p) => p.id).join('_'),
-      status: selectedStatuses.join('_'),
-      q: searchQuery,
-      sort,
-      order,
-    }),
-  );
-
   // hide accepted > then 30 days ago
   const rows = useMemo(() => {
     const tasks = tasksQuery.data?.pages[0].items || [];
@@ -161,11 +148,6 @@ export default function TasksTable() {
   //   setSelectedProjects([]);
   //   setSelectedStatuses([]);
   // };
-
-  const handleTaskOperations = (event: TaskOperationEvent) => {
-    const { array, action } = event.detail;
-    callback(array, action);
-  };
 
   // Open on key press
   const hotKeyPress = (field: string) => {
@@ -187,22 +169,16 @@ export default function TasksTable() {
     ['T', () => hotKeyPress(`type-${focusedTaskId}`)],
   ]);
 
-  useEventListener('taskOperation', handleTaskOperations);
-
-  useEffect(() => {
-    if (!rows.length || !sheet.get(`task-preview-${focusedTaskId}`)) return;
-    const relativeTasks = rows.filter((t) => t.id === focusedTaskId || t.parentId === focusedTaskId);
-    const [currentTask] = relativeTasks.filter((t) => t.id === focusedTaskId);
-    sheet.update(`task-preview-${currentTask.id}`, {
-      content: <TaskCard mode={mode} task={currentTask} state="editing" isSelected={false} isFocused={true} isSheet />,
-    });
-  }, [rows, focusedTaskId]);
-
   useEffect(() => {
     if (!rows.length) return;
     if (search.taskIdPreview) {
       const [task] = rows.filter((t) => t.id === search.taskIdPreview);
-      openTaskPreviewSheet(task, mode, navigate);
+
+      if (sheet.get(`task-preview-${search.taskIdPreview}`)) {
+        sheet.update(`task-preview-${search.taskIdPreview}`, {
+          content: <TaskCard mode={mode} task={task} state="editing" isSelected={false} isFocused={true} isSheet />,
+        });
+      } else openTaskPreviewSheet(task, mode, navigate);
       return;
     }
     if (search.userIdPreview) {
@@ -233,14 +209,14 @@ export default function TasksTable() {
           if (!edge || !isSubTask) return;
           const newOrder: number = getRelativeTaskOrder(edge, rows, targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
           try {
-            const updatedTask = await taskMutation.mutateAsync({
+            await taskMutation.mutateAsync({
               id: sourceData.item.id,
               orgIdOrSlug: workspace.organizationId,
               key: 'order',
               data: newOrder,
               projectId: sourceData.item.projectId,
             });
-            callback([updatedTask], 'updateSubTask');
+            await queryClient.invalidateQueries({ refetchType: 'active' });
           } catch (err) {
             toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
           }

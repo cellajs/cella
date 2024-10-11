@@ -4,7 +4,6 @@ import { Check, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
@@ -19,6 +18,7 @@ import { StartedIcon } from '~/modules/tasks/task-selectors/status-icons/started
 import { UnstartedIcon } from '~/modules/tasks/task-selectors/status-icons/unstarted';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 
@@ -90,9 +90,11 @@ const SelectStatus = ({
 }: { taskStatus: TaskStatus; projectId: string; creationValueChange?: (newValue: number) => void }) => {
   const { t } = useTranslation();
 
-  const tableSearch = useSearch({ strict: false });
   const { pathname } = useLocation();
-  const { focusedTaskId } = useWorkspaceStore();
+  const { focusedTaskId: storeFocusedId } = useWorkspaceStore();
+  const tableSearch = useSearch({
+    from: WorkspaceRoute.id,
+  });
   const {
     data: { workspace, projects },
   } = useWorkspaceQuery();
@@ -100,9 +102,13 @@ const SelectStatus = ({
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
   const taskMutation = useTaskMutation();
 
+  const focusedTaskId = useMemo(
+    () => (tableSearch.taskIdPreview ? tableSearch.taskIdPreview : storeFocusedId),
+    [storeFocusedId, tableSearch.taskIdPreview],
+  );
+
   const showedStatuses = useMemo(() => {
     if (searchValue.length) return taskStatuses.filter((s) => s.status.includes(searchValue.toLowerCase()));
-
     return taskStatuses;
   }, [searchValue]);
 
@@ -110,8 +116,6 @@ const SelectStatus = ({
     if (creationValueChange) creationValueChange(newStatus);
     if (!focusedTaskId) return;
     try {
-      const cleanTaskId = focusedTaskId.replace('sheet-card-', '');
-
       const isTable = pathname.includes('/table');
       const queryKeys = !isTable
         ? taskKeys.list({ projectId, orgIdOrSlug: workspace.organizationId })
@@ -127,15 +131,15 @@ const SelectStatus = ({
       const query: Query | undefined = queryClient.getQueryData(queryKeys);
       const tasks: Task[] = query ? (isTable ? query.pages?.[0]?.items || [] : query.items || []) : [];
       const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
-      const updatedTask = await taskMutation.mutateAsync({
-        id: cleanTaskId,
+      await taskMutation.mutateAsync({
+        id: focusedTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'status',
         data: newStatus,
         order: newOrder,
         projectId,
       });
-      dispatchCustomEvent('taskOperation', { array: [updatedTask], action: 'update', projectId: updatedTask.projectId });
+      if (tableSearch.taskIdPreview) await queryClient.invalidateQueries({ refetchType: 'active' });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
