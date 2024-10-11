@@ -6,7 +6,7 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { queryClient } from '~/lib/router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { getNewStatusTaskOrder } from '~/modules/tasks/helpers';
-import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
+import { handleTaskDropDownClick } from '~/modules/tasks/helpers/helper';
 import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact';
 import { statusVariants, taskStatuses } from '~/modules/tasks/task-selectors/select-status';

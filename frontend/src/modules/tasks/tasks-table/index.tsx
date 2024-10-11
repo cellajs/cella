@@ -25,9 +25,8 @@ import { taskKeys, useTaskMutation } from '~/modules/common/query-client-provide
 import { sheet } from '~/modules/common/sheeter/state';
 import { isSubTaskData } from '~/modules/projects/board/helpers';
 import { configureForExport, getRelativeTaskOrder } from '~/modules/tasks/helpers';
-import { openTaskPreviewSheet } from '~/modules/tasks/helpers/helper';
+import { handleTaskDropDownClick, openTaskPreviewSheet } from '~/modules/tasks/helpers/helper';
 import TaskCard from '~/modules/tasks/task';
-import { handleTaskDropDownClick } from '~/modules/tasks/task-selectors/drop-down-trigger';
 import TableHeader from '~/modules/tasks/tasks-display-header/header';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
