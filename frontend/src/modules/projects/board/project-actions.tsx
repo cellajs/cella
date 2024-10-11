@@ -4,6 +4,7 @@ import { showToast } from '~/lib/toasts';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
 import { openProjectConfigSheet } from './helpers';
@@ -11,6 +12,7 @@ import { openProjectConfigSheet } from './helpers';
 const ProjectActions = ({ project }: { project: Project }) => {
   const { t } = useTranslation();
   const { changeColumn, workspaces } = useWorkspaceUIStore();
+  const { setFocusedTaskId } = useWorkspaceStore();
 
   const {
     data: { workspace, projects },
@@ -35,6 +37,7 @@ const ProjectActions = ({ project }: { project: Project }) => {
   };
 
   const createTaskClick = () => {
+    setFocusedTaskId(null);
     changeColumn(workspace.id, project.id, {
       createTaskForm: !createTaskForm,
     });
