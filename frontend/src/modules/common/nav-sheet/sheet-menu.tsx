@@ -13,7 +13,7 @@ import { updateMembership } from '~/api/memberships';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
+import { getRelativeItem, orderChange } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuSearch } from '~/modules/common/nav-sheet/sheet-menu-search';
 import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
@@ -88,25 +88,23 @@ export const SheetMenu = memo(() => {
           const targetData = target.data;
           if (!isPageData(targetData) || !isPageData(sourceData)) return;
 
-          const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
-          const neededItems = findRelatedItemsByType(menu, sourceData.item.entity, sourceData.item.membership.archived);
-          const targetItemIndex = neededItems.findIndex((i) => i.id === targetData.item.id);
-          const relativeItemIndex = closestEdgeOfTarget === 'top' ? targetItemIndex - 1 : targetItemIndex + 1;
-
-          const relativeItem = neededItems[relativeItemIndex];
+          const { item: sourceItem } = sourceData;
+          const { item: targetItem } = targetData;
+          const edge: Edge | null = extractClosestEdge(targetData);
+          const relativeItem = getRelativeItem(menu, sourceItem.entity, sourceItem.membership.archived, targetItem.id, edge);
           let newOrder: number;
 
           if (relativeItem === undefined || relativeItem.membership.order === targetData.order) {
-            newOrder = closestEdgeOfTarget === 'top' ? targetData.order / 2 : targetData.order + 1;
-          } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
+            newOrder = orderChange(targetData.order, edge === 'top' ? 'dec' : 'inc');
+          } else if (relativeItem.id === sourceItem.id) newOrder = sourceData.order;
           else newOrder = (relativeItem.membership.order + targetData.order) / 2;
 
           const updatedMembership = await updateMembership({
-            membershipId: sourceData.item.membership.id,
+            membershipId: sourceItem.membership.id,
             order: newOrder,
-            organizationId: sourceData.item.organizationId || sourceData.item.id,
+            organizationId: sourceItem.organizationId || sourceItem.id,
           });
-          dispatchCustomEvent('menuEntityChange', { entity: sourceData.item.entity, membership: updatedMembership });
+          dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership });
         },
       }),
     );

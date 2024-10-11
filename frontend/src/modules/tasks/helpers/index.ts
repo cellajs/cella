@@ -1,50 +1,44 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
+import { orderChange } from '~/modules/common/nav-sheet/helpers';
 import { impacts } from '~/modules/tasks/task-selectors/select-impact';
 import { taskStatuses } from '~/modules/tasks/task-selectors/select-status';
 import type { Project, SubTask, Task } from '~/types/app';
 import { dateIsRecent } from '~/utils/date-is-recent';
 
-const orderIncrease = (order: number) => {
-  if (Number.isInteger(order)) return order + 1;
-  return Math.ceil(order);
-};
-
-const orderDecrease = (order: number) => {
-  if (order > 1 && Number.isInteger(order)) return order - 1;
-  return order / 2;
-};
-
 export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, id: string, parentId?: string, status?: number) => {
-  let filteredTasks: Task[] | SubTask[] = tasks; // If no parentId or status, consider all tasks
+  // Filter tasks based on status, if provided
+  let filteredTasks: Task[] | SubTask[] = status ? tasks.filter((t) => t.status === status) : tasks;
 
-  // Filter tasks based on parentId or status
+  // If parentId exists, filter for subtasks and sort accordingly
   if (parentId) filteredTasks = tasks.find((t) => t.id === parentId)?.subTasks || [];
-  if (status) filteredTasks = tasks.filter((t) => t.status === status);
 
-  // Sort tasks based on their order
-  filteredTasks.sort((a, b) => sortTaskOrder(a, b, parentId ? edge !== 'top' : edge === 'top'));
+  // Sort based on task or subtask order
+  filteredTasks.sort((a, b) => (parentId ? sortSubTaskOrder(a, b, edge !== 'top') : sortTaskOrder(a, b, edge === 'top')));
 
   // Find the relative task based on the order
-  const relativeTask = filteredTasks.find((t) =>
-    parentId ? (edge === 'top' ? t.order < order : t.order > order) : edge === 'top' ? t.order > order : t.order < order,
-  );
+  const relativeTask = filteredTasks.find((t) => {
+    if (parentId) return edge === 'top' ? t.order < order : t.order > order;
+    return edge === 'top' ? t.order > order : t.order < order;
+  });
+
   let newOrder: number;
 
   // Determine new order based on relative task presence and conditions
   if (!relativeTask || relativeTask.order === order) {
-    newOrder = parentId
-      ? edge === 'top'
-        ? orderDecrease(order)
-        : orderIncrease(order)
-      : edge === 'top'
-        ? orderIncrease(order)
-        : orderDecrease(order);
+    newOrder = parentId ? orderChange(order, edge === 'top' ? 'dec' : 'inc') : orderChange(order, edge === 'top' ? 'inc' : 'dec');
   } else if (relativeTask.id === id) {
     newOrder = relativeTask.order;
   } else {
     newOrder = (relativeTask.order + order) / 2;
   }
   return newOrder;
+};
+
+// To sort SubTasks by its order
+const sortSubTaskOrder = (task1: Pick<Task, 'order'>, task2: Pick<Task, 'order'>, reverse?: boolean) => {
+  if (task1.order !== null && task2.order !== null) return reverse ? task2.order - task1.order : task1.order - task2.order;
+  // order is null
+  return 0;
 };
 
 // To sort Tasks by its status & order
@@ -62,7 +56,7 @@ export const getNewStatusTaskOrder = (oldStatus: number, newStatus: number, task
   const [task] = tasks
     .filter((t) => t.status === newStatus && (t.status !== 6 || dateIsRecent(t.modifiedAt, 30)))
     .sort((a, b) => sortTaskOrder(a, b, direction > 0));
-  return task ? (direction > 0 ? orderDecrease(task.order) : orderIncrease(task.order)) : 0.1;
+  return task ? orderChange(task.order, direction > 0 ? 'dec' : 'inc') : 0.1;
 };
 
 // return task order for new created Tasks

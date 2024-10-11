@@ -3,7 +3,7 @@ import type { Config } from './default';
 export default {
   mode: 'development',
   name: 'Raak DEVELOPMENT',
-  debug: false,
+  debug: true,
 
   // senderIsReceiver: true,
 
