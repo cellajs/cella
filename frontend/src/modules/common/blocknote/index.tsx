@@ -19,7 +19,7 @@ import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import type { Member } from '~/types/common';
 
 import type { Block } from '@blocknote/core';
-import { getContentAsString } from './helpers';
+import { focusEditor, getContentAsString } from './helpers';
 import './styles.css';
 
 type BlockNoteProps = {
@@ -76,19 +76,17 @@ export const BlockNote = ({
   };
 
   useLayoutEffect(() => {
+    if (defaultValue === '') return;
+
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
-      const currentBlocks = getContentAsString(editor.document as Block[]);
-      const newBlocksContent = getContentAsString(blocks as Block[]);
-
-      // Only replace blocks if the content actually changes
-      if (currentBlocks !== newBlocksContent || html === '') {
-        editor.replaceBlocks(editor.document, blocks);
-        const lastBlock = editor.document[editor.document.length - 1];
-        editor.focus();
-        editor.setTextCursorPosition(lastBlock.id, 'end');
-        if (!wasInitial.current) wasInitial.current = true;
-      }
+      // If the current content is the same as the new content or if this is the initial update, exit early.
+      if (wasInitial.current) return;
+      editor.replaceBlocks(editor.document, blocks);
+      // Replace the existing blocks in the editor with the new blocks.
+      focusEditor(editor);
+      // Set the initial state flag to true to indicate that the first update has occurred.
+      wasInitial.current = true;
     };
     blockUpdate(defaultValue);
   }, [defaultValue]);
@@ -101,8 +99,9 @@ export const BlockNote = ({
       editor={editor}
       defaultValue={defaultValue}
       onChange={() => {
+        const blockContent = getContentAsString(editor.document as Block[]);
         // to avoid update if content empty, so from draft shown
-        if (!triggerUpdateOnChange || editor.document[0].content?.toString() === '') return;
+        if (!triggerUpdateOnChange || blockContent === '') return;
         queueMicrotask(() => onBlockNoteChange());
       }}
       onFocus={() => queueMicrotask(() => onFocus?.())}
