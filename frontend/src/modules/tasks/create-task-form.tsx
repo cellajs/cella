@@ -4,6 +4,7 @@ import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
+import { useSearch } from '@tanstack/react-router';
 import { ChevronDown, Tag, UserX, X } from 'lucide-react';
 import { type LegacyRef, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -15,7 +16,7 @@ import { queryClient } from '~/lib/router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
-import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from '~/modules/tasks/helpers';
+import { extractUniqueWordsFromHTML, getNewTaskOrder } from '~/modules/tasks/helpers';
 import { NotSelected } from '~/modules/tasks/task-selectors/impact-icons/not-selected';
 import SelectImpact, { impacts } from '~/modules/tasks/task-selectors/select-impact';
 import SetLabels from '~/modules/tasks/task-selectors/select-labels';
@@ -28,6 +29,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import { WorkspaceRoute } from '~/routes/workspaces';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -35,6 +37,7 @@ import type { Label, Task } from '~/types/app';
 import type { Member } from '~/types/common';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
+import { createTaskSchema } from '#/modules/tasks/schema';
 import { useWorkspaceQuery } from '../workspaces/use-workspace';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
@@ -51,11 +54,10 @@ interface CreateTaskFormProps {
 }
 
 const formSchema = z.object({
-  id: z.string(),
-  summary: z.string(),
-  description: z.string(),
-  type: z.string(),
-  impact: z.number().nullable(),
+  ...createTaskSchema.omit({
+    labels: true,
+    assignedTo: true,
+  }).shape,
   assignedTo: z.array(
     z.object({
       id: z.string(),
@@ -75,16 +77,26 @@ const formSchema = z.object({
       lastUsed: z.string(),
     }),
   ),
-  status: z.number(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks = [], defaultValues, className, dialog: isDialog, onCloseForm }) => {
+const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
+  projectIdOrSlug: passedProjectIdOrSlug,
+  tasks = [],
+  defaultValues,
+  className,
+  dialog: isDialog,
+  onCloseForm,
+}) => {
   const { t } = useTranslation();
   const { mode } = useThemeStore();
   const { user } = useUserStore();
   const { focusedTaskId } = useWorkspaceStore();
+  const { project } = useSearch({ from: WorkspaceRoute.id });
+
+  const projectIdOrSlug = useMemo(() => project ?? passedProjectIdOrSlug, [project, passedProjectIdOrSlug]);
+
   const {
     data: { projects },
   } = useWorkspaceQuery();
@@ -116,8 +128,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks 
           assignedTo: [],
           labels: [],
           status: 1,
+          projectId: projectId,
           expandable: false,
           keywords: '',
+          order: getNewTaskOrder(1, tasks),
         },
         ...defaultValues,
       },
@@ -129,18 +143,11 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks 
   const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
-    // Extract text from summary HTML
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(values.summary, 'text/html');
-    const summaryText = doc.body.textContent || `subtask${values.id}`;
-
-    const slug = summaryText.toLowerCase().replace(/ /g, '-');
-
     const newTask = {
       id: values.id,
       description: values.description,
       summary: values.summary,
-      expandable: taskExpandable(values.summary, values.description),
+      expandable: values.expandable,
       keywords: extractUniqueWordsFromHTML(values.description),
       type: values.type as TaskType,
       impact: values.impact as TaskImpact,
@@ -148,9 +155,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks 
       assignedTo: values.assignedTo.map((user) => user.id),
       status: values.status,
       organizationId: organizationId,
-      projectId: projectId,
+      projectId: values.projectId,
       createdBy: user.id,
-      slug: slug,
       order: getNewTaskOrder(values.status, tasks),
     };
 
@@ -208,10 +214,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, tasks 
                     className="min-h-16 [&>.bn-editor]:min-h-16"
                     projectId={projectId}
                     html={value}
-                    onChange={(description, summary) => {
-                      onChange(description);
-                      form.setValue('summary', summary);
-                    }}
+                    onChange={onChange}
                     taskToClose={focusedTaskId}
                     callback={form.handleSubmit(onSubmit)}
                     mode={mode}

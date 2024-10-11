@@ -28,7 +28,7 @@ interface TaskBlockNoteProps {
   html: string;
   projectId: string;
   className?: string;
-  onChange?: (newContent: string, newSummary: string) => void;
+  onChange?: (newContent: string) => void;
   taskToClose?: string | null;
   subTask?: boolean;
   callback?: () => void;
@@ -94,13 +94,9 @@ export const TaskBlockNote = ({
     if (editor.getSelection()) return;
 
     const descriptionHtml = await editor.blocksToFullHTML(editor.document);
-    // find first block with text in it
-    const summary = editor.document.find((el) => Array.isArray(el.content) && (el.content as { text: string }[])[0]?.text.trim() !== '');
-    const summaryHTML = await editor.blocksToFullHTML([summary ?? editor.document[0]]);
-    const cleanSummary = DOMPurify.sanitize(summaryHTML);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
 
-    if (isCreationMode) onChange(cleanDescription, cleanSummary);
+    if (isCreationMode) onChange(cleanDescription);
     else await handleUpdateHTML(cleanDescription);
   };
 

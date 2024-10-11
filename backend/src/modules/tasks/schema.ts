@@ -10,7 +10,6 @@ import { userSchema } from '../users/schema';
 
 export const createTaskSchema = z.object({
   ...createInsertSchema(tasksTable).omit({
-    id: true,
     labels: true,
     entity: true,
     organizationId: true,

@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { Plus } from 'lucide-react';
 import { useMemo } from 'react';
@@ -10,24 +10,16 @@ import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { queryClient } from '~/lib/router';
-import { extractUniqueWordsFromHTML, getNewTaskOrder, taskExpandable } from '~/modules/tasks/helpers';
+import { extractUniqueWordsFromHTML, getNewTaskOrder } from '~/modules/tasks/helpers';
 import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote.tsx';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types/app';
-import { nanoid } from '~/utils/nanoid';
+import { createTaskSchema } from '#/modules/tasks/schema';
 
-const formSchema = z.object({
-  id: z.string(),
-  summary: z.string(),
-  description: z.string(),
-  type: z.string(),
-  impact: z.number().nullable(),
-  status: z.number(),
-  parentId: z.string(),
-});
+const formSchema = createTaskSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -57,6 +49,8 @@ export const CreateSubTaskForm = ({
         parentId: parentTask.id,
         expandable: false,
         keywords: '',
+        projectId: parentTask.projectId,
+        order: getNewTaskOrder(1, parentTask.subTasks),
       },
     }),
     [],
@@ -66,18 +60,10 @@ export const CreateSubTaskForm = ({
   const form = useFormWithDraft<FormValues>(`create-sub-task-${parentTask.id}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
-    const defaultId = nanoid();
-    // Extract text from summary HTML
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(values.summary, 'text/html');
-    const summaryText = doc.body.textContent || `subtask${defaultId}`;
-
-    const slug = summaryText.toLowerCase().replace(/ /g, '-');
     const newSubTask = {
-      id: defaultId,
       description: values.description,
       summary: values.summary,
-      expandable: taskExpandable(values.summary, values.description),
+      expandable: values.expandable,
       keywords: extractUniqueWordsFromHTML(values.description),
       type: 'chore' as const,
       impact: null,
@@ -88,7 +74,6 @@ export const CreateSubTaskForm = ({
       labels: [],
       projectId: parentTask.projectId,
       createdBy: user.id,
-      slug: slug,
       order: getNewTaskOrder(values.status, parentTask.subTasks),
     };
 
@@ -143,10 +128,7 @@ export const CreateSubTaskForm = ({
                     id={parentTask.id}
                     projectId={parentTask.projectId}
                     html={value}
-                    onChange={(description, summary) => {
-                      onChange(description);
-                      form.setValue('summary', summary);
-                    }}
+                    onChange={onChange}
                     callback={form.handleSubmit(onSubmit)}
                     mode={mode}
                     taskToClose={parentTask.id}

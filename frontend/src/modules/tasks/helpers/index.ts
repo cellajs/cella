@@ -91,20 +91,6 @@ export const extractUniqueWordsFromHTML = (html: string) => {
   return uniqueWords.join(' ');
 };
 
-// return if task is expandable or not
-export const taskExpandable = (summary: string, description: string) => {
-  const parser = new DOMParser();
-  //Parse the HTML and extract text content
-  const summaryDoc = parser.parseFromString(summary, 'text/html');
-  const descriptionDoc = parser.parseFromString(description, 'text/html');
-
-  const summaryText = summaryDoc.body.textContent || '';
-  const descriptionText = descriptionDoc.body.textContent || '';
-  if (descriptionText.length === summaryText.length) return summaryText !== descriptionText;
-
-  return true;
-};
-
 export const inNumbersArray = (arrayLen: number, number: string) => {
   const array = [...Array(arrayLen).keys()].map((i) => i + 1);
 

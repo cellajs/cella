@@ -25,13 +25,31 @@ const tasksRoutes = app
    * Create task
    */
   .openapi(taskRoutesConfig.createTask, async (ctx) => {
-    const newTask = ctx.req.valid('json');
+    const newTaskInfo = ctx.req.valid('json');
     const organization = getOrganization();
     const user = getContextUser();
-    const [createdTask] = await db
-      .insert(tasksTable)
-      .values({ ...newTask, organizationId: organization.id })
-      .returning();
+
+    const newTask: InsertTaskModel = {
+      ...newTaskInfo,
+      organizationId: organization.id,
+    };
+
+    const descriptionText = String(newTask.description);
+    const rootElement = parseHtml(descriptionText);
+    const groupElement = rootElement.querySelector('.bn-block-group');
+    if (groupElement) {
+      // Remove all child element except the first one
+      const children = groupElement.childNodes;
+      for (let i = 1; i < children.length; i++) {
+        groupElement.removeChild(children[i]);
+      }
+      const summaryText = rootElement.toString();
+      newTask.summary = summaryText;
+      if (descriptionText.length === summaryText.length) newTask.expandable = summaryText !== descriptionText;
+      else newTask.expandable = true;
+    }
+
+    const [createdTask] = await db.insert(tasksTable).values(newTask).returning();
 
     logEvent('Task created', { task: createdTask.id });
 
