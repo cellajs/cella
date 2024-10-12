@@ -8,7 +8,7 @@ import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
 import { useUpdateWorkspaceMutation } from '~/modules/workspaces/update-workspace-form';
 import { useWorkspaceStore } from '~/store/workspace';
-import { useWorkspaceQuery } from './use-workspace';
+import { useWorkspaceQuery } from './helpers/use-workspace';
 
 const WorkspacePage = () => {
   const { t } = useTranslation();

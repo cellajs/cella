@@ -9,12 +9,12 @@ import { Kbd } from '~/modules/common/kbd';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import type { TaskImpact } from '~/modules/tasks/create-task-form';
 import { inNumbersArray } from '~/modules/tasks/helpers';
-import { HighIcon } from '~/modules/tasks/task-selectors/impact-icons/high';
-import { LowIcon } from '~/modules/tasks/task-selectors/impact-icons/low';
-import { MediumIcon } from '~/modules/tasks/task-selectors/impact-icons/medium';
-import { NoneIcon } from '~/modules/tasks/task-selectors/impact-icons/none';
+import { HighIcon } from '~/modules/tasks/task-dropdowns/impact-icons/high';
+import { LowIcon } from '~/modules/tasks/task-dropdowns/impact-icons/low';
+import { MediumIcon } from '~/modules/tasks/task-dropdowns/impact-icons/medium';
+import { NoneIcon } from '~/modules/tasks/task-dropdowns/impact-icons/none';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
-import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 

@@ -19,7 +19,7 @@ import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { focusEditor, getContentAsString, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
-import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import UppyFilePanel from './uppy-file-panel';
 
 interface TaskBlockNoteProps {

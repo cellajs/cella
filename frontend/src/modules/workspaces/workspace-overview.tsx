@@ -1,13 +1,12 @@
-import { config } from 'config';
 import { Construction } from 'lucide-react';
+import DisplayOptions from '~/modules/app/board-header/display-options';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { FocusView } from '~/modules/common/focus-view';
 import StickyBox from '~/modules/common/sticky-box';
-import DisplayOptions from '~/modules/tasks/tasks-display-header/display-options';
-import { useWorkspaceQuery } from '../workspaces/use-workspace';
+import { useWorkspaceQuery } from './helpers/use-workspace';
 
-const Overview = () => {
+const WorkspaceOverview = () => {
   const {
     data: { workspace },
   } = useWorkspaceQuery();
@@ -26,22 +25,11 @@ const Overview = () => {
         <ContentPlaceholder
           Icon={Construction}
           title="Not built yet."
-          text={
-            <>
-              <p>Here will be a grid of project cards for stats, analytics and advisory.</p>
-              <p className="mt-4">
-                Please connect on
-                <a href={config.company.githubUrl} className="underline underline-offset-2 text-primary mx-1" target="_blank" rel="noreferrer">
-                  Github
-                </a>
-                if you want to help out as OS contributor!
-              </p>
-            </>
-          }
+          text={<p>Here will be a grid of project cards for stats, analytics and advisory.</p>}
         />
       </div>
     </>
   );
 };
 
-export default Overview;
+export default WorkspaceOverview;

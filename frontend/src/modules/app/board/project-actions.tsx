@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { showToast } from '~/lib/toasts';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { useWorkspaceStore } from '~/store/workspace';
 import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';

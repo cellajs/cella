@@ -10,7 +10,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import DeleteWorkspaces from '~/modules/workspaces/delete-workspace';
 import UpdateWorkspaceForm from '~/modules/workspaces/update-workspace-form';
-import { useWorkspaceQuery } from './use-workspace';
+import { useWorkspaceQuery } from './helpers/use-workspace';
 
 export const WorkspaceSettings = ({ sheet: isSheet }: { sheet?: boolean }) => {
   const { t } = useTranslation();

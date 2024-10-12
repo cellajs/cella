@@ -10,7 +10,7 @@ import type { Task } from '~/types/app';
 import { dateShort } from '~/utils/date-short';
 import { AvatarWrap } from '../common/avatar-wrap';
 
-const HeaderInfo = ({ task }: { task: Task }) => {
+const TaskHeaderInfo = ({ task }: { task: Task }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const { copyToClipboard } = useCopyToClipboard();
@@ -58,4 +58,4 @@ const HeaderInfo = ({ task }: { task: Task }) => {
   );
 };
 
-export default HeaderInfo;
+export default TaskHeaderInfo;

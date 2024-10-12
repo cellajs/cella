@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { FocusView } from '~/modules/common/focus-view';
 
-import DisplayOptions from '~/modules/tasks/tasks-display-header/display-options';
-import PageView from '~/modules/tasks/tasks-display-header/page-view';
-import TasksSearch from '~/modules/tasks/tasks-display-header/search';
-import TaskSelectedButtons from '~/modules/tasks/tasks-display-header/selected-buttons';
-import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import DisplayOptions from '~/modules/app/board-header/display-options';
+import PageView from '~/modules/app/board-header/page-view';
+import TasksSearch from '~/modules/app/board-header/search';
+import TaskSelectedButtons from '~/modules/app/board-header/selected-buttons';
+import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { useNavigationStore } from '~/store/navigation';
 import { useWorkspaceStore } from '~/store/workspace';
 
-const Header = ({
+const BoardHeader = ({
   children,
 }: {
   children?: React.ReactNode;
@@ -41,4 +41,4 @@ const Header = ({
   );
 };
 
-export default Header;
+export default BoardHeader;

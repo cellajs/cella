@@ -1,5 +1,5 @@
-import { impacts } from '~/modules/tasks/task-selectors/select-impact';
-import { taskStatuses } from '~/modules/tasks/task-selectors/select-status';
+import { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
+import { taskStatuses } from '~/modules/tasks/task-dropdowns/select-status';
 import type { Project, Task } from '~/types/app';
 
 export const configureForExport = (tasks: Task[], projects: Omit<Project, 'counts'>[]) => {

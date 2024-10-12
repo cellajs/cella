@@ -1,10 +1,10 @@
 import { EllipsisVertical, Plus, Settings, Tag, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { openProjectConfigSheet } from '~/modules/app/board/helpers';
 import { dialog } from '~/modules/common/dialoger/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import AddProjects from '~/modules/projects/add-project';
-import { openProjectConfigSheet } from '~/modules/projects/board/helpers';
 import LabelsTable from '~/modules/tasks/labels-table';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';

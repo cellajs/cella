@@ -22,7 +22,7 @@ import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { UserMenuItem } from '~/types/common';
-import { useWorkspaceQuery } from '../workspaces/use-workspace';
+import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
 
 interface CreateProjectFormProps {
   callback?: () => void;

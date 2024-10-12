@@ -2,7 +2,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import type { Project } from '~/types/app';
 import ProjectActions from './project-actions';
 

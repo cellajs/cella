@@ -3,7 +3,7 @@ import { useParams } from '@tanstack/react-router';
 import { queryClient } from '~/lib/router';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import type { Project, Workspace } from '~/types/app';
-import { workspaceQueryOptions } from './helpers/query-options';
+import { workspaceQueryOptions } from './query-options';
 
 export const useWorkspaceQuery = () => {
   const { idOrSlug, orgIdOrSlug } = useParams({ from: WorkspaceRoute.id });

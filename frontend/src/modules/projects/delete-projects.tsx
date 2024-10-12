@@ -4,7 +4,7 @@ import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import type { Project } from '~/types/app';
-import { useWorkspaceQuery } from '../workspaces/use-workspace';
+import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
 
 interface Props {
   projects: Project[];

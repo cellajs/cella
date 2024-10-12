@@ -9,7 +9,7 @@ import UpdateProjectForm from '~/modules/projects/update-project-form';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { Project } from '~/types/app';
-import { useWorkspaceQuery } from '../workspaces/use-workspace';
+import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
 
 export const ProjectSettings = ({ sheet: isSheet, project }: { sheet?: boolean; project: Project }) => {
   const { t } = useTranslation();

@@ -22,7 +22,7 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import type { Project } from '~/types/app';
 import { cleanUrl } from '~/utils/clean-url';
-import { useWorkspaceQuery } from '../workspaces/use-workspace';
+import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
 
 interface Props {
   project: Project;

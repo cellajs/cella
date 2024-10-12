@@ -11,7 +11,7 @@ import { Kbd } from '~/modules/common/kbd';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
-import { useWorkspaceQuery } from '~/modules/workspaces/use-workspace';
+import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { User } from '~/types/common';

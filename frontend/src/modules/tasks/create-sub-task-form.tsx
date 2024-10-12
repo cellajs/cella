@@ -11,7 +11,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { queryClient } from '~/lib/router';
 import { extractUniqueWordsFromHTML, getNewTaskOrder } from '~/modules/tasks/helpers';
-import { TaskBlockNote } from '~/modules/tasks/task-selectors/task-blocknote.tsx';
+import { TaskBlockNote } from '~/modules/tasks/task-dropdowns/task-blocknote';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { useThemeStore } from '~/store/theme.ts';

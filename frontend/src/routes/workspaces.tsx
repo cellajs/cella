@@ -4,15 +4,15 @@ import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch } from '~/lib/query-client';
 import ErrorNotice from '~/modules/common/error-notice';
-import Overview from '~/modules/projects/overview';
 import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
+import Overview from '~/modules/workspaces/workspace-overview';
 import { baseEntityRoutes } from '~/nav-config';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { AppRoute } from './general';
 
 // Lazy-loaded components
 const WorkspacePage = lazy(() => import('~/modules/workspaces/workspace-page'));
-const Board = lazy(() => import('~/modules/projects/board/board'));
+const Board = lazy(() => import('~/modules/app/board/board'));
 const TasksTable = lazy(() => import('~/modules/tasks/tasks-table'));
 
 export const tasksSearchSchema = z.object({

@@ -6,7 +6,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-vi
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import type { Label } from '~/types/app';
 import { dateShort } from '~/utils/date-short';
-import { badgeStyle } from '../task-selectors/select-labels';
+import { badgeStyle } from '../task-dropdowns/select-labels';
 
 export const useColumns = () => {
   const { t } = useTranslation();

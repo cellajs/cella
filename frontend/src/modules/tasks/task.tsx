@@ -12,20 +12,19 @@ import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/externa
 import { motion } from 'framer-motion';
 import useDoubleClick from '~/hooks/use-double-click';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { isTaskData } from '~/modules/app/board/helpers';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { type DropDownToRemove, dropdownerState } from '~/modules/common/dropdowner/state';
-import { isTaskData } from '~/modules/projects/board/helpers';
-import { handleTaskDropDownClick } from '~/modules/tasks/helpers/helper';
+import { handleTaskDropDownClick, setTaskCardFocus } from '~/modules/tasks/helpers';
 import TaskDescription from '~/modules/tasks/task-content.tsx';
+import type { TaskStatus } from '~/modules/tasks/task-dropdowns/select-status';
+import { taskTypes } from '~/modules/tasks/task-dropdowns/select-task-type';
 import { TaskFooter } from '~/modules/tasks/task-footer';
 import { TaskHeader } from '~/modules/tasks/task-header';
-import type { TaskStatus } from '~/modules/tasks/task-selectors/select-status';
-import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme.ts';
 import type { Task } from '~/types/app';
 import { getDraggableItemData } from '~/utils/drag-drop';
-import { setTaskCardFocus } from './helpers/helper';
 import type { TaskStates } from './types';
 
 const variants = cva('task-card', {

@@ -7,16 +7,15 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { handleTaskDropDownClick } from '~/modules/tasks/helpers/helper';
-import { taskTypes } from '~/modules/tasks/task-selectors/select-task-type';
+import { handleTaskDropDownClick, openTaskPreviewSheet } from '~/modules/tasks/helpers';
+import { taskTypes } from '~/modules/tasks/task-dropdowns/select-task-type';
 import { Button } from '~/modules/ui/button';
 import type { Mode } from '~/store/theme';
 import { useUserStore } from '~/store/user';
 import type { Task } from '~/types/app';
 import { dateMini } from '~/utils/date-mini';
 import { dateShort } from '~/utils/date-short';
-import HeaderInfo from './header-info';
-import { openTaskPreviewSheet } from './helpers/helper';
+import TaskHeaderInfo from './task-header-info';
 import type { TaskStates } from './types';
 
 export const TaskHeader = ({
@@ -77,7 +76,7 @@ export const TaskHeader = ({
             <TooltipButton toolTipContent={dateShort(task.createdAt)} side="bottom" sideOffset={5} hideWhenDetached>
               <span className="ml-1 opacity-50 text-sm text-center font-light">{dateMini(task.createdAt, user.language, 'ago')}</span>
             </TooltipButton>
-            <HeaderInfo task={task} />
+            <TaskHeaderInfo task={task} />
           </>
         )}
 
