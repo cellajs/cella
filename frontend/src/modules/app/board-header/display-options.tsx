@@ -24,9 +24,13 @@ const DisplayOptions = ({ className = '' }: Props) => {
 
   return (
     <ToggleGroup type="single" variant="merged" className={cn('gap-0', className)} onValueChange={handleItemChange}>
-      {['board', 'table', 'overview'].map((value) => (
+      {['board', 'table'].map((value) => (
         <TooltipButton key={value} toolTipContent={t(`common:${value}_view`)}>
-          <ToggleGroupItem key={value} value={value} className={`${pathname.includes(value) ? 'bg-accent' : ''}`}>
+          <ToggleGroupItem
+            key={value}
+            value={value}
+            className={`${pathname.includes(value) ? 'bg-accent' : 'hover:bg-accent/50 text-accent-foreground/70'}`}
+          >
             {value === 'board' && <SquareKanban size={16} />}
             {value === 'table' && <Rows4 size={16} />}
             {value === 'overview' && <Grid2X2 size={16} />}

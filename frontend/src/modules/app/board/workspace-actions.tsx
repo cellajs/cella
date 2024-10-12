@@ -20,6 +20,7 @@ const WorkspaceActions = ({ project }: WorkspaceActionsProps) => {
 
   const openSettingsSheet = () => {
     sheet.create(<WorkspaceSettings sheet />, {
+      side: 'right',
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:resource_settings', { resource: t('app:workspace') }),
       description: t('common:resource_settings.text', { resource: t('app:workspace').toLowerCase() }),
@@ -32,6 +33,7 @@ const WorkspaceActions = ({ project }: WorkspaceActionsProps) => {
       className: 'max-w-full lg:max-w-4xl',
       title: t('app:manage_labels'),
       id: 'workspace-preview-labels',
+      side: 'right',
     });
   };
 

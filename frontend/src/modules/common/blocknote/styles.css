@@ -41,6 +41,12 @@ p.bn-inline-content code {
   top: -0.15rem;
 }
 
+@media (max-width: 639px) {
+  .bn-shadcn .bn-side-menu {
+    display: none;
+  }
+}
+
 .prosemirror-dropcursor-block {
   border-radius: 2rem;
 }

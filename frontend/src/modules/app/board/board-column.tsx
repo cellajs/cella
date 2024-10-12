@@ -123,7 +123,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
 
   // Subscribe to task updates
   useEffect(() => {
-    if (networkMode !== 'online' || config.mode === 'production') return;
+    if (networkMode !== 'online' || !config.has.sync) return;
 
     const shapeStream = new ShapeStream<RawTask>(taskShape(project.id));
     const unsubscribe = shapeStream.subscribe((messages) => {

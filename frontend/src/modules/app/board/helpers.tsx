@@ -36,6 +36,7 @@ export const openProjectConfigSheet = (project: Project) => {
   ];
 
   sheet.create(<SheetNav tabs={projectTabs} />, {
+    side: 'right',
     className: 'max-w-full lg:max-w-4xl',
     id: isAdmin ? 'edit-project' : 'project-members',
     title: isAdmin ? t('common:resource_settings', { resource: t('app:project') }) : t('app:project_members'),
