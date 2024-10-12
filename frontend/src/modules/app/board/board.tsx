@@ -215,12 +215,12 @@ export default function Board() {
   const handleEscKeyPress = () => {
     if (!focusedTaskId) return;
     // check if creation of subtask open
-    const subTaskCreation = !!document.getElementById('create-sub-task');
-    if (subTaskCreation) return;
+    const subtaskCreation = !!document.getElementById('create-subtask');
+    if (subtaskCreation) return;
 
     // check if creation of subtask open or  some of the subtasks editing
-    const subTasksEditing = document.querySelectorAll(`[id^="blocknote-subtask-"]`);
-    if (subTasksEditing.length) return dispatchCustomEvent('changeSubTaskState', { taskId: focusedTaskId, state: 'removeEditing' });
+    const subtasksEditing = document.querySelectorAll(`[id^="blocknote-subtask-"]`);
+    if (subtasksEditing.length) return dispatchCustomEvent('changeSubtaskState', { taskId: focusedTaskId, state: 'removeEditing' });
 
     const taskState = tasksState[focusedTaskId];
     if (!taskState || taskState === 'folded') return;
@@ -307,7 +307,7 @@ export default function Board() {
 
       setTimeout(() => setTaskState(prevFocused, newState), 0);
       // Fold the subtasks of the previously focused task
-      dispatchCustomEvent('changeSubTaskState', { taskId: prevFocused, state: 'folded' });
+      dispatchCustomEvent('changeSubtaskState', { taskId: prevFocused, state: 'folded' });
     }
 
     // Update the previous focused task ID

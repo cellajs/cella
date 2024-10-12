@@ -23,7 +23,7 @@ const formSchema = createTaskSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const CreateSubTaskForm = ({
+export const CreateSubtaskForm = ({
   parentTask,
   formOpen,
   setFormState,
@@ -50,17 +50,17 @@ export const CreateSubTaskForm = ({
         expandable: false,
         keywords: '',
         projectId: parentTask.projectId,
-        order: getNewTaskOrder(1, parentTask.subTasks),
+        order: getNewTaskOrder(1, parentTask.subtasks),
       },
     }),
     [],
   );
 
   // Form with draft in local storage
-  const form = useFormWithDraft<FormValues>(`create-sub-task-${parentTask.id}`, formOptions);
+  const form = useFormWithDraft<FormValues>(`create-subtask-${parentTask.id}`, formOptions);
 
   const onSubmit = (values: FormValues) => {
-    const newSubTask = {
+    const newSubtask = {
       description: values.description,
       summary: values.summary,
       expandable: values.expandable,
@@ -74,10 +74,10 @@ export const CreateSubTaskForm = ({
       labels: [],
       projectId: parentTask.projectId,
       createdBy: user.id,
-      order: getNewTaskOrder(values.status, parentTask.subTasks),
+      order: getNewTaskOrder(values.status, parentTask.subtasks),
     };
 
-    createTask(newSubTask)
+    createTask(newSubtask)
       .then(async (resp) => {
         if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:todo') }));
         form.reset();
@@ -116,7 +116,7 @@ export const CreateSubTaskForm = ({
     );
   return (
     <Form {...form}>
-      <form id="create-sub-task" onSubmit={form.handleSubmit(onSubmit)} className="p-3 mb-2 flex gap-2 flex-col bg-secondary/50">
+      <form id="create-subtask" onSubmit={form.handleSubmit(onSubmit)} className="p-3 mb-2 flex gap-2 flex-col bg-secondary/50">
         <FormField
           control={form.control}
           name="description"
@@ -132,7 +132,7 @@ export const CreateSubTaskForm = ({
                     callback={form.handleSubmit(onSubmit)}
                     mode={mode}
                     taskToClose={parentTask.id}
-                    subTask
+                    subtask
                     className="pl-8"
                   />
                 </FormControl>
@@ -173,4 +173,4 @@ export const CreateSubTaskForm = ({
   );
 };
 
-export default CreateSubTaskForm;
+export default CreateSubtaskForm;

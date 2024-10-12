@@ -15,7 +15,7 @@ import SelectStatus, { type TaskStatus } from '~/modules/tasks/task-dropdowns/se
 import SelectTaskType from '~/modules/tasks/task-dropdowns/select-task-type';
 import type { Mode } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { Project, SubTask, Task } from '~/types/app';
+import type { Project, Subtask, Task } from '~/types/app';
 import { dateIsRecent } from '~/utils/date-is-recent';
 
 const TaskCard = lazy(() => import('~/modules/tasks/task'));
@@ -78,13 +78,13 @@ export const handleTaskDropDownClick = (task: Task, field: string, trigger: HTML
 
 export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, id: string, parentId?: string, status?: number) => {
   // Filter tasks based on status, if provided
-  let filteredTasks: Task[] | SubTask[] = status ? tasks.filter((t) => t.status === status) : tasks;
+  let filteredTasks: Task[] | Subtask[] = status ? tasks.filter((t) => t.status === status) : tasks;
 
   // If parentId exists, filter for subtasks and sort accordingly
-  if (parentId) filteredTasks = tasks.find((t) => t.id === parentId)?.subTasks || [];
+  if (parentId) filteredTasks = tasks.find((t) => t.id === parentId)?.subtasks || [];
 
   // Sort based on task or subtask order
-  filteredTasks.sort((a, b) => (parentId ? sortSubTaskOrder(a, b, edge !== 'top') : sortTaskOrder(a, b, edge === 'top')));
+  filteredTasks.sort((a, b) => (parentId ? sortSubtaskOrder(a, b, edge !== 'top') : sortTaskOrder(a, b, edge === 'top')));
 
   // Find the relative task based on the order
   const relativeTask = filteredTasks.find((t) => {
@@ -105,8 +105,8 @@ export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, i
   return newOrder;
 };
 
-// To sort SubTasks by its order
-const sortSubTaskOrder = (task1: Pick<Task, 'order'>, task2: Pick<Task, 'order'>, reverse?: boolean) => {
+// To sort Subtasks by its order
+const sortSubtaskOrder = (task1: Pick<Task, 'order'>, task2: Pick<Task, 'order'>, reverse?: boolean) => {
   if (task1.order !== null && task2.order !== null) return reverse ? task2.order - task1.order : task1.order - task2.order;
   // order is null
   return 0;
@@ -131,7 +131,7 @@ export const getNewStatusTaskOrder = (oldStatus: number, newStatus: number, task
 };
 
 // return task order for new created Tasks
-export const getNewTaskOrder = (status: number, tasks: Task[] | SubTask[]) => {
+export const getNewTaskOrder = (status: number, tasks: Task[] | Subtask[]) => {
   const filteredTasks = tasks.filter((t) => t.status === status).sort((a, b) => b.order - a.order);
   return filteredTasks.length > 0 ? filteredTasks[0].order + 1 : 1;
 };
@@ -178,7 +178,7 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
   // Sort subtasks within each task by order
   const tasksWithSortedSubtasks = filteredTasks.map((task) => ({
     ...task,
-    subTasks: task.subTasks.sort((a, b) => a.order - b.order),
+    subtasks: task.subtasks.sort((a, b) => a.order - b.order),
   }));
 
   // Sort the main tasks
@@ -196,7 +196,7 @@ export const configureForExport = (tasks: Task[], projects: Omit<Project, 'count
     const summaryText = summaryDoc.body.textContent || '';
 
     const project = projects.find((p) => p.id === task.projectId);
-    const subTaskCount = `${task.subTasks.filter((st) => st.status === 6).length} of ${task.subTasks.length}`;
+    const subtaskCount = `${task.subtasks.filter((st) => st.status === 6).length} of ${task.subtasks.length}`;
     const impact = impacts[task.impact ?? 0];
     return {
       ...task,
@@ -204,7 +204,7 @@ export const configureForExport = (tasks: Task[], projects: Omit<Project, 'count
       labels: task.labels.map((label) => label.name),
       status: taskStatuses[task.status].status,
       impact: impact.value,
-      subTasks: task.subTasks.length ? subTaskCount : '-',
+      subtasks: task.subtasks.length ? subtaskCount : '-',
       projectId: project?.name ?? '-',
       createdBy: task.createdBy?.name ?? '-',
       modifiedBy: task.modifiedBy?.name ?? '-',

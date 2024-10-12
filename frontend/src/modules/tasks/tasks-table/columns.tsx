@@ -160,21 +160,21 @@ export const useColumns = () => {
       },
     },
     {
-      key: 'subTasks',
+      key: 'subtasks',
       name: t('app:todos'),
       sortable: false,
       visible: false,
       width: 80,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) =>
-        row.subTasks.length > 0 ? (
+        row.subtasks.length > 0 ? (
           <div className="flex gap-[.07rem]">
-            <span className="text-success">{row.subTasks.filter((t) => t.status === 6).length}</span>
+            <span className="text-success">{row.subtasks.filter((t) => t.status === 6).length}</span>
             <span className="font-light">/</span>
-            <span className="font-light">{row.subTasks.length}</span>
+            <span className="font-light">{row.subtasks.length}</span>
           </div>
-        ) : row.subTasks.length ? (
-          row.subTasks.length
+        ) : row.subtasks.length ? (
+          row.subtasks.length
         ) : (
           '-'
         ),

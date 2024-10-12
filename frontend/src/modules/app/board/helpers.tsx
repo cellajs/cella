@@ -3,17 +3,17 @@ import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import MembersTable from '~/modules/organizations/members-table';
 import { ProjectSettings } from '~/modules/projects/project-settings';
-import type { Project, SubTask, Task } from '~/types/app';
+import type { Project, Subtask, Task } from '~/types/app';
 import type { DraggableItemData } from '~/types/common';
 
 export type TaskDraggableItemData = DraggableItemData<Task> & { type: 'task' };
-export type SubTaskDraggableItemData = DraggableItemData<SubTask> & { type: 'subTask' };
+export type SubtaskDraggableItemData = DraggableItemData<Subtask> & { type: 'subtask' };
 
 export const isTaskData = (data: Record<string | symbol, unknown>): data is TaskDraggableItemData => {
   return data.dragItem === true && typeof data.order === 'number' && data.type === 'task';
 };
-export const isSubTaskData = (data: Record<string | symbol, unknown>): data is SubTaskDraggableItemData => {
-  return data.dragItem === true && typeof data.order === 'number' && data.type === 'subTask';
+export const isSubtaskData = (data: Record<string | symbol, unknown>): data is SubtaskDraggableItemData => {
+  return data.dragItem === true && typeof data.order === 'number' && data.type === 'subtask';
 };
 
 export const openProjectConfigSheet = (project: Project) => {

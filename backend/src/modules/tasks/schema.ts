@@ -67,7 +67,7 @@ const taskSchema = z.object({
   modifiedBy: userSchema.omit({ counts: true }).nullable(),
 });
 
-export const subTaskSchema = z.array(
+export const subtaskSchema = z.array(
   z.object({
     ...createSelectSchema(tasksTable).pick({
       id: true,
@@ -84,9 +84,9 @@ export const subTaskSchema = z.array(
   }),
 );
 
-export const taskWithSubTasksSchema = z.object({
+export const taskWithSubtasksSchema = z.object({
   ...taskSchema.shape,
-  subTasks: subTaskSchema,
+  subtasks: subtaskSchema,
 });
 
 export const getTasksQuerySchema = paginationQuerySchema.merge(

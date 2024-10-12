@@ -30,7 +30,7 @@ interface TaskBlockNoteProps {
   className?: string;
   onChange?: (newContent: string) => void;
   taskToClose?: string | null;
-  subTask?: boolean;
+  subtask?: boolean;
   callback?: () => void;
 }
 
@@ -42,7 +42,7 @@ export const TaskBlockNote = ({
   onChange,
   callback,
   taskToClose = null,
-  subTask = false,
+  subtask = false,
   className = '',
 }: TaskBlockNoteProps) => {
   const { t } = useTranslation();
@@ -53,7 +53,7 @@ export const TaskBlockNote = ({
   const { search } = useLocation();
 
   const isCreationMode = !!onChange;
-  const stateEvent = subTask ? 'changeSubTaskState' : 'changeTaskState';
+  const stateEvent = subtask ? 'changeSubtaskState' : 'changeTaskState';
   const isSheet = !!search.taskIdPreview;
 
   const {
@@ -84,8 +84,8 @@ export const TaskBlockNote = ({
   );
 
   const handleEditorFocus = () => {
-    // Remove subTask editing state
-    dispatchCustomEvent('changeSubTaskState', { taskId: id, state: 'removeEditing' });
+    // Remove subtask editing state
+    dispatchCustomEvent('changeSubtaskState', { taskId: id, state: 'removeEditing' });
     // Remove Task editing state if focused not task itself
     if (taskToClose) dispatchCustomEvent('changeTaskState', { taskId: taskToClose, state: 'expanded' });
   };
@@ -144,7 +144,7 @@ export const TaskBlockNote = ({
   return (
     <Suspense>
       <BlockNoteView
-        id={subTask ? `blocknote-subtask-${id}` : `blocknote-${id}`}
+        id={subtask ? `blocknote-subtask-${id}` : `blocknote-${id}`}
         // Defer onChange, onFocus and onBlur  to run after rendering
         onChange={() => {
           if (!isCreationMode && canChangeState.current && !isSheet) dispatchCustomEvent(stateEvent, { taskId: id, state: 'unsaved' });
@@ -173,7 +173,7 @@ export const TaskBlockNote = ({
           <CustomFormattingToolbar config={customFormattingToolBarConfig} />
         </div>
 
-        {!subTask && <CustomSideMenu />}
+        {!subtask && <CustomSideMenu />}
 
         <Mention members={members.filter((m) => m.membership.projectId === projectId)} editor={editor} />
 

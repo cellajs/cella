@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { type GetTasksParams, updateTask } from '~/api/tasks';
 import { queryClient } from '~/lib/router';
-import type { SubTask, Task } from '~/types/app';
+import type { Subtask, Task } from '~/types/app';
 
 export type TasksMutationQueryFnVariables = Parameters<typeof updateTask>[0] & {
   projectId?: string;
@@ -27,17 +27,17 @@ export const useTaskMutation = () => {
 };
 
 // Helper function to update a task property
-const updateTaskProperty = <T extends Task | SubTask>(task: T, variables: TasksMutationQueryFnVariables): T => {
+const updateTaskProperty = <T extends Task | Subtask>(task: T, variables: TasksMutationQueryFnVariables): T => {
   return { ...task, [variables.key]: variables.data };
 };
 
 // Helper function to update a subtask within the parent
-const updateSubtasks = (subTasks: SubTask[], taskId: string, variables: TasksMutationQueryFnVariables) => {
-  return subTasks.map((subTask) => {
-    if (subTask.id === taskId) {
-      return updateTaskProperty(subTask, variables); // Update the subtask
+const updateSubtasks = (subtasks: Subtask[], taskId: string, variables: TasksMutationQueryFnVariables) => {
+  return subtasks.map((subtask) => {
+    if (subtask.id === taskId) {
+      return updateTaskProperty(subtask, variables); // Update the subtask
     }
-    return subTask; // No changes
+    return subtask; // No changes
   });
 };
 
@@ -70,9 +70,9 @@ queryClient.setMutationDefaults(taskKeys.update(), {
           }
 
           // If the task is the parent, update its subtasks
-          if (task.subTasks) {
-            const updatedSubtasks = updateSubtasks(task.subTasks, taskId, variables);
-            return { ...task, subTasks: updatedSubtasks }; // Return parent with updated subtasks
+          if (task.subtasks) {
+            const updatedSubtasks = updateSubtasks(task.subtasks, taskId, variables);
+            return { ...task, subtasks: updatedSubtasks }; // Return parent with updated subtasks
           }
 
           // No changes, return task as-is
@@ -105,9 +105,9 @@ queryClient.setMutationDefaults(taskKeys.update(), {
         }
 
         // If the task is the parent, update its subtasks
-        if (task.subTasks) {
-          const updatedSubtasks = task.subTasks.map((subTask) => (subTask.id === taskId ? updatedTask : subTask));
-          return { ...task, subTasks: updatedSubtasks }; // Return parent with updated subtasks
+        if (task.subtasks) {
+          const updatedSubtasks = task.subtasks.map((subtask) => (subtask.id === taskId ? updatedTask : subtask));
+          return { ...task, subtasks: updatedSubtasks }; // Return parent with updated subtasks
         }
 
         // No changes, return task as-is

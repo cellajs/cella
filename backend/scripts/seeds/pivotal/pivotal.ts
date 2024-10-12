@@ -9,7 +9,7 @@ import { labelsTable } from '#/db/schema/labels';
 import { projectsTable } from '#/db/schema/projects';
 import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
 import { extractKeywords } from '#/modules/tasks/helpers';
-import { getLabels, getSubTask, getTaskLabels } from './helper';
+import { getLabels, getSubtask, getTaskLabels } from './helper';
 import type { PivotalTask } from './type';
 
 const program = new Command().option('--file <file>', 'Zip file to upload').option('--project <project>', 'Project to upload tasks to').parse();
@@ -65,7 +65,7 @@ zip.loadAsync(data).then(async (zip) => {
     .map((task, index) => {
       const taskId = nanoid();
       const labelsIds = getTaskLabels(task, labelsToInsert);
-      const subtasks = getSubTask(task, taskId, project.organizationId, project.id);
+      const subtasks = getSubtask(task, taskId, project.organizationId, project.id);
       if (subtasks.length) subtasksToInsert.push(...subtasks);
       return {
         id: taskId,

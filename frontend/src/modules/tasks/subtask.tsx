@@ -12,23 +12,23 @@ import { deleteTasks } from '~/api/tasks';
 import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { queryClient } from '~/lib/router';
-import { isSubTaskData } from '~/modules/app/board/helpers';
+import { isSubtaskData } from '~/modules/app/board/helpers';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { TaskBlockNote } from '~/modules/tasks/task-dropdowns/task-blocknote';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
-import type { SubTask as BaseSubTask, Task } from '~/types/app';
+import type { Subtask as BaseSubtask, Task } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { getDraggableItemData } from '~/utils/drag-drop';
 import { sheet } from '../common/sheeter/state';
 import type { TaskStates } from './types';
 
-const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
+const Subtask = ({ task, mode }: { task: BaseSubtask; mode: Mode }) => {
   const { t } = useTranslation();
 
-  const subTaskRef = useRef<HTMLDivElement>(null);
+  const subtaskRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TaskStates>('folded');
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -38,8 +38,8 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 
   const taskMutation = useTaskMutation();
 
-  const onRemove = (subTaskId: string) => {
-    deleteTasks([subTaskId], task.organizationId).then(async (resp) => {
+  const onRemove = (subtaskId: string) => {
+    deleteTasks([subtaskId], task.organizationId).then(async (resp) => {
       await queryClient.invalidateQueries({
         refetchType: 'active',
       });
@@ -49,7 +49,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   };
 
   const setEdge = ({ self, source }: { source: ElementDragPayload; self: DropTargetRecord }) => {
-    if (!isSubTaskData(source.data) || !isSubTaskData(self.data)) return;
+    if (!isSubtaskData(source.data) || !isSubtaskData(self.data)) return;
     setClosestEdge(extractClosestEdge(self.data));
   };
 
@@ -80,10 +80,10 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
       setState('editing');
     },
     allowedTargets: ['p', 'div', 'img'],
-    ref: subTaskRef,
+    ref: subtaskRef,
   });
 
-  useEventListener('changeSubTaskState', (e) => {
+  useEventListener('changeSubtaskState', (e) => {
     const { taskId, state: newState } = e.detail;
     // The logic ensures that tasks are expanded from 'editing' or 'unsaved' states when 'removeEditing' is triggered
     if ((task.parentId === taskId || (task.parentId !== taskId && task.id !== taskId)) && newState === 'removeEditing') {
@@ -91,7 +91,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
       return;
     }
 
-    // If the task is a sub-task of the taskId from the event and the newState is 'folded', fold the task
+    // If the task is a subtask of the taskId from the event and the newState is 'folded', fold the task
     if (task.parentId === taskId && newState === 'folded') return setState(newState);
 
     // If the task.id as the event's taskId, update the task state
@@ -118,8 +118,8 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
-    const data = getDraggableItemData<BaseSubTask>(task, task.order, 'subTask', 'project');
-    const element = subTaskRef.current;
+    const data = getDraggableItemData<BaseSubtask>(task, task.order, 'subtask', 'project');
+    const element = subtaskRef.current;
     if (!element) return;
 
     return combine(
@@ -138,7 +138,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
         element,
         canDrop({ source }) {
           const data = source.data;
-          return isSubTaskData(data) && data.item.id !== task.id;
+          return isSubtaskData(data) && data.item.id !== task.id;
         },
         getIsSticky: () => true,
 
@@ -163,7 +163,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
-      ref={subTaskRef}
+      ref={subtaskRef}
       onClick={handleCardClick}
       className={`flex items-start gap-1 p-1 mb-0.5 hover:bg-secondary/50 opacity-${dragging ? '30' : '100'} bg-secondary/25`}
     >
@@ -197,7 +197,7 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
                   html={task.description || ''}
                   mode={mode}
                   className="w-full pr-2 bg-transparent border-none"
-                  subTask={true}
+                  subtask={true}
                   taskToClose={task.parentId}
                 />
               ) : (
@@ -217,9 +217,9 @@ const SubTask = ({ task, mode }: { task: BaseSubTask; mode: Mode }) => {
   );
 };
 
-export default SubTask;
+export default Subtask;
 
-const SummaryButtons = ({ task }: { task: BaseSubTask }) => {
+const SummaryButtons = ({ task }: { task: BaseSubtask }) => {
   return (
     <>
       {task.expandable && <div className="inline-flex px-1 text-sm cursor-pointer py-0 h-5">...</div>}

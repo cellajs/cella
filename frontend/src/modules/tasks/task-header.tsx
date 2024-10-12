@@ -29,13 +29,13 @@ export const TaskHeader = ({
   state: TaskStates;
   mode?: Mode;
   isSheet?: boolean;
-  onRemove?: (subTaskId: string) => void;
+  onRemove?: (subtaskId: string) => void;
 }) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
-  const isSubTask = task.parentId !== null;
+  const isSubtask = task.parentId !== null;
   const isEditing = state === 'editing' || state === 'unsaved';
 
   const getButtonText = () => {
@@ -45,7 +45,7 @@ export const TaskHeader = ({
 
   return (
     <StickyBox enabled={false} className="flex flex-row z-100 w-full justify-between">
-      {!isSubTask && (
+      {!isSubtask && (
         <Button
           id={`type-${task.id}`}
           onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
@@ -64,7 +64,7 @@ export const TaskHeader = ({
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.3 }}
       >
-        {!isSubTask && task.createdBy && (
+        {!isSubtask && task.createdBy && (
           <>
             <AvatarWrap
               type="user"
@@ -81,10 +81,10 @@ export const TaskHeader = ({
         )}
 
         <div className="grow" />
-        {(!isSheet || isSubTask) && (
+        {(!isSheet || isSubtask) && (
           <TooltipButton
             disabled={isEditing}
-            toolTipContent={t('common:edit_resource', { resource: isSubTask ? t('app:todo').toLowerCase() : t('app:task').toLowerCase() })}
+            toolTipContent={t('common:edit_resource', { resource: isSubtask ? t('app:todo').toLowerCase() : t('app:task').toLowerCase() })}
             side="bottom"
             sideOffset={5}
             hideWhenDetached
@@ -94,7 +94,7 @@ export const TaskHeader = ({
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               onClick={() => {
-                const event = isSubTask ? 'changeSubTaskState' : 'changeTaskState';
+                const event = isSubtask ? 'changeSubtaskState' : 'changeTaskState';
                 dispatchCustomEvent(event, { taskId: task.id, state: isEditing ? 'expanded' : 'editing' });
               }}
               aria-label="Edit"
@@ -107,7 +107,7 @@ export const TaskHeader = ({
           </TooltipButton>
         )}
 
-        {!isSubTask && !isSheet && (
+        {!isSubtask && !isSheet && (
           <TooltipButton toolTipContent={t('common:expand')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {
@@ -123,7 +123,7 @@ export const TaskHeader = ({
           </TooltipButton>
         )}
 
-        {isSubTask && onRemove && (
+        {isSubtask && onRemove && (
           <TooltipButton toolTipContent={t('common:delete')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button onClick={() => onRemove(task.id)} variant="ghost" size="xs" className="text-secondary-foreground cursor-pointer">
               <span className="sr-only">{t('app:move_task')}</span>
@@ -132,11 +132,11 @@ export const TaskHeader = ({
           </TooltipButton>
         )}
 
-        {(!isSheet || isSubTask) && (
+        {(!isSheet || isSubtask) && (
           <TooltipButton toolTipContent={t('common:close')} side="bottom" sideOffset={5} hideWhenDetached>
             <Button
               onClick={() => {
-                const event = isSubTask ? 'changeSubTaskState' : 'changeTaskState';
+                const event = isSubtask ? 'changeSubtaskState' : 'changeTaskState';
                 dispatchCustomEvent(event, { taskId: task.id, state: 'folded' });
               }}
               aria-label="Collapse"

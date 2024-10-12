@@ -16,7 +16,7 @@ const TasksSearch = ({ toggleFocus }: { toggleFocus: () => void }) => {
 
   const handleClick = () => {
     if (focusedTaskId) {
-      dispatchCustomEvent('changeSubTaskState', { taskId: focusedTaskId, state: 'folded' });
+      dispatchCustomEvent('changeSubtaskState', { taskId: focusedTaskId, state: 'folded' });
       setFocusedTaskId(null);
     }
     inputRef.current?.focus();

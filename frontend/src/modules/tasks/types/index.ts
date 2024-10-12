@@ -1,6 +1,6 @@
 export interface TasksCustomEventMap {
   changeTaskState: CustomEvent<TaskStateInfo>;
-  changeSubTaskState: CustomEvent<{ taskId: string; state: TaskStates | 'removeEditing' }>;
+  changeSubtaskState: CustomEvent<{ taskId: string; state: TaskStates | 'removeEditing' }>;
   toggleSelectTask: CustomEvent<TaskSelectInfo>;
 }
 

@@ -182,25 +182,25 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
           const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
           const mainTaskId = nanoid();
           // 60% change to set Subtasks
-          const insertSubTasks: InsertTaskModel[] = Array.from({ length: Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 3) + 1 }).map(
+          const insertSubtasks: InsertTaskModel[] = Array.from({ length: Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 3) + 1 }).map(
             (_, subIndex) => {
-              const subTaskDescription = faker.commerce.productDescription();
-              const subTaskName = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+              const subtaskDescription = faker.commerce.productDescription();
+              const subtaskName = organizationsUniqueEnforcer.enforce(() => faker.company.name());
               return {
                 id: nanoid(),
                 organizationId: organization.id,
                 projectId: project.id,
-                summary: `<div class="bn-block-content"><p class="bn-inline-content">${subTaskName}</p></div>`,
-                keywords: extractKeywords(subTaskName + subTaskDescription),
+                summary: `<div class="bn-block-content"><p class="bn-inline-content">${subtaskName}</p></div>`,
+                keywords: extractKeywords(subtaskName + subtaskDescription),
                 expandable: true,
                 parentId: mainTaskId,
-                slug: slugify(subTaskName, { lower: true }),
+                slug: slugify(subtaskName, { lower: true }),
                 order: subIndex + 1,
                 // status in sub tasks only 1 or 6
                 status: Math.random() < 0.5 ? 1 : 6,
                 impact: 0,
                 type: 'chore',
-                description: `<div class="bn-block-content"><p class="bn-inline-content">${subTaskName}</p></div><div class="bn-block-content"><p class="bn-inline-content">${subTaskDescription}</p></div>`,
+                description: `<div class="bn-block-content"><p class="bn-inline-content">${subtaskName}</p></div><div class="bn-block-content"><p class="bn-inline-content">${subtaskDescription}</p></div>`,
                 createdAt: faker.date.past(),
                 createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
                 modifiedAt: faker.date.past(),
@@ -240,7 +240,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
           };
 
           // Combine main task with its subtasks
-          return [mainTask, ...insertSubTasks];
+          return [mainTask, ...insertSubtasks];
         });
 
         tasksCount += insertTasks.length;

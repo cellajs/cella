@@ -15,7 +15,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router, { queryClient } from '~/lib/router';
 import { BoardColumnHeader } from '~/modules/app/board/board-column-header';
 import { ColumnSkeleton } from '~/modules/app/board/column-skeleton';
-import { isSubTaskData, isTaskData } from '~/modules/app/board/helpers';
+import { isSubtaskData, isTaskData } from '~/modules/app/board/helpers';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
@@ -260,7 +260,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     return combine(
       monitorForElements({
         canMonitor({ source }) {
-          return isTaskData(source.data) || isSubTaskData(source.data);
+          return isTaskData(source.data) || isSubtaskData(source.data);
         },
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
@@ -269,8 +269,8 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
           const sourceData = source.data;
           const targetData = target.data;
           const isTask = isTaskData(sourceData) && isTaskData(targetData);
-          const isSubTask = isSubTaskData(sourceData) && isSubTaskData(targetData);
-          if (!isTask && !isSubTask) return;
+          const isSubtask = isSubtaskData(sourceData) && isSubtaskData(targetData);
+          if (!isTask && !isSubtask) return;
 
           const { item: sourceItem } = sourceData;
           const { item: targetItem } = targetData;
@@ -295,7 +295,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
             }
           }
 
-          if (isSubTask) {
+          if (isSubtask) {
             const newOrder = getRelativeTaskOrder(edge, showingTasks, targetData.order, sourceItem.id, targetItem.parentId ?? undefined);
             try {
               await taskMutation.mutateAsync({

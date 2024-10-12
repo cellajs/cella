@@ -15,7 +15,7 @@ import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
 import { extractKeywords } from './helpers';
 import taskRoutesConfig from './routes';
-import type { subTaskSchema } from './schema';
+import type { subtaskSchema } from './schema';
 
 const app = new CustomHono();
 
@@ -59,7 +59,7 @@ const tasksRoutes = app
 
     const finalTask = {
       ...createdTask,
-      subTasks: [] as z.infer<typeof subTaskSchema>,
+      subtasks: [] as z.infer<typeof subtaskSchema>,
       createdBy: user,
       modifiedBy: null,
       assignedTo: assignedTo.filter((m) => createdTask.assignedTo.includes(m.id)),
@@ -120,7 +120,7 @@ const tasksRoutes = app
 
         return {
           ...task,
-          subTasks: subtasks,
+          subtasks: subtasks,
           createdBy: task.createdBy ? userMap.get(task.createdBy) || null : null,
           modifiedBy: userMap.get(task.modifiedBy || '') || null,
           assignedTo: users.filter((m) => task.assignedTo.includes(m.id)),
@@ -180,7 +180,7 @@ const tasksRoutes = app
 
     const [updatedTask] = await db.update(tasksTable).set(updateValues).where(eq(tasksTable.id, id)).returning();
 
-    const subTasks = await db.select().from(tasksTable).where(eq(tasksTable.parentId, updatedTask.id));
+    const subtasks = await db.select().from(tasksTable).where(eq(tasksTable.parentId, updatedTask.id));
 
     const uniqueAssignedUserIds = [...updatedTask.assignedTo];
     if (updatedTask.createdBy) uniqueAssignedUserIds.push(updatedTask.createdBy);
@@ -189,7 +189,7 @@ const tasksRoutes = app
     const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, updatedTask.labels));
 
     const finalTask = {
-      subTasks,
+      subtasks,
       ...updatedTask,
       createdBy: users.find((m) => m.id === updatedTask.createdBy) || null,
       modifiedBy: users.find((m) => m.id === updatedTask.modifiedBy) || null,
@@ -222,7 +222,7 @@ const tasksRoutes = app
     // Map errors of tasks user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'task', { project: id }));
 
-    // Delete subTasks at first then delete the tasks
+    // Delete subtasks at first then delete the tasks
     await db.delete(tasksTable).where(inArray(tasksTable.parentId, allowedIds));
     await db.delete(tasksTable).where(inArray(tasksTable.id, allowedIds));
 
