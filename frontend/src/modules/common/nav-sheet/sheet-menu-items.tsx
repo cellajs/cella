@@ -1,5 +1,6 @@
 import { Link, useParams } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
@@ -20,14 +21,15 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
   const currentIdOrSlug = useParams({ strict: false, select: (p) => p.idOrSlug });
   const isActive = currentIdOrSlug === item.slug || currentIdOrSlug === item.id;
 
-  const { orgIdOrSlug, idOrSlug, path } = getEntityPath(item);
+  // Build route path for the entity
+  const { orgIdOrSlug, idOrSlug, path } = useMemo(() => getEntityPath(item), [item]);
 
   return (
     <Link
       resetScroll={false}
       className={cn(
         `group flex ${
-          item.parentSlug && !searchResults ? 'h-12 relative menu-item-sub' : 'h-14'
+          !item.submenu && !searchResults ? 'h-12 relative menu-item-sub' : 'h-14'
         } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
         className,
         isActive && 'ring-transparent bg-accent',
@@ -37,7 +39,7 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
       params={{ idOrSlug, orgIdOrSlug }}
     >
       <AvatarWrap
-        className={`${item.parentSlug && !searchResults ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} z-[1] items-center`}
+        className={`${!item.submenu && !searchResults ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} z-[1] items-center`}
         type={item.entity}
         id={item.id}
         name={item.name}
@@ -45,11 +47,11 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
       />
       <div className="truncate grow py-2 flex flex-col justify-center pr-2 text-left">
         <div
-          className={`truncate ${item.parentSlug && !searchResults ? 'max-sm:pt-1.5 text-sm sm:-mb-1 sm:-mt-0.5' : 'max-sm:pt-2.5 text-base'} leading-5`}
+          className={`truncate ${!item.submenu && !searchResults ? 'max-sm:pt-1.5 text-sm sm:-mb-1 sm:-mt-0.5' : 'max-sm:pt-2.5 text-base'} leading-5`}
         >
           {item.name}
         </div>
-        <div className={`max-sm:hidden text-muted-foreground ${item.parentSlug && !searchResults ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
+        <div className={`max-sm:hidden text-muted-foreground ${!item.submenu && !searchResults ? 'text-xs mt-0.5' : 'text-sm'} font-light`}>
           {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover:hidden ">{t(item.entity)}</span>}
           <span className="hidden transition-all duration-500 ease-in-out group-hover:inline ">
             {item.submenu?.length
@@ -101,11 +103,7 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
       <>
         {filteredItems.map((item) => (
           <div key={item.id}>
-            <SheetMenuItem
-              item={item}
-              className={className}
-              searchResults={searchResults}
-            />
+            <SheetMenuItem item={item} className={className} searchResults={searchResults} />
             {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
               <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
             )}

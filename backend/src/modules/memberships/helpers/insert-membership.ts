@@ -11,10 +11,17 @@ interface Props<T> {
   role: MembershipModel['role'];
   entity: T;
   createdBy?: UserModel['id'];
+  workspaceId?: string;
 }
 
 // Helper function to insert a membership and give it proper order number
-export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({ user, role, entity, createdBy = user.id }: Props<T>) => {
+export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({
+  user,
+  role,
+  entity,
+  workspaceId,
+  createdBy = user.id,
+}: Props<T>) => {
   // Get the max order number
   const [{ maxOrder }] = await db
     .select({
@@ -23,6 +30,7 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, user.id));
 
+  //TODO - make this generic
   const newMembership: InsertMembershipModel = {
     organizationId: '',
     workspaceId: null as string | null,
@@ -36,6 +44,11 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
   // If inserted membership is not organization
   newMembership.organizationId = entity.organizationId ?? entity.id;
   const entityIdField = entityIdFields[entity.entity];
+
+  //TODO - make this generic
+  if (workspaceId) {
+    newMembership.workspaceId = workspaceId;
+  }
 
   // If you add more entities to membership
   newMembership[entityIdField] = entity.id;

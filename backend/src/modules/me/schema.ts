@@ -45,14 +45,17 @@ export const menuItemSchema = z.object({
 export const menuItemsSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
-    submenu: z.array(menuItemSchema).optional().default([]),
+    submenu: z.array(menuItemSchema).optional(),
   }),
 );
 
 // Create a menu schema based on menu sections in entity-config
 export const userMenuSchema = z.object(
-  menuSections.reduce((acc, section) => {
-    acc[section.name] = menuItemsSchema;
-    return acc;
-  }, {} as Record<MenuSectionName, typeof menuItemsSchema>)
+  menuSections.reduce(
+    (acc, section) => {
+      acc[section.name] = menuItemsSchema;
+      return acc;
+    },
+    {} as Record<MenuSectionName, typeof menuItemsSchema>,
+  ),
 );

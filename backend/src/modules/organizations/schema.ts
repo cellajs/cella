@@ -25,12 +25,6 @@ export const organizationSchema = z.object({
   counts: membershipsCountSchema,
 });
 
-export const organizationOptionalMembershipSchema = organizationSchema.merge(
-  z.object({
-    membership: membershipInfoSchema.optional().nullable(),
-  }),
-);
-
 export const createOrganizationBodySchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,

@@ -6,6 +6,7 @@ import { projectsTable } from '#/db/schema/projects';
 import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import permissionManager from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -14,7 +15,6 @@ import { splitByAllowance } from '#/utils/split-by-allowance';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import projectRoutesConfig from './routes';
-import permissionManager from '#/lib/permission-manager';
 
 const app = new CustomHono();
 
@@ -38,6 +38,7 @@ const projectsRoutes = app
     const slugAvailable = await checkSlugAvailable(slug);
     if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'project', { slug });
 
+    // Create project with valid organization
     const [project] = await db
       .insert(projectsTable)
       .values({
@@ -51,11 +52,10 @@ const projectsRoutes = app
     logEvent('Project created', { project: project.id });
 
     // Insert membership
-    const createdMembership = await insertMembership({ user, role: 'admin', entity: project });
+    const createdMembership = await insertMembership({ user, role: 'admin', entity: project, workspaceId });
 
     const createdProject = {
       ...project,
-      workspaceId: workspaceId,
       membership: createdMembership,
     };
 

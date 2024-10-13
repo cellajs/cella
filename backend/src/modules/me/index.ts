@@ -1,4 +1,4 @@
-import { eq, and, asc } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
@@ -12,14 +12,14 @@ import { transformDatabaseUserWithCount } from '../users/helpers/transform-datab
 import meRoutesConfig from './routes';
 
 import { config } from 'config';
+import type { z } from 'zod';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { entityIdFields, entityTables, menuSections, type MenuSection } from '#/entity-config';
+import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/entity-config';
 import { getContextUser, getMemberships } from '#/lib/context';
 import { getPreparedSessions } from './helpers/get-sessions';
-import type { z } from 'zod';
 import type { menuItemsSchema, userMenuSchema } from './schema';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 
 const app = new CustomHono();
 
@@ -67,7 +67,7 @@ const meRoutes = app
 
     // Fetch function for each menu section, including handling submenus
     const fetchMenuItemsForSection = async (section: MenuSection) => {
-      let formattedSubmenus: z.infer<typeof menuItemsSchema>;
+      let formattedSubmenus: Omit<z.infer<typeof menuItemsSchema>[number], 'submenu'>[];
       const mainTable = entityTables[section.entityType];
       const mainEntityIdField = entityIdFields[section.entityType];
 
@@ -80,8 +80,6 @@ const meRoutes = app
         .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.entityType)))
         .orderBy(asc(membershipsTable.order))
         .innerJoin(membershipsTable, eq(membershipsTable[mainEntityIdField], mainTable.id));
-
-      console.log('entity', section);
 
       if (section.submenu) {
         const subTable = entityTables[section.submenu.entityType];
@@ -108,12 +106,10 @@ const meRoutes = app
           entity: item.entity,
           thumbnailUrl: item.thumbnailUrl,
           membership,
-          submenu: [],
         }));
-        console.log('subEntity', formattedSubmenus);
       }
 
-      // TODO is this formatting necessary? Can we return data with proper select? toDateString?
+      // TODO is this formatting necessary? Can we return data with proper select? toDateString is necessary?
       return entity.map(({ item, membership }) => ({
         slug: item.slug,
         id: item.id,

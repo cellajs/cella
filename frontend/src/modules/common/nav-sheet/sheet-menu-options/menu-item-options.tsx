@@ -9,7 +9,6 @@ import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { useNavigationStore } from '~/store/navigation';
 import type { UserMenuItem } from '~/types/common';
 import Spinner from '../../spinner';
 
@@ -19,7 +18,7 @@ interface MenuItemOptionsProps {
 
 export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
   const { t } = useTranslation();
-  const { archiveStateToggle } = useNavigationStore();
+
   const { mutate: updateMembership, status } = useMutation({
     mutationFn: (values: UpdateMenuOptionsProp) => baseUpdateMembership(values),
     onSuccess: (updatedMembership) => {
@@ -27,7 +26,7 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
 
       if (updatedMembership.archived !== item.membership.archived) {
         const archived = updatedMembership.archived || !item.membership.archived;
-        archiveStateToggle(item, archived, item.parentSlug ? item.parentSlug : null);
+
         item.membership.archived = archived;
         toastMessage = t(`common:success.${updatedMembership.archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${item.entity}`) });
       }
@@ -59,16 +58,16 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
   return (
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
-      className={`group flex relative items-center ${item.parentSlug ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 pr-2 justify-start rounded focus:outline-none
+      className={`group flex relative items-center ${!item.submenu ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 pr-2 justify-start rounded focus:outline-none
         ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 cursor-grab`}
     >
       {status === 'pending' ? (
-        <div className={`${item.parentSlug ? 'my-2 mx-3 h-8 w-8' : 'm-2'} p-2 ${item.membership.archived && 'opacity-70'}`}>
+        <div className={`${!item.submenu ? 'my-2 mx-3 h-8 w-8' : 'm-2'} p-2 ${item.membership.archived && 'opacity-70'}`}>
           <Spinner inline />
         </div>
       ) : (
         <AvatarWrap
-          className={`${item.parentSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${item.membership.archived && 'opacity-70'}`}
+          className={`${!item.submenu ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${item.membership.archived && 'opacity-70'}`}
           type={item.entity}
           id={item.id}
           name={item.name}
@@ -85,13 +84,13 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
             Icon={item.membership.archived ? ArchiveRestore : Archive}
             title={item.membership.archived ? t('common:restore') : t('common:archive')}
             onClick={() => handleUpdateMembershipKey('archive')}
-            subtask={!!item.parentSlug}
+            subtask={!item.submenu}
           />
           <OptionButtons
             Icon={item.membership.muted ? Bell : BellOff}
             title={item.membership.muted ? t('common:unmute') : t('common:mute')}
             onClick={() => handleUpdateMembershipKey('mute')}
-            subtask={!!item.parentSlug}
+            subtask={!item.submenu}
           />
         </div>
       </div>

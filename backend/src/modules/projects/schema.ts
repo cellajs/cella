@@ -10,7 +10,6 @@ export const projectSchema = z.object({
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
   membership: membershipInfoSchema,
-  workspaceId: z.string().nullish(),
 });
 
 export const createProjectBodySchema = z.object({

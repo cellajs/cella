@@ -120,7 +120,7 @@ const organizationsRoutes = app
         },
       })
       .from(organizationsQuery.as('organizations'))
-      .leftJoin(memberships, eq(organizationsTable.id, memberships.organizationId))
+      .innerJoin(memberships, and(eq(organizationsTable.id, memberships.organizationId), eq(memberships.userId, user.id)))
       .leftJoin(countsQuery, eq(organizationsTable.id, countsQuery.id))
       .orderBy(orderColumn)
       .limit(Number(limit))

@@ -102,7 +102,12 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
       </header>
 
       <Sheet open={showSheet} onOpenChange={toggleSheet}>
-        <SheetContent aria-describedby={undefined} side="top" className={`fixed z-[120] border-none pb-8 ${showSheet ? '' : 'delay-300'}`}>
+        <SheetContent
+          aria-describedby={undefined}
+          side="top"
+          hideClose={true}
+          className={`fixed z-[120] border-none pb-8 ${showSheet ? '' : 'delay-300'}`}
+        >
           <SheetHiddenTitle>Navigation</SheetHiddenTitle>
           <div
             ref={ref}
