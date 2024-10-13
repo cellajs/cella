@@ -342,7 +342,7 @@ export default function Board() {
               <Redo
                 size={200}
                 strokeWidth={0.2}
-                className="max-md:hidden absolute scale-x-0 scale-y-75 -rotate-180 text-primary top-4 right-44 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/workspace:opacity-100 group-hover/workspace:scale-x-100 group-hover/workspace:translate-y-0 group-hover/workspace:rotate-[-130deg]"
+                className="max-md:hidden absolute scale-x-0 scale-y-75 -rotate-180 text-primary top-4 right-20 lg:right-36 translate-y-20 opacity-0 duration-500 delay-500 transition-all group-hover/workspace:opacity-100 group-hover/workspace:scale-x-100 group-hover/workspace:translate-y-0 group-hover/workspace:rotate-[-130deg]"
               />
               <p className="inline-flex gap-1 opacity-0 duration-500 transition-opacity group-hover/workspace:opacity-100">
                 <span>{t('common:click')}</span>

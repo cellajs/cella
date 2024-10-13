@@ -46,29 +46,24 @@ export const SheetMenu = memo(() => {
   const pwaEnabled = config.has.pwa;
 
   const searchResultsListItems = useCallback(() => {
-    return searchResults.length > 0
-      ? searchResults.map((item: UserMenuItem) => (
-          <SheetMenuItem key={item.id} searchResults item={item} />
-        ))
-      : [];
+    return searchResults.length > 0 ? searchResults.map((item: UserMenuItem) => <SheetMenuItem key={item.id} searchResults item={item} />) : [];
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return menuSections
-      .map((section) => {
-        const menuSection = menu[section.name];
+    return menuSections.map((section) => {
+      const menuSection = menu[section.name];
 
-        return (
-          <MenuSection
-            entityType={section.entityType}
-            key={section.name}
-            sectionLabel={section.label}
-            sectionType={section.name}
-            createForm={section.createForm}
-            data={menuSection}
-          />
-        );
-      });
+      return (
+        <MenuSection
+          entityType={section.entityType}
+          key={section.name}
+          sectionLabel={section.label}
+          sectionType={section.name}
+          createForm={section.createForm}
+          data={menuSection}
+        />
+      );
+    });
   }, [menu]);
 
   // monitoring drop event
@@ -113,7 +108,7 @@ export const SheetMenu = memo(() => {
       <div className="p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
         <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
         {searchTerm && (
-          <div className="search-results mt-6">
+          <div className="search-results mt-3">
             {searchResultsListItems().length > 0 ? (
               searchResultsListItems()
             ) : (

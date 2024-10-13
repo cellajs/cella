@@ -24,6 +24,7 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
   // Build route path for the entity
   const { orgIdOrSlug, idOrSlug, path } = useMemo(() => getEntityPath(item), [item]);
 
+  // TODO use tailwind conditional classes
   return (
     <Link
       resetScroll={false}
