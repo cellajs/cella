@@ -46,12 +46,12 @@ export const useColumns = () => {
       ),
     },
     {
-      key: 'lastUsed',
+      key: 'lastUsedAt',
       name: t('app:last_used'),
       sortable: true,
       visible: true,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => dateShort(row.lastUsed.toString()),
+      renderCell: ({ row }) => dateShort(row.lastUsedAt.toString()),
     },
   ];
 

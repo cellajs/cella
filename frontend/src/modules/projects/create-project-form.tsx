@@ -21,7 +21,6 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { UserMenuItem } from '~/types/common';
 import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
 
 interface CreateProjectFormProps {
@@ -69,7 +68,7 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ dialog: is
       if (isDialog) dialog.remove();
       addProject(createdProject);
       useNavigationStore.setState({
-        menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
+        menu: addMenuItem(createdProject, 'workspaces', workspace.slug),
       });
       callback([{ ...createdProject, ...{ members: [user] } }], 'createProject');
     },

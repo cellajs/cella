@@ -7,6 +7,8 @@ import { membershipsTable } from './memberships';
 
 type Language = (typeof config.languages)[number]['value'];
 
+const languages = config.languages.map((lang) => lang.value) as [string, ...string[]];
+
 export const organizationsTable = pgTable(
   'organizations',
   {
@@ -19,11 +21,7 @@ export const organizationsTable = pgTable(
     slug: varchar('slug').unique().notNull(),
     country: varchar('country'),
     timezone: varchar('timezone'),
-    defaultLanguage: varchar('default_language', {
-      enum: ['en', 'nl'],
-    })
-      .notNull()
-      .default(config.defaultLanguage),
+    defaultLanguage: varchar('default_language', { enum: languages }).notNull().default(config.defaultLanguage),
     languages: json('languages').$type<Language[]>().notNull().default([config.defaultLanguage]),
     notificationEmail: varchar('notification_email'),
     emailDomains: json('email_domains').$type<string[]>().notNull().default([]),
@@ -33,17 +31,12 @@ export const organizationsTable = pgTable(
     logoUrl: varchar('logo_url'),
     websiteUrl: varchar('website_url'),
     welcomeText: varchar('welcome_text'),
-    isProduction: boolean('is_production').notNull().default(false),
     authStrategies: json('auth_strategies').$type<string[]>().notNull().default([]),
     chatSupport: boolean('chat_support').notNull().default(false),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    createdBy: varchar('created_by').references(() => usersTable.id, {
-      onDelete: 'set null',
-    }),
+    createdBy: varchar('created_by').references(() => usersTable.id, { onDelete: 'set null' }),
     modifiedAt: timestamp('modified_at'),
-    modifiedBy: varchar('modified_by').references(() => usersTable.id, {
-      onDelete: 'set null',
-    }),
+    modifiedBy: varchar('modified_by').references(() => usersTable.id, { onDelete: 'set null' }),
   },
   (table) => {
     return {

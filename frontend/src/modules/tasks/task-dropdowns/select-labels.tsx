@@ -55,7 +55,7 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
   const [isRecent, setIsRecent] = useState(!isMobile);
 
   const orderedLabels = useMemo(
-    () => labels.filter((l) => l.projectId === projectId).sort((a, b) => new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime()),
+    () => labels.filter((l) => l.projectId === projectId).sort((a, b) => new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime()),
     [labels],
   );
 
@@ -66,7 +66,7 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
     if (!isRecent) return selectedLabels;
     // save to recent labels all labels that used in past 3 days
     changeColumn(workspace.id, projectId, {
-      recentLabels: orderedLabels.filter((l) => dateIsRecent(l.lastUsed, 3)),
+      recentLabels: orderedLabels.filter((l) => dateIsRecent(l.lastUsedAt, 3)),
     });
     return orderedLabels.slice(0, 8);
   }, [isRecent, searchValue, orderedLabels, selectedLabels]);

@@ -74,7 +74,7 @@ const formSchema = z.object({
       projectId: z.string(),
       organizationId: z.string(),
       useCount: z.number(),
-      lastUsed: z.string(),
+      lastUsedAt: z.string(),
     }),
   ),
 });

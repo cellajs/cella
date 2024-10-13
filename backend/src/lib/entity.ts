@@ -33,7 +33,7 @@ export async function resolveEntity<T extends Entity>(entityType: T, idOrSlug: s
  * @param entityType - The type of the entity.
  * @param ids - An array of unique identifiers (IDs) of the entities.
  */
-export const resolveEntities = async (entityType: Entity, ids: Array<string>) => {
+export async function resolveEntities<T extends Entity>(entityType: T, ids: Array<string>): Promise<Array<EntityModel<T>>> {
   // Get the corresponding table for the entity type
   const table = entityTables[entityType];
 
@@ -46,5 +46,5 @@ export const resolveEntities = async (entityType: Entity, ids: Array<string>) =>
   // Query for multiple entities by IDs
   const entities = await db.select().from(table).where(inArray(table.id, ids));
 
-  return entities;
-};
+  return entities as Array<EntityModel<T>>;
+}

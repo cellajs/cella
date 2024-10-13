@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { config } from 'config';
-import { type StorageType, uniqueStorageTypes } from '#/entity-config';
+import { type MenuSectionName, menuSections } from '#/entity-config';
 import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
@@ -39,25 +39,20 @@ export const menuItemSchema = z.object({
   thumbnailUrl: imageUrlSchema.nullish(),
   entity: z.enum(config.contextEntityTypes),
   membership: membershipInfoSchema,
-  parentId: z.string().nullable().optional(),
-  parentSlug: z.string().optional(),
-  organizationId: z.string().optional(),
+  organizationId: z.string().optional().nullable(),
 });
 
 export const menuItemsSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
-    submenu: z.array(menuItemSchema).optional(),
+    submenu: z.array(menuItemSchema).optional().default([]),
   }),
 );
 
-// Create a menu schema based on entity storage types
+// Create a menu schema based on menu sections in entity-config
 export const userMenuSchema = z.object(
-  uniqueStorageTypes.reduce(
-    (schema, storageType) => {
-      schema[storageType] = menuItemsSchema;
-      return schema;
-    },
-    {} as Record<StorageType, typeof menuItemsSchema>,
-  ),
+  menuSections.reduce((acc, section) => {
+    acc[section.name] = menuItemsSchema;
+    return acc;
+  }, {} as Record<MenuSectionName, typeof menuItemsSchema>)
 );

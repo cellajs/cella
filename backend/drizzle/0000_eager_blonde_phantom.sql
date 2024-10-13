@@ -3,10 +3,15 @@ CREATE TABLE IF NOT EXISTS "attachments" (
 	"filename" varchar NOT NULL,
 	"content_type" varchar NOT NULL,
 	"size" varchar NOT NULL,
-	"task_id" varchar NOT NULL,
+	"entity" varchar DEFAULT 'attachment' NOT NULL,
 	"url" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" varchar
+	"created_by" varchar,
+	"modified_at" timestamp,
+	"modified_by" varchar,
+	"organization_id" varchar NOT NULL,
+	"project_id" varchar NOT NULL,
+	"task_id" varchar NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "labels" (
@@ -14,18 +19,18 @@ CREATE TABLE IF NOT EXISTS "labels" (
 	"name" varchar NOT NULL,
 	"color" varchar,
 	"entity" varchar DEFAULT 'label' NOT NULL,
-	"organization_id" varchar NOT NULL,
-	"project_id" varchar NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
 	"last_used" timestamp DEFAULT now() NOT NULL,
-	"use_count" integer NOT NULL
+	"modified_at" timestamp,
+	"modified_by" varchar,
+	"use_count" integer NOT NULL,
+	"organization_id" varchar NOT NULL,
+	"project_id" varchar NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "memberships" (
 	"id" varchar PRIMARY KEY NOT NULL,
 	"type" varchar NOT NULL,
-	"organization_id" varchar NOT NULL,
-	"workspace_id" varchar,
-	"project_id" varchar,
 	"user_id" varchar NOT NULL,
 	"role" varchar DEFAULT 'member' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -34,7 +39,10 @@ CREATE TABLE IF NOT EXISTS "memberships" (
 	"modified_by" varchar,
 	"archived" boolean DEFAULT false NOT NULL,
 	"muted" boolean DEFAULT false NOT NULL,
-	"sort_order" double precision NOT NULL
+	"sort_order" double precision NOT NULL,
+	"organization_id" varchar NOT NULL,
+	"workspace_id" varchar,
+	"project_id" varchar
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "oauth_accounts" (
@@ -63,7 +71,6 @@ CREATE TABLE IF NOT EXISTS "organizations" (
 	"logo_url" varchar,
 	"website_url" varchar,
 	"welcome_text" varchar,
-	"is_production" boolean DEFAULT false NOT NULL,
 	"auth_strategies" json DEFAULT '[]'::json NOT NULL,
 	"chat_support" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -92,8 +99,7 @@ CREATE TABLE IF NOT EXISTS "projects" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"created_by" varchar,
 	"modified_at" timestamp,
-	"modified_by" varchar,
-	"parent_id" varchar
+	"modified_by" varchar
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "requests" (
@@ -120,7 +126,6 @@ CREATE TABLE IF NOT EXISTS "sessions" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "tasks" (
 	"id" varchar PRIMARY KEY NOT NULL,
-	"slug" varchar NOT NULL,
 	"entity" varchar DEFAULT 'task' NOT NULL,
 	"description" varchar NOT NULL,
 	"keywords" varchar NOT NULL,
@@ -136,7 +141,7 @@ CREATE TABLE IF NOT EXISTS "tasks" (
 	"organization_id" varchar NOT NULL,
 	"project_id" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" varchar DEFAULT 'unknown' NOT NULL,
+	"created_by" varchar,
 	"modified_at" timestamp,
 	"modified_by" varchar
 );
@@ -169,7 +174,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"thumbnail_url" varchar,
 	"newsletter" boolean DEFAULT false NOT NULL,
 	"last_seen_at" timestamp,
-	"last_visit_at" timestamp,
+	"last_started_at" timestamp,
 	"last_sign_in_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp,
@@ -196,13 +201,37 @@ CREATE TABLE IF NOT EXISTS "workspaces" (
 );
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "attachments" ADD CONSTRAINT "attachments_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "attachments" ADD CONSTRAINT "attachments_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+ ALTER TABLE "labels" ADD CONSTRAINT "labels_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -215,24 +244,6 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "labels" ADD CONSTRAINT "labels_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "memberships" ADD CONSTRAINT "memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "memberships" ADD CONSTRAINT "memberships_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "memberships" ADD CONSTRAINT "memberships_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -251,6 +262,24 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "memberships" ADD CONSTRAINT "memberships_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "memberships" ADD CONSTRAINT "memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "memberships" ADD CONSTRAINT "memberships_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "memberships" ADD CONSTRAINT "memberships_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -298,12 +327,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "projects" ADD CONSTRAINT "projects_parent_id_workspaces_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."workspaces"("id") ON DELETE set null ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -334,7 +357,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "tasks" ADD CONSTRAINT "tasks_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set default ON UPDATE no action;
+ ALTER TABLE "tasks" ADD CONSTRAINT "tasks_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -386,7 +409,6 @@ CREATE INDEX IF NOT EXISTS "organizations_created_at_index" ON "organizations" U
 CREATE INDEX IF NOT EXISTS "requests_emails" ON "requests" USING btree ("email" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "requests_created_at" ON "requests" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_admin_id" ON "sessions" USING btree ("admin_user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_tasks_description" ON "tasks" USING btree ("description");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_tasks_project" ON "tasks" USING btree ("project_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_tasks_keywords" ON "tasks" USING btree ("keywords");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "users_name_index" ON "users" USING btree ("name" DESC NULLS LAST);--> statement-breakpoint

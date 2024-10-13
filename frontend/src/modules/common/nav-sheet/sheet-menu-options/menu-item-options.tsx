@@ -1,5 +1,4 @@
 import { onlineManager } from '@tanstack/react-query';
-import type { ContextEntity } from 'backend/types/common';
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
@@ -14,13 +13,11 @@ import { useNavigationStore } from '~/store/navigation';
 import type { UserMenuItem } from '~/types/common';
 import Spinner from '../../spinner';
 
-interface ItemOptionProps {
+interface MenuItemOptionsProps {
   item: UserMenuItem;
-  itemType: ContextEntity;
-  parentItemSlug?: string;
 }
 
-export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) => {
+export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
   const { t } = useTranslation();
   const { archiveStateToggle } = useNavigationStore();
   const { mutate: updateMembership, status } = useMutation({
@@ -30,18 +27,18 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
 
       if (updatedMembership.archived !== item.membership.archived) {
         const archived = updatedMembership.archived || !item.membership.archived;
-        archiveStateToggle(item, archived, parentItemSlug ? parentItemSlug : null);
+        archiveStateToggle(item, archived, item.parentSlug ? item.parentSlug : null);
         item.membership.archived = archived;
-        toastMessage = t(`common:success.${updatedMembership.archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${itemType}`) });
+        toastMessage = t(`common:success.${updatedMembership.archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${item.entity}`) });
       }
 
       if (updatedMembership.muted !== item.membership.muted) {
         const muted = updatedMembership.muted || !item.membership.muted;
         item.membership.muted = muted;
-        toastMessage = t(`common:success.${updatedMembership.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${itemType}`) });
+        toastMessage = t(`common:success.${updatedMembership.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${item.entity}`) });
       }
 
-      dispatchCustomEvent('menuEntityChange', { entity: itemType, membership: updatedMembership, toast: toastMessage });
+      dispatchCustomEvent('menuEntityChange', { entity: item.entity, membership: updatedMembership, toast: toastMessage });
     },
   });
 
@@ -62,17 +59,17 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
   return (
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
-      className={`group flex relative items-center ${parentItemSlug ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 pr-2 justify-start rounded focus:outline-none
+      className={`group flex relative items-center ${item.parentSlug ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 pr-2 justify-start rounded focus:outline-none
         ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 cursor-grab`}
     >
       {status === 'pending' ? (
-        <div className={`${parentItemSlug ? 'my-2 mx-3 h-8 w-8' : 'm-2'} p-2 ${item.membership.archived && 'opacity-70'}`}>
+        <div className={`${item.parentSlug ? 'my-2 mx-3 h-8 w-8' : 'm-2'} p-2 ${item.membership.archived && 'opacity-70'}`}>
           <Spinner inline />
         </div>
       ) : (
         <AvatarWrap
-          className={`${parentItemSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${item.membership.archived && 'opacity-70'}`}
-          type={itemType}
+          className={`${item.parentSlug ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${item.membership.archived && 'opacity-70'}`}
+          type={item.entity}
           id={item.id}
           name={item.name}
           url={item.thumbnailUrl}
@@ -80,7 +77,7 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
       )}
 
       <div className="truncate grow py-2 pl-1 text-left">
-        <div className={`truncate ${parentItemSlug ? 'text-sm' : 'text-base mb-1'} leading-5 ${item.membership.archived && 'opacity-70'}`}>
+        <div className={`truncate ${item.entity ? 'text-sm' : 'text-base mb-1'} leading-5 ${item.membership.archived && 'opacity-70'}`}>
           {item.name} {config.debug && <span className="text-muted">#{item.membership.order}</span>}
         </div>
         <div className="flex items-center gap-4 transition-opacity delay-500">
@@ -88,13 +85,13 @@ export const ItemOption = ({ item, itemType, parentItemSlug }: ItemOptionProps) 
             Icon={item.membership.archived ? ArchiveRestore : Archive}
             title={item.membership.archived ? t('common:restore') : t('common:archive')}
             onClick={() => handleUpdateMembershipKey('archive')}
-            subtask={!!parentItemSlug}
+            subtask={!!item.parentSlug}
           />
           <OptionButtons
             Icon={item.membership.muted ? Bell : BellOff}
             title={item.membership.muted ? t('common:unmute') : t('common:mute')}
             onClick={() => handleUpdateMembershipKey('mute')}
-            subtask={!!parentItemSlug}
+            subtask={!!item.parentSlug}
           />
         </div>
       </div>

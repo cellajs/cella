@@ -17,6 +17,7 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import workspaceRoutesConfig from './routes';
+import permissionManager from '#/lib/permission-manager';
 
 const app = new CustomHono();
 
@@ -31,10 +32,7 @@ const workspacesRoutes = app
     const user = getContextUser();
 
     const slugAvailable = await checkSlugAvailable(slug);
-
-    if (!slugAvailable) {
-      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'workspace', { slug });
-    }
+    if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'workspace', { slug });
 
     const [workspace] = await db
       .insert(workspacesTable)
@@ -50,16 +48,7 @@ const workspacesRoutes = app
     // Insert membership
     const createdMembership = await insertMembership({ user, role: 'admin', entity: workspace });
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...workspace,
-          membership: createdMembership,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: { ...workspace, membership: createdMembership } }, 200);
   })
   /*
    * Get workspace by id or slug with related projects, members and labels
@@ -71,12 +60,17 @@ const workspacesRoutes = app
     const user = getContextUser();
 
     const workspace = await resolveEntity('workspace', idOrSlug);
+    if (!workspace) return errorResponse(ctx, 404, 'not_found', 'warn', 'workspace', { id: idOrSlug });
 
-    if (!workspace) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'workspace', { id: idOrSlug });
-    }
+    // TODO remove this and use permission manager once it returns membership
+    const workspaceMembership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'workspace');
+    if (!workspaceMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'workspace');
 
-    const membership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'workspace');
+    // If not allowed and not admin, return forbidden
+    const canRead = permissionManager.isPermissionAllowed(memberships, 'read', workspace);
+    if (!canRead && user.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', 'workspace');
+
+    // Get projects
     const projectsWithMembership = await db
       .select({
         project: projectsTable,
@@ -86,19 +80,19 @@ const workspacesRoutes = app
       .innerJoin(workspacesTable, eq(workspacesTable.id, workspace.id))
       .innerJoin(
         membershipsTable,
-        and(eq(membershipsTable.projectId, projectsTable.id), eq(membershipsTable.userId, user.id), eq(membershipsTable.archived, false)),
+        and(eq(membershipsTable.projectId, projectsTable.id), eq(membershipsTable.workspaceId, workspace.id), eq(membershipsTable.userId, user.id), eq(membershipsTable.archived, false)),
       )
-      .where(eq(projectsTable.parentId, workspace.id))
+      .where(eq(projectsTable.organizationId, workspace.organizationId))
       .orderBy(asc(membershipsTable.order));
 
     const projects = projectsWithMembership.map(({ project, membership }) => {
       return {
         ...project,
         membership,
-        workspaceId: workspace.id,
       };
     });
 
+    // Get members
     const membershipCount = db
       .select({
         userId: membershipsTable.userId,
@@ -134,6 +128,7 @@ const workspacesRoutes = app
       projectId,
     }));
 
+    // Get labels
     const labelsQuery = db
       .select()
       .from(labelsTable)
@@ -146,18 +141,14 @@ const workspacesRoutes = app
 
     const labels = await db.select().from(labelsQuery.as('labels'));
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          workspace: { ...workspace, membership: membership ?? null },
-          projects,
-          members,
-          labels,
-        },
-      },
-      200,
-    );
+    const data = {
+      workspace: { ...workspace, membership: workspaceMembership },
+      projects,
+      members,
+      labels,
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Update workspace by id or slug
@@ -167,19 +158,22 @@ const workspacesRoutes = app
     const { name, slug, thumbnailUrl, bannerUrl } = ctx.req.valid('json');
 
     const user = getContextUser();
+    const memberships = getMemberships();
 
     const workspace = await resolveEntity('workspace', idOrSlug);
+    if (!workspace) return errorResponse(ctx, 404, 'not_found', 'warn', 'workspace', { id: idOrSlug });
 
-    if (!workspace) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'workspace', { id: idOrSlug });
-    }
+    // TODO remove this and user permission manager once it returns membership
+    const userMembership = memberships.find((m) => m.workspaceId === workspace.id && m.type === 'workspace');
+    if (!userMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
+
+    // If not allowed and not admin, return forbidden
+    const canUpdate = permissionManager.isPermissionAllowed(memberships, 'update', workspace);
+    if (!canUpdate && user.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     if (slug && slug !== workspace.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-
-      if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'workspace', { slug });
-      }
+      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'workspace', { slug });
     }
 
     const [updatedWorkspace] = await db
@@ -196,32 +190,21 @@ const workspacesRoutes = app
       .where(eq(workspacesTable.id, workspace.id))
       .returning();
 
-    const memberships = await db
+    const workspaceMemberships = await db
       .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'workspace'), eq(membershipsTable.workspaceId, workspace.id)));
 
-    if (memberships.length > 0) {
-      memberships.map((membership) =>
-        sendSSEToUsers([membership.userId], 'update_entity', {
-          ...updatedWorkspace,
-          membership: memberships.find((m) => m.id === membership.id) ?? null,
-        }),
-      );
+    // Send SSE events to workspace members
+    for (const membership of workspaceMemberships) {
+      sendSSEToUsers([membership.userId], 'update_entity', { ...updatedWorkspace, membership });
     }
 
     logEvent('Workspace updated', { workspace: updatedWorkspace.id });
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...updatedWorkspace,
-          membership: memberships.find((m) => m.id === user.id) ?? null,
-        },
-      },
-      200,
-    );
+    const data = { ...updatedWorkspace, membership: userMembership };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Delete workspaces
@@ -234,15 +217,11 @@ const workspacesRoutes = app
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
-    if (!toDeleteIds.length) {
-      return errorResponse(ctx, 400, 'invalid_request', 'warn', 'workspace');
-    }
+    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'workspace');
 
     const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'workspace', toDeleteIds, memberships);
 
-    if (!allowedIds.length) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
-    }
+    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
 
     // Map errors of workspaces user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'workspace', { workspace: id }));

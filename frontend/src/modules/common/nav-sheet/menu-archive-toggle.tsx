@@ -10,6 +10,7 @@ interface MenuArchiveToggleProps {
   isSubmenu?: boolean;
 }
 
+// TODO isSubmenu and isArchivedVisible can go away and instead use conditional tailwind classes
 export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount, isArchivedVisible, isSubmenu }: MenuArchiveToggleProps) => {
   const { t } = useTranslation();
 

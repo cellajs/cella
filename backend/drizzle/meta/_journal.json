@@ -1,26 +1,19 @@
 {
-  "version": "7",
+  "version": "8",
   "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
       "version": "7",
-      "when": 1726141920518,
-      "tag": "0000_glorious_union_jack",
+      "when": 1728759499147,
+      "tag": "0000_eager_blonde_phantom",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1728049999295,
-      "tag": "0001_sticky_scarecrow",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1728573019286,
-      "tag": "0002_solid_warpath",
+      "when": 1728775361222,
+      "tag": "0001_odd_kronos",
       "breakpoints": true
     }
   ]

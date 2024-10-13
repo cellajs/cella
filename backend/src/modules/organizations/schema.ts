@@ -21,9 +21,15 @@ export const organizationSchema = z.object({
   languages: z.array(languageSchema),
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
-  membership: membershipInfoSchema.nullable(),
+  membership: membershipInfoSchema,
   counts: membershipsCountSchema,
 });
+
+export const organizationOptionalMembershipSchema = organizationSchema.merge(
+  z.object({
+    membership: membershipInfoSchema.optional().nullable(),
+  }),
+);
 
 export const createOrganizationBodySchema = z.object({
   name: nameSchema,

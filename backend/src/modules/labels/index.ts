@@ -36,7 +36,12 @@ const labelsRoutes = app
   .openapi(labelsRoutesConfig.getLabels, async (ctx) => {
     const { q, sort, order, offset, limit, projectId } = ctx.req.valid('query');
 
-    const labelsFilters: SQL[] = [inArray(labelsTable.projectId, projectId.split('_'))];
+    const organization = getOrganization();
+
+    // Filter labels at least by valid organization
+    const labelsFilters: SQL[] = [eq(labelsTable.organizationId, organization.id), inArray(labelsTable.projectId, projectId.split('_'))];
+
+    // Add more filters
     if (q) labelsFilters.push(ilike(labelsTable.name, `%${q}%`));
 
     const labelsQuery = db
@@ -47,7 +52,7 @@ const labelsRoutes = app
     const orderColumn = getOrderColumn(
       {
         name: labelsTable.name,
-        lastUsed: labelsTable.lastUsed,
+        lastUsedAt: labelsTable.lastUsedAt,
         useCount: labelsTable.useCount,
       },
       sort,
@@ -65,8 +70,10 @@ const labelsRoutes = app
    */
   .openapi(labelsRoutesConfig.updateLabel, async (ctx) => {
     const id = ctx.req.param('id');
-    if (!id) return errorResponse(ctx, 404, 'not_found', 'warn');
     const { useCount } = ctx.req.valid('json');
+
+    if (!id) return errorResponse(ctx, 404, 'not_found', 'warn');
+
     await db
       .update(labelsTable)
       .set({

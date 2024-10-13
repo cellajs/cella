@@ -350,7 +350,7 @@ const membershipsRoutes = app
         .where(and(eq(membershipsTable.type, updatedType), eq(membershipsTable.userId, user.id)));
       const isAllowed = permissionManager.isPermissionAllowed(permissionMemberships, 'update', membershipContext);
       if (!isAllowed && user.role !== 'admin') {
-        return errorResponse(ctx, 403, 'forbidden', 'warn', updatedType, { user: user.id, id: membershipContext.id });
+        return errorResponse(ctx, 403, 'forbidden', 'warn', updatedType, { membership: membershipContext.id });
       }
     }
 
@@ -374,21 +374,15 @@ const membershipsRoutes = app
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 
-    return ctx.json(
-      {
-        success: true,
-        data: updatedMembership,
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: updatedMembership }, 200);
   })
   /*
-   * Get members by entity id and type
+   * Get members by entity id/slug and type
    */
   .openapi(membershipRouteConfig.getMembers, async (ctx) => {
     const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
-    const entity = await resolveEntity(entityType, idOrSlug);
 
+    const entity = await resolveEntity(entityType, idOrSlug);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
 
     const entityIdField = entityIdFields[entity.entity];

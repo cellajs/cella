@@ -14,12 +14,12 @@ import { dialog } from '~/modules/common/dialoger/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { baseEntityRoutes, suggestionSections } from '~/nav-config';
+import { getEntityPath, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { Button } from '../ui/button';
 import Spinner from './spinner';
 
-type SuggestionType = z.infer<typeof entitySuggestionSchema>;
+export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
 export interface SuggestionSection {
   id: string;
@@ -74,21 +74,16 @@ export const MainSearch = () => {
   });
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {
-    const { entity, parentId, slug } = suggestion;
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    // Construct the destination URL
-    const basePath = baseEntityRoutes[entity];
-    const queryParams = parentId ? `?${entity}=${slug}` : '';
-    const to = `${basePath}${queryParams}`;
+    const { orgIdOrSlug, idOrSlug, path } = getEntityPath(suggestion);
 
-    const idOrSlug = parentId ?? slug;
 
     navigate({
-      to,
+      to: path,
       resetScroll: false,
-      params: { idOrSlug },
+      params: { idOrSlug, orgIdOrSlug },
     });
 
     dialog.remove(false);

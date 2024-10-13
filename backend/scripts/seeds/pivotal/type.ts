@@ -73,7 +73,7 @@ export interface Labels {
   color: string;
   organizationId: string;
   projectId: string;
-  lastUsed: Date;
+  lastUsedAt: Date;
   useCount: number;
 }
 

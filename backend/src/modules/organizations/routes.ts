@@ -11,6 +11,7 @@ import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
+  organizationOptionalMembershipSchema,
   organizationSchema,
   sendNewsletterBodySchema,
   updateOrganizationBodySchema,
@@ -62,7 +63,7 @@ class OrganizationRoutesConfig {
         description: 'Organizations',
         content: {
           'application/json': {
-            schema: successWithPaginationSchema(organizationSchema),
+            schema: successWithPaginationSchema(organizationOptionalMembershipSchema),
           },
         },
       },

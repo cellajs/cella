@@ -30,7 +30,7 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   setFocusView: (status: boolean) => void;
-  archiveStateToggle: (item: UserMenuItem, active: boolean, parentId?: string | null) => void;
+  archiveStateToggle: (item: UserMenuItem, active: boolean, parentSlug?: string | null) => void;
   finishedOnboarding: boolean;
   setFinishedOnboarding: () => void;
   clearNavigationStore: () => void;
@@ -52,9 +52,9 @@ interface InitStore
   > {}
 
 const initialMenuState: UserMenu = menuSections
-  .filter((el) => !el.isSubmenu)
+  .filter((el) => !el.submenu)
   .reduce((acc, section) => {
-    acc[section.storageType] = [];
+    acc[section.name] = [];
     return acc;
   }, {} as UserMenu);
 
@@ -124,9 +124,9 @@ export const useNavigationStore = create<NavigationState>()(
               state.activeSections = null;
             });
           },
-          archiveStateToggle: (item: UserMenuItem, active: boolean, parentId?: string | null) => {
+          archiveStateToggle: (item: UserMenuItem, active: boolean, parentSlug?: string | null) => {
             set((state) => {
-              if (!parentId) {
+              if (!parentSlug) {
                 // Update the 'archived' status for the item in all sections
                 for (const sectionKey of objectKeys(state.menu)) {
                   const section = state.menu[sectionKey];
@@ -135,9 +135,9 @@ export const useNavigationStore = create<NavigationState>()(
                 }
               } else {
                 // Update the 'archived' status for the item in a specific submenu
-                const section = menuSections.find((el) => el.type === item.entity)?.storageType;
+                const section = menuSections.find((el) => el.entityType === item.entity)?.name;
                 if (!section) return;
-                const parent = state.menu[section].find((item) => item.id === parentId);
+                const parent = state.menu[section].find((item) => item.slug === parentSlug);
                 if (!parent || !parent.submenu) return;
                 const itemIndex = parent.submenu.findIndex((el) => el.id === item.id);
                 if (itemIndex && itemIndex !== -1) parent.submenu[itemIndex].membership.archived = active;

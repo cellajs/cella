@@ -29,12 +29,11 @@ export const isPageData = (data: Record<string | symbol, unknown>): data is Page
 };
 
 export type SectionItem = {
-  storageType: keyof UserMenu;
-  type: ContextEntity;
+  name: keyof UserMenu;
+  entityType: ContextEntity;
   label: string;
   createForm?: React.ReactNode;
-  isSubmenu?: boolean;
-  toPrefix?: boolean;
+  submenu?: SectionItem;
   icon?: React.ElementType<LucideProps>;
 };
 
@@ -49,23 +48,22 @@ export const SheetMenu = memo(() => {
   const searchResultsListItems = useCallback(() => {
     return searchResults.length > 0
       ? searchResults.map((item: UserMenuItem) => (
-          <SheetMenuItem key={item.id} searchResults mainItemIdOrSlug={item.parentSlug} item={item} type={item.entity} />
+          <SheetMenuItem key={item.id} searchResults item={item} />
         ))
       : [];
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
     return menuSections
-      .filter((el) => !el.isSubmenu)
       .map((section) => {
-        const menuSection = menu[section.storageType];
+        const menuSection = menu[section.name];
 
         return (
           <MenuSection
-            entityType={section.type}
-            key={section.type}
+            entityType={section.entityType}
+            key={section.name}
             sectionLabel={section.label}
-            sectionType={section.storageType}
+            sectionType={section.name}
             createForm={section.createForm}
             data={menuSection}
           />
@@ -142,7 +140,7 @@ export const SheetMenu = memo(() => {
                 </label>
               </div>
               {pwaEnabled && <NetworkModeSwitch />}
-              {menuSections.some((el) => el.isSubmenu) && (
+              {menuSections.some((el) => el.submenu) && (
                 <div className="flex items-center gap-4 ml-1">
                   <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
                   <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">

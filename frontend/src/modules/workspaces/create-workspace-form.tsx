@@ -24,7 +24,7 @@ import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
 import type { Workspace } from '~/types/app';
-import type { Organization, UserMenuItem } from '~/types/common';
+import type { Organization } from '~/types/common';
 import { idSchema } from '#/utils/schema/common-schemas';
 
 interface CreateWorkspaceFormProps {
@@ -68,7 +68,7 @@ const CreateWorkspaceForm: React.FC<CreateWorkspaceFormProps> = ({ callback, dia
       if (isDialog) dialog.remove();
 
       useNavigationStore.setState({
-        menu: addMenuItem(createdWorkspace as UserMenuItem, 'workspaces'),
+        menu: addMenuItem(createdWorkspace, 'workspaces'),
       });
       navigate({
         to: '/$orgIdOrSlug/workspaces/$idOrSlug/board',

@@ -6,14 +6,25 @@ import { paginationQuerySchema } from '#/utils/schema/common-schemas';
 
 export const createLabelSchema = createInsertSchema(labelsTable).omit({
   id: true,
-  lastUsed: true,
+  lastUsedAt: true,
+  createdAt: true,
+  createdBy: true,
+  modifiedAt: true,
+  modifiedBy: true,
   entity: true,
   organizationId: true,
 });
 
 export const labelSchema = z.object({
-  ...createSelectSchema(labelsTable).omit({ lastUsed: true, entity: true }).shape,
-  lastUsed: z.string(),
+  ...createSelectSchema(labelsTable).omit({
+    lastUsedAt: true,
+    entity: true,
+    createdAt: true,
+    createdBy: true,
+    modifiedAt: true,
+    modifiedBy: true,
+  }).shape,
+  lastUsedAt: z.string(),
 });
 
 export const updateLabelSchema = z.object({
@@ -24,7 +35,7 @@ export const getLabelsQuerySchema = paginationQuerySchema.merge(
   z.object({
     projectId: z.string(),
     q: z.string().optional(),
-    sort: z.enum(['name', 'useCount', 'lastUsed']).default('name').optional(),
+    sort: z.enum(['name', 'useCount', 'lastUsedAt']).default('name').optional(),
     order: z.enum(['asc', 'desc']).default('asc').optional(),
   }),
 );

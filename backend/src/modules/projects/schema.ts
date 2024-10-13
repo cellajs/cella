@@ -9,7 +9,7 @@ export const projectSchema = z.object({
   ...createSelectSchema(projectsTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  membership: membershipInfoSchema.nullable(),
+  membership: membershipInfoSchema,
   workspaceId: z.string().nullish(),
 });
 

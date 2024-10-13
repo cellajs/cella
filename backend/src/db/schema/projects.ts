@@ -1,10 +1,7 @@
-import { relations } from 'drizzle-orm';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
-import { membershipsTable } from './memberships';
 import { organizationsTable } from './organizations';
-import { workspacesTable } from './workspaces';
 
 export const projectsTable = pgTable('projects', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
@@ -28,18 +25,7 @@ export const projectsTable = pgTable('projects', {
   modifiedBy: varchar('modified_by').references(() => usersTable.id, {
     onDelete: 'set null',
   }),
-  parentId: varchar('parent_id').references(() => workspacesTable.id, {
-    onDelete: 'set null',
-  }),
 });
-
-export const projectsTableRelations = relations(projectsTable, ({ one, many }) => ({
-  users: many(membershipsTable),
-  workspace: one(workspacesTable, {
-    fields: [projectsTable.parentId],
-    references: [workspacesTable.id],
-  }),
-}));
 
 export type ProjectModel = typeof projectsTable.$inferSelect;
 export type InsertProjectModel = typeof projectsTable.$inferInsert;

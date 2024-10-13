@@ -47,8 +47,8 @@ export const tasksTable = pgTable(
   },
   (table) => {
     return {
-      tasksProjectIdx: index('idx_tasks_project').on(table.projectId),
-      tasksKeywordsIdx: index('idx_tasks_keywords').on(table.keywords),
+      tasksProjectIndex: index('idx_tasks_project').on(table.projectId),
+      tasksKeywordsIndex: index('idx_tasks_keywords').on(table.keywords),
     };
   },
 );

@@ -32,7 +32,7 @@ export const labelsQueryOptions = ({
 }: GetLabelsParams & {
   rowsLength?: number;
 }) => {
-  const sort = initialSort || 'lastUsed';
+  const sort = initialSort || 'lastUsedAt';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
@@ -71,7 +71,7 @@ const LabelsTable = () => {
   const [rows, setRows] = useState<Label[]>([]);
   const [query, setQuery] = useState<LabelsSearch['q']>('');
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'lastUsed', direction: 'DESC' }]);
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>([{ columnKey: 'lastUsedAt', direction: 'DESC' }]);
 
   // Search query options
   const q = useDebounce(query, 200);

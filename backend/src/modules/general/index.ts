@@ -14,7 +14,7 @@ import { db } from '#/db/db';
 import { getContextUser, getMemberships } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
+import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -258,16 +258,16 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
+
     const user = getContextUser();
     const memberships = getMemberships();
 
     // Retrieve organizationIds for non-admin users and check if the user has at least one organization membership
     let organizationIds: string[] = [];
 
-    if (user.role !== 'admin') {
-      organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
-      if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
-    }
+    // Organization required
+    organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
+    if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined);
 
     // Provide suggestions for all entities or narrow them down to a specific type if specified
     const entityTypes = type ? [type] : config.pageEntityTypes;
@@ -286,6 +286,7 @@ const generalRoutes = app
         slug: table.slug,
         name: table.name,
         entity: table.entity,
+        membership: membershipSelect,
         ...('email' in table && { email: table.email }),
         ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
       };
@@ -322,7 +323,14 @@ const generalRoutes = app
       const $where = $and.length > 1 ? and(...$and) : $and[0];
 
       // Build query
-      queries.push(db.select(baseSelect).from(table).where($where).limit(10));
+      queries.push(
+        db
+          .select(baseSelect)
+          .from(table)
+          .innerJoin(membershipsTable, and(eq(membershipsTable.userId, user.id), eq(membershipsTable[entityIdField], table.id)))
+          .where($where)
+          .limit(10),
+      );
     }
 
     const results = await Promise.all(queries);

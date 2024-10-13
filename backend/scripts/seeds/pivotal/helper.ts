@@ -45,7 +45,7 @@ export const getLabels = (tasks: PivotalTask[], organizationId: string, projectI
     color: '#FFA9BA',
     organizationId: organizationId,
     projectId: projectId,
-    lastUsed: new Date(),
+    lastUsedAt: new Date(),
     useCount: value,
   }));
   return labelsToInsert;
