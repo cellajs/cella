@@ -12,10 +12,11 @@ import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@elect
 import { config } from 'config';
 import { toast } from 'sonner';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import router, { queryClient } from '~/lib/router';
+import { queryClient } from '~/lib/router';
 import { BoardColumnHeader } from '~/modules/app/board/board-column-header';
 import { ColumnSkeleton } from '~/modules/app/board/column-skeleton';
 import { isSubtaskData, isTaskData } from '~/modules/app/board/helpers';
+import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
@@ -36,6 +37,7 @@ import { defaultColumnValues, useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { objectKeys } from '~/utils/object';
+import ProjectActions from './project-actions';
 
 interface BoardColumnProps {
   tasksState: Record<string, TaskStates>;
@@ -113,8 +115,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     expandIced: showIced,
     expandAccepted: showAccepted,
     minimized,
-    createTaskForm,
-  } = useMemo(() => settings || defaultColumnValues, [settings]);
+  } = useMemo(() => settings || defaultColumnValues, [settings?.expandIced, settings?.expandAccepted, settings?.minimized]);
 
   // Query tasks
   const { data, isLoading } = useSuspenseQuery(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }));
@@ -244,18 +245,8 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
   useEffect(() => {
-    if (!createTaskForm) dialog.remove(false, `create-task-form-${project.id}`);
-    else setTimeout(() => openCreateTaskDialog(defaultTaskFormRef), 0);
-  }, [createTaskForm]);
-
-  useEffect(() => {
     if (isMobile && minimized) handleExpand();
   }, [minimized, isMobile]);
-
-  useEffect(() => {
-    const unsubscribe = router.subscribe('onBeforeLoad', () => dialog.remove(false, `create-task-form-${project.id}`));
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     return combine(
@@ -317,15 +308,21 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
 
   if (minimized)
     return (
-      <div ref={columnRef} className="flex flex-col h-full max-sm:-mx-1.5 max-sm:pb-28">
-        <BoardColumnHeader project={project} />
-        <div className="border h-full" onClick={handleExpand} onKeyDown={() => {}} />
+      <div ref={columnRef} onClick={handleExpand} onKeyDown={() => {}} className="flex flex-col h-full max-sm:-mx-1.5 max-sm:pb-28">
+        <BoardColumnHeader projectId={project.id}>
+          <AvatarWrap className="max-sm:hidden h-6 w-6 text-xs" id={project.id} type="project" name={project.name} url={project.thumbnailUrl} />
+        </BoardColumnHeader>
+        <div className="border h-full" />
       </div>
     );
 
   return (
     <div ref={columnRef} className="flex flex-col h-full max-sm:-mx-1.5 max-sm:pb-28">
-      <BoardColumnHeader project={project} />
+      <BoardColumnHeader projectId={project.id}>
+        <AvatarWrap className="max-sm:hidden h-6 w-6 text-xs" id={project.id} type="project" name={project.name} url={project.thumbnailUrl} />
+        <div className="truncate leading-6">{project.name}</div>
+        <ProjectActions project={project} openDialog={() => openCreateTaskDialog(defaultTaskFormRef)} />
+      </BoardColumnHeader>
       <div
         className={cn(
           'flex-1 sm:h-[calc(100vh-146px)] relative rounded-b-none max-w-full bg-transparent group/column flex flex-col flex-shrink-0 snap-center sm:border-b opacity-100',

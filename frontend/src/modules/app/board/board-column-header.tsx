@@ -1,17 +1,14 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
-import type { Project } from '~/types/app';
-import ProjectActions from './project-actions';
 
-export function BoardColumnHeader({ project }: { project: Project }) {
+export function BoardColumnHeader({ projectId, children }: { projectId: string; children?: React.ReactNode }) {
   const navigate = useNavigate();
   const {
     data: { projects },
   } = useWorkspaceQuery();
-  const currentIndex = projects.findIndex((p) => p.id === project.id);
+  const currentIndex = projects.findIndex((p) => p.id === projectId);
 
   const params = useParams({
     strict: false,
@@ -42,12 +39,7 @@ export function BoardColumnHeader({ project }: { project: Project }) {
       </Button>
 
       <div className="grow sm:hidden" />
-
-      <AvatarWrap className="max-sm:hidden h-6 w-6 text-xs" id={project.id} type="project" name={project.name} url={project.thumbnailUrl} />
-      <div className="truncate leading-6">{project.name}</div>
-
-      <ProjectActions project={project} />
-
+      {children}
       <Button disabled={currentIndex === projects.length - 1} variant="ghost" className="sm:hidden" onClick={() => ArrowClick('right')}>
         <ChevronRight size={16} />
       </Button>

@@ -1,6 +1,9 @@
 import { EllipsisVertical, Minimize2, Plus, Settings, Users } from 'lucide-react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import router from '~/lib/router';
 import { showToast } from '~/lib/toasts';
+import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
@@ -9,7 +12,7 @@ import { useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project } from '~/types/app';
 import { openProjectConfigSheet } from './helpers';
 
-const ProjectActions = ({ project }: { project: Project }) => {
+const ProjectActions = ({ project, openDialog }: { project: Project; openDialog: () => void }) => {
   const { t } = useTranslation();
   const { changeColumn, workspaces } = useWorkspaceUIStore();
   const { setFocusedTaskId } = useWorkspaceStore();
@@ -38,13 +41,23 @@ const ProjectActions = ({ project }: { project: Project }) => {
   };
 
   const createTaskClick = () => {
-    setFocusedTaskId(null);
+    if (createTaskForm) setFocusedTaskId(null);
     changeColumn(workspace.id, project.id, {
       createTaskForm: !createTaskForm,
     });
   };
 
   if (minimized) return null;
+
+  useEffect(() => {
+    const unsubscribe = router.subscribe('onBeforeLoad', () => dialog.remove(false, `create-task-form-${project.id}`));
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!createTaskForm) dialog.remove(false, `create-task-form-${project.id}`);
+    else setTimeout(() => openDialog(), 0);
+  }, [createTaskForm]);
 
   return (
     <>
