@@ -9,11 +9,11 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { config } from 'config';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
 import { updateMembership } from '~/api/memberships';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { getRelativeItem, orderChange } from '~/modules/common/nav-sheet/helpers';
+import { getRelativeItemOrder } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuSearch } from '~/modules/common/nav-sheet/sheet-menu-search';
 import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
@@ -82,15 +82,8 @@ export const SheetMenu = memo(() => {
           if (!isPageData(targetData) || !isPageData(sourceData)) return;
 
           const { item: sourceItem } = sourceData;
-          const { item: targetItem } = targetData;
           const edge: Edge | null = extractClosestEdge(targetData);
-          const relativeItem = getRelativeItem(menu, sourceItem.entity, sourceItem.membership.archived, targetItem.id, edge);
-          let newOrder: number;
-
-          if (relativeItem === undefined || relativeItem.membership.order === targetData.order) {
-            newOrder = orderChange(targetData.order, edge === 'top' ? 'dec' : 'inc');
-          } else if (relativeItem.id === sourceItem.id) newOrder = sourceData.order;
-          else newOrder = (relativeItem.membership.order + targetData.order) / 2;
+          const newOrder = getRelativeItemOrder(menu, sourceItem.entity, sourceItem.membership.archived, sourceItem.id, targetData.order, edge);
 
           const updatedMembership = await updateMembership({
             membershipId: sourceItem.membership.id,

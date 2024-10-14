@@ -6,12 +6,10 @@ import { dropdowner } from '~/modules/common/dropdowner/state';
 import { orderChange } from '~/modules/common/nav-sheet/helpers';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { TaskImpact, TaskType } from '~/modules/tasks/create-task-form';
-import { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
-import SelectImpact from '~/modules/tasks/task-dropdowns/select-impact';
+import SelectImpact, { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
 import SetLabels from '~/modules/tasks/task-dropdowns/select-labels';
 import AssignMembers from '~/modules/tasks/task-dropdowns/select-members';
-import { taskStatuses } from '~/modules/tasks/task-dropdowns/select-status';
-import SelectStatus, { type TaskStatus } from '~/modules/tasks/task-dropdowns/select-status';
+import SelectStatus, { taskStatuses, type TaskStatus } from '~/modules/tasks/task-dropdowns/select-status';
 import SelectTaskType from '~/modules/tasks/task-dropdowns/select-task-type';
 import type { Mode } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -83,20 +81,22 @@ export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, i
   // If parentId exists, filter for subtasks and sort accordingly
   if (parentId) filteredTasks = tasks.find((t) => t.id === parentId)?.subtasks || [];
 
+  const isEdgeTop = edge === 'top';
+  const sortFunc = parentId ? sortSubtaskOrder : sortTaskOrder;
   // Sort based on task or subtask order
-  filteredTasks.sort((a, b) => (parentId ? sortSubtaskOrder(a, b, edge !== 'top') : sortTaskOrder(a, b, edge === 'top')));
+  filteredTasks.sort((a, b) => sortFunc(a, b, isEdgeTop));
 
   // Find the relative task based on the order
   const relativeTask = filteredTasks.find((t) => {
-    if (parentId) return edge === 'top' ? t.order < order : t.order > order;
-    return edge === 'top' ? t.order > order : t.order < order;
+    if (parentId) return isEdgeTop ? t.order < order : t.order > order;
+    return isEdgeTop ? t.order > order : t.order < order;
   });
 
   let newOrder: number;
 
   // Determine new order based on relative task presence and conditions
   if (!relativeTask || relativeTask.order === order) {
-    newOrder = parentId ? orderChange(order, edge === 'top' ? 'dec' : 'inc') : orderChange(order, edge === 'top' ? 'inc' : 'dec');
+    newOrder = parentId ? orderChange(order, isEdgeTop ? 'dec' : 'inc') : orderChange(order, isEdgeTop ? 'inc' : 'dec');
   } else if (relativeTask.id === id) {
     newOrder = relativeTask.order;
   } else {
