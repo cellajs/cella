@@ -52,7 +52,7 @@ export const useColumns = () => {
             {row.summary ? (
               <div
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
-                dangerouslySetInnerHTML={{ __html: row.summary as string }}
+                dangerouslySetInnerHTML={{ __html: row.summary }}
                 className="bn-container bn-shadcn"
               />
             ) : (

@@ -17,6 +17,11 @@ import { extractKeywords } from '#/modules/tasks/helpers';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 
+const WORKSPACES_COUNT = 1;
+const PROJECTS_COUNT = 4;
+const TASKS_COUNT = 50;
+const LABELS_COUNT = 5;
+
 export const dataSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizations = await db.select().from(organizationsTable);
   const memberships = await db.select().from(membershipsTable);
@@ -41,7 +46,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
       return { id: el.userId as string };
     });
 
-    const insertWorkspaces: InsertWorkspaceModel[] = Array.from({ length: 5 }).map(() => {
+    const insertWorkspaces: InsertWorkspaceModel[] = Array.from({ length: WORKSPACES_COUNT }).map(() => {
       const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
       return {
@@ -60,8 +65,11 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
 
     const workspaces = await db.insert(workspacesTable).values(insertWorkspaces).returning().onConflictDoNothing();
 
-    const groupSize = 10;
+    // Groups of 3-10 members
+    const groupSize = faker.number.int({ min: 3, max: 10 });
+
     let groupIndex = 0;
+
     for (const workspace of workspaces) {
       workspacesCount++;
       if (progressCallback) progressCallback('workspaces', workspacesCount, 'inserting');
@@ -93,13 +101,15 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
       membershipsCount += workspaceMemberships.length;
 
       if (progressCallback) progressCallback('memberships', membershipsCount, 'inserting');
-      // add admin user to every even workspace
-      if (workspacesCount % 2 === 0 && adminOrgIds.includes(organization.id)) {
+
+      // Add admin user to every workspace if it has admin membership
+      if (adminOrgIds.includes(organization.id)) {
         workspaceMemberships.push({
           id: nanoid(),
           type: 'workspace',
           userId: adminUser.id,
           organizationId: organization.id,
+          archived: faker.datatype.boolean(0.5),
           workspaceId: workspace.id,
           role: faker.helpers.arrayElement(['admin', 'member']),
           createdAt: faker.date.past(),
@@ -109,7 +119,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
       }
       await db.insert(membershipsTable).values(workspaceMemberships).onConflictDoNothing();
 
-      const insertProjects: InsertProjectModel[] = Array.from({ length: 3 }).map(() => {
+      const insertProjects: InsertProjectModel[] = Array.from({ length: PROJECTS_COUNT }).map(() => {
         const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
         return {
@@ -162,7 +172,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
 
         await db.insert(membershipsTable).values(projectMemberships).onConflictDoNothing();
 
-        const insertLabels: InsertLabelModel[] = Array.from({ length: 5 }).map(() => {
+        const insertLabels: InsertLabelModel[] = Array.from({ length: LABELS_COUNT }).map(() => {
           const name = organizationsUniqueEnforcer.enforce(() => slugify(faker.company.name(), { lower: true }));
 
           return {
@@ -182,10 +192,17 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
 
         const labels = await db.insert(labelsTable).values(insertLabels).onConflictDoNothing().returning();
 
-        const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).flatMap((_, index) => {
+        // Add tasks to projects
+        const amount = faker.number.float({ min: 0.2, max: 2.0 }) * TASKS_COUNT;
+
+        const insertTasks: InsertTaskModel[] = Array.from({ length: amount }).flatMap((_, index) => {
+          // Only add tasks to projects where admin user is a member
+          if (!adminOrgIds.includes(project.organizationId)) return [];
+
           const taskDescription = `${faker.hacker.phrase()} ${faker.hacker.phrase()}`;
           const name = organizationsUniqueEnforcer.enforce(() => faker.hacker.phrase());
           const mainTaskId = nanoid();
+
           // 60% change to set Subtasks
           const insertSubtasks: InsertTaskModel[] = Array.from({ length: Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 3) + 1 }).map(
             (_, subIndex) => {
@@ -244,7 +261,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
 
         tasksCount += insertTasks.length;
         if (progressCallback) progressCallback('tasks', tasksCount, 'inserting');
-
+        if (!insertTasks.length) continue;
         await db.insert(tasksTable).values(insertTasks).onConflictDoNothing();
       }
     }
