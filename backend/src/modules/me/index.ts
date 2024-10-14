@@ -34,10 +34,9 @@ const meRoutes = app
 
     const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
+    // List enabled identity providers
     const oauthAccounts = await db
-      .select({
-        providerId: oauthAccountsTable.providerId,
-      })
+      .select({ providerId: oauthAccountsTable.providerId })
       .from(oauthAccountsTable)
       .where(eq(oauthAccountsTable.userId, user.id));
 
@@ -79,6 +78,7 @@ const meRoutes = app
         .orderBy(asc(membershipsTable.order))
         .innerJoin(membershipsTable, eq(membershipsTable[mainEntityIdField], mainTable.id));
 
+      // If the section has a submenu, fetch the submenu items
       if (section.submenu) {
         const subTable = entityTables[section.submenu.entityType];
         const subEntityIdField = entityIdFields[section.submenu.entityType];

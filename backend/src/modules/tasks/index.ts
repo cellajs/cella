@@ -138,7 +138,7 @@ const tasksRoutes = app
       })
       .filter((task) => !task.parentId); // Filter out subtasks
 
-    return ctx.json({ success: true, data: { items: finalTasks, total: tasks.length } }, 200);
+    return ctx.json({ success: true, data: { items: finalTasks, total: finalTasks.length } }, 200);
   })
   /*
    * Update task
