@@ -1,4 +1,3 @@
-import { relations } from 'drizzle-orm';
 import { type AnyPgColumn, boolean, doublePrecision, index, integer, jsonb, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
@@ -52,29 +51,6 @@ export const tasksTable = pgTable(
     };
   },
 );
-
-export const tasksTableRelations = relations(tasksTable, ({ one }) => ({
-  organization: one(organizationsTable, {
-    fields: [tasksTable.organizationId],
-    references: [organizationsTable.id],
-  }),
-  project: one(projectsTable, {
-    fields: [tasksTable.projectId],
-    references: [projectsTable.id],
-  }),
-  createdByUser: one(usersTable, {
-    fields: [tasksTable.createdBy],
-    references: [usersTable.id],
-  }),
-  modifiedByUser: one(usersTable, {
-    fields: [tasksTable.modifiedBy],
-    references: [usersTable.id],
-  }),
-  parentTask: one(tasksTable, {
-    fields: [tasksTable.parentId],
-    references: [tasksTable.id],
-  }),
-}));
 
 export type TaskModel = typeof tasksTable.$inferSelect;
 export type InsertTaskModel = typeof tasksTable.$inferInsert;

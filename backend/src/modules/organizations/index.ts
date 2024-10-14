@@ -7,7 +7,7 @@ import { config } from 'config';
 import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
-import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
+import { getContextUser, getMemberships } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
@@ -122,9 +122,14 @@ const organizationsRoutes = app
    * Update an organization by id or slug
    */
   .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+
     const user = getContextUser();
     const memberships = getMemberships();
-    const organization = getOrganization();
+
+    // Resolve organization
+    const organization = await resolveEntity('organization', idOrSlug);
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { idOrSlug });
 
     // If not allowed and not admin, return forbidden
     const canUpdate = permissionManager.isPermissionAllowed(memberships, 'update', organization);

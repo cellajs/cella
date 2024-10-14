@@ -32,14 +32,8 @@ export const updateProjectBodySchema = createInsertSchema(projectsTable, {
   slug: validSlugSchema,
   name: nameSchema,
   thumbnailUrl: imageUrlSchema,
-})
-  .pick({
-    slug: true,
-    name: true,
-    thumbnailUrl: true,
-  })
-  .merge(
-    z.object({
-      parentId: idSchema.nullable(),
-    }),
-  );
+}).pick({
+  slug: true,
+  name: true,
+  thumbnailUrl: true,
+});

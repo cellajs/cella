@@ -1,4 +1,3 @@
-import { relations } from 'drizzle-orm';
 import { integer, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
@@ -33,17 +32,6 @@ export const labelsTable = pgTable('labels', {
       onDelete: 'cascade',
     }),
 });
-
-export const labelsTableRelations = relations(labelsTable, ({ one }) => ({
-  organization: one(organizationsTable, {
-    fields: [labelsTable.organizationId],
-    references: [organizationsTable.id],
-  }),
-  project: one(projectsTable, {
-    fields: [labelsTable.projectId],
-    references: [projectsTable.id],
-  }),
-}));
 
 export type LabelModel = typeof labelsTable.$inferSelect;
 export type InsertLabelModel = typeof labelsTable.$inferInsert;

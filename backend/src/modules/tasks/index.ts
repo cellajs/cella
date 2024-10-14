@@ -150,7 +150,7 @@ const tasksRoutes = app
     if (!id) return errorResponse(ctx, 404, 'not_found', 'warn');
 
     const user = getContextUser();
-    
+
     // TODO add permission check for project using memberships
 
     const updateValues: Partial<InsertTaskModel> = {
@@ -183,30 +183,14 @@ const tasksRoutes = app
       }
     }
 
-    const [updatedTask] = await db.update(tasksTable).set(updateValues).where(eq(tasksTable.id, id)).returning();
+    const [updatedTask] = await db.update(tasksTable).set(updateValues).where(eq(tasksTable.id, id)).returning({
+      summary: tasksTable.summary,
+      description: tasksTable.description,
+      expandable: tasksTable.expandable,
+      order: tasksTable.order,
+    });
 
-    const subtasks = await db.select().from(tasksTable).where(eq(tasksTable.parentId, updatedTask.id));
-
-    const uniqueAssignedUserIds = [...updatedTask.assignedTo];
-    if (updatedTask.createdBy) uniqueAssignedUserIds.push(updatedTask.createdBy);
-    if (updatedTask.modifiedBy) uniqueAssignedUserIds.push(updatedTask.modifiedBy);
-
-    const users = await getUsersByConditions([inArray(usersTable.id, uniqueAssignedUserIds)]);
-    const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, updatedTask.labels));
-
-    // TODO this looks weird, createdBy and modiefiedBy are perphaps not in the assignedTo array?
-    // TODO2: do we actually need to send back the task, since it is a granular PUT anyways?
-    // Modified is for update simply user?
-    const finalTask = {
-      subtasks,
-      ...updatedTask,
-      createdBy: users.find((m) => m.id === updatedTask.createdBy) || null,
-      modifiedBy: users.find((m) => m.id === updatedTask.modifiedBy) || null,
-      assignedTo: users.filter((m) => updatedTask.assignedTo.includes(m.id)),
-      labels: labels.filter((m) => updatedTask.labels.includes(m.id)),
-    };
-
-    return ctx.json({ success: true, data: finalTask }, 200);
+    return ctx.json({ success: true, data: updatedTask }, 200);
   })
   /*
    * Delete tasks
