@@ -79,19 +79,24 @@ const UpdateWorkspaceForm = ({ workspace, callback, dialog: isDialog, sheet: isS
   // Update sheet title with unsaved changes
   useEffect(() => {
     if (!isSheet) return;
-    if (form.unsavedChanges) {
-      const targetSheet = sheet.get('update-user');
+    if (form.formState.isDirty) {
+      const targetSheet = sheet.get('edit-workspace');
+      if (typeof targetSheet?.title === 'string') {
+        return sheet.update('edit-workspace', { title: <UnsavedBadge title={targetSheet.title} /> });
+      }
 
       if (!targetSheet || !isValidElement(targetSheet.title)) return;
       // Check if the title's type is a function (React component) and not a string
       const { type: tittleType } = targetSheet.title;
 
       if (typeof tittleType !== 'function' || tittleType.name === 'UnsavedBadge') return;
-      sheet.update('update-user', {
+      sheet.update('edit-workspace', {
         title: <UnsavedBadge title={targetSheet.title} />,
       });
+    } else {
+      sheet.update('edit-workspace', { title: t('common:resource_settings', { resource: t('app:workspace') }) });
     }
-  }, [form.unsavedChanges]);
+  }, [form.formState.isDirty]);
 
   return (
     <Form {...form}>

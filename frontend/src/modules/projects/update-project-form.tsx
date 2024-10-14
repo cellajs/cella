@@ -87,19 +87,25 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
   // Update sheet title with unsaved changes
   useEffect(() => {
     if (!isSheet) return;
-    if (form.unsavedChanges) {
-      const targetSheet = sheet.get('update-user');
+    if (form.formState.isDirty) {
+      const targetSheet = sheet.get('edit-project');
+
+      if (typeof targetSheet?.title === 'string') {
+        sheet.update('edit-project', { title: <UnsavedBadge title={targetSheet.title} /> });
+        return;
+      }
 
       if (!targetSheet || !isValidElement(targetSheet.title)) return;
       // Check if the title's type is a function (React component) and not a string
       const { type: tittleType } = targetSheet.title;
 
       if (typeof tittleType !== 'function' || tittleType.name === 'UnsavedBadge') return;
-      sheet.update('update-user', {
-        title: <UnsavedBadge title={targetSheet.title} />,
-      });
+
+      sheet.update('edit-project', { title: <UnsavedBadge title={targetSheet.title} /> });
+    } else {
+      sheet.update('edit-project', { title: t('common:resource_settings', { resource: t('app:project') }) });
     }
-  }, [form.unsavedChanges]);
+  }, [form.formState.isDirty]);
 
   return (
     <Form {...form}>
