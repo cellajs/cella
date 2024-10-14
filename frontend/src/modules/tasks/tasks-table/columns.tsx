@@ -193,11 +193,11 @@ export const useColumns = () => {
           <Link
             to={`/${workspace.organizationId}/workspaces/${workspace.slug}/board?project=${project.slug}`}
             tabIndex={tabIndex}
-            disabled={!project.workspaceId}
+            disabled={!project.membership.workspaceId}
             className="flex space-x-2 items-center outline-0 ring-0 group truncate"
           >
             <AvatarWrap type="project" className="h-6 w-6 text-xs" id={project.id} name={project.name} url={project.thumbnailUrl} />
-            <span className={`${!project.workspaceId ? '' : 'group-hover:underline underline-offset-4 truncate'}`}>{project.name}</span>
+            <span className={`${!project.membership.workspaceId ? '' : 'group-hover:underline underline-offset-4 truncate'}`}>{project.name}</span>
           </Link>
         );
       },

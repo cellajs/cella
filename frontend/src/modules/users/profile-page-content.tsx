@@ -1,21 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
-import { getUser } from '~/api/users';
+// import { useQuery } from '@tanstack/react-query';
+// import { getUser } from '~/api/users';
 import ProjectsTable from '~/modules/projects/projects-table';
 
 const ProfilePageContent = ({ sheet, userId, organizationId }: { userId: string; organizationId?: string; sheet?: boolean }) => {
-  const { data: user } = useQuery({
-    queryKey: ['users', userId],
-    queryFn: () => getUser(userId),
-    // Disable the query when `organizationId` is available
-    enabled: !organizationId,
-  });
-
-  const orgId = organizationId || user?.organizations?.[0]?.id;
+  // const { data: user } = useQuery({
+  //   queryKey: ['users', userId],
+  //   queryFn: () => getUser(userId),
+  //   // Disable the query when `organizationId` is available
+  //   enabled: !organizationId,
+  // });
 
   // Don't render anything until `orgId` is available
-  if (!orgId) return null;
+  if (!organizationId) return <div>You can currently only access user profiles within an organization scope ...</div>;
 
-  return <ProjectsTable organizationId={orgId} userId={userId} sheet={sheet} />;
+  return <ProjectsTable organizationId={organizationId} userId={userId} sheet={sheet} />;
 };
 
 export default ProfilePageContent;

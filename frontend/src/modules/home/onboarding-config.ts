@@ -6,7 +6,6 @@ import { addMenuItem } from '~/modules/common/nav-sheet/helpers/add-menu-item';
 import type { StepItem } from '~/modules/common/stepper/types';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { UserMenuItem } from '~/types/common';
 
 export const onDefaultBoardingSteps: StepItem[] = [
   {
@@ -35,7 +34,7 @@ export const onBoardingFinishCallback = () => {
     slug: `${lastCreatedOrganization.slug}-workspace`,
     organizationId: lastCreatedOrganization.id,
   }).then((createdWorkspace) => {
-    useNavigationStore.setState({ menu: addMenuItem(createdWorkspace as UserMenuItem, 'workspaces') });
+    useNavigationStore.setState({ menu: addMenuItem(createdWorkspace, 'workspaces') });
     for (let i = 3; i !== 0; i--) {
       const namingArr = ['one', 'two', 'three'];
       createProject({
@@ -45,7 +44,7 @@ export const onBoardingFinishCallback = () => {
         workspaceId: createdWorkspace.id,
       }).then((createdProject) => {
         useNavigationStore.setState({
-          menu: addMenuItem({ ...createdProject, ...({ parentId: createdProject.workspaceId } as UserMenuItem) }, 'workspaces'),
+          menu: addMenuItem(createdProject, 'workspaces', createdWorkspace.slug),
         });
       });
     }

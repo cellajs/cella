@@ -9,7 +9,8 @@ export type EntityTables = (typeof entityTables)[keyof typeof entityTables];
 
 export type EntityTableNames = EntityTables['_']['name'];
 
-export type StorageType = (typeof entityMenuSections)[number]['storageType'];
+export type MenuSection = (typeof menuSections)[number];
+export type MenuSectionName = MenuSection['name'];
 
 // Define what are the entities and their tables
 export const entityTables = {
@@ -31,23 +32,19 @@ export const entityIdFields = {
 } as const;
 
 // Define how entities are rendered in user menu
-export const entityMenuSections = [
+// Here you declare the menu sections
+export const menuSections = [
   {
-    storageType: 'organizations' as const,
-    type: 'organization' as const,
-    isSubmenu: false,
-  },
+    name: 'organizations',
+    entityType: 'organization',
+  } as const,
   {
-    storageType: 'workspaces' as const,
-    type: 'workspace' as const,
-    isSubmenu: false,
-  },
-  {
-    storageType: 'workspaces' as const,
-    type: 'project' as const,
-    isSubmenu: true,
-  },
+    name: 'workspaces',
+    entityType: 'workspace',
+    submenu: {
+      name: 'projects',
+      entityType: 'project',
+      parentField: 'workspaceId',
+    } as const,
+  } as const,
 ];
-
-// Expose unique storage types for menu schema
-export const uniqueStorageTypes = Array.from(new Set(entityMenuSections.map((section) => section.storageType)));

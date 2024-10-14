@@ -70,6 +70,13 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
       const membersGroup = users.slice(groupIndex * groupSize, (groupIndex + 1) * groupSize);
       groupIndex++;
 
+      const createModifiedBlock = {
+        createdAt: faker.date.past(),
+        createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
+        modifiedAt: faker.date.past(),
+        modifiedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
+      };
+
       const workspaceMemberships: InsertMembershipModel[] = membersGroup.map((user) => {
         return {
           id: nanoid(),
@@ -111,11 +118,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
           name,
           color: faker.internet.color(),
           slug: slugify(name, { lower: true }),
-          createdAt: faker.date.past(),
-          createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
-          modifiedAt: faker.date.past(),
-          modifiedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
-          parentId: workspace.id,
+          ...createModifiedBlock,
         };
       });
 
@@ -145,6 +148,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             userId: adminUser.id,
             type: 'project',
             organizationId: organization.id,
+            workspaceId: workspace.id,
             projectId: project.id,
             role: faker.helpers.arrayElement(['admin', 'member']),
             createdAt: faker.date.past(),
@@ -165,10 +169,11 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             id: nanoid(),
             organizationId: organization.id,
             projectId: project.id,
-            lastUsed: faker.date.past(),
+            lastUsedAt: faker.date.past(),
             useCount: Math.floor(Math.random() * 20) + 1,
             name,
             color: faker.internet.color(),
+            ...createModifiedBlock,
           };
         });
 
@@ -178,14 +183,14 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
         const labels = await db.insert(labelsTable).values(insertLabels).onConflictDoNothing().returning();
 
         const insertTasks: InsertTaskModel[] = Array.from({ length: 50 }).flatMap((_, index) => {
-          const taskDescription = faker.commerce.productDescription();
-          const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+          const taskDescription = `${faker.hacker.phrase()} ${faker.hacker.phrase()}`;
+          const name = organizationsUniqueEnforcer.enforce(() => faker.hacker.phrase());
           const mainTaskId = nanoid();
           // 60% change to set Subtasks
           const insertSubtasks: InsertTaskModel[] = Array.from({ length: Math.random() < 0.6 ? 0 : Math.floor(Math.random() * 3) + 1 }).map(
             (_, subIndex) => {
-              const subtaskDescription = faker.commerce.productDescription();
-              const subtaskName = organizationsUniqueEnforcer.enforce(() => faker.company.name());
+              const subtaskDescription = faker.hacker.phrase();
+              const subtaskName = organizationsUniqueEnforcer.enforce(() => faker.hacker.phrase());
               return {
                 id: nanoid(),
                 organizationId: organization.id,
@@ -201,10 +206,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
                 impact: 0,
                 type: 'chore',
                 description: `<div class="bn-block-content"><p class="bn-inline-content">${subtaskName}</p></div><div class="bn-block-content"><p class="bn-inline-content">${subtaskDescription}</p></div>`,
-                createdAt: faker.date.past(),
-                createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
-                modifiedAt: faker.date.past(),
-                modifiedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
+                ...createModifiedBlock,
               };
             },
           );
@@ -233,10 +235,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             // random integer between 0 and 3
             impact: Math.floor(Math.random() * 4),
             description: `<div class="bn-block-content"><p class="bn-inline-content">${name}</p></div><div class="bn-block-content"><p class="bn-inline-content">${taskDescription}</p></div>`,
-            createdAt: faker.date.past(),
-            createdBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
-            modifiedAt: faker.date.past(),
-            modifiedBy: membersGroup[Math.floor(Math.random() * membersGroup.length)].id,
+            ...createModifiedBlock,
           };
 
           // Combine main task with its subtasks

@@ -6,6 +6,7 @@ import { projectsTable } from '#/db/schema/projects';
 import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
+import permissionManager from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -24,24 +25,26 @@ const projectsRoutes = app
    */
   .openapi(projectRoutesConfig.createProject, async (ctx) => {
     const { name, slug } = ctx.req.valid('json');
-    const workspaceId = ctx.req.query('workspaceId');
+    const { workspaceId } = ctx.req.valid('query');
+    const memberships = getMemberships();
+
+    // Make sure the user is a member of the workspace
+    const workspaceMembership = memberships.find((m) => m.workspaceId === workspaceId && m.type === 'workspace');
+    if (!workspaceMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'workspace');
 
     const organization = getOrganization();
     const user = getContextUser();
 
     const slugAvailable = await checkSlugAvailable(slug);
+    if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'project', { slug });
 
-    if (!slugAvailable) {
-      return errorResponse(ctx, 409, 'slug_exists', 'warn', 'project', { slug });
-    }
-
+    // Create project with valid organization
     const [project] = await db
       .insert(projectsTable)
       .values({
         organizationId: organization.id,
         name,
         slug,
-        parentId: workspaceId ?? null,
         createdBy: user.id,
       })
       .returning();
@@ -49,11 +52,10 @@ const projectsRoutes = app
     logEvent('Project created', { project: project.id });
 
     // Insert membership
-    const createdMembership = await insertMembership({ user, role: 'admin', entity: project });
+    const createdMembership = await insertMembership({ user, role: 'admin', entity: project, workspaceId });
 
     const createdProject = {
       ...project,
-      workspaceId,
       membership: createdMembership,
     };
 
@@ -64,38 +66,39 @@ const projectsRoutes = app
    */
   .openapi(projectRoutesConfig.getProject, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
+
+    const user = getContextUser();
     const memberships = getMemberships();
 
     const project = await resolveEntity('project', idOrSlug);
+    if (!project) return errorResponse(ctx, 404, 'not_found', 'warn', 'project', { id: idOrSlug });
 
-    if (!project) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'project', { id: idOrSlug });
-    }
+    // TODO remove this and use permission manager once it returns membership
+    const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project');
+    if (!membership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
 
-    const membership = memberships.find((m) => m.projectId === project.id && m.type === 'project') ?? null;
+    // If not allowed and not admin, return forbidden
+    const canRead = permissionManager.isPermissionAllowed(memberships, 'read', project);
+    if (!canRead && user.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...project,
-          workspaceId: project.parentId,
-          membership,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: { ...project, membership } }, 200);
   })
   /*
    * Get list of projects
    */
   .openapi(projectRoutesConfig.getProjects, async (ctx) => {
     const { q, sort, order, offset, limit, userId: requestUserId } = ctx.req.valid('query');
-    const user = getContextUser();
 
+    const user = getContextUser();
+    const organization = getOrganization();
+
+    // Get projects for a specific user or self
     const userId = requestUserId ?? user.id;
 
-    const projectsFilters: SQL[] = [];
+    // Filter projects at least by valid organization
+    const projectsFilters: SQL[] = [eq(projectsTable.organizationId, organization.id)];
+
+    // Add other filters
     if (q) projectsFilters.push(ilike(projectsTable.name, `%${q}%`));
 
     const projectsQuery = db
@@ -128,20 +131,18 @@ const projectsRoutes = app
       .limit(Number(limit))
       .offset(Number(offset));
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          items: projects.map(({ project, membership }) => ({
-            ...project,
-            membership,
-            workspaceId: project.parentId,
-          })),
-          total: projects.length,
-        },
-      },
-      200,
-    );
+    // TODO map membership directly in the query?
+    const projectsWithMembership = projects.map(({ project, membership }) => ({
+      ...project,
+      membership,
+    }));
+
+    const data = {
+      items: projectsWithMembership,
+      total: projects.length,
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Update project by id or slug
@@ -150,13 +151,19 @@ const projectsRoutes = app
     const { idOrSlug } = ctx.req.valid('param');
     const { name, thumbnailUrl, slug } = ctx.req.valid('json');
 
+    const memberships = getMemberships();
     const user = getContextUser();
 
     const project = await resolveEntity('project', idOrSlug);
+    if (!project) return errorResponse(ctx, 404, 'not_found', 'warn', 'project', { id: idOrSlug });
 
-    if (!project) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'project', { id: idOrSlug });
-    }
+    // TODO remove this and user permission manager once it returns membership
+    const userMembership = memberships.find((m) => m.projectId === project.id && m.type === 'project');
+    if (!userMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
+
+    // If not allowed and not admin, return forbidden
+    const canUpdate = permissionManager.isPermissionAllowed(memberships, 'update', project);
+    if (!canUpdate && user.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     if (slug && slug !== project.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -175,33 +182,19 @@ const projectsRoutes = app
       .where(eq(projectsTable.id, project.id))
       .returning();
 
-    const memberships = await db
+    const projectMemberships = await db
       .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'project'), eq(membershipsTable.projectId, project.id)));
 
-    if (memberships.length > 0) {
-      memberships.map((membership) =>
-        sendSSEToUsers([membership.userId], 'update_entity', {
-          ...updatedProject,
-          membership: memberships.find((m) => m.id === membership.id) ?? null,
-        }),
-      );
+    // Send SSE events to project members
+    for (const membership of projectMemberships) {
+      sendSSEToUsers([membership.userId], 'update_entity', { ...updatedProject, membership });
     }
 
     logEvent('Project updated', { project: updatedProject.id });
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...updatedProject,
-          parentId: updatedProject.parentId,
-          membership: memberships.find((m) => m.id === user.id) ?? null,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: { ...updatedProject, membership: userMembership } }, 200);
   })
 
   /*
@@ -215,15 +208,10 @@ const projectsRoutes = app
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
-    if (!toDeleteIds.length) {
-      return errorResponse(ctx, 400, 'invalid_request', 'warn', 'project');
-    }
+    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'project');
 
     const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'project', toDeleteIds, memberships);
-
-    if (!allowedIds.length) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
-    }
+    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'project');
 
     // Map errors of projects user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'project', { project: id }));

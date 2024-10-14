@@ -6,8 +6,8 @@ const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuI
   const { menu } = useNavigationStore.getState();
 
   return menuSections.reduce(
-    (acc, { storageType }) => {
-      if (menu[storageType]) acc[storageType] = transform(menu[storageType]);
+    (acc, { name }) => {
+      if (menu[name]) acc[name] = transform(menu[name]);
       return acc;
     },
     {} as Record<keyof UserMenu, UserMenuItem[]>,

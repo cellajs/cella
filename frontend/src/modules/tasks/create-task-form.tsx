@@ -74,7 +74,7 @@ const formSchema = z.object({
       projectId: z.string(),
       organizationId: z.string(),
       useCount: z.number(),
-      lastUsed: z.string(),
+      lastUsedAt: z.string(),
     }),
   ),
 });
@@ -200,7 +200,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
         ref={ref as LegacyRef<HTMLFormElement>}
         id={`create-task-${projectIdOrSlug}`}
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn(className, `p-3 sm:pl-11 ${isDialog ? '' : 'border-b'} flex gap-2 flex-col shadow-inner`)}
+        className={cn(className, `sm:p-3 sm:pl-11 ${isDialog ? '' : 'border-b'} flex gap-2 flex-col shadow-inner`)}
       >
         <FormField
           control={form.control}

@@ -22,7 +22,7 @@ export const useColumns = (sheet?: boolean) => {
       sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
-        if (!row.workspaceId)
+        if (!row.membership.workspaceId)
           return (
             <div className="flex space-x-2 cursor-default items-center outline-0 ring-0 group">
               <AvatarWrap type="project" className="h-8 w-8" id={row.id} name={row.name} />
@@ -31,7 +31,7 @@ export const useColumns = (sheet?: boolean) => {
           );
         return (
           <Link
-            to={`/workspaces/${row.workspaceId}/board?project=${row.slug}`}
+            to={`/workspaces/${row.membership.workspaceId}/board?project=${row.slug}`}
             tabIndex={tabIndex}
             className="flex space-x-2 items-center outline-0 ring-0 group"
           >

@@ -1,9 +1,7 @@
-import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, systemGuard } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
 import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
-import { entitySuggestionSchema } from '../general/schema';
 import { updateUserBodySchema, userSchema, usersQuerySchema } from './schema';
 
 class UsersRoutesConfig {
@@ -68,7 +66,7 @@ class UsersRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successWithDataSchema(z.object({ ...userSchema.shape, organizations: z.array(entitySuggestionSchema) })),
+            schema: successWithDataSchema(userSchema),
           },
         },
       },

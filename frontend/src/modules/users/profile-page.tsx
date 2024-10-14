@@ -37,10 +37,11 @@ const UserProfilePage = ({
   const { user: currentUser, setUser } = useUserStore();
 
   const isSelf = currentUser.id === user.id;
-  const organizationId = isUserMember(user) ? user.membership.organizationId : user.organizations?.[0]?.id;
+  const organizationId = isUserMember(user) ? user.membership.organizationId : undefined;
 
   const { mutate } = useUpdateUserMutation(currentUser.id);
 
+  // TODO this should be a Link with button variant style?
   const handleSettingCLick = () => {
     navigate({ to: '/user/settings', replace: true });
   };

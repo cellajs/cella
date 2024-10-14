@@ -12,7 +12,7 @@ export const workspaceSchema = z.object({
   ...createSelectSchema(workspacesTable).shape,
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),
-  membership: membershipInfoSchema.nullable(),
+  membership: membershipInfoSchema,
 });
 
 export const workspaceWithProjectSchema = z.object({
@@ -20,7 +20,7 @@ export const workspaceWithProjectSchema = z.object({
     ...createSelectSchema(workspacesTable).shape,
     createdAt: z.string(),
     modifiedAt: z.string().nullable(),
-    membership: membershipInfoSchema.nullable(),
+    membership: membershipInfoSchema,
   }),
   projects: z.array(projectSchema),
   members: z.array(membersSchema),

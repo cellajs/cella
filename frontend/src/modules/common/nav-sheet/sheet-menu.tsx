@@ -29,12 +29,11 @@ export const isPageData = (data: Record<string | symbol, unknown>): data is Page
 };
 
 export type SectionItem = {
-  storageType: keyof UserMenu;
-  type: ContextEntity;
+  name: keyof UserMenu;
+  entityType: ContextEntity;
   label: string;
   createForm?: React.ReactNode;
-  isSubmenu?: boolean;
-  toPrefix?: boolean;
+  submenu?: SectionItem;
   icon?: React.ElementType<LucideProps>;
 };
 
@@ -47,30 +46,24 @@ export const SheetMenu = memo(() => {
   const pwaEnabled = config.has.pwa;
 
   const searchResultsListItems = useCallback(() => {
-    return searchResults.length > 0
-      ? searchResults.map((item: UserMenuItem) => (
-          <SheetMenuItem key={item.id} searchResults mainItemIdOrSlug={item.parentSlug} item={item} type={item.entity} />
-        ))
-      : [];
+    return searchResults.length > 0 ? searchResults.map((item: UserMenuItem) => <SheetMenuItem key={item.id} searchResults item={item} />) : [];
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return menuSections
-      .filter((el) => !el.isSubmenu)
-      .map((section) => {
-        const menuSection = menu[section.storageType];
+    return menuSections.map((section) => {
+      const menuSection = menu[section.name];
 
-        return (
-          <MenuSection
-            entityType={section.type}
-            key={section.type}
-            sectionLabel={section.label}
-            sectionType={section.storageType}
-            createForm={section.createForm}
-            data={menuSection}
-          />
-        );
-      });
+      return (
+        <MenuSection
+          entityType={section.entityType}
+          key={section.name}
+          sectionLabel={section.label}
+          sectionType={section.name}
+          createForm={section.createForm}
+          data={menuSection}
+        />
+      );
+    });
   }, [menu]);
 
   // monitoring drop event
@@ -115,7 +108,7 @@ export const SheetMenu = memo(() => {
       <div className="p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
         <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
         {searchTerm && (
-          <div className="search-results mt-6">
+          <div className="search-results mt-3">
             {searchResultsListItems().length > 0 ? (
               searchResultsListItems()
             ) : (
@@ -142,7 +135,7 @@ export const SheetMenu = memo(() => {
                 </label>
               </div>
               {pwaEnabled && <NetworkModeSwitch />}
-              {menuSections.some((el) => el.isSubmenu) && (
+              {menuSections.some((el) => el.submenu) && (
                 <div className="flex items-center gap-4 ml-1">
                   <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
                   <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">

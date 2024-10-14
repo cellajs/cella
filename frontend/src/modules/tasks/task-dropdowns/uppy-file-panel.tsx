@@ -41,7 +41,10 @@ const UppyFilePanel = (taskId: string) => (props: FilePanelProps) => {
                 size: String(res.file.size || 0),
                 contentType: res.file.type,
                 filename: res.file.name || 'unknown',
+                //TODO make generic
                 taskId,
+                organizationId: '',
+                projectId: ''
               });
 
               const updateData: PartialBlock = {

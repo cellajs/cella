@@ -1,6 +1,6 @@
 {
-  "id": "9e148727-932d-44c2-9f2c-65ce36adf6c3",
-  "prevId": "cb435c4f-5c1b-4023-893a-4f8e87971860",
+  "id": "b46fef00-6f3d-46be-9026-8493871c14c9",
+  "prevId": "e2877a93-26c6-4b5e-ae83-8783377818b9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -32,11 +32,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "task_id": {
-          "name": "task_id",
+        "entity": {
+          "name": "entity",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'attachment'"
         },
         "url": {
           "name": "url",
@@ -56,23 +57,40 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
+        },
+        "modified_at": {
+          "name": "modified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modified_by": {
+          "name": "modified_by",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "task_id": {
+          "name": "task_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "attachments_task_id_tasks_id_fk": {
-          "name": "attachments_task_id_tasks_id_fk",
-          "tableFrom": "attachments",
-          "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "attachments_created_by_users_id_fk": {
           "name": "attachments_created_by_users_id_fk",
           "tableFrom": "attachments",
@@ -84,6 +102,58 @@
             "id"
           ],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "attachments_modified_by_users_id_fk": {
+          "name": "attachments_modified_by_users_id_fk",
+          "tableFrom": "attachments",
+          "tableTo": "users",
+          "columnsFrom": [
+            "modified_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "attachments_organization_id_organizations_id_fk": {
+          "name": "attachments_organization_id_organizations_id_fk",
+          "tableFrom": "attachments",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "attachments_project_id_projects_id_fk": {
+          "name": "attachments_project_id_projects_id_fk",
+          "tableFrom": "attachments",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "attachments_task_id_tasks_id_fk": {
+          "name": "attachments_task_id_tasks_id_fk",
+          "tableFrom": "attachments",
+          "tableTo": "tasks",
+          "columnsFrom": [
+            "task_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -119,6 +189,44 @@
           "notNull": true,
           "default": "'label'"
         },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_used": {
+          "name": "last_used",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modified_at": {
+          "name": "modified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modified_by": {
+          "name": "modified_by",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "use_count": {
+          "name": "use_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "organization_id": {
           "name": "organization_id",
           "type": "varchar",
@@ -130,23 +238,36 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
-        },
-        "last_used": {
-          "name": "last_used",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "use_count": {
-          "name": "use_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
+        "labels_created_by_users_id_fk": {
+          "name": "labels_created_by_users_id_fk",
+          "tableFrom": "labels",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "labels_modified_by_users_id_fk": {
+          "name": "labels_modified_by_users_id_fk",
+          "tableFrom": "labels",
+          "tableTo": "users",
+          "columnsFrom": [
+            "modified_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
         "labels_organization_id_organizations_id_fk": {
           "name": "labels_organization_id_organizations_id_fk",
           "tableFrom": "labels",
@@ -192,24 +313,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
         },
         "user_id": {
           "name": "user_id",
@@ -268,49 +371,28 @@
           "type": "double precision",
           "primaryKey": false,
           "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "memberships_organization_id_organizations_id_fk": {
-          "name": "memberships_organization_id_organizations_id_fk",
-          "tableFrom": "memberships",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "memberships_workspace_id_workspaces_id_fk": {
-          "name": "memberships_workspace_id_workspaces_id_fk",
-          "tableFrom": "memberships",
-          "tableTo": "workspaces",
-          "columnsFrom": [
-            "workspace_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "memberships_project_id_projects_id_fk": {
-          "name": "memberships_project_id_projects_id_fk",
-          "tableFrom": "memberships",
-          "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "memberships_user_id_users_id_fk": {
           "name": "memberships_user_id_users_id_fk",
           "tableFrom": "memberships",
@@ -348,6 +430,45 @@
             "id"
           ],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "memberships_organization_id_organizations_id_fk": {
+          "name": "memberships_organization_id_organizations_id_fk",
+          "tableFrom": "memberships",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "memberships_workspace_id_workspaces_id_fk": {
+          "name": "memberships_workspace_id_workspaces_id_fk",
+          "tableFrom": "memberships",
+          "tableTo": "workspaces",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "memberships_project_id_projects_id_fk": {
+          "name": "memberships_project_id_projects_id_fk",
+          "tableFrom": "memberships",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -520,13 +641,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
-        },
-        "is_production": {
-          "name": "is_production",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "auth_strategies": {
           "name": "auth_strategies",
@@ -765,12 +879,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -807,19 +915,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "modified_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "projects_parent_id_workspaces_id_fk": {
-          "name": "projects_parent_id_workspaces_id_fk",
-          "tableFrom": "projects",
-          "tableTo": "workspaces",
-          "columnsFrom": [
-            "parent_id"
           ],
           "columnsTo": [
             "id"
@@ -1134,8 +1229,7 @@
           "name": "created_by",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'unknown'"
+          "notNull": false
         },
         "modified_at": {
           "name": "modified_at",
@@ -1232,7 +1326,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set default",
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "tasks_modified_by_users_id_fk": {
@@ -1442,8 +1536,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "last_visit_at": {
-          "name": "last_visit_at",
+        "last_started_at": {
+          "name": "last_started_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false

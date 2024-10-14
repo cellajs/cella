@@ -10,7 +10,7 @@ export const transformDatabaseUserWithCount = (
   return {
     ...user,
     lastSeenAt: user.lastSeenAt?.toISOString() ?? null,
-    lastVisitAt: user.lastVisitAt?.toISOString() ?? null,
+    lastStartedAt: user.lastStartedAt?.toISOString() ?? null,
     lastSignInAt: user.lastSignInAt?.toISOString() ?? null,
     createdAt: user.createdAt.toISOString(),
     modifiedAt: user.modifiedAt?.toISOString() ?? null,

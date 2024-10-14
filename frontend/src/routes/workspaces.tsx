@@ -4,8 +4,8 @@ import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch } from '~/lib/query-client';
 import ErrorNotice from '~/modules/common/error-notice';
-import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import Overview from '~/modules/workspaces/workspace-overview';
+import { workspaceQueryOptions } from '~/modules/workspaces/helpers/query-options';
 import { baseEntityRoutes } from '~/nav-config';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import { AppRoute } from './general';
@@ -33,7 +33,7 @@ export const boardSearchSchema = z.object({
 
 export const labelsSearchSchema = z.object({
   q: z.string().optional(),
-  sort: z.enum(['name', 'useCount', 'lastUsed']).default('name').optional(),
+  sort: z.enum(['name', 'useCount', 'lastUsedAt']).default('name').optional(),
   order: z.enum(['asc', 'desc']).default('asc').optional(),
 });
 

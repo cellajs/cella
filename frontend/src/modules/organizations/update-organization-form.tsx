@@ -93,7 +93,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   const languages = useWatch({
     control: form.control,
     name: 'languages',
-  });
+  }) as string[];
 
   const defaultLanguage = useWatch({
     control: form.control,

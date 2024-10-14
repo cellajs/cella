@@ -5,8 +5,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { menuSections } from '~/nav-config';
 
-import type { UserMenu, UserMenuItem } from '~/types/common';
-import { objectKeys } from '~/utils/object';
+import type { UserMenu } from '~/types/common';
 
 type EntitySubList = Record<string, string[]>;
 export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: EntitySubList }>;
@@ -30,7 +29,6 @@ interface NavigationState {
   setLoading: (status: boolean) => void;
   focusView: boolean;
   setFocusView: (status: boolean) => void;
-  archiveStateToggle: (item: UserMenuItem, active: boolean, parentId?: string | null) => void;
   finishedOnboarding: boolean;
   setFinishedOnboarding: () => void;
   clearNavigationStore: () => void;
@@ -52,9 +50,9 @@ interface InitStore
   > {}
 
 const initialMenuState: UserMenu = menuSections
-  .filter((el) => !el.isSubmenu)
+  .filter((el) => !el.submenu)
   .reduce((acc, section) => {
-    acc[section.storageType] = [];
+    acc[section.name] = [];
     return acc;
   }, {} as UserMenu);
 
@@ -122,26 +120,6 @@ export const useNavigationStore = create<NavigationState>()(
           setSectionsDefault: () => {
             set((state) => {
               state.activeSections = null;
-            });
-          },
-          archiveStateToggle: (item: UserMenuItem, active: boolean, parentId?: string | null) => {
-            set((state) => {
-              if (!parentId) {
-                // Update the 'archived' status for the item in all sections
-                for (const sectionKey of objectKeys(state.menu)) {
-                  const section = state.menu[sectionKey];
-                  const itemIndex = section.findIndex((el) => el.id === item.id);
-                  if (itemIndex !== -1) state.menu[sectionKey][itemIndex].membership.archived = active;
-                }
-              } else {
-                // Update the 'archived' status for the item in a specific submenu
-                const section = menuSections.find((el) => el.type === item.entity)?.storageType;
-                if (!section) return;
-                const parent = state.menu[section].find((item) => item.id === parentId);
-                if (!parent || !parent.submenu) return;
-                const itemIndex = parent.submenu.findIndex((el) => el.id === item.id);
-                if (itemIndex && itemIndex !== -1) parent.submenu[itemIndex].membership.archived = active;
-              }
             });
           },
           setFinishedOnboarding: () => {
