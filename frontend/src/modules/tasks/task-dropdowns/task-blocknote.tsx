@@ -10,13 +10,12 @@ import DOMPurify from 'dompurify';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-import type { Block } from '@blocknote/core';
 import { customFormattingToolBarConfig, customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import { focusEditor, getContentAsString, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
+import { focusEditor, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
@@ -119,12 +118,12 @@ export const TaskBlockNote = ({
   };
 
   useLayoutEffect(() => {
-    if (html === '') return;
+    if (html === '' && !isCreationMode) return;
 
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
       // If the current content is the same as the new content or if this is the initial update, exit early.
-      if (wasInitial.current) return;
+      if (wasInitial.current && !isCreationMode) return;
       editor.replaceBlocks(editor.document, blocks);
       // Replace the existing blocks in the editor with the new blocks.
       focusEditor(editor);
@@ -149,9 +148,8 @@ export const TaskBlockNote = ({
         onChange={() => {
           if (!isCreationMode && canChangeState.current && !isSheet) dispatchCustomEvent(stateEvent, { taskId: id, state: 'unsaved' });
 
-          const blockContent = getContentAsString(editor.document as Block[]);
           // to avoid update if content empty, so from draft shown
-          if (!isCreationMode || blockContent === '') return;
+          if (!isCreationMode || html === '') return;
           queueMicrotask(() => updateData());
         }}
         onFocus={() => queueMicrotask(() => handleEditorFocus())}
