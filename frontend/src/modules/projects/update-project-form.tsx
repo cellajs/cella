@@ -51,7 +51,6 @@ export const useUpdateProjectMutation = (idOrSlug: string, orgIdOrSlug: string) 
 const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet }: Props) => {
   const { t } = useTranslation();
   const { updateProject } = useWorkspaceQuery();
-  console.log('updateProject', project.id, project.organizationId);
   const { mutate, isPending } = useUpdateProjectMutation(project.id, project.organizationId);
 
   const formOptions: UseFormProps<FormValues> = {
@@ -73,7 +72,6 @@ const UpdateProjectForm = ({ project, callback, dialog: isDialog, sheet: isSheet
   };
 
   const onSubmit = (values: FormValues) => {
-    console.log('values', values);
     mutate(values, {
       onSuccess: (updatedProject) => {
         if (isDialog) dialog.remove();
