@@ -23,8 +23,7 @@ import WorkspaceActions from '~/modules/app/board/workspace-actions';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { taskKeys } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
-import { sortAndGetCounts } from '~/modules/tasks/helpers';
-import { handleTaskDropDownClick, openTaskPreviewSheet, setTaskCardFocus } from '~/modules/tasks/helpers';
+import { handleTaskDropDownClick, openTaskPreviewSheet, setTaskCardFocus, sortAndGetCounts } from '~/modules/tasks/helpers';
 import TaskCard from '~/modules/tasks/task';
 import type { TaskCardToggleSelectEvent, TaskStates, TaskStatesChangeEvent } from '~/modules/tasks/types';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
@@ -128,6 +127,7 @@ export default function Board() {
     data: { workspace, projects },
   } = useWorkspaceQuery();
   const isMobile = useBreakpoints('max', 'sm');
+
   const { workspaces, changeColumn } = useWorkspaceUIStore();
 
   const [tasksState, setTasksState] = useState<Record<string, TaskStates>>({});
@@ -214,6 +214,7 @@ export default function Board() {
 
   const handleEscKeyPress = () => {
     if (!focusedTaskId) return;
+
     // check if creation of subtask open
     const subtaskCreation = !!document.getElementById('create-subtask');
     if (subtaskCreation) return;
@@ -223,7 +224,16 @@ export default function Board() {
     if (subtasksEditing.length) return dispatchCustomEvent('changeSubtaskState', { taskId: focusedTaskId, state: 'removeEditing' });
 
     const taskState = tasksState[focusedTaskId];
-    if (!taskState || taskState === 'folded') return;
+    if (!taskState || taskState === 'folded') {
+      // check if creation of task open
+      const taskCreation = document.getElementById(`create-task-${currentTask.projectId}`);
+      if (taskCreation) {
+        changeColumn(workspace.id, currentTask.projectId, {
+          createTaskForm: false,
+        });
+        return;
+      }
+    }
     if (taskState === 'editing' || taskState === 'unsaved') return setTaskState(focusedTaskId, 'expanded');
     if (taskState === 'expanded') return setTaskState(focusedTaskId, 'folded');
   };
@@ -287,6 +297,7 @@ export default function Board() {
 
   const handleTaskState = (event: TaskStatesChangeEvent) => {
     const { taskId, state } = event.detail;
+    if (state === 'currentState') return setTaskState(taskId, tasksState[taskId] === 'folded' ? 'folded' : 'expanded');
     setTaskState(taskId, state);
   };
 

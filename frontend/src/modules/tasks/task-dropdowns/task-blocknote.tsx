@@ -30,7 +30,8 @@ interface TaskBlockNoteProps {
   onChange?: (newContent: string) => void;
   taskToClose?: string | null;
   subtask?: boolean;
-  callback?: () => void;
+  onEnterClick?: () => void;
+  onEscapeClick?: () => void;
 }
 
 export const TaskBlockNote = ({
@@ -39,7 +40,8 @@ export const TaskBlockNote = ({
   projectId,
   mode,
   onChange,
-  callback,
+  onEnterClick,
+  onEscapeClick,
   taskToClose = null,
   subtask = false,
   className = '',
@@ -86,7 +88,7 @@ export const TaskBlockNote = ({
     // Remove subtask editing state
     dispatchCustomEvent('changeSubtaskState', { taskId: id, state: 'removeEditing' });
     // Remove Task editing state if focused not task itself
-    if (taskToClose) dispatchCustomEvent('changeTaskState', { taskId: taskToClose, state: 'expanded' });
+    if (taskToClose) dispatchCustomEvent('changeTaskState', { taskId: taskToClose, state: 'currentState' });
   };
   const updateData = async () => {
     // if user in Formatting Toolbar does not update
@@ -100,6 +102,8 @@ export const TaskBlockNote = ({
   };
 
   const handleKeyDown: KeyboardEventHandler = async (event) => {
+    if (event.key === 'Escape') onEscapeClick?.();
+
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault();
       // to ensure that blocknote have description
@@ -112,7 +116,7 @@ export const TaskBlockNote = ({
         const blocksToUpdate = handleSubmitOnEnter(editor);
         if (blocksToUpdate) editor.replaceBlocks(editor.document, blocksToUpdate);
         updateData();
-        callback?.();
+        onEnterClick?.();
       }
     }
   };

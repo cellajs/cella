@@ -129,7 +129,7 @@ export const CreateSubtaskForm = ({
                     projectId={parentTask.projectId}
                     html={value}
                     onChange={onChange}
-                    callback={form.handleSubmit(onSubmit)}
+                    onEnterClick={form.handleSubmit(onSubmit)}
                     mode={mode}
                     taskToClose={parentTask.id}
                     subtask

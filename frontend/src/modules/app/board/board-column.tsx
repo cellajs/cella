@@ -228,6 +228,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
       {
         id: `create-task-form-${project.id}`,
         drawerOnMobile: false,
+        preventEscPress: true,
         className: 'p-0 w-auto shadow-none relative z-[50] rounded-none border-t-0 m-0 max-w-none',
         container: ref.current,
         containerBackdrop: false,
@@ -243,7 +244,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
 
   useEffect(() => {
-    if (!createTaskForm) dialog.remove(true, `create-task-form-${project.id}`);
+    if (!createTaskForm) dialog.remove(false, `create-task-form-${project.id}`);
     else setTimeout(() => openCreateTaskDialog(defaultTaskFormRef), 0);
   }, [createTaskForm]);
 

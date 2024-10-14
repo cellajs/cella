@@ -6,11 +6,10 @@ import { z } from 'zod';
 
 import { useSearch } from '@tanstack/react-router';
 import { ChevronDown, Tag, UserX, X } from 'lucide-react';
-import { type LegacyRef, useCallback, useMemo } from 'react';
+import { type LegacyRef, useMemo } from 'react';
 import { toast } from 'sonner';
 import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useHotkeys } from '~/hooks/use-hot-keys.ts';
 import { useMeasure } from '~/hooks/use-measure';
 import { queryClient } from '~/lib/router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -106,15 +105,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   const { ref, bounds } = useMeasure();
 
   const handleCloseForm = () => {
-    if (isDialog) dialog.remove();
+    if (isDialog) dialog.remove(false, `create-task-form-${projectId}`);
     onCloseForm?.();
   };
 
-  const handleHotKeysKeyPress = useCallback(() => {
-    handleCloseForm();
-  }, [handleCloseForm]);
-
-  useHotkeys([['Escape', handleHotKeysKeyPress]]);
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
@@ -216,7 +210,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                     html={value}
                     onChange={onChange}
                     taskToClose={focusedTaskId}
-                    callback={form.handleSubmit(onSubmit)}
+                    onEnterClick={form.handleSubmit(onSubmit)}
+                    onEscapeClick={handleCloseForm}
                     mode={mode}
                   />
                 </FormControl>

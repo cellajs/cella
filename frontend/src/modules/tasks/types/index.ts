@@ -6,7 +6,7 @@ export interface TasksCustomEventMap {
 
 type TaskStateInfo = {
   taskId: string;
-  state: TaskStates;
+  state: TaskStates | 'currentState';
 };
 
 type TaskSelectInfo = {

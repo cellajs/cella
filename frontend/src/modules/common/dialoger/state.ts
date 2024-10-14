@@ -14,6 +14,7 @@ export type DialogT = {
   containerBackdropClassName?: string;
   autoFocus?: boolean;
   hideClose?: boolean;
+  preventEscPress?: boolean;
   content?: React.ReactNode;
   titleContent?: string | React.ReactNode;
   addToTitle?: boolean;

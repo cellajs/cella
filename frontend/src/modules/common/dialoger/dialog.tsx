@@ -9,7 +9,20 @@ export interface DialogProp {
   removeDialog: (dialog: DialogT) => void;
 }
 export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
-  const { id, content, container, open, description, title, className, containerBackdrop, containerBackdropClassName, autoFocus, hideClose } = dialog;
+  const {
+    id,
+    content,
+    preventEscPress,
+    container,
+    open,
+    description,
+    title,
+    className,
+    containerBackdrop,
+    containerBackdropClassName,
+    autoFocus,
+    hideClose,
+  } = dialog;
 
   const closeDialog = () => {
     removeDialog(dialog);
@@ -24,6 +37,10 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
     if (container && !containerBackdrop) event.preventDefault();
   };
 
+  const handleEscapeKeyDown = (event: KeyboardEvent) => {
+    if (preventEscPress) event.preventDefault();
+  };
+
   return (
     <Dialog key={id} open={open} onOpenChange={onOpenChange} modal={!container}>
       {container && containerBackdrop && (
@@ -35,7 +52,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
         />
       )}
       <DialogContent
-        onEscapeKeyDown={closeDialog}
+        onEscapeKeyDown={handleEscapeKeyDown}
         hideClose={hideClose}
         onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
