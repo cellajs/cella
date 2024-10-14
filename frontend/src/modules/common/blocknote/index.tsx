@@ -18,8 +18,7 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import type { Member } from '~/types/common';
 
-import type { Block } from '@blocknote/core';
-import { focusEditor, getContentAsString } from './helpers';
+import { focusEditor } from './helpers';
 import './styles.css';
 
 type BlockNoteProps = {
@@ -76,12 +75,12 @@ export const BlockNote = ({
   };
 
   useLayoutEffect(() => {
-    if (defaultValue === '') return;
+    if (defaultValue === '' && !triggerUpdateOnChange) return;
 
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
       // If the current content is the same as the new content or if this is the initial update, exit early.
-      if (wasInitial.current) return;
+      if (wasInitial.current && !triggerUpdateOnChange) return;
       editor.replaceBlocks(editor.document, blocks);
       // Replace the existing blocks in the editor with the new blocks.
       focusEditor(editor);
@@ -99,9 +98,8 @@ export const BlockNote = ({
       editor={editor}
       defaultValue={defaultValue}
       onChange={() => {
-        const blockContent = getContentAsString(editor.document as Block[]);
         // to avoid update if content empty, so from draft shown
-        if (!triggerUpdateOnChange || blockContent === '') return;
+        if (!triggerUpdateOnChange || defaultValue === '') return;
         queueMicrotask(() => onBlockNoteChange());
       }}
       onFocus={() => queueMicrotask(() => onFocus?.())}
