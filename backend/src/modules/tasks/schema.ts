@@ -89,6 +89,13 @@ export const taskWithSubtasksSchema = z.object({
   subtasks: subtaskSchema,
 });
 
+export const updatedTaskSchema = taskSchema.pick({
+  summary: true,
+  description: true,
+  expandable: true,
+  order: true,
+});
+
 export const getTasksQuerySchema = paginationQuerySchema.merge(
   z.object({
     q: z.string().optional(),

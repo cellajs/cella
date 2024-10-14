@@ -5,7 +5,7 @@ import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 
 import { z } from 'zod';
-import { createTaskSchema, getTasksQuerySchema, taskWithSubtasksSchema, updateTaskSchema } from './schema';
+import { createTaskSchema, getTasksQuerySchema, taskWithSubtasksSchema, updateTaskSchema, updatedTaskSchema } from './schema';
 
 class TaskRoutesConfig {
   public createTask = createRouteConfig({
@@ -85,7 +85,7 @@ class TaskRoutesConfig {
         description: 'Task updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(taskWithSubtasksSchema),
+            schema: successWithDataSchema(updatedTaskSchema),
           },
         },
       },

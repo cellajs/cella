@@ -20,7 +20,7 @@ export const taskKeys = {
 };
 
 export const useTaskMutation = () => {
-  return useMutation<Task, Error, TasksMutationQueryFnVariables>({
+  return useMutation<Pick<Task, 'summary' | 'description' | 'expandable'>, Error, TasksMutationQueryFnVariables>({
     mutationKey: taskKeys.update(),
     mutationFn: updateTask,
   });
@@ -101,12 +101,22 @@ queryClient.setMutationDefaults(taskKeys.update(), {
       const updatedTasks = oldData.items.map((task) => {
         // Update the task itself
         if (task.id === taskId) {
-          return updatedTask;
+          return {
+            ...task,
+            ...updatedTask,
+          };
         }
 
         // If the task is the parent, update its subtasks
         if (task.subtasks) {
-          const updatedSubtasks = task.subtasks.map((subtask) => (subtask.id === taskId ? updatedTask : subtask));
+          const updatedSubtasks = task.subtasks.map((subtask) =>
+            subtask.id === taskId
+              ? {
+                  ...subtask,
+                  ...updatedTask,
+                }
+              : subtask,
+          );
           return { ...task, subtasks: updatedSubtasks }; // Return parent with updated subtasks
         }
 
