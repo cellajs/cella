@@ -1,5 +1,4 @@
 import { config } from 'config';
-import { relations } from 'drizzle-orm';
 import { boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
@@ -29,25 +28,6 @@ export const membershipsTable = pgTable('memberships', {
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
 });
-
-export const membershipsTableRelations = relations(membershipsTable, ({ one }) => ({
-  user: one(usersTable, {
-    fields: [membershipsTable.userId],
-    references: [usersTable.id],
-  }),
-  organization: one(organizationsTable, {
-    fields: [membershipsTable.organizationId],
-    references: [organizationsTable.id],
-  }),
-  workspace: one(workspacesTable, {
-    fields: [membershipsTable.workspaceId],
-    references: [workspacesTable.id],
-  }),
-  project: one(projectsTable, {
-    fields: [membershipsTable.projectId],
-    references: [projectsTable.id],
-  }),
-}));
 
 export const membershipSelect = {
   id: membershipsTable.id,

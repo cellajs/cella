@@ -1,4 +1,3 @@
-import { relations } from 'drizzle-orm';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
@@ -12,13 +11,6 @@ export const passkeysTable = pgTable('passkeys', {
   publicKey: varchar('public_key').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
-
-export const passkeyTableRelations = relations(passkeysTable, ({ one }) => ({
-  user: one(usersTable, {
-    fields: [passkeysTable.userEmail],
-    references: [usersTable.email],
-  }),
-}));
 
 export type PasskeyModel = typeof passkeysTable.$inferSelect;
 export type InsertPasskeyModel = typeof passkeysTable.$inferInsert;
