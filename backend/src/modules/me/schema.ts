@@ -39,6 +39,7 @@ export const menuItemSchema = z.object({
   thumbnailUrl: imageUrlSchema.nullish(),
   entity: z.enum(config.contextEntityTypes),
   membership: membershipInfoSchema,
+  // TODO perhaps use membershipInfoSchema here, since membership should always be present in menu
   organizationId: z.string().optional().nullable(),
 });
 

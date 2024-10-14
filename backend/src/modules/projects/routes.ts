@@ -4,6 +4,7 @@ import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
 import { entityInOrgParamSchema, idOrSlugSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
 
+import { membershipInfoSchema } from '../memberships/schema';
 import { createProjectBodySchema, createProjectQuerySchema, getProjectsQuerySchema, projectSchema, updateProjectBodySchema } from './schema';
 
 class ProjectRoutesConfig {
@@ -32,7 +33,7 @@ class ProjectRoutesConfig {
         description: 'Project',
         content: {
           'application/json': {
-            schema: successWithDataSchema(projectSchema),
+            schema: successWithDataSchema(projectSchema.extend({ membership: membershipInfoSchema })),
           },
         },
       },
@@ -109,7 +110,7 @@ class ProjectRoutesConfig {
         description: 'Project updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(projectSchema),
+            schema: successWithDataSchema(projectSchema.extend({ membership: membershipInfoSchema })),
           },
         },
       },

@@ -123,7 +123,7 @@ const projectsRoutes = app
     const projects = await db
       .select({
         project: projectsTable,
-        membership: membershipsTable,
+        membership: membershipSelect,
       })
       .from(projectsQuery.as('projects'))
       .innerJoin(memberships, eq(memberships.projectId, projectsTable.id))

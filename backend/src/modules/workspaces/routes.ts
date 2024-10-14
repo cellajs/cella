@@ -4,6 +4,7 @@ import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema } from '#/utils/schema/common-responses';
 import { entityInOrgParamSchema, idOrSlugSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
 
+import { membershipInfoSchema } from '../memberships/schema';
 import { createWorkspaceBodySchema, updateWorkspaceBodySchema, workspaceSchema, workspaceWithProjectSchema } from './schema';
 
 class WorkspaceRoutesConfig {
@@ -30,7 +31,7 @@ class WorkspaceRoutesConfig {
         description: 'workspace was created',
         content: {
           'application/json': {
-            schema: successWithDataSchema(workspaceSchema),
+            schema: successWithDataSchema(workspaceSchema.extend({ membership: membershipInfoSchema })),
           },
         },
       },
@@ -83,7 +84,7 @@ class WorkspaceRoutesConfig {
         description: 'Workspace updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(workspaceSchema),
+            schema: successWithDataSchema(workspaceSchema.extend({ membership: membershipInfoSchema })),
           },
         },
       },

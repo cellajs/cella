@@ -20,6 +20,7 @@ const ProjectActions = ({ project }: { project: Project }) => {
 
   const { minimized, createTaskForm } = workspaces[workspace.id]?.[project.id] || { minimized: false, createTaskForm: false };
 
+  // TODO: this doesnt look ok
   const role = project.membership?.role || 'member';
 
   const minimizeClick = () => {

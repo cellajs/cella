@@ -8,6 +8,7 @@ import {
   successWithoutDataSchema,
 } from '#/utils/schema/common-responses';
 import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+import { membershipInfoSchema } from '../memberships/schema';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
@@ -39,7 +40,7 @@ class OrganizationRoutesConfig {
         description: 'Organization was createRouteConfigd',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationSchema),
+            schema: successWithDataSchema(organizationSchema.extend({ membership: membershipInfoSchema })),
           },
         },
       },
@@ -92,7 +93,7 @@ class OrganizationRoutesConfig {
         description: 'Organization was updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationSchema),
+            schema: successWithDataSchema(organizationSchema.extend({ membership: membershipInfoSchema })),
           },
         },
       },

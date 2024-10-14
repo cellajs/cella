@@ -44,21 +44,19 @@ const meRoutes = app
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOauthProviderOptions => config.enabledOauthProviders.includes(provider as EnabledOauthProviderOptions));
+
     // Update last visit date
     await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...transformDatabaseUserWithCount(user, memberships.length),
-          oauth: validOAuthAccounts,
-          passkey: !!passkey.length,
-          sessions: await getPreparedSessions(user.id, ctx),
-        },
-      },
-      200,
-    );
+    // Prepare data
+    const data = {
+      ...transformDatabaseUserWithCount(user, memberships.length),
+      oauth: validOAuthAccounts,
+      passkey: !!passkey.length,
+      sessions: await getPreparedSessions(user.id, ctx),
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
   // Your main function
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {

@@ -9,7 +9,7 @@ import CreateWorkspaceForm from '~/modules/workspaces/create-workspace-form';
 import { Suspense, lazy } from 'react';
 import type { FooterLinkProps } from '~/modules/common/main-footer';
 import type { NavItem } from '~/modules/common/main-nav';
-import { MainSearch, type SuggestionType, type SuggestionSection } from '~/modules/common/main-search';
+import { MainSearch, type SuggestionSection, type SuggestionType } from '~/modules/common/main-search';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
 import type { UserMenuItem } from './types/common';
 
@@ -64,7 +64,7 @@ export const menuSections: SectionItem[] = [
       entityType: 'project',
       label: 'app:projects',
     },
-  }
+  },
 ];
 
 // Here you set default footer links
@@ -83,12 +83,14 @@ export const suggestionSections: SuggestionSection[] = [
 ];
 
 // App specific entity path resolver
+// TODO review this again, I dont like the fallback to empty string
 export const getEntityPath = (item: UserMenuItem | SuggestionType) => {
   const basePath = baseEntityRoutes[item.entity];
-  const queryParams = item.membership.workspaceId && item.entity === 'project' ? `?${item.entity}=${item.slug}` : '';
+  // TODO: use entityField util here? so it becomes projectId which is more consistent?
+  const queryParams = item.membership?.workspaceId && item.entity === 'project' ? `?${item.entity}=${item.slug}` : '';
 
-  const idOrSlug = item.membership.workspaceId && item.entity === 'project' ? item.membership.workspaceId : item.slug;
-  const orgIdOrSlug = item.membership.organizationId;
+  const idOrSlug = item.membership?.workspaceId && item.entity === 'project' ? item.membership.workspaceId : item.slug;
+  const orgIdOrSlug = item.organizationId || '';
 
   const path = `${basePath}${queryParams}`;
 

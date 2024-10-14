@@ -51,6 +51,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const search = useSearch({ strict: false });
   const containerRef = useRef(null);
   const navigate = useNavigate();
+
   const entityType = entity.entity;
   const isAdmin = entity.membership?.role === 'admin';
 

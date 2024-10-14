@@ -66,7 +66,7 @@ export const useColumns = (
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (
         <div className="inline-flex items-center gap-1 relative group h-full w-full">
-          {t(row.membership.role)}
+          {row.membership ? t(row.membership.role) : '-'}
           <ChevronDown size={16} className="transition-opacity duration-200 opacity-0 group-hover:opacity-100" />
         </div>
       ),

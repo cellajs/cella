@@ -11,7 +11,7 @@ const ProfilePageContent = ({ sheet, userId, organizationId }: { userId: string;
   // });
 
   // Don't render anything until `orgId` is available
-  if (!organizationId) return <div>You can currently only access user profiles within an organization scope ...</div>;
+  if (!organizationId) return <div>Do a get organizations request here</div>;
 
   return <ProjectsTable organizationId={organizationId} userId={userId} sheet={sheet} />;
 };

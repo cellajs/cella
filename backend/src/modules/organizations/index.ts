@@ -35,8 +35,8 @@ const organizationsRoutes = app
     const { name, slug } = ctx.req.valid('json');
     const user = getContextUser();
 
+    // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
-
     if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
 
     const [createdOrganization] = await db
@@ -56,23 +56,13 @@ const organizationsRoutes = app
     // Insert membership
     const createdMembership = await insertMembership({ user, role: 'admin', entity: createdOrganization });
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...createdOrganization,
-          membership: createdMembership,
-          counts: {
-            memberships: {
-              admins: 1,
-              members: 1,
-              total: 1,
-            },
-          },
-        },
-      },
-      200,
-    );
+    const data = {
+      ...createdOrganization,
+      membership: createdMembership,
+      counts: { memberships: { admins: 1, members: 1, total: 1 } },
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Get list of organizations
@@ -120,7 +110,7 @@ const organizationsRoutes = app
         },
       })
       .from(organizationsQuery.as('organizations'))
-      .innerJoin(memberships, and(eq(organizationsTable.id, memberships.organizationId), eq(memberships.userId, user.id)))
+      .leftJoin(memberships, and(eq(organizationsTable.id, memberships.organizationId), eq(memberships.userId, user.id)))
       .leftJoin(countsQuery, eq(organizationsTable.id, countsQuery.id))
       .orderBy(orderColumn)
       .limit(Number(limit))
@@ -176,19 +166,16 @@ const organizationsRoutes = app
 
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...updatedOrganization,
-          membership: userMembership,
-          counts: {
-            memberships: memberCounts,
-          },
-        },
+    // Prepare data
+    const data = {
+      ...updatedOrganization,
+      membership: userMembership,
+      counts: {
+        memberships: memberCounts,
       },
-      200,
-    );
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Get organization by id or slug
