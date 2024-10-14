@@ -149,7 +149,7 @@ export const TaskBlockNote = ({
           if (!isCreationMode && canChangeState.current && !isSheet) dispatchCustomEvent(stateEvent, { taskId: id, state: 'unsaved' });
 
           // to avoid update if content empty, so from draft shown
-          if (!isCreationMode || html === '') return;
+          if (!isCreationMode || (html === '' && !subtask)) return;
           queueMicrotask(() => updateData());
         }}
         onFocus={() => queueMicrotask(() => handleEditorFocus())}
