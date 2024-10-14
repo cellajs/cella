@@ -35,6 +35,8 @@ export const TaskHeader = ({
   const { user } = useUserStore();
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
+  const [saveClicked, setSaveClicked] = useState(false);
+
   const isSubtask = task.parentId !== null;
   const isEditing = state === 'editing' || state === 'unsaved';
 
@@ -93,6 +95,11 @@ export const TaskHeader = ({
               id={`edit-toggle-${task.id}`}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
+              onMouseDown={() => {
+                if (state !== 'unsaved') return;
+                setSaveClicked(true);
+                setTimeout(() => setSaveClicked(false), 2000);
+              }}
               onClick={() => {
                 const event = isSubtask ? 'changeSubtaskState' : 'changeTaskState';
                 dispatchCustomEvent(event, { taskId: task.id, state: isEditing ? 'expanded' : 'editing' });
@@ -102,7 +109,9 @@ export const TaskHeader = ({
               className={`flex  min-w-20 flex-row items-center gap-1 font-light ${state === 'unsaved' ? 'hover:text-green-500' : ''}`}
               size="xs"
             >
-              <span className={isEditing ? 'italic' : ''}>{getButtonText()}</span>
+              <span className={`${isEditing ? 'italic' : ''} ${saveClicked ? 'text-green-500' : ''}`}>
+                {saveClicked ? t('common:saved') : getButtonText()}
+              </span>
             </Button>
           </TooltipButton>
         )}
