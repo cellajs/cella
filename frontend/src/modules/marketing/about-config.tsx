@@ -1,9 +1,9 @@
 import { config } from 'config';
-import { Building2, Folder, Github, StickyNote, Twitter, Users } from 'lucide-react';
+import { Building2, Folder, StickyNote, Twitter, Users } from 'lucide-react';
 
 export const socials = [
   { title: 'Twitter', href: config.company.twitterUrl, icon: Twitter },
-  { title: 'GitHub', href: config.company.githubUrl, icon: Github },
+  // { title: 'GitHub', href: config.company.githubUrl, icon: Github },
 ];
 
 export const footerSections = [
