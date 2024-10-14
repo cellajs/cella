@@ -9,3 +9,10 @@ export const extractKeywords = (description: string) => {
 
   return uniqueWords.join(' ');
 };
+
+export const getDateFromToday = (days: number): Date => {
+  // Calculate the date 'days' ago from today
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() - days);
+  return targetDate;
+};

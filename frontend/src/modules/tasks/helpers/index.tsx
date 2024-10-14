@@ -168,21 +168,16 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
 
   const filteredTasks = tasks.filter((task) => {
     // Count accepted in past 30 days and iced tasks
-    if (task.status === 6 && dateIsRecent(task.modifiedAt, 30)) acceptedCount += 1;
+    if (task.status === 6) acceptedCount += 1;
     if (task.status === 0) icedCount += 1;
     // Filter based on showAccepted in past 30 days and showIced
-    if (showAccepted && dateIsRecent(task.modifiedAt, 30) && task.status === 6) return true;
+    if (showAccepted && task.status === 6) return true;
     if (showIced && task.status === 0) return true;
     return task.status !== 0 && task.status !== 6;
   });
-  // Sort subtasks within each task by order
-  const tasksWithSortedSubtasks = filteredTasks.map((task) => ({
-    ...task,
-    subtasks: task.subtasks.sort((a, b) => a.order - b.order),
-  }));
 
   // Sort the main tasks
-  const sortedTasks = tasksWithSortedSubtasks.sort((a, b) => sortTaskOrder(a, b));
+  const sortedTasks = filteredTasks.sort((a, b) => sortTaskOrder(a, b));
 
   return { sortedTasks, acceptedCount, icedCount };
 };

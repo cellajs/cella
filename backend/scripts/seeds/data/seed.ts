@@ -162,9 +162,9 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             projectId: project.id,
             role: faker.helpers.arrayElement(['admin', 'member']),
             createdAt: faker.date.past(),
-            order: adminProjectsMembershipsOrder > 2 ? 1 : adminProjectsMembershipsOrder,
+            order: adminProjectsMembershipsOrder,
           });
-          adminProjectsMembershipsOrder = adminProjectsMembershipsOrder > 2 ? 1 : adminProjectsMembershipsOrder + 1;
+          adminProjectsMembershipsOrder = adminProjectsMembershipsOrder >= 2 ? 1 : adminProjectsMembershipsOrder + 1;
         }
 
         membershipsCount += projectMemberships.length;

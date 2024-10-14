@@ -97,9 +97,7 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
     );
 
   const renderItems = () => {
-    const filteredItems = data
-      .filter((item) => (shownOption === 'archived' ? item.membership.archived : !item.membership.archived))
-      .sort((a, b) => a.membership.order - b.membership.order);
+    const filteredItems = data.filter((item) => (shownOption === 'archived' ? item.membership.archived : !item.membership.archived));
     return (
       <>
         {filteredItems.map((item) => (

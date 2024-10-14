@@ -1,4 +1,4 @@
-import { type SQL, and, eq, ilike, inArray } from 'drizzle-orm';
+import { type SQL, and, eq, gte, ilike, inArray, lte, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 
 import { parse as parseHtml } from 'node-html-parser';
@@ -13,7 +13,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
-import { extractKeywords } from './helpers';
+import { extractKeywords, getDateFromToday } from './helpers';
 import taskRoutesConfig from './routes';
 import type { subtaskSchema } from './schema';
 
@@ -106,21 +106,32 @@ const tasksRoutes = app
       order,
     );
 
-    const tasks = await db.select().from(tasksQuery.as('tasks')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const tasks = await db
+      .select()
+      .from(tasksQuery.as('tasks'))
+      .orderBy(orderColumn)
+      .limit(Number(limit))
+      .offset(Number(offset))
+      // all tasks with status under 6 and with status 6 modified within the last 30 days
+      .where(or(lte(tasksTable.status, 5), and(eq(tasksTable.status, 6), gte(tasksTable.modifiedAt, getDateFromToday(30)))));
 
-    // TODO what hapens here? Add comments and consider a helper for this to reuse?
+    // Create a set of unique user IDs from the tasks, so we can retrieve them from the database
     const uniqueAssignedUserIds = Array.from(
       new Set([
+        // Get all assigned user IDs by flattening the array of assignedTo properties & flittering null values
         ...tasks.flatMap((t) => t.assignedTo),
         ...tasks.map((t) => t.createdBy).filter((id) => id !== null),
         ...tasks.map((t) => t.modifiedBy).filter((id) => id !== null),
       ]),
     );
+
+    // Create a set of unique label IDs from the tasks
     const uniqueLabelIds = Array.from(new Set([...tasks.flatMap((t) => t.labels)]));
 
     const users = await getUsersByConditions([inArray(usersTable.id, uniqueAssignedUserIds)]);
     const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, uniqueLabelIds));
 
+    // Create a map for quick access to users by their ID
     const userMap = new Map(users.map((user) => [user.id, user]));
 
     const finalTasks = tasks

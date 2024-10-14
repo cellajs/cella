@@ -186,6 +186,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     return respTasks.filter((t) => t.keywords.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [data, searchQuery]);
 
+  console.log('🚀 ~ tasks ~ tasks:', tasks);
   const {
     sortedTasks: showingTasks,
     acceptedCount,
