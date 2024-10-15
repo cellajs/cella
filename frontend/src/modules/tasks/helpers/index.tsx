@@ -2,9 +2,11 @@ import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import type { NavigateFn } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { Suspense, lazy } from 'react';
+import { toast } from 'sonner';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { orderChange } from '~/modules/common/nav-sheet/helpers';
+import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { TaskImpact, TaskType } from '~/modules/tasks/create-task-form';
 import SelectImpact, { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
@@ -228,4 +230,24 @@ export const handleEditorFocus = (id: string, taskToClose?: string | null) => {
   dispatchCustomEvent('changeSubtaskState', { taskId: id, state: 'removeEditing' });
   // Remove Task editing state if focused not task itself
   if (taskToClose) dispatchCustomEvent('changeTaskState', { taskId: taskToClose, state: 'currentState' });
+};
+
+export const useHandleUpdateHTML = () => {
+  const taskMutation = useTaskMutation();
+
+  const handleUpdateHTML = async (task: Task | Subtask, newContent: string) => {
+    try {
+      await taskMutation.mutateAsync({
+        id: task.id,
+        orgIdOrSlug: task.organizationId,
+        key: 'description',
+        data: newContent,
+        projectId: task.projectId,
+      });
+    } catch (err) {
+      toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
+    }
+  };
+
+  return { handleUpdateHTML };
 };

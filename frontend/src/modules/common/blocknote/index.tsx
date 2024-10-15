@@ -1,14 +1,20 @@
-import { GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
+import { FilePanelController, type FilePanelProps, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
 import DOMPurify from 'dompurify';
-import { useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import * as Badge from '~/modules/ui/badge';
 import * as Button from '~/modules/ui/button';
+import * as Card from '~/modules/ui/card';
 import * as DropdownMenu from '~/modules/ui/dropdown-menu';
+import * as Input from '~/modules/ui/input';
+import * as Label from '~/modules/ui/label';
 import * as Popover from '~/modules/ui/popover';
+import * as Select from '~/modules/ui/select';
+import * as Tabs from '~/modules/ui/tabs';
+import * as Toggle from '~/modules/ui/toggle';
 import * as Tooltip from '~/modules/ui/tooltip';
 import { useThemeStore } from '~/store/theme';
-import { cn } from '~/utils/cn';
 
 import {
   customFormattingToolBarConfig,
@@ -23,12 +29,14 @@ import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import type { Member } from '~/types/common';
 
 import type { Block } from '@blocknote/core';
-import { getContentAsString } from './helpers';
+import { FloatingPortal } from '@floating-ui/react';
+import router from '~/lib/router';
+import { trimInlineContentText } from '~/modules/tasks/helpers';
+import { focusEditor, getContentAsString } from './helpers';
 import './styles.css';
 
 type BlockNoteProps = {
   id: string;
-  triggerUpdateOnChange: boolean;
   defaultValue?: string;
   className?: string;
   sideMenu?: boolean;
@@ -36,18 +44,20 @@ type BlockNoteProps = {
   formattingToolbar?: boolean;
   customSideMenu?: boolean;
   customSlashMenu?: boolean;
+  updateDataOnBeforeLoad?: boolean;
   customFormattingToolbar?: boolean;
+  trailingBlock?: boolean;
   emojis?: boolean;
   members?: Member[];
-  updateData: (value: string) => void;
+  updateData: (html: string) => void;
+  filePanel?: (props: FilePanelProps) => JSX.Element;
+  onChange?: (value: string) => void;
   onFocus?: () => void;
-  onBlur?: () => void;
   onKeyDown?: () => void;
 };
 
 export const BlockNote = ({
   id,
-  triggerUpdateOnChange,
   defaultValue = '',
   className = '',
   sideMenu = true,
@@ -57,45 +67,62 @@ export const BlockNote = ({
   customSlashMenu = false,
   customFormattingToolbar = false,
   emojis = true,
+  trailingBlock = true,
+  updateDataOnBeforeLoad = false,
   members,
   updateData,
+  filePanel,
+  onChange,
   onKeyDown,
-  onBlur,
   onFocus,
 }: BlockNoteProps) => {
   const { mode } = useThemeStore();
   const wasInitial = useRef(false);
 
-  const editor = useCreateBlockNote({ schema: customSchema });
+  const [text, setText] = useState<string>(defaultValue);
+
+  const onBlockNoteChange = useCallback(async () => {
+    // Converts the editor's contents from Block objects to Markdown and store to state.
+    const descriptionHtml = await editor.blocksToFullHTML(editor.document);
+    const cleanDescription = DOMPurify.sanitize(descriptionHtml);
+
+    const contentToUpdate = trimInlineContentText(cleanDescription);
+    if (onChange) onChange(contentToUpdate);
+    setText(contentToUpdate);
+  }, []);
+
+  const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
 
   const emojiPicker = customSlashMenu ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') : emojis;
 
-  const onBlockNoteChange = async () => {
-    //if user in Formatting Toolbar does not update
+  const triggerDataUpdate = () => {
+    // if user in Formatting Toolbar does not update
     if (editor.getSelection()) return;
 
-    const descriptionHtml = await editor.blocksToFullHTML(editor.document);
-    const cleanDescription = DOMPurify.sanitize(descriptionHtml);
-    updateData(cleanDescription);
+    updateData(text);
   };
 
-  useLayoutEffect(() => {
+  useEffect(() => {
+    if (wasInitial.current) return;
     const blockUpdate = async (html: string) => {
       const blocks = await editor.tryParseHTMLToBlocks(html);
       const currentBlocks = getContentAsString(editor.document as Block[]);
       const newBlocksContent = getContentAsString(blocks as Block[]);
 
       // Only replace blocks if the content actually changes
-      if (currentBlocks !== newBlocksContent || html === '') {
-        editor.replaceBlocks(editor.document, blocks);
-        const lastBlock = editor.document[editor.document.length - 1];
-        editor.focus();
-        editor.setTextCursorPosition(lastBlock.id, 'end');
-        if (!wasInitial.current) wasInitial.current = true;
-      }
+      if (currentBlocks === newBlocksContent) return;
+      editor.replaceBlocks(editor.document, blocks);
+      focusEditor(editor);
+      wasInitial.current = true;
     };
     blockUpdate(defaultValue);
   }, [defaultValue]);
+
+  useEffect(() => {
+    if (!updateDataOnBeforeLoad) return;
+    const unsubscribe = router.subscribe('onBeforeLoad', triggerDataUpdate);
+    return () => unsubscribe();
+  }, []);
 
   return (
     <BlockNoteView
@@ -103,38 +130,51 @@ export const BlockNote = ({
       data-color-scheme={mode}
       theme={mode}
       editor={editor}
-      shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip }}
-      defaultValue={defaultValue}
-      onChange={() => {
-        // to avoid update if content empty, so from draft shown
-        if (!triggerUpdateOnChange || editor.document[0].content?.toString() === '') return;
-        queueMicrotask(() => onBlockNoteChange());
-      }}
-      onFocus={() => queueMicrotask(() => onFocus?.())}
-      onBlur={() => queueMicrotask(() => onBlur?.())}
+      shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip, Select, Label, Input, Card, Badge, Toggle, Tabs }}
+      onChange={onBlockNoteChange}
+      onFocus={onFocus}
+      onBlur={triggerDataUpdate}
       onKeyDown={onKeyDown}
       sideMenu={customSideMenu ? false : sideMenu}
       slashMenu={customSlashMenu ? false : slashMenu}
       formattingToolbar={customFormattingToolbar ? false : formattingToolbar}
       emojiPicker={!emojiPicker}
-      className={cn('p-3 border rounded-md', className)}
+      className={className}
     >
-      {customSlashMenu && <CustomSlashMenu editor={editor} />}
+      {customSlashMenu && (
+        <FloatingPortal>
+          <div className="bn-ui-container">
+            <CustomSlashMenu editor={editor} />
+          </div>
+        </FloatingPortal>
+      )}
       {customFormattingToolbar && (
-        <div className="fixed">
-          <CustomFormattingToolbar config={customFormattingToolBarConfig} />
-        </div>
+        <FloatingPortal>
+          <div className="bn-ui-container">
+            <CustomFormattingToolbar config={customFormattingToolBarConfig} />
+          </div>
+        </FloatingPortal>
       )}
       {customSideMenu && <CustomSideMenu />}
-      <Mention members={members} editor={editor} />
+      <FloatingPortal>
+        <div className="bn-ui-container">
+          <Mention members={members} editor={editor} />
+        </div>
+      </FloatingPortal>
       {emojiPicker && (
-        <GridSuggestionMenuController
-          triggerCharacter={':'}
-          // Changes the Emoji Picker to only have 10 columns & min length of 0.
-          columns={5}
-          minQueryLength={0}
-        />
+        <FloatingPortal>
+          <div className="bn-ui-container">
+            <GridSuggestionMenuController
+              triggerCharacter={':'}
+              // Changes the Emoji Picker to only have 10 columns & min length of 0.
+              columns={5}
+              minQueryLength={0}
+            />
+          </div>
+        </FloatingPortal>
       )}
+      {/* Replaces default file panel with Uppy one. */}
+      {filePanel && <FilePanelController filePanel={filePanel} />}
     </BlockNoteView>
   );
 };

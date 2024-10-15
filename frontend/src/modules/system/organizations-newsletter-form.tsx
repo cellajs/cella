@@ -92,7 +92,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
                   <BlockNote
                     id={'blocknote-org-letter'}
                     defaultValue={value}
-                    triggerUpdateOnChange={true}
+                    onChange={onChange}
                     updateData={onChange}
                     customSideMenu={true}
                     customSlashMenu={true}

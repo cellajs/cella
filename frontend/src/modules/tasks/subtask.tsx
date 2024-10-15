@@ -13,21 +13,24 @@ import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { queryClient } from '~/lib/router';
 import { isSubtaskData } from '~/modules/app/board/helpers';
+import { BlockNote } from '~/modules/common/blocknote';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
-import { TaskBlockNote } from '~/modules/tasks/task-dropdowns/task-blocknote';
+import { sheet } from '~/modules/common/sheeter/state';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
 import type { Subtask as BaseSubtask, Task } from '~/types/app';
+import type { Member } from '~/types/common';
 import { cn } from '~/utils/cn';
 import { getDraggableItemData } from '~/utils/drag-drop';
-import { sheet } from '../common/sheeter/state';
+import { handleEditorFocus, useHandleUpdateHTML } from './helpers';
 import type { TaskStates } from './types';
 
-const Subtask = ({ task, mode }: { task: BaseSubtask; mode: Mode }) => {
+const Subtask = ({ task, mode, members }: { task: BaseSubtask; mode: Mode; members: Member[] }) => {
   const { t } = useTranslation();
 
+  const { handleUpdateHTML } = useHandleUpdateHTML();
   const subtaskRef = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<TaskStates>('folded');
   const [dragging, setDragging] = useState(false);
@@ -73,6 +76,8 @@ const Subtask = ({ task, mode }: { task: BaseSubtask; mode: Mode }) => {
     if (state !== 'folded' || clickTarget.tagName === 'BUTTON' || clickTarget.closest('button')) return;
     setState('expanded');
   };
+
+  const updateDescription = (html: string) => handleUpdateHTML(task, html);
 
   useDoubleClick({
     onDoubleClick: () => {
@@ -193,14 +198,19 @@ const Subtask = ({ task, mode }: { task: BaseSubtask; mode: Mode }) => {
           ) : (
             <div className="flex w-full flex-col">
               {state === 'editing' || state === 'unsaved' ? (
-                <TaskBlockNote
-                  id={task.id}
-                  projectId={task.projectId}
-                  html={task.description || ''}
-                  mode={mode}
+                <BlockNote
+                  id={`blocknote-subtask-${task.id}`}
+                  members={members}
+                  defaultValue={task.description}
                   className="w-full pr-2 bg-transparent border-none"
-                  subtask={true}
-                  taskToClose={task.parentId}
+                  onFocus={() => handleEditorFocus(task.id, task.parentId)}
+                  updateData={updateDescription}
+                  sideMenu={false}
+                  trailingBlock={false}
+                  customSideMenu
+                  customSlashMenu
+                  customFormattingToolbar
+                  updateDataOnBeforeLoad
                 />
               ) : (
                 <div className={'w-full bg-transparent pr-2 border-none bn-container bn-shadcn'} data-color-scheme={mode}>

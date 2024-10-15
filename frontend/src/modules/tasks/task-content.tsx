@@ -4,9 +4,12 @@ import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import CreateSubtaskForm from '~/modules/tasks/create-subtask-form';
 import Subtask from '~/modules/tasks/subtask';
-import { TaskBlockNote } from '~/modules/tasks/task-dropdowns/task-blocknote';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
+import { BlockNote } from '../common/blocknote';
+import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
+import { handleEditorFocus, useHandleUpdateHTML } from './helpers';
+import UppyFilePanel from './task-dropdowns/uppy-file-panel';
 import type { TaskStates } from './types';
 
 interface Props {
@@ -20,6 +23,13 @@ const TaskContent = ({ task, mode, state }: Props) => {
   const [createSubtask, setCreateSubtask] = useState(false);
 
   const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none pl-9';
+
+  const {
+    data: { members },
+  } = useWorkspaceQuery();
+
+  const { handleUpdateHTML } = useHandleUpdateHTML();
+  const updateDescription = (html: string) => handleUpdateHTML(task, html);
 
   // TODO put this in a helper folder?
   useEffect(() => {
@@ -52,7 +62,21 @@ const TaskContent = ({ task, mode, state }: Props) => {
       ) : (
         <motion.div initial={{ y: -10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.3 }}>
           {state === 'editing' || state === 'unsaved' ? (
-            <TaskBlockNote id={task.id} projectId={task.projectId} html={task.description || ''} mode={mode} className={expandedStyle} />
+            <BlockNote
+              id={`blocknote-${task.id}`}
+              members={members}
+              defaultValue={task.description}
+              className={expandedStyle}
+              onFocus={() => handleEditorFocus(task.id)}
+              updateData={updateDescription}
+              filePanel={UppyFilePanel(task.id)}
+              sideMenu={true}
+              trailingBlock={false}
+              customSideMenu
+              customSlashMenu
+              customFormattingToolbar
+              updateDataOnBeforeLoad
+            />
           ) : (
             <div ref={taskContentRef} className={`${expandedStyle} bn-container bn-shadcn`} data-color-scheme={mode}>
               <div
@@ -65,7 +89,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
           <div id={`subtask-container-${task.id}`} className="-mx-2 mt-2 w-[calc(100%+1.25rem)]">
             <div className="flex flex-col">
               {task.subtasks.map((task) => (
-                <Subtask mode={mode} key={task.id} task={task} />
+                <Subtask mode={mode} key={task.id} task={task} members={members} />
               ))}
             </div>
 
