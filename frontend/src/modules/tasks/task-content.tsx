@@ -70,11 +70,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
               onFocus={() => handleEditorFocus(task.id)}
               updateData={updateDescription}
               filePanel={UppyFilePanel(task.id)}
-              sideMenu={true}
               trailingBlock={false}
-              customSideMenu
-              customSlashMenu
-              customFormattingToolbar
               updateDataOnBeforeLoad
             />
           ) : (

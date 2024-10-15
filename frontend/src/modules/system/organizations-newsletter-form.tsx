@@ -94,9 +94,6 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
                     defaultValue={value}
                     onChange={onChange}
                     updateData={onChange}
-                    customSideMenu={true}
-                    customSlashMenu={true}
-                    customFormattingToolbar={true}
                     className="min-h-20 pl-10 pr-6"
                   />
                 </Suspense>

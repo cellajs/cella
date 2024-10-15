@@ -2,7 +2,7 @@ import { FilePanelController, type FilePanelProps, GridSuggestionMenuController,
 import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
 import DOMPurify from 'dompurify';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type KeyboardEventHandler, useCallback, useEffect, useRef, useState } from 'react';
 import * as Badge from '~/modules/ui/badge';
 import * as Button from '~/modules/ui/button';
 import * as Card from '~/modules/ui/card';
@@ -42,10 +42,7 @@ type BlockNoteProps = {
   sideMenu?: boolean;
   slashMenu?: boolean;
   formattingToolbar?: boolean;
-  customSideMenu?: boolean;
-  customSlashMenu?: boolean;
   updateDataOnBeforeLoad?: boolean;
-  customFormattingToolbar?: boolean;
   trailingBlock?: boolean;
   emojis?: boolean;
   members?: Member[];
@@ -53,7 +50,7 @@ type BlockNoteProps = {
   filePanel?: (props: FilePanelProps) => JSX.Element;
   onChange?: (value: string) => void;
   onFocus?: () => void;
-  onKeyDown?: () => void;
+  onKeyDown?: KeyboardEventHandler | undefined;
 };
 
 export const BlockNote = ({
@@ -63,9 +60,6 @@ export const BlockNote = ({
   sideMenu = true,
   slashMenu = true,
   formattingToolbar = true,
-  customSideMenu = false,
-  customSlashMenu = false,
-  customFormattingToolbar = false,
   emojis = true,
   trailingBlock = true,
   updateDataOnBeforeLoad = false,
@@ -79,6 +73,7 @@ export const BlockNote = ({
   const { mode } = useThemeStore();
   const wasInitial = useRef(false);
 
+  const isCreationMode = !!onChange;
   const [text, setText] = useState<string>(defaultValue);
 
   const onBlockNoteChange = useCallback(async () => {
@@ -87,34 +82,45 @@ export const BlockNote = ({
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
 
     const contentToUpdate = trimInlineContentText(cleanDescription);
-    if (onChange) onChange(contentToUpdate);
+    if (isCreationMode) onChange(contentToUpdate);
     setText(contentToUpdate);
   }, []);
 
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
 
-  const emojiPicker = customSlashMenu ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') : emojis;
+  const emojiPicker = slashMenu ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') : emojis;
 
   const triggerDataUpdate = () => {
     // if user in Formatting Toolbar does not update
     if (editor.getSelection()) return;
-
     updateData(text);
   };
 
   useEffect(() => {
-    if (wasInitial.current) return;
     const blockUpdate = async (html: string) => {
+      if (wasInitial.current && !isCreationMode) return;
+
       const blocks = await editor.tryParseHTMLToBlocks(html);
+
+      // Get the current blocks and the new blocks' content as strings to compare them
       const currentBlocks = getContentAsString(editor.document as Block[]);
       const newBlocksContent = getContentAsString(blocks as Block[]);
 
       // Only replace blocks if the content actually changes
       if (currentBlocks === newBlocksContent) return;
+
       editor.replaceBlocks(editor.document, blocks);
-      focusEditor(editor);
+      // Handle focus:
+      // 1. In creation mode, focus the editor only if it hasn't been initialized before.
+      // 2. Outside creation mode, focus the editor every time.
+      if (isCreationMode) {
+        if (!wasInitial.current) focusEditor(editor); // Focus only on the first initialization in creation mode
+      } else focusEditor(editor); // Always focus when not in creation mode
+
+      // Mark the editor as having been initialized
       wasInitial.current = true;
     };
+
     blockUpdate(defaultValue);
   }, [defaultValue]);
 
@@ -135,32 +141,36 @@ export const BlockNote = ({
       onFocus={onFocus}
       onBlur={triggerDataUpdate}
       onKeyDown={onKeyDown}
-      sideMenu={customSideMenu ? false : sideMenu}
-      slashMenu={customSlashMenu ? false : slashMenu}
-      formattingToolbar={customFormattingToolbar ? false : formattingToolbar}
+      sideMenu={!sideMenu}
+      slashMenu={!slashMenu}
+      formattingToolbar={!formattingToolbar}
       emojiPicker={!emojiPicker}
       className={className}
     >
-      {customSlashMenu && (
+      {slashMenu && (
         <FloatingPortal>
           <div className="bn-ui-container">
             <CustomSlashMenu editor={editor} />
           </div>
         </FloatingPortal>
       )}
-      {customFormattingToolbar && (
+
+      {formattingToolbar && (
         <FloatingPortal>
           <div className="bn-ui-container">
             <CustomFormattingToolbar config={customFormattingToolBarConfig} />
           </div>
         </FloatingPortal>
       )}
-      {customSideMenu && <CustomSideMenu />}
+
+      {sideMenu && <CustomSideMenu />}
+
       <FloatingPortal>
         <div className="bn-ui-container">
           <Mention members={members} editor={editor} />
         </div>
       </FloatingPortal>
+
       {emojiPicker && (
         <FloatingPortal>
           <div className="bn-ui-container">
@@ -173,7 +183,7 @@ export const BlockNote = ({
           </div>
         </FloatingPortal>
       )}
-      {/* Replaces default file panel with Uppy one. */}
+
       {filePanel && <FilePanelController filePanel={filePanel} />}
     </BlockNoteView>
   );

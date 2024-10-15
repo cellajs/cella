@@ -10,14 +10,16 @@ import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { queryClient } from '~/lib/router';
-import { extractUniqueWordsFromHTML, getNewTaskOrder } from '~/modules/tasks/helpers';
-import { TaskBlockNote } from '~/modules/tasks/task-dropdowns/task-blocknote';
+import { extractUniqueWordsFromHTML, getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
-import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types/app';
 import { createTaskSchema } from '#/modules/tasks/schema';
+import { nanoid } from '#/utils/nanoid';
+import { BlockNote } from '../common/blocknote';
+import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
+import UppyFilePanel from './task-dropdowns/uppy-file-panel';
 
 const formSchema = createTaskSchema;
 
@@ -33,14 +35,18 @@ export const CreateSubtaskForm = ({
   setFormState: (value: boolean) => void;
 }) => {
   const { t } = useTranslation();
-  const { mode } = useThemeStore();
+  const {
+    data: { members },
+  } = useWorkspaceQuery();
+
   const { user } = useUserStore();
+  const defaultId = nanoid();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
       resolver: zodResolver(formSchema),
       defaultValues: {
-        id: '',
+        id: defaultId,
         description: '',
         summary: '',
         type: 'chore',
@@ -61,6 +67,7 @@ export const CreateSubtaskForm = ({
 
   const onSubmit = (values: FormValues) => {
     const newSubtask = {
+      id: defaultId,
       description: values.description,
       summary: values.summary,
       expandable: values.expandable,
@@ -107,6 +114,8 @@ export const CreateSubtaskForm = ({
 
   useHotkeys([['Escape', () => setFormState(false)]]);
 
+  if (form.loading) return null;
+
   if (!formOpen)
     return (
       <Button variant="ghost" size="sm" className="w-full mb-1 pl-11 justify-start rounded-none" onClick={() => setFormState(true)}>
@@ -124,17 +133,20 @@ export const CreateSubtaskForm = ({
             return (
               <FormItem>
                 <FormControl>
-                  <TaskBlockNote
-                    id={parentTask.id}
-                    projectId={parentTask.projectId}
-                    html={value}
-                    onChange={onChange}
-                    onEnterClick={form.handleSubmit(onSubmit)}
-                    mode={mode}
-                    taskToClose={parentTask.id}
-                    subtask
+                  <BlockNote
+                    id={`blocknote-subtask-${defaultId}`}
+                    members={members}
+                    defaultValue={value}
                     className="pl-8"
+                    onFocus={() => handleEditorFocus(parentTask.id, parentTask.id)}
+                    updateData={onChange}
+                    onChange={onChange}
+                    filePanel={UppyFilePanel(defaultId)}
+                    trailingBlock={false}
                   />
+                  {/* 
+                    onEnterClick={form.handleSubmit(onSubmit)}
+                  /> */}
                 </FormControl>
                 <FormMessage />
               </FormItem>

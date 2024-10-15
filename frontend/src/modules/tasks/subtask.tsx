@@ -207,9 +207,6 @@ const Subtask = ({ task, mode, members }: { task: BaseSubtask; mode: Mode; membe
                   updateData={updateDescription}
                   sideMenu={false}
                   trailingBlock={false}
-                  customSideMenu
-                  customSlashMenu
-                  customFormattingToolbar
                   updateDataOnBeforeLoad
                 />
               ) : (

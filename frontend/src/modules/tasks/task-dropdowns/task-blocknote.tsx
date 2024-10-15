@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import type { Block } from '@blocknote/core';
+import { FloatingPortal } from '@floating-ui/react';
 import { customFormattingToolBarConfig, customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
@@ -18,7 +19,6 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { focusEditor, getContentAsString, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
-import { FloatingPortal } from '@floating-ui/react';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
 import * as Badge from '~/modules/ui/badge';
 import * as Button from '~/modules/ui/button';

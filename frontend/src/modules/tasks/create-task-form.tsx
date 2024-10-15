@@ -15,21 +15,19 @@ import { queryClient } from '~/lib/router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
-import { extractUniqueWordsFromHTML, getNewTaskOrder } from '~/modules/tasks/helpers';
+import { extractUniqueWordsFromHTML, getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
 import { NotSelected } from '~/modules/tasks/task-dropdowns/impact-icons/not-selected';
 import SelectImpact, { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
 import SetLabels from '~/modules/tasks/task-dropdowns/select-labels';
 import AssignMembers from '~/modules/tasks/task-dropdowns/select-members';
 import SelectStatus, { type TaskStatus, taskStatuses } from '~/modules/tasks/task-dropdowns/select-status';
 import { taskTypes } from '~/modules/tasks/task-dropdowns/select-task-type';
-import { TaskBlockNote } from '~/modules/tasks/task-dropdowns/task-blocknote';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Badge } from '~/modules/ui/badge';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { WorkspaceRoute } from '~/routes/workspaces';
-import { useThemeStore } from '~/store/theme.ts';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Label, Task } from '~/types/app';
@@ -37,7 +35,9 @@ import type { Member } from '~/types/common';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
 import { createTaskSchema } from '#/modules/tasks/schema';
+import { BlockNote } from '../common/blocknote';
 import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
+import UppyFilePanel from './task-dropdowns/uppy-file-panel';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
@@ -89,7 +89,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   onCloseForm,
 }) => {
   const { t } = useTranslation();
-  const { mode } = useThemeStore();
   const { user } = useUserStore();
   const { focusedTaskId } = useWorkspaceStore();
   const { project } = useSearch({ from: WorkspaceRoute.id });
@@ -97,7 +96,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   const projectIdOrSlug = useMemo(() => project ?? passedProjectIdOrSlug, [project, passedProjectIdOrSlug]);
 
   const {
-    data: { projects },
+    data: { projects, members },
   } = useWorkspaceQuery();
   const { id: projectId, organizationId } = projects.find((p) => p.id === projectIdOrSlug || p.slug === projectIdOrSlug) ?? projects[0];
 
@@ -188,6 +187,8 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
     return true;
   };
 
+  if (form.loading) return null;
+
   return (
     <Form {...form}>
       <form
@@ -203,17 +204,21 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
             return (
               <FormItem>
                 <FormControl>
-                  <TaskBlockNote
-                    id={defaultId}
+                  <BlockNote
+                    id={`blocknote-${defaultId}`}
+                    members={members}
+                    defaultValue={value}
                     className="min-h-16 [&>.bn-editor]:min-h-16"
-                    projectId={projectId}
-                    html={value}
+                    onFocus={() => handleEditorFocus(defaultId, focusedTaskId)}
+                    updateData={onChange}
                     onChange={onChange}
-                    taskToClose={focusedTaskId}
+                    filePanel={UppyFilePanel(defaultId)}
+                    trailingBlock={false}
+                  />
+                  {/*
                     onEnterClick={form.handleSubmit(onSubmit)}
                     onEscapeClick={handleCloseForm}
-                    mode={mode}
-                  />
+                  /> */}
                 </FormControl>
                 <FormMessage />
               </FormItem>
