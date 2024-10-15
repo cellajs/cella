@@ -1,7 +1,6 @@
 import { ErrorBoundary } from 'react-error-boundary';
 import { MainContent } from '~/modules/common/main-content';
 
-import { useSetDocumentTitle } from '~/hooks/use-set-document-title';
 import { Dialoger } from '~/modules/common/dialoger';
 import { DropDowner } from '~/modules/common/dropdowner';
 import ErrorNotice from '~/modules/common/error-notice';
@@ -12,7 +11,6 @@ import SSE from '~/modules/common/sse';
 import { SSEProvider } from '~/modules/common/sse/provider';
 
 const App = () => {
-  useSetDocumentTitle();
   return (
     <div id="main-app-root">
       <ErrorBoundary
