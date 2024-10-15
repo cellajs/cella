@@ -1,7 +1,6 @@
 import { type SQL, and, eq, gte, ilike, inArray, lte, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 
-import { parse as parseHtml } from 'node-html-parser';
 import type { z } from 'zod';
 import { labelsTable } from '#/db/schema/labels';
 import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
@@ -13,7 +12,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
-import { extractKeywords, getDateFromToday } from './helpers';
+import { getDateFromToday, scanTaskDescription } from './helpers';
 import taskRoutesConfig from './routes';
 import type { subtaskSchema } from './schema';
 
@@ -30,27 +29,18 @@ const tasksRoutes = app
     const organization = getOrganization();
     const user = getContextUser();
 
+    // TODO add permission check for project using memberships
+
     // Use body data to create a new task, add valid organization id
-    const newTask: InsertTaskModel = {
-      ...newTaskInfo,
-      organizationId: organization.id,
-    };
+    const newTask: InsertTaskModel = { ...newTaskInfo, organizationId: organization.id };
 
-    // TODO a helper for this?
     const descriptionText = String(newTask.description);
-    const rootElement = parseHtml(descriptionText);
-    const paragraphElement = rootElement.querySelector('.bn-inline-content');
 
-    if (paragraphElement) {
-      paragraphElement.classList.add('inline');
-      const summaryText = paragraphElement.toString();
-      newTask.summary = summaryText;
-      const bnBlockElements = rootElement.querySelectorAll('.bn-block-outer');
-      newTask.expandable = bnBlockElements.length > 1;
-    } else {
-      newTask.summary = descriptionText;
-      newTask.expandable = false;
-    }
+    // Create summary, expandable and keywords from description
+    const { summary, expandable, keywords } = scanTaskDescription(descriptionText);
+    newTask.summary = summary;
+    newTask.expandable = expandable;
+    newTask.keywords = keywords;
 
     const [createdTask] = await db.insert(tasksTable).values(newTask).returning();
 
@@ -118,7 +108,7 @@ const tasksRoutes = app
     // Create a set of unique user IDs from the tasks, so we can retrieve them from the database
     const uniqueAssignedUserIds = Array.from(
       new Set([
-        // Get all assigned user IDs by flattening the array of assignedTo properties & flittering null values
+        // Get all assigned user IDs by flattening the array of assignedTo properties & filtering null values
         ...tasks.flatMap((t) => t.assignedTo),
         ...tasks.map((t) => t.createdBy).filter((id) => id !== null),
         ...tasks.map((t) => t.modifiedBy).filter((id) => id !== null),
@@ -158,7 +148,11 @@ const tasksRoutes = app
     const id = ctx.req.param('id');
     const { key, data, order } = ctx.req.valid('json');
 
+    const allowedKeys = ['labels', 'assignedTo', 'type', 'status', 'description', 'impact'];
+
+    // Validate request
     if (!id) return errorResponse(ctx, 404, 'not_found', 'warn');
+    if (!allowedKeys.includes(key)) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'task');
 
     const user = getContextUser();
 
@@ -171,23 +165,14 @@ const tasksRoutes = app
       ...(order && { order: order }),
     };
 
+    // If updating description, also update keywords, summary and expandable
     if (key === 'description' && data) {
       const descriptionText = String(data);
-      updateValues.keywords = extractKeywords(descriptionText);
-      const rootElement = parseHtml(descriptionText);
-      const paragraphElement = rootElement.querySelector('.bn-inline-content');
 
-      // TODO a helper for this?
-      if (paragraphElement) {
-        paragraphElement.classList.add('inline');
-        const summaryText = paragraphElement.toString();
-        updateValues.summary = summaryText;
-        const bnBlockElements = rootElement.querySelectorAll('.bn-block-outer');
-        updateValues.expandable = bnBlockElements.length > 1;
-      } else {
-        updateValues.summary = descriptionText;
-        updateValues.expandable = false;
-      }
+      const { summary, expandable, keywords } = scanTaskDescription(descriptionText);
+      updateValues.summary = summary;
+      updateValues.expandable = expandable;
+      updateValues.keywords = keywords;
     }
 
     const [updatedTask] = await db.update(tasksTable).set(updateValues).where(eq(tasksTable.id, id)).returning({
