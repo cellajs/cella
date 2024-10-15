@@ -13,7 +13,7 @@ import { cn } from '~/utils/cn';
 
 const marketingNavConfig = [
   { id: 'product', url: '/about', hash: 'product' },
-  // { id: 'pricing', url: '/about', hash: 'pricing' },
+  { id: 'pricing', url: '/about', hash: 'pricing' },
   // { id: 'docs', url: `${config.backendUrl}/docs`, hash: '' },
 ];
 
