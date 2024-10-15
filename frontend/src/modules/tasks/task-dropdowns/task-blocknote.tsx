@@ -17,7 +17,19 @@ import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import { focusEditor, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import '~/modules/common/blocknote/styles.css';
+import { FloatingPortal } from '@floating-ui/react';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
+import * as Badge from '~/modules/ui/badge';
+import * as Button from '~/modules/ui/button';
+import * as Card from '~/modules/ui/card';
+import * as DropdownMenu from '~/modules/ui/dropdown-menu';
+import * as Input from '~/modules/ui/input';
+import * as Label from '~/modules/ui/label';
+import * as Popover from '~/modules/ui/popover';
+import * as Select from '~/modules/ui/select';
+import * as Tabs from '~/modules/ui/tabs';
+import * as Toggle from '~/modules/ui/toggle';
+import * as Tooltip from '~/modules/ui/tooltip';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import UppyFilePanel from './uppy-file-panel';
 
@@ -159,6 +171,7 @@ export const TaskBlockNote = ({
         onFocus={() => queueMicrotask(() => handleEditorFocus())}
         onBlur={() => queueMicrotask(() => updateData())}
         onKeyDown={handleKeyDown}
+        shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip, Select, Label, Input, Card, Badge, Toggle, Tabs }}
         editor={editor}
         data-color-scheme={mode}
         theme={mode}
@@ -169,22 +182,31 @@ export const TaskBlockNote = ({
         slashMenu={false}
         filePanel={false}
       >
-        <CustomSlashMenu editor={editor} />
+        <FloatingPortal>
+          <div className="bn-ui-container">
+            <CustomSlashMenu editor={editor} />
+          </div>
+        </FloatingPortal>
 
-        <div className="fixed">
-          <CustomFormattingToolbar config={customFormattingToolBarConfig} />
-        </div>
+        <FloatingPortal>
+          <div className="bn-ui-container">
+            <CustomFormattingToolbar config={customFormattingToolBarConfig} />
+          </div>
+        </FloatingPortal>
 
         {!subtask && <CustomSideMenu />}
 
-        <Mention members={members.filter((m) => m.membership.projectId === projectId)} editor={editor} />
+        <FloatingPortal>
+          <div className="bn-ui-container">
+            <Mention members={members.filter((m) => m.membership.projectId === projectId)} editor={editor} />
+          </div>
+        </FloatingPortal>
 
-        <GridSuggestionMenuController
-          triggerCharacter={':'}
-          // Changes the Emoji Picker to only have 5 columns & min length of 0.
-          columns={5}
-          minQueryLength={0}
-        />
+        <FloatingPortal>
+          <div className="bn-ui-container">
+            <GridSuggestionMenuController triggerCharacter={':'} columns={5} minQueryLength={0} />
+          </div>
+        </FloatingPortal>
 
         {/* Replaces default file panel with Uppy one. */}
         <FilePanelController filePanel={filePanel} />

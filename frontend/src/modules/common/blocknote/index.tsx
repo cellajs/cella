@@ -3,6 +3,10 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
 import DOMPurify from 'dompurify';
 import { useLayoutEffect, useRef } from 'react';
+import * as Button from '~/modules/ui/button';
+import * as DropdownMenu from '~/modules/ui/dropdown-menu';
+import * as Popover from '~/modules/ui/popover';
+import * as Tooltip from '~/modules/ui/tooltip';
 import { useThemeStore } from '~/store/theme';
 import { cn } from '~/utils/cn';
 
@@ -99,6 +103,7 @@ export const BlockNote = ({
       data-color-scheme={mode}
       theme={mode}
       editor={editor}
+      shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip }}
       defaultValue={defaultValue}
       onChange={() => {
         // to avoid update if content empty, so from draft shown

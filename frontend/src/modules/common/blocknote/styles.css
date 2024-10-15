@@ -14,7 +14,7 @@ p.bn-inline-content code {
 }
 
 .bn-grid-suggestion-menu {
-  background-color: hsl(var(--card));
+  background-color: hsl(var(--popover));
   border: 1px solid hsl(var(--border));
   z-index: 9999 !important;
   max-height: 40vh !important;
@@ -60,7 +60,7 @@ p.bn-inline-content code {
 }
 
 .bn-menu-dropdown {
-  background-color: hsl(var(--card));
+  background-color: hsl(var(--popover));
   border: 1px solid hsl(var(--border));
   position: fixed;
   z-index: 9999 !important;
@@ -70,7 +70,7 @@ p.bn-inline-content code {
 }
 
 .bn-toolbar.bn-formatting-toolbar {
-  background-color: hsl(var(--card));
+  background-color: hsl(var(--popover));
   border: 1px solid hsl(var(--border));
 }
 
@@ -89,7 +89,7 @@ p.bn-inline-content code {
   max-height: 40vh;
   overflow-y: auto;
   z-index: 9999 !important;
-  background-color: hsl(var(--card));
+  background-color: hsl(var(--popover));
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
   box-shadow: 0 1px 4px 0 rgb(0 0 0 / 0.1);
