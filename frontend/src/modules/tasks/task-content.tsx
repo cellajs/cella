@@ -21,6 +21,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
 
   const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none pl-9';
 
+  // TODO put this in a helper folder?
   useEffect(() => {
     if (state !== 'expanded') return;
     // All elements with a data-url attribute

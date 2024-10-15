@@ -34,7 +34,7 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
     toast.success(t('common:success.stopped_impersonation'));
   };
 
-  const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
+  const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-secondary';
   return (
     <nav
       id="main-nav"
