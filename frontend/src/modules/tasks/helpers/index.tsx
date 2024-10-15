@@ -2,6 +2,7 @@ import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
 import type { NavigateFn } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { Suspense, lazy } from 'react';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { orderChange } from '~/modules/common/nav-sheet/helpers';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -206,4 +207,25 @@ export const configureForExport = (tasks: Task[], projects: Omit<Project, 'count
       assignedTo: task.assignedTo.map((m) => m.name) || '-',
     } as unknown as Task;
   });
+};
+
+export const trimInlineContentText = (descriptionHtml: string) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(descriptionHtml, 'text/html');
+
+  // Select all elements with the class 'bn-inline-content'
+  const inlineContents = doc.querySelectorAll('.bn-inline-content');
+
+  for (const element of inlineContents) {
+    // Trim the text and update the element's content
+    if (element.textContent) element.textContent = element.textContent.trim();
+  }
+  return doc.body.innerHTML;
+};
+
+export const handleEditorFocus = (id: string, taskToClose?: string | null) => {
+  // Remove subtask editing state
+  dispatchCustomEvent('changeSubtaskState', { taskId: id, state: 'removeEditing' });
+  // Remove Task editing state if focused not task itself
+  if (taskToClose) dispatchCustomEvent('changeTaskState', { taskId: taskToClose, state: 'currentState' });
 };
