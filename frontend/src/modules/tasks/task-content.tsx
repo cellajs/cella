@@ -39,12 +39,12 @@ const TaskContent = ({ task, mode, state }: Props) => {
   return (
     <div className="flex flex-col grow gap-2">
       {state === 'folded' ? (
-        <div className="mt-1 inline-flex items-center">
+        <div className="mt-1 ml-1 leading-none inline items-center">
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
             dangerouslySetInnerHTML={{ __html: task.summary }}
             data-color-scheme={mode}
-            className="bn-container bn-shadcn pl-1"
+            className="bn-container bn-shadcn leading-none inline"
           />
           <SummaryButtons task={task} />
         </div>

@@ -179,12 +179,14 @@ const Subtask = ({ task, mode }: { task: BaseSubtask; mode: Mode }) => {
         />
       </div>
       <div className="flex flex-col grow min-h-7 justify-center gap-2 mx-1">
-        <div className={state !== 'folded' ? 'inline-flex items-center mt-1' : 'mt-1 flex flex-col items-start'}>
+        <div className="mt-1 flex flex-col items-start">
           {state === 'folded' ? (
-            <div className="mr-1.5 inline-flex items-center">
+            <div className="mr-1.5 inline leading-none items-center">
               <div
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
                 dangerouslySetInnerHTML={{ __html: task.summary }}
+                data-color-scheme={mode}
+                className="bn-container bn-shadcn leading-none inline"
               />
               <SummaryButtons task={task} />
             </div>

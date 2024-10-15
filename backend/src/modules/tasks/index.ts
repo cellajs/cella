@@ -36,20 +36,20 @@ const tasksRoutes = app
       organizationId: organization.id,
     };
 
+    // TODO a helper for this?
     const descriptionText = String(newTask.description);
     const rootElement = parseHtml(descriptionText);
-    const groupElement = rootElement.querySelector('.bn-block-group');
+    const paragraphElement = rootElement.querySelector('.bn-inline-content');
 
-    if (groupElement) {
-      // Remove all child element except the first one
-      const children = groupElement.childNodes;
-      for (let i = 1; i < children.length; i++) {
-        groupElement.removeChild(children[i]);
-      }
-      const summaryText = rootElement.toString();
+    if (paragraphElement) {
+      paragraphElement.classList.add('inline');
+      const summaryText = paragraphElement.toString();
       newTask.summary = summaryText;
-      if (descriptionText.length === summaryText.length) newTask.expandable = summaryText !== descriptionText;
-      else newTask.expandable = true;
+      const bnBlockElements = rootElement.querySelectorAll('.bn-block-outer');
+      newTask.expandable = bnBlockElements.length > 1;
+    } else {
+      newTask.summary = descriptionText;
+      newTask.expandable = false;
     }
 
     const [createdTask] = await db.insert(tasksTable).values(newTask).returning();
@@ -171,26 +171,22 @@ const tasksRoutes = app
       ...(order && { order: order }),
     };
 
-    // TODO a helper for this? And shouldnt this be in create task too?
     if (key === 'description' && data) {
       const descriptionText = String(data);
       updateValues.keywords = extractKeywords(descriptionText);
       const rootElement = parseHtml(descriptionText);
-      const groupElement = rootElement.querySelector('.bn-block-group');
-      if (groupElement) {
-        // Remove all child element except the first one
-        const children = groupElement.childNodes;
-        for (let i = 1; i < children.length; i++) {
-          groupElement.removeChild(children[i]);
-        }
-        const summaryText = rootElement.toString();
-        updateValues.summary = summaryText;
+      const paragraphElement = rootElement.querySelector('.bn-inline-content');
 
-        if (descriptionText.length === summaryText.length) {
-          updateValues.expandable = summaryText !== descriptionText;
-        } else {
-          updateValues.expandable = true;
-        }
+      // TODO a helper for this?
+      if (paragraphElement) {
+        paragraphElement.classList.add('inline');
+        const summaryText = paragraphElement.toString();
+        updateValues.summary = summaryText;
+        const bnBlockElements = rootElement.querySelectorAll('.bn-block-outer');
+        updateValues.expandable = bnBlockElements.length > 1;
+      } else {
+        updateValues.summary = descriptionText;
+        updateValues.expandable = false;
       }
     }
 
