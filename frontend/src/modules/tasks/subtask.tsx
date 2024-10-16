@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { deleteTasks } from '~/api/tasks';
 import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { queryClient } from '~/lib/router';
 import { isSubtaskData } from '~/modules/app/board/helpers';
 import { BlockNote } from '~/modules/common/blocknote';
@@ -204,6 +205,7 @@ const Subtask = ({ task, mode, members }: { task: BaseSubtask; mode: Mode; membe
                   defaultValue={task.description}
                   className="w-full pr-2 bg-transparent border-none"
                   onFocus={() => handleEditorFocus(task.id, task.parentId)}
+                  onEnterClick={() => dispatchCustomEvent('changeSubtaskState', { taskId: task.id, state: 'expanded' })}
                   updateData={updateDescription}
                   sideMenu={false}
                   trailingBlock={false}

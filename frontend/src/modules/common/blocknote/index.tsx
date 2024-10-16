@@ -32,7 +32,7 @@ import type { Block } from '@blocknote/core';
 import { FloatingPortal } from '@floating-ui/react';
 import router from '~/lib/router';
 import { trimInlineContentText } from '~/modules/tasks/helpers';
-import { focusEditor, getContentAsString } from './helpers';
+import { focusEditor, getContentAsString, handleSubmitOnEnter } from './helpers';
 import './styles.css';
 
 type BlockNoteProps = {
@@ -50,7 +50,8 @@ type BlockNoteProps = {
   filePanel?: (props: FilePanelProps) => JSX.Element;
   onChange?: (value: string) => void;
   onFocus?: () => void;
-  onKeyDown?: KeyboardEventHandler | undefined;
+  onEscapeClick?: () => void;
+  onEnterClick?: () => void;
 };
 
 export const BlockNote = ({
@@ -67,14 +68,24 @@ export const BlockNote = ({
   updateData,
   filePanel,
   onChange,
-  onKeyDown,
+  onEscapeClick,
+  onEnterClick,
   onFocus,
 }: BlockNoteProps) => {
   const { mode } = useThemeStore();
   const wasInitial = useRef(false);
+  const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
 
   const isCreationMode = !!onChange;
   const [text, setText] = useState<string>(defaultValue);
+
+  const emojiPicker = slashMenu ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') : emojis;
+
+  const triggerDataUpdate = () => {
+    // if user in Formatting Toolbar does not update
+    if (editor.getSelection()) return;
+    updateData(text);
+  };
 
   const onBlockNoteChange = useCallback(async () => {
     // Converts the editor's contents from Block objects to Markdown and store to state.
@@ -86,14 +97,27 @@ export const BlockNote = ({
     setText(contentToUpdate);
   }, []);
 
-  const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
+  const handleKeyDown: KeyboardEventHandler = async (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onEscapeClick?.();
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
 
-  const emojiPicker = slashMenu ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') : emojis;
-
-  const triggerDataUpdate = () => {
-    // if user in Formatting Toolbar does not update
-    if (editor.getSelection()) return;
-    updateData(text);
+      // to ensure that blocknote have description
+      if (
+        editor.document?.some((block) => {
+          const content = block.content;
+          return Array.isArray(content) && (content as { text: string }[])[0]?.text.trim() !== '';
+        })
+      ) {
+        const blocksToUpdate = handleSubmitOnEnter(editor);
+        if (blocksToUpdate) editor.replaceBlocks(editor.document, blocksToUpdate);
+        triggerDataUpdate();
+        onEnterClick?.();
+      }
+    }
   };
 
   useEffect(() => {
@@ -107,7 +131,7 @@ export const BlockNote = ({
       const newBlocksContent = getContentAsString(blocks as Block[]);
 
       // Only replace blocks if the content actually changes
-      if (currentBlocks === newBlocksContent) return;
+      if (!isCreationMode && currentBlocks === newBlocksContent) return;
 
       editor.replaceBlocks(editor.document, blocks);
       // Handle focus:
@@ -140,7 +164,7 @@ export const BlockNote = ({
       onChange={onBlockNoteChange}
       onFocus={onFocus}
       onBlur={triggerDataUpdate}
-      onKeyDown={onKeyDown}
+      onKeyDown={handleKeyDown}
       sideMenu={!sideMenu}
       slashMenu={!slashMenu}
       formattingToolbar={!formattingToolbar}

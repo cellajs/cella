@@ -214,11 +214,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                     onChange={onChange}
                     filePanel={UppyFilePanel(defaultId)}
                     trailingBlock={false}
-                  />
-                  {/*
                     onEnterClick={form.handleSubmit(onSubmit)}
                     onEscapeClick={handleCloseForm}
-                  /> */}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

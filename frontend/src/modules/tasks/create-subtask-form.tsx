@@ -143,10 +143,8 @@ export const CreateSubtaskForm = ({
                     onChange={onChange}
                     filePanel={UppyFilePanel(defaultId)}
                     trailingBlock={false}
-                  />
-                  {/* 
                     onEnterClick={form.handleSubmit(onSubmit)}
-                  /> */}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

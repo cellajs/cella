@@ -2,6 +2,7 @@ import '@blocknote/shadcn/style.css';
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import CreateSubtaskForm from '~/modules/tasks/create-subtask-form';
 import Subtask from '~/modules/tasks/subtask';
 import type { Mode } from '~/store/theme';
@@ -69,6 +70,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
               className={expandedStyle}
               onFocus={() => handleEditorFocus(task.id)}
               updateData={updateDescription}
+              onEnterClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' })}
               filePanel={UppyFilePanel(task.id)}
               trailingBlock={false}
               updateDataOnBeforeLoad
