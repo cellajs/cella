@@ -12,15 +12,9 @@ function useBodyClass(classMappings: { [key: string]: boolean }) {
     for (let i = 0; i < classNames.length; i++) {
       const className = classNames[i];
       if (stableClassMappings[className]) {
-        if (!bodyClassList.contains(className)) {
-          console.log(`Adding class: ${className}`);
-          bodyClassList.add(className);
-        }
+        if (!bodyClassList.contains(className)) bodyClassList.add(className);
       } else {
-        if (bodyClassList.contains(className)) {
-          console.log(`Removing class: ${className}`);
-          bodyClassList.remove(className);
-        }
+        if (bodyClassList.contains(className)) bodyClassList.remove(className);
       }
     }
 
@@ -28,10 +22,7 @@ function useBodyClass(classMappings: { [key: string]: boolean }) {
     return () => {
       for (let i = 0; i < classNames.length; i++) {
         const className = classNames[i];
-        if (bodyClassList.contains(className)) {
-          console.log(`Cleaning up class: ${className}`);
-          bodyClassList.remove(className);
-        }
+        if (bodyClassList.contains(className)) bodyClassList.remove(className);
       }
     };
   }, [stableClassMappings]);

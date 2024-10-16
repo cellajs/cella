@@ -16,16 +16,16 @@ export const handleCreateUser = async (
   ctx: Context,
   data: Omit<InsertUserModel, 'unsubscribeToken'>,
   options?: {
+    isInvite?: boolean;
     provider?: {
       id: OauthProviderOptions;
       userId: string;
     };
-    isEmailVerified?: boolean;
     redirectUrl?: string;
   },
 ) => {
   // If sign up is disabled, return an error
-  if (!config.has.registrationEnabled) return errorResponse(ctx, 403, 'sign_up_disabled', 'warn', undefined);
+  if (!config.has.registrationEnabled && !options?.isInvite) return errorResponse(ctx, 403, 'sign_up_disabled', 'warn');
 
   // Check if the slug is available
   const slugAvailable = await checkSlugAvailable(data.slug);
@@ -38,6 +38,7 @@ export const handleCreateUser = async (
         id: data.id,
         slug: slugAvailable ? data.slug : `${data.slug}-${data.id}`,
         firstName: data.firstName,
+        emailVerified: data.emailVerified,
         email: data.email.toLowerCase(),
         name: data.name,
         unsubscribeToken: generateUnsubscribeToken(data.email),
@@ -53,7 +54,7 @@ export const handleCreateUser = async (
     }
 
     // If the email is not verified, send a verification email
-    if (!options?.isEmailVerified) {
+    if (!data.emailVerified) {
       sendVerificationEmail(data.email);
     } else {
       await setSessionCookie(ctx, user.id, 'password');
@@ -63,7 +64,7 @@ export const handleCreateUser = async (
   } catch (error) {
     // If the email already exists, return an error
     if (error instanceof Error && error.message.startsWith('duplicate key')) {
-      return errorResponse(ctx, 409, 'email_exists', 'warn', undefined);
+      return errorResponse(ctx, 409, 'email_exists', 'warn');
     }
 
     if (error instanceof Error) {

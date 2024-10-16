@@ -28,7 +28,7 @@ export const sessionsTable = pgTable(
   },
   (table) => {
     return {
-      adminUserIdIdx: index('idx_admin_id').on(table.adminUserId),
+      adminUserIdIndex: index('idx_admin_id').on(table.adminUserId),
     };
   },
 );

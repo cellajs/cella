@@ -74,7 +74,7 @@ const UserSettingsPage = () => {
       {
         className: 'md:max-w-xl',
         title: t('common:delete_account'),
-        text: t('common:confirm.delete_account', { email: user.email }),
+        description: t('common:confirm.delete_account', { email: user.email }),
       },
     );
   };

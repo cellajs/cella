@@ -24,13 +24,16 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, searchResults
       if (!searchTerm.trim()) return [];
 
       const lowerCaseTerm = searchTerm.toLowerCase();
+
+      // Flatten menu items and submenus
       const filterItems = (items: UserMenuItem[]): UserMenuItem[] =>
         items.flatMap((item) => {
           const isMatch = item.name.toLowerCase().includes(lowerCaseTerm);
           const filteredSubmenu = item.submenu ? filterItems(item.submenu) : [];
           return isMatch ? [item, ...filteredSubmenu] : filteredSubmenu;
         });
-      return menuSections.filter((el) => !el.isSubmenu).flatMap((section) => filterItems(menu[section.storageType]));
+
+      return menuSections.flatMap((section) => filterItems(menu[section.name]));
     };
     searchResultsChange(filterResults());
   }, [searchTerm, menu]);

@@ -11,7 +11,7 @@ const sendSSE = (userId: string, eventName: string, data: Record<string, unknown
   });
 };
 
-export const sendSSEToUsers = (users: string[] | null, eventName: string, data: Record<string, unknown>): void => {
-  if (!users || users.length === 0) return;
-  users.map((id) => sendSSE(id, eventName, data));
+export const sendSSEToUsers = (userIds: string[] | null, eventName: string, data: Record<string, unknown>): void => {
+  if (!userIds || userIds.length === 0) return;
+  userIds.map((id) => sendSSE(id, eventName, data));
 };

@@ -39,7 +39,7 @@ export async function diverged({
 
     commonFiles = upstreamFileList.filter((file) => localFileList.includes(file));
 
-    commonSpinner.success('Successfully found common files between upstream and local branch.');
+    commonSpinner.success('Found common files between upstream and local branch.');
   } catch (error) {
     console.error(error);
     commonSpinner.error('Failed to find common files between upstream and local branch.');
@@ -57,7 +57,7 @@ export async function diverged({
     // Get the list of diverged files by comparing local branch and upstream branch
     divergedFiles = await runGitCommand({ targetFolder, command: `diff --name-only ${localBranch} upstream/${upstreamBranch}` });
 
-    divergedSpinner.success('Successfully found diverged files between upstream and local branch.');
+    divergedSpinner.success('Found diverged files between upstream and local branch.');
   } catch (error) {
     console.error(error);
     divergedSpinner.error('Failed to find diverged files between upstream and local branch.');
@@ -71,7 +71,7 @@ export async function diverged({
 
   const ignorePatterns = await extractIgnorePatterns({ ignoreList, ignoreFile });
   if (ignorePatterns.length > 0) {
-    ignoreSpinner.success('Successfully created ignore patterns.');
+    ignoreSpinner.success('Created ignore patterns.');
   } else {
     ignoreSpinner.warning("No ignore list or ignore file found. Proceeding without ignoring files.");
   }
@@ -88,7 +88,7 @@ export async function diverged({
   if (ignorePatterns.length > 0) {
     filteredFiles = applyIgnorePatterns(filteredFiles, ignorePatterns);
   }
-  filterSpinnen.success('Successfully filtered diverged files.');
+  filterSpinnen.success('Filtered diverged files.');
 
   const writeSpinner = yoctoSpinner({
     text: 'Writing diverged files to file',
@@ -97,13 +97,21 @@ export async function diverged({
   // Write the final list of diverged files to the specified file
   if (filteredFiles.length > 0) {
     await writeFile(divergedFile, filteredFiles.join("\n"), "utf-8");
-    writeSpinner.success(`Diverged files successfully written to ${divergedFile}.`);
+    writeSpinner.success(`Diverged files written to ${divergedFile}.`);
   } else {
     writeSpinner.success("No files have diverged between the upstream and local branch that are not ignored.");
     // Optionally remove the Diverged file if empty
     await rm(divergedFile, { force: true });
   }
 
-  console.log(`${colors.green('Success')} Successfully completed the diverged command.`);
+  console.log()
+
+    // Log each diverged file line by line for clickable paths in VSCode
+  filteredFiles.forEach((file) => console.log(`./${file}`));
+
+  console.log()
+  console.log(`Found ${colors.blue(filteredFiles.length)} diverged files between the upstream and local branch.`);
+  console.log()
+  console.log(`${colors.green('✔')} Completed the diverged command.`);
   console.log()
 }

@@ -114,6 +114,10 @@ class AuthRoutesConfig {
           },
         },
       },
+      302: {
+        headers: z.object({ Location: z.string() }),
+        description: 'Redirect to frontend',
+      },
       ...errorResponses,
     },
   });

@@ -65,7 +65,9 @@ export const AppRoute = createRoute({
       <App />
     </Suspense>
   ),
-  loader: async ({ location }) => {
+  loader: async ({ location, cause }) => {
+    if (cause !== 'enter') return;
+
     try {
       console.debug('Fetch me & menu while entering app ', location.pathname);
       const getSelf = async () => {

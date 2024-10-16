@@ -40,7 +40,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
         drawerOnMobile: false,
         className: 'sm:max-w-5xl',
         title: t('common:contact_us'),
-        text: t('common:contact_us.text'),
+        description: t('common:contact_us.text'),
       });
     }
     window.Gleap.openConversations();

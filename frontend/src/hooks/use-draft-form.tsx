@@ -13,6 +13,7 @@ export function useFormWithDraft<
   props?: UseFormProps<TFieldValues, TContext>,
 ): UseFormReturn<TFieldValues, TContext, TTransformedValues> & {
   unsavedChanges: boolean;
+  loading: boolean;
 } {
   const form = useForm<TFieldValues, TContext, TTransformedValues>(props);
   const getForm = useDraftStore((state) => state.getForm);
@@ -20,6 +21,7 @@ export function useFormWithDraft<
   const resetForm = useDraftStore((state) => state.resetForm);
 
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [loading, setLoading] = useState(true); // loading state
 
   useEffect(() => {
     const values = getForm<TFieldValues>(formId);
@@ -30,6 +32,7 @@ export function useFormWithDraft<
         form.setValue(key as FieldPath<TFieldValues>, value);
       }
     }
+    setLoading(false); // Set loading to false once draft values have been applied
   }, [formId]);
 
   const allFields = form.watch();
@@ -37,9 +40,7 @@ export function useFormWithDraft<
   useEffect(() => {
     if (form.formState.isDirty) {
       const values = Object.fromEntries(Object.entries(allFields).filter(([_, value]) => value !== undefined));
-      if (Object.keys(values).length > 0) {
-        return setForm(formId, values);
-      }
+      if (Object.keys(values).length > 0) return setForm(formId, values);
     }
 
     if (unsavedChanges) {
@@ -51,6 +52,7 @@ export function useFormWithDraft<
   return {
     ...form,
     unsavedChanges,
+    loading,
     reset: (values, keepStateOptions) => {
       resetForm(formId);
       form.reset(values, keepStateOptions);

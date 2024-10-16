@@ -8,7 +8,7 @@ import { imageUrlSchema, nameSchema, paginationQuerySchema, validSlugSchema } fr
 export const userSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
   lastSeenAt: z.string().nullable(),
-  lastVisitAt: z.string().nullable(),
+  lastStartedAt: z.string().nullable(),
   lastSignInAt: z.string().nullable(),
   createdAt: z.string(),
   modifiedAt: z.string().nullable(),

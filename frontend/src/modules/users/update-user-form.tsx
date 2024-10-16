@@ -15,6 +15,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
+import { isValidElement } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -114,12 +115,15 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
   useEffect(() => {
     if (form.unsavedChanges) {
       const targetSheet = sheet.get('update-user');
-      if (targetSheet && targetSheet.title?.type?.name !== 'UnsavedBadge') {
-        sheet.update('update-user', {
-          title: <UnsavedBadge title={targetSheet?.title} />,
-        });
-      }
-      return;
+
+      if (!targetSheet || !isValidElement(targetSheet.title)) return;
+      // Check if the title's type is a function (React component) and not a string
+      const { type: tittleType } = targetSheet.title;
+
+      if (typeof tittleType !== 'function' || tittleType.name === 'UnsavedBadge') return;
+      sheet.update('update-user', {
+        title: <UnsavedBadge title={targetSheet.title} />,
+      });
     }
   }, [form.unsavedChanges]);
 

@@ -3,7 +3,7 @@
 import { CornerDownLeft, FlipHorizontal2, Minus, Plus, RefreshCw } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '~/modules/ui/button';
-import PanViewer from './panwiever-setup';
+import PanViewer from './image-viewer-setup';
 
 type ReactPanZoomProps = {
   image: string;

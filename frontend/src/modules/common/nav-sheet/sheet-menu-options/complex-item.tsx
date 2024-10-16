@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
 import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
-import { ItemOption } from '~/modules/common/nav-sheet/sheet-menu-options/item-option';
+import { MenuItemOptions } from '~/modules/common/nav-sheet/sheet-menu-options/menu-item-options';
 import type { UserMenuItem } from '~/types/common';
 import { getDraggableItemData } from '~/utils/drag-drop';
 import { isPageData } from '../sheet-menu';
@@ -28,9 +28,7 @@ export const ComplexOptionElement = ({
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const handleCanDrop = (sourceData: Record<string | symbol, unknown>) => {
-    return (
-      isPageData(sourceData) && sourceData.item.id !== item.id && sourceData.itemType === item.entity && sourceData.item.parentId === item.parentId
-    );
+    return isPageData(sourceData) && sourceData.item.id !== item.id && sourceData.itemType === item.entity;
   };
 
   // create draggable & dropTarget elements and auto scroll
@@ -65,7 +63,7 @@ export const ComplexOptionElement = ({
   return (
     <div className="relative my-1">
       <div ref={dragRef}>
-        <ItemOption item={item} itemType={item.entity} parentItemSlug={item.parentSlug} />
+        <MenuItemOptions item={item} />
         {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
           <>
             <SheetMenuItemsOptions data={item.submenu} shownOption={shownOption} />

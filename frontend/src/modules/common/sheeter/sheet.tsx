@@ -1,36 +1,71 @@
-import { X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { useEffect, useRef, useState } from 'react';
 import StickyBox from '~/modules/common/sticky-box';
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
+import { type SheetT, sheet as sheetState } from './state';
 
 export interface SheetProp {
-  id: string;
-  content?: React.ReactNode;
-  title?: string | React.ReactNode;
-  description?: React.ReactNode;
-  modal?: boolean;
-  side?: 'bottom' | 'top' | 'right' | 'left';
-  className?: string;
-  removeSheet: () => void;
+  sheet: SheetT;
+  removeSheet: (sheet: SheetT) => void;
 }
 
-export default function DesktopSheet({ id, title, description, modal = true, side = 'right', content, className, removeSheet }: SheetProp) {
-  const { t } = useTranslation();
+export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
+  const { id, modal = true, side: sheetSide, open, description, title, hideClose = false, className: sheetClassName, content } = sheet;
+  const sheetRef = useRef<HTMLDivElement>(null);
 
-  const handleClose = (state: boolean) => {
-    if (!state) removeSheet();
+  // State to retain side value even after sheet removal
+  const [side, setSide] = useState(sheetSide);
+  const [className, setClassName] = useState(sheetClassName);
+
+  // Prevent flickering of sheet when its removed
+  useEffect(() => {
+    if (sheetSide) {
+      setSide(sheetSide); // Update side when new sheet is created
+      setClassName(sheetClassName);
+    }
+  }, [sheetSide, sheetClassName]);
+
+  const closeSheet = () => {
+    removeSheet(sheet);
+    sheet.removeCallback?.();
+  };
+
+  const onOpenChange = (open: boolean) => {
+    if (!modal) return;
+    sheetState.update(id, { open });
+    if (!open) closeSheet();
+  };
+
+  const handleEscapeKeyDown = (e: KeyboardEvent) => {
+    const activeElement = document.activeElement;
+    if (!modal && !sheetRef.current?.contains(activeElement)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeSheet();
+  };
+
+  const handleInteractOutside = (event: CustomEvent<{ originalEvent: PointerEvent }> | CustomEvent<{ originalEvent: FocusEvent }>) => {
+    const bodyClassList = document.body.classList;
+    if (bodyClassList.contains('keep-menu-open') && bodyClassList.contains('menu-sheet-open')) return;
+
+    const mainContentElement = document.getElementById('main-block-app-content');
+    if (!modal && mainContentElement?.contains(event.target as Node)) {
+      return closeSheet();
+    }
   };
 
   return (
-    <Sheet open={true} onOpenChange={handleClose} modal={modal}>
-      <SheetContent id={id} onEscapeKeyDown={removeSheet} side={side} aria-describedby={undefined} className={`${className} items-start`}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={modal}>
+      <SheetContent
+        ref={sheetRef}
+        onEscapeKeyDown={handleEscapeKeyDown}
+        onInteractOutside={handleInteractOutside}
+        side={side} // Retained side value
+        hideClose={hideClose}
+        aria-describedby={undefined}
+        className={`${className} items-start`}
+      >
         <StickyBox className={`z-10 flex items-center justify-between bg-background py-4 ${title ? '' : 'hidden'}`}>
           <SheetTitle>{title}</SheetTitle>
-
-          <SheetClose onClick={removeSheet} className="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none">
-            <X size={24} strokeWidth={1.25} />
-            <span className="sr-only">{t('common:close')}</span>
-          </SheetClose>
         </StickyBox>
         <SheetHeader className={`${description || title ? '' : 'hidden'}`}>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>

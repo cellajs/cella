@@ -1,5 +1,6 @@
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
+import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 
 export const attachmentsTable = pgTable('attachments', {
@@ -7,11 +8,23 @@ export const attachmentsTable = pgTable('attachments', {
   filename: varchar('filename').notNull(),
   contentType: varchar('content_type').notNull(),
   size: varchar('size').notNull(),
+  entity: varchar('entity', { enum: ['attachment'] })
+    .notNull()
+    .default('attachment'),
   url: varchar('url').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by').references(() => usersTable.id, {
     onDelete: 'set null',
   }),
+  modifiedAt: timestamp('modified_at'),
+  modifiedBy: varchar('modified_by').references(() => usersTable.id, {
+    onDelete: 'set null',
+  }),
+  organizationId: varchar('organization_id')
+    .notNull()
+    .references(() => organizationsTable.id, {
+      onDelete: 'cascade',
+    }),
 });
 
 export type AttachmentModel = typeof attachmentsTable.$inferSelect;

@@ -3,7 +3,11 @@ import { useEffect, useState } from 'react';
 
 type ValidBreakpoints = keyof typeof config.theme.screenSizes;
 
-export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: ValidBreakpoints): boolean => {
+export const useBreakpoints = (
+  mustBe: 'min' | 'max',
+  breakpoint: ValidBreakpoints,
+  enableReactivity = true, // Optional parameter to enable/disable reactivity
+) => {
   const breakpoints: { [key: string]: string } = config.theme.screenSizes;
 
   // Sort breakpoints by their pixel value in ascending order
@@ -39,6 +43,8 @@ export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: ValidBreakpoin
 
   // Update breakpoints on window resize
   useEffect(() => {
+    if (!enableReactivity) return;
+
     const updateBreakpoints = () => {
       setCurrentBreakpoints(getMatchedBreakpoints());
     };
@@ -51,7 +57,7 @@ export const useBreakpoints = (mustBe: 'min' | 'max', breakpoint: ValidBreakpoin
 
     // Cleanup on unmount
     return () => window.removeEventListener('resize', updateBreakpoints);
-  }, [breakpoints]);
+  }, [breakpoints, enableReactivity]);
 
   // Get the index of the current largest matched breakpoint and target breakpoint
   const currentBreakpointIndex = sortedBreakpoints.indexOf(currentBreakpoints[currentBreakpoints.length - 1]);

@@ -8,13 +8,13 @@ import CreateOrganizationForm from '~/modules/organizations/create-organization-
 import { config } from 'config';
 import type { FooterLinkProps } from '~/modules/common/main-footer';
 import type { NavItem } from '~/modules/common/main-nav';
-import { MainSearch, type SuggestionSection } from '~/modules/common/main-search';
+import { MainSearch, type SuggestionSection, type SuggestionType } from '~/modules/common/main-search';
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
+import type { UserMenuItem } from './types/common';
 
 // Set entities paths
 export const baseEntityRoutes = {
   user: '/user/$idOrSlug',
-  userInOrg: '/$orgIdOrSlug/user/$idOrSlug',
   organization: '/$idOrSlug',
 } as const;
 
@@ -31,12 +31,11 @@ export const navItems: NavItem[] = [
   { id: 'account', icon: User, sheet: <SheetAccount />, mirrorOnMobile: true },
 ];
 
-// Here you declare the menu sections(same need in BE with storageType, type & isSubmenu )
+// Here you declare the menu sections
 export const menuSections: SectionItem[] = [
   {
-    storageType: 'organizations',
-    type: 'organization',
-    isSubmenu: false,
+    name: 'organizations',
+    entityType: 'organization',
     createForm: <CreateOrganizationForm dialog />,
     label: 'common:organizations',
   },
@@ -54,3 +53,14 @@ export const suggestionSections: SuggestionSection[] = [
   { id: 'users', label: 'common:users', type: 'user' },
   { id: 'organizations', label: 'common:organizations', type: 'organization' },
 ];
+
+// App specific entity path resolver
+// TODO review this again, I dont like the fallback to empty string
+export const getEntityPath = (item: UserMenuItem | SuggestionType) => {
+  const path = baseEntityRoutes[item.entity];
+
+  const idOrSlug = item.slug || item.id || '';
+  const orgIdOrSlug = item.organizationId || '';
+
+  return { path, idOrSlug, orgIdOrSlug };
+};

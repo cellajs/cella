@@ -23,7 +23,7 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
-import type { Organization, UserMenuItem } from '~/types/common';
+import type { Organization } from '~/types/common';
 
 interface CreateOrganizationFormProps {
   callback?: (organization: Organization) => void;
@@ -65,7 +65,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       nextStep?.();
 
       useNavigationStore.setState({
-        menu: addMenuItem(createdOrganization as UserMenuItem, 'organizations'),
+        menu: addMenuItem(createdOrganization, 'organizations'),
       });
       if (!callback) {
         navigate({

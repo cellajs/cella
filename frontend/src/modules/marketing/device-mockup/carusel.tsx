@@ -1,6 +1,6 @@
 import Autoplay from 'embla-carousel-autoplay';
 import { useState } from 'react';
-import ReactPanZoom from '~/modules/common/panwiever';
+import ReactPanZoom from '~/modules/common/image-viewer';
 import { Carousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 
 interface DeviceCarouselProps {

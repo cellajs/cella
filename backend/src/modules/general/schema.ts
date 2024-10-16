@@ -42,7 +42,7 @@ export const entitySuggestionSchema = z.object({
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
   entity: pageEntityTypeSchema,
-  parentId: z.string().nullable().optional(),
+  membership: membershipInfoSchema.nullable().optional(),
 });
 
 export type Suggestion = z.infer<typeof entitySuggestionSchema>;

@@ -23,6 +23,7 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, user.id));
 
+  //TODO - make this generic
   const newMembership: InsertMembershipModel = {
     organizationId: '',
     type: entity.entity,
