@@ -12,7 +12,7 @@ export async function mergeUpstream({
   localBranch,
 }) {
   const targetFolder = process.cwd()
-  console.log();
+  console.info();
 
   // Fetch upstream changes and checkout local branch
   await fetchUpstream({ localBranch });
@@ -88,7 +88,7 @@ export async function mergeUpstream({
     }
   } else {
     ignoreSpinner.warning('No ignore list or ignore file found. Proceeding without ignoring files.');
-    console.log(`${colors.yellow('Skipped')} reset/checkout as no files are ignored.`);
+    console.info(`${colors.yellow('Skipped')} reset/checkout as no files are ignored.`);
   }
 
   // Check for merge conflicts
@@ -132,6 +132,6 @@ export async function mergeUpstream({
     process.exit(1);
   }
 
-  console.log(`${colors.green('Success')} Merged upstream changes into local branch ${localBranch}.`);
-  console.log()
+  console.info(`${colors.green('Success')} Merged upstream changes into local branch ${localBranch}.`);
+  console.info()
 }

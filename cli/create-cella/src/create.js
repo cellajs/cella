@@ -155,13 +155,14 @@ export async function create({
       const relativePath = relative(originalCwd, targetFolder);
 
       console.info('now go to your project using:')
-      console.info(colors.cyan(`  cd ./${relativePath}`)); // Adding './' to make it clear it's a relative path
+      console.info(colors.cyan(`  cd ${relativePath}`)); // Adding './' to make it clear it's a relative path
       console.info()
     }
     console.info(`${needsCd ? 'then ' : ''}quick start with:`)
     console.info(colors.cyan(`  ${packageManager} quick`))
     console.info()
 
-    console.info('Read the readme in project root for more info on how to get started!')
+    console.info('Check out the readme to get started: /README.md')
     console.info(`Enjoy building ${projectName} using cella! 🎉`)
+    console.info()
   }
