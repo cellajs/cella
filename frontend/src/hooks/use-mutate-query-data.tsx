@@ -151,6 +151,8 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
   };
 };
 
+// TODO Find a way to extract the following functions into a separate file for generic use
+
 function assertProjects(items: Item[]): asserts items is Project[] {
   if (!items.length) throw new Error('No items provided');
   if (!('type' in items[0])) throw new Error('Not a project');
