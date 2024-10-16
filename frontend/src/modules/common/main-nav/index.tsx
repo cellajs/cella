@@ -43,6 +43,7 @@ const MainNav = () => {
     // If its a have dialog, open it
     if (navItem.dialog) {
       return dialog(navItem.dialog, {
+        id: 'workspace-add-task',
         className: navItem.id === 'search' ? 'sm:max-w-2xl p-0 border-0 mb-4' : '',
         drawerOnMobile: false,
         refocus: false,

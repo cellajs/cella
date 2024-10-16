@@ -10,16 +10,16 @@ import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { queryClient } from '~/lib/router';
+import { BlockNote } from '~/modules/common/blocknote';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
+import UppyFilePanel from '~/modules/tasks/task-dropdowns/uppy-file-panel';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types/app';
 import { createTaskSchema } from '#/modules/tasks/schema';
 import { nanoid } from '#/utils/nanoid';
-import { BlockNote } from '../common/blocknote';
 import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
-import UppyFilePanel from './task-dropdowns/uppy-file-panel';
 
 const formSchema = createTaskSchema;
 

@@ -13,6 +13,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMeasure } from '~/hooks/use-measure';
 import { queryClient } from '~/lib/router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { BlockNote } from '~/modules/common/blocknote';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
@@ -22,11 +23,13 @@ import SetLabels from '~/modules/tasks/task-dropdowns/select-labels';
 import AssignMembers from '~/modules/tasks/task-dropdowns/select-members';
 import SelectStatus, { type TaskStatus, taskStatuses } from '~/modules/tasks/task-dropdowns/select-status';
 import { taskTypes } from '~/modules/tasks/task-dropdowns/select-task-type';
+import UppyFilePanel from '~/modules/tasks/task-dropdowns/uppy-file-panel';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Badge } from '~/modules/ui/badge';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useUserStore } from '~/store/user.ts';
 import { useWorkspaceStore } from '~/store/workspace';
@@ -35,9 +38,6 @@ import type { Member } from '~/types/common';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
 import { createTaskSchema } from '#/modules/tasks/schema';
-import { BlockNote } from '../common/blocknote';
-import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
-import UppyFilePanel from './task-dropdowns/uppy-file-panel';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
@@ -104,7 +104,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   const { ref, bounds } = useMeasure();
 
   const handleCloseForm = () => {
-    if (isDialog) dialog.remove(false, `create-task-form-${projectId}`);
+    if (isDialog) {
+      if (passedProjectIdOrSlug === '') dialog.remove(false, 'workspace-add-task');
+      else dialog.remove(false, `create-task-form-${projectId}`);
+    }
     onCloseForm?.();
   };
 
