@@ -20,6 +20,7 @@
     "@blocknote/core": "^0.16.0",
     "@blocknote/react": "^0.16.0",
     "@blocknote/shadcn": "^0.16.0",
+    "@floating-ui/react": "^0.26.25",
     "@github/mini-throttle": "^2.1.1",
     "@hookform/resolvers": "^3.9.0",
     "@oslojs/encoding": "^1.1.0",
@@ -90,7 +91,6 @@
     "jspdf-autotable": "^3.8.3",
     "locales": "workspace:*",
     "lucide-react": "^0.447.0",
-    "middleware@latest": "link:zustand/middleware@latest",
     "nanoid": "^5.0.7",
     "react": "^18.3.1",
     "react-confetti-explosion": "^2.1.2",
@@ -112,7 +112,7 @@
     "vaul": "^1.0.0",
     "workbox-window": "^7.1.0",
     "zod": "^3.23.8",
-    "zustand": "5.0.0-rc.2",
+    "zustand": "5.0.0",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
