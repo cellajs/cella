@@ -15,7 +15,7 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { isSubtaskData } from '~/modules/app/board/helpers';
 import { BlockNote } from '~/modules/common/blocknote';
 import { DropIndicator } from '~/modules/common/drop-indicator';
-import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
+import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
@@ -39,11 +39,8 @@ const Subtask = ({
   const [state, setState] = useState<TaskStates>('folded');
   const [dragging, setDragging] = useState(false);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
-  // const { taskIdPreview } = useSearch({
-  //   from: WorkspaceRoute.id,
-  // });
 
-  const taskMutation = useTaskMutation();
+  const taskMutation = useTaskUpdateMutation();
 
   const onRemove = (subtaskId: string) => {
     deleteTasks([subtaskId], task.organizationId).then(async (resp) => {

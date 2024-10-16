@@ -7,16 +7,13 @@ import { z } from 'zod';
 import { useSearch } from '@tanstack/react-router';
 import { ChevronDown, Tag, UserX, X } from 'lucide-react';
 import { type LegacyRef, useMemo } from 'react';
-import { toast } from 'sonner';
-import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMeasure } from '~/hooks/use-measure';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { BlockNote } from '~/modules/common/blocknote';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
-import { taskKeys } from '~/modules/common/query-client-provider/tasks';
+import { useTaskCreateMutation } from '~/modules/common/query-client-provider/tasks';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
 import { NotSelected } from '~/modules/tasks/task-dropdowns/impact-icons/not-selected';
 import SelectImpact, { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
@@ -104,7 +101,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
 
   const defaultId = nanoid();
   const { ref, bounds } = useMeasure();
-  const callback = useMutateQueryData(taskKeys.list({ projectId, orgIdOrSlug: organizationId }));
+  const taskMutation = useTaskCreateMutation();
 
   const handleCloseForm = () => {
     if (isDialog) {
@@ -141,7 +138,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     const newTask = {
       id: values.id,
       description: values.description,
@@ -159,17 +156,9 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
       order: getNewTaskOrder(values.status, tasks),
     };
 
-    createTask(newTask)
-      .then(async (resp) => {
-        if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:task') }));
-        form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('app:task') }));
-
-        callback([resp], 'create');
-
-        handleCloseForm();
-      })
-      .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:task') })));
+    taskMutation.mutate(newTask);
+    form.reset();
+    handleCloseForm();
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one

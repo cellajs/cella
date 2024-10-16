@@ -21,7 +21,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
-import { taskKeys, useTaskMutation } from '~/modules/common/query-client-provider/tasks';
+import { taskKeys, useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { getRelativeTaskOrder, openTaskPreviewSheet, sortAndGetCounts } from '~/modules/tasks/helpers';
@@ -37,7 +37,7 @@ import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Column } from '~/store/workspace-ui';
 import { defaultColumnValues, useWorkspaceUIStore } from '~/store/workspace-ui';
-import type { Project } from '~/types/app';
+import type { Project, Task } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { objectKeys } from '~/utils/object';
 import ProjectActions from './project-actions';
@@ -128,7 +128,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   // Query tasks
   const { data, isLoading } = useSuspenseQuery(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }));
 
-  const taskMutation = useTaskMutation();
+  const taskMutation = useTaskUpdateMutation();
 
   // Subscribe to task updates
   useEffect(() => {
@@ -136,6 +136,47 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
 
     const shapeStream = new ShapeStream<RawTask>(taskShape(project.id));
     const unsubscribe = shapeStream.subscribe((messages) => {
+      const createMessage = messages.find((m) => m.headers.operation === 'insert') as ChangeMessage<RawTask> | undefined;
+      if (createMessage) {
+        const value = createMessage.value;
+        queryClient.setQueryData(tasksQueryOptions({ projectId: project.id, orgIdOrSlug: project.organizationId }).queryKey, (data) => {
+          if (!data) return;
+          const createdTask = {
+            subtasks: [],
+          } as unknown as Task;
+          // TODO: Refactor
+          for (const key of objectKeys(value)) {
+            if (key === 'sort_order') {
+              createdTask.order = value[key];
+            } else if (key === 'organization_id') {
+              createdTask.organizationId = value[key];
+            } else if (key === 'created_at') {
+              createdTask.createdAt = value[key];
+            } else if (key === 'created_by') {
+              createdTask.createdBy = members.find((m) => m.id === value[key]) ?? null;
+            } else if (key === 'parent_id') {
+              createdTask.parentId = value[key];
+            } else if (key === 'assigned_to') {
+              createdTask.assignedTo = members.filter((m) => value[key].includes(m.id));
+            } else if (key === 'modified_at') {
+              createdTask.modifiedAt = value[key];
+            } else if (key === 'modified_by') {
+              createdTask.modifiedBy = members.find((m) => m.id === value[key]) ?? null;
+            } else if (key === 'project_id') {
+              createdTask.projectId = value[key];
+            } else if (key === 'labels') {
+              createdTask.labels = labels.filter((l) => value[key].includes(l.id));
+            } else {
+              createdTask[key] = value[key] as never;
+            }
+          }
+          return {
+            ...data,
+            items: [createdTask, ...data.items],
+          };
+        });
+      }
+
       const updateMessage = messages.find((m) => m.headers.operation === 'update') as ChangeMessage<RawTask> | undefined;
       if (updateMessage) {
         const value = updateMessage.value;

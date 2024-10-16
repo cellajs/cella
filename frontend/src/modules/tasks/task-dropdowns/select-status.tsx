@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
-import { taskKeys, useTaskMutation } from '~/modules/common/query-client-provider/tasks';
+import { taskKeys, useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { getNewStatusTaskOrder, inNumbersArray } from '~/modules/tasks/helpers';
 import { AcceptedIcon } from '~/modules/tasks/task-dropdowns/status-icons/accepted';
 import { DeliveredIcon } from '~/modules/tasks/task-dropdowns/status-icons/delivered';
@@ -100,7 +100,7 @@ const SelectStatus = ({
   } = useWorkspaceQuery();
   const [searchValue, setSearchValue] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
-  const taskMutation = useTaskMutation();
+  const taskMutation = useTaskUpdateMutation();
 
   const focusedTaskId = useMemo(
     () => (tableSearch.taskIdPreview ? tableSearch.taskIdPreview : storeFocusedId),
