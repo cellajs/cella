@@ -62,15 +62,15 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
           url={thumbnailUrl}
         />
 
-        <div className="flex my-2 flex-col truncate pl-1">
+        <div className="flex py-2 flex-col truncate pl-1">
           {/* Page title */}
           <h1 className="md:text-xl -mt-1 truncate leading-6 font-semibold">{title}</h1>
-          {/* Breadcrumb */}
 
-          <Breadcrumb className="">
+          {/* Breadcrumb */}
+          <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="max-sm:hidden">
-                <BreadcrumbLink asChild>
+                <BreadcrumbLink className="p-0.5" asChild>
                   <Link to={config.defaultRedirectPath}>
                     <Home size={12} />
                   </Link>

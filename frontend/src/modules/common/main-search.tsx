@@ -79,7 +79,6 @@ export const MainSearch = () => {
 
     const { orgIdOrSlug, idOrSlug, path } = getEntityPath(suggestion);
 
-
     navigate({
       to: path,
       resetScroll: false,
@@ -94,12 +93,13 @@ export const MainSearch = () => {
   }, [suggestions]);
 
   return (
-    <Command className="rounded-lg border" shouldFilter={false}>
+    <Command className="rounded-lg border shadow-2xl" shouldFilter={false}>
       <CommandInput
         value={searchValue}
         clearValue={setSearchValue}
-        className="h-12"
+        className="h-12 text-lg"
         autoFocus
+        wrapClassName="text-lg"
         placeholder={t('common:placeholder.search')}
         onValueChange={(searchValue) => {
           const historyIndexes = recentSearches.map((_, index) => index);
