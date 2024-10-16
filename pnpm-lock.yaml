@@ -309,6 +309,9 @@ importers:
       '@blocknote/shadcn':
         specifier: ^0.16.0
         version: 0.16.0(@tiptap/pm@2.8.0)(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))
+      '@floating-ui/react':
+        specifier: ^0.26.25
+        version: 0.26.25(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@github/mini-throttle':
         specifier: ^2.1.1
         version: 2.1.1
@@ -2564,6 +2567,7 @@ packages:
 
   '@evilmartians/lefthook@1.7.18':
     resolution: {integrity: sha512-BIJBQtC7xKOedxESlB0wVG6M32ftjK+5vnID9I5CjRDE/6KcCpcK366AyG0eHGdPK1TVty81QalxZqSTxWRXPw==}
+    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -2583,8 +2587,8 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@floating-ui/react@0.26.24':
-    resolution: {integrity: sha512-2ly0pCkZIGEQUq5H8bBK0XJmc1xIK/RM3tvVzY3GBER7IOD1UgmC2Y2tjj4AuS+TC+vTE1KJv2053290jua0Sw==}
+  '@floating-ui/react@0.26.25':
+    resolution: {integrity: sha512-hZOmgN0NTOzOuZxI1oIrDu3Gcl8WViIkvPMpB4xdd4QD6xAMtwgwr3VPoiyH/bLtRcS1cDnhxLSD1NsMJmwh/A==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -9351,6 +9355,9 @@ packages:
   tailwind-merge@2.5.3:
     resolution: {integrity: sha512-d9ZolCAIzom1nf/5p4LdD5zvjmgSxY0BGgdSvmXIoMYAiPdAW/dSpP7joCDYFY7r/HkEa2qmPtkgsu0xjQeQtw==}
 
+  tailwind-merge@2.5.4:
+    resolution: {integrity: sha512-0q8cfZHMu9nuYP/b5Shb7Y7Sh1B7Nnl5GqNr1U+n2p6+mybvRtayrQ+0042Z5byvTA8ihjlP8Odo8/VnHbZu4Q==}
+
   tailwindcss-animate@1.0.7:
     resolution: {integrity: sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA==}
     peerDependencies:
@@ -11561,7 +11568,7 @@ snapshots:
   '@blocknote/react@0.16.0(@tiptap/pm@2.8.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@blocknote/core': 0.16.0
-      '@floating-ui/react': 0.26.24(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@floating-ui/react': 0.26.25(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tiptap/core': 2.8.0(@tiptap/pm@2.8.0)
       '@tiptap/react': 2.8.0(@tiptap/core@2.8.0(@tiptap/pm@2.8.0))(@tiptap/pm@2.8.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       lodash.merge: 4.6.2
@@ -12309,7 +12316,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@floating-ui/react@0.26.24(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@floating-ui/react@0.26.25(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@floating-ui/react-dom': 2.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@floating-ui/utils': 0.2.8
@@ -16678,7 +16685,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-easy-sort: 1.6.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      tailwind-merge: 2.5.3
+      tailwind-merge: 2.5.4
       tsup: 6.7.0(@swc/core@1.7.26)(postcss@8.4.47)(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))(typescript@5.6.2)
     transitivePeerDependencies:
       - '@swc/core'
@@ -20509,6 +20516,8 @@ snapshots:
   tailwind-merge@2.5.2: {}
 
   tailwind-merge@2.5.3: {}
+
+  tailwind-merge@2.5.4: {}
 
   tailwindcss-animate@1.0.7(tailwindcss@3.4.13(ts-node@10.9.2(@swc/core@1.7.26)(@types/node@22.7.4)(typescript@5.6.2))):
     dependencies:

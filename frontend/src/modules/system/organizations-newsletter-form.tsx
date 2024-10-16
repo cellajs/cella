@@ -64,6 +64,8 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
     form.reset();
   };
 
+  if (form.loading) return null;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 pb-8 h-max">
@@ -92,11 +94,8 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
                   <BlockNote
                     id={'blocknote-org-letter'}
                     defaultValue={value}
-                    triggerUpdateOnChange={true}
+                    onChange={onChange}
                     updateData={onChange}
-                    customSideMenu={true}
-                    customSlashMenu={true}
-                    customFormattingToolbar={true}
                     className="min-h-20 pl-10 pr-6"
                   />
                 </Suspense>
