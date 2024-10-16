@@ -9,6 +9,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@electric-sql/client';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { toast } from 'sonner';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -21,13 +22,15 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dialog } from '~/modules/common/dialoger/state';
 import FocusTrap from '~/modules/common/focus-trap';
 import { taskKeys, useTaskMutation } from '~/modules/common/query-client-provider/tasks';
+import { sheet } from '~/modules/common/sheeter/state';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
-import { getRelativeTaskOrder, sortAndGetCounts } from '~/modules/tasks/helpers';
+import { getRelativeTaskOrder, openTaskPreviewSheet, sortAndGetCounts } from '~/modules/tasks/helpers';
 import TaskCard from '~/modules/tasks/task';
 import type { TaskStates } from '~/modules/tasks/types';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
+import { WorkspaceBoardRoute } from '~/routes/workspaces';
 import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
 import { useThemeStore } from '~/store/theme';
@@ -96,6 +99,11 @@ const taskVariants = {
 
 export function BoardColumn({ project, tasksState, settings }: BoardColumnProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { taskIdPreview } = useSearch({
+    from: WorkspaceBoardRoute.id,
+  });
+
   const defaultTaskFormRef = useRef<HTMLDivElement | null>(null);
   const afterRef = useRef<HTMLDivElement | null>(null);
   const beforeRef = useRef<HTMLDivElement | null>(null);
@@ -243,6 +251,20 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   // Hides underscroll elements
   // 4rem refers to the header height
   const stickyBackground = <div className="sm:hidden left-0 right-0 h-4 bg-background sticky top-0 z-30 -mt-4" />;
+
+  useEffect(() => {
+    if (!taskIdPreview) return;
+    const focusedTask = tasks.find((t) => t.id === taskIdPreview);
+    if (!focusedTask) return;
+    // to open sheet after initial sheet.remove triggers
+    if (taskIdPreview) {
+      if (sheet.get(`task-preview-${taskIdPreview}`)) {
+        sheet.update(`task-preview-${taskIdPreview}`, {
+          content: <TaskCard mode={mode} task={focusedTask} state="editing" isSelected={false} isFocused={true} isSheet />,
+        });
+      } else setTimeout(() => openTaskPreviewSheet(focusedTask, mode, navigate), 0);
+    }
+  }, [tasks, taskIdPreview]);
 
   useEffect(() => {
     if (isMobile && minimized) handleExpand();
