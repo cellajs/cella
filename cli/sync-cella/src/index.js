@@ -16,7 +16,7 @@ import { diverged } from './diverged.js'
 import { mergeUpstream } from './merge-upstream.js'
 
 async function main() {
-  console.log(CELLA_TITLE);
+  console.info(CELLA_TITLE);
 
   const targetFolder = process.cwd()
 

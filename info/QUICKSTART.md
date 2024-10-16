@@ -1,5 +1,5 @@
 # Quickstart
-This document describes how to develop your own app based on Cella, after forking it.
+This document describes how to develop your own app based on Cella.
 
 Also read the [architecture](./ARCHITECTURE.md) info.
 
@@ -19,7 +19,7 @@ pnpm quick
 
 
 ## Cella CLI
-Currently, Cella CLI is limited to creating a project (which you already used), listing diverged files and pulling upstream changes. Both commands will use your config in cella.config.js.
+Currently, Cella CLI is limited to creating a cella project, listing diverged files and pulling upstream changes. Config can be found in cella.config.js.
 
 ### 1. List diverged
 Receive a list of files that have diverged from cella itself. The files you have ignored in cella.config.js will not be listed.
@@ -29,7 +29,7 @@ pnpm diverged
 ```
 
 ### 2. Pull upstream
-Pull upstream changes from cella. Changes in files that are ignored will automatically be undone, to reduce conflicts.
+Pull upstream changes from cella. Changes in files that are in the cella ignore list will automatically be undone, to reduce conflicts.
 
 ```bash
 pnpm run upstream:pull
