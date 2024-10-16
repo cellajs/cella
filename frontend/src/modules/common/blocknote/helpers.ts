@@ -29,3 +29,17 @@ export const handleSubmitOnEnter = (editor: CustomBlockNoteSchema): CustomBlockN
   }
   return null;
 };
+
+export const trimInlineContentText = (descriptionHtml: string) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(descriptionHtml, 'text/html');
+
+  // Select all elements with the class 'bn-inline-content'
+  const inlineContents = doc.querySelectorAll('.bn-inline-content');
+
+  for (const element of inlineContents) {
+    // Trim the text and update the element's content
+    if (element.textContent) element.textContent = element.textContent.trim();
+  }
+  return doc.body.innerHTML;
+};

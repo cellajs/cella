@@ -211,20 +211,6 @@ export const configureForExport = (tasks: Task[], projects: Omit<Project, 'count
   });
 };
 
-export const trimInlineContentText = (descriptionHtml: string) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(descriptionHtml, 'text/html');
-
-  // Select all elements with the class 'bn-inline-content'
-  const inlineContents = doc.querySelectorAll('.bn-inline-content');
-
-  for (const element of inlineContents) {
-    // Trim the text and update the element's content
-    if (element.textContent) element.textContent = element.textContent.trim();
-  }
-  return doc.body.innerHTML;
-};
-
 export const updateImageSourcesFromDataUrl = () => {
   // Select all elements that have a 'data-url' attribute
   const elementsWithDataUrl = document.querySelectorAll('[data-url]');

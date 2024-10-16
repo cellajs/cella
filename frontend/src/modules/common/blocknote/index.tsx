@@ -31,8 +31,8 @@ import type { Member } from '~/types/common';
 import type { Block } from '@blocknote/core';
 import { FloatingPortal } from '@floating-ui/react';
 import router from '~/lib/router';
-import { trimInlineContentText } from '~/modules/tasks/helpers';
-import { focusEditor, getContentAsString, handleSubmitOnEnter } from './helpers';
+
+import { focusEditor, getContentAsString, handleSubmitOnEnter, trimInlineContentText } from '~/modules/common/blocknote/helpers';
 import './styles.css';
 
 type BlockNoteProps = {
@@ -86,6 +86,9 @@ export const BlockNote = ({
   const triggerDataUpdate = () => {
     // if user in Formatting Toolbar does not update
     if (editor.getSelection()) return;
+    // if user in file panel does not update
+    if (editor.filePanel?.shown) return;
+
     updateData(text);
   };
 
@@ -183,6 +186,7 @@ export const BlockNote = ({
       slashMenu={!slashMenu}
       formattingToolbar={!formattingToolbar}
       emojiPicker={!emojiPicker}
+      filePanel={!filePanel}
       className={className}
     >
       {slashMenu && (

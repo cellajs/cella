@@ -64,6 +64,8 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
     form.reset();
   };
 
+  if (form.loading) return null;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 pb-8 h-max">
