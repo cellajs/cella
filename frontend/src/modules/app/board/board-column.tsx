@@ -347,7 +347,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                       variant="ghost"
                       disabled={!acceptedCount}
                       size="sm"
-                      className="flex relative justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 border-t border-t-transparent ring-inset bg-green-500/5 hover:bg-green-500/10 text-green-500 text-xs -mt-[.07rem]"
+                      className="flex relative justify-start w-full rounded-none gap-1 border-b border-b-green-500/10 border-t border-t-transparent ring-inset focus-visible:ring-offset-0 bg-green-500/5 hover:bg-green-500/10 text-green-500 text-xs -mt-[.07rem]"
                     >
                       <span className="w-6 mr-1.5 text-center">{acceptedCount}</span>
                       <span>{t('app:accepted').toLowerCase()}</span>
@@ -401,7 +401,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                       variant="ghost"
                       disabled={!icedCount}
                       size="sm"
-                      className="flex relative justify-start w-full rounded-none gap-1 ring-inset text-sky-500 max-sm:border-b border-b-sky-500/10 bg-sky-500/5 hover:bg-sky-500/10 text-xs -mt-[.07rem]"
+                      className="flex relative justify-start w-full rounded-none gap-1 ring-inset focus-visible:ring-offset-0 text-sky-500 max-sm:border-b border-b-sky-500/10 bg-sky-500/5 hover:bg-sky-500/10 text-xs -mt-[.07rem]"
                     >
                       <span className="w-6 mr-1.5 text-center">{icedCount}</span>
                       <span> {t('app:iced').toLowerCase()}</span>
