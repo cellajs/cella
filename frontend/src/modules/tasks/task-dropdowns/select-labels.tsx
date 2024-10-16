@@ -52,7 +52,7 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
 
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
-  const [isRecent, setIsRecent] = useState(!isMobile);
+  const [isRecent, setIsRecent] = useState(!!creationValueChange || !isMobile);
 
   const orderedLabels = useMemo(
     () => labels.filter((l) => l.projectId === projectId).sort((a, b) => new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime()),

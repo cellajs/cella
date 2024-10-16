@@ -418,6 +418,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                                   'opacity-70 hover:opacity-100 rounded-full w-5 h-5 focus-visible:ring-offset-0 active:translate-y-0',
                                 )}
                                 onClick={(e) => {
+                                  e.stopPropagation();
                                   e.preventDefault();
                                   onChange(value.filter((l) => l.name !== name));
                                 }}
