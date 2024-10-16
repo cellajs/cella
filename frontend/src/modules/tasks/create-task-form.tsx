@@ -14,7 +14,7 @@ import { BlockNote } from '~/modules/common/blocknote';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
 import { useTaskCreateMutation } from '~/modules/common/query-client-provider/tasks';
-import { extractUniqueWordsFromHTML, getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
+import { getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
 import { NotSelected } from '~/modules/tasks/task-dropdowns/impact-icons/not-selected';
 import SelectImpact, { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
 import SetLabels from '~/modules/tasks/task-dropdowns/select-labels';
@@ -35,6 +35,7 @@ import type { Label, Task } from '~/types/app';
 import type { Member } from '~/types/common';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
+import { scanTaskDescription } from '#/modules/tasks/helpers';
 import { createTaskSchema } from '#/modules/tasks/schema';
 
 export type TaskType = 'feature' | 'chore' | 'bug';
@@ -139,12 +140,14 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   const form = useFormWithDraft<FormValues>(`create-task-${projectId}`, formOptions);
 
   const onSubmit = async (values: FormValues) => {
+    const { summary, keywords, expandable } = scanTaskDescription(values.description);
+
     const newTask = {
       id: values.id,
       description: values.description,
-      summary: values.summary,
-      expandable: values.expandable,
-      keywords: extractUniqueWordsFromHTML(values.description),
+      summary: values.summary || summary,
+      expandable: values.expandable || expandable,
+      keywords: values.keywords || keywords,
       type: values.type as TaskType,
       impact: values.impact as TaskImpact,
       labels: values.labels.map((label) => label.id),

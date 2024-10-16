@@ -8,12 +8,13 @@ import { useMemo } from 'react';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { BlockNote } from '~/modules/common/blocknote';
-import { extractUniqueWordsFromHTML, getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
+import { getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
 import UppyFilePanel from '~/modules/tasks/task-dropdowns/uppy-file-panel';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types/app';
+import { scanTaskDescription } from '#/modules/tasks/helpers';
 import { createTaskSchema } from '#/modules/tasks/schema';
 import { nanoid } from '#/utils/nanoid';
 import { useTaskCreateMutation } from '../common/query-client-provider/tasks';
@@ -65,12 +66,14 @@ export const CreateSubtaskForm = ({
   const form = useFormWithDraft<FormValues>(`create-subtask-${parentTask.id}`, formOptions);
 
   const onSubmit = async (values: FormValues) => {
+    const { summary, keywords, expandable } = scanTaskDescription(values.description);
+
     const newSubtask = {
       id: defaultId,
       description: values.description,
-      summary: values.summary,
-      expandable: values.expandable,
-      keywords: extractUniqueWordsFromHTML(values.description),
+      summary: values.summary || summary,
+      expandable: values.expandable || expandable,
+      keywords: values.keywords || keywords,
       type: 'chore' as const,
       impact: null,
       status: 1,
