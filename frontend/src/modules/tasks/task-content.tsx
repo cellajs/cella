@@ -9,7 +9,7 @@ import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
 import { BlockNote } from '../common/blocknote';
 import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
-import { handleEditorFocus, useHandleUpdateHTML } from './helpers';
+import { handleEditorFocus, updateImageSourcesFromDataUrl, useHandleUpdateHTML } from './helpers';
 import UppyFilePanel from './task-dropdowns/uppy-file-panel';
 import type { TaskStates } from './types';
 
@@ -17,6 +17,7 @@ interface Props {
   task: Task;
   mode: Mode;
   state: TaskStates;
+  isSheet?: boolean;
 }
 
 const TaskContent = ({ task, mode, state }: Props) => {
@@ -32,20 +33,9 @@ const TaskContent = ({ task, mode, state }: Props) => {
   const { handleUpdateHTML } = useHandleUpdateHTML();
   const updateDescription = (html: string) => handleUpdateHTML(task, html);
 
-  // TODO put this in a helper folder?
   useEffect(() => {
     if (state !== 'expanded') return;
-    // All elements with a data-url attribute
-    const blocks = document.querySelectorAll('[data-url]');
-    if (blocks.length < 1) return;
-
-    for (const block of blocks) {
-      const url = block.getAttribute('data-url');
-      const img = block.querySelector('img');
-
-      //set img src attribute if is inside the block
-      if (img && url) img.setAttribute('src', url);
-    }
+    updateImageSourcesFromDataUrl();
   }, [task.description, state]);
 
   return (
@@ -71,6 +61,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
               onFocus={() => handleEditorFocus(task.id)}
               updateData={updateDescription}
               onEnterClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' })}
+              onTextDifference={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'unsaved' })}
               filePanel={UppyFilePanel(task.id)}
               trailingBlock={false}
               updateDataOnBeforeLoad

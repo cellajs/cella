@@ -206,6 +206,7 @@ const Subtask = ({ task, mode, members }: { task: BaseSubtask; mode: Mode; membe
                   className="w-full pr-2 bg-transparent border-none"
                   onFocus={() => handleEditorFocus(task.id, task.parentId)}
                   onEnterClick={() => dispatchCustomEvent('changeSubtaskState', { taskId: task.id, state: 'expanded' })}
+                  onTextDifference={() => dispatchCustomEvent('changeSubtaskState', { taskId: task.id, state: 'unsaved' })}
                   updateData={updateDescription}
                   sideMenu={false}
                   trailingBlock={false}

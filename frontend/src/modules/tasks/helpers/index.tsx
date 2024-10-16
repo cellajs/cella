@@ -225,6 +225,21 @@ export const trimInlineContentText = (descriptionHtml: string) => {
   return doc.body.innerHTML;
 };
 
+export const updateImageSourcesFromDataUrl = () => {
+  // Select all elements that have a 'data-url' attribute
+  const elementsWithDataUrl = document.querySelectorAll('[data-url]');
+  // Exit early if no matching elements are found
+  if (elementsWithDataUrl.length === 0) return;
+
+  for (const element of elementsWithDataUrl) {
+    const imageUrl = element.getAttribute('data-url');
+    const imageElement = element.querySelector('img');
+
+    // Update the 'src' attribute of the image if both the URL and image exist
+    if (imageElement && imageUrl) imageElement.setAttribute('src', imageUrl);
+  }
+};
+
 export const handleEditorFocus = (id: string, taskToClose?: string | null) => {
   // Remove subtask editing state
   dispatchCustomEvent('changeSubtaskState', { taskId: id, state: 'removeEditing' });
@@ -235,8 +250,11 @@ export const handleEditorFocus = (id: string, taskToClose?: string | null) => {
 export const useHandleUpdateHTML = () => {
   const taskMutation = useTaskMutation();
 
-  const handleUpdateHTML = async (task: Task | Subtask, newContent: string) => {
+  const handleUpdateHTML = async (task: Task | Subtask, newContent: string, isSheet = false) => {
     try {
+      // after update change task unsaved state to editing
+      const stateEvent = task.parentId ? 'changeSubtaskState' : 'changeTaskState';
+      if (!isSheet) dispatchCustomEvent(stateEvent, { taskId: task.id, state: 'editing' });
       await taskMutation.mutateAsync({
         id: task.id,
         orgIdOrSlug: task.organizationId,

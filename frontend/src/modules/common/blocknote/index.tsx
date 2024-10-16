@@ -52,6 +52,7 @@ type BlockNoteProps = {
   onFocus?: () => void;
   onEscapeClick?: () => void;
   onEnterClick?: () => void;
+  onTextDifference?: () => void;
 };
 
 export const BlockNote = ({
@@ -71,6 +72,7 @@ export const BlockNote = ({
   onEscapeClick,
   onEnterClick,
   onFocus,
+  onTextDifference,
 }: BlockNoteProps) => {
   const { mode } = useThemeStore();
   const wasInitial = useRef(false);
@@ -88,14 +90,26 @@ export const BlockNote = ({
   };
 
   const onBlockNoteChange = useCallback(async () => {
-    // Converts the editor's contents from Block objects to Markdown and store to state.
+    if (!editor || !editor.document) return;
+
+    // Converts the editor's contents from Block objects to HTML and sanitizes it
     const descriptionHtml = await editor.blocksToFullHTML(editor.document);
     const cleanDescription = DOMPurify.sanitize(descriptionHtml);
 
+    // Get the current and old block content as strings for comparison
+    const newHtml = getContentAsString(editor.document as Block[]);
+    const oldBlocks = await editor.tryParseHTMLToBlocks(text);
+    const oldHtml = getContentAsString(oldBlocks as Block[]);
+
+    // Check if there is any difference in the content
+    if (oldHtml !== newHtml) onTextDifference?.();
+
+    // Prepare the content for further updates (trims and sanitizes)
     const contentToUpdate = trimInlineContentText(cleanDescription);
-    if (isCreationMode) onChange(contentToUpdate);
+    // Update the state or trigger the onChange callback in creation mode
+    if (isCreationMode) onChange?.(contentToUpdate);
     setText(contentToUpdate);
-  }, []);
+  }, [editor, text, isCreationMode, onChange, onTextDifference]);
 
   const handleKeyDown: KeyboardEventHandler = async (event) => {
     if (event.key === 'Escape') {

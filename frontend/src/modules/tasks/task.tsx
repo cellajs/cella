@@ -183,7 +183,7 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
                   {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
                 </Button>
               )}
-              <TaskDescription mode={mode} task={task} state={state} />
+              <TaskDescription mode={mode} task={task} state={state} isSheet={isSheet} />
             </div>
             <TaskFooter task={task} isSheet={isSheet} isSelected={isSelected} isStatusDropdownOpen={isStatusDropdownOpen} />
           </motion.div>
