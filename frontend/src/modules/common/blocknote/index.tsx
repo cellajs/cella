@@ -86,6 +86,8 @@ export const BlockNote = ({
   const triggerDataUpdate = () => {
     // if user in Formatting Toolbar does not update
     if (editor.getSelection()) return;
+    // if user in file panel does not update
+    if (editor.filePanel?.shown) return;
     updateData(text);
   };
 
@@ -183,6 +185,7 @@ export const BlockNote = ({
       slashMenu={!slashMenu}
       formattingToolbar={!formattingToolbar}
       emojiPicker={!emojiPicker}
+      filePanel={!filePanel}
       className={className}
     >
       {slashMenu && (
