@@ -2,13 +2,13 @@ import type { UseInfiniteQueryOptions, UseQueryOptions } from '@tanstack/react-q
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
+import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { persister, queryClient } from '~/lib/router';
-import { offlineFetch, offlineFetchInfinite } from '../../../lib/query-client';
-import { useGeneralStore } from '../../../store/general';
-import type { ContextEntity } from '../../../types/common';
-import { membersQueryOptions } from '../../organizations/members-table/helpers/query-options';
-import { organizationQueryOptions } from '../../organizations/organization-page';
-import { getAndSetMe, getAndSetMenu } from '../../users/helpers';
+import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
+import { organizationQueryOptions } from '~/modules/organizations/organization-page';
+import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import { useGeneralStore } from '~/store/general';
+import type { ContextEntity } from '~/types/common';
 
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 

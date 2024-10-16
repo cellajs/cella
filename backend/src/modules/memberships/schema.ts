@@ -35,6 +35,7 @@ export const createMembershipQuerySchema = baseMembersQuerySchema;
 
 export const deleteMembersQuerySchema = baseMembersQuerySchema.extend(idsQuerySchema.shape);
 
+// TODO make generic the parent tree using mapping of entities
 export const membershipInfoSchema = z.object({
   id: membershipTableSchema.shape.id,
   role: membershipTableSchema.shape.role,

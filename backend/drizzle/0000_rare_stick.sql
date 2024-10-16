@@ -3,15 +3,18 @@ CREATE TABLE IF NOT EXISTS "attachments" (
 	"filename" varchar NOT NULL,
 	"content_type" varchar NOT NULL,
 	"size" varchar NOT NULL,
+	"entity" varchar DEFAULT 'attachment' NOT NULL,
 	"url" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"created_by" varchar
+	"created_by" varchar,
+	"modified_at" timestamp,
+	"modified_by" varchar,
+	"organization_id" varchar NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "memberships" (
 	"id" varchar PRIMARY KEY NOT NULL,
 	"type" varchar NOT NULL,
-	"organization_id" varchar NOT NULL,
 	"user_id" varchar NOT NULL,
 	"role" varchar DEFAULT 'member' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -20,7 +23,8 @@ CREATE TABLE IF NOT EXISTS "memberships" (
 	"modified_by" varchar,
 	"archived" boolean DEFAULT false NOT NULL,
 	"muted" boolean DEFAULT false NOT NULL,
-	"sort_order" double precision NOT NULL
+	"sort_order" double precision NOT NULL,
+	"organization_id" varchar NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "oauth_accounts" (
@@ -49,7 +53,6 @@ CREATE TABLE IF NOT EXISTS "organizations" (
 	"logo_url" varchar,
 	"website_url" varchar,
 	"welcome_text" varchar,
-	"is_production" boolean DEFAULT false NOT NULL,
 	"auth_strategies" json DEFAULT '[]'::json NOT NULL,
 	"chat_support" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -117,7 +120,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"thumbnail_url" varchar,
 	"newsletter" boolean DEFAULT false NOT NULL,
 	"last_seen_at" timestamp,
-	"last_visit_at" timestamp,
+	"last_started_at" timestamp,
 	"last_sign_in_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"modified_at" timestamp,
@@ -135,7 +138,13 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "memberships" ADD CONSTRAINT "memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -154,6 +163,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "memberships" ADD CONSTRAINT "memberships_modified_by_users_id_fk" FOREIGN KEY ("modified_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "memberships" ADD CONSTRAINT "memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

@@ -8,6 +8,7 @@ export const config = {
   backendUrl: 'https://api.cellajs.com',
   backendAuthUrl: 'https://api.cellajs.com/auth',
   tusUrl: 'https://tus.cellajs.com',
+  electricUrl: 'https://electric.cellajs.com',
 
   defaultRedirectPath: '/home',
   firstSignInRedirectPath: '/welcome',
@@ -115,6 +116,7 @@ export const config = {
   // Optional settings
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
+    sync: false, // Realtime updates and sync using Electric Sync
     registrationEnabled: true, // Allow users to sign up. If disabled, the app is by invitation only
     waitList: false, // Suggest a waitlist for unknown emails when sign up is disabled
   },

@@ -23,14 +23,14 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   const { theme } = useThemeStore();
 
   const navIconColor = theme !== 'none' ? 'text-primary-foreground' : '';
-  const activeClass = isActive ? 'bg-accent/20 hover:bg-accent/20' : '';
+  const activeClass = isActive ? 'bg-background/50 hover:bg-background/75' : '';
 
   return (
     <TooltipButton toolTipContent={t(`common:${navItem.id}`)} side="right" sideOffset={10} hideWhenDetached>
       <Button
         id={`${navItem.id}-nav`}
         variant="ghost"
-        className={cn('hover:bg-accent/10 group h-14 w-14', navIconColor, activeClass)}
+        className={cn('hover:bg-background/25 ring-inset focus-visible:ring-offset-0 group h-14 w-14', navIconColor, activeClass)}
         onClick={() => onClick(navItem.id)}
       >
         {navItem.id === 'account' && user ? (

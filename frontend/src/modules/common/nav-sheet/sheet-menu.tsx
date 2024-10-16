@@ -9,11 +9,11 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { config } from 'config';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
 import { updateMembership } from '~/api/memberships';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { findRelatedItemsByType } from '~/modules/common/nav-sheet/helpers';
+import { getRelativeItemOrder } from '~/modules/common/nav-sheet/helpers';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuSearch } from '~/modules/common/nav-sheet/sheet-menu-search';
 import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
@@ -29,12 +29,11 @@ export const isPageData = (data: Record<string | symbol, unknown>): data is Page
 };
 
 export type SectionItem = {
-  storageType: keyof UserMenu;
-  type: ContextEntity;
+  name: keyof UserMenu;
+  entityType: ContextEntity;
   label: string;
   createForm?: React.ReactNode;
-  isSubmenu?: boolean;
-  toPrefix?: boolean;
+  submenu?: SectionItem;
   icon?: React.ElementType<LucideProps>;
 };
 
@@ -47,30 +46,24 @@ export const SheetMenu = memo(() => {
   const pwaEnabled = config.has.pwa;
 
   const searchResultsListItems = useCallback(() => {
-    return searchResults.length > 0
-      ? searchResults.map((item: UserMenuItem) => (
-          <SheetMenuItem key={item.id} searchResults mainItemIdOrSlug={item.parentSlug} item={item} type={item.entity} />
-        ))
-      : [];
+    return searchResults.length > 0 ? searchResults.map((item: UserMenuItem) => <SheetMenuItem key={item.id} searchResults item={item} />) : [];
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {
-    return menuSections
-      .filter((el) => !el.isSubmenu)
-      .map((section) => {
-        const menuSection = menu[section.storageType];
+    return menuSections.map((section) => {
+      const menuSection = menu[section.name];
 
-        return (
-          <MenuSection
-            entityType={section.type}
-            key={section.type}
-            sectionLabel={section.label}
-            sectionType={section.storageType}
-            createForm={section.createForm}
-            data={menuSection}
-          />
-        );
-      });
+      return (
+        <MenuSection
+          entityType={section.entityType}
+          key={section.name}
+          sectionLabel={section.label}
+          sectionType={section.name}
+          createForm={section.createForm}
+          data={menuSection}
+        />
+      );
+    });
   }, [menu]);
 
   // monitoring drop event
@@ -88,25 +81,16 @@ export const SheetMenu = memo(() => {
           const targetData = target.data;
           if (!isPageData(targetData) || !isPageData(sourceData)) return;
 
-          const closestEdgeOfTarget: Edge | null = extractClosestEdge(targetData);
-          const neededItems = findRelatedItemsByType(menu, sourceData.item.entity, sourceData.item.membership.archived);
-          const targetItemIndex = neededItems.findIndex((i) => i.id === targetData.item.id);
-          const relativeItemIndex = closestEdgeOfTarget === 'top' ? targetItemIndex - 1 : targetItemIndex + 1;
-
-          const relativeItem = neededItems[relativeItemIndex];
-          let newOrder: number;
-
-          if (relativeItem === undefined || relativeItem.membership.order === targetData.order) {
-            newOrder = closestEdgeOfTarget === 'top' ? targetData.order / 2 : targetData.order + 1;
-          } else if (relativeItem.id === sourceData.item.id) newOrder = sourceData.order;
-          else newOrder = (relativeItem.membership.order + targetData.order) / 2;
+          const { item: sourceItem } = sourceData;
+          const edge: Edge | null = extractClosestEdge(targetData);
+          const newOrder = getRelativeItemOrder(menu, sourceItem.entity, sourceItem.membership.archived, sourceItem.id, targetData.order, edge);
 
           const updatedMembership = await updateMembership({
-            membershipId: sourceData.item.membership.id,
+            membershipId: sourceItem.membership.id,
             order: newOrder,
-            organizationId: sourceData.item.organizationId || sourceData.item.id,
+            organizationId: sourceItem.organizationId || sourceItem.id,
           });
-          dispatchCustomEvent('menuEntityChange', { entity: sourceData.item.entity, membership: updatedMembership });
+          dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership });
         },
       }),
     );
@@ -117,7 +101,7 @@ export const SheetMenu = memo(() => {
       <div className="p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
         <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
         {searchTerm && (
-          <div className="search-results mt-6">
+          <div className="search-results mt-3">
             {searchResultsListItems().length > 0 ? (
               searchResultsListItems()
             ) : (
@@ -144,7 +128,7 @@ export const SheetMenu = memo(() => {
                 </label>
               </div>
               {pwaEnabled && <NetworkModeSwitch />}
-              {menuSections.some((el) => el.isSubmenu) && (
+              {menuSections.some((el) => el.submenu) && (
                 <div className="flex items-center gap-4 ml-1">
                   <Switch size="xs" id="hideSubmenu" checked={hideSubmenu} onCheckedChange={toggleHideSubmenu} ria-label={t('common:nested_menu')} />
                   <label htmlFor="hideSubmenu" className="cursor-pointer select-none text-sm font-medium leading-none">

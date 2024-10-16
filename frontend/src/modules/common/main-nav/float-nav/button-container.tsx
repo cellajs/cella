@@ -17,7 +17,7 @@ const MobileNavButton: React.FC<MobileNavButtonProps> = ({ Icon, onClick, classN
       size="icon"
       variant="secondary"
       onClick={onClick}
-      className={`fixed z-[100] w-16 h-16 flex items-center shadow-lg hover:bg-secondary justify-center rounded-full bottom-3 ${positionClasses} ${className}`}
+      className={`fixed z-[100] w-14 h-14 flex items-center shadow-lg hover:bg-secondary justify-center rounded-full bottom-3 ${positionClasses} ${className}`}
       aria-label="Nav Button"
     >
       <Icon size={24} strokeWidth={1.5} />

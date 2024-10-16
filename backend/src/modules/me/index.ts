@@ -2,22 +2,21 @@ import { and, asc, eq } from 'drizzle-orm';
 
 import { db } from '#/db/db';
 import { auth } from '#/db/lucia';
-import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { type ContextEntity, CustomHono, type EnabledOauthProviderOptions } from '#/types/common';
+import { CustomHono, type EnabledOauthProviderOptions } from '#/types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
 import { config } from 'config';
-import type { PgColumn } from 'drizzle-orm/pg-core';
 import type { z } from 'zod';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { entityIdFields, entityMenuSections, entityTables } from '#/entity-config';
+import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/entity-config';
 import { getContextUser, getMemberships } from '#/lib/context';
 import { getPreparedSessions } from './helpers/get-sessions';
 import type { menuItemsSchema, userMenuSchema } from './schema';
@@ -35,116 +34,119 @@ const meRoutes = app
 
     const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
+    // List enabled identity providers
     const oauthAccounts = await db
-      .select({
-        providerId: oauthAccountsTable.providerId,
-      })
+      .select({ providerId: oauthAccountsTable.providerId })
       .from(oauthAccountsTable)
       .where(eq(oauthAccountsTable.userId, user.id));
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOauthProviderOptions => config.enabledOauthProviders.includes(provider as EnabledOauthProviderOptions));
-    // Update last visit date
-    await db.update(usersTable).set({ lastVisitAt: new Date() }).where(eq(usersTable.id, user.id));
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...transformDatabaseUserWithCount(user, memberships.length),
-          oauth: validOAuthAccounts,
-          passkey: !!passkey.length,
-          sessions: await getPreparedSessions(user.id, ctx),
-        },
-      },
-      200,
-    );
+    // Update last visit date
+    await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
+
+    // Prepare data
+    const data = {
+      ...transformDatabaseUserWithCount(user, memberships.length),
+      oauth: validOAuthAccounts,
+      passkey: !!passkey.length,
+      sessions: await getPreparedSessions(user.id, ctx),
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
-  /*
-   * Get current user menu
-   */
+  // Your main function
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = getContextUser();
+    const memberships = getMemberships();
 
-    const fetchAndFormatEntities = async (type: ContextEntity, subEntityType?: ContextEntity) => {
-      let formattedSubmenus: z.infer<typeof menuItemsSchema>;
-      const mainTable = entityTables[type];
-      const mainEntityIdField = entityIdFields[type];
+    // Fetch function for each menu section, including handling submenus
+    const fetchMenuItemsForSection = async (section: MenuSection) => {
+      let formattedSubmenus: Omit<z.infer<typeof menuItemsSchema>[number], 'submenu'>[];
+      const mainTable = entityTables[section.entityType];
+      const mainEntityIdField = entityIdFields[section.entityType];
 
       const entity = await db
         .select({
-          entity: mainTable,
+          item: mainTable,
           membership: membershipSelect,
         })
         .from(mainTable)
-        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, type)))
+        .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.entityType)))
         .orderBy(asc(membershipsTable.order))
         .innerJoin(membershipsTable, eq(membershipsTable[mainEntityIdField], mainTable.id));
 
-      if (subEntityType && 'parentId' in entityTables[subEntityType]) {
-        const subTable = entityTables[subEntityType];
-        const subEntityIdField = entityIdFields[subEntityType];
+      // If the section has a submenu, fetch the submenu items
+      if (section.submenu) {
+        const subTable = entityTables[section.submenu.entityType];
+        const subEntityIdField = entityIdFields[section.submenu.entityType];
 
         const subEntity = await db
           .select({
-            entity: subTable,
+            item: subTable,
             membership: membershipSelect,
-            parent: mainTable,
           })
           .from(subTable)
-          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, subEntityType)))
+          .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.submenu.entityType)))
           .orderBy(asc(membershipsTable.order))
-          .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id))
-          .innerJoin(mainTable, eq(mainTable.id, subTable.parentId as PgColumn));
+          .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
 
-        formattedSubmenus = subEntity.map(({ entity, membership, parent }) => ({
-          slug: entity.slug,
-          id: entity.id,
-          createdAt: entity.createdAt.toDateString(),
-          modifiedAt: entity.modifiedAt?.toDateString() ?? null,
-          name: entity.name,
-          entity: entity.entity,
-          thumbnailUrl: entity.thumbnailUrl,
+        // TODO is this formatting necessary? Can we return data with proper select? toDateString?
+        formattedSubmenus = subEntity.map(({ item, membership }) => ({
+          slug: item.slug,
+          id: item.id,
+          createdAt: item.createdAt.toDateString(),
+          modifiedAt: item.modifiedAt?.toDateString() ?? null,
+          organizationId: membership.organizationId,
+          name: item.name,
+          entity: item.entity,
+          thumbnailUrl: item.thumbnailUrl,
           membership,
-          parentId: parent.id,
-          parentSlug: parent.slug,
         }));
       }
 
-      return entity.map(({ entity, membership }) => ({
-        slug: entity.slug,
-        id: entity.id,
-        createdAt: entity.createdAt.toDateString(),
-        modifiedAt: entity.modifiedAt?.toDateString() ?? null,
-        name: entity.name,
-        entity: entity.entity,
-        thumbnailUrl: entity.thumbnailUrl,
+      const submenuParentField = section.submenu?.parentField;
+
+      // TODO is this formatting necessary? Can we return data with proper select? toDateString is necessary?
+      const entityItems = entity.map(({ item, membership }) => ({
+        slug: item.slug,
+        id: item.id,
+        createdAt: item.createdAt.toDateString(),
+        modifiedAt: item.modifiedAt?.toDateString() ?? null,
+        organizationId: membership.organizationId,
+        name: item.name,
+        entity: item.entity,
+        thumbnailUrl: item.thumbnailUrl,
         membership,
-        submenu: formattedSubmenus ? formattedSubmenus.filter((p) => p.parentId === entity.id) : [],
+        submenu: submenuParentField ? formattedSubmenus.filter((p) => p.membership[submenuParentField] === item.id) : [],
       }));
+
+      return entityItems;
     };
 
-    const data = await entityMenuSections
-      .filter((el) => !el.isSubmenu)
-      .reduce(
+    // Build the menu data asynchronously
+    const data = async () => {
+      const result = await menuSections.reduce(
         async (accPromise, section) => {
           const acc = await accPromise;
-          const submenu = entityMenuSections.find((el) => el.storageType === section.storageType && el.isSubmenu);
-          return {
-            ...acc,
-            [section.storageType]: await fetchAndFormatEntities(section.type, submenu?.type),
-          };
+          if (!memberships.length) {
+            acc[section.name] = [];
+            return acc;
+          }
+
+          // Fetch menu items for the current section
+          acc[section.name] = await fetchMenuItemsForSection(section);
+          return acc;
         },
         Promise.resolve({} as z.infer<typeof userMenuSchema>),
       );
-    return ctx.json(
-      {
-        success: true,
-        data,
-      },
-      200,
-    );
+
+      return result;
+    };
+
+    return ctx.json({ success: true, data: await data() }, 200);
   })
   /*
    * Terminate a session
@@ -223,17 +225,13 @@ const meRoutes = app
       .filter((provider): provider is EnabledOauthProviderOptions => config.enabledOauthProviders.includes(provider as EnabledOauthProviderOptions));
     logEvent('User updated', { user: updatedUser.id });
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...transformDatabaseUserWithCount(updatedUser, memberships.length),
-          oauth: validOAuthAccounts,
-          passkey: !!passkey.length,
-        },
-      },
-      200,
-    );
+    const data = {
+      ...transformDatabaseUserWithCount(updatedUser, memberships.length),
+      oauth: validOAuthAccounts,
+      passkey: !!passkey.length,
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Delete current user (self)

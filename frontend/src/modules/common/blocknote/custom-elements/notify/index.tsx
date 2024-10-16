@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '~/modules/ui/dropdown-menu';
 
-import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notifyOptions';
+import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
 import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 
 // The Notify block.

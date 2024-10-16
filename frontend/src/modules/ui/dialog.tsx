@@ -23,7 +23,7 @@ const DialogOverlay = React.forwardRef<
     className={cn(
       disabled
         ? ''
-        : 'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[100] sm:grid place-items-center overflow-y-auto bg-background/40 backdrop-blur-sm',
+        : 'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[120] sm:grid place-items-center overflow-y-auto bg-background/40 backdrop-blur-sm',
       className,
     )}
     {...props}
@@ -39,7 +39,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'overflow-x-clip overflow-y-clip bg-background mt-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 relative z-[160] grid w-[95vw] gap-4 border p-4 shadow-lg duration-200 rounded-lg mx-auto',
+        'overflow-x-clip overflow-y-clip bg-background mt-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 relative z-[125] grid w-[95vw] gap-4 border p-4 shadow-lg duration-200 rounded-lg mx-auto',
         className,
       )}
       {...props}

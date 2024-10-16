@@ -14,12 +14,12 @@ import { dialog } from '~/modules/common/dialoger/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { baseEntityRoutes, suggestionSections } from '~/nav-config';
+import { getEntityPath, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { Button } from '../ui/button';
 import Spinner from './spinner';
 
-type SuggestionType = z.infer<typeof entitySuggestionSchema>;
+export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
 export interface SuggestionSection {
   id: string;
@@ -74,19 +74,15 @@ export const MainSearch = () => {
   });
 
   const onSelectSuggestion = (suggestion: SuggestionType) => {
-    const { entity, parentId, slug } = suggestion;
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    // Construct the destination URL
-    const basePath = baseEntityRoutes[entity];
-    const queryParams = parentId ? `?${entity}=${slug}` : '';
-    const to = `${basePath}${queryParams}`;
-
-    const idOrSlug = parentId ?? slug;
+    // TODO because cella doesnt have a product entity, we remove orgIdOrSlug here.
+    // TODO an attachments crud with views will be added to cella, so we can add the orgIdOrSlug back
+    const { idOrSlug, path } = getEntityPath(suggestion);
 
     navigate({
-      to,
+      to: path,
       resetScroll: false,
       params: { idOrSlug },
     });
@@ -99,12 +95,13 @@ export const MainSearch = () => {
   }, [suggestions]);
 
   return (
-    <Command className="rounded-lg border" shouldFilter={false}>
+    <Command className="rounded-lg border shadow-2xl" shouldFilter={false}>
       <CommandInput
         value={searchValue}
         clearValue={setSearchValue}
-        className="h-12"
+        className="h-12 text-lg"
         autoFocus
+        wrapClassName="text-lg"
         placeholder={t('common:placeholder.search')}
         onValueChange={(searchValue) => {
           const historyIndexes = recentSearches.map((_, index) => index);

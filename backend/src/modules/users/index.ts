@@ -3,7 +3,6 @@ import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { coalesce, db } from '#/db/db';
 import { auth } from '#/db/lucia';
 import { membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
 import { getContextUser } from '#/lib/context';
@@ -162,22 +161,14 @@ const usersRoutes = app
 
     if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
 
+    // Now only admins or the user themselves can view a user
+    // TODO allow organization members to view each other using getMemberships
     if (user.role !== 'admin' && user.id !== targetUser.id) {
       return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
     }
 
-    const userOrganizations = await db
-      .select({
-        id: organizationsTable.id,
-        slug: organizationsTable.slug,
-        name: organizationsTable.name,
-        entity: organizationsTable.entity,
-        thumbnailUrl: organizationsTable.thumbnailUrl,
-      })
-      .from(organizationsTable)
-      .innerJoin(membershipsTable, and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.type, 'organization')))
-      .where(eq(organizationsTable.id, membershipsTable.organizationId));
-
+    // Get the user's membership count
+    // TODO: put in a helper function
     const [{ memberships }] = await db
       .select({
         memberships: count(),
@@ -185,13 +176,7 @@ const usersRoutes = app
       .from(membershipsTable)
       .where(eq(membershipsTable.userId, targetUser.id));
 
-    return ctx.json(
-      {
-        success: true,
-        data: { ...transformDatabaseUserWithCount(targetUser, memberships), ...{ organizations: userOrganizations } },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: transformDatabaseUserWithCount(targetUser, memberships) }, 200);
   })
   /*
    * Update a user by id or slug
@@ -200,22 +185,16 @@ const usersRoutes = app
     const { idOrSlug } = ctx.req.valid('param');
 
     const user = getContextUser();
+
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
-
     if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
-
-    if (user.role !== 'admin' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: idOrSlug });
-    }
 
     const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
 
+    // Check if slug is available
     if (slug && slug !== targetUser.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-
-      if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
-      }
+      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'user', { slug });
     }
 
     const [updatedUser] = await db
@@ -238,6 +217,8 @@ const usersRoutes = app
       .where(eq(usersTable.id, targetUser.id))
       .returning();
 
+    // Get the user's membership count
+    // TODO: put in a helper function
     const [{ memberships }] = await db
       .select({
         memberships: count(),
@@ -246,13 +227,9 @@ const usersRoutes = app
       .where(eq(membershipsTable.userId, updatedUser.id));
 
     logEvent('User updated', { user: updatedUser.id });
-    return ctx.json(
-      {
-        success: true,
-        data: transformDatabaseUserWithCount(updatedUser, memberships),
-      },
-      200,
-    );
+
+    const data = transformDatabaseUserWithCount(updatedUser, memberships);
+    return ctx.json({ success: true, data }, 200);
   });
 
 export default usersRoutes;

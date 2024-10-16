@@ -7,7 +7,7 @@ import { config } from 'config';
 import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
-import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
+import { getContextUser, getMemberships } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
@@ -35,8 +35,8 @@ const organizationsRoutes = app
     const { name, slug } = ctx.req.valid('json');
     const user = getContextUser();
 
+    // Check if slug is available
     const slugAvailable = await checkSlugAvailable(slug);
-
     if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
 
     const [createdOrganization] = await db
@@ -56,23 +56,13 @@ const organizationsRoutes = app
     // Insert membership
     const createdMembership = await insertMembership({ user, role: 'admin', entity: createdOrganization });
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...createdOrganization,
-          membership: createdMembership,
-          counts: {
-            memberships: {
-              admins: 1,
-              members: 1,
-              total: 1,
-            },
-          },
-        },
-      },
-      200,
-    );
+    const data = {
+      ...createdOrganization,
+      membership: createdMembership,
+      counts: { memberships: { admins: 1, members: 1, total: 1 } },
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Get list of organizations
@@ -120,46 +110,41 @@ const organizationsRoutes = app
         },
       })
       .from(organizationsQuery.as('organizations'))
-      .leftJoin(memberships, eq(organizationsTable.id, memberships.organizationId))
+      .leftJoin(memberships, and(eq(organizationsTable.id, memberships.organizationId), eq(memberships.userId, user.id)))
       .leftJoin(countsQuery, eq(organizationsTable.id, countsQuery.id))
       .orderBy(orderColumn)
       .limit(Number(limit))
       .offset(Number(offset));
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          items: organizations,
-          total,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: { items: organizations, total } }, 200);
   })
   /*
    * Update an organization by id or slug
    */
   .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+
     const user = getContextUser();
     const memberships = getMemberships();
-    const organization = getOrganization();
+
+    // Resolve organization
+    const organization = await resolveEntity('organization', idOrSlug);
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { idOrSlug });
 
     // If not allowed and not admin, return forbidden
     const canUpdate = permissionManager.isPermissionAllowed(memberships, 'update', organization);
-    if (!canUpdate && user.role !== 'admin') {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { user: user.id, id: organization.id });
-    }
+    if (!canUpdate && user.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+
+    // TODO remove this and user permission manager once it returns membership
+    const userMembership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization');
+    if (!userMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const updatedFields = ctx.req.valid('json');
     const slug = updatedFields.slug;
 
     if (slug && slug !== organization.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
-
-      if (!slugAvailable) {
-        return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
-      }
+      if (!slugAvailable) return errorResponse(ctx, 409, 'slug_exists', 'warn', 'organization', { slug });
     }
 
     const [updatedOrganization] = await db
@@ -172,37 +157,30 @@ const organizationsRoutes = app
       .where(eq(organizationsTable.id, organization.id))
       .returning();
 
-    const membershipsToUpdate = await db
+    const organizationMemberships = await db
       .select(membershipSelect)
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
-    if (membershipsToUpdate.length > 0) {
-      membershipsToUpdate.map((membership) =>
-        sendSSEToUsers([membership.userId], 'update_entity', {
-          ...updatedOrganization,
-          membership: membershipsToUpdate.find((m) => m.id === membership.id) ?? null,
-        }),
-      );
+    // Send SSE events to organization members
+    for (const membership of organizationMemberships) {
+      sendSSEToUsers([membership.userId], 'update_entity', { ...updatedOrganization, membership });
     }
 
     logEvent('Organization updated', { organization: updatedOrganization.id });
 
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...updatedOrganization,
-          membership: membershipsToUpdate.find((m) => m.id === user.id) ?? null,
-          counts: {
-            memberships: memberCounts,
-          },
-        },
+    // Prepare data
+    const data = {
+      ...updatedOrganization,
+      membership: userMembership,
+      counts: {
+        memberships: memberCounts,
       },
-      200,
-    );
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Get organization by id or slug
@@ -214,33 +192,26 @@ const organizationsRoutes = app
     const memberships = getMemberships();
 
     const organization = await resolveEntity('organization', idOrSlug);
-
-    if (!organization) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { id: idOrSlug });
-    }
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { id: idOrSlug });
 
     // If not allowed and not admin, return forbidden
     const canRead = permissionManager.isPermissionAllowed(memberships, 'read', organization);
-    if (!canRead && user.role !== 'admin') {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { user: user.id, id: idOrSlug });
-    }
+    if (!canRead && user.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
-    const membership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization') ?? null;
+    const membership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization');
+    if (!membership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          ...organization,
-          membership,
-          counts: {
-            memberships: memberCounts,
-          },
-        },
+    const data = {
+      ...organization,
+      membership,
+      counts: {
+        memberships: memberCounts,
       },
-      200,
-    );
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
 
   /*
@@ -254,21 +225,17 @@ const organizationsRoutes = app
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
 
-    if (!toDeleteIds.length) {
-      return errorResponse(ctx, 400, 'invalid_request', 'warn', 'organization');
-    }
+    if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'organization');
 
     const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
 
     // Map errors of organization user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
 
-    if (!allowedIds.length) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
-    }
+    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
-    // Get members
-    const organizationsMembers = await db
+    // Get ids of members for organizations
+    const memberIds = await db
       .select({ id: membershipsTable.userId })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
@@ -276,13 +243,14 @@ const organizationsRoutes = app
     // Delete the organizations
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
-    // Send SSE events for the organizations that were deleted
+    // Send SSE events to all members of organizations that were deleted
     for (const id of allowedIds) {
-      if (!organizationsMembers.length) continue;
+      if (!memberIds.length) continue;
 
-      const membersId = organizationsMembers.map((member) => member.id);
-      sendSSEToUsers(membersId, 'remove_entity', { id, entity: 'organization' });
+      const userIds = memberIds.map((m) => m.id);
+      sendSSEToUsers(userIds, 'remove_entity', { id, entity: 'organization' });
     }
+
     logEvent('Organizations deleted', { ids: allowedIds.join() });
 
     return ctx.json({ success: true, errors: errors }, 200);

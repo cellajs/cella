@@ -14,6 +14,10 @@ import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-to
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 
+const ORGANIZATIONS_COUNT = 100;
+const MEMBERS_COUNT = 100;
+const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
+
 // Seed organizations with data
 export const organizationsSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
@@ -28,7 +32,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
   const organizations: (InsertOrganizationModel & {
     id: string;
   })[] = Array.from({
-    length: 10,
+    length: ORGANIZATIONS_COUNT,
   }).map(() => {
     const name = organizationsUniqueEnforcer.enforce(() => faker.company.name());
 
@@ -57,13 +61,14 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
   let organizationsCount = 0;
   let membershipsCount = 0;
   let adminMembershipsOrder = 1;
+  let adminOrganizationsCount = 0;
 
   // Create 100 users for each organization
   for (const organization of organizations) {
     organizationsCount++;
     if (progressCallback) progressCallback('organizations', organizationsCount, 'inserting');
 
-    const insertUsers: InsertUserModel[] = Array.from({ length: 100 }).map(() => {
+    const insertUsers: InsertUserModel[] = Array.from({ length: MEMBERS_COUNT }).map(() => {
       const firstName = faker.person.firstName();
       const lastName = faker.person.lastName();
       const firstAndLastName = { firstName, lastName };
@@ -109,19 +114,24 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
       };
     });
 
-    // add Admin user to every even organization
-    if (organizationsCount % 2 === 0) {
+    // Loop over organizations
+
+    // Add Admin user to every even organization, but limit to a certain number
+    if (organizationsCount % 2 === 0 && adminOrganizationsCount < SYSTEM_ADMIN_MEMBERSHIP_COUNT) {
       memberships.push({
         id: nanoid(),
         userId: adminUser.id,
         organizationId: organization.id,
         type: 'organization',
+        archived: faker.datatype.boolean(0.5),
         role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: faker.date.past(),
         order: adminMembershipsOrder,
       });
       adminMembershipsOrder++;
+      adminOrganizationsCount++; // Increment the counter
     }
+
     membershipsCount += memberships.length;
     if (progressCallback) progressCallback('memberships', membershipsCount, 'inserting');
 

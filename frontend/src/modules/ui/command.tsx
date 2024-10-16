@@ -41,8 +41,8 @@ interface ZeroValSet {
 
 const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & ZeroValSet>(
   ({ className, wrapClassName, value, clearValue, ...props }, ref) => (
-    <div className={cn('flex items-center border-b px-3 relative', wrapClassName)} cmdk-input-wrapper="">
-      <Search className="mr-2 h-4 w-4 shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
+    <div className={cn('flex items-center group border-b px-3 relative', wrapClassName)} cmdk-input-wrapper="">
+      <Search size={16} className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
       <CommandPrimitive.Input
         value={value}
         ref={ref}

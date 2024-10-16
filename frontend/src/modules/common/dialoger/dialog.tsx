@@ -2,12 +2,27 @@ import { type DialogT, dialog as dialogState } from '~/modules/common/dialoger/s
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
+type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
+
 export interface DialogProp {
   dialog: DialogT;
   removeDialog: (dialog: DialogT) => void;
 }
 export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
-  const { id, content, container, open, description, title, className, containerBackdrop, containerBackdropClassName, autoFocus, hideClose } = dialog;
+  const {
+    id,
+    content,
+    preventEscPress,
+    container,
+    open,
+    description,
+    title,
+    className,
+    containerBackdrop,
+    containerBackdropClassName,
+    autoFocus,
+    hideClose,
+  } = dialog;
 
   const closeDialog = () => {
     removeDialog(dialog);
@@ -16,6 +31,14 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
   const onOpenChange = (open: boolean) => {
     dialogState.update(dialog.id, { open });
     if (!open) closeDialog();
+  };
+
+  const handleInteractOutside = (event: CustomInteractOutsideEvent) => {
+    if (container && !containerBackdrop) event.preventDefault();
+  };
+
+  const handleEscapeKeyDown = (event: KeyboardEvent) => {
+    if (preventEscPress) event.preventDefault();
   };
 
   return (
@@ -29,8 +52,9 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
         />
       )}
       <DialogContent
-        onEscapeKeyDown={closeDialog}
+        onEscapeKeyDown={handleEscapeKeyDown}
         hideClose={hideClose}
+        onInteractOutside={handleInteractOutside}
         onOpenAutoFocus={(event: Event) => {
           if (!autoFocus) event.preventDefault();
         }}

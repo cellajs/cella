@@ -46,8 +46,12 @@ const SignIn = () => {
             token,
           });
           setEmail(data.email);
+          setError(null);
         })
         .catch(setError);
+    } else {
+      setTokenData(null);
+      setError(null);
     }
   }, [token]);
 

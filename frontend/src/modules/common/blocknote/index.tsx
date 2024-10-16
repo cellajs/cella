@@ -88,6 +88,7 @@ export const BlockNote = ({
     if (editor.getSelection()) return;
     // if user in file panel does not update
     if (editor.filePanel?.shown) return;
+
     updateData(text);
   };
 

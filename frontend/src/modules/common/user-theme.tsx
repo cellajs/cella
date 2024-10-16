@@ -23,6 +23,7 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
     { id: 'light', label: t('common:light'), icon: Sun },
     { id: 'dark', label: t('common:dark'), icon: Moon },
   ] as const;
+
   const themes = objectEntries(config.theme.colors);
 
   function Icon({ icon: Icon }: { icon: React.FC<LucideProps> }) {

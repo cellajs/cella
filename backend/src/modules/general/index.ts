@@ -14,7 +14,7 @@ import { db } from '#/db/db';
 import { getContextUser, getMemberships } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
+import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
@@ -25,7 +25,7 @@ import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import { type ContextEntity, CustomHono } from '#/types/common';
+import { CustomHono } from '#/types/common';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
@@ -81,7 +81,7 @@ const generalRoutes = app
       .select()
       .from(tokensTable)
       .where(and(eq(tokensTable.id, token)));
-    // if (!tokenRecord?.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'token');
+    if (!tokenRecord) return errorResponse(ctx, 404, 'not_found', 'warn');
 
     // const user = await getUserBy('email', tokenRecord.email);
     // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
@@ -258,75 +258,72 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
+
     const user = getContextUser();
     const memberships = getMemberships();
 
-    // Retrieve organizationIds for non-admin users and check if the user has at least one organization membership
-    let organizationIds: string[] = [];
+    // Retrieve organizationIds
+    const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
+    if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined);
 
-    if (user.role !== 'admin') {
-      organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
-      if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined, { user: user.id });
-    }
-
-    // Provide suggestions for all entities or narrow them down to a specific type if specified
+    // Determine the entity types to query, default to all types if not specified
     const entityTypes = type ? [type] : config.pageEntityTypes;
 
     // Array to hold queries for concurrent execution
-    const queries = [];
+    const queries = entityTypes
+      .map((entityType) => {
+        const table = entityTables[entityType];
+        const entityIdField = entityIdFields[entityType];
+        if (!table) return null;
 
-    for (const entityType of entityTypes) {
-      const table = entityTables[entityType];
-      if (!table) continue;
-      const entityIdField = entityIdFields[entityType];
+        // Base selection setup including membership details
+        const baseSelect = {
+          id: table.id,
+          slug: table.slug,
+          name: table.name,
+          entity: table.entity,
+          ...('email' in table && { email: table.email }),
+          ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
+        };
 
-      // Basic selection setup
-      const baseSelect = {
-        id: table.id,
-        slug: table.slug,
-        name: table.name,
-        entity: table.entity,
-        ...('email' in table && { email: table.email }),
-        ...('thumbnailUrl' in table && { thumbnailUrl: table.thumbnailUrl }),
-      };
-
-      // Build search filters
-      const $or = [ilike(table.name, `%${q}%`)];
-      if ('email' in table) $or.push(ilike(table.email, `%${q}%`));
-
-      // Build organization filters
-      const $and = [];
-      if (organizationIds.length) {
-        const $membershipAnd = [inArray(membershipsTable.organizationId, organizationIds)];
-        if (config.contextEntityTypes.includes(entityType as ContextEntity)) {
-          $membershipAnd.push(eq(membershipsTable.type, entityType as ContextEntity));
+        // Build search filters
+        const $or = [ilike(table.name, `%${q}%`)];
+        if ('email' in table) {
+          $or.push(ilike(table.email, `%${q}%`));
         }
 
-        const memberships = await db
-          .select()
-          .from(membershipsTable)
-          .where(and(...$membershipAnd));
-
-        const uniqueValuesSet = new Set<string>();
-
-        for (const member of memberships) {
-          const id = member[entityIdField];
-          if (id) uniqueValuesSet.add(id);
+        // For users, no need to join memberships, just perform the search
+        if (entityType === 'user') {
+          return db
+            .select(baseSelect)
+            .from(table)
+            .where(or(...$or))
+            .limit(10);
         }
 
-        const uniqueValuesArray = Array.from(uniqueValuesSet);
-        $and.push(inArray(table.id, uniqueValuesArray));
-      }
+        // For other entities, perform the join with memberships
+        const $where = and(
+          or(...$or),
+          eq(membershipsTable.userId, user.id),
+          inArray(membershipsTable.organizationId, organizationIds),
+          eq(membershipsTable[entityIdField], table.id),
+        );
 
-      $and.push($or.length > 1 ? or(...$or) : $or[0]);
-      const $where = $and.length > 1 ? and(...$and) : $and[0];
-
-      // Build query
-      queries.push(db.select(baseSelect).from(table).where($where).limit(10));
-    }
+        // Execute the query using inner join with memberships table
+        return db
+          .select({
+            ...baseSelect,
+            membership: membershipSelect,
+          })
+          .from(table)
+          .leftJoin(membershipsTable, and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType)))
+          .where($where)
+          .limit(10);
+      })
+      .filter(Boolean); // Filter out null values if any entity type is invalid
 
     const results = await Promise.all(queries);
-    const items = results.flat();
+    const items = results.flat().filter((item) => item !== null);
 
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
   })
@@ -338,14 +335,15 @@ const generalRoutes = app
 
     if (!token) return errorResponse(ctx, 400, 'No token provided', 'warn', 'user');
 
+    // Check if token exists
     const user = await getUserBy('unsubscribeToken', token);
-
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
+    // Verify token
     const isValid = verifyUnsubscribeToken(user.email, token);
-
     if (!isValid) return errorResponse(ctx, 400, 'Token verification failed', 'warn', 'user');
 
+    // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
 
     const redirectUrl = `${config.frontendUrl}/unsubscribe`;

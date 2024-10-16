@@ -20,12 +20,12 @@ interface MenuSectionProps {
 
 export const MenuSection = ({ data, sectionType, sectionLabel, entityType, createForm }: MenuSectionProps) => {
   const { t } = useTranslation();
+  const { activeSections } = useNavigationStore();
 
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
-  const { activeSections } = useNavigationStore();
+
   const isSectionVisible = activeSections?.[sectionType] !== undefined ? activeSections[sectionType] : true;
-  const parentItemId = data.length > 0 ? data[0].parentId : '';
 
   const sectionRef = useRef<HTMLDivElement>(null);
   const archivedRef = useRef<HTMLDivElement>(null);
@@ -47,6 +47,7 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
     setArchivedVisible(!isArchivedVisible);
   };
 
+  // TODO - refactor this into a generic hook?
   // Helper function to set or remove 'tabindex' attribute
   const updateTabIndex = (ref: React.RefObject<HTMLElement>, isVisible: boolean) => {
     if (!ref.current) return;
@@ -69,17 +70,15 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
 
   return (
     <>
-      {!parentItemId && (
-        <MenuSectionSticky
-          data={data}
-          sectionLabel={sectionLabel}
-          sectionType={sectionType}
-          optionsView={optionsView}
-          isSectionVisible={isSectionVisible}
-          toggleOptionsView={toggleOptionsView}
-          createDialog={createDialog}
-        />
-      )}
+      <MenuSectionSticky
+        data={data}
+        sectionLabel={sectionLabel}
+        sectionType={sectionType}
+        optionsView={optionsView}
+        isSectionVisible={isSectionVisible}
+        toggleOptionsView={toggleOptionsView}
+        createDialog={createDialog}
+      />
       <div
         ref={sectionRef}
         className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}
@@ -93,7 +92,7 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
           {!!data.length && (
             <>
               <MenuArchiveToggle
-                isSubmenu={typeof parentItemId === 'string'}
+                isSubmenu={false}
                 archiveToggleClick={archiveToggleClick}
                 inactiveCount={data.filter((i) => i.membership.archived).length}
                 isArchivedVisible={isArchivedVisible}

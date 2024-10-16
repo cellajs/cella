@@ -1,5 +1,5 @@
 {
-  "id": "135b8700-1927-4cd8-ac84-12cf4d5e09a1",
+  "id": "36f89a8d-02da-4e6b-b6b0-9355c9dada94",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -32,6 +32,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "entity": {
+          "name": "entity",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'attachment'"
+        },
         "url": {
           "name": "url",
           "type": "varchar",
@@ -50,6 +57,24 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
+        },
+        "modified_at": {
+          "name": "modified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "modified_by": {
+          "name": "modified_by",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -65,6 +90,32 @@
             "id"
           ],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "attachments_modified_by_users_id_fk": {
+          "name": "attachments_modified_by_users_id_fk",
+          "tableFrom": "attachments",
+          "tableTo": "users",
+          "columnsFrom": [
+            "modified_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "attachments_organization_id_organizations_id_fk": {
+          "name": "attachments_organization_id_organizations_id_fk",
+          "tableFrom": "attachments",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -83,12 +134,6 @@
         },
         "type": {
           "name": "type",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -150,23 +195,16 @@
           "type": "double precision",
           "primaryKey": false,
           "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "memberships_organization_id_organizations_id_fk": {
-          "name": "memberships_organization_id_organizations_id_fk",
-          "tableFrom": "memberships",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "memberships_user_id_users_id_fk": {
           "name": "memberships_user_id_users_id_fk",
           "tableFrom": "memberships",
@@ -204,6 +242,19 @@
             "id"
           ],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "memberships_organization_id_organizations_id_fk": {
+          "name": "memberships_organization_id_organizations_id_fk",
+          "tableFrom": "memberships",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -376,13 +427,6 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
-        },
-        "is_production": {
-          "name": "is_production",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "auth_strategies": {
           "name": "auth_strategies",
@@ -934,8 +978,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "last_visit_at": {
-          "name": "last_visit_at",
+        "last_started_at": {
+          "name": "last_started_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false

@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 
 import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { useSetDocumentTitle } from '~/hooks/use-set-document-title';
 import { DownAlert } from '~/modules/common/down-alert';
 import ReloadPrompt from '~/modules/common/reload-prompt';
 import { Toaster } from '~/modules/ui/sonner';
@@ -12,6 +13,7 @@ import { TooltipProvider } from '~/modules/ui/tooltip';
 function Root() {
   const { isOnline } = useOnlineManager();
 
+  useSetDocumentTitle();
   // Lazy load
   const GleapSupport = useLazyComponent(
     () =>

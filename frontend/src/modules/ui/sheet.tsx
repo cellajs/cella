@@ -18,7 +18,7 @@ const SheetOverlay = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Ove
   ({ className, ...props }, ref) => (
     <SheetPrimitive.Overlay
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[100] bg-background/40 backdrop-blur-sm',
+        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[113] bg-background/40 backdrop-blur-sm',
         className,
       )}
       {...props}
@@ -30,7 +30,7 @@ SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
 // Removed the animate out classes since sheeter has state issues in remove step
 export const sheetVariants = cva(
-  'z-[100] fixed gap-4 bg-background px-4 pb-4 shadow-lg transition ease-in-out overflow-y-auto data-[state=open]:duration-300 data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=closed]:animate-out',
+  'z-[114] fixed gap-4 bg-background px-4 pb-4 shadow-lg transition ease-in-out overflow-y-auto data-[state=open]:duration-300 data-[state=open]:animate-in data-[state=closed]:duration-200 data-[state=closed]:animate-out',
   {
     variants: {
       side: {
@@ -53,22 +53,22 @@ interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetP
   hideClose?: boolean;
 }
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
-  ({ side = 'right', className, children, hideClose = true, onClick, ...props }, ref) => (
+  ({ side = 'right', className, children, hideClose = false, onClick, ...props }, ref) => (
     <>
       <SheetOverlay
         onClick={onClick} // Using the passed onClick function
       />
       <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-        {children}
         {!hideClose && (
           <SheetPrimitive.Close
             onClick={onClick}
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-3 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none"
+            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-3 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none z-20"
           >
             <X className="h-6 w-6" strokeWidth={1.25} />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
         )}
+        {children}
       </SheetPrimitive.Content>
     </>
   ),

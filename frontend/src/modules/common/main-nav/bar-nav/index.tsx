@@ -34,12 +34,12 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
     toast.success(t('common:success.stopped_impersonation'));
   };
 
-  const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-primary-foreground';
+  const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-secondary';
   return (
     <nav
       id="main-nav"
       className={cn(
-        'fixed z-[90] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden',
+        'fixed z-[100] sm:z-[110] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden',
         navBackground,
         !hasStarted && 'max-sm:translate-y-full sm:-translate-x-full',
       )}
