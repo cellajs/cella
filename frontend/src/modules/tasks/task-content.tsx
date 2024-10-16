@@ -2,15 +2,17 @@ import '@blocknote/shadcn/style.css';
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { BlockNote } from '~/modules/common/blocknote';
+import { taskKeys } from '~/modules/common/query-client-provider/tasks';
 import CreateSubtaskForm from '~/modules/tasks/create-subtask-form';
 import Subtask from '~/modules/tasks/subtask';
+import UppyFilePanel from '~/modules/tasks/task-dropdowns/uppy-file-panel';
+import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
-import { BlockNote } from '../common/blocknote';
-import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
 import { handleEditorFocus, updateImageSourcesFromDataUrl, useHandleUpdateHTML } from './helpers';
-import UppyFilePanel from './task-dropdowns/uppy-file-panel';
 import type { TaskStates } from './types';
 
 interface Props {
@@ -25,6 +27,15 @@ const TaskContent = ({ task, mode, state }: Props) => {
   const [createSubtask, setCreateSubtask] = useState(false);
 
   const expandedStyle = 'min-h-16 [&>.bn-editor]:min-h-16 w-full bg-transparent border-none pl-9';
+  const callback = useMutateQueryData(taskKeys.list({ projectId: task.projectId, orgIdOrSlug: task.organizationId }));
+
+  const subTaskDeleteCallback = (subtaskId: string) => {
+    const { subtasks } = task;
+    // Filter out the subtask to be removed
+    const updatedSubtasks = subtasks.filter((st) => st.id !== subtaskId);
+    const updatedTask = { ...task, subtasks: updatedSubtasks };
+    callback([updatedTask], 'update');
+  };
 
   const {
     data: { members },
@@ -78,7 +89,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
           <div id={`subtask-container-${task.id}`} className="-mx-2 mt-2 w-[calc(100%+1.25rem)]">
             <div className="flex flex-col">
               {task.subtasks.map((task) => (
-                <Subtask mode={mode} key={task.id} task={task} members={members} />
+                <Subtask mode={mode} key={task.id} task={task} members={members} removeCallback={subTaskDeleteCallback} />
               ))}
             </div>
 

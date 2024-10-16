@@ -12,12 +12,10 @@ import { deleteTasks } from '~/api/tasks';
 import useDoubleClick from '~/hooks/use-double-click';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { queryClient } from '~/lib/router';
 import { isSubtaskData } from '~/modules/app/board/helpers';
 import { BlockNote } from '~/modules/common/blocknote';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
-import { sheet } from '~/modules/common/sheeter/state';
 import { TaskHeader } from '~/modules/tasks/task-header';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Mode } from '~/store/theme';
@@ -28,7 +26,12 @@ import { getDraggableItemData } from '~/utils/drag-drop';
 import { handleEditorFocus, useHandleUpdateHTML } from './helpers';
 import type { TaskStates } from './types';
 
-const Subtask = ({ task, mode, members }: { task: BaseSubtask; mode: Mode; members: Member[] }) => {
+const Subtask = ({
+  task,
+  mode,
+  members,
+  removeCallback,
+}: { task: BaseSubtask; mode: Mode; members: Member[]; removeCallback: (id: string) => void }) => {
   const { t } = useTranslation();
 
   const { handleUpdateHTML } = useHandleUpdateHTML();
@@ -44,11 +47,10 @@ const Subtask = ({ task, mode, members }: { task: BaseSubtask; mode: Mode; membe
 
   const onRemove = (subtaskId: string) => {
     deleteTasks([subtaskId], task.organizationId).then(async (resp) => {
-      await queryClient.invalidateQueries({
-        refetchType: 'active',
-      });
-      if (resp) toast.success(t('common:success.delete_resources', { resources: t('app:todos') }));
-      else toast.error(t('common:error.delete_resources', { resources: t('app:todos') }));
+      if (resp) {
+        toast.success(t('common:success.delete_resources', { resources: t('app:todos') }));
+        removeCallback(subtaskId);
+      } else toast.error(t('common:error.delete_resources', { resources: t('app:todos') }));
     });
   };
 
@@ -66,7 +68,6 @@ const Subtask = ({ task, mode, members }: { task: BaseSubtask; mode: Mode; membe
         data: newStatus,
         projectId: task.projectId,
       });
-      if (sheet.get(`task-preview-${task.parentId}`)) await queryClient.invalidateQueries({ refetchType: 'active' });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:todo') }));
     }

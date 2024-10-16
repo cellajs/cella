@@ -2,19 +2,21 @@ import { Trash, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { deleteTasks } from '~/api/tasks';
-import { queryClient } from '~/lib/router';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { taskKeys } from '~/modules/common/query-client-provider/tasks';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { Workspace } from '~/types/app';
+import type { Project, Workspace } from '~/types/app';
 
 interface TaskSelectedButtonsProps {
   workspace: Workspace;
+  projects: Project[];
   selectedTasks: string[];
   setSelectedTasks: (taskIds: string[]) => void;
 }
 
-const TaskSelectedButtons = ({ workspace, selectedTasks, setSelectedTasks }: TaskSelectedButtonsProps) => {
+const TaskSelectedButtons = ({ workspace, projects, selectedTasks, setSelectedTasks }: TaskSelectedButtonsProps) => {
   const { t } = useTranslation();
 
   const removeSelect = () => setSelectedTasks([]);
@@ -24,14 +26,21 @@ const TaskSelectedButtons = ({ workspace, selectedTasks, setSelectedTasks }: Tas
       .then(async (resp) => {
         if (resp) {
           toast.success(t('common:success.delete_resources', { resources: t('app:tasks') }));
-          await queryClient.invalidateQueries({
-            refetchType: 'active',
-          });
+
+          for (const project of projects) {
+            const callback = useMutateQueryData(taskKeys.list({ projectId: project.id, orgIdOrSlug: workspace.organizationId }));
+            const newTasks = selectedTasks.map((el) => ({ id: el })) ?? [];
+            callback(newTasks, 'delete');
+          }
+
           removeSelect();
         }
         if (!resp) toast.error(t('common:error.delete_resources', { resources: t('app:tasks') }));
       })
-      .catch(() => toast.error(t('common:error.delete_resources', { resources: t('app:tasks') })));
+      .catch((err) => {
+        console.log(err);
+        toast.error(t('common:error.delete_resources', { resources: t('app:tasks') }));
+      });
   };
 
   return (

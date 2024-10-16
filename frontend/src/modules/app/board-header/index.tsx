@@ -17,7 +17,7 @@ const BoardHeader = ({
   const { setFocusView } = useNavigationStore();
   const { selectedTasks, setSelectedTasks, showPageHeader, togglePageHeader } = useWorkspaceStore();
   const {
-    data: { workspace },
+    data: { workspace, projects },
   } = useWorkspaceQuery();
 
   const [searchFocused, setSearchFocused] = useState(false);
@@ -32,7 +32,9 @@ const BoardHeader = ({
       {!searchFocused && !selectedTasks.length && (
         <PageView workspace={workspace} showPageHeader={showPageHeader} toggleFocus={handleTogglePageHeader} />
       )}
-      {!!selectedTasks.length && <TaskSelectedButtons workspace={workspace} selectedTasks={selectedTasks} setSelectedTasks={setSelectedTasks} />}
+      {!!selectedTasks.length && (
+        <TaskSelectedButtons workspace={workspace} projects={projects} selectedTasks={selectedTasks} setSelectedTasks={setSelectedTasks} />
+      )}
       <TasksSearch toggleFocus={() => setSearchFocused(!searchFocused)} />
       {!searchFocused && children}
       <DisplayOptions className="max-sm:hidden" />

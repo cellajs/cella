@@ -11,11 +11,12 @@ import { toast } from 'sonner';
 import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMeasure } from '~/hooks/use-measure';
-import { queryClient } from '~/lib/router';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { BlockNote } from '~/modules/common/blocknote';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
+import { taskKeys } from '~/modules/common/query-client-provider/tasks';
 import { extractUniqueWordsFromHTML, getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
 import { NotSelected } from '~/modules/tasks/task-dropdowns/impact-icons/not-selected';
 import SelectImpact, { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
@@ -57,6 +58,7 @@ const formSchema = z.object({
     labels: true,
     assignedTo: true,
   }).shape,
+  id: z.string(),
   assignedTo: z.array(
     z.object({
       id: z.string(),
@@ -102,6 +104,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
 
   const defaultId = nanoid();
   const { ref, bounds } = useMeasure();
+  const callback = useMutateQueryData(taskKeys.list({ projectId, orgIdOrSlug: organizationId }));
 
   const handleCloseForm = () => {
     if (isDialog) {
@@ -161,8 +164,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
         if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:task') }));
         form.reset();
         toast.success(t('common:success.create_resource', { resource: t('app:task') }));
+
+        callback([resp], 'create');
+
         handleCloseForm();
-        await queryClient.invalidateQueries({ refetchType: 'active' });
       })
       .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:task') })));
   };
