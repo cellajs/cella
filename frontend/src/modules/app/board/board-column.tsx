@@ -389,7 +389,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                     {showingTasks.map((task, index) => {
                       return (
                         <div key={task.id}>
-                          {index === firstUpstartedIndex && <div className="z-[250]" ref={beforeRef} />}
+                          {index === firstUpstartedIndex && <div className="z-[104]" ref={beforeRef} />}
                           <motion.div
                             variants={taskVariants}
                             initial={task.status === 6 || task.status === 0 ? 'hidden' : 'visible'}
@@ -420,7 +420,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                               )} */}
                             </FocusTrap>
                           </motion.div>
-                          {index === lastUpstartedIndex && <div className="z-[250]" ref={afterRef} />}
+                          {index === lastUpstartedIndex && <div className="z-[104]" ref={afterRef} />}
                         </div>
                       );
                     })}
