@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
-import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
+import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import type { TaskType } from '~/modules/tasks/create-task-form';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
@@ -42,7 +42,7 @@ const SelectTaskType = ({ currentType, projectId, className = '' }: SelectTaskTy
   const [selectedType, setSelectedType] = useState<Type | undefined>(taskTypes[taskTypes.findIndex((type) => type.value === currentType)]);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
-  const taskMutation = useTaskMutation();
+  const taskMutation = useTaskUpdateMutation();
 
   const { taskIdPreview } = useSearch({
     from: WorkspaceRoute.id,

@@ -15,7 +15,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Task } from '~/types/app';
 import { cn } from '~/utils/cn';
-import { taskKeys, useTaskMutation } from '../common/query-client-provider/tasks';
+import { taskKeys, useTaskUpdateMutation } from '../common/query-client-provider/tasks';
 
 interface TasksFooterProps {
   task: Task;
@@ -28,7 +28,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
-  const taskMutation = useTaskMutation();
+  const taskMutation = useTaskUpdateMutation();
 
   const selectedImpact = task.impact !== null ? impacts[task.impact] : null;
 

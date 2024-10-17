@@ -23,7 +23,7 @@ import TableHeader from '~/modules/app/board-header';
 import { isSubtaskData } from '~/modules/app/board/helpers';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dropdowner } from '~/modules/common/dropdowner/state';
-import { taskKeys, useTaskMutation } from '~/modules/common/query-client-provider/tasks';
+import { taskKeys, useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
 import { configureForExport, getRelativeTaskOrder, handleTaskDropDownClick, openTaskPreviewSheet } from '~/modules/tasks/helpers';
 import TaskCard from '~/modules/tasks/task';
@@ -90,7 +90,7 @@ export default function TasksTable() {
 
   const focusedTaskId = search.taskIdPreview;
 
-  const taskMutation = useTaskMutation();
+  const taskMutation = useTaskUpdateMutation();
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'createdAt'));
   const [selectedStatuses] = useState<number[]>(typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || []);

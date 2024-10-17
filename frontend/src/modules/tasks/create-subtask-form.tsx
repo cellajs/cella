@@ -5,21 +5,19 @@ import type { z } from 'zod';
 
 import { Plus } from 'lucide-react';
 import { useMemo } from 'react';
-import { toast } from 'sonner';
-import { createTask } from '~/api/tasks.ts';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { BlockNote } from '~/modules/common/blocknote';
-import { extractUniqueWordsFromHTML, getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
+import { getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
 import UppyFilePanel from '~/modules/tasks/task-dropdowns/uppy-file-panel';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types/app';
+import { scanTaskDescription } from '#/modules/tasks/helpers';
 import { createTaskSchema } from '#/modules/tasks/schema';
 import { nanoid } from '#/utils/nanoid';
-import { taskKeys } from '../common/query-client-provider/tasks';
+import { useTaskCreateMutation } from '../common/query-client-provider/tasks';
 import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
 
 const formSchema = createTaskSchema;
@@ -41,6 +39,7 @@ export const CreateSubtaskForm = ({
   } = useWorkspaceQuery();
 
   const { user } = useUserStore();
+  const taskMutation = useTaskCreateMutation();
   const defaultId = nanoid();
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -63,18 +62,18 @@ export const CreateSubtaskForm = ({
     [],
   );
 
-  const callback = useMutateQueryData(taskKeys.list({ projectId: parentTask.projectId, orgIdOrSlug: parentTask.organizationId }));
-
   // Form with draft in local storage
   const form = useFormWithDraft<FormValues>(`create-subtask-${parentTask.id}`, formOptions);
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
+    const { summary, keywords, expandable } = scanTaskDescription(values.description);
+
     const newSubtask = {
       id: defaultId,
       description: values.description,
-      summary: values.summary,
-      expandable: values.expandable,
-      keywords: extractUniqueWordsFromHTML(values.description),
+      summary: values.summary || summary,
+      expandable: values.expandable || expandable,
+      keywords: values.keywords || keywords,
       type: 'chore' as const,
       impact: null,
       status: 1,
@@ -87,19 +86,9 @@ export const CreateSubtaskForm = ({
       order: getNewTaskOrder(values.status, parentTask.subtasks),
     };
 
-    createTask(newSubtask)
-      .then(async (resp) => {
-        if (!resp) toast.error(t('common:error.create_resource', { resource: t('app:todo') }));
-        form.reset();
-        toast.success(t('common:success.create_resource', { resource: t('app:todo') }));
-        // Update the callback with the new subtask added
-        const updatedSubtasks = [...parentTask.subtasks, resp];
-        const updatedTask = { ...parentTask, subtasks: updatedSubtasks };
-        callback([updatedTask], 'update');
-
-        setFormState(false);
-      })
-      .catch(() => toast.error(t('common:error.create_resource', { resource: t('app:todo') })));
+    taskMutation.mutate(newSubtask);
+    form.reset();
+    setFormState(false);
   };
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one

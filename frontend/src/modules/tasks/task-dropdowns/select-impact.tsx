@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
-import { useTaskMutation } from '~/modules/common/query-client-provider/tasks';
+import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import type { TaskImpact } from '~/modules/tasks/create-task-form';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { HighIcon } from '~/modules/tasks/task-dropdowns/impact-icons/high';
@@ -54,7 +54,7 @@ const SelectImpact = ({ value, projectId, triggerWidth = 192, creationValueChang
   const isSearching = searchValue.length > 0;
 
   const focusedTaskId = useMemo(() => (taskIdPreview ? taskIdPreview : storeFocusedId), [storeFocusedId, taskIdPreview]);
-  const taskMutation = useTaskMutation();
+  const taskMutation = useTaskUpdateMutation();
 
   const changeTaskImpact = async (newImpact: TaskImpact) => {
     try {

@@ -34,13 +34,13 @@ const tasksRoutes = app
     // Use body data to create a new task, add valid organization id
     const newTask: InsertTaskModel = { ...newTaskInfo, organizationId: organization.id };
 
-    const descriptionText = String(newTask.description);
+    // const descriptionText = String(newTask.description);
 
     // Create summary, expandable and keywords from description
-    const { summary, expandable, keywords } = scanTaskDescription(descriptionText);
-    newTask.summary = summary;
-    newTask.expandable = expandable;
-    newTask.keywords = keywords;
+    // const { summary, expandable, keywords } = scanTaskDescription(descriptionText);
+    // newTask.summary = summary;
+    // newTask.expandable = expandable;
+    // newTask.keywords = keywords;
 
     const [createdTask] = await db.insert(tasksTable).values(newTask).returning();
 
