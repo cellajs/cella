@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import type { NavItem } from '~/modules/common/main-nav';
 import MainNavLoader from '~/modules/common/main-nav/bar-nav/bar-nav-loader';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { cn } from '~/utils/cn';
 
 interface NavButtonProps {
   navItem: NavItem;
@@ -22,15 +21,15 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   const { user } = useUserStore();
   const { theme } = useThemeStore();
 
-  const navIconColor = theme !== 'none' ? 'text-primary-foreground' : '';
-  const activeClass = isActive ? 'bg-background/50 hover:bg-background/75' : '';
-
   return (
     <TooltipButton toolTipContent={t(`common:${navItem.id}`)} side="right" sideOffset={10} hideWhenDetached>
       <Button
         id={`${navItem.id}-nav`}
         variant="ghost"
-        className={cn('hover:bg-background/25 ring-inset focus-visible:ring-offset-0 group h-14 w-14', navIconColor, activeClass)}
+        data-theme={theme}
+        data-active={isActive}
+        className={`hover:bg-background/25 ring-inset focus-visible:ring-offset-0 group h-14 w-14 
+          data-[active=true]:bg-background/50 hover:bg-background/75 text-primary-foreground data-[theme=none]:text-inherit`}
         onClick={() => onClick(navItem.id)}
       >
         {navItem.id === 'account' && user ? (

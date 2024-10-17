@@ -98,7 +98,7 @@ export const SheetMenu = memo(() => {
 
   return (
     <ScrollArea className="h-full" id="nav-sheet">
-      <div className="p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
+      <div data-menu={true} className="group p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
         <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
         {searchTerm && (
           <div className="search-results mt-3">

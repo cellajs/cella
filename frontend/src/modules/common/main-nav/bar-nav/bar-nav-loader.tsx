@@ -1,8 +1,9 @@
-import { useIsFetching } from '@tanstack/react-query';
 import { config } from 'config';
 import { Home } from 'lucide-react';
-import useMounted from '~/hooks/use-mounted';
 import Logo from '~/modules/app/logo';
+
+import { useIsFetching } from '@tanstack/react-query';
+import useMounted from '~/hooks/use-mounted';
 import { useNavigationStore } from '~/store/navigation';
 
 const MainNavLoader = () => {
@@ -10,20 +11,28 @@ const MainNavLoader = () => {
   const { navLoading } = useNavigationStore();
   const isFetching = useIsFetching();
 
-  // Show loading spinner when fetching data or navigating
   const isLoading = isFetching > 0 || navLoading;
-
   return (
     <>
       <Logo
         iconOnly
-        className={`${isLoading && config.navLogoAnimation} w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0 ${
-          hasWaited && !isLoading && 'ease-in-out opacity-0 scale-0'
-        }`}
+        data-waited={hasWaited}
+        data-loading={isLoading}
+        className={`w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0
+          data-[loading=true]:${config.navLogoAnimation}
+          data-[waited=true]:data-[loading=false]:ease-in-out  
+          data-[waited=true]:data-[loading=false]:opacity-0
+          data-[waited=true]:data-[loading=false]:scale-0`}
       />
       <Home
+        data-waited={hasWaited}
+        data-loading={isLoading}
         strokeWidth={config.theme.strokeWidth}
-        className={`transition-all ease-in-out group-hover:scale-110 group-hover:opacity-100 ${!hasWaited || isLoading ? 'opacity-0 scale-0' : ''}`}
+        className="transition-all ease-in-out group-hover:scale-110 group-hover:opacity-100 
+        data-[waited=false]:scale-0
+        data-[loading=true]:scale-0
+        data-[waited=false]:opacity-0
+        data-[loading=true]:opacity-0"
       />
     </>
   );
