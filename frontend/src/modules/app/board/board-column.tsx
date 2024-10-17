@@ -238,7 +238,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
         id: `create-task-form-${project.id}`,
         drawerOnMobile: false,
         preventEscPress: true,
-        className: 'p-0 w-auto shadow-none relative z-[130] rounded-none border-t-0 m-0 max-w-none',
+        className: 'p-0 w-auto shadow-none relative z-[104] rounded-none border-t-0 m-0 max-w-none',
         container: ref.current,
         containerBackdrop: false,
         hideClose: true,
@@ -359,9 +359,15 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
           ) : (
             <ScrollArea id={project.id} className="h-full mx-[-.07rem]">
               <ScrollBar />
-              <div className="z-[250]" ref={defaultTaskFormRef} />
+              <div className="z-[104]" ref={defaultTaskFormRef} />
 
-              <div className="h-full flex flex-col" id={`tasks-list-${project.id}`} ref={cardListRef}>
+              <div
+                data-show-iced={showIced}
+                data-show-accepted={showAccepted}
+                className="h-full flex flex-col group"
+                id={`tasks-list-${project.id}`}
+                ref={cardListRef}
+              >
                 {!!tasks.length && (
                   <div className="flex flex-col flex-grow">
                     <Button
@@ -376,7 +382,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                       {!!acceptedCount && (
                         <ChevronDown
                           size={16}
-                          className={`transition-transform absolute right-5 opacity-50 ${showAccepted ? 'rotate-180' : 'rotate-0'}`}
+                          className="transition-transform absolute right-5 opacity-50 group-data-[show-accepted=true]:rotate-180"
                         />
                       )}
                     </Button>
@@ -428,10 +434,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                       <span className="w-6 mr-1.5 text-center">{icedCount}</span>
                       <span> {t('app:iced').toLowerCase()}</span>
                       {!!icedCount && (
-                        <ChevronDown
-                          size={16}
-                          className={`transition-transform absolute right-5 opacity-50 ${showIced ? 'rotate-180' : 'rotate-0'}`}
-                        />
+                        <ChevronDown size={16} className="transition-transform absolute right-5 opacity-50 group-data-[show-iced=true]:rotate-180" />
                       )}
                     </Button>
                   </div>

@@ -2,6 +2,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
+import { cn } from '~/utils/cn';
 
 export function BoardColumnHeader({ projectId, children }: { projectId: string; children?: React.ReactNode }) {
   const navigate = useNavigate();
@@ -32,7 +33,10 @@ export function BoardColumnHeader({ projectId, children }: { projectId: string; 
 
   return (
     <div
-      className={`sm:border p-1 sm:p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-1 sm:gap-2 space-between items-center ${stickyStyles}`}
+      className={cn(
+        'sm:border p-1 sm:p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-1 sm:gap-2 space-between items-center',
+        stickyStyles,
+      )}
     >
       <Button disabled={currentIndex === 0} variant="ghost" className="sm:hidden" onClick={() => ArrowClick('left')}>
         <ChevronLeft size={16} />

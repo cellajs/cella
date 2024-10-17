@@ -29,7 +29,8 @@ const DisplayOptions = ({ className = '' }: Props) => {
           <ToggleGroupItem
             key={value}
             value={value}
-            className={`${pathname.includes(value) ? 'bg-accent' : 'hover:bg-accent/50 text-accent-foreground/70'}`}
+            data-current-option={pathname.includes(value)}
+            className="hover:bg-accent/50 text-accent-foreground/70 data-[current-option=true]:bg-accent "
           >
             {value === 'board' && <SquareKanban size={16} />}
             {value === 'table' && <Rows4 size={16} />}

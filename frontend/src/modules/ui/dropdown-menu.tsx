@@ -61,7 +61,7 @@ const DropdownMenuContent = React.forwardRef<
     {!modal &&
       ReactDOM.createPortal(
         <div
-          className="fixed inset-0 bg-transparent z-[120]" // Full-screen overlay
+          className="fixed inset-0 bg-transparent z-[103]" // Full-screen overlay
         />,
         document.body,
       )}

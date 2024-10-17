@@ -79,8 +79,8 @@ const ProjectActions = ({ project, openDialog }: { project: Project; openDialog:
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button variant="plain" size="xs" className="rounded hidden sm:inline-flex" onClick={createTaskClick}>
-        <Plus size={18} className={`${createTaskForm ? 'rotate-45' : ''} transition-transform duration-200 `} />
+      <Button data-form-open={createTaskForm} variant="plain" size="xs" className="rounded hidden sm:inline-flex" onClick={createTaskClick}>
+        <Plus size={18} className="[[data-form-open=true]_&]:rotate-45 transition-transform duration-200" />
         <span className="ml-1">{t('app:task')}</span>
       </Button>
       <div className="grow sm:hidden" />
