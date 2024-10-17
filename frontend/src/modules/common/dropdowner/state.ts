@@ -7,6 +7,7 @@ export type DropDownT = {
   autoFocus?: boolean;
   content?: React.ReactNode;
   align?: 'start' | 'end';
+  modal?: boolean;
 };
 
 export type DropDownToRemove = {
@@ -57,6 +58,18 @@ class Observer {
   get = (id: number | string) => {
     return this.dropdowner ? this.dropdowner.id === id : false;
   };
+
+  updateOpenDropDown = (data: Partial<DropDownT>) => {
+    if (!this.dropdowner) return;
+
+    const updatedDropDown = { ...this.dropdowner, ...data };
+    this.dropdowner = updatedDropDown;
+    this.publish(updatedDropDown);
+  };
+
+  getOpenDropDown = () => {
+    return this.dropdowner;
+  };
 }
 
 export const dropdownerState = new Observer();
@@ -75,6 +88,7 @@ const dropdownerFunction = (content: React.ReactNode, data?: ExternalDropDown) =
     content,
     refocus: true,
     autoFocus: true,
+    modal: data?.modal ?? true,
     align: 'start',
     id,
     ...data,
@@ -85,4 +99,6 @@ const dropdownerFunction = (content: React.ReactNode, data?: ExternalDropDown) =
 export const dropdowner = Object.assign(dropdownerFunction, {
   remove: dropdownerState.remove,
   get: dropdownerState.get,
+  getOpenDropDown: dropdownerState.getOpenDropDown,
+  updateOpenDropDown: dropdownerState.updateOpenDropDown,
 });

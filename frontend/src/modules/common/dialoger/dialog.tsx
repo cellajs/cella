@@ -1,6 +1,7 @@
 import { type DialogT, dialog as dialogState } from '~/modules/common/dialoger/state';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
+import { dropdowner } from '../dropdowner/state';
 
 type CustomInteractOutsideEvent = CustomEvent<{ originalEvent: PointerEvent | FocusEvent }>;
 
@@ -34,6 +35,12 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
   };
 
   const handleInteractOutside = (event: CustomInteractOutsideEvent) => {
+    const dropDown = dropdowner.getOpenDropDown();
+
+    // Check if there is an open dropdown and if it is not modal
+    if (dropDown && !dropDown.modal) event.preventDefault();
+
+    // Check if the container exists and if there's no backdrop
     if (container && !containerBackdrop) event.preventDefault();
   };
 

@@ -400,7 +400,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                           organizationId={organizationId}
                           creationValueChange={onChange}
                         />,
-                        { id: `labels-${defaultId}`, trigger: event.currentTarget },
+                        { id: `labels-${defaultId}`, trigger: event.currentTarget, modal: false },
                       );
                     }}
                   >
@@ -421,6 +421,17 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                                   e.stopPropagation();
                                   e.preventDefault();
                                   onChange(value.filter((l) => l.name !== name));
+                                  dropdowner.updateOpenDropDown({
+                                    content: (
+                                      <SetLabels
+                                        value={value.filter((l) => l.name !== name) as Label[]}
+                                        triggerWidth={bounds.width - 3}
+                                        projectId={projectId}
+                                        organizationId={organizationId}
+                                        creationValueChange={onChange}
+                                      />
+                                    ),
+                                  });
                                 }}
                                 onKeyDown={() => {}}
                               >

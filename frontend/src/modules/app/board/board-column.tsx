@@ -238,7 +238,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
         id: `create-task-form-${project.id}`,
         drawerOnMobile: false,
         preventEscPress: true,
-        className: 'p-0 w-auto shadow-none relative z-[50] rounded-none border-t-0 m-0 max-w-none',
+        className: 'p-0 w-auto shadow-none relative z-[130] rounded-none border-t-0 m-0 max-w-none',
         container: ref.current,
         containerBackdrop: false,
         hideClose: true,

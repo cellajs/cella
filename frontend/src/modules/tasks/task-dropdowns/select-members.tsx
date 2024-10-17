@@ -99,7 +99,8 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
     <Command className="relative rounded-lg max-h-[44vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>
       <CommandInput
         ref={inputRef}
-        className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none max-sm:hidden min-h-10"
+        wrapClassName="max-sm:hidden"
+        className="leading-normal focus-visible:ring-transparent border-t-0 border-x-0 border-b-1 rounded-none min-h-10"
         placeholder={t('app:placeholder.assign')}
         value={searchValue}
         autoFocus={true}
@@ -137,7 +138,6 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
                 value={user.id}
                 onSelect={(id) => {
                   handleSelectClick(id);
-                  dropdowner.remove();
                   setSearchValue('');
                 }}
                 className="group rounded-md flex gap-2 justify-between items-center w-full leading-normal"
