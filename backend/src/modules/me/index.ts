@@ -12,14 +12,13 @@ import { transformDatabaseUserWithCount } from '../users/helpers/transform-datab
 import meRoutesConfig from './routes';
 
 import { config } from 'config';
-import type { z } from 'zod';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/entity-config';
 import { getContextUser, getMemberships } from '#/lib/context';
 import { getPreparedSessions } from './helpers/get-sessions';
-import type { menuItemsSchema, userMenuSchema } from './schema';
+import type { MenuItem, UserMenu } from './schema';
 
 const app = new CustomHono();
 
@@ -64,13 +63,20 @@ const meRoutes = app
 
     // Fetch function for each menu section, including handling submenus
     const fetchMenuItemsForSection = async (section: MenuSection) => {
-      let formattedSubmenus: Omit<z.infer<typeof menuItemsSchema>[number], 'submenu'>[];
+      let submenus: MenuItem[];
       const mainTable = entityTables[section.entityType];
       const mainEntityIdField = entityIdFields[section.entityType];
 
       const entity = await db
         .select({
-          item: mainTable,
+          slug: mainTable.slug,
+          id: mainTable.id,
+          createdAt: mainTable.createdAt,
+          modifiedAt: mainTable.modifiedAt,
+          organizationId: membershipSelect.organizationId,
+          name: mainTable.name,
+          entity: mainTable.entity,
+          thumbnailUrl: mainTable.thumbnailUrl,
           membership: membershipSelect,
         })
         .from(mainTable)
@@ -83,42 +89,27 @@ const meRoutes = app
         const subTable = entityTables[section.submenu.entityType];
         const subEntityIdField = entityIdFields[section.submenu.entityType];
 
-        const subEntity = await db
+        submenus = await db
           .select({
-            item: subTable,
+            slug: subTable.slug,
+            id: subTable.id,
+            createdAt: subTable.createdAt,
+            modifiedAt: subTable.modifiedAt,
+            organizationId: membershipSelect.organizationId,
+            name: subTable.name,
+            entity: subTable.entity,
+            thumbnailUrl: subTable.thumbnailUrl,
             membership: membershipSelect,
           })
           .from(subTable)
           .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.submenu.entityType)))
           .orderBy(asc(membershipsTable.order))
           .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
-
-        // TODO is this formatting necessary? Can we return data with proper select? toDateString?
-        formattedSubmenus = subEntity.map(({ item, membership }) => ({
-          slug: item.slug,
-          id: item.id,
-          createdAt: item.createdAt.toDateString(),
-          modifiedAt: item.modifiedAt?.toDateString() ?? null,
-          organizationId: membership.organizationId,
-          name: item.name,
-          entity: item.entity,
-          thumbnailUrl: item.thumbnailUrl,
-          membership,
-        }));
       }
 
-      // TODO is this formatting necessary? Can we return data with proper select? toDateString is necessary?
-      return entity.map(({ item, membership }) => ({
-        slug: item.slug,
-        id: item.id,
-        createdAt: item.createdAt.toDateString(),
-        modifiedAt: item.modifiedAt?.toDateString() ?? null,
-        organizationId: membership.organizationId,
-        name: item.name,
-        entity: item.entity,
-        thumbnailUrl: item.thumbnailUrl,
-        membership,
-        submenu: section.submenu ? formattedSubmenus.filter((p) => p.membership[section.submenu.parentField] === item.id) : [],
+      return entity.map((entity) => ({
+        ...entity,
+        submenu: section.submenu ? submenus.filter((p) => p.membership[section.submenu.parentField] === entity.id) : [],
       }));
     };
 
@@ -136,7 +127,7 @@ const meRoutes = app
           acc[section.name] = await fetchMenuItemsForSection(section);
           return acc;
         },
-        Promise.resolve({} as z.infer<typeof userMenuSchema>),
+        Promise.resolve({} as UserMenu),
       );
 
       return result;

@@ -1,5 +1,4 @@
 import type { membersSchema } from 'backend/modules/general/schema';
-import type { menuItemsSchema, userMenuSchema } from 'backend/modules/me/schema';
 import type { membershipInfoSchema, membershipSchema } from 'backend/modules/memberships/schema';
 import type { organizationSchema } from 'backend/modules/organizations/schema';
 import type { requestSchema } from 'backend/modules/requests/schema';
@@ -17,8 +16,8 @@ export type ContextEntity = (typeof config.contextEntityTypes)[number];
 export type User = z.infer<typeof userSchema>;
 export type Session = Extract<InferResponseType<(typeof client.index)['$get']>, { data: unknown }>['data']['sessions'][number];
 export type MeUser = User & { sessions: Session[]; passkey: boolean; oauth: EnabledOauthProviderOptions[] };
-export type UserMenu = z.infer<typeof userMenuSchema>;
-export type UserMenuItem = z.infer<typeof menuItemsSchema>[number];
+export type UserMenu = Extract<InferResponseType<(typeof client.menu)['$get']>, { data: unknown }>['data'];
+export type UserMenuItem = UserMenu[keyof UserMenu][number];
 
 export type Organization = z.infer<typeof organizationSchema>;
 
