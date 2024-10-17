@@ -44,7 +44,6 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
 
   const [loading, setLoading] = useState(false);
 
-  const invertClass = mode === 'dark' ? 'invert' : '';
   let redirect = '';
   if (token) {
     const searchResult = useSearch({
@@ -67,7 +66,7 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
         </div>
       )}
 
-      <div className="flex flex-col space-y-2">
+      <div data-mode={mode} className="group flex flex-col space-y-2">
         {hasPasskey && actionType === 'signIn' && (
           <Button type="button" onClick={() => passkeyAuth(email, successesCallback)} variant="plain" className="w-full gap-1.5">
             <Fingerprint size={16} />
@@ -99,9 +98,10 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
                 }}
               >
                 <img
+                  data-provider={provider}
                   src={`/static/images/${provider.toLowerCase()}-icon.svg`}
                   alt={provider}
-                  className={`w-4 h-4 ${provider === 'github' ? invertClass : ''}`}
+                  className="w-4 h-4 group-data-[mode=dark]:data-[provider=github]:invert"
                   loading="lazy"
                 />
                 {token

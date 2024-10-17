@@ -16,13 +16,9 @@ export interface AvatarWrapProps extends AvatarProps {
 const AvatarWrap = memo(({ type, id, name, url, className, ...props }: AvatarWrapProps) => {
   const avatarBackground = useMemo(() => numberToColorClass(id), [id]);
   return (
-    <Avatar {...props} className={className}>
+    <Avatar {...props} data-type={type} className={cn('group', className)}>
       {url ? (
-        <AvatarImage
-          src={`${url}?width=100&format=avif`}
-          draggable="false"
-          className={`bg-muted ${type && type === 'user' ? 'rounded-full' : 'rounded-md'}`}
-        />
+        <AvatarImage src={`${url}?width=100&format=avif`} draggable="false" className="bg-muted rounded-md group-data-[type=user]:rounded-full" />
       ) : (
         <AvatarFallback className={cn('bg-muted', avatarBackground, type && type === 'user' ? 'rounded-full' : 'rounded-md')}>
           <span className="sr-only">{name}</span>

@@ -23,7 +23,10 @@ const PasswordStrength = ({
   }, [password]);
 
   return (
-    <div className={`absolute -mt-[calc(0.25rem+1px)] w-full px-[.07rem] flex gap-[.07rem] ${password.length > minLength ? '' : 'opacity-50'}`}>
+    <div
+      data-min-length={password.length > minLength}
+      className="absolute -mt-[calc(0.25rem+1px)] w-full px-[.07rem] flex gap-[.07rem] data-[min-length=false]:opacity-50"
+    >
       {[1, 2, 3, 4].map((el) => (
         <div
           className="h-1 w-full bg-primary/25"

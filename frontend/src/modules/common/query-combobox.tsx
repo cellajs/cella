@@ -129,8 +129,9 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
                 <CommandGroup>
                   {data.items.map((user) => (
                     <CommandItem
+                      data-was-selected={selected.some((u) => u === user.email)}
                       key={user.id}
-                      className="w-full justify-between"
+                      className="w-full justify-between group"
                       onSelect={() => {
                         if (user.email) onSelect(user.email);
                       }}
@@ -139,7 +140,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
                         <AvatarWrap type={user.entity} className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
                         <span className="group-hover:underline underline-offset-4 truncate font-medium">{user.name}</span>
                       </div>
-                      <Check size={16} className={`text-success ${!selected.some((u) => u === user.email) && 'invisible'}`} />
+                      <Check size={16} className="text-success group-data-[was-selected=false]:invisible" />
                     </CommandItem>
                   ))}
                 </CommandGroup>

@@ -5,8 +5,13 @@ const Spinner = ({ inline = false, noDelay = false }) => {
   const { hasStarted } = useMounted();
 
   return (
-    <div className={`duration-300 transition-all ${!hasStarted && !noDelay && 'opacity-0'} `}>
-      <Loader2 className={`text-muted-foreground mx-auto ${inline ? 'h-6 w-6' : 'mt-[40vh] h-10 w-10'} animate-spin`} />
+    <div
+      data-started={hasStarted}
+      data-delay={noDelay}
+      data-inline={inline}
+      className="duration-300 transition-all data-[started=false]:data-[delay=false]:opacity-0 group"
+    >
+      <Loader2 className="text-muted-foreground mx-auto group-data-[inline=true]:h-6 w-6 group-data-[inline=false]:mt-[40vh] h-10 w-10  animate-spin" />
     </div>
   );
 };
