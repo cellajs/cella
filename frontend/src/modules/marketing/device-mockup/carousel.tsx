@@ -30,12 +30,16 @@ const DeviceCarousel = ({ slides, onOpenChange, isDialog = false, slide = 0 }: D
           return (
             <CarouselItem key={slide.src} onClick={() => onOpenChange(true, idx)}>
               <div className="overflow-hidden relative h-full rounded-t-[.5rem]">
-                <ReactPanZoom
-                  image={`/static/screenshots/${slide.src}`}
-                  alt={`Slide ${idx}`}
-                  imageClass={imageClass}
-                  showButtons={current === idx && isDialog}
-                />
+                {isDialog ? (
+                  <ReactPanZoom
+                    image={`/static/screenshots/${slide.src}`}
+                    alt={`Slide ${idx}`}
+                    imageClass={imageClass}
+                    showButtons={current === idx}
+                  />
+                ) : (
+                  <img src={`/static/screenshots/${slide.src}`} alt={`Slide ${idx}`} className={`${imageClass} w-full h-full`} />
+                )}
               </div>
             </CarouselItem>
           );

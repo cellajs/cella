@@ -1,8 +1,10 @@
 // This code is originally authored by https://github.com/mgorabbani (https://github.com/mgorabbani/react-image-pan-zoom-rotate).
 
-import { CornerDownLeft, FlipHorizontal2, Minus, Plus, RefreshCw } from 'lucide-react';
+import { Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react';
 import * as React from 'react';
-import { Button } from '~/modules/ui/button';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import { TooltipButton } from '../tooltip-button';
 import PanViewer from './image-viewer-setup';
 
 type ReactPanZoomProps = {
@@ -16,16 +18,17 @@ type ReactPanZoomProps = {
 };
 
 const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(({ image, alt, resetImageState, showButtons, imageClass }, ref) => {
+  const isDesktop = useBreakpoints('min', 'xl', true);
   const [dx, setDx] = React.useState(0);
   const [dy, setDy] = React.useState(0);
-  const [zoom, setZoom] = React.useState(1);
+  const [zoom, setZoom] = React.useState(isDesktop ? 0.9 : 1);
   const [rotation, setRotation] = React.useState(0);
   const [flip, setFlip] = React.useState(false);
 
   const resetAll = () => {
     setDx(0);
     setDy(0);
-    setZoom(1);
+    setZoom(isDesktop ? 0.9 : 1);
     setRotation(0);
     setFlip(false);
   };
@@ -44,13 +47,13 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(({ im
     setZoom((prevZoom) => (prevZoom >= 1 ? prevZoom - 0.2 : prevZoom));
   };
 
-  const rotateLeft = () => {
-    setRotation((prevRotation) => (prevRotation === -3 ? 0 : prevRotation - 1));
+  const rotateRight = () => {
+    setRotation((prevRotation) => (prevRotation === 3 ? 0 : prevRotation + 1));
   };
 
-  const flipImage = () => {
-    setFlip((prevFlip) => !prevFlip);
-  };
+  // const flipImage = () => {
+  //   setFlip((prevFlip) => !prevFlip);
+  // };
 
   const onPan = (dx: number, dy: number) => {
     setDx(dx);
@@ -60,28 +63,60 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(({ im
   return (
     <>
       {showButtons && (
-        <div className="absolute flex flex-col right-0 top-12 gap-1 z-20 select-none rounded bg-transparent">
-          <Button size="icon" variant="outline" onClick={zoomIn}>
-            <Plus size={20} />
-          </Button>
-          <Button size="icon" variant="outline" onClick={zoomOut}>
-            <Minus size={20} />
-          </Button>
-          <Button size="icon" variant="outline" onClick={rotateLeft}>
-            <CornerDownLeft size={20} />
-          </Button>
-          <Button size="icon" variant="outline" onClick={flipImage}>
-            <FlipHorizontal2 size={20} />
-          </Button>
-          <Button size="icon" variant="outline" onClick={resetAll}>
-            <RefreshCw size={20} />
-          </Button>
-        </div>
+        <ToggleGroup
+          type="single"
+          variant="merged"
+          className="gap-0 flex left-[calc(50vw-5rem)] shadow-sm rounded-sm bottom-3 absolute z-20 select-none"
+          onValueChange={(value) => {
+            switch (value) {
+              case 'zoomIn':
+                zoomIn();
+                break;
+              case 'zoomOut':
+                zoomOut();
+                break;
+              case 'rotateRight':
+                rotateRight();
+                break;
+              case 'resetAll':
+                resetAll();
+                break;
+              default:
+                break;
+            }
+          }}
+        >
+          <TooltipButton toolTipContent="Zoom in">
+            <ToggleGroupItem value="zoomIn" className="bg-background hover:bg-accent text-accent-foreground">
+              <Plus size={14} />
+            </ToggleGroupItem>
+          </TooltipButton>
+
+          <TooltipButton toolTipContent="Zoom out">
+            <ToggleGroupItem value="zoomOut" className="bg-background hover:bg-accent text-accent-foreground">
+              <Minus size={14} />
+            </ToggleGroupItem>
+          </TooltipButton>
+
+          <TooltipButton toolTipContent="Rotate right">
+            <ToggleGroupItem value="rotateRight" className="bg-background hover:bg-accent text-accent-foreground">
+              <RotateCwSquare size={14} />
+            </ToggleGroupItem>
+          </TooltipButton>
+
+          <TooltipButton toolTipContent="Reset">
+            <ToggleGroupItem value="resetAll" className="bg-background hover:bg-accent text-accent-foreground">
+              <RefreshCw size={14} />
+            </ToggleGroupItem>
+          </TooltipButton>
+        </ToggleGroup>
       )}
+
       <PanViewer
         className="w-full h-full flex justify-center items-center z-10"
         zoom={zoom}
         setZoom={setZoom}
+        enablePan={true}
         pandx={dx}
         pandy={dy}
         onPan={onPan}
