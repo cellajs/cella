@@ -6,11 +6,13 @@ import { queryClient } from '~/lib/router';
 import type { Subtask, Task } from '~/types/app';
 import { nanoid } from '~/utils/nanoid';
 
+export type TasksCreateMutationQueryFnVariables = Parameters<typeof createTask>[0];
 export type TasksUpdateMutationQueryFnVariables = Parameters<typeof updateTask>[0] & {
   projectId?: string;
 };
-
-export type TasksCreateMutationQueryFnVariables = Parameters<typeof createTask>[0];
+// export type TasksDeleteMutationQueryFnVariables = Parameters<typeof deleteTasks>[0] & {
+//   projectId?: string;
+// };
 
 type InfiniteQueryFnData = {
   items: Task[];
@@ -39,6 +41,13 @@ export const useTaskUpdateMutation = () => {
     mutationFn: updateTask,
   });
 };
+
+// export const useTaskDeleteMutation = () => {
+//   return useMutation<boolean, Error, TasksDeleteMutationQueryFnVariables>({
+//     mutationKey: taskKeys.delete(),
+//     mutationFn: deleteTasks,
+//   });
+// };
 
 // Helper function to update a task property
 const updateTaskProperty = <T extends Task | Subtask>(task: T, variables: TasksUpdateMutationQueryFnVariables): T => {
@@ -251,3 +260,59 @@ queryClient.setMutationDefaults(taskKeys.update(), {
     }
   },
 });
+
+// queryClient.setMutationDefaults(taskKeys.delete(), {
+//   mutationFn: (variables: TasksDeleteMutationQueryFnVariables) => deleteTasks(variables),
+//   onMutate: async (variables) => {
+//     const { ids, projectId, orgIdOrSlug } = variables;
+
+//     // Cancel any outgoing refetches
+//     // (so they don't overwrite our optimistic update)
+//     await queryClient.cancelQueries({ queryKey: taskKeys.list({ orgIdOrSlug, projectId }) });
+//     // Snapshot the previous value
+//     const previousTasks = queryClient.getQueryData<InfiniteQueryFnData>(taskKeys.list({ orgIdOrSlug, projectId }));
+
+//     // Optimistically update to the new value
+//     if (previousTasks) {
+//       queryClient.setQueryData<InfiniteQueryFnData>(taskKeys.list({ orgIdOrSlug, projectId }), (old) => {
+//         if (!old) {
+//           return {
+//             items: [],
+//             total: 0,
+//           };
+//         }
+
+//         const updatedTasks = old.items
+//           .map((task) => {
+//             // Update the task itself
+//             if (ids.includes(task.id)) {
+//               return null;
+//             }
+
+//             // If the task is the parent, update its subtasks
+//             if (task.subtasks) {
+//               const updatedSubtasks = task.subtasks.filter((subtask) => !ids.includes(subtask.id));
+//               return { ...task, subtasks: updatedSubtasks }; // Return parent with updated subtasks
+//             }
+
+//             // No changes, return task as-is
+//             return task;
+//           })
+//           .filter(Boolean) as Task[];
+
+//         return {
+//           ...old,
+//           items: updatedTasks,
+//         };
+//       });
+//     }
+
+//     // Return a context object with the snapshotted value
+//     return { previousTasks };
+//   },
+//   onError: (_, { orgIdOrSlug, projectId }, context) => {
+//     if (context?.previousTasks) {
+//       queryClient.setQueryData(taskKeys.list({ orgIdOrSlug, projectId }), context.previousTasks);
+//     }
+//   },
+// });
