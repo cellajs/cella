@@ -1,11 +1,12 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createEnv } from '@t3-oss/env-core';
+import { config } from 'config';
 import { config as dotenvConfig } from 'dotenv';
 import { z } from 'zod';
 
 // Check if .env file exists
 const isEnvFileExists = existsSync('.env');
-if (!isEnvFileExists) {
+if (!isEnvFileExists && config.mode === 'development') {
   const isExampleEnvFileExists = existsSync('.env.example');
   if (!isExampleEnvFileExists) {
     throw new Error('Please create a .env file');
