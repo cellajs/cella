@@ -3,12 +3,13 @@ import { t } from 'i18next';
 import { toast } from 'sonner';
 import { type GetTasksParams, createTask, updateTask } from '~/api/tasks';
 import { queryClient } from '~/lib/router';
-import type { Subtask, Task } from '~/types/app';
+import type { Label, Subtask, Task } from '~/types/app';
 import { nanoid } from '~/utils/nanoid';
 
 export type TasksCreateMutationQueryFnVariables = Parameters<typeof createTask>[0];
-export type TasksUpdateMutationQueryFnVariables = Parameters<typeof updateTask>[0] & {
+export type TasksUpdateMutationQueryFnVariables = Omit<Parameters<typeof updateTask>[0], 'data'> & {
   projectId?: string;
+  data: string | number | boolean | string[] | Label[] | null;
 };
 // export type TasksDeleteMutationQueryFnVariables = Parameters<typeof deleteTasks>[0] & {
 //   projectId?: string;
@@ -38,7 +39,13 @@ export const useTaskCreateMutation = () => {
 export const useTaskUpdateMutation = () => {
   return useMutation<Pick<Task, 'summary' | 'description' | 'expandable'>, Error, TasksUpdateMutationQueryFnVariables>({
     mutationKey: taskKeys.update(),
-    mutationFn: updateTask,
+    mutationFn: (variables: TasksUpdateMutationQueryFnVariables) => {
+      const transformedVariables = {
+        ...variables,
+        data: Array.isArray(variables.data) ? variables.data.map((item) => (typeof item === 'string' ? item : item.id)) : variables.data,
+      };
+      return updateTask(transformedVariables);
+    },
   });
 };
 
@@ -166,7 +173,16 @@ queryClient.setMutationDefaults(taskKeys.create(), {
 });
 
 queryClient.setMutationDefaults(taskKeys.update(), {
-  mutationFn: (variables: TasksUpdateMutationQueryFnVariables) => updateTask(variables),
+  mutationFn: (variables: TasksUpdateMutationQueryFnVariables) => {
+    // Transform data only if key is 'labels' and data is an array
+    const transformedVariables = {
+      ...variables,
+      data: Array.isArray(variables.data) ? variables.data.map((l) => (typeof l === 'string' ? l : l.id)) : variables.data,
+    };
+
+    // Send transformed variables to the server
+    return updateTask(transformedVariables);
+  },
   onMutate: async (variables) => {
     const { id: taskId, orgIdOrSlug, projectId } = variables;
 

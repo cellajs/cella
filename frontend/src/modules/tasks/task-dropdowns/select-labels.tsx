@@ -75,12 +75,11 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
     if (!focusedTaskId) return;
 
     try {
-      const labelIds = labels.map((l) => l.id);
       await taskMutation.mutateAsync({
         id: focusedTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'labels',
-        data: labelIds,
+        data: labels,
         projectId,
       });
       if (taskIdPreview) await queryClient.invalidateQueries({ refetchType: 'active' });
