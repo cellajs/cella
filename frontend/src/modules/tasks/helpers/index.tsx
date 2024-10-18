@@ -84,7 +84,7 @@ export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, i
 };
 
 // To sort Subtasks by its order
-const sortSubtaskOrder = (task1: Pick<Task, 'order'>, task2: Pick<Task, 'order'>, reverse?: boolean) => {
+export const sortSubtaskOrder = (task1: Pick<Task, 'order'>, task2: Pick<Task, 'order'>, reverse?: boolean) => {
   if (task1.order !== null && task2.order !== null) return reverse ? task2.order - task1.order : task1.order - task2.order;
   // order is null
   return 0;

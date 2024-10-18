@@ -308,7 +308,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     return combine(
       monitorForElements({
         canMonitor({ source }) {
-          return isTaskData(source.data) || isSubtaskData(source.data);
+          return (isTaskData(source.data) || isSubtaskData(source.data)) && !taskIdPreview;
         },
         async onDrop({ location, source }) {
           const target = location.current.dropTargets[0];
@@ -351,6 +351,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                 orgIdOrSlug: workspace.organizationId,
                 key: 'order',
                 data: newOrder,
+                projectId: sourceItem.projectId,
               });
             } catch (err) {
               return toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
