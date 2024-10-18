@@ -1,5 +1,5 @@
 import { cva } from 'class-variance-authority';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 import { Card, CardContent } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
@@ -55,7 +55,19 @@ interface TaskProps {
   style?: React.CSSProperties;
 }
 
-export default function TaskCard({ style, task, mode, isSelected, isFocused, state, isSheet }: TaskProps) {
+function areEqual(prevProps: TaskProps, nextProps: TaskProps) {
+  // Compare to decide if component should rerender
+  return (
+    prevProps.task === nextProps.task &&
+    prevProps.mode === nextProps.mode &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.isFocused === nextProps.isFocused &&
+    prevProps.state === nextProps.state &&
+    prevProps.isSheet === nextProps.isSheet
+  );
+}
+
+const TaskCard = memo(function TaskCard({ style, task, mode, isSelected, isFocused, state, isSheet }: TaskProps) {
   const taskRef = useRef<HTMLDivElement>(null);
   const taskDragRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -192,4 +204,6 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
       </Card>
     </motion.div>
   );
-}
+}, areEqual);
+
+export default TaskCard;

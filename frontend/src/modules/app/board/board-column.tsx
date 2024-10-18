@@ -227,17 +227,16 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     };
   }, [networkMode]);
 
-  const tasks = useMemo(() => {
+  const { filteredTasks, acceptedCount, icedCount } = useMemo(() => {
+    // Get the tasks from the data or default to an empty array
     const respTasks = data?.items || [];
-    if (!searchQuery.length) return respTasks;
-    return respTasks.filter((t) => t.keywords.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [data, searchQuery]);
 
-  const {
-    filteredTasks: showingTasks,
-    acceptedCount,
-    icedCount,
-  } = useMemo(() => sortAndGetCounts(tasks, showAccepted, showIced), [tasks, showAccepted, showIced]);
+    // Filter tasks based on the search query
+    const filteredTasks = searchQuery.length ? respTasks.filter((t) => t.keywords.toLowerCase().includes(searchQuery.toLowerCase())) : respTasks;
+
+    // Sort the filtered tasks and get the counts
+    return sortAndGetCounts(filteredTasks, showAccepted, showIced);
+  }, [data, searchQuery, showAccepted, showIced]);
 
   const handleIcedClick = () => {
     changeColumn(workspace.id, project.id, {
@@ -261,7 +260,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     dialog(
       <CreateTaskForm
         projectIdOrSlug={project.id}
-        tasks={showingTasks}
+        tasks={filteredTasks}
         dialog
         onCloseForm={() =>
           changeColumn(workspace.id, project.id, {
@@ -290,7 +289,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
 
   useEffect(() => {
     if (!taskIdPreview) return;
-    const focusedTask = tasks.find((t) => t.id === taskIdPreview);
+    const focusedTask = filteredTasks.find((t) => t.id === taskIdPreview);
     if (!focusedTask) return;
     // to open sheet after initial sheet.remove triggers
     if (taskIdPreview) {
@@ -298,7 +297,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
         sheet.update(`task-preview-${taskIdPreview}`, { content: <TaskSheet task={focusedTask} /> });
       } else setTimeout(() => openTaskPreviewSheet(focusedTask), 0);
     }
-  }, [tasks, taskIdPreview]);
+  }, [filteredTasks, taskIdPreview]);
 
   useEffect(() => {
     if (isMobile && minimized) handleExpand();
@@ -328,7 +327,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
           if (!edge) return;
 
           if (isTask) {
-            const newOrder: number = getRelativeTaskOrder(edge, showingTasks, targetData.order, sourceItem.id, undefined, sourceItem.status);
+            const newOrder: number = getRelativeTaskOrder(edge, filteredTasks, targetData.order, sourceItem.id, undefined, sourceItem.status);
             try {
               await taskMutation.mutateAsync({
                 id: sourceItem.id,
@@ -344,7 +343,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
           }
 
           if (isSubtask) {
-            const newOrder = getRelativeTaskOrder(edge, showingTasks, targetData.order, sourceItem.id, targetItem.parentId ?? undefined);
+            const newOrder = getRelativeTaskOrder(edge, filteredTasks, targetData.order, sourceItem.id, targetItem.parentId ?? undefined);
             try {
               await taskMutation.mutateAsync({
                 id: sourceItem.id,
@@ -402,7 +401,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                 id={`tasks-list-${project.id}`}
                 ref={cardListRef}
               >
-                {!!tasks.length && (
+                {!!filteredTasks.length && (
                   <div className="flex flex-col flex-grow">
                     <Button
                       onClick={handleAcceptedClick}
@@ -420,7 +419,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                         />
                       )}
                     </Button>
-                    {showingTasks.map((task) => {
+                    {filteredTasks.map((task) => {
                       return (
                         <div key={task.id}>
                           <motion.div
@@ -458,7 +457,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                   </div>
                 )}
 
-                {!tasks.length && !searchQuery && (
+                {!filteredTasks.length && !searchQuery && (
                   <ContentPlaceholder
                     Icon={Palmtree}
                     title={t('common:no_resource_yet', { resource: t('app:tasks').toLowerCase() })}
@@ -479,7 +478,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                     }
                   />
                 )}
-                {!tasks.length && searchQuery && (
+                {!filteredTasks.length && searchQuery && (
                   <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('app:tasks').toLowerCase() })} />
                 )}
               </div>
