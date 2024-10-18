@@ -39,21 +39,19 @@ export const MenuSectionSticky = ({
                 <motion.span layout={'size'} className="flex items-center">
                   {t(sectionLabel)}
                 </motion.span>
-                {!isSectionVisible && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="inline-block px-2 py-1 text-xs font-light text-muted-foreground"
-                  >
-                    {data.filter((i) => !i.membership.archived).length}
-                  </motion.span>
-                )}
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="inline-block group-data-[visible=false]/menuSection:hidden px-2 py-1 text-xs font-light text-muted-foreground"
+                >
+                  {data.filter((i) => !i.membership.archived).length}
+                </motion.span>
               </div>
 
-              <motion.div initial={{ rotate: 0 }} animate={{ rotate: isSectionVisible ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                <ChevronDown size={16} className="opacity-50" />
+              <motion.div initial={{ rotate: 0 }} transition={{ duration: 0.2 }}>
+                <ChevronDown size={16} className="opacity-50 group-data-[visible=true]/menuSection:rotate-180" />
               </motion.div>
             </motion.button>
           </Button>

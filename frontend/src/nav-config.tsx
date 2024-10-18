@@ -31,7 +31,7 @@ export const baseNavItems: NavItemId[] = ['menu', 'home', 'search', 'account'];
 
 // Here you declare all of your main navigation items
 export const navItems: NavItem[] = [
-  { id: 'menu', icon: Menu, sheet: <SheetMenu data-menu={true} /> },
+  { id: 'menu', icon: Menu, sheet: <SheetMenu /> },
   { id: 'home', icon: Home, href: '/home' },
   { id: 'search', icon: Search, dialog: <MainSearch /> },
   { id: 'account', icon: User, sheet: <SheetAccount />, mirrorOnMobile: true },

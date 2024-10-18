@@ -58,16 +58,23 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
   return (
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
-      className={`group flex relative items-center ${!item.submenu ? 'h-12 relative menu-item-sub' : 'h-14 '} w-full p-0 pr-2 justify-start rounded focus:outline-none
-        ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 cursor-grab`}
+      data-archived={item.membership.archived}
+      className="group/optionsItem flex relative items-center h-14 w-full p-0 pr-2 justify-start rounded focus:outline-none
+        ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 cursor-grab
+        group-data-[submenu=false]/menuOptions:h-12
+        group-data-[submenu=false]/menuOptions:menu-item-sub"
     >
       {status === 'pending' ? (
-        <div className={`${!item.submenu ? 'my-2 mx-3 h-8 w-8' : 'm-2'} p-2 ${item.membership.archived && 'opacity-70'}`}>
+        <div
+          className="p-2 m-2 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
+            group-data-[submenu=false]/menuOptions:p-1 group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8 group-data-[archived=true]/optionsItem:opacity-70"
+        >
           <Spinner inline />
         </div>
       ) : (
         <AvatarWrap
-          className={`${!item.submenu ? 'my-2 mx-3 h-8 w-8 text-xs' : 'm-2'} ${item.membership.archived && 'opacity-70'}`}
+          className="m-2 group-data-[submenu=false]/menuOptions:text-xs group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
+            group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8 group-data-[archived=true]/optionsItem:opacity-70"
           type={item.entity}
           id={item.id}
           name={item.name}
@@ -76,7 +83,7 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
       )}
 
       <div className="truncate grow py-2 pl-1 text-left">
-        <div className={`truncate ${item.entity ? 'text-sm' : 'text-base mb-1'} leading-5 ${item.membership.archived && 'opacity-70'}`}>
+        <div className="truncate text-sm leading-5 group-data-[archived=true]/optionsItem:opacity-70">
           {item.name} {config.debug && <span className="text-muted">#{item.membership.order}</span>}
         </div>
         <div className="flex items-center gap-4 transition-opacity delay-500">
@@ -108,7 +115,7 @@ const OptionButtons = ({ Icon, title, onClick, subtask = false }: OptionButtonsP
   <Button
     variant="link"
     size="sm"
-    className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover:opacity-100"
+    className="p-0 font-light text-xs h-4 leading-3 opacity-80 group-hover/optionsItem:opacity-100"
     aria-label={`Click ${title}`}
     onClick={onClick}
   >

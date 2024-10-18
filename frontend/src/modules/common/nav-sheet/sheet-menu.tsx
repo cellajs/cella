@@ -98,17 +98,16 @@ export const SheetMenu = memo(() => {
 
   return (
     <ScrollArea className="h-full" id="nav-sheet">
-      <div data-menu={true} className="group p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
+      <div data-search={!!searchTerm} className="group/menu p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
         <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
-        {searchTerm && (
-          <div className="search-results mt-3">
-            {searchResultsListItems().length > 0 ? (
-              searchResultsListItems()
-            ) : (
-              <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
-            )}
-          </div>
-        )}
+
+        <div className="search-results mt-3 group-data-[search=false]/menu:hidden">
+          {searchResultsListItems().length > 0 ? (
+            searchResultsListItems()
+          ) : (
+            <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+          )}
+        </div>
 
         {!searchTerm && (
           <>

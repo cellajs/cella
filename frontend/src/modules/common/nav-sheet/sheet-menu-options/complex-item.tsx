@@ -4,11 +4,11 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
+import { isPageData } from '~/modules/common/nav-sheet/sheet-menu';
 import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
 import { MenuItemOptions } from '~/modules/common/nav-sheet/sheet-menu-options/menu-item-options';
 import type { UserMenuItem } from '~/types/common';
 import { getDraggableItemData } from '~/utils/drag-drop';
-import { isPageData } from '../sheet-menu';
 
 interface ComplexOptionElementProps {
   item: UserMenuItem;
@@ -28,9 +28,7 @@ export const ComplexOptionElement = ({
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const handleCanDrop = (sourceData: Record<string | symbol, unknown>) => {
-    return (
-      isPageData(sourceData) && sourceData.item.id !== item.id && sourceData.itemType === item.entity
-    );
+    return isPageData(sourceData) && sourceData.item.id !== item.id && sourceData.itemType === item.entity;
   };
 
   // create draggable & dropTarget elements and auto scroll
@@ -63,20 +61,23 @@ export const ComplexOptionElement = ({
   }, [item]);
 
   return (
-    <div className="relative my-1">
+    <div data-submenu={!!item.submenu} className="group/menuOptions relative my-1">
       <div ref={dragRef}>
         <MenuItemOptions item={item} />
         {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
-          <>
+          <div
+            data-have-inactive={!!item.submenu.filter((i) => i.membership.archived).length}
+            data-submenu={true}
+            data-archived-visible={isSubmenuArchivedVisible}
+            className="group/archived"
+          >
             <SheetMenuItemsOptions data={item.submenu} shownOption={shownOption} />
             <MenuArchiveToggle
               archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
               inactiveCount={item.submenu.filter((i) => i.membership.archived).length}
-              isArchivedVisible={isSubmenuArchivedVisible}
-              isSubmenu
             />
             {isSubmenuArchivedVisible && <SheetMenuItemsOptions data={item.submenu} shownOption="archived" />}
-          </>
+          </div>
         )}
       </div>
       {closestEdge && <DropIndicator className="h-0.5 w-full" edge={closestEdge} gap={0.35} />}

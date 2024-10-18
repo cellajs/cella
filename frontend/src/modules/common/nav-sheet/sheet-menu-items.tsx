@@ -24,16 +24,15 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
   // Build route path for the entity
   const { orgIdOrSlug, idOrSlug, path } = useMemo(() => getEntityPath(item), [item]);
 
-  // TODO use tailwind conditional classes
   return (
     <Link
+      data-search-results={!!searchResults}
+      data-submenu={!!item.submenu}
+      data-active={isActive}
       resetScroll={false}
       className={cn(
-        `group flex ${
-          !item.submenu && !searchResults ? 'h-12 relative menu-item-sub' : 'h-14'
-        } w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`,
+        'group flex h-14 w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground data-[submenu=false]:data-[search-results=false]:h-12 data-[submenu=false]:data-[search-results=false]:relative data-[submenu=false]:data-[search-results=false]:menu-item-sub data-[active=true]:ring-transparent data-[active=true]:bg-accent ',
         className,
-        isActive && 'ring-transparent bg-accent',
       )}
       aria-label={item.name}
       to={path}
@@ -72,11 +71,10 @@ interface SheetMenuItemsProps {
   shownOption: 'archived' | 'unarchive';
   createDialog?: () => void;
   className?: string;
-  searchResults?: boolean;
   type: ContextEntity;
 }
 
-export const SheetMenuItems = ({ data, type, shownOption, createDialog, className, searchResults }: SheetMenuItemsProps) => {
+export const SheetMenuItems = ({ data, type, shownOption, createDialog, className }: SheetMenuItemsProps) => {
   const { t } = useTranslation();
   const { hideSubmenu } = useNavigationStore();
 
@@ -102,7 +100,7 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
       <>
         {filteredItems.map((item) => (
           <div key={item.id}>
-            <SheetMenuItem item={item} className={className} searchResults={searchResults} />
+            <SheetMenuItem item={item} className={className} />
             {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
               <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
             )}
