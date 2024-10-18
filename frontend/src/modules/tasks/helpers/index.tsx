@@ -144,7 +144,6 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
   let acceptedCount = 0;
   let icedCount = 0;
 
-  console.log('sortAndGetCounts', tasks.length);
   const splitTasks = tasks.filter((task) => {
     // Count accepted in past 30 days and iced tasks
     if (task.status === 6) acceptedCount += 1;

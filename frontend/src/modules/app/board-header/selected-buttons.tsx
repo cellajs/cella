@@ -37,8 +37,7 @@ const TaskSelectedButtons = ({ workspace, projects, selectedTasks, setSelectedTa
         }
         if (!resp) toast.error(t('common:error.delete_resources', { resources: t('app:tasks') }));
       })
-      .catch((err) => {
-        console.log(err);
+      .catch(() => {
         toast.error(t('common:error.delete_resources', { resources: t('app:tasks') }));
       });
   };
