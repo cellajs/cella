@@ -1,5 +1,4 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/types';
-import type { NavigateFn } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { Suspense, lazy } from 'react';
 import { toast } from 'sonner';
@@ -14,28 +13,16 @@ import SetLabels from '~/modules/tasks/task-dropdowns/select-labels';
 import AssignMembers from '~/modules/tasks/task-dropdowns/select-members';
 import SelectStatus, { taskStatuses, type TaskStatus } from '~/modules/tasks/task-dropdowns/select-status';
 import SelectTaskType from '~/modules/tasks/task-dropdowns/select-task-type';
-import type { Mode } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project, Subtask, Task } from '~/types/app';
 import { dateIsRecent } from '~/utils/date-is-recent';
 
-const TaskCard = lazy(() => import('~/modules/tasks/task'));
+const TaskSheet = lazy(() => import('~/modules/tasks/task-sheet'));
 
-export const openTaskPreviewSheet = (task: Task, mode: Mode, navigate: NavigateFn, addSearch = false) => {
-  if (addSearch) {
-    navigate({
-      to: '.',
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({
-        ...prev,
-        ...{ taskIdPreview: task.id },
-      }),
-    });
-  }
+export const openTaskPreviewSheet = (task: Task) => {
   sheet.create(
     <Suspense>
-      <TaskCard mode={mode} task={task} state="editing" isSelected={false} isFocused={true} isSheet />
+      <TaskSheet task={task} />
     </Suspense>,
     {
       className: 'max-w-full lg:max-w-4xl px-0',
@@ -43,21 +30,9 @@ export const openTaskPreviewSheet = (task: Task, mode: Mode, navigate: NavigateF
       id: `task-preview-${task.id}`,
       hideClose: false,
       side: 'right',
-      removeCallback: () => {
-        navigate({
-          to: '.',
-          replace: true,
-          resetScroll: false,
-          search: (prev) => {
-            const { taskIdPreview: _, ...nextSearch } = prev;
-            return nextSearch;
-          },
-        });
-        sheet.remove(`task-preview-${task.id}`);
-      },
+      removeCallback: () => sheet.remove(`task-preview-${task.id}`),
     },
   );
-  setTaskCardFocus(`sheet-card-${task.id}`);
 };
 
 export const setTaskCardFocus = (id: string) => {

@@ -169,7 +169,7 @@ export default function TaskCard({ style, task, mode, isSelected, isFocused, sta
         <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-2 sm:pr-3 space-between flex flex-col relative">
           {/* To prevent on expand animation */}
           <motion.div className="flex flex-col" layout transition={{ duration: 0 }}>
-            {state !== 'folded' && <TaskHeader task={task} state={state} mode={mode} isSheet={isSheet} />}
+            {state !== 'folded' && <TaskHeader task={task} state={state} isSheet={isSheet} />}
             <div className="flex flex-row gap-1 w-full">
               {state === 'folded' && (
                 <Button

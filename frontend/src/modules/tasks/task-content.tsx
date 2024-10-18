@@ -15,14 +15,14 @@ import type { Task } from '~/types/app';
 import { handleEditorFocus, updateImageSourcesFromDataUrl, useHandleUpdateHTML } from './helpers';
 import type { TaskStates } from './types';
 
-interface Props {
+interface TaskContentProps {
   task: Task;
   mode: Mode;
   state: TaskStates;
   isSheet?: boolean;
 }
 
-const TaskContent = ({ task, mode, state }: Props) => {
+const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
   const taskContentRef = useRef<HTMLDivElement>(null);
   const [createSubtask, setCreateSubtask] = useState(false);
 
@@ -42,7 +42,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
   } = useWorkspaceQuery();
 
   const { handleUpdateHTML } = useHandleUpdateHTML();
-  const updateDescription = (html: string) => handleUpdateHTML(task, html);
+  const updateDescription = (html: string) => handleUpdateHTML(task, html, isSheet);
 
   useEffect(() => {
     if (state !== 'expanded') return;
@@ -72,7 +72,9 @@ const TaskContent = ({ task, mode, state }: Props) => {
               onFocus={() => handleEditorFocus(task.id)}
               updateData={updateDescription}
               onEnterClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' })}
-              onTextDifference={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'unsaved' })}
+              onTextDifference={() => {
+                if (!isSheet) dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'unsaved' });
+              }}
               filePanel={UppyFilePanel(task.id)}
               trailingBlock={false}
               updateDataOnBeforeLoad
@@ -101,7 +103,7 @@ const TaskContent = ({ task, mode, state }: Props) => {
   );
 };
 
-export default TaskContent;
+export default TaskDescription;
 
 const SummaryButtons = ({ task }: { task: Task }) => {
   return (

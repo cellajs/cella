@@ -30,8 +30,8 @@ import type { Member } from '~/types/common';
 
 import type { Block } from '@blocknote/core';
 import { FloatingPortal } from '@floating-ui/react';
-import router from '~/lib/router';
 
+import router from '~/lib/router';
 import { focusEditor, getContentAsString, handleSubmitOnEnter, trimInlineContentText } from '~/modules/common/blocknote/helpers';
 import './styles.css';
 

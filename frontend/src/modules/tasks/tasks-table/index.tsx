@@ -1,18 +1,12 @@
-import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Bird } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import type { z } from 'zod';
 import { type GetTasksParams, getTasksList } from '~/api/tasks';
-import { useHotkeys } from '~/hooks/use-hot-keys';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import { queryClient } from '~/lib/router';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -20,17 +14,14 @@ import Export from '~/modules/common/data-table/export.tsx';
 import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 
 import TableHeader from '~/modules/app/board-header';
-import { isSubtaskData } from '~/modules/app/board/helpers';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
-import { dropdowner } from '~/modules/common/dropdowner/state';
-import { taskKeys, useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
+import { taskKeys } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
-import { configureForExport, getRelativeTaskOrder, handleTaskDropDownClick, openTaskPreviewSheet } from '~/modules/tasks/helpers';
-import TaskCard from '~/modules/tasks/task';
+import { configureForExport, openTaskPreviewSheet } from '~/modules/tasks/helpers';
+import TaskSheet from '~/modules/tasks/task-sheet';
 import { useColumns } from '~/modules/tasks/tasks-table/columns';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { WorkspaceTableRoute, type tasksSearchSchema } from '~/routes/workspaces';
-import { useThemeStore } from '~/store/theme';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 
@@ -79,7 +70,6 @@ const tasksQueryOptions = ({
 
 export default function TasksTable() {
   const { t } = useTranslation();
-  const { mode } = useThemeStore();
   const navigate = useNavigate();
 
   const search = useSearch({ from: WorkspaceTableRoute.id });
@@ -87,10 +77,6 @@ export default function TasksTable() {
   const {
     data: { workspace, projects },
   } = useWorkspaceQuery();
-
-  const focusedTaskId = search.taskIdPreview;
-
-  const taskMutation = useTaskUpdateMutation();
 
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'createdAt'));
   const [selectedStatuses] = useState<number[]>(typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || []);
@@ -140,36 +126,14 @@ export default function TasksTable() {
   //   setSelectedStatuses([]);
   // };
 
-  // Open on key press
-  const hotKeyPress = (field: string) => {
-    const focusedTask = rows.find((t) => t.id === focusedTaskId);
-    if (!focusedTask) return;
-    const taskCard = document.getElementById(`sheet-card-${focusedTask.id}`);
-    if (!taskCard) return;
-    if (taskCard && document.activeElement !== taskCard) taskCard.focus();
-    const trigger = taskCard.querySelector(`#${field}`);
-    if (!trigger) return dropdowner.remove();
-    handleTaskDropDownClick(focusedTask, field, trigger as HTMLElement);
-  };
-
-  useHotkeys([
-    ['A', () => hotKeyPress(`assignedTo-${focusedTaskId}`)],
-    ['I', () => hotKeyPress(`impact-${focusedTaskId}`)],
-    ['L', () => hotKeyPress(`labels-${focusedTaskId}`)],
-    ['S', () => hotKeyPress(`status-${focusedTaskId}`)],
-    ['T', () => hotKeyPress(`type-${focusedTaskId}`)],
-  ]);
-
   useEffect(() => {
     if (!rows.length) return;
     if (search.taskIdPreview) {
       const [task] = rows.filter((t) => t.id === search.taskIdPreview);
 
       if (sheet.get(`task-preview-${search.taskIdPreview}`)) {
-        sheet.update(`task-preview-${search.taskIdPreview}`, {
-          content: <TaskCard mode={mode} task={task} state="editing" isSelected={false} isFocused={true} isSheet />,
-        });
-      } else openTaskPreviewSheet(task, mode, navigate);
+        sheet.update(`task-preview-${search.taskIdPreview}`, { content: <TaskSheet task={task} /> });
+      } else openTaskPreviewSheet(task);
       return;
     }
     if (search.userIdPreview) {
@@ -182,39 +146,6 @@ export default function TasksTable() {
     if (search.q?.length) setSearchQuery(search.q);
     setFocusedTaskId(null);
   }, []);
-
-  useEffect(() => {
-    return combine(
-      monitorForElements({
-        canMonitor({ source }) {
-          return isSubtaskData(source.data);
-        },
-        async onDrop({ location, source }) {
-          const target = location.current.dropTargets[0];
-          if (!target) return;
-          const sourceData = source.data;
-          const targetData = target.data;
-
-          const edge: Edge | null = extractClosestEdge(targetData);
-          const isSubtask = isSubtaskData(sourceData) && isSubtaskData(targetData);
-          if (!edge || !isSubtask) return;
-          const newOrder: number = getRelativeTaskOrder(edge, rows, targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
-          try {
-            await taskMutation.mutateAsync({
-              id: sourceData.item.id,
-              orgIdOrSlug: workspace.organizationId,
-              key: 'order',
-              data: newOrder,
-              projectId: sourceData.item.projectId,
-            });
-            await queryClient.invalidateQueries({ refetchType: 'active' });
-          } catch (err) {
-            toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
-          }
-        },
-      }),
-    );
-  }, [rows]);
 
   return (
     <>

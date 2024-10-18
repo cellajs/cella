@@ -9,7 +9,7 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@electric-sql/client';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { toast } from 'sonner';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -26,6 +26,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import CreateTaskForm from '~/modules/tasks/create-task-form';
 import { getRelativeTaskOrder, openTaskPreviewSheet, sortAndGetCounts } from '~/modules/tasks/helpers';
 import TaskCard from '~/modules/tasks/task';
+import TaskSheet from '~/modules/tasks/task-sheet';
 import type { TaskStates } from '~/modules/tasks/types';
 import { Button } from '~/modules/ui/button';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
@@ -99,7 +100,6 @@ const taskVariants = {
 
 export function BoardColumn({ project, tasksState, settings }: BoardColumnProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { taskIdPreview } = useSearch({
     from: WorkspaceBoardRoute.id,
   });
@@ -300,10 +300,8 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     // to open sheet after initial sheet.remove triggers
     if (taskIdPreview) {
       if (sheet.get(`task-preview-${taskIdPreview}`)) {
-        sheet.update(`task-preview-${taskIdPreview}`, {
-          content: <TaskCard mode={mode} task={focusedTask} state="editing" isSelected={false} isFocused={true} isSheet />,
-        });
-      } else setTimeout(() => openTaskPreviewSheet(focusedTask, mode, navigate), 0);
+        sheet.update(`task-preview-${taskIdPreview}`, { content: <TaskSheet task={focusedTask} /> });
+      } else setTimeout(() => openTaskPreviewSheet(focusedTask), 0);
     }
   }, [tasks, taskIdPreview]);
 

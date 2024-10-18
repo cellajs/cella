@@ -17,7 +17,6 @@ import { taskTypes } from '~/modules/tasks/task-dropdowns/select-task-type';
 import { AvatarGroup, AvatarGroupList, AvatarOverflowIndicator } from '~/modules/ui/avatar';
 import { Button } from '~/modules/ui/button';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
-import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/types/app';
 import { dateShort } from '~/utils/date-short';
 import { limitedUserSchema } from '#/modules/users/schema';
@@ -26,7 +25,6 @@ export const useColumns = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
-  const { mode } = useThemeStore();
   const {
     data: { workspace, projects },
   } = useWorkspaceQuery();
@@ -45,9 +43,7 @@ export const useColumns = () => {
           variant="none"
           tabIndex={tabIndex}
           className="inline-flex justify-start h-auto text-left flex-wrap w-full outline-0 ring-0 focus-visible:ring-0 group px-0"
-          onClick={() => {
-            openTaskPreviewSheet(row, mode, navigate, true);
-          }}
+          onClick={() => openTaskPreviewSheet(row)}
         >
           <span className="font-light whitespace-pre-wrap leading-5 py-1">
             {row.summary ? (
