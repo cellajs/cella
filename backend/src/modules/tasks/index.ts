@@ -47,7 +47,7 @@ const tasksRoutes = app
     logEvent('Task created', { task: createdTask.id });
 
     const uniqueAssignedUserIds = [...new Set(createdTask.assignedTo)];
-    const assignedTo = await getUsersByConditions([inArray(usersTable.id, uniqueAssignedUserIds)]);
+    const assignedTo = await getUsersByConditions([inArray(usersTable.id, uniqueAssignedUserIds)], 'limited');
     const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, createdTask.labels));
 
     const finalTask = {
@@ -118,7 +118,7 @@ const tasksRoutes = app
     // Create a set of unique label IDs from the tasks
     const uniqueLabelIds = Array.from(new Set([...tasks.flatMap((t) => t.labels)]));
 
-    const users = await getUsersByConditions([inArray(usersTable.id, uniqueAssignedUserIds)]);
+    const users = await getUsersByConditions([inArray(usersTable.id, uniqueAssignedUserIds)], 'limited');
     const labels = await db.select().from(labelsTable).where(inArray(labelsTable.id, uniqueLabelIds));
 
     // Create a map for quick access to users by their ID

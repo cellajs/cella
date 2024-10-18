@@ -5,7 +5,7 @@ import type { User } from '~/types/common';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 
-export const openUserPreviewSheet = (user: Omit<User, 'counts'>, navigate: NavigateFn, addSearch = false) => {
+export const openUserPreviewSheet = (user: Partial<User>, navigate: NavigateFn, addSearch = false) => {
   if (addSearch) {
     navigate({
       to: '.',
@@ -19,7 +19,8 @@ export const openUserPreviewSheet = (user: Omit<User, 'counts'>, navigate: Navig
   }
   sheet.create(
     <Suspense>
-      <UserProfilePage sheet user={user} />
+      {/* TODO fix types */}
+      <UserProfilePage sheet user={user as User} />
     </Suspense>,
     {
       className: 'max-w-full lg:max-w-4xl p-0',

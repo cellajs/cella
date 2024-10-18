@@ -59,12 +59,12 @@ const taskSchema = z.object({
   }).shape,
   labels: z.array(labelSchema),
   status: z.nativeEnum(TaskStatus),
-  assignedTo: z.array(userSchema.omit({ counts: true })),
+  assignedTo: z.array(userSchema.pick({ id: true, name: true, thumbnailUrl: true, email: true, entity: true })),
   createdAt: z.string(),
   parentId: z.string().nullable(),
   modifiedAt: z.string().nullable(),
-  createdBy: userSchema.omit({ counts: true }).nullable(),
-  modifiedBy: userSchema.omit({ counts: true }).nullable(),
+  createdBy: userSchema.pick({ id: true, name: true, thumbnailUrl: true, email: true, entity: true }).nullable(),
+  modifiedBy: userSchema.pick({ id: true, name: true, thumbnailUrl: true, email: true, entity: true }).nullable(),
 });
 
 export const subtaskSchema = z.array(

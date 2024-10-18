@@ -16,7 +16,7 @@ import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { User } from '~/types/common';
 
-export type AssignableMember = Omit<User, 'counts'>;
+export type AssignableMember = Partial<User> & { id: string };
 
 interface AssignMembersProps {
   value: AssignableMember[];
