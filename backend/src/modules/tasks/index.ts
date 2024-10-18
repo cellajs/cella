@@ -148,7 +148,7 @@ const tasksRoutes = app
     const id = ctx.req.param('id');
     const { key, data, order } = ctx.req.valid('json');
 
-    const allowedKeys = ['labels', 'assignedTo', 'type', 'status', 'description', 'impact'];
+    const allowedKeys = ['labels', 'assignedTo', 'type', 'status', 'description', 'impact', 'order'];
 
     // Validate request
     if (!id) return errorResponse(ctx, 404, 'not_found', 'warn');

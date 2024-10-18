@@ -346,7 +346,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                 projectId: project.id,
               });
             } catch (err) {
-              return toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
+              return toast.error(t('common:error.reorder_resource', { resource: t('app:task') }));
             }
           }
 
