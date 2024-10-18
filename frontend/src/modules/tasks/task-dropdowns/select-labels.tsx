@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import { createLabel, updateLabel } from '~/api/labels.ts';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
-import { queryClient } from '~/lib/router';
 import { Kbd } from '~/modules/common/kbd.tsx';
 import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { inNumbersArray } from '~/modules/tasks/helpers';
@@ -82,8 +81,6 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
         data: labels,
         projectId,
       });
-      if (taskIdPreview) await queryClient.invalidateQueries({ refetchType: 'active' });
-
       return;
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));

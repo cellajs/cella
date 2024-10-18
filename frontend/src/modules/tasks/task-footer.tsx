@@ -45,11 +45,6 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
         order: newOrder,
         projectId: task.projectId,
       });
-      if (isSheet) {
-        await queryClient.invalidateQueries({
-          refetchType: 'active',
-        });
-      }
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }

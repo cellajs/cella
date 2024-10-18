@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { queryClient } from '~/lib/router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
@@ -66,7 +65,6 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
         data: members,
         projectId,
       });
-      if (taskIdPreview) await queryClient.invalidateQueries({ refetchType: 'active' });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }

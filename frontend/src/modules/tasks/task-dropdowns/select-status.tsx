@@ -139,7 +139,6 @@ const SelectStatus = ({
         order: newOrder,
         projectId,
       });
-      if (tableSearch.taskIdPreview) await queryClient.invalidateQueries({ refetchType: 'active' });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }

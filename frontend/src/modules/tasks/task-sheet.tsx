@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 
 import { toast } from 'sonner';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { queryClient } from '~/lib/router';
 import { isSubtaskData } from '~/modules/app/board/helpers';
 import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { getRelativeTaskOrder, handleTaskDropDownClick, setTaskCardFocus } from '~/modules/tasks/helpers';
@@ -41,6 +40,7 @@ const TaskSheet = ({ task }: TasksSheetProps) => {
     handleTaskDropDownClick(task, field, trigger as HTMLElement);
   };
 
+  console.log(231);
   useHotkeys([
     ['A', () => hotKeyPress(`assignedTo-${task.id}`)],
     ['I', () => hotKeyPress(`impact-${task.id}`)],
@@ -100,7 +100,6 @@ const TaskSheet = ({ task }: TasksSheetProps) => {
               data: newOrder,
               projectId: sourceData.item.projectId,
             });
-            await queryClient.invalidateQueries({ refetchType: 'active' });
           } catch (err) {
             toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
           }

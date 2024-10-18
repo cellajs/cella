@@ -3,7 +3,6 @@ import { Check } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { queryClient } from '~/lib/router';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
@@ -68,7 +67,6 @@ const SelectImpact = ({ value, projectId, triggerWidth = 192, creationValueChang
         data: newImpact,
         projectId,
       });
-      if (taskIdPreview) await queryClient.invalidateQueries({ refetchType: 'active' });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
     }
