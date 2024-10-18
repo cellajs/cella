@@ -422,12 +422,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                     {filteredTasks.map((task) => {
                       return (
                         <div key={task.id}>
-                          <motion.div
-                            variants={taskVariants}
-                            initial={task.status === 6 || task.status === 0 ? 'hidden' : 'visible'}
-                            animate="visible"
-                            exit="exit"
-                          >
+                          <motion.div variants={taskVariants} initial={'visible'} animate="visible" exit="exit">
                             <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                               <TaskCard
                                 task={task}
