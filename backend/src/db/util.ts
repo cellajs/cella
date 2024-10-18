@@ -23,7 +23,6 @@ export async function getUserBy(field: SafeField | UnsafeField, value: string, t
 }
 
 // Overload signatures
-// Overload signatures
 export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[]): Promise<UserModel[]>;
 export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type: 'unsafe'): Promise<UnsafeUserModel[]>;
 export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type: 'limited'): Promise<LimitedUserModel[]>;

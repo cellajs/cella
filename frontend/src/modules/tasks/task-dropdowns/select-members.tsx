@@ -14,15 +14,13 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
-import type { User } from '~/types/common';
-
-export type AssignableMember = Partial<User> & { id: string };
+import type { LimitedUser } from '~/types/common';
 
 interface AssignMembersProps {
-  value: AssignableMember[];
+  value: LimitedUser[];
   projectId: string;
   triggerWidth?: number;
-  creationValueChange?: (users: AssignableMember[]) => void;
+  creationValueChange?: (users: LimitedUser[]) => void;
 }
 
 const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
@@ -35,7 +33,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
   const {
     data: { workspace, members },
   } = useWorkspaceQuery();
-  const [selectedMembers, setSelectedMembers] = useState<AssignableMember[]>(value);
+  const [selectedMembers, setSelectedMembers] = useState<LimitedUser[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [showAll, setShowAll] = useState(false);
   const isMobile = useBreakpoints('max', 'sm');
@@ -57,7 +55,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
     return sortedMembers.slice(0, 6);
   }, [showAll, searchValue, sortedMembers]);
 
-  const changeAssignedTo = async (members: AssignableMember[]) => {
+  const changeAssignedTo = async (members: LimitedUser[]) => {
     if (!focusedTaskId) return;
 
     try {

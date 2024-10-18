@@ -6,7 +6,7 @@ import { objectKeys } from '#/lib/object';
 import { paginationQuerySchema } from '#/utils/schema/common-schemas';
 import { constructZodLiteralUnionType } from '#/utils/zod';
 import { labelSchema } from '../labels/schema';
-import { userSchema } from '../users/schema';
+import { limitedUserSchema } from '../users/schema';
 
 export const createTaskSchema = z.object({
   ...createInsertSchema(tasksTable).omit({
@@ -59,12 +59,12 @@ const taskSchema = z.object({
   }).shape,
   labels: z.array(labelSchema),
   status: z.nativeEnum(TaskStatus),
-  assignedTo: z.array(userSchema.pick({ id: true, name: true, thumbnailUrl: true, email: true, entity: true })),
+  assignedTo: z.array(limitedUserSchema),
   createdAt: z.string(),
   parentId: z.string().nullable(),
   modifiedAt: z.string().nullable(),
-  createdBy: userSchema.pick({ id: true, name: true, thumbnailUrl: true, email: true, entity: true }).nullable(),
-  modifiedBy: userSchema.pick({ id: true, name: true, thumbnailUrl: true, email: true, entity: true }).nullable(),
+  createdBy: limitedUserSchema.nullable(),
+  modifiedBy: limitedUserSchema.nullable(),
 });
 
 export const subtaskSchema = z.array(

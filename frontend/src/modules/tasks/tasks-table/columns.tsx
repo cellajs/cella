@@ -20,7 +20,7 @@ import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { useThemeStore } from '~/store/theme';
 import type { Task } from '~/types/app';
 import { dateShort } from '~/utils/date-short';
-import { userSchema } from '#/modules/users/schema';
+import { limitedUserSchema } from '#/modules/users/schema';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -220,7 +220,7 @@ export const useColumns = () => {
       width: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
-        const result = userSchema.pick({ id: true, name: true, thumbnailUrl: true }).safeParse(row.modifiedBy);
+        const result = limitedUserSchema.safeParse(row.modifiedBy);
         if (!result.success) return '-';
         const user = result.data;
         return (
@@ -258,7 +258,7 @@ export const useColumns = () => {
       width: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => {
-        const result = userSchema.pick({ id: true, name: true, thumbnailUrl: true }).safeParse(row.modifiedBy);
+        const result = limitedUserSchema.safeParse(row.modifiedBy);
         if (!result.success) return '-';
         const user = result.data;
         return (

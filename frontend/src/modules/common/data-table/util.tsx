@@ -1,11 +1,11 @@
 import type { NavigateFn } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { User } from '~/types/common';
+import type { LimitedUser } from '~/types/common';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 
-export const openUserPreviewSheet = (user: Partial<User>, navigate: NavigateFn, addSearch = false) => {
+export const openUserPreviewSheet = (user: LimitedUser, navigate: NavigateFn, addSearch = false) => {
   if (addSearch) {
     navigate({
       to: '.',
@@ -19,8 +19,7 @@ export const openUserPreviewSheet = (user: Partial<User>, navigate: NavigateFn, 
   }
   sheet.create(
     <Suspense>
-      {/* TODO fix types */}
-      <UserProfilePage sheet user={user as User} />
+      <UserProfilePage sheet user={user} />
     </Suspense>,
     {
       className: 'max-w-full lg:max-w-4xl p-0',

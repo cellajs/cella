@@ -3,14 +3,14 @@ import { t } from 'i18next';
 import { toast } from 'sonner';
 import { type GetTasksParams, createTask, updateTask } from '~/api/tasks';
 import { queryClient } from '~/lib/router';
-import type { AssignableMember } from '~/modules/tasks/task-dropdowns/select-members';
 import type { Label, Subtask, Task } from '~/types/app';
+import type { LimitedUser } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 
 export type TasksCreateMutationQueryFnVariables = Parameters<typeof createTask>[0];
 export type TasksUpdateMutationQueryFnVariables = Omit<Parameters<typeof updateTask>[0], 'data'> & {
   projectId?: string;
-  data: string | number | boolean | string[] | Label[] | AssignableMember[] | null;
+  data: string | number | boolean | string[] | Label[] | LimitedUser[] | null;
 };
 // export type TasksDeleteMutationQueryFnVariables = Parameters<typeof deleteTasks>[0] & {
 //   projectId?: string;

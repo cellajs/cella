@@ -59,7 +59,6 @@ const avoidedFields = [
   'emailVerified',
   'bio',
   'language',
-  'bannerUrl',
   'newsletter',
   'lastSeenAt',
   'lastStartedAt',
