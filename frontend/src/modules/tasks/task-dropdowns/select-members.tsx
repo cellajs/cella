@@ -16,7 +16,7 @@ import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { User } from '~/types/common';
 
-type AssignableMember = Omit<User, 'counts'>;
+export type AssignableMember = Omit<User, 'counts'>;
 
 interface AssignMembersProps {
   value: AssignableMember[];
@@ -65,7 +65,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
         id: focusedTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'assignedTo',
-        data: members.map((user) => user.id),
+        data: members,
         projectId,
       });
       if (taskIdPreview) await queryClient.invalidateQueries({ refetchType: 'active' });

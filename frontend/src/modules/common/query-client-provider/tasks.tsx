@@ -3,13 +3,14 @@ import { t } from 'i18next';
 import { toast } from 'sonner';
 import { type GetTasksParams, createTask, updateTask } from '~/api/tasks';
 import { queryClient } from '~/lib/router';
+import type { AssignableMember } from '~/modules/tasks/task-dropdowns/select-members';
 import type { Label, Subtask, Task } from '~/types/app';
 import { nanoid } from '~/utils/nanoid';
 
 export type TasksCreateMutationQueryFnVariables = Parameters<typeof createTask>[0];
 export type TasksUpdateMutationQueryFnVariables = Omit<Parameters<typeof updateTask>[0], 'data'> & {
   projectId?: string;
-  data: string | number | boolean | string[] | Label[] | null;
+  data: string | number | boolean | string[] | Label[] | AssignableMember[] | null;
 };
 // export type TasksDeleteMutationQueryFnVariables = Parameters<typeof deleteTasks>[0] & {
 //   projectId?: string;
@@ -174,15 +175,18 @@ queryClient.setMutationDefaults(taskKeys.create(), {
 
 queryClient.setMutationDefaults(taskKeys.update(), {
   mutationFn: (variables: TasksUpdateMutationQueryFnVariables) => {
-    // Transform data only if key is 'labels' and data is an array
+    const { data } = variables;
+    // Transform data only if key is 'labels' of 'assignTo' and data is an array
+    const transformedData = Array.isArray(data) ? data.map((el) => (typeof el === 'string' ? el : el.id)) : data;
     const transformedVariables = {
       ...variables,
-      data: Array.isArray(variables.data) ? variables.data.map((l) => (typeof l === 'string' ? l : l.id)) : variables.data,
+      data: transformedData,
     };
 
     // Send transformed variables to the server
     return updateTask(transformedVariables);
   },
+
   onMutate: async (variables) => {
     const { id: taskId, orgIdOrSlug, projectId } = variables;
 
