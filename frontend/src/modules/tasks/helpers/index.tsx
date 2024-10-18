@@ -144,7 +144,8 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
   let acceptedCount = 0;
   let icedCount = 0;
 
-  const filteredTasks = tasks.filter((task) => {
+  console.log('sortAndGetCounts', tasks.length);
+  const splitTasks = tasks.filter((task) => {
     // Count accepted in past 30 days and iced tasks
     if (task.status === 6) acceptedCount += 1;
     if (task.status === 0) icedCount += 1;
@@ -155,9 +156,9 @@ export const sortAndGetCounts = (tasks: Task[], showAccepted: boolean, showIced:
   });
 
   // Sort the main tasks
-  const sortedTasks = filteredTasks.sort((a, b) => sortTaskOrder(a, b));
+  const filteredTasks = splitTasks.sort((a, b) => sortTaskOrder(a, b));
 
-  return { sortedTasks, acceptedCount, icedCount };
+  return { filteredTasks, acceptedCount, icedCount };
 };
 
 export const configureForExport = (tasks: Task[], projects: Omit<Project, 'counts'>[]): Task[] => {

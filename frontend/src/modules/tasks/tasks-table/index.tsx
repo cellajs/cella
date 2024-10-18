@@ -39,7 +39,7 @@ const tasksQueryOptions = ({
 }: GetTasksParams & {
   rowsLength?: number;
 }) => {
-  const sort = initialSort || 'createdAt';
+  const sort = initialSort || 'status';
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
@@ -78,7 +78,7 @@ export default function TasksTable() {
     data: { workspace, projects },
   } = useWorkspaceQuery();
 
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'createdAt'));
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search, 'status'));
   const [selectedStatuses] = useState<number[]>(typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || []);
   const [selectedProjects] = useState<string[]>(search.projectId?.split('_') || []);
   const [columns, setColumns] = useColumns();
@@ -99,7 +99,7 @@ export default function TasksTable() {
     [searchQuery, sort, order, selectedStatuses, selectedProjects],
   );
 
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+  useSaveInSearchParams(filters, { sort: 'status', order: 'desc' });
 
   // Query tasks
   const tasksQuery = useInfiniteQuery(

@@ -1,5 +1,5 @@
-import { type SQL, and, eq, gte, ilike, inArray, lte, or } from 'drizzle-orm';
-import { db } from '#/db/db';
+import { type SQL, and, desc, eq, ilike, inArray } from 'drizzle-orm';
+import { coalesce, db } from '#/db/db';
 
 import type { z } from 'zod';
 import { labelsTable } from '#/db/schema/labels';
@@ -92,18 +92,21 @@ const tasksRoutes = app
         modifiedAt: tasksTable.modifiedAt,
       },
       sort,
-      tasksTable.createdAt,
+      tasksTable.status,
       order,
     );
 
     const tasks = await db
       .select()
       .from(tasksQuery.as('tasks'))
-      .orderBy(orderColumn)
+      .orderBy(
+        // Sort default by status first, higher status comes first
+        orderColumn,
+        // Then sort by order, with null values handled
+        desc(coalesce(tasksTable.order, 0)),
+      )
       .limit(Number(limit))
-      .offset(Number(offset))
-      // all tasks with status under 6 and with status 6 modified within the last 30 days
-      .where(or(lte(tasksTable.status, 5), and(eq(tasksTable.status, 6), gte(tasksTable.modifiedAt, getDateFromToday(30)))));
+      .offset(Number(offset));
 
     // Create a set of unique user IDs from the tasks, so we can retrieve them from the database
     const uniqueAssignedUserIds = Array.from(
@@ -137,9 +140,20 @@ const tasksRoutes = app
           labels: labels.filter((m) => task.labels.includes(m.id)),
         };
       })
-      .filter((task) => !task.parentId); // Filter out subtasks
+      .filter((t) => {
+        if (t.parentId) return false;
+        return !(t.status === 6 && t.modifiedAt && t.modifiedAt >= getDateFromToday(30));
+      }); // Filter out subtasks and tasks accepted over 30 days ago
+    // TODO in future, add a query param to tell what should be cut off date
 
-    return ctx.json({ success: true, data: { items: finalTasks, total: finalTasks.length } }, 200);
+    const counts = {
+      iced: finalTasks.filter((t) => t.status === 0).length,
+      accepted: tasks.filter((t) => t.status === 6).length,
+      acceptedRecent: finalTasks.filter((t) => t.status === 6).length,
+      tasks: tasks.length,
+    };
+
+    return ctx.json({ success: true, data: { items: finalTasks, total: finalTasks.length, counts } }, 200);
   })
   /*
    * Update task

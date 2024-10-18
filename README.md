@@ -1,14 +1,8 @@
 <div align="center">
 
-  <img src="./info/screenshot-dark.png#gh-dark-mode-only" />
-  <img src="./info/screenshot.png#gh-light-mode-only" />
-
-<br />
-
+<h1><b>Raak</b></h1>
 <p>
-	<h1><b>Raak</b></h1>
-<p>
-    <b>Linear meets Pivotal tracker. Raak is an OS multi-app issue tracker.</b>
+    <b>Linear meets Pivotal tracker. Raak is a multi-app issue tracker.</b>
     <br />
     <br />
     <a href="https://raak.io">Website</a>

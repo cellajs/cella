@@ -105,8 +105,6 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   });
 
   const defaultTaskFormRef = useRef<HTMLDivElement | null>(null);
-  const afterRef = useRef<HTMLDivElement | null>(null);
-  const beforeRef = useRef<HTMLDivElement | null>(null);
   const columnRef = useRef<HTMLDivElement | null>(null);
   const cardListRef = useRef<HTMLDivElement | null>(null);
 
@@ -236,13 +234,10 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   }, [data, searchQuery]);
 
   const {
-    sortedTasks: showingTasks,
+    filteredTasks: showingTasks,
     acceptedCount,
     icedCount,
   } = useMemo(() => sortAndGetCounts(tasks, showAccepted, showIced), [tasks, showAccepted, showIced]);
-
-  const firstUpstartedIndex = useMemo(() => showingTasks.findIndex((t) => t.status === 1), [showingTasks]);
-  const lastUpstartedIndex = useMemo(() => showingTasks.findLastIndex((t) => t.status === 1), [showingTasks]);
 
   const handleIcedClick = () => {
     changeColumn(workspace.id, project.id, {
@@ -361,7 +356,6 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
               return toast.error(t('common:error.reorder_resource', { resource: t('app:todo') }));
             }
           }
-          await queryClient.invalidateQueries({ refetchType: 'active' });
         },
       }),
     );
@@ -425,16 +419,14 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                         />
                       )}
                     </Button>
-                    {showingTasks.map((task, index) => {
+                    {showingTasks.map((task) => {
                       return (
                         <div key={task.id}>
-                          {index === firstUpstartedIndex && <div className="z-[104]" ref={beforeRef} />}
                           <motion.div
                             variants={taskVariants}
                             initial={task.status === 6 || task.status === 0 ? 'hidden' : 'visible'}
                             animate="visible"
                             exit="exit"
-                            className={cn((index === firstUpstartedIndex || index === lastUpstartedIndex) && 'group relative')}
                           >
                             <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                               <TaskCard
@@ -444,22 +436,8 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                                 isFocused={task.id === focusedTaskId}
                                 mode={mode}
                               />
-                              {/* Conditionally render "+ Task" button for first and last task */}
-                              {/* {((index === firstUpstartedIndex && isMouseNearTop) || (index === lastUpstartedIndex && isMouseNearBottom)) && (
-                                <Button
-                                  variant="plain"
-                                  size="xs"
-                                  style={{ left: `${mouseX}px` }}
-                                  className={`absolute bg-background hover:bg-background transform -translate-y-1/2 opacity-1 rounded hidden sm:inline-flex ${isMouseNearTop ? 'top' : 'bottom'}-2`}
-                                  onClick={() => openCreateTaskDialog(isMouseNearTop ? beforeRef : afterRef, 'embed')}
-                                >
-                                  <Plus size={16} />
-                                  <span className="ml-1">{t('app:task')}</span>
-                                </Button>
-                              )} */}
                             </FocusTrap>
                           </motion.div>
-                          {index === lastUpstartedIndex && <div className="z-[104]" ref={afterRef} />}
                         </div>
                       );
                     })}

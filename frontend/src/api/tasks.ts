@@ -28,7 +28,7 @@ export type GetTasksParams = Omit<Parameters<(typeof client.index)['$get']>['0']
 
 // Get list of tasks
 export const getTasksList = async (
-  { q, sort = 'createdAt', order = 'asc', page = 0, limit = 1000, offset, projectId, orgIdOrSlug, status }: GetTasksParams,
+  { q, sort = 'status', order = 'desc', page = 0, limit = 1000, offset, projectId, orgIdOrSlug, status }: GetTasksParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(

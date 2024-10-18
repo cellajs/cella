@@ -146,6 +146,7 @@ export default function Board() {
     });
   }, [queries]);
 
+  // TODO perhaps move this out of the component together with all hotkeys?
   const [currentTask] = useMemo(() => tasks.filter((t) => t.id === focusedTaskId), [tasks, focusedTaskId]);
 
   const handleVerticalArrowKeyDown = async (event: KeyboardEvent) => {
@@ -162,12 +163,12 @@ export default function Board() {
     const { expandAccepted, expandIced } = (workspaces[workspace.id] && workspaces[workspace.id][currentProject.id]) || defaultColumnValues;
 
     // Filter and sort tasks for the current project
-    const filteredTasks = tasks.filter((t) => t.projectId === currentProject.id);
-    const { sortedTasks } = sortAndGetCounts(filteredTasks, expandAccepted, expandIced);
+    const projectTasks = tasks.filter((t) => t.projectId === currentProject.id);
+    const { filteredTasks } = sortAndGetCounts(projectTasks, expandAccepted, expandIced);
 
-    const taskIndex = focusedTaskId ? sortedTasks.findIndex((t) => t.id === focusedTaskId) : 0;
+    const taskIndex = focusedTaskId ? filteredTasks.findIndex((t) => t.id === focusedTaskId) : 0;
     // Ensure the next task in the direction exists
-    const nextTask = sortedTasks[taskIndex + direction];
+    const nextTask = filteredTasks[taskIndex + direction];
     if (!nextTask) return;
 
     setTaskCardFocus(nextTask.id);
@@ -190,7 +191,7 @@ export default function Board() {
     const { expandAccepted } = (workspaces[workspace.id] && workspaces[workspace.id][nextProject.id]) || defaultColumnValues;
     const filteredTasks = tasks.filter((t) => t.projectId === nextProject.id);
 
-    const [firstTask] = sortAndGetCounts(filteredTasks, expandAccepted, false).sortedTasks;
+    const [firstTask] = sortAndGetCounts(filteredTasks, expandAccepted, false).filteredTasks;
     if (!firstTask) return;
 
     // Set focus on the first task of the project
