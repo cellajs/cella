@@ -9,7 +9,6 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
-import { motion } from 'framer-motion';
 import useDoubleClick from '~/hooks/use-double-click';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { isTaskData } from '~/modules/app/board/helpers';
@@ -160,49 +159,44 @@ const TaskCard = memo(function TaskCard({ style, task, mode, isSelected, isFocus
   }, [task, state]);
 
   return (
-    <motion.div layout transition={{ duration: 0.3 }}>
-      <Card
-        id={isSheet ? `sheet-card-${task.id}` : task.id}
-        onClick={handleCardClick}
-        style={style}
-        tabIndex={0}
-        ref={taskRef}
-        className={cn(
-          `group/task rounded-none border-0 border-b bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
+    <Card
+      id={isSheet ? `sheet-card-${task.id}` : task.id}
+      onClick={handleCardClick}
+      style={style}
+      tabIndex={0}
+      ref={taskRef}
+      className={cn(
+        `group/task relative rounded-none border-0 border-b bg-transparent hover:bg-card/20 bg-gradient-to-br from-transparent focus:outline-none 
         focus-visible:none border-l-2 via-transparent via-60% to-100% opacity-${dragging ? '30' : '100'} 
         ${dragOver ? 'bg-card/20' : ''} 
         ${isFocused && !isSheet ? 'border-l-primary is-focused' : 'border-l-transparent'}
         ${state !== 'folded' ? 'is-expanded' : 'is-collapsed'}`,
-          variants({
-            status: task.status as TaskStatus,
-          }),
-        )}
-      >
-        <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-2 sm:pr-3 space-between flex flex-col relative">
-          {/* To prevent on expand animation */}
-          <motion.div className="flex flex-col" layout transition={{ duration: 0 }}>
-            {state !== 'folded' && <TaskHeader task={task} state={state} isSheet={isSheet} />}
-            <div className="flex flex-row gap-1 w-full">
-              {state === 'folded' && (
-                <Button
-                  id={`type-${task.id}`}
-                  onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
-                  aria-label="Set type"
-                  variant="ghost"
-                  size="xs"
-                  className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
-                >
-                  {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
-                </Button>
-              )}
-              <TaskDescription mode={mode} task={task} state={state} isSheet={isSheet} />
-            </div>
-            <TaskFooter task={task} isSheet={isSheet} isSelected={isSelected} isStatusDropdownOpen={isStatusDropdownOpen} />
-          </motion.div>
-        </CardContent>
-        {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
-      </Card>
-    </motion.div>
+        variants({
+          status: task.status as TaskStatus,
+        }),
+      )}
+    >
+      <CardContent id={`${task.id}-content`} ref={taskDragRef} className="p-2 sm:pr-3 space-between flex flex-col relative">
+        {state !== 'folded' && <TaskHeader task={task} state={state} isSheet={isSheet} />}
+        <div className="flex flex-row gap-1 w-full">
+          {state === 'folded' && (
+            <Button
+              id={`type-${task.id}`}
+              onClick={(event) => handleTaskDropDownClick(task, 'type', event.currentTarget)}
+              aria-label="Set type"
+              variant="ghost"
+              size="xs"
+              className="relative group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 opacity-80 -ml-0.5"
+            >
+              {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
+            </Button>
+          )}
+          <TaskDescription mode={mode} task={task} state={state} isSheet={isSheet} />
+        </div>
+        <TaskFooter task={task} isSheet={isSheet} isSelected={isSelected} isStatusDropdownOpen={isStatusDropdownOpen} />
+      </CardContent>
+      {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
+    </Card>
   );
 }, areEqual);
 

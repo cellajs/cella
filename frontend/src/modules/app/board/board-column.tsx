@@ -1,5 +1,5 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { Reorder } from 'framer-motion';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { type MutableRefObject, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -90,12 +90,6 @@ export const tasksQueryOptions = ({ projectId, orgIdOrSlug }: GetTasksParams) =>
         projectId,
       }),
   });
-};
-
-const taskVariants = {
-  hidden: { opacity: 0, height: 0 },
-  visible: { opacity: 1, height: 'auto' },
-  exit: { opacity: 0, height: 0 },
 };
 
 export function BoardColumn({ project, tasksState, settings }: BoardColumnProps) {
@@ -303,6 +297,10 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     if (isMobile && minimized) handleExpand();
   }, [minimized, isMobile]);
 
+  const onReorder = async () => {
+    console.info('reorder');
+  };
+
   useEffect(() => {
     return combine(
       monitorForElements({
@@ -419,10 +417,17 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                         />
                       )}
                     </Button>
-                    {filteredTasks.map((task) => {
-                      return (
-                        <div key={task.id}>
-                          <motion.div variants={taskVariants} initial={'visible'} animate="visible" exit="exit">
+                    <Reorder.Group values={filteredTasks} onReorder={onReorder}>
+                      {filteredTasks.map((task) => {
+                        return (
+                          <Reorder.Item
+                            key={task.id}
+                            value={task}
+                            layout="position"
+                            transition={{
+                              duration: 0.3,
+                            }}
+                          >
                             <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                               <TaskCard
                                 task={task}
@@ -432,10 +437,10 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                                 mode={mode}
                               />
                             </FocusTrap>
-                          </motion.div>
-                        </div>
-                      );
-                    })}
+                          </Reorder.Item>
+                        );
+                      })}
+                    </Reorder.Group>
                     <Button
                       onClick={handleIcedClick}
                       variant="ghost"

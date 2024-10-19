@@ -1,6 +1,5 @@
 import '@blocknote/shadcn/style.css';
 import { config } from 'config';
-import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -52,7 +51,7 @@ const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
   return (
     <div className="flex flex-col grow gap-2">
       {state === 'folded' ? (
-        <div className="mt-1 ml-1 leading-none inline items-center">
+        <div className="mt-2 ml-1 leading-none inline items-center">
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
             dangerouslySetInnerHTML={{ __html: task.summary }}
@@ -62,7 +61,7 @@ const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
           <SummaryButtons task={task} />
         </div>
       ) : (
-        <motion.div initial={{ y: -10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.3 }}>
+        <>
           {state === 'editing' || state === 'unsaved' ? (
             <BlockNote
               id={`blocknote-${task.id}`}
@@ -97,7 +96,7 @@ const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
 
             <CreateSubtaskForm formOpen={createSubtask} setFormState={(value) => setCreateSubtask(value)} parentTask={task} />
           </div>
-        </motion.div>
+        </>
       )}
     </div>
   );

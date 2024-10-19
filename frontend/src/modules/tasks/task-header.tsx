@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { ChevronUp, Maximize2, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -56,13 +55,7 @@ export const TaskHeader = ({
           {taskTypes[taskTypes.findIndex((t) => t.value === task.type)]?.icon() || ''}
         </Button>
       )}
-      <motion.div
-        className="flex flex-row gap-1 w-full items-center ml-1"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.3 }}
-      >
+      <div className="flex flex-row gap-1 w-full items-center ml-1">
         {!isSubtask && task.createdBy && (
           <>
             <AvatarWrap
@@ -146,7 +139,7 @@ export const TaskHeader = ({
             </Button>
           </TooltipButton>
         )}
-      </motion.div>
+      </div>
     </StickyBox>
   );
 };

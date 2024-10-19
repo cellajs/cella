@@ -163,13 +163,13 @@ const Subtask = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.3 }}
+      // initial={{ opacity: 0, y: -10 }}
+      // animate={{ opacity: 1, y: 0 }}
+      // exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0 }}
       ref={subtaskRef}
       onClick={handleCardClick}
-      className={`flex items-start gap-1 p-1 mb-0.5 hover:bg-secondary/50 opacity-${dragging ? '30' : '100'} bg-secondary/25`}
+      className={`flex relative subtask items-start gap-1 p-1 mb-0.5 hover:bg-secondary/50 opacity-${dragging ? '30' : '100'} bg-secondary/25`}
     >
       <div className="flex flex-col gap-1">
         <Checkbox
