@@ -3,7 +3,6 @@ import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -26,11 +25,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const CreateSubtaskForm = ({
   parentTask,
-  formOpen,
   setFormState,
 }: {
   parentTask: Task;
-  formOpen: boolean;
   setFormState: (value: boolean) => void;
 }) => {
   const { t } = useTranslation();
@@ -112,13 +109,6 @@ export const CreateSubtaskForm = ({
 
   if (form.loading) return null;
 
-  if (!formOpen)
-    return (
-      <Button variant="ghost" size="sm" className="w-full mb-1 pl-11 justify-start rounded-none" onClick={() => setFormState(true)}>
-        <Plus size={16} />
-        <span className="ml-1 font-normal">{t('app:todo')}</span>
-      </Button>
-    );
   return (
     <Form {...form}>
       <form id="create-subtask" onSubmit={form.handleSubmit(onSubmit)} className="p-3 mb-2 flex gap-2 flex-col bg-secondary/50">

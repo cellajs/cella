@@ -1,6 +1,8 @@
 import '@blocknote/shadcn/style.css';
 import { config } from 'config';
+import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { BlockNote } from '~/modules/common/blocknote';
@@ -11,6 +13,7 @@ import UppyFilePanel from '~/modules/tasks/task-dropdowns/uppy-file-panel';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
+import { Button } from '../ui/button';
 import { handleEditorFocus, updateImageSourcesFromDataUrl, useHandleUpdateHTML } from './helpers';
 import type { TaskStates } from './types';
 
@@ -22,6 +25,8 @@ interface TaskContentProps {
 }
 
 const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
+  const { t } = useTranslation();
+
   const taskContentRef = useRef<HTMLDivElement>(null);
   const [createSubtask, setCreateSubtask] = useState(false);
 
@@ -94,7 +99,14 @@ const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
               ))}
             </div>
 
-            <CreateSubtaskForm formOpen={createSubtask} setFormState={(value) => setCreateSubtask(value)} parentTask={task} />
+            {createSubtask ? (
+              <CreateSubtaskForm setFormState={(value) => setCreateSubtask(value)} parentTask={task} />
+            ) : (
+              <Button variant="ghost" size="sm" className="w-full mb-1 pl-11 justify-start rounded-none" onClick={() => setCreateSubtask(true)}>
+                <Plus size={16} />
+                <span className="ml-1 font-normal">{t('app:todo')}</span>
+              </Button>
+            )}
           </div>
         </>
       )}
@@ -111,7 +123,7 @@ const SummaryButtons = ({ task }: { task: Task }) => {
         <div className="inline-flex gap-1 items-center opacity-80 group-hover/task:opacity-100 group-[.is-focused]/task:opacity-100 -mt-[0.15rem]">
           {task.expandable && <div className="inline-flex px-1 text-sm cursor-pointer py-0 h-5">...</div>}
           {task.subtasks.length > 0 && (
-            <div className="inline-flex py-0.5 text-xs h-5 ml-1 gap-[.1rem] cursor-pointer">
+            <div className="inline-flex py-0.5 text-xs h-5 ml-2 gap-[.1rem] cursor-pointer">
               <span className="text-success">{task.subtasks.filter((t) => t.status === 6).length}</span>
               <span className="font-light">/</span>
               <span className="font-light">{task.subtasks.length}</span>
