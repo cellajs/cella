@@ -8,7 +8,7 @@
   "chore": "Chore",
   "collapse": "Collapse",
   "copied": "Copied",
-  "create_label.text": "Type a label name to create it",
+  "create_label.text": "Create your first label ...",
   "create_project.text": "Set up a new project",
   "delete_workspace_notice.text": "You can delete your personal workspace {{name}}. You can then optionally include the projects in another workspace. The projects and its data remain available to others.",
   "deliver": "Deliver",

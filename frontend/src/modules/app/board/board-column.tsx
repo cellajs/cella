@@ -1,5 +1,5 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { Reorder } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronDown, Palmtree, Search, Undo } from 'lucide-react';
 import { type MutableRefObject, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -297,10 +297,6 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     if (isMobile && minimized) handleExpand();
   }, [minimized, isMobile]);
 
-  const onReorder = async () => {
-    console.info('reorder');
-  };
-
   useEffect(() => {
     return combine(
       monitorForElements({
@@ -417,12 +413,11 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                         />
                       )}
                     </Button>
-                    <Reorder.Group values={filteredTasks} onReorder={onReorder}>
+                    <motion.div>
                       {filteredTasks.map((task) => {
                         return (
-                          <Reorder.Item
+                          <motion.div
                             key={task.id}
-                            value={task}
                             layout="position"
                             transition={{
                               duration: 0.3,
@@ -437,10 +432,10 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                                 mode={mode}
                               />
                             </FocusTrap>
-                          </Reorder.Item>
+                          </motion.div>
                         );
                       })}
-                    </Reorder.Group>
+                    </motion.div>
                     <Button
                       onClick={handleIcedClick}
                       variant="ghost"

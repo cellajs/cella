@@ -73,7 +73,7 @@ export default function TasksTable() {
   const navigate = useNavigate();
 
   const search = useSearch({ from: WorkspaceTableRoute.id });
-  const { searchQuery, selectedTasks, setSelectedTasks, setSearchQuery, setFocusedTaskId } = useWorkspaceStore();
+  const { searchQuery, selectedTasks, setSelectedTasks, setSearchQuery } = useWorkspaceStore();
   const {
     data: { workspace, projects },
   } = useWorkspaceQuery();
@@ -82,11 +82,13 @@ export default function TasksTable() {
   const [selectedStatuses] = useState<number[]>(typeof search.status === 'number' ? [search.status] : search.status?.split('_').map(Number) || []);
   const [selectedProjects] = useState<string[]>(search.projectId?.split('_') || []);
   const [columns, setColumns] = useColumns();
+
   // Search query options
   const sort = sortColumns[0]?.columnKey as TasksSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as TasksSearch['order'];
 
   const isFiltered = !!searchQuery || selectedStatuses.length > 0 || selectedProjects.length > 0;
+
   // Save filters in search params
   const filters = useMemo(
     () => ({
@@ -102,7 +104,7 @@ export default function TasksTable() {
   useSaveInSearchParams(filters, { sort: 'status', order: 'desc' });
 
   // Query tasks
-  const tasksQuery = useInfiniteQuery(
+  const queryResult = useInfiniteQuery(
     tasksQueryOptions({
       q: searchQuery,
       sort,
@@ -113,8 +115,8 @@ export default function TasksTable() {
     }),
   );
 
-  const rows = useMemo(() => tasksQuery.data?.pages[0].items || [], [tasksQuery.data]);
-  const totalCount = rows.length;
+  const rows = useMemo(() => queryResult.data?.pages[0].items || [], [queryResult.data]);
+  const totalCount = queryResult.data?.pages[0].total;
 
   const handleSelectedRowsChange = (selectedRows: Set<string>) => {
     setSelectedTasks(Array.from(selectedRows));
@@ -142,9 +144,9 @@ export default function TasksTable() {
     }
   }, [rows]);
 
+  // TODO: research how to use search param as state
   useEffect(() => {
     if (search.q?.length) setSearchQuery(search.q);
-    setFocusedTaskId(null);
   }, []);
 
   return (
@@ -168,8 +170,8 @@ export default function TasksTable() {
           rows,
           rowHeight: 42,
           totalCount,
-          isLoading: tasksQuery.isLoading,
-          isFetching: tasksQuery.isFetching,
+          isLoading: queryResult.isLoading,
+          isFetching: queryResult.isFetching,
           isFiltered,
           selectedRows: new Set<string>(selectedTasks),
           onSelectedRowsChange: handleSelectedRowsChange,
