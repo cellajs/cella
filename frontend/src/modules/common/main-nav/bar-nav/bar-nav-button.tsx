@@ -28,8 +28,8 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
         variant="ghost"
         data-theme={theme}
         data-active={isActive}
-        className={`hover:bg-background/25 ring-inset focus-visible:ring-offset-0 group h-14 w-14 
-          data-[active=true]:bg-background/50 hover:bg-background/75 text-primary-foreground data-[theme=none]:text-inherit`}
+        className={`ring-inset focus-visible:ring-offset-0 group h-14 w-14 
+          data-[active=true]:bg-background/50 hover:bg-background/30 text-primary-foreground data-[theme=none]:text-inherit`}
         onClick={() => onClick(navItem.id)}
       >
         {navItem.id === 'account' && user ? (
