@@ -14,7 +14,7 @@ export async function diverged({
   localBranch,
 }) {
   const targetFolder = process.cwd()
-  console.log();
+  console.info();
 
   // Fetch upstream changes and checkout local branch
   await fetchUpstream({ localBranch });
@@ -104,14 +104,14 @@ export async function diverged({
     await rm(divergedFile, { force: true });
   }
 
-  console.log()
+  console.info()
 
     // Log each diverged file line by line for clickable paths in VSCode
-  filteredFiles.forEach((file) => console.log(`./${file}`));
+  filteredFiles.forEach((file) => console.info(`./${file}`));
 
-  console.log()
-  console.log(`Found ${colors.blue(filteredFiles.length)} diverged files between the upstream and local branch.`);
-  console.log()
-  console.log(`${colors.green('✔')} Completed the diverged command.`);
-  console.log()
+  console.info()
+  console.info(`Found ${colors.blue(filteredFiles.length)} diverged files between the upstream and local branch.`);
+  console.info()
+  console.info(`${colors.green('✔')} Completed the diverged command.`);
+  console.info()
 }

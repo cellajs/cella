@@ -26,7 +26,8 @@
     "build": "pnpm run clean && turbo build --filter backend --filter frontend --filter tus",
     "build:dev": "turbo build:dev --filter backend --filter frontend --filter tus",
     "start": "turbo start --filter backend --filter frontend --filter tus",
-    "upstream:pull": "node ./cli/sync-cella/index.js merge-upstream --config-file cella.config.js",
+    "upstream:pull": "node ./cli/sync-cella/index.js pull-upstream --config-file cella.config.js",
+    "upstream:push": "node ./cli/sync-cella/index.js push-upstream --config-file cella.config.js",
     "diverged": "node ./cli/sync-cella/index.js diverged --config-file cella.config.js"
   },
   "devDependencies": {

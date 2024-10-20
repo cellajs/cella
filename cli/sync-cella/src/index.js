@@ -13,10 +13,11 @@ import { extractValues } from './utils/config-file.js'
 import { runGitCommand } from './utils/run-git-command.js'
 
 import { diverged } from './diverged.js'
-import { mergeUpstream } from './merge-upstream.js'
+import { pullUpstream } from './pull-upstream.js'
+import { pushUpstream } from './push-upstream.js'
 
 async function main() {
-  console.log(CELLA_TITLE);
+  console.info(CELLA_TITLE);
 
   const targetFolder = process.cwd()
 
@@ -26,7 +27,8 @@ async function main() {
       message: 'Select the sync service you want to use:',
       choices: [
         { name: 'Diverged files', value: 'diverged' },
-        { name: 'Merge upstream', value: 'merge-upstream' },
+        { name: 'Pull from upstream', value: 'pull-upstream' },
+        { name: 'Push to upstream', value: 'push-upstream' },
         { name: 'Cancel', value: 'cancel' },
       ],
     })
@@ -107,8 +109,12 @@ async function main() {
     return await diverged(options);
   }
 
-  if (cli.syncService === 'merge-upstream') {
-    return await mergeUpstream(options);
+  if (cli.syncService === 'pull-upstream') {
+    return await pullUpstream(options);
+  }
+
+  if (cli.syncService === 'push-upstream') {
+    return await pushUpstream(options);
   }
 }
 
