@@ -65,7 +65,7 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
         group-data-[submenu=false]/menuOptions:h-12
         group-data-[submenu=false]/menuOptions:menu-item-sub"
     >
-      {status !== 'pending' && (
+      {status === 'pending' && (
         <div className="absolute z-10">
           <Spinner
             className="p-1 m-2 opacity-50 h-10 w-10 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
