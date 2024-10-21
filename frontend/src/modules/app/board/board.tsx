@@ -49,14 +49,6 @@ function BoardDesktop({
   const panelRefs = useRef<Record<string, ImperativePanelHandle | null>>({});
   const { changePanels, workspacesPanels, workspaces } = useWorkspaceUIStore();
 
-  const scrollerWidth = getScrollerWidth(bounds.width, projects.length);
-  const panelMinSize = useMemo(() => {
-    if (typeof scrollerWidth === 'number') {
-      return (PANEL_MIN_WIDTH / scrollerWidth) * 100;
-    }
-    return 100 / (projects.length + 1); // + 1 to allow resizing
-  }, [scrollerWidth, projects.length]);
-
   const panelStorage = useMemo(
     () => ({
       getItem: (_: string) => workspacesPanels[workspaceId] ?? null,
@@ -71,6 +63,14 @@ function BoardDesktop({
       settings: workspaces[workspaceId]?.[project.id],
     }));
   }, [projects, workspaces, workspaceId]);
+
+  const scrollerWidth = getScrollerWidth(bounds.width, projectSettingsMap.filter((p) => !p.settings?.minimized).length);
+  const panelMinSize = useMemo(() => {
+    if (typeof scrollerWidth === 'number') return (PANEL_MIN_WIDTH / scrollerWidth) * 100;
+
+    const projectsLength = projectSettingsMap.filter((p) => !p.settings?.minimized).length;
+    return 100 / (projectsLength + 1); // + 1 to allow resizing
+  }, [scrollerWidth, projectSettingsMap]);
 
   useEffect(() => {
     for (const { project, settings } of projectSettingsMap) {
