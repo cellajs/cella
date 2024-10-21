@@ -1,7 +1,8 @@
 import { Loader2 } from 'lucide-react';
 import useMounted from '~/hooks/use-mounted';
+import { cn } from '~/utils/cn';
 
-const Spinner = ({ inline = false, noDelay = false }) => {
+const Spinner = ({ className = '', inline = false, noDelay = false }) => {
   const { hasStarted } = useMounted();
 
   return (
@@ -11,7 +12,7 @@ const Spinner = ({ inline = false, noDelay = false }) => {
       data-inline={inline}
       className="duration-300 transition-all data-[started=false]:data-[delay=false]:opacity-0 group"
     >
-      <Loader2 className="text-muted-foreground mx-auto group-data-[inline=true]:h-6 w-6 group-data-[inline=false]:mt-[40vh] h-10 w-10  animate-spin" />
+      <Loader2 className={cn('text-muted-foreground mx-auto h-6 w-6 group-data-[inline=false]:mt-[40vh] animate-spin', className)} />
     </div>
   );
 };

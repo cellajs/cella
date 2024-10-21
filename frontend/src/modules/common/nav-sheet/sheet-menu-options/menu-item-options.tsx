@@ -65,23 +65,23 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
         group-data-[submenu=false]/menuOptions:h-12
         group-data-[submenu=false]/menuOptions:menu-item-sub"
     >
-      {status === 'pending' ? (
-        <div
-          className="p-2 m-2 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
-            group-data-[submenu=false]/menuOptions:p-1 group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8 group-data-[archived=true]/optionsItem:opacity-70"
-        >
-          <Spinner inline />
+      {status !== 'pending' && (
+        <div className="absolute z-10">
+          <Spinner
+            className="p-1 m-2 opacity-50 h-10 w-10 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
+            group-data-[submenu=false]/menuOptions:p-1 group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8"
+            inline
+          />
         </div>
-      ) : (
-        <AvatarWrap
-          className="m-2 group-data-[submenu=false]/menuOptions:text-xs group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
-            group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8 group-data-[archived=true]/optionsItem:opacity-70"
-          type={item.entity}
-          id={item.id}
-          name={item.name}
-          url={item.thumbnailUrl}
-        />
       )}
+      <AvatarWrap
+        className="m-2 group-data-[submenu=false]/menuOptions:text-xs group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
+            group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8 group-data-[archived=true]/optionsItem:opacity-70"
+        type={item.entity}
+        id={item.id}
+        name={item.name}
+        url={item.thumbnailUrl}
+      />
 
       <div className="truncate grow py-2 pl-1 text-left">
         <div className="truncate text-sm leading-5 group-data-[archived=true]/optionsItem:opacity-70">
