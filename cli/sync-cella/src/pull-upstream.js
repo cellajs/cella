@@ -5,7 +5,7 @@ import { fetchUpstream } from './fetch-upstream.js'
 import { runGitCommand } from './utils/run-git-command.js'
 import { extractIgnorePatterns, applyIgnorePatterns } from './utils/ignore-patterns.js'
 
-export async function mergeUpstream({
+export async function pullUpstream({
   ignoreFile,
   ignoreList,
   upstreamBranch,
