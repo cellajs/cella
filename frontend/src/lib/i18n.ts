@@ -7,13 +7,14 @@ import app from '../../../locales/en/app.json';
 import common from '../../../locales/en/common.json';
 
 import { config } from 'config';
+import { env } from '../../env';
 
 export type { ParseKeys } from 'i18next';
 
 // Set up i18n with hybrid preload and lazy loading strategy
 const initOptions: InitOptions = {
   resources: { en: { common, app, about } }, // Preload default ('en') translations
-  debug: config.debug,
+  debug: env.VITE_DEBUG_I18N,
   ns: ['common', 'app', 'about'],
   partialBundledLanguages: true,
   supportedLngs: config.languages.map((lng) => lng.value),

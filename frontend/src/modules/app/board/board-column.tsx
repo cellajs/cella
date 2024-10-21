@@ -41,6 +41,7 @@ import { defaultColumnValues, useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project, Task } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { objectKeys } from '~/utils/object';
+import { env } from '../../../../env';
 import ProjectActions from './project-actions';
 
 interface BoardColumnProps {
@@ -124,7 +125,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
 
   // Subscribe to task updates
   useEffect(() => {
-    if (networkMode !== 'online' || !config.has.sync) return;
+    if (networkMode !== 'online' || !config.has.sync || !env.VITE_HAS_SYNC) return;
 
     const shapeStream = new ShapeStream<RawTask>(taskShape(project.id));
     const unsubscribe = shapeStream.subscribe((messages) => {

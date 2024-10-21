@@ -124,7 +124,7 @@ export default defineConfig(() => {
       },
     }),
   );
-  if (env.VITE_MILLION_LINT && config.debug) viteConfig.plugins?.push([MillionLint.vite()]);
+  if (env.VITE_MILLION_LINT) viteConfig.plugins?.push([MillionLint.vite()]);
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   return viteConfig;
 });
