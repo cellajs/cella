@@ -6,9 +6,8 @@ import { z } from 'zod';
 
 import { useSearch } from '@tanstack/react-router';
 import { ChevronDown, Tag, UserX, X } from 'lucide-react';
-import { type LegacyRef, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { BlockNote } from '~/modules/common/blocknote';
 import { dialog } from '~/modules/common/dialoger/state.ts';
@@ -101,7 +100,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   const { id: projectId, organizationId } = projects.find((p) => p.id === projectIdOrSlug || p.slug === projectIdOrSlug) ?? projects[0];
 
   const defaultId = nanoid();
-  const { ref, bounds } = useMeasure();
+
   const taskMutation = useTaskCreateMutation();
 
   const handleCloseForm = () => {
@@ -164,6 +163,13 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
     handleCloseForm();
   };
 
+  const getFieldWidth = () => {
+    const element = document.getElementById(`create-task-${projectIdOrSlug}`);
+    if (!element) return;
+    const styles = getComputedStyle(element);
+    return element.clientWidth - Number.parseFloat(styles.paddingLeft) - Number.parseFloat(styles.paddingRight) - 3;
+  };
+
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
   const isDirty = () => {
     const type = form.getValues('type');
@@ -192,7 +198,6 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
   return (
     <Form {...form}>
       <form
-        ref={ref as LegacyRef<HTMLFormElement>}
         id={`create-task-${projectIdOrSlug}`}
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn(className, `sm:p-3 sm:pl-11 ${isDialog ? '' : 'border-b'} flex gap-2 flex-col sm:shadow-inner`)}
@@ -275,7 +280,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                           <SelectImpact
                             value={selectedImpactValue}
                             projectId={projectId}
-                            triggerWidth={bounds.width - 3}
+                            triggerWidth={getFieldWidth()}
                             creationValueChange={onChange}
                           />,
                           {
@@ -323,7 +328,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                       dropdowner(
                         <AssignMembers
                           value={value as Member[]}
-                          triggerWidth={bounds.width - 3}
+                          triggerWidth={getFieldWidth()}
                           projectId={projectId}
                           creationValueChange={onChange}
                         />,
@@ -387,7 +392,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                       dropdowner(
                         <SetLabels
                           value={value as Label[]}
-                          triggerWidth={bounds.width - 3}
+                          triggerWidth={getFieldWidth()}
                           projectId={projectId}
                           organizationId={organizationId}
                           creationValueChange={onChange}
@@ -417,7 +422,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                                     content: (
                                       <SetLabels
                                         value={value.filter((l) => l.name !== name) as Label[]}
-                                        triggerWidth={bounds.width - 3}
+                                        triggerWidth={getFieldWidth()}
                                         projectId={projectId}
                                         organizationId={organizationId}
                                         creationValueChange={onChange}

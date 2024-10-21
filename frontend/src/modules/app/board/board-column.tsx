@@ -41,7 +41,6 @@ import { defaultColumnValues, useWorkspaceUIStore } from '~/store/workspace-ui';
 import type { Project, Task } from '~/types/app';
 import { cn } from '~/utils/cn';
 import { objectKeys } from '~/utils/object';
-import { env } from '../../../../env';
 import ProjectActions from './project-actions';
 
 interface BoardColumnProps {
@@ -125,7 +124,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
 
   // Subscribe to task updates
   useEffect(() => {
-    if (networkMode !== 'online' || !config.has.sync || !env.VITE_HAS_SYNC) return;
+    if (networkMode !== 'online' || !config.has.sync) return;
 
     const shapeStream = new ShapeStream<RawTask>(taskShape(project.id));
     const unsubscribe = shapeStream.subscribe((messages) => {
@@ -359,7 +358,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
   if (minimized)
     return (
       <div ref={columnRef} onClick={handleExpand} onKeyDown={() => {}} className="flex flex-col h-full max-sm:-mx-1.5 max-sm:pb-28">
-        <BoardColumnHeader projectId={project.id}>
+        <BoardColumnHeader projectId={project.id} className="sm:p-2">
           <AvatarWrap className="max-sm:hidden h-6 w-6 text-xs" id={project.id} type="project" name={project.name} url={project.thumbnailUrl} />
         </BoardColumnHeader>
         <div className="border h-full" />

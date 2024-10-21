@@ -4,7 +4,7 @@ import { Button } from '~/modules/ui/button';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { cn } from '~/utils/cn';
 
-export function BoardColumnHeader({ projectId, children }: { projectId: string; children?: React.ReactNode }) {
+export function BoardColumnHeader({ projectId, children, className }: { projectId: string; children?: React.ReactNode; className?: string }) {
   const navigate = useNavigate();
   const {
     data: { projects },
@@ -36,6 +36,7 @@ export function BoardColumnHeader({ projectId, children }: { projectId: string; 
       className={cn(
         'sm:border p-1 sm:p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-1 sm:gap-2 space-between items-center',
         stickyStyles,
+        className,
       )}
     >
       <Button disabled={currentIndex === 0} variant="ghost" className="sm:hidden" onClick={() => ArrowClick('left')}>

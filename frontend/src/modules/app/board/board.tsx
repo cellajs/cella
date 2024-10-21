@@ -96,7 +96,7 @@ function BoardDesktop({
                 ref={(el) => (panelRefs.current[project.id] = el)}
                 id={project.id}
                 order={project.membership?.order || index}
-                collapsedSize={5}
+                collapsedSize={panelMinSize * 0.1}
                 minSize={panelMinSize}
                 collapsible
               >
