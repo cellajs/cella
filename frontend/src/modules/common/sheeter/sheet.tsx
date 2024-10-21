@@ -9,20 +9,25 @@ export interface SheetProp {
 }
 
 export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
-  const { id, modal = true, side: sheetSide, open, description, title, hideClose = false, className: sheetClassName, content } = sheet;
+  const {
+    id,
+    modal = true,
+    side: sheetSide,
+    open,
+    description,
+    title,
+    interactWithPortalElements,
+    hideClose = false,
+    className: sheetClassName,
+    content,
+  } = sheet;
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  const modalState = interactWithPortalElements ? false : modal;
 
   // State to retain side value even after sheet removal
   const [side, setSide] = useState(sheetSide);
   const [className, setClassName] = useState(sheetClassName);
-
-  // Prevent flickering of sheet when its removed
-  useEffect(() => {
-    if (sheetSide) {
-      setSide(sheetSide); // Update side when new sheet is created
-      setClassName(sheetClassName);
-    }
-  }, [sheetSide, sheetClassName]);
 
   const closeSheet = () => {
     removeSheet(sheet);
@@ -48,13 +53,19 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
     if (bodyClassList.contains('keep-menu-open') && bodyClassList.contains('menu-sheet-open')) return;
 
     const mainContentElement = document.getElementById('main-block-app-content');
-    if (!modal && mainContentElement?.contains(event.target as Node)) {
-      return closeSheet();
-    }
+    if (!modal && mainContentElement?.contains(event.target as Node)) return closeSheet();
   };
 
+  // Prevent flickering of sheet when its removed
+  useEffect(() => {
+    if (sheetSide) {
+      setSide(sheetSide); // Update side when new sheet is created
+      setClassName(sheetClassName);
+    }
+  }, [sheetSide, sheetClassName]);
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} modal={modal}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={modalState}>
       <SheetContent
         ref={sheetRef}
         onEscapeKeyDown={handleEscapeKeyDown}
@@ -63,6 +74,9 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
         hideClose={hideClose}
         aria-describedby={undefined}
         className={`${className} items-start`}
+        // If interactWithPortalElements is set to true, you also need to pass an onClick function to close the sheet.
+        interactWithPortalElements={interactWithPortalElements}
+        closeSheet={closeSheet}
       >
         <StickyBox className={`z-10 flex items-center justify-between bg-background py-4 ${title ? '' : 'hidden'}`}>
           <SheetTitle>{title}</SheetTitle>

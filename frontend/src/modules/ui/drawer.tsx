@@ -1,10 +1,11 @@
 import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
+import ReactDOM from 'react-dom';
 import { Drawer as DrawerPrimitive } from 'vaul';
 
 import { cn } from '~/utils/cn';
 
-const DrawerVariants = cva('fixed z-[115] p-4 overflow-y-auto flex flex-col rounded-t-2.5 border bg-background', {
+const DrawerVariants = cva('fixed z-[115] p-4 overflow-x-hidden overflow-y-auto flex flex-col rounded-t-2.5 border bg-background', {
   variants: {
     direction: {
       top: 'inset-x-0 top-0 mb-24 flex-col',
@@ -51,16 +52,36 @@ const DrawerOverlay = React.forwardRef<
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
-export interface DrawerContentProps extends VariantProps<typeof DrawerVariants>, React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> {}
+export interface DrawerContentProps extends VariantProps<typeof DrawerVariants>, React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content> {
+  closeDrawer?: () => void;
+  interactWithPortalElements?: boolean;
+}
 
 const DrawerContent = React.forwardRef<React.ElementRef<typeof DrawerPrimitive.Content>, DrawerContentProps>(
-  ({ className, direction, children, ...props }, ref) => {
+  ({ className, direction, children, closeDrawer, interactWithPortalElements, ...props }, ref) => {
+    React.useEffect(() => {
+      if (!interactWithPortalElements) return;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'auto';
+      };
+    }, [interactWithPortalElements]);
     return (
       <DrawerPortal>
-        <DrawerOverlay />
+        {!interactWithPortalElements && <DrawerOverlay />}
+
         <DrawerPrimitive.Content ref={ref} className={cn(DrawerVariants({ direction }), className)} {...props}>
           <div className={DrawerSliderVariants({ direction })} />
           <div className="w-full h-full">{children}</div>
+          {interactWithPortalElements &&
+            ReactDOM.createPortal(
+              <div
+                onClick={closeDrawer}
+                onKeyDown={() => {}}
+                className="fixed bg-background/40 backdrop-blur-sm inset-0 z-[110]" // Full-screen overlay
+              />,
+              document.body,
+            )}
         </DrawerPrimitive.Content>
       </DrawerPortal>
     );
