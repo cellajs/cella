@@ -97,25 +97,26 @@ async function main() {
   // Ask for the PR branch name with a default value
   const defaultPrBranchName = `pr-branch-${Date.now()}`;
 
-  if (cli.syncService === 'push-upstream')
-  cli.prBranchName = await input({
-    message: 'Enter the PR branch name:',
-    default: defaultPrBranchName,
-    validate: (input) => input.length > 0 || 'PR branch name cannot be empty.',
-  });
-
-  const changeBranchName = await confirm({
-    message: `The default PR branch is "${cli.prBranchName}". Do you want to change it?`,
-    default: false,
-  });
-
-  if (changeBranchName) {
+  if (cli.syncService === 'push-upstream') {
     cli.prBranchName = await input({
-      message: 'Enter your custom PR branch name:',
-      default: cli.prBranchName,
+      message: 'Enter the PR branch name:',
+      default: defaultPrBranchName,
+      validate: (input) => input.length > 0 || 'PR branch name cannot be empty.',
     });
-  }
-};
+  
+    const changeBranchName = await confirm({
+      message: `The default PR branch is "${cli.prBranchName}". Do you want to change it?`,
+      default: false,
+    });
+  
+    if (changeBranchName) {
+      cli.prBranchName = await input({
+        message: 'Enter your custom PR branch name:',
+        default: cli.prBranchName,
+      });
+    }
+  };
+
   // Run the selected sync service and pass the options
   const options = {
     divergedFile: cli.divergedFile,
