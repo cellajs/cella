@@ -112,7 +112,7 @@ export const BlockNote = ({
     // Update the state or trigger the onChange callback in creation mode
     if (isCreationMode) onChange?.(contentToUpdate);
     setText(contentToUpdate);
-  }, [editor, text, isCreationMode, onChange, onTextDifference]);
+  }, [editor, text, isCreationMode, onChange, onTextDifference, setText]);
 
   const handleKeyDown: KeyboardEventHandler = async (event) => {
     if (event.key === 'Escape') {
@@ -165,11 +165,19 @@ export const BlockNote = ({
     blockUpdate(defaultValue);
   }, [defaultValue]);
 
+  const onBeforeLoadHandle = useCallback(async () => {
+    // Converts the editor's contents from Block objects to HTML and sanitizes it
+    const descriptionHtml = await editor.blocksToFullHTML(editor.document);
+    const cleanDescription = DOMPurify.sanitize(descriptionHtml);
+    if (!wasInitial.current) return;
+    updateData(cleanDescription);
+  }, [editor, wasInitial]);
+
   useEffect(() => {
     if (!updateDataOnBeforeLoad) return;
-    const unsubscribe = router.subscribe('onBeforeLoad', triggerDataUpdate);
+    const unsubscribe = router.subscribe('onBeforeLoad', onBeforeLoadHandle);
     return () => unsubscribe();
-  }, []);
+  }, [onBeforeLoadHandle]);
 
   return (
     <BlockNoteView
