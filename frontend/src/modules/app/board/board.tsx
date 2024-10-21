@@ -296,7 +296,8 @@ export default function Board() {
   };
 
   const handleTaskState = (event: TaskStatesChangeEvent) => {
-    const { taskId, state } = event.detail;
+    const { taskId, state, sheet } = event.detail;
+    if (sheet) return;
     if (state === 'currentState') return setTaskState(taskId, tasksState[taskId] === 'folded' ? 'folded' : 'expanded');
     setTaskState(taskId, state);
   };

@@ -215,7 +215,7 @@ export const useHandleUpdateHTML = () => {
     try {
       // after update change task unsaved state to editing
       const stateEvent = task.parentId ? 'changeSubtaskState' : 'changeTaskState';
-      if (!isSheet) dispatchCustomEvent(stateEvent, { taskId: task.id, state: 'editing' });
+      dispatchCustomEvent(stateEvent, { taskId: task.id, state: 'editing', sheet: isSheet });
       await taskMutation.mutateAsync({
         id: task.id,
         orgIdOrSlug: task.organizationId,

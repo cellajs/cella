@@ -7,14 +7,14 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { BlockNote } from '~/modules/common/blocknote';
 import { taskKeys } from '~/modules/common/query-client-provider/tasks';
 import CreateSubtaskForm from '~/modules/tasks/create-subtask-form';
+import { handleEditorFocus, updateImageSourcesFromDataUrl, useHandleUpdateHTML } from '~/modules/tasks/helpers';
 import Subtask from '~/modules/tasks/subtask';
 import UppyFilePanel from '~/modules/tasks/task-dropdowns/uppy-file-panel';
+import { Button } from '~/modules/ui/button';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
 import { env } from '../../../env';
-import { Button } from '../ui/button';
-import { handleEditorFocus, updateImageSourcesFromDataUrl, useHandleUpdateHTML } from './helpers';
 import type { TaskStates } from './types';
 
 interface TaskContentProps {
@@ -77,7 +77,7 @@ const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
               updateData={updateDescription}
               onEnterClick={() => dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'expanded' })}
               onTextDifference={() => {
-                if (!isSheet) dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'unsaved' });
+                dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'unsaved', sheet: isSheet });
               }}
               filePanel={UppyFilePanel(task.id)}
               trailingBlock={false}

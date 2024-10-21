@@ -7,6 +7,7 @@ export interface TasksCustomEventMap {
 type TaskStateInfo = {
   taskId: string;
   state: TaskStates | 'currentState';
+  sheet?: boolean;
 };
 
 type TaskSelectInfo = {

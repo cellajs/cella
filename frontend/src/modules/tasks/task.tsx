@@ -97,7 +97,7 @@ const TaskCard = memo(function TaskCard({ style, task, mode, isSelected, isFocus
   useDoubleClick({
     onDoubleClick: () => {
       if (state === 'editing' || state === 'unsaved') return;
-      dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'editing' });
+      dispatchCustomEvent('changeTaskState', { taskId: task.id, state: 'editing', sheet: isSheet });
     },
     allowedTargets: ['p', 'div', 'img'],
     excludeIds: [`subtask-container-${task.id}`],

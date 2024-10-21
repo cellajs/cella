@@ -73,38 +73,37 @@ export const TaskHeader = ({
         )}
 
         <div className="grow" />
-        {(!isSheet || isSubtask) && (
-          <TooltipButton
-            disabled={isEditing}
-            toolTipContent={t('common:edit_resource', { resource: isSubtask ? t('app:todo').toLowerCase() : t('app:task').toLowerCase() })}
-            side="bottom"
-            sideOffset={5}
-            hideWhenDetached
+
+        <TooltipButton
+          disabled={isEditing}
+          toolTipContent={t('common:edit_resource', { resource: isSubtask ? t('app:todo').toLowerCase() : t('app:task').toLowerCase() })}
+          side="bottom"
+          sideOffset={5}
+          hideWhenDetached
+        >
+          <Button
+            id={`edit-toggle-${task.id}`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onMouseDown={() => {
+              if (state !== 'unsaved') return;
+              setSaveClicked(true);
+              setTimeout(() => setSaveClicked(false), 2000);
+            }}
+            onClick={() => {
+              const event = isSubtask ? 'changeSubtaskState' : 'changeTaskState';
+              dispatchCustomEvent(event, { taskId: task.id, state: isEditing ? 'expanded' : 'editing', sheet: isSheet });
+            }}
+            aria-label="Edit"
+            variant="ghost"
+            className={`flex  min-w-20 flex-row items-center gap-1 font-light ${state === 'unsaved' ? 'hover:text-green-500' : ''}`}
+            size="xs"
           >
-            <Button
-              id={`edit-toggle-${task.id}`}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-              onMouseDown={() => {
-                if (state !== 'unsaved') return;
-                setSaveClicked(true);
-                setTimeout(() => setSaveClicked(false), 2000);
-              }}
-              onClick={() => {
-                const event = isSubtask ? 'changeSubtaskState' : 'changeTaskState';
-                dispatchCustomEvent(event, { taskId: task.id, state: isEditing ? 'expanded' : 'editing' });
-              }}
-              aria-label="Edit"
-              variant="ghost"
-              className={`flex  min-w-20 flex-row items-center gap-1 font-light ${state === 'unsaved' ? 'hover:text-green-500' : ''}`}
-              size="xs"
-            >
-              <span className={`${isEditing ? 'italic' : ''} ${saveClicked ? 'text-green-500' : ''}`}>
-                {saveClicked ? t('common:saved') : getButtonText()}
-              </span>
-            </Button>
-          </TooltipButton>
-        )}
+            <span className={`${isEditing ? 'italic' : ''} ${saveClicked ? 'text-green-500' : ''}`}>
+              {saveClicked ? t('common:saved') : getButtonText()}
+            </span>
+          </Button>
+        </TooltipButton>
 
         {!isSubtask && !isSheet && (
           <TooltipButton toolTipContent={t('common:expand')} side="bottom" sideOffset={5} hideWhenDetached>
