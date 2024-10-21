@@ -12,6 +12,10 @@ import { transformDatabaseUserWithCount } from '../users/helpers/transform-datab
 import meRoutesConfig from './routes';
 
 import { config } from 'config';
+<<<<<<< HEAD
+=======
+import type { z } from 'zod';
+>>>>>>> upstream/development
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
@@ -63,12 +67,17 @@ const meRoutes = app
 
     // Fetch function for each menu section, including handling submenus
     const fetchMenuItemsForSection = async (section: MenuSection) => {
+<<<<<<< HEAD
       let submenus: MenuItem[];
+=======
+      let formattedSubmenus: Omit<z.infer<typeof menuItemsSchema>[number], 'submenu'>[];
+>>>>>>> upstream/development
       const mainTable = entityTables[section.entityType];
       const mainEntityIdField = entityIdFields[section.entityType];
 
       const entity = await db
         .select({
+<<<<<<< HEAD
           slug: mainTable.slug,
           id: mainTable.id,
           createdAt: mainTable.createdAt,
@@ -77,6 +86,9 @@ const meRoutes = app
           name: mainTable.name,
           entity: mainTable.entity,
           thumbnailUrl: mainTable.thumbnailUrl,
+=======
+          item: mainTable,
+>>>>>>> upstream/development
           membership: membershipSelect,
         })
         .from(mainTable)
@@ -91,6 +103,7 @@ const meRoutes = app
 
         submenus = await db
           .select({
+<<<<<<< HEAD
             slug: subTable.slug,
             id: subTable.id,
             createdAt: subTable.createdAt,
@@ -99,18 +112,55 @@ const meRoutes = app
             name: subTable.name,
             entity: subTable.entity,
             thumbnailUrl: subTable.thumbnailUrl,
+=======
+            item: subTable,
+>>>>>>> upstream/development
             membership: membershipSelect,
           })
           .from(subTable)
           .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, section.submenu.entityType)))
           .orderBy(asc(membershipsTable.order))
           .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
+<<<<<<< HEAD
       }
 
       return entity.map((entity) => ({
         ...entity,
         submenu: section.submenu ? submenus.filter((p) => p.membership[section.submenu.parentField] === entity.id) : [],
+=======
+
+        // TODO is this formatting necessary? Can we return data with proper select? toDateString?
+        formattedSubmenus = subEntity.map(({ item, membership }) => ({
+          slug: item.slug,
+          id: item.id,
+          createdAt: item.createdAt.toDateString(),
+          modifiedAt: item.modifiedAt?.toDateString() ?? null,
+          organizationId: membership.organizationId,
+          name: item.name,
+          entity: item.entity,
+          thumbnailUrl: item.thumbnailUrl,
+          membership,
+        }));
+      }
+
+      const submenuParentField = section.submenu?.parentField;
+
+      // TODO is this formatting necessary? Can we return data with proper select? toDateString is necessary?
+      const entityItems = entity.map(({ item, membership }) => ({
+        slug: item.slug,
+        id: item.id,
+        createdAt: item.createdAt.toDateString(),
+        modifiedAt: item.modifiedAt?.toDateString() ?? null,
+        organizationId: membership.organizationId,
+        name: item.name,
+        entity: item.entity,
+        thumbnailUrl: item.thumbnailUrl,
+        membership,
+        submenu: submenuParentField ? formattedSubmenus.filter((p) => p.membership[submenuParentField] === item.id) : [],
+>>>>>>> upstream/development
       }));
+
+      return entityItems;
     };
 
     // Build the menu data asynchronously

@@ -33,12 +33,24 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
     toast.success(t('common:success.stopped_impersonation'));
   };
 
+<<<<<<< HEAD
   return (
     <nav
       id="main-nav"
       data-theme={theme}
       data-started={hasStarted}
       className="fixed z-[100] sm:z-[110] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden bg-primary data-[theme=none]:bg-secondary data-[started=false]:max-sm:translate-y-full data-[started=false]:sm:-translate-x-full"
+=======
+  const navBackground = theme !== 'none' ? 'bg-primary' : 'bg-secondary';
+  return (
+    <nav
+      id="main-nav"
+      className={cn(
+        'fixed z-[100] sm:z-[110] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden',
+        navBackground,
+        !hasStarted && 'max-sm:translate-y-full sm:-translate-x-full',
+      )}
+>>>>>>> upstream/development
     >
       <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">
         {items.map((navItem: NavItem, index: number) => {

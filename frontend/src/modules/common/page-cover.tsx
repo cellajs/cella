@@ -67,8 +67,12 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
   };
   return (
     <div
+<<<<<<< HEAD
       data-url={!!url}
       className={`relative flex bg-cover bg-center h-32 ${numberToColorClass(id)} data-[url=true]:h-[20vw] min-h-40 sm:min-w-52`}
+=======
+      className={`relative flex bg-cover bg-muted bg-center ${bannerHeight} ${bannerClass}`}
+>>>>>>> upstream/development
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && (

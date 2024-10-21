@@ -8,7 +8,12 @@ interface MenuArchiveToggleProps {
   inactiveCount: number;
 }
 
+<<<<<<< HEAD
 export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount }: MenuArchiveToggleProps) => {
+=======
+// TODO isSubmenu and isArchivedVisible can go away and instead use conditional tailwind classes
+export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount, isArchivedVisible, isSubmenu }: MenuArchiveToggleProps) => {
+>>>>>>> upstream/development
   const { t } = useTranslation();
 
   return (
@@ -17,8 +22,14 @@ export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount }: MenuArc
         onClick={archiveToggleClick}
         disabled={inactiveCount < 1}
         variant="secondary"
+<<<<<<< HEAD
         className="w-full group mb-1 cursor-pointer bg-background p-0 transition duration-300 focus-visible:outline-none ring-inset focus-visible:ring-offset-0 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
         group-data-[submenu=true]/archived:h-8 group-data-[submenu=true]/archived:relative group-data-[submenu=true]/archived:menu-item-sub"
+=======
+        className={`w-full ${
+          isSubmenu ? 'h-8 relative menu-item-sub' : ''
+        } group mb-1 cursor-pointer bg-background p-0 transition duration-300 focus-visible:outline-none ring-inset focus-visible:ring-offset-0 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground`}
+>>>>>>> upstream/development
       >
         <div className="w-14 py-2 flex justify-center items-center">
           <Archive size={16} className="mr-0.5 items-center opacity-75" />

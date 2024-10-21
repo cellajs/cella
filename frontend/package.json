@@ -17,11 +17,17 @@
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.4.0",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.3",
+<<<<<<< HEAD
     "@blocknote/core": "^0.17.1",
     "@blocknote/react": "^0.17.1",
     "@blocknote/shadcn": "^0.17.1",
     "@electric-sql/client": "^0.6.4",
     "@electric-sql/react": "^0.4.6",
+=======
+    "@blocknote/core": "^0.16.0",
+    "@blocknote/react": "^0.16.0",
+    "@blocknote/shadcn": "^0.16.0",
+>>>>>>> upstream/development
     "@floating-ui/react": "^0.26.25",
     "@github/mini-throttle": "^2.1.1",
     "@hookform/resolvers": "^3.9.0",
@@ -93,7 +99,6 @@
     "jspdf-autotable": "^3.8.4",
     "locales": "workspace:*",
     "lucide-react": "^0.447.0",
-    "middleware@latest": "link:zustand/middleware@latest",
     "nanoid": "^5.0.7",
     "react": "^18.3.1",
     "react-confetti-explosion": "^2.1.2",

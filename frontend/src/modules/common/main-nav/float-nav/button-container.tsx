@@ -14,6 +14,7 @@ const MobileNavButton: React.FC<MobileNavButtonProps> = ({ Icon, onClick, classN
   return (
     <Button
       size="icon"
+<<<<<<< HEAD
       data-direction={direction}
       variant="secondary"
       onClick={onClick}
@@ -22,6 +23,11 @@ const MobileNavButton: React.FC<MobileNavButtonProps> = ({ Icon, onClick, classN
         data-[direction=left]:left-3 data-[direction=right]:right-3`,
         className,
       )}
+=======
+      variant="secondary"
+      onClick={onClick}
+      className={`fixed z-[100] w-14 h-14 flex items-center shadow-lg hover:bg-secondary justify-center rounded-full bottom-3 ${positionClasses} ${className}`}
+>>>>>>> upstream/development
       aria-label="Nav Button"
     >
       <Icon size={24} strokeWidth={1.5} />

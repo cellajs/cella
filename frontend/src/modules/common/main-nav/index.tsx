@@ -43,7 +43,11 @@ const MainNav = () => {
     // If its a have dialog, open it
     if (navItem.dialog) {
       return dialog(navItem.dialog, {
+<<<<<<< HEAD
         id: navItem.id,
+=======
+        id: 'workspace-add-task',
+>>>>>>> upstream/development
         className: navItem.id === 'search' ? 'sm:max-w-2xl p-0 border-0 mb-4' : '',
         drawerOnMobile: false,
         refocus: false,
@@ -71,7 +75,11 @@ const MainNav = () => {
       side: sheetSide,
       hideClose: true,
       modal: isMobile,
+<<<<<<< HEAD
       className: 'fixed sm:z-[105] p-0 sm:inset-0 xs:max-w-80 sm:left-16 group-[.menu-sheet-open]/body:group-[.keep-menu-open]/body:xl:shadow-none',
+=======
+      className: `fixed sm:z-[105] p-0 sm:inset-0 xs:max-w-80 sm:left-16 ${navItem.id === 'menu' && 'group-[.keep-menu-open]/body:xl:shadow-none'}`,
+>>>>>>> upstream/development
       removeCallback: () => {
         setNavSheetOpen(null);
       },

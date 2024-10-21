@@ -21,15 +21,25 @@ export const NavButton = ({ navItem, isActive, onClick }: NavButtonProps) => {
   const { user } = useUserStore();
   const { theme } = useThemeStore();
 
+<<<<<<< HEAD
+=======
+  const navIconColor = theme !== 'none' ? 'text-primary-foreground' : '';
+  const activeClass = isActive ? 'bg-background/50 hover:bg-background/75' : '';
+
+>>>>>>> upstream/development
   return (
     <TooltipButton toolTipContent={t(`common:${navItem.id}`)} side="right" sideOffset={10} hideWhenDetached>
       <Button
         id={`${navItem.id}-nav`}
         variant="ghost"
+<<<<<<< HEAD
         data-theme={theme}
         data-active={isActive}
         className={`ring-inset focus-visible:ring-offset-0 group h-14 w-14 
           data-[active=true]:bg-background/50 hover:bg-background/30 text-primary-foreground data-[theme=none]:text-inherit`}
+=======
+        className={cn('hover:bg-background/25 ring-inset focus-visible:ring-offset-0 group h-14 w-14', navIconColor, activeClass)}
+>>>>>>> upstream/development
         onClick={() => onClick(navItem.id)}
       >
         {navItem.id === 'account' && user ? (

@@ -1,7 +1,11 @@
 import type { NavigateFn } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { sheet } from '~/modules/common/sheeter/state';
+<<<<<<< HEAD
 import type { LimitedUser } from '~/types/common';
+=======
+import type { User } from '~/types/common';
+>>>>>>> upstream/development
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 

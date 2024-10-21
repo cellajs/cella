@@ -30,8 +30,13 @@ import type { Member } from '~/types/common';
 
 import type { Block } from '@blocknote/core';
 import { FloatingPortal } from '@floating-ui/react';
+<<<<<<< HEAD
 
 import router from '~/lib/router';
+=======
+import router from '~/lib/router';
+
+>>>>>>> upstream/development
 import { focusEditor, getContentAsString, handleSubmitOnEnter, trimInlineContentText } from '~/modules/common/blocknote/helpers';
 import './styles.css';
 
@@ -182,7 +187,11 @@ export const BlockNote = ({
       onFocus={onFocus}
       onBlur={triggerDataUpdate}
       onKeyDown={handleKeyDown}
+<<<<<<< HEAD
       sideMenu={false}
+=======
+      sideMenu={!sideMenu}
+>>>>>>> upstream/development
       slashMenu={!slashMenu}
       formattingToolbar={!formattingToolbar}
       emojiPicker={!emojiPicker}

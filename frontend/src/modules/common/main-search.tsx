@@ -77,14 +77,15 @@ export const MainSearch = () => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    const { orgIdOrSlug, idOrSlug, path } = getEntityPath(suggestion);
+    // TODO because cella doesnt have a product entity, we remove orgIdOrSlug here.
+    // TODO an attachments crud with views will be added to cella, so we can add the orgIdOrSlug back
+    const { idOrSlug, path } = getEntityPath(suggestion);
 
     navigate({
       to: path,
       resetScroll: false,
-      params: { idOrSlug, orgIdOrSlug },
+      params: { idOrSlug },
     });
-
     dialog.remove(false);
   };
 

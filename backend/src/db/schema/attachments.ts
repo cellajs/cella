@@ -1,9 +1,8 @@
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
-import { tasksTable } from './tasks';
-import { usersTable } from './users';
-import { projectsTable } from './projects';
 import { organizationsTable } from './organizations';
+import { projectsTable } from './projects';
+import { usersTable } from './users';
 
 export const attachmentsTable = pgTable('attachments', {
   id: varchar('id').primaryKey().$defaultFn(nanoid),
@@ -27,6 +26,7 @@ export const attachmentsTable = pgTable('attachments', {
     .references(() => organizationsTable.id, {
       onDelete: 'cascade',
     }),
+<<<<<<< HEAD
   projectId: varchar('project_id')
     .notNull()
     .references(() => projectsTable.id, {
@@ -37,6 +37,8 @@ export const attachmentsTable = pgTable('attachments', {
     .references(() => tasksTable.id, {
       onDelete: 'cascade',
     }),
+=======
+>>>>>>> upstream/development
 });
 
 export type AttachmentModel = typeof attachmentsTable.$inferSelect;

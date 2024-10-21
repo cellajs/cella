@@ -28,4 +28,8 @@ export const mapMenuSectionsSchema = <T extends ZodTypeAny>(getSchemaForTable: (
       {} as Record<EntityTableNames, T>,
     ),
   );
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> upstream/development

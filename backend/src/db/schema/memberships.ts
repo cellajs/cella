@@ -25,8 +25,11 @@ export const membershipsTable = pgTable('memberships', {
   organizationId: varchar('organization_id')
     .notNull()
     .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+<<<<<<< HEAD
   workspaceId: varchar('workspace_id').references(() => workspacesTable.id, { onDelete: 'cascade' }),
   projectId: varchar('project_id').references(() => projectsTable.id, { onDelete: 'cascade' }),
+=======
+>>>>>>> upstream/development
 });
 
 export const membershipSelect = {

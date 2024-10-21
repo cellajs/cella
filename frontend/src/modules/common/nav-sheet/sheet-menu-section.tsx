@@ -69,7 +69,11 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
   }, [archivedRef, isArchivedVisible]);
 
   return (
+<<<<<<< HEAD
     <div className="group/menuSection" data-visible={isSectionVisible}>
+=======
+    <>
+>>>>>>> upstream/development
       <MenuSectionSticky
         data={data}
         sectionLabel={sectionLabel}
@@ -90,6 +94,7 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
             <SheetMenuItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
           )}
           {!!data.length && (
+<<<<<<< HEAD
             <div
               className="group/archived"
               data-have-inactive={!!data.filter((i) => i.membership.archived).length}
@@ -97,6 +102,15 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
               data-archived-visible={isArchivedVisible}
             >
               <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.filter((i) => i.membership.archived).length} />
+=======
+            <>
+              <MenuArchiveToggle
+                isSubmenu={false}
+                archiveToggleClick={archiveToggleClick}
+                inactiveCount={data.filter((i) => i.membership.archived).length}
+                isArchivedVisible={isArchivedVisible}
+              />
+>>>>>>> upstream/development
               <div
                 ref={archivedRef}
                 className="grid transition-[grid-template-rows] grid-rows-[0fr] group-data-[archived-visible=true]/archived:grid-rows-[1fr] ease-in-out duration-300"

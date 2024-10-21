@@ -16,6 +16,7 @@ const MainNavLoader = () => {
     <>
       <Logo
         iconOnly
+<<<<<<< HEAD
         data-waited={hasWaited}
         data-loading={isLoading}
         className={`w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0
@@ -23,6 +24,11 @@ const MainNavLoader = () => {
           data-[waited=true]:data-[loading=false]:ease-in-out  
           data-[waited=true]:data-[loading=false]:opacity-0
           data-[waited=true]:data-[loading=false]:scale-0`}
+=======
+        className={`${isLoading && config.navLogoAnimation} w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0 ${
+          hasWaited && !isLoading && 'ease-in-out opacity-0 scale-0'
+        }`}
+>>>>>>> upstream/development
       />
       <Home
         data-waited={hasWaited}
