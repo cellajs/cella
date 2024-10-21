@@ -34,7 +34,7 @@ export const updateTaskSchema = z.object({
     ).map((key) => z.literal(key)),
   ),
   data: z.union([z.array(z.string()), z.string(), z.number(), z.boolean()]).nullable(),
-  order: z.number().nullable(),
+  order: z.number().nullish(),
 });
 
 export enum TaskStatus {

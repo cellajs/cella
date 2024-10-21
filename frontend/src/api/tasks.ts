@@ -59,20 +59,13 @@ export const getTasksList = async (
   return json.data;
 };
 
-export type UpdateTaskParams = Parameters<(typeof client)[':id']['$put']>['0']['json'];
-
-// Update task by its ID
-export const updateTask = async ({
-  id,
-  orgIdOrSlug,
-  key,
-  data,
-  order,
-}: Omit<UpdateTaskParams, 'order'> & {
+export type UpdateTaskParams = Parameters<(typeof client)[':id']['$put']>['0']['json'] & {
   id: string;
   orgIdOrSlug: string;
-  order?: number | null;
-}) => {
+};
+
+// Update task by its ID
+export const updateTask = async ({ id, orgIdOrSlug, key, data, order }: UpdateTaskParams) => {
   const newOrder = order || null;
   const response = await client[':id'].$put({
     param: { id, orgIdOrSlug },

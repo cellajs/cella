@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { Workspace } from '~/types/app';
 
 interface WorkspaceState {
   selectedTasks: string[];
@@ -17,10 +16,6 @@ interface WorkspaceState {
 export const useWorkspaceStore = create<WorkspaceState>()(
   devtools(
     immer((set) => ({
-      workspace: null as unknown as Workspace,
-      projects: [],
-      members: [],
-      labels: [],
       selectedTasks: [],
       searchQuery: '',
       focusedTaskId: null,

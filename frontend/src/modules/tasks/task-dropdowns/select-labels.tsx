@@ -4,10 +4,9 @@ import { Check, Dot, Loader2, Tag } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { createLabel, updateLabel } from '~/api/labels.ts';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { Kbd } from '~/modules/common/kbd.tsx';
+import { useLabelCreateMutation, useLabelUpdateMutation } from '~/modules/common/query-client-provider/labels';
 import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Badge } from '~/modules/ui/badge.tsx';
@@ -43,15 +42,17 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
   });
 
   const {
-    data: { workspace, projects, labels },
+    data: { workspace, labels },
   } = useWorkspaceQuery();
-  const callback = useMutateQueryData(['labels', projects.map((p) => p.id).join('_')]);
   const taskMutation = useTaskUpdateMutation();
   const focusedTaskId = useMemo(() => (taskIdPreview ? taskIdPreview : storeFocusedId), [storeFocusedId, taskIdPreview]);
 
   const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
   const [searchValue, setSearchValue] = useState('');
   const [isRecent, setIsRecent] = useState(!!creationValueChange || !isMobile);
+
+  const labelCreateMutation = useLabelCreateMutation();
+  const labelUpdateMutation = useLabelUpdateMutation();
 
   const orderedLabels = useMemo(
     () => labels.filter((l) => l.projectId === projectId).sort((a, b) => new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime()),
@@ -95,8 +96,13 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
       const updatedLabels = selectedLabels.filter((label) => label.name !== value);
       setSelectedLabels(updatedLabels);
       if (creationValueChange) return creationValueChange(updatedLabels);
-      await updateTaskLabels(updatedLabels);
-      await updateLabel(existingLabel.id, workspace.organizationId, existingLabel.useCount + 1);
+      labelUpdateMutation.mutateAsync({
+        id: existingLabel.id,
+        workspaceSlug: workspace.slug,
+        orgIdOrSlug: workspace.organizationId,
+        useCount: existingLabel.useCount - 1,
+      });
+      updateTaskLabels(updatedLabels);
       return;
     }
     const newLabel = labels.find((label) => label.name === value);
@@ -104,8 +110,13 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
       const updatedLabels = [...selectedLabels, newLabel];
       setSelectedLabels(updatedLabels);
       if (creationValueChange) return creationValueChange(updatedLabels);
-      await updateLabel(newLabel.id, workspace.organizationId, newLabel.useCount + 1);
-      await updateTaskLabels(updatedLabels);
+      labelUpdateMutation.mutateAsync({
+        id: newLabel.id,
+        workspaceSlug: workspace.slug,
+        orgIdOrSlug: workspace.organizationId,
+        useCount: newLabel.useCount + 1,
+      });
+      updateTaskLabels(updatedLabels);
       return;
     }
   };
@@ -114,18 +125,17 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
     setSearchValue('');
     if (labels.find((l) => l.name === value)) return handleSelectClick(value);
 
-    const createdLabel = await createLabel(
-      {
-        name: value,
-        color: '#FFA9BA',
-        projectId: projectId,
-        useCount: 1,
-      },
-      workspace.organizationId,
-    );
+    const createdLabel = await labelCreateMutation.mutateAsync({
+      workspaceSlug: workspace.slug,
+      orgIdOrSlug: workspace.organizationId,
+      name: value,
+      color: '#FFA9BA',
+      projectId,
+      useCount: 1,
+    });
+
     const updatedLabels = [...selectedLabels, createdLabel];
     setSelectedLabels(updatedLabels);
-    callback([createdLabel], 'create');
     if (creationValueChange) return creationValueChange(updatedLabels);
     await updateTaskLabels(updatedLabels);
   };

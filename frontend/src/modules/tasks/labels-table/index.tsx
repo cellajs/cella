@@ -1,13 +1,12 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions } from '@tanstack/react-query';
 import { Bird, Trash, XSquare } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { type GetLabelsParams, deleteLabels, getLabels } from '~/api/labels';
 import { useDebounce } from '~/hooks/use-debounce';
-import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -65,7 +64,7 @@ const LabelsTable = () => {
   const { t } = useTranslation();
   const [columns] = useColumns();
   const {
-    data: { workspace, projects },
+    data: { workspace, labels },
   } = useWorkspaceQuery();
 
   const [rows, setRows] = useState<Label[]>([]);
@@ -78,22 +77,8 @@ const LabelsTable = () => {
   const sort = sortColumns[0]?.columnKey as LabelsSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as LabelsSearch['order'];
 
-  const queryResult = useInfiniteQuery(
-    labelsQueryOptions({
-      q,
-      sort,
-      order,
-      projectId: projects.map((p) => p.id).join('_'),
-      rowsLength: rows.length,
-      orgIdOrSlug: workspace.organizationId,
-    }),
-  );
-
-  // Map (updated) query data to rows
-  useMapQueryDataToRows<Label>({ queryResult, setSelectedRows, setRows, selectedRows });
-
   // Total count
-  const totalCount = queryResult.data?.pages[0].total;
+  const totalCount = labels.length;
   // Table selection
   const selectedLabels = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
@@ -124,6 +109,20 @@ const LabelsTable = () => {
       setSelectedRows(new Set<string>());
     });
   };
+
+  useEffect(() => {
+    const filteredLabels = q ? labels.filter((label) => label.name.toLowerCase().includes(q.toLowerCase())) : labels;
+    const sortedLabels = filteredLabels.sort((a, b) => {
+      if (sort === 'name') {
+        return a.name.localeCompare(b.name) * (order === 'asc' ? 1 : -1);
+      }
+      if (sort === 'useCount') {
+        return a.useCount - b.useCount * (order === 'asc' ? 1 : -1);
+      }
+      return new Date(a.lastUsedAt).getTime() - new Date(b.lastUsedAt).getTime() * (order === 'asc' ? 1 : -1);
+    });
+    setRows(sortedLabels);
+  }, [labels, q, sort, order]);
 
   return (
     <div className="flex flex-col gap-4 h-full">
