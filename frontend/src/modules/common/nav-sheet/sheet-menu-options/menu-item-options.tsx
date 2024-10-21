@@ -7,10 +7,12 @@ import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { showToast } from '~/lib/toasts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import type { UserMenuItem } from '~/types/common';
 import Spinner from '../../spinner';
+import { updateMenuItem } from '../helpers/update-menu-item';
 
 interface MenuItemOptionsProps {
   item: UserMenuItem;
@@ -24,20 +26,19 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
     onSuccess: (updatedMembership) => {
       let toastMessage: string | undefined;
 
-      if (updatedMembership.archived !== item.membership.archived) {
-        const archived = updatedMembership.archived || !item.membership.archived;
+      const updatedEntity: UserMenuItem = { ...item, membership: { ...item.membership, ...updatedMembership } };
 
-        item.membership.archived = archived;
+      if (updatedMembership.archived !== item.membership.archived) {
         toastMessage = t(`common:success.${updatedMembership.archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${item.entity}`) });
       }
 
       if (updatedMembership.muted !== item.membership.muted) {
-        const muted = updatedMembership.muted || !item.membership.muted;
-        item.membership.muted = muted;
         toastMessage = t(`common:success.${updatedMembership.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${item.entity}`) });
       }
+      updateMenuItem(updatedEntity);
+      dispatchCustomEvent('menuEntityChange', { entity: item.entity, membership: updatedMembership });
 
-      dispatchCustomEvent('menuEntityChange', { entity: item.entity, membership: updatedMembership, toast: toastMessage });
+      if (toastMessage) showToast(toastMessage, 'success');
     },
   });
 

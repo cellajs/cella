@@ -17,7 +17,6 @@ import type { Project, Task } from '~/types/app';
 import type { ContextEntity, Membership } from '~/types/common';
 
 import type { ImperativePanelHandle } from 'react-resizable-panels';
-import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { queryClient } from '~/lib/router';
 import WorkspaceActions from '~/modules/app/board/workspace-actions';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -119,8 +118,11 @@ export default function Board() {
   const { focusedTaskId, selectedTasks, setSearchQuery, setSelectedTasks } = useWorkspaceStore();
   const prevFocusedRef = useRef<string | null>(focusedTaskId);
   const {
-    data: { workspace, projects },
+    data: { workspace, projects: queryProjects },
+    updateProjectMembership,
+    updateWorkspaceMembership,
   } = useWorkspaceQuery();
+
   const isMobile = useBreakpoints('max', 'sm');
 
   const { workspaces, changeColumn } = useWorkspaceUIStore();
@@ -130,6 +132,12 @@ export default function Board() {
   const { project, q } = useSearch({
     from: WorkspaceBoardRoute.id,
   });
+
+  // TODO maybe find other way
+  const projects = useMemo(
+    () => queryProjects.filter((p) => !p.membership?.archived).sort((a, b) => (a.membership?.order ?? 0) - (b.membership?.order ?? 0)),
+    [queryProjects],
+  );
 
   // Finding the project based on the query parameter or defaulting to the first project
   const mobileDeviceProject = useMemo(() => {
@@ -281,11 +289,10 @@ export default function Board() {
     return setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
   };
 
-  const workspaceCallback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
   const handleEntityUpdate = (event: { detail: { membership: Membership; entity: ContextEntity } }) => {
     const { entity, membership } = event.detail;
-    if (entity !== 'workspace' && entity !== 'project') return;
-    workspaceCallback([membership], entity === 'project' ? 'updateProjectMembership' : 'updateWorkspaceMembership');
+    if (entity === 'project') updateProjectMembership(membership);
+    if (entity === 'workspace') updateWorkspaceMembership(membership);
   };
 
   const handleTaskState = (event: TaskStatesChangeEvent) => {

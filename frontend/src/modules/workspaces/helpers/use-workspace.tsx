@@ -3,6 +3,7 @@ import { useParams } from '@tanstack/react-router';
 import { queryClient } from '~/lib/router';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import type { Project, Workspace } from '~/types/app';
+import type { Membership } from '~/types/common';
 import { workspaceQueryOptions } from './query-options';
 
 export const useWorkspaceQuery = () => {
@@ -14,6 +15,16 @@ export const useWorkspaceQuery = () => {
     queryClient.setQueryData(queryOptions.queryKey, {
       ...result.data,
       workspace,
+    });
+  };
+
+  const updateWorkspaceMembership = (membership: Membership) => {
+    queryClient.setQueryData(queryOptions.queryKey, (data) => {
+      if (!data) return;
+      return {
+        ...data,
+        workspace: { ...data.workspace, membership: { ...data.workspace.membership, ...membership } },
+      };
     });
   };
 
@@ -33,9 +44,20 @@ export const useWorkspaceQuery = () => {
       return {
         ...data,
         projects: data.projects.map((p) => {
-          if (p.id === project.id) {
-            return project;
-          }
+          if (p.id === project.id) return project;
+          return p;
+        }),
+      };
+    });
+  };
+
+  const updateProjectMembership = (membership: Membership) => {
+    queryClient.setQueryData(queryOptions.queryKey, (data) => {
+      if (!data) return;
+      return {
+        ...data,
+        projects: data.projects.map((p) => {
+          if (p.membership && p.membership.id === membership.id) return { ...p, membership: { ...p.membership, ...membership } };
           return p;
         }),
       };
@@ -55,8 +77,10 @@ export const useWorkspaceQuery = () => {
   return {
     ...result,
     updateWorkspace,
+    updateWorkspaceMembership,
     addProject,
     updateProject,
+    updateProjectMembership,
     removeProjects,
   };
 };

@@ -1,4 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
+import { menuSections } from '~/nav-config';
+import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenu, UserMenuItem } from '~/types/common';
 
 const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntity, archived: boolean, reverse = false): UserMenuItem[] => {
@@ -56,4 +58,17 @@ export const orderChange = (order: number, action: 'inc' | 'dec') => {
 
   if (order > 1 && Number.isInteger(order)) return order - 1;
   return order / 2;
+};
+
+export const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
+  const { menu } = useNavigationStore.getState();
+
+  const updatedMenu = menuSections.reduce(
+    (acc, { name }) => {
+      if (menu[name]) acc[name] = transform(menu[name]);
+      return acc;
+    },
+    {} as Record<keyof UserMenu, UserMenuItem[]>,
+  );
+  useNavigationStore.setState({ menu: updatedMenu });
 };

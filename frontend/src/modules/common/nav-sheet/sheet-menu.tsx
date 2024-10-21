@@ -20,6 +20,7 @@ import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
 import { menuSections } from '~/nav-config';
+import { updateMenuItem } from './helpers/update-menu-item';
 import { NetworkModeSwitch } from './network-mode-switch';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
@@ -90,6 +91,9 @@ export const SheetMenu = memo(() => {
             order: newOrder,
             organizationId: sourceItem.organizationId || sourceItem.id,
           });
+
+          const updatedEntity: UserMenuItem = { ...sourceItem, membership: { ...sourceItem.membership, ...updatedMembership } };
+          updateMenuItem(updatedEntity);
           dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership });
         },
       }),
