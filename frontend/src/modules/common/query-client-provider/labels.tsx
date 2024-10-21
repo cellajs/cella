@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { type QueryKey, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { toast } from 'sonner';
 import { type GetLabelsParams, createLabel, updateLabel } from '~/api/labels';
@@ -38,6 +38,33 @@ export const useLabelUpdateMutation = () => {
   });
 };
 
+const getPreviousWorkspace = async (queryKey: QueryKey) => {
+  // Cancel any outgoing refetches
+  // (so they don't overwrite our optimistic update)
+  await queryClient.cancelQueries({ queryKey });
+  // Snapshot the previous value
+  const previousWorkspace = queryClient.getQueryData<GetWorkspaceResponse>(queryKey);
+
+  return previousWorkspace;
+};
+
+const onError = (
+  _: Error,
+  {
+    orgIdOrSlug,
+    workspaceSlug,
+  }: {
+    orgIdOrSlug: string;
+    workspaceSlug: string;
+  },
+  context?: { previousWorkspace?: GetWorkspaceResponse },
+) => {
+  if (context?.previousWorkspace) {
+    const queryOptions = workspaceQueryOptions(workspaceSlug, orgIdOrSlug);
+    queryClient.setQueryData(queryOptions.queryKey, context.previousWorkspace);
+  }
+};
+
 queryClient.setMutationDefaults(labelKeys.create(), {
   mutationFn: createLabel,
   onMutate: async (variables: LabelsCreateMutationQueryFnVariables) => {
@@ -53,12 +80,7 @@ queryClient.setMutationDefaults(labelKeys.create(), {
     };
 
     const queryOptions = workspaceQueryOptions(workspaceSlug, orgIdOrSlug);
-
-    // Cancel any outgoing refetches
-    // (so they don't overwrite our optimistic update)
-    await queryClient.cancelQueries({ queryKey: queryOptions.queryKey });
-    // Snapshot the previous value
-    const previousWorkspace = queryClient.getQueryData<GetWorkspaceResponse>(queryOptions.queryKey);
+    const previousWorkspace = await getPreviousWorkspace(queryOptions.queryKey);
 
     // Optimistically update to the new value
     if (previousWorkspace) {
@@ -101,27 +123,15 @@ queryClient.setMutationDefaults(labelKeys.create(), {
     });
     toast.success(t('common:success.create_resource', { resource: t('app:task') }));
   },
-  onError: (_, { workspaceSlug, orgIdOrSlug }, context) => {
-    if (context?.previousWorkspace) {
-      const queryOptions = workspaceQueryOptions(workspaceSlug, orgIdOrSlug);
-      queryClient.setQueryData(queryOptions.queryKey, context.previousWorkspace);
-    }
-    toast.error(t('common:error.create_resource', { resource: t('app:label') }));
-  },
+  onError,
 });
 
 queryClient.setMutationDefaults(labelKeys.update(), {
   mutationFn: updateLabel,
   onMutate: async (variables: LabelsUpdateMutationQueryFnVariables) => {
     const { orgIdOrSlug, workspaceSlug } = variables;
-
     const queryOptions = workspaceQueryOptions(workspaceSlug, orgIdOrSlug);
-
-    // Cancel any outgoing refetches
-    // (so they don't overwrite our optimistic update)
-    await queryClient.cancelQueries({ queryKey: queryOptions.queryKey });
-    // Snapshot the previous value
-    const previousWorkspace = queryClient.getQueryData<GetWorkspaceResponse>(queryOptions.queryKey);
+    const previousWorkspace = await getPreviousWorkspace(queryOptions.queryKey);
 
     // Optimistically update to the new value
     if (previousWorkspace) {
@@ -150,10 +160,5 @@ queryClient.setMutationDefaults(labelKeys.update(), {
     // Return a context object with the snapshotted value
     return { previousWorkspace };
   },
-  onError: (_, { orgIdOrSlug, workspaceSlug }, context) => {
-    if (context?.previousWorkspace) {
-      const queryOptions = workspaceQueryOptions(workspaceSlug, orgIdOrSlug);
-      queryClient.setQueryData(queryOptions.queryKey, context.previousWorkspace);
-    }
-  },
+  onError,
 });

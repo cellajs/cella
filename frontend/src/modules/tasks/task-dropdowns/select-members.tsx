@@ -62,7 +62,7 @@ const AssignMembers = ({ projectId, value, creationValueChange, triggerWidth = 3
         id: focusedTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'assignedTo',
-        data: members,
+        data: members.map((m) => m.id),
         projectId,
       });
     } catch (err) {
