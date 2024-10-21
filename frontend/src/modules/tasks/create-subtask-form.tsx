@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { useUserStore } from '~/store/user.ts';
 import type { Task } from '~/types/app';
 import { scanTaskDescription } from '#/modules/tasks/helpers';
-import { createTaskSchema } from '#/modules/tasks/schema';
+import { TaskType, createTaskSchema } from '#/modules/tasks/schema';
 import { nanoid } from '#/utils/nanoid';
 import { useTaskCreateMutation } from '../common/query-client-provider/tasks';
 import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
@@ -46,7 +46,7 @@ export const CreateSubtaskForm = ({
         id: defaultId,
         description: '',
         summary: '',
-        type: 'chore',
+        type: TaskType.chore,
         impact: null,
         status: 1,
         parentId: parentTask.id,
@@ -71,7 +71,7 @@ export const CreateSubtaskForm = ({
       summary: values.summary || summary,
       expandable: values.expandable || expandable,
       keywords: values.keywords || keywords,
-      type: 'chore' as const,
+      type: values.type,
       impact: null,
       status: 1,
       parentId: parentTask.id,

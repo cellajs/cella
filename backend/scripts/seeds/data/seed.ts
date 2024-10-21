@@ -14,6 +14,7 @@ import { and, eq } from 'drizzle-orm';
 import { UniqueEnforcer } from 'enforce-unique';
 import slugify from 'slugify';
 import { extractKeywords } from '#/modules/tasks/helpers';
+import { TaskType } from '#/modules/tasks/schema';
 import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 
@@ -221,7 +222,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
                 // status in sub tasks only 1 or 6
                 status: Math.random() < 0.5 ? 1 : 6,
                 impact: 0,
-                type: 'chore',
+                type: TaskType.chore,
                 description: `<div class="bn-block-content"><p class="bn-inline-content">${subtaskName}</p></div><div class="bn-block-content"><p class="bn-inline-content">${subtaskDescription}</p></div>`,
                 ...createModifiedBlock,
               };
@@ -248,7 +249,7 @@ export const dataSeed = async (progressCallback?: (stage: string, count: number,
             order: index + 1,
             // random integer between 0 and 6
             status: Math.floor(Math.random() * 7),
-            type: faker.helpers.arrayElement(['bug', 'feature', 'chore']),
+            type: faker.helpers.arrayElement([1, 2, 3]),
             // random integer between 0 and 3
             impact: Math.floor(Math.random() * 4),
             description: `<div class="bn-block-content"><p class="bn-inline-content">${name}</p></div><div class="bn-block-content"><p class="bn-inline-content">${taskDescription}</p></div>`,

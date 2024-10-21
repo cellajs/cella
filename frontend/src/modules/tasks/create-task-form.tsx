@@ -35,9 +35,8 @@ import type { Member } from '~/types/common';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
 import { scanTaskDescription } from '#/modules/tasks/helpers';
-import { createTaskSchema } from '#/modules/tasks/schema';
+import { TaskType, createTaskSchema } from '#/modules/tasks/schema';
 
-export type TaskType = 'feature' | 'chore' | 'bug';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
 
 interface CreateTaskFormProps {
@@ -119,7 +118,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
           id: defaultId,
           description: '',
           summary: '',
-          type: 'feature',
+          type: TaskType.feature,
           impact: null,
           assignedTo: [],
           labels: [],
@@ -147,7 +146,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
       summary: values.summary || summary,
       expandable: values.expandable || expandable,
       keywords: values.keywords || keywords,
-      type: values.type as TaskType,
+      type: values.type,
       impact: values.impact as TaskImpact,
       labels: values.labels.map((label) => label.id),
       assignedTo: values.assignedTo.map((user) => user.id),
@@ -177,7 +176,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
     const status = form.getValues('status');
     const labels = form.getValues('labels');
     const impact = form.getValues('impact');
-    if (assignedTo.length || labels.length || status !== 1 || impact || type !== 'feature') return true;
+    if (assignedTo.length || labels.length || status !== 1 || impact || type !== TaskType.feature) return true;
     const { dirtyFields } = form.formState;
     const fieldsKeys = Object.keys(dirtyFields);
     if (!fieldsKeys.length) return false;
@@ -240,15 +239,16 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                     type="single"
                     variant="merged"
                     className="gap-0 w-full"
-                    value={value}
+                    value={taskTypes[value - 1].type}
                     onValueChange={(newValue) => {
-                      if (newValue.length > 0) onChange(newValue);
+                      const taskTypeValue = TaskType[newValue as keyof typeof TaskType];
+                      if (taskTypeValue !== undefined) onChange(taskTypeValue);
                     }}
                   >
                     {taskTypes.map((type) => (
-                      <ToggleGroupItem size="sm" value={type.value} className="w-full" key={type.label}>
+                      <ToggleGroupItem size="sm" value={type.type} className="w-full" key={type.label}>
                         {type.icon()}
-                        <span className="ml-2 font-light">{t(`app:${type.value}`)}</span>
+                        <span className="ml-2 font-light">{t(`app:${type.type}`)}</span>
                       </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
@@ -259,7 +259,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
           }}
         />
 
-        {form.getValues('type') !== 'bug' && (
+        {form.getValues('type') !== TaskType.bug && (
           <FormField
             control={form.control}
             name="impact"
@@ -468,7 +468,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
               <FormField
                 control={form.control}
                 name="status"
-                render={({ field: { onChange } }) => {
+                render={({ field: { value, onChange } }) => {
                   return (
                     <FormItem className="gap-0 w-8">
                       <FormControl>
@@ -479,17 +479,10 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                           size="xs"
                           className="relative rounded-none rounded-r border-l border-l-background/25 [&:not(.absolute)]:active:translate-y-0"
                           onClick={(event) => {
-                            dropdowner(
-                              <SelectStatus
-                                taskStatus={form.getValues('status') as TaskStatus}
-                                projectId={projectId}
-                                creationValueChange={onChange}
-                              />,
-                              {
-                                id: `status-${defaultId}`,
-                                trigger: event.currentTarget,
-                              },
-                            );
+                            dropdowner(<SelectStatus taskStatus={value as TaskStatus} projectId={projectId} creationValueChange={onChange} />, {
+                              id: `status-${defaultId}`,
+                              trigger: event.currentTarget,
+                            });
                           }}
                         >
                           <ChevronDown size={16} />

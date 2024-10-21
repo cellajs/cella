@@ -15,6 +15,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import type { Task } from '~/types/app';
 import { cn } from '~/utils/cn';
+import { TaskType } from '#/modules/tasks/schema';
 import { taskKeys, useTaskUpdateMutation } from '../common/query-client-provider/tasks';
 
 interface TasksFooterProps {
@@ -58,7 +59,7 @@ export const TaskFooter = ({ task, isSelected, isStatusDropdownOpen, isSheet = f
           onCheckedChange={(checked) => dispatchCustomEvent('toggleSelectTask', { selected: !!checked, taskId: task.id })}
         />
       )}
-      {task.type !== 'bug' && (
+      {task.type !== TaskType.bug && (
         <Button
           id={`impact-${task.id}`}
           onClick={(event) => handleTaskDropDownClick(task, 'impact', event.currentTarget)}

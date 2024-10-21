@@ -3,6 +3,12 @@ import type { InsertTaskModel } from '#/db/schema/tasks';
 import { extractKeywords } from '#/modules/tasks/helpers';
 import type { Labels, PivotalTask } from './type';
 
+export enum PivotalTaskTypes {
+  feature = 1,
+  chore = 2,
+  bug = 3,
+}
+
 export const getSubtask = (task: PivotalTask, taskId: string, organizationId: string, projectId: string) => {
   const subtasks: InsertTaskModel[] = [];
   for (let i = 0; i <= 27; i++) {
@@ -12,7 +18,7 @@ export const getSubtask = (task: PivotalTask, taskId: string, organizationId: st
       subtasks.push({
         id: nanoid(),
         summary: `<div class="bn-block-content"><p class="bn-inline-content">${task[taskKey]}</p></div>`,
-        type: 'chore' as const,
+        type: PivotalTaskTypes.chore,
         keywords: extractKeywords(task[taskKey]),
         parentId: taskId,
         organizationId: organizationId,

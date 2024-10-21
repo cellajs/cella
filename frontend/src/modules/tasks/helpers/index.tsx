@@ -7,7 +7,7 @@ import { dropdowner } from '~/modules/common/dropdowner/state';
 import { orderChange } from '~/modules/common/nav-sheet/helpers';
 import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { TaskImpact, TaskType } from '~/modules/tasks/create-task-form';
+import type { TaskImpact } from '~/modules/tasks/create-task-form';
 import SelectImpact, { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
 import SetLabels from '~/modules/tasks/task-dropdowns/select-labels';
 import AssignMembers from '~/modules/tasks/task-dropdowns/select-members';
@@ -44,7 +44,7 @@ export const setTaskCardFocus = (id: string) => {
 };
 
 export const handleTaskDropDownClick = (task: Task, field: string, trigger: HTMLElement) => {
-  let component = <SelectTaskType currentType={task.type as TaskType} projectId={task.projectId} />;
+  let component = <SelectTaskType currentType={task.type} projectId={task.projectId} />;
   if (field.includes('impact')) component = <SelectImpact value={task.impact as TaskImpact} projectId={task.projectId} />;
   else if (field.includes('labels')) component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
   else if (field.includes('assignedTo')) component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;

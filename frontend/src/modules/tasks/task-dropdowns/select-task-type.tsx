@@ -6,13 +6,13 @@ import { toast } from 'sonner';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { Kbd } from '~/modules/common/kbd';
 import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
-import type { TaskType } from '~/modules/tasks/create-task-form';
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceStore } from '~/store/workspace';
 import { cn } from '~/utils/cn';
+import { TaskType } from '#/modules/tasks/schema';
 
 type Type = {
   value: (typeof taskTypes)[number]['value'];
@@ -21,9 +21,9 @@ type Type = {
 };
 
 export const taskTypes = [
-  { value: 'feature', label: 'Feature', icon: () => <Star size={16} className="fill-amber-400 text-amber-500" /> },
-  { value: 'chore', label: 'Chore', icon: () => <Bolt size={16} className="fill-slate-400 text-slate-500" /> },
-  { value: 'bug', label: 'Bug', icon: () => <Bug size={16} className="fill-red-400 text-red-500" /> },
+  { value: TaskType.feature, type: 'feature', label: 'Feature', icon: () => <Star size={16} className="fill-amber-400 text-amber-500" /> },
+  { value: TaskType.chore, type: 'chore', label: 'Chore', icon: () => <Bolt size={16} className="fill-slate-400 text-slate-500" /> },
+  { value: TaskType.bug, type: 'bug', label: 'Bug', icon: () => <Bug size={16} className="fill-red-400 text-red-500" /> },
 ] as const;
 
 export interface SelectTaskTypeProps {
@@ -102,9 +102,9 @@ const SelectTaskType = ({ currentType, projectId, className = '' }: SelectTaskTy
           {taskTypes.map((Type, index) => (
             <CommandItem
               key={Type.value}
-              value={Type.value}
+              value={Type.type}
               onSelect={(value) => {
-                const indexType = taskTypes.findIndex((type) => type.value === value);
+                const indexType = taskTypes.findIndex((type) => type.type === value);
                 setSelectedType(taskTypes[indexType]);
                 setSearchValue('');
                 if (changeTaskType) changeTaskType(taskTypes[indexType].value);

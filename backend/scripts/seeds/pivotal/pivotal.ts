@@ -9,7 +9,7 @@ import { labelsTable } from '#/db/schema/labels';
 import { projectsTable } from '#/db/schema/projects';
 import { type InsertTaskModel, tasksTable } from '#/db/schema/tasks';
 import { extractKeywords } from '#/modules/tasks/helpers';
-import { getLabels, getSubtask, getTaskLabels } from './helper';
+import { PivotalTaskTypes, getLabels, getSubtask, getTaskLabels } from './helper';
 import type { PivotalTask } from './type';
 
 const program = new Command().option('--file <file>', 'Zip file to upload').option('--project <project>', 'Project to upload tasks to').parse();
@@ -70,7 +70,7 @@ zip.loadAsync(data).then(async (zip) => {
       return {
         id: taskId,
         summary: `<div class="bn-block-content"><p class="bn-inline-content">${task.Title}</p></div>`,
-        type: (task.Type || 'chore') as 'feature' | 'bug' | 'chore',
+        type: PivotalTaskTypes[task.Type as keyof typeof PivotalTaskTypes] || PivotalTaskTypes.chore,
         organizationId: project.organizationId,
         projectId: project.id,
         expandable: true,

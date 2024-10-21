@@ -15,6 +15,13 @@
       "when": 1728775361222,
       "tag": "0001_odd_kronos",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1729521659999,
+      "tag": "0002_stormy_lady_vermin",
+      "breakpoints": true
     }
   ]
 }

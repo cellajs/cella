@@ -15,9 +15,7 @@ export const tasksTable = pgTable(
     keywords: varchar('keywords').notNull(),
     expandable: boolean('expandable').default(false).notNull(),
     summary: varchar('summary').notNull(),
-    type: varchar('type', {
-      enum: ['bug', 'feature', 'chore'],
-    }).notNull(),
+    type: integer('type').notNull(),
     impact: integer('impact'),
     // order is a reserved keyword in Postgres, so we need to use a different name
     order: doublePrecision('sort_order').notNull(),

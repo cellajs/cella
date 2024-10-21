@@ -19,6 +19,7 @@ import { Button } from '~/modules/ui/button';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import type { Task } from '~/types/app';
 import { dateShort } from '~/utils/date-short';
+import { TaskType } from '#/modules/tasks/schema';
 import { limitedUserSchema } from '#/modules/users/schema';
 
 export const useColumns = () => {
@@ -81,7 +82,7 @@ export const useColumns = () => {
       width: 120,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => {
-        if (row.type === 'bug') return '-';
+        if (row.type === TaskType.bug) return '-';
 
         const impact = row.impact === null ? null : impacts[row.impact];
 
