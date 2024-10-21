@@ -213,6 +213,7 @@ queryClient.setMutationDefaults(taskKeys.update(), {
           // Update the task itself
           if (task.id === taskId) {
             const t = updateTaskProperty(task, variables);
+            if (variables.order && variables.order !== t.order) t.order = variables.order;
             return t;
           }
 
