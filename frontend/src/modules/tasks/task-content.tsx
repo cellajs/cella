@@ -56,7 +56,7 @@ const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
   return (
     <div className="flex flex-col grow gap-2">
       {state === 'folded' ? (
-        <div className="mt-2 ml-1 leading-none inline items-center">
+        <div className="mt-1.5 ml-1 leading-none inline items-center">
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: is sanitized by backend
             dangerouslySetInnerHTML={{ __html: task.summary }}
