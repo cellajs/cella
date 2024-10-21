@@ -8,8 +8,10 @@ import type { Subtask, Task } from '~/types/app';
 import { nanoid } from '~/utils/nanoid';
 
 export type TasksCreateMutationQueryFnVariables = Parameters<typeof createTask>[0];
-export type TasksUpdateMutationQueryFnVariables = Parameters<typeof updateTask>[0] & {
+type TasksUpdateParams = Parameters<typeof updateTask>[0];
+export type TasksUpdateMutationQueryFnVariables = Omit<TasksUpdateParams, 'data'> & {
   projectId?: string;
+  data: TasksUpdateParams['data'] | { id: string }[];
 };
 // export type TasksDeleteMutationQueryFnVariables = Parameters<typeof deleteTasks>[0] & {
 //   projectId?: string;
@@ -29,6 +31,15 @@ export const taskKeys = {
   delete: () => [...taskKeys.all(), 'delete'] as const,
 };
 
+const transformUpdateData = (variables: TasksUpdateMutationQueryFnVariables) => {
+  const transformedVariables = {
+    ...variables,
+    data: Array.isArray(variables.data) ? variables.data.map((item) => (typeof item === 'string' ? item : item.id)) : variables.data,
+  };
+
+  return transformedVariables;
+};
+
 export const useTaskCreateMutation = () => {
   return useMutation<Task, Error, TasksCreateMutationQueryFnVariables>({
     mutationKey: taskKeys.create(),
@@ -39,7 +50,7 @@ export const useTaskCreateMutation = () => {
 export const useTaskUpdateMutation = () => {
   return useMutation<Pick<Task, 'summary' | 'description' | 'expandable'>, Error, TasksUpdateMutationQueryFnVariables>({
     mutationKey: taskKeys.update(),
-    mutationFn: updateTask,
+    mutationFn: (variables) => updateTask(transformUpdateData(variables)),
   });
 };
 
@@ -182,7 +193,7 @@ queryClient.setMutationDefaults(taskKeys.create(), {
 });
 
 queryClient.setMutationDefaults(taskKeys.update(), {
-  mutationFn: updateTask,
+  mutationFn: (variables) => updateTask(transformUpdateData(variables)),
   onMutate: async (variables: TasksUpdateMutationQueryFnVariables) => {
     const { id: taskId, orgIdOrSlug, projectId } = variables;
     const queryKey = taskKeys.list({ orgIdOrSlug, projectId });
