@@ -5,10 +5,12 @@ import { clientConfig, handleResponse } from '.';
 // Create Hono clients to make requests to the backend
 export const client = labelsHc(config.backendUrl, clientConfig);
 
-export type CreateLabelParams = Parameters<(typeof client.index)['$post']>['0']['json'];
+export type CreateLabelParams = Parameters<(typeof client.index)['$post']>['0']['json'] & {
+  orgIdOrSlug: string;
+};
 
 // Create a new label
-export const createLabel = async (label: CreateLabelParams, orgIdOrSlug: string) => {
+export const createLabel = async ({ orgIdOrSlug, ...label }: CreateLabelParams) => {
   const response = await client.index.$post({
     param: { orgIdOrSlug },
     json: label,
@@ -56,8 +58,13 @@ export const getLabels = async (
   return json.data;
 };
 
+export type UpdateLabelParams = Parameters<(typeof client)[':id']['$put']>['0']['json'] & {
+  id: string;
+  orgIdOrSlug: string;
+};
+
 // Update label by its ID
-export const updateLabel = async (id: string, orgIdOrSlug: string, useCount: number) => {
+export const updateLabel = async ({ id, orgIdOrSlug, useCount }: UpdateLabelParams) => {
   const response = await client[':id'].$put({
     param: { id, orgIdOrSlug },
     json: {

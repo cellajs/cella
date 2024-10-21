@@ -78,9 +78,10 @@ queryClient.setMutationDefaults(taskKeys.create(), {
   onMutate: async (variables) => {
     const { id: taskId, organizationId, projectId, parentId, impact } = variables;
 
+    const optimisticId = taskId || nanoid();
     const newTask: Task = {
       ...variables,
-      id: taskId || nanoid(),
+      id: optimisticId,
       impact: impact || null,
       expandable: false,
       parentId: parentId || null,
@@ -132,9 +133,9 @@ queryClient.setMutationDefaults(taskKeys.create(), {
     }
 
     // Return a context object with the snapshotted value
-    return { previousTasks };
+    return { previousTasks, optimisticId };
   },
-  onSuccess: (createdTask, { id: taskId, organizationId, projectId }) => {
+  onSuccess: (createdTask, { organizationId, projectId }, { optimisticId }) => {
     queryClient.setQueryData<InfiniteQueryFnData>(taskKeys.list({ orgIdOrSlug: organizationId, projectId }), (oldData) => {
       if (!oldData) {
         return {
@@ -145,13 +146,13 @@ queryClient.setMutationDefaults(taskKeys.create(), {
 
       const updatedTasks = oldData.items.map((task) => {
         // Update the task itself
-        if (task.id === taskId) {
+        if (task.id === optimisticId) {
           return createdTask;
         }
 
         // If the task is the parent, update its subtasks
         if (task.subtasks) {
-          const updatedSubtasks = task.subtasks.map((subtask) => (subtask.id === taskId ? createdTask : subtask));
+          const updatedSubtasks = task.subtasks.map((subtask) => (subtask.id === optimisticId ? createdTask : subtask));
           return { ...task, subtasks: updatedSubtasks }; // Return parent with updated subtasks
         }
 
