@@ -7,9 +7,9 @@ import type { z } from 'zod';
 import { createProjectBodySchema } from 'backend/modules/projects/schema';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import { getMembers } from '~/api/memberships';
 import { createProject } from '~/api/projects';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMutateWorkSpaceQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -20,7 +20,6 @@ import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useNavigationStore } from '~/store/navigation';
-import { useUserStore } from '~/store/user';
 import { useWorkspaceQuery } from '../workspaces/helpers/use-workspace';
 
 interface CreateProjectFormProps {
@@ -34,7 +33,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ dialog: isDialog }) => {
   const { t } = useTranslation();
-  const { user } = useUserStore();
   const {
     data: { workspace },
     addProject,
@@ -57,20 +55,23 @@ export const CreateProjectForm: React.FC<CreateProjectFormProps> = ({ dialog: is
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
 
-  const callback = useMutateWorkSpaceQueryData(['workspaces', workspace.slug]);
   const { mutate: create, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
       return createProject({ ...values, workspaceId: workspace.id, organizationId: workspace.organizationId });
     },
-    onSuccess: (createdProject) => {
+    onSuccess: async (createdProject) => {
       form.reset();
       toast.success(t('common:success.create_resource', { resource: t(`common:${type}`) }));
+      const { items } = await getMembers({
+        idOrSlug: createdProject.id,
+        orgIdOrSlug: createdProject.organizationId,
+        entityType: createdProject.entity,
+      });
       if (isDialog) dialog.remove();
-      addProject(createdProject);
+      addProject(createdProject, items || []);
       useNavigationStore.setState({
         menu: addMenuItem(createdProject, 'workspaces', workspace.slug),
       });
-      callback([{ ...createdProject, ...{ members: [user] } }], 'createProject');
     },
   });
 

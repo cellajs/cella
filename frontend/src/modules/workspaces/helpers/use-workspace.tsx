@@ -3,7 +3,7 @@ import { useParams } from '@tanstack/react-router';
 import { queryClient } from '~/lib/router';
 import { WorkspaceRoute } from '~/routes/workspaces';
 import type { Project, Workspace } from '~/types/app';
-import type { Membership } from '~/types/common';
+import type { Member, Membership } from '~/types/common';
 import { workspaceQueryOptions } from './query-options';
 
 export const useWorkspaceQuery = () => {
@@ -28,12 +28,13 @@ export const useWorkspaceQuery = () => {
     });
   };
 
-  const addProject = (project: Project) => {
+  const addProject = (project: Project, members: Member[]) => {
     queryClient.setQueryData(queryOptions.queryKey, (data) => {
       if (!data) return;
       return {
         ...data,
         projects: [...data.projects, project],
+        members: [...data.members, ...members],
       };
     });
   };
