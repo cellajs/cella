@@ -79,7 +79,7 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
         id: focusedTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'labels',
-        data: labels,
+        data: labels.map((label) => label.id),
         projectId,
       });
       return;
