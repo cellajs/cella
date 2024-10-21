@@ -5,12 +5,12 @@ import { Button } from '~/modules/ui/button';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/utils/cn';
+import { nanoid } from '~/utils/nanoid';
 
 interface TableFilterBarProps {
   children: React.ReactNode;
   isFiltered?: boolean;
   onResetFilters: () => void;
-  id?: string;
 }
 
 interface FilterBarChildProps {
@@ -41,8 +41,10 @@ export const FilterBarContent = ({ children, className = '' }: FilterBarChildPro
   );
 };
 
-export const TableFilterBar = ({ onResetFilters, isFiltered, children, id }: TableFilterBarProps) => {
+export const TableFilterBar = ({ onResetFilters, isFiltered, children }: TableFilterBarProps) => {
   const { t } = useTranslation();
+
+  const key = nanoid();
 
   const [isFilterActive, setFilterActive] = useState<boolean>(!!isFiltered);
 
@@ -56,8 +58,8 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children, id }: Tab
       <TableFilterBarContext.Provider value={{ isFilterActive, setFilterActive }}>{children}</TableFilterBarContext.Provider>
       {!isFilterActive && (
         <Button className="sm:hidden" variant="secondary" onClick={() => setFilterActive(true)} asChild>
-          <motion.button key={id} layoutId={`table-filter-bar-button-${id}`}>
-            <motion.span layoutId={`table-filter-bar-icon-${id}`}>
+          <motion.button key={key} layoutId={`table-filter-bar-button-${key}`}>
+            <motion.span layoutId={`table-filter-bar-icon-${key}`}>
               <Filter width={16} height={16} />
             </motion.span>
             <span className="ml-1">{t('common:filter')}</span>
@@ -66,7 +68,7 @@ export const TableFilterBar = ({ onResetFilters, isFiltered, children, id }: Tab
       )}
       {isFilterActive && (
         <Button className="sm:hidden" variant="secondary" onClick={clearFilters} asChild>
-          <motion.button key={id} layoutId="table-filter-bar-button">
+          <motion.button key={key} layoutId="table-filter-bar-button">
             <motion.span layoutId="table-filter-bar-icon">{isFiltered ? <FilterX size={16} /> : <X size={16} />}</motion.span>
           </motion.button>
         </Button>
