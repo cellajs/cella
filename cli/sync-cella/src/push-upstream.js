@@ -1,5 +1,7 @@
+import { existsSync } from 'node:fs';
 import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
+import { confirm } from '@inquirer/prompts';
 
 import { fetchUpstream } from './fetch-upstream.js';
 import { runGitCommand } from './utils/run-git-command.js';
@@ -11,34 +13,86 @@ export async function pushUpstream({
   upstreamBranch,
   localBranch,
   prBranchName,
-  prMessage
 }) {
   const targetFolder = process.cwd();
-  console.info();
 
-  // Step 1: Check for local uncommitted changes
+  // Step 1: Check for unstaged changes
   const statusSpinner = yoctoSpinner({
-    text: 'Checking for uncommitted local changes',
+    text: 'Checking for unstaged changes',
   }).start();
 
+  let hasUnstagedChanges = false;
   try {
     const statusOutput = await runGitCommand({ targetFolder, command: 'status --porcelain' });
+    
     if (statusOutput.trim() !== '') {
-      statusSpinner.error('Uncommitted changes detected. Please commit or stash your changes.');
-      process.exit(1);
-    } else {
-      statusSpinner.success('No uncommitted changes detected.');
+      hasUnstagedChanges = true;
     }
+
+    statusSpinner.success('Checked for unstaged changes.');
   } catch (error) {
     console.error(error);
-    statusSpinner.error('Failed to check for local changes.');
+    statusSpinner.error('Failed to check for unstaged changes.');
     process.exit(1);
   }
 
-  // Step 2: Fetch upstream changes and checkout local branch
+  // If there are unstaged changes, ask the user how to proceed
+  if (hasUnstagedChanges) {
+    const shouldStashChanges = await confirm({
+      message: 'You have unstaged changes. Do you want to stash them and proceed?',
+      default: true,
+    });
+
+    if (shouldStashChanges) {
+      const stashSpinner = yoctoSpinner({
+        text: 'Stashing changes',
+      }).start();
+
+      try {
+        await runGitCommand({ targetFolder, command: 'stash' });
+        stashSpinner.success('Successfully stashed changes.');
+      } catch (error) {
+        console.error(error);
+        stashSpinner.error('Failed to stash changes.');
+        process.exit(1);
+      }
+    } else {
+      console.info('Please commit or stash your changes before proceeding.');
+      process.exit(1);
+    }
+  }
+
+  // Step 2: Check out the 'prBranch' locally
+  const checkoutSpinner = yoctoSpinner({
+    text: `Checking out ${prBranchName} locally`,
+  }).start();
+
+  try {
+    await runGitCommand({ targetFolder, command: `checkout -b ${prBranchName}` });
+    checkoutSpinner.success(`Successfully checked out ${prBranchName}.`);
+  } catch (error) {
+    if (error.includes('already exists')) {
+      checkoutSpinner.warning(`Branch ${prBranchName} already exists, switching to it.`);
+      try {
+        await runGitCommand({ targetFolder, command: `checkout ${prBranchName}` });
+        checkoutSpinner.success(`Switched to ${prBranchName}.`);
+      } catch (err) {
+        console.error(err);
+        checkoutSpinner.error('Failed to switch to the PR branch.');
+        process.exit(1);
+      }
+    } else {
+      console.error(error);
+      checkoutSpinner.error('Failed to checkout the PR branch.');
+      process.exit(1);
+    }
+  }
+
+  // Step 3: Fetch upstream changes and continue the process
   await fetchUpstream({ localBranch });
 
-  // Step 3: Find common files between upstream and local branch
+  // Continue with the rest of your steps as before
+  // Step 4: Find common files between upstream and local branch
   const commonSpinner = yoctoSpinner({
     text: 'Finding common files between upstream and local branch',
   }).start();
@@ -52,7 +106,7 @@ export async function pushUpstream({
     const upstreamFileList = upstreamFiles.split("\n");
     const localFileList = localFiles.split("\n");
 
-    // Find common files between both branches
+    // Find common files
     commonFiles = upstreamFileList.filter((file) => localFileList.includes(file));
 
     commonSpinner.success('Found common files between upstream and local branch.');
@@ -62,92 +116,102 @@ export async function pushUpstream({
     process.exit(1);
   }
 
-  // Step 4: Get the list of changes in your local branch
-  const changesSpinner = yoctoSpinner({
-    text: 'Finding changes in your local branch',
+  // Step 5: Merge the local branch into the upstream branch
+  const mergeSpinner = yoctoSpinner({
+    text: `Merging ${localBranch} into upstream/${upstreamBranch}`,
   }).start();
 
-  let changedFiles;
-
+  let mergeOutput;
   try {
-    changedFiles = await runGitCommand({ targetFolder, command: `diff --name-only ${localBranch}` });
-    changesSpinner.success('Found changes in your local branch.');
+    mergeOutput = await runGitCommand({ targetFolder, command: `merge --no-commit upstream/${upstreamBranch}` });
+
+    if (mergeOutput.includes('CONFLICT')) {
+      mergeSpinner.warning('Merge conflicts detected. Proceeding to resolve conflicts.');
+    } else {
+      mergeSpinner.success(`Successfully merged ${localBranch} into upstream/${upstreamBranch}.`);
+    }
   } catch (error) {
-    console.error(error);
-    changesSpinner.error('Failed to find changes in your local branch.');
-    process.exit(1);
+    if (error.includes('CONFLICT')) {
+      mergeSpinner.warning('Merge conflicts detected. Proceeding to resolve conflicts.');
+    } else {
+      console.error(error);
+      mergeSpinner.error('Failed to merge branches.');
+      process.exit(1);
+    }
   }
 
-  // Step 5: Filter the changes to only include files that are in the original repo
+  // Step 6: Filter and revert ignored files
   const filterSpinner = yoctoSpinner({
-    text: 'Filtering changes to only include common files',
+    text: 'Filtering and reverting ignored files',
   }).start();
 
-  let filteredFiles = changedFiles.split("\n").filter((file) => commonFiles.includes(file));
-
-  if (filteredFiles.length === 0) {
-    filterSpinner.error('No relevant changes to push.');
-    process.exit(0);
-  }
-
-  filterSpinner.success(`Filtered changes: ${filteredFiles.join(', ')}`);
-
-  // Step 6: Apply ignore patterns (if needed)
-  const ignoreSpinner = yoctoSpinner({
-    text: 'Applying ignore patterns',
-  }).start();
-
-  const ignorePatterns = await extractIgnorePatterns({ ignoreList, ignoreFile });
-  if (ignorePatterns.length > 0) {
-    filteredFiles = applyIgnorePatterns(filteredFiles, ignorePatterns);
-    ignoreSpinner.success('Applied ignore patterns.');
-  } else {
-    ignoreSpinner.warning('No ignore patterns applied.');
-  }
-
-  // Step 7: Create a new branch for the PR
-  const branchSpinner = yoctoSpinner({
-    text: `Creating branch ${prBranchName}`,
-  }).start();
-
+  let filteredFiles;
   try {
-    await runGitCommand({ targetFolder, command: `checkout -b ${prBranchName}` });
-    branchSpinner.success(`Created branch ${prBranchName}.`);
+    const divergedFiles = await runGitCommand({ targetFolder, command: `diff --name-only ${localBranch} upstream/${upstreamBranch}` });
+
+    // Split diverged files into an array
+    filteredFiles = divergedFiles.split("\n").filter((file) => commonFiles.includes(file));
+
+    // Extract ignore patterns and apply them
+    const ignorePatterns = await extractIgnorePatterns({ ignoreList, ignoreFile });
+    if (ignorePatterns.length > 0) {
+      const ignoredFiles = applyIgnorePatterns(filteredFiles, ignorePatterns);
+
+      if (ignoredFiles.length > 0) {
+        // Ensure the files exist before attempting to reset or checkout
+        const existingFilesToRevert = ignoredFiles.filter(file => existsSync(file)).join(' ');
+
+        if (existingFilesToRevert.length > 0) {
+          await runGitCommand({ targetFolder, command: `reset ${existingFilesToRevert}` });
+          await runGitCommand({ targetFolder, command: `checkout --ours -- ${existingFilesToRevert}` });
+
+          // Remove the ignored files from the filtered list
+          filteredFiles = filteredFiles.filter((file) => !ignoredFiles.includes(file));
+        }
+      }
+    }
+
+    filterSpinner.success('Filtered and reverted ignored files.');
   } catch (error) {
     console.error(error);
-    branchSpinner.error('Failed to create the branch.');
+    filterSpinner.error('Failed to filter and revert ignored files.');
     process.exit(1);
   }
 
-  // Step 8: Add filtered changes and commit
+  // Step 7: Stage and commit only filtered files
   const commitSpinner = yoctoSpinner({
-    text: 'Adding and committing filtered changes',
+    text: 'Staging and committing filtered files',
   }).start();
 
   try {
-    await runGitCommand({ targetFolder, command: `git add ${filteredFiles.join(' ')}` });
-    await runGitCommand({ targetFolder, command: `git commit -m "${prMessage}"` });
-    commitSpinner.success('Committed the filtered changes.');
+    if (filteredFiles.length > 0) {
+      await runGitCommand({ targetFolder, command: `add ${filteredFiles.join(' ')}` });
+      await runGitCommand({ targetFolder, command: `commit -m "Merge from ${localBranch} to upstream/${upstreamBranch}, resolving conflicts for ignored files"` });
+
+      commitSpinner.success('Committed the filtered files.');
+    } else {
+      commitSpinner.success('No files to commit.');
+    }
   } catch (error) {
     console.error(error);
-    commitSpinner.error('Failed to commit the changes.');
+    commitSpinner.error('Failed to commit the filtered files.');
     process.exit(1);
   }
 
-  // Step 9: Push the new branch to your fork
+  // Step 8: Push the merged changes back to the original repo
   const pushSpinner = yoctoSpinner({
-    text: 'Pushing branch to origin',
+    text: 'Pushing changes to upstream',
   }).start();
 
   try {
-    await runGitCommand({ targetFolder, command: `git push origin ${prBranchName}` });
-    pushSpinner.success(`Pushed ${prBranchName} to origin.`);
+    await runGitCommand({ targetFolder, command: `push origin ${prBranchName}` });
+    pushSpinner.success('Pushed changes to upstream.');
   } catch (error) {
     console.error(error);
-    pushSpinner.error('Failed to push the branch to origin.');
+    pushSpinner.error('Failed to push changes.');
     process.exit(1);
   }
 
-  // Step 10: (Optional) Create a pull request - use GitHub CLI or API
-  console.info(`${colors.green('✔')} Successfully pushed filtered changes to ${prBranchName}. You can now create a pull request.`);
+  console.info(`${colors.green('✔')} Successfully merged changes from ${localBranch} to upstream/${upstreamBranch}, resolving conflicts where necessary.`);
+  console.info();
 }
