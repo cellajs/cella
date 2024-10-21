@@ -11,6 +11,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
+import { env } from './env';
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
@@ -123,7 +124,7 @@ export default defineConfig(() => {
       },
     }),
   );
-  if (config.mode === 'development' && config.debug) viteConfig.plugins?.push([MillionLint.vite()]);
+  if (env.VITE_MILLION_LINT && config.debug) viteConfig.plugins?.push([MillionLint.vite()]);
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   return viteConfig;
 });

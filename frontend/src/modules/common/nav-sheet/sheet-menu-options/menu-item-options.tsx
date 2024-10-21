@@ -1,5 +1,4 @@
 import { onlineManager } from '@tanstack/react-query';
-import { config } from 'config';
 import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +10,7 @@ import { showToast } from '~/lib/toasts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import type { UserMenuItem } from '~/types/common';
+import { env } from '../../../../../env';
 import Spinner from '../../spinner';
 import { updateMenuItem } from '../helpers/update-menu-item';
 
@@ -85,7 +85,7 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
 
       <div className="truncate grow py-2 pl-1 text-left">
         <div className="truncate text-sm leading-5 group-data-[archived=true]/optionsItem:opacity-70">
-          {item.name} {config.debug && <span className="text-muted">#{item.membership.order}</span>}
+          {item.name} {env.VITE_DEBUG_UI && <span className="text-muted">#{item.membership.order}</span>}
         </div>
         <div className="flex items-center gap-4 transition-opacity delay-500">
           <OptionButtons

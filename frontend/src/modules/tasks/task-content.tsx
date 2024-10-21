@@ -1,5 +1,4 @@
 import '@blocknote/shadcn/style.css';
-import { config } from 'config';
 import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +12,7 @@ import UppyFilePanel from '~/modules/tasks/task-dropdowns/uppy-file-panel';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import type { Mode } from '~/store/theme';
 import type { Task } from '~/types/app';
+import { env } from '../../../env';
 import { Button } from '../ui/button';
 import { handleEditorFocus, updateImageSourcesFromDataUrl, useHandleUpdateHTML } from './helpers';
 import type { TaskStates } from './types';
@@ -136,7 +136,7 @@ const SummaryButtons = ({ task }: { task: Task }) => {
         </div>
       )}
       {/*  in debug mode: show order number to debug drag */}
-      {config.debug && <span className="ml-2 opacity-15 text-sm text-center font-light">#{task.order}</span>}
+      {env.VITE_DEBUG_UI && <span className="ml-2 opacity-15 text-sm text-center font-light">#{task.order}</span>}
     </>
   );
 };
