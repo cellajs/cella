@@ -4,7 +4,6 @@ import { Suspense, lazy } from 'react';
 import { toast } from 'sonner';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
-import { orderChange } from '~/modules/common/nav-sheet/helpers';
 import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { TaskImpact } from '~/modules/tasks/create-task-form';
@@ -15,7 +14,6 @@ import SelectStatus, { taskStatuses, type TaskStatus } from '~/modules/tasks/tas
 import SelectTaskType from '~/modules/tasks/task-dropdowns/select-task-type';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project, Subtask, Task } from '~/types/app';
-import { dateIsRecent } from '~/utils/date-is-recent';
 
 const TaskSheet = lazy(() => import('~/modules/tasks/task-sheet'));
 
@@ -52,66 +50,68 @@ export const handleTaskDropDownClick = (task: Task, field: string, trigger: HTML
   return dropdowner(component, { id: field, trigger, align: field.startsWith('status') || field.startsWith('assignedTo') ? 'end' : 'start' });
 };
 
-export const getRelativeTaskOrder = (edge: Edge, tasks: Task[], order: number, id: string, parentId?: string, status?: number) => {
+export const getRelativeTaskOrder = (edge: Edge, tasks: Task[] | Subtask[], order: number, id: string, status?: number) => {
   // Filter tasks based on status, if provided
-  let filteredTasks: Task[] | Subtask[] = status ? tasks.filter((t) => t.status === status) : tasks;
-
-  // If parentId exists, filter for subtasks and sort accordingly
-  if (parentId) filteredTasks = tasks.find((t) => t.id === parentId)?.subtasks || [];
+  const filteredTasks: Task[] | Subtask[] = status ? tasks.filter((t) => t.status === status) : tasks;
 
   const isEdgeTop = edge === 'top';
-  const sortFunc = parentId ? sortSubtaskOrder : sortTaskOrder;
+  const sortFunc = sortTaskOrder;
+
   // Sort based on task or subtask order
   filteredTasks.sort((a, b) => sortFunc(a, b, isEdgeTop));
 
-  // Find the relative task based on the order
+  // If dropped in between, we find relative (second) task based on order
   const relativeTask = filteredTasks.find((t) => {
-    if (parentId) return isEdgeTop ? t.order < order : t.order > order;
     return isEdgeTop ? t.order > order : t.order < order;
   });
 
-  let newOrder: number;
-
-  // Determine new order based on relative task presence and conditions
+  // If no relative task found, return new order based on edge
   if (!relativeTask || relativeTask.order === order) {
-    newOrder = parentId ? orderChange(order, isEdgeTop ? 'dec' : 'inc') : orderChange(order, isEdgeTop ? 'inc' : 'dec');
-  } else if (relativeTask.id === id) {
-    newOrder = relativeTask.order;
-  } else {
-    newOrder = (relativeTask.order + order) / 2;
+    return Math.floor(order) + (isEdgeTop ? 10 : -10);
   }
-  return newOrder;
+
+  // If the relative task is task, return its order
+  if (relativeTask.id === id) return relativeTask.order;
+
+  // Put the new task in the middle of two tasks
+  return (relativeTask.order + order) / 2;
 };
 
-// To sort Subtasks by its order
-export const sortSubtaskOrder = (task1: Pick<Task, 'order'>, task2: Pick<Task, 'order'>, reverse?: boolean) => {
-  if (task1.order !== null && task2.order !== null) return reverse ? task2.order - task1.order : task1.order - task2.order;
-  // order is null
-  return 0;
-};
-
-// To sort Tasks by its status & order
-const sortTaskOrder = (task1: Pick<Task, 'status' | 'order'>, task2: Pick<Task, 'status' | 'order'>, reverse?: boolean) => {
+// To sort tasks by its status & order
+export const sortTaskOrder = (task1: Pick<Task, 'status' | 'order'>, task2: Pick<Task, 'status' | 'order'>, reverse?: boolean) => {
   if (task1.status !== task2.status) return task2.status - task1.status;
+
   // same status, sort by order
   if (task1.order !== null && task2.order !== null) return reverse ? task1.order - task2.order : task2.order - task1.order;
+
   // order is null
   return 0;
 };
 
-// return task order for task status
+// Return task order based on new status
 export const getNewStatusTaskOrder = (oldStatus: number, newStatus: number, tasks: Task[]) => {
   const direction = newStatus - oldStatus;
-  const [task] = tasks
-    .filter((t) => t.status === newStatus && (t.status !== 6 || dateIsRecent(t.modifiedAt, 30)))
-    .sort((a, b) => sortTaskOrder(a, b, direction > 0));
-  return task ? orderChange(task.order, direction > 0 ? 'dec' : 'inc') : 0.1;
+
+  // Find the task with the same new status
+  const [task] = tasks.filter((t) => t.status === newStatus).sort((a, b) => sortTaskOrder(a, b, direction > 0));
+
+  // Default to 100 if no tasks with same status
+  if (!task) return 100;
+
+  // Return +10 if going down, -10 if going up
+  return Math.floor(task.order) + (direction > 0 ? -10 : 10);
 };
 
-// return task order for new created Tasks
+// Return task order for new task
 export const getNewTaskOrder = (status: number, tasks: Task[] | Subtask[]) => {
+  // Compare with tasks with same status
   const filteredTasks = tasks.filter((t) => t.status === status).sort((a, b) => b.order - a.order);
-  return filteredTasks.length > 0 ? filteredTasks[0].order + 1 : 1;
+
+  // If iced or unstarted, go to the top, else go to the bottom
+  const index = status < 2 ? 0 : filteredTasks.length - 1;
+
+  // If no tasks with same status, return 1000, else return +10 for iced or unstarted, -10 for others
+  return filteredTasks.length > 0 ? filteredTasks[index].order + (status < 2 ? 10 : -10) : 1000;
 };
 
 // retrieve unique words from task description

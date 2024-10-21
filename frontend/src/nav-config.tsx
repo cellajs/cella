@@ -40,7 +40,7 @@ export const navItems: NavItem[] = [
     icon: Plus,
     dialog: (
       <Suspense>
-        <CreateTaskForm projectIdOrSlug={''} dialog />
+        <CreateTaskForm dialog />
       </Suspense>
     ),
   },

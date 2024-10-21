@@ -40,24 +40,15 @@ export const getRelativeItemOrder = (
   // Find the relative item based on the item's position and the edge (top or bottom)
   const relativeItem = neededItems.find(({ membership }) => (isEdgeTop ? membership.order < itemOrder : membership.order > itemOrder));
 
-  let newOrder: number;
-
-  // Compute the new order based on the conditions
-  if (!relativeItem || relativeItem.membership.order === itemOrder) newOrder = orderChange(itemOrder, isEdgeTop ? 'dec' : 'inc');
-  else if (relativeItem.id === itemId) newOrder = relativeItem.membership.order;
-  else newOrder = (relativeItem.membership.order + itemOrder) / 2;
-
-  return newOrder;
-};
-
-export const orderChange = (order: number, action: 'inc' | 'dec') => {
-  if (action === 'inc') {
-    if (Number.isInteger(order)) return order + 1;
-    return Math.ceil(order);
+  // If no relative item found, return new order based on edge
+  if (!relativeItem || relativeItem.membership.order === itemOrder) {
+    return Math.floor(itemOrder) + (isEdgeTop ? -10 : 10);
   }
+  // If relative item is same as item, return item's order
+  if (relativeItem.id === itemId) return relativeItem.membership.order;
 
-  if (order > 1 && Number.isInteger(order)) return order - 1;
-  return order / 2;
+  // Put the new item in the middle of two items
+  return (relativeItem.membership.order + itemOrder) / 2;
 };
 
 export const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {

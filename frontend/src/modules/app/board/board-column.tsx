@@ -254,7 +254,6 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
     dialog(
       <CreateTaskForm
         projectIdOrSlug={project.id}
-        tasks={filteredTasks}
         dialog
         onCloseForm={() =>
           changeColumn(workspace.id, project.id, {
@@ -321,7 +320,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
           if (!edge) return;
 
           if (isTask) {
-            const newOrder: number = getRelativeTaskOrder(edge, filteredTasks, targetData.order, sourceItem.id, undefined, sourceItem.status);
+            const newOrder: number = getRelativeTaskOrder(edge, filteredTasks, targetData.order, sourceItem.id, sourceItem.status);
             try {
               await taskMutation.mutateAsync({
                 id: sourceItem.id,
@@ -337,7 +336,10 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
           }
 
           if (isSubtask) {
-            const newOrder = getRelativeTaskOrder(edge, filteredTasks, targetData.order, sourceItem.id, targetItem.parentId ?? undefined);
+            // If parentId exists, filter for subtasks and sort accordingly
+            const subtasks = filteredTasks.find((t) => t.id === targetItem.parentId)?.subtasks || [];
+
+            const newOrder = getRelativeTaskOrder(edge, subtasks, targetData.order, sourceItem.id);
             try {
               await taskMutation.mutateAsync({
                 id: sourceItem.id,
@@ -416,13 +418,7 @@ export function BoardColumn({ project, tasksState, settings }: BoardColumnProps)
                     <motion.div>
                       {filteredTasks.map((task) => {
                         return (
-                          <motion.div
-                            key={task.id}
-                            layout="position"
-                            transition={{
-                              duration: 0.3,
-                            }}
-                          >
+                          <motion.div key={task.id} layout="position" transition={{ duration: 0.3 }}>
                             <FocusTrap mainElementId={task.id} active={task.id === focusedTaskId}>
                               <TaskCard
                                 task={task}

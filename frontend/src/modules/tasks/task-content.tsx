@@ -1,4 +1,5 @@
 import '@blocknote/shadcn/style.css';
+import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -93,11 +94,13 @@ const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
           )}
 
           <div id={`subtask-container-${task.id}`} className="-mx-2 mt-2 w-[calc(100%+1.25rem)]">
-            <div className="flex flex-col">
+            <motion.div>
               {task.subtasks.map((task) => (
-                <Subtask mode={mode} key={task.id} task={task} members={members} removeCallback={subTaskDeleteCallback} />
+                <motion.div key={task.id} layout="position" transition={{ duration: 0.3 }}>
+                  <Subtask mode={mode} key={task.id} task={task} members={members} removeCallback={subTaskDeleteCallback} />
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             {createSubtask ? (
               <CreateSubtaskForm setFormState={(value) => setCreateSubtask(value)} parentTask={task} />

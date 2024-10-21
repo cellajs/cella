@@ -3,7 +3,6 @@ import { t } from 'i18next';
 import { toast } from 'sonner';
 import { type GetTasksParams, createTask, updateTask } from '~/api/tasks';
 import { queryClient } from '~/lib/router';
-import { sortSubtaskOrder } from '~/modules/tasks/helpers';
 import type { Subtask, Task } from '~/types/app';
 import { nanoid } from '~/utils/nanoid';
 
@@ -221,7 +220,7 @@ queryClient.setMutationDefaults(taskKeys.update(), {
           if (task.subtasks) {
             //TODO maybe sort in some other way
             const updatedSubtasks = updateSubtasks(task.subtasks, taskId, variables);
-            return { ...task, subtasks: updatedSubtasks.sort((a, b) => sortSubtaskOrder(a, b)) }; // Return parent with updated subtasks
+            return { ...task, subtasks: updatedSubtasks.sort((a, b) => b.order - a.order) }; // Return parent with updated subtasks
           }
 
           // No changes, return task as-is

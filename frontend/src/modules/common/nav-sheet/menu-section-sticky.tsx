@@ -44,7 +44,7 @@ export const MenuSectionSticky = ({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.25 }}
-                  className="inline-block group-data-[visible=false]/menuSection:hidden px-2 py-1 text-xs font-light text-muted-foreground"
+                  className="inline-block group-data-[visible=true]/menuSection:hidden px-2 py-1 text-xs font-light text-muted-foreground"
                 >
                   {data.filter((i) => !i.membership.archived).length}
                 </motion.span>

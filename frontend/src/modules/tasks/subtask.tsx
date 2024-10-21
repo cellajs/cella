@@ -3,7 +3,6 @@ import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type { DropTargetRecord, ElementDragPayload } from '@atlaskit/pragmatic-drag-and-drop/dist/types/internal-types';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { dropTargetForExternal } from '@atlaskit/pragmatic-drag-and-drop/external/adapter';
-import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -162,11 +161,8 @@ const Subtask = ({
   }, [task]);
 
   return (
-    <motion.div
-      // initial={{ opacity: 0, y: -10 }}
-      // animate={{ opacity: 1, y: 0 }}
-      // exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0 }}
+    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+    <div
       ref={subtaskRef}
       onClick={handleCardClick}
       className={`flex relative subtask items-start gap-1 p-1 mb-0.5 hover:bg-secondary/50 opacity-${dragging ? '30' : '100'} bg-secondary/25`}
@@ -223,7 +219,7 @@ const Subtask = ({
         </div>
       </div>
       {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.2} />}
-    </motion.div>
+    </div>
   );
 };
 

@@ -4,15 +4,16 @@ import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-import { useSearch } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import { ChevronDown, Tag, UserX, X } from 'lucide-react';
 import { useMemo } from 'react';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { queryClient } from '~/lib/router';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { BlockNote } from '~/modules/common/blocknote';
 import { dialog } from '~/modules/common/dialoger/state.ts';
 import { dropdowner } from '~/modules/common/dropdowner/state.ts';
-import { useTaskCreateMutation } from '~/modules/common/query-client-provider/tasks';
+import { taskKeys, useTaskCreateMutation } from '~/modules/common/query-client-provider/tasks';
 import { getNewTaskOrder, handleEditorFocus } from '~/modules/tasks/helpers';
 import { NotSelected } from '~/modules/tasks/task-dropdowns/impact-icons/not-selected';
 import SelectImpact, { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
@@ -40,9 +41,8 @@ import { TaskType, createTaskSchema } from '#/modules/tasks/schema';
 export type TaskImpact = 0 | 1 | 2 | 3 | null;
 
 interface CreateTaskFormProps {
-  projectIdOrSlug: string;
+  projectIdOrSlug?: string;
   className?: string;
-  tasks?: Task[];
   dialog?: boolean;
   defaultValues?: Partial<FormValues>;
   onCloseForm?: () => void;
@@ -78,33 +78,31 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
-  projectIdOrSlug: passedProjectIdOrSlug,
-  tasks = [],
-  defaultValues,
-  className,
-  dialog: isDialog,
-  onCloseForm,
-}) => {
+const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, defaultValues, className, dialog: isDialog, onCloseForm }) => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const { focusedTaskId } = useWorkspaceStore();
-  const { project } = useSearch({ from: WorkspaceRoute.id });
-
-  const projectIdOrSlug = useMemo(() => project ?? passedProjectIdOrSlug, [project, passedProjectIdOrSlug]);
+  const { orgIdOrSlug } = useParams({ from: WorkspaceRoute.id });
 
   const {
-    data: { projects, members },
+    data: { members, workspace, projects },
   } = useWorkspaceQuery();
-  const { id: projectId, organizationId } = projects.find((p) => p.id === projectIdOrSlug || p.slug === projectIdOrSlug) ?? projects[0];
 
   const defaultId = nanoid();
 
   const taskMutation = useTaskCreateMutation();
 
+  // Project id is required
+  const projectId = projectIdOrSlug || projects[0]?.id;
+  if (!projectId) return <>No project id found, please contact support</>;
+
+  // Get  cached tasks
+  const queryKey = taskKeys.list({ projectId, orgIdOrSlug });
+  const tasks = queryClient.getQueryData<{ items: Task[] }>(queryKey)?.items ?? [];
+
   const handleCloseForm = () => {
     if (isDialog) {
-      if (passedProjectIdOrSlug === '') dialog.remove(false, 'workspace-add-task');
+      if (projectId === '') dialog.remove(false, 'workspace-add-task');
       else dialog.remove(false, `create-task-form-${projectId}`);
     }
     onCloseForm?.();
@@ -123,7 +121,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
           assignedTo: [],
           labels: [],
           status: 1,
-          projectId: projectId,
+          projectId,
           expandable: false,
           keywords: '',
           order: getNewTaskOrder(1, tasks),
@@ -151,7 +149,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
       labels: values.labels.map((label) => label.id),
       assignedTo: values.assignedTo.map((user) => user.id),
       status: values.status,
-      organizationId: organizationId,
+      organizationId: workspace.organizationId,
       projectId: values.projectId,
       createdBy: user.id,
       order: getNewTaskOrder(values.status, tasks),
@@ -394,7 +392,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                           value={value as Label[]}
                           triggerWidth={getFieldWidth()}
                           projectId={projectId}
-                          organizationId={organizationId}
+                          organizationId={workspace.organizationId}
                           creationValueChange={onChange}
                         />,
                         { id: `labels-${defaultId}`, trigger: event.currentTarget, modal: false },
@@ -424,7 +422,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({
                                         value={value.filter((l) => l.name !== name) as Label[]}
                                         triggerWidth={getFieldWidth()}
                                         projectId={projectId}
-                                        organizationId={organizationId}
+                                        organizationId={workspace.organizationId}
                                         creationValueChange={onChange}
                                       />
                                     ),

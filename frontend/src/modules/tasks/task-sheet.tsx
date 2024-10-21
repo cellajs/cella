@@ -101,7 +101,7 @@ const TaskSheet = ({ task }: TasksSheetProps) => {
           const edge: Edge | null = extractClosestEdge(targetData);
           const isSubtask = isSubtaskData(sourceData) && isSubtaskData(targetData);
           if (!edge || !isSubtask) return;
-          const newOrder: number = getRelativeTaskOrder(edge, [], targetData.order, sourceData.item.id, targetData.item.parentId ?? undefined);
+          const newOrder: number = getRelativeTaskOrder(edge, [], targetData.order, sourceData.item.id);
           try {
             await taskMutation.mutateAsync({
               id: sourceData.item.id,

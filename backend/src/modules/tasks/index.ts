@@ -129,7 +129,7 @@ const tasksRoutes = app
 
     const finalTasks = tasks
       .map((task) => {
-        const subtasks = tasks.filter((st) => st.parentId === task.id).sort((a, b) => a.order - b.order);
+        const subtasks = tasks.filter((st) => st.parentId === task.id).sort((a, b) => b.order - a.order);
 
         return {
           ...task,
