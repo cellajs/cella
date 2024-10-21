@@ -21,7 +21,6 @@ interface TasksSheetProps {
 }
 
 const TaskSheet = ({ task }: TasksSheetProps) => {
-  console.log('🚀 ~ TaskSheet ~ task:', task);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { mode } = useThemeStore();
@@ -40,7 +39,6 @@ const TaskSheet = ({ task }: TasksSheetProps) => {
     handleTaskDropDownClick(task, field, trigger as HTMLElement);
   };
 
-  console.log(231);
   useHotkeys([
     ['A', () => hotKeyPress(`assignedTo-${task.id}`)],
     ['I', () => hotKeyPress(`impact-${task.id}`)],
