@@ -62,10 +62,37 @@ export async function pushUpstream({
     }
   }
 
-  // Step 2: Fetch upstream changes and checkout the local branch
+  // Step 2: Check out the 'prBranch' locally
+  const checkoutSpinner = yoctoSpinner({
+    text: `Checking out ${prBranchName} locally`,
+  }).start();
+
+  try {
+    await runGitCommand({ targetFolder, command: `checkout -b ${prBranchName}` });
+    checkoutSpinner.success(`Successfully checked out ${prBranchName}.`);
+  } catch (error) {
+    if (error.includes('already exists')) {
+      checkoutSpinner.warning(`Branch ${prBranchName} already exists, switching to it.`);
+      try {
+        await runGitCommand({ targetFolder, command: `checkout ${prBranchName}` });
+        checkoutSpinner.success(`Switched to ${prBranchName}.`);
+      } catch (err) {
+        console.error(err);
+        checkoutSpinner.error('Failed to switch to the PR branch.');
+        process.exit(1);
+      }
+    } else {
+      console.error(error);
+      checkoutSpinner.error('Failed to checkout the PR branch.');
+      process.exit(1);
+    }
+  }
+
+  // Step 3: Fetch upstream changes and continue the process
   await fetchUpstream({ localBranch });
 
-  // Step 3: Find common files between upstream and local branch
+  // Continue with the rest of your steps as before
+  // Step 4: Find common files between upstream and local branch
   const commonSpinner = yoctoSpinner({
     text: 'Finding common files between upstream and local branch',
   }).start();
@@ -89,7 +116,7 @@ export async function pushUpstream({
     process.exit(1);
   }
 
-  // Step 4: Merge the local branch into the upstream branch
+  // Step 5: Merge the local branch into the upstream branch
   const mergeSpinner = yoctoSpinner({
     text: `Merging ${localBranch} into upstream/${upstreamBranch}`,
   }).start();
@@ -113,7 +140,7 @@ export async function pushUpstream({
     }
   }
 
-  // Step 5: Filter and revert ignored files
+  // Step 6: Filter and revert ignored files
   const filterSpinner = yoctoSpinner({
     text: 'Filtering and reverting ignored files',
   }).start();
@@ -151,7 +178,7 @@ export async function pushUpstream({
     process.exit(1);
   }
 
-  // Step 6: Stage and commit only filtered files
+  // Step 7: Stage and commit only filtered files
   const commitSpinner = yoctoSpinner({
     text: 'Staging and committing filtered files',
   }).start();
@@ -171,7 +198,7 @@ export async function pushUpstream({
     process.exit(1);
   }
 
-  // Step 7: Push the merged changes back to the original repo
+  // Step 8: Push the merged changes back to the original repo
   const pushSpinner = yoctoSpinner({
     text: 'Pushing changes to upstream',
   }).start();
