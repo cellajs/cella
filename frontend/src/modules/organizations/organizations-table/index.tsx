@@ -150,7 +150,6 @@ const OrganizationsTable = () => {
       {
         className: 'max-w-full lg:max-w-4xl',
         title: t('common:newsletter'),
-        interactWithPortalElements: true,
         description: t('common:newsletter.text'),
         id: 'newsletter-form',
         side: 'right',

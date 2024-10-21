@@ -8,7 +8,6 @@ export type SheetT = {
   open?: boolean;
   canToggle?: boolean;
   modal?: boolean;
-  interactWithPortalElements?: boolean;
   side?: 'bottom' | 'top' | 'right' | 'left';
   removeCallback?: () => void;
 };

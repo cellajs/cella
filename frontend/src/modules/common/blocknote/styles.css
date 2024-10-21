@@ -35,8 +35,7 @@ p.bn-inline-content code {
   text-decoration: underline;
 }
 
-.bn-container.bn-shadcn b,
-.bn-container.bn-shadcn strong {
+.bn-container.bn-shadcn b, .bn-container.bn-shadcn strong {
   font-weight: 600;
 }
 

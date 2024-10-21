@@ -3,7 +3,6 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { X } from 'lucide-react';
 import * as React from 'react';
-import ReactDOM from 'react-dom';
 
 import { cn } from '~/utils/cn';
 
@@ -50,48 +49,29 @@ export const sheetVariants = cva(
 );
 
 interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>, VariantProps<typeof sheetVariants> {
-  closeSheet?: () => void; // Adding onClick prop
+  onClick?: () => void; // Adding onClick prop
   hideClose?: boolean;
-  interactWithPortalElements?: boolean;
 }
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
-  ({ side = 'right', className, children, interactWithPortalElements, hideClose = false, closeSheet, ...props }, ref) => {
-    React.useEffect(() => {
-      if (!interactWithPortalElements) return;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = 'auto';
-      };
-    }, [interactWithPortalElements]);
-    return (
-      <>
-        {interactWithPortalElements &&
-          ReactDOM.createPortal(
-            <div
-              onClick={closeSheet}
-              onKeyDown={() => {}}
-              className="fixed bg-background/40 backdrop-blur-sm inset-0 bg-transparent z-[113]" // Full-screen overlay
-            />,
-            document.body,
-          )}
-        <SheetOverlay
-          onClick={closeSheet} // Using the passed onClick function
-        />
-        <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-          {!hideClose && (
-            <SheetPrimitive.Close
-              onClick={closeSheet}
-              className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-3 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none z-20"
-            >
-              <X className="h-6 w-6" strokeWidth={1.25} />
-              <span className="sr-only">Close</span>
-            </SheetPrimitive.Close>
-          )}
-          {children}
-        </SheetPrimitive.Content>
-      </>
-    );
-  },
+  ({ side = 'right', className, children, hideClose = false, onClick, ...props }, ref) => (
+    <>
+      <SheetOverlay
+        onClick={onClick} // Using the passed onClick function
+      />
+      <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
+        {!hideClose && (
+          <SheetPrimitive.Close
+            onClick={onClick}
+            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute right-3 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none z-20"
+          >
+            <X className="h-6 w-6" strokeWidth={1.25} />
+            <span className="sr-only">Close</span>
+          </SheetPrimitive.Close>
+        )}
+        {children}
+      </SheetPrimitive.Content>
+    </>
+  ),
 );
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 

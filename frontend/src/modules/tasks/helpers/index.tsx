@@ -30,7 +30,6 @@ export const openTaskPreviewSheet = (task: Task) => {
       id: `task-preview-${task.id}`,
       hideClose: false,
       side: 'right',
-      interactWithPortalElements: true,
       removeCallback: () => sheet.remove(`task-preview-${task.id}`),
     },
   );
