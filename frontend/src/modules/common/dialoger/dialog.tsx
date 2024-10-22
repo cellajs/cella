@@ -69,7 +69,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
         container={container}
       >
         <DialogHeader className={`${title || description ? '' : 'hidden'}`}>
-          <DialogTitle className={`${title || title ? '' : 'hidden'} h-6`}>{title}</DialogTitle>
+          <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{title}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
         </DialogHeader>
 
