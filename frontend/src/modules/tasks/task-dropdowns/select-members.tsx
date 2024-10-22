@@ -1,4 +1,3 @@
-import { useSearch } from '@tanstack/react-router';
 import { Check, XCircle } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,8 +10,6 @@ import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/ta
 import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
-import { WorkspaceRoute } from '~/routes/workspaces';
-import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 import type { LimitedUser } from '~/types/common';
 
@@ -24,10 +21,6 @@ interface AssignMembersProps {
 
 const AssignMembers = ({ task, creationValueChange, triggerWidth = 320 }: AssignMembersProps) => {
   const { t } = useTranslation();
-  const { focusedTaskId: storeFocusedId } = useWorkspaceStore();
-  const { taskIdPreview } = useSearch({
-    from: WorkspaceRoute.id,
-  });
 
   const {
     data: { workspace, members },
@@ -38,7 +31,6 @@ const AssignMembers = ({ task, creationValueChange, triggerWidth = 320 }: Assign
   const isMobile = useBreakpoints('max', 'sm');
   const inputRef = useRef<HTMLInputElement>(null);
   const taskMutation = useTaskUpdateMutation();
-  const focusedTaskId = useMemo(() => (taskIdPreview ? taskIdPreview : storeFocusedId), [storeFocusedId, taskIdPreview]);
 
   const projectMembers = members.filter((m) => m.membership.projectId === task.projectId);
 
@@ -55,11 +47,9 @@ const AssignMembers = ({ task, creationValueChange, triggerWidth = 320 }: Assign
   }, [showAll, searchValue, sortedMembers]);
 
   const changeAssignedTo = async (members: LimitedUser[]) => {
-    if (!focusedTaskId) return;
-
     try {
       await taskMutation.mutateAsync({
-        id: focusedTaskId,
+        id: task.id,
         orgIdOrSlug: workspace.organizationId,
         key: 'assignedTo',
         data: members,

@@ -67,11 +67,14 @@ export const useColumns = () => {
       visible: !isMobile,
       cellClass: 'start',
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => (
-        <>
-          {taskTypes[taskTypes.findIndex((t) => t.value === row.type)]?.icon()} <span className="ml-2">{t(`app:${row.type}`)}</span>
-        </>
-      ),
+      renderCell: ({ row }) => {
+        const type = taskTypes[taskTypes.findIndex((t) => t.value === row.type)];
+        return (
+          <>
+            {type.icon()} <span className="ml-2">{t(`app:${type.type}`)}</span>
+          </>
+        );
+      },
       width: 140,
     },
     {
