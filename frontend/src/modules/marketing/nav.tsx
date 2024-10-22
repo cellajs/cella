@@ -55,7 +55,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
 
   return (
     <>
-      <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-[101] h-16 w-full">
+      <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-[121] h-16 w-full">
         <div className="flex h-full items-center gap-2 max-w-[84rem] mx-auto justify-between transition-colors duration-300">
           <div className="flex h-full items-center gap-2 md:gap-6">
             <div className="md:hidden">
@@ -66,10 +66,10 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
-              className="md:ml-2 hover:opacity-90 active:scale-95 relative"
+              className="md:ml-2 mt-1 hover:opacity-90 active:scale-95 relative"
               aria-label="Go to about page"
             >
-              <Logo height={30} />
+              <Logo height={40} />
 
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0 -right-4">
                 <title>We support Ukraine</title>
@@ -116,7 +116,12 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
       </header>
 
       <Sheet open={showSheet} onOpenChange={toggleSheet}>
-        <SheetContent aria-describedby={undefined} side="top" className={`fixed z-[100] border-none pb-8 ${showSheet ? '' : 'delay-300'}`}>
+        <SheetContent
+          aria-describedby={undefined}
+          side="top"
+          hideClose={true}
+          className={`fixed z-[120] border-none pb-8 ${showSheet ? '' : 'delay-300'}`}
+        >
           <SheetHiddenTitle>Navigation</SheetHiddenTitle>
           <div
             ref={ref}

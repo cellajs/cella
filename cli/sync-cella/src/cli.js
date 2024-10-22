@@ -49,8 +49,8 @@ export const command = new Command(NAME)
         if (typeof name === 'string') {
           name = name.trim()
         }
-        if (!['diverged', 'merge-upstream'].includes(name)) {
-            throw new InvalidArgumentError(`Invalid sync-service: ${name}, supported: "diverged", "merge-upstream"`)
+        if (!['diverged', 'pull-upstream', 'push-upstream'].includes(name)) {
+            throw new InvalidArgumentError(`Invalid sync-service: ${name}, supported: "diverged", "pull-upstream", "push-upstream"`)
           }
           syncService = name
       })

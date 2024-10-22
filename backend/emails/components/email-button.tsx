@@ -3,6 +3,8 @@ import { Button, Section } from 'jsx-email';
 export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: string }) => (
   <Section style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '2rem' }}>
     <Button
+      height={40}
+      width={200}
       style={{
         textAlign: 'center',
         background: '#000',

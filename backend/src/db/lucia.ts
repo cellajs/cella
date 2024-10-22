@@ -9,9 +9,11 @@ import { env } from '../../env';
 import { type SessionModel, sessionsTable } from './schema/sessions';
 import { type UnsafeUserModel, usersTable } from './schema/users';
 
-export const githubAuth = new GitHub(env.GITHUB_CLIENT_ID || '', env.GITHUB_CLIENT_SECRET || '', {
-  redirectURI: config.backendAuthUrl + authRoutesConfig.githubSignInCallback.path,
-});
+export const githubAuth = new GitHub(
+  env.GITHUB_CLIENT_ID || '',
+  env.GITHUB_CLIENT_SECRET || '',
+  config.backendAuthUrl + authRoutesConfig.githubSignInCallback.path,
+);
 
 export const googleAuth = new Google(
   env.GOOGLE_CLIENT_ID || '',
