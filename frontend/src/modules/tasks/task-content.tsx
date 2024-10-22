@@ -1,5 +1,5 @@
 import '@blocknote/shadcn/style.css';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -102,14 +102,20 @@ const TaskDescription = ({ task, mode, state, isSheet }: TaskContentProps) => {
               ))}
             </motion.div>
 
-            {createSubtask ? (
-              <CreateSubtaskForm setFormState={(value) => setCreateSubtask(value)} parentTask={task} />
-            ) : (
-              <Button variant="ghost" size="sm" className="w-full mb-1 pl-11 justify-start rounded-none" onClick={() => setCreateSubtask(true)}>
-                <Plus size={16} />
-                <span className="ml-1 font-normal">{t('app:todo')}</span>
-              </Button>
-            )}
+            <AnimatePresence mode="wait">
+              {createSubtask ? (
+                <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+                  <CreateSubtaskForm setFormState={(value) => setCreateSubtask(value)} parentTask={task} />
+                </motion.div>
+              ) : (
+                <motion.div key="button" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+                  <Button variant="ghost" size="sm" className="w-full mb-1 pl-11 justify-start rounded-none" onClick={() => setCreateSubtask(true)}>
+                    <Plus size={16} />
+                    <span className="ml-1 font-normal">{t('app:todo')}</span>
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </>
       )}

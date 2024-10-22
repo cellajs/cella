@@ -6,14 +6,12 @@ import { cn } from '~/utils/cn';
 
 export function BoardColumnHeader({ projectId, children, className }: { projectId: string; children?: React.ReactNode; className?: string }) {
   const navigate = useNavigate();
+  const params = useParams({ strict: false });
+
   const {
     data: { projects },
   } = useWorkspaceQuery();
   const currentIndex = projects.findIndex((p) => p.id === projectId);
-
-  const params = useParams({
-    strict: false,
-  });
 
   const ArrowClick = (side: 'left' | 'right') => {
     const targetIndex = currentIndex + (side === 'left' ? -1 : 1);
@@ -29,13 +27,11 @@ export function BoardColumnHeader({ projectId, children, className }: { projectI
     });
   };
 
-  const stickyStyles = 'sticky sm:relative top-2 sm:top-0 bg-background z-50';
-
   return (
     <div
       className={cn(
         'sm:border p-1 sm:p-3 rounded-lg rounded-b-none text-normal leading-4 flex flex-row gap-1 sm:gap-2 space-between items-center',
-        stickyStyles,
+        'sticky sm:relative top-2 sm:top-0 bg-background z-50',
         className,
       )}
     >
