@@ -103,15 +103,24 @@ export const getNewStatusTaskOrder = (oldStatus: number, newStatus: number, task
 };
 
 // Return task order for new task
-export const getNewTaskOrder = (status: number, tasks: Task[] | Subtask[]) => {
+export const getNewTaskOrder = (status: number, tasks: Task[] | Subtask[], isSubtask = false) => {
+  // Sort tasks based on order
+  let filteredTasks = tasks.sort((a, b) => b.order - a.order);
+  let index = filteredTasks.length - 1;
+  let mutation = -10;
+
   // Compare with tasks with same status
-  const filteredTasks = tasks.filter((t) => t.status === status).sort((a, b) => b.order - a.order);
+  if (!isSubtask) {
+    filteredTasks = tasks.filter((t) => t.status === status);
 
-  // If iced or unstarted, go to the top, else go to the bottom
-  const index = status < 2 ? 0 : filteredTasks.length - 1;
-
+    // If iced or unstarted, go to the top
+    if (status < 2) {
+      index = 0;
+      mutation = 10;
+    }
+  }
   // If no tasks with same status, return 1000, else return +10 for iced or unstarted, -10 for others
-  return filteredTasks.length > 0 ? filteredTasks[index].order + (status < 2 ? 10 : -10) : 1000;
+  return filteredTasks.length > 0 ? filteredTasks[index].order + mutation : 1000;
 };
 
 // retrieve unique words from task description

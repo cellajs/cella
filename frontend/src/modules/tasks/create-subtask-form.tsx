@@ -53,7 +53,7 @@ export const CreateSubtaskForm = ({
         expandable: false,
         keywords: '',
         projectId: parentTask.projectId,
-        order: getNewTaskOrder(1, parentTask.subtasks),
+        order: 0,
       },
     }),
     [],
@@ -80,7 +80,7 @@ export const CreateSubtaskForm = ({
       labels: [],
       projectId: parentTask.projectId,
       createdBy: user.id,
-      order: getNewTaskOrder(values.status, parentTask.subtasks),
+      order: getNewTaskOrder(values.status, parentTask.subtasks, true),
     };
 
     taskMutation.mutate(newSubtask);

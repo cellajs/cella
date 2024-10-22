@@ -110,7 +110,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         type: 'organization',
         role: faker.helpers.arrayElement(['admin', 'member']),
         createdAt: faker.date.past(),
-        order: organizationsCount + 1,
+        order: organizationsCount * 10,
       };
     });
 
@@ -128,7 +128,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
         createdAt: faker.date.past(),
         order: adminMembershipsOrder,
       });
-      adminMembershipsOrder++;
+      adminMembershipsOrder = adminMembershipsOrder + 10;
       adminOrganizationsCount++; // Increment the counter
     }
 

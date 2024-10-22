@@ -124,7 +124,7 @@ const CreateTaskForm: React.FC<CreateTaskFormProps> = ({ projectIdOrSlug, defaul
           projectId,
           expandable: false,
           keywords: '',
-          order: getNewTaskOrder(1, tasks),
+          order: 0,
         },
         ...defaultValues,
       },
