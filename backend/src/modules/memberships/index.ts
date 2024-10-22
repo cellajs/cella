@@ -331,7 +331,7 @@ const membershipsRoutes = app
 
       const ceilOrder = lastOrderMembership ? Math.ceil(lastOrderMembership.order) : 0;
 
-      orderToUpdate = ceilOrder + 1;
+      orderToUpdate = ceilOrder + 10;
     }
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
