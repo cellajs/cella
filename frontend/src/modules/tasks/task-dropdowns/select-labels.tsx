@@ -149,6 +149,7 @@ const SetLabels = ({ task, creationValueChange, triggerWidth = 320 }: SetLabelsP
           if (inNumbersArray(6, searchValue)) return handleSelectClick(labels[Number.parseInt(searchValue) - 1]?.name);
           setSearchValue(searchValue.toLowerCase());
         }}
+        wrapClassName={`${isMobile && !isRecent && 'hidden'}`}
         clearValue={setSearchValue}
         className="leading-normal min-h-10"
         placeholder={showedLabels.length ? t('app:placeholder.search_labels') : t('app:create_label.text')}
@@ -197,7 +198,7 @@ const SetLabels = ({ task, creationValueChange, triggerWidth = 320 }: SetLabelsP
               if (inputRef.current && !isMobile) inputRef.current.focus();
             }}
           >
-            {isRecent ? 'Show selected labels' : 'Show recent labels'}
+            {t(`app:${isRecent ? 'show_selected_labels' : 'more_labels'}`)}
           </CommandItem>
         ) : (
           <CommandItemCreate onSelect={() => handleCreateClick(searchValue)} searchValue={searchValue} labels={labels} />
