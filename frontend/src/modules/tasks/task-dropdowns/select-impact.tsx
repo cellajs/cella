@@ -1,6 +1,5 @@
-import { useSearch } from '@tanstack/react-router';
 import { Check } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { dropdowner } from '~/modules/common/dropdowner/state';
@@ -14,8 +13,7 @@ import { MediumIcon } from '~/modules/tasks/task-dropdowns/impact-icons/medium';
 import { NoneIcon } from '~/modules/tasks/task-dropdowns/impact-icons/none';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
-import { WorkspaceRoute } from '~/routes/workspaces';
-import { useWorkspaceStore } from '~/store/workspace';
+import type { Task } from '~/types/app';
 
 type ImpactOption = {
   value: (typeof impacts)[number]['value'];
@@ -32,40 +30,33 @@ export const impacts = [
 ] as const;
 
 interface SelectImpactProps {
-  value: TaskImpact;
-  projectId: string;
+  task: Task;
   triggerWidth?: number;
   creationValueChange?: (newValue: TaskImpact) => void;
 }
 
-const SelectImpact = ({ value, projectId, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
+const SelectImpact = ({ task, triggerWidth = 192, creationValueChange }: SelectImpactProps) => {
   const { t } = useTranslation();
-  const { focusedTaskId: storeFocusedId } = useWorkspaceStore();
-  const { taskIdPreview } = useSearch({
-    from: WorkspaceRoute.id,
-  });
 
   const {
     data: { workspace },
   } = useWorkspaceQuery();
-  const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(value !== null ? impacts[value] : null);
+  const [selectedImpact, setSelectedImpact] = useState<ImpactOption | null>(task.impact !== null ? impacts[task.impact] : null);
   const [searchValue, setSearchValue] = useState('');
   const isSearching = searchValue.length > 0;
 
-  const focusedTaskId = useMemo(() => (taskIdPreview ? taskIdPreview : storeFocusedId), [storeFocusedId, taskIdPreview]);
   const taskMutation = useTaskUpdateMutation();
 
   const changeTaskImpact = async (newImpact: TaskImpact) => {
     try {
       if (creationValueChange) return creationValueChange(newImpact);
-      if (!focusedTaskId) return;
 
       await taskMutation.mutateAsync({
-        id: focusedTaskId,
+        id: task.id,
         orgIdOrSlug: workspace.organizationId,
         key: 'impact',
         data: newImpact,
-        projectId,
+        projectId: task.projectId,
       });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));

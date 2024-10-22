@@ -1,4 +1,3 @@
-import { useSearch } from '@tanstack/react-router';
 import { CommandEmpty } from 'cmdk';
 import { Check, Dot, Loader2, Tag } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -12,10 +11,8 @@ import { inNumbersArray } from '~/modules/tasks/helpers';
 import { Badge } from '~/modules/ui/badge.tsx';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command.tsx';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
-import { WorkspaceRoute } from '~/routes/workspaces';
 import { useWorkspaceUIStore } from '~/store/workspace-ui.ts';
-import { useWorkspaceStore } from '~/store/workspace.ts';
-import type { Label } from '~/types/app';
+import type { Label, Task } from '~/types/app';
 import { dateIsRecent } from '~/utils/date-is-recent';
 
 export const badgeStyle = (color?: string | null) => {
@@ -24,30 +21,23 @@ export const badgeStyle = (color?: string | null) => {
 };
 
 interface SetLabelsProps {
-  value: Label[];
-  organizationId: string;
-  projectId: string;
+  task: Task;
   triggerWidth?: number;
   creationValueChange?: (labels: Label[]) => void;
 }
 
-const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }: SetLabelsProps) => {
+const SetLabels = ({ task, creationValueChange, triggerWidth = 320 }: SetLabelsProps) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const { changeColumn } = useWorkspaceUIStore();
   const inputRef = useRef<HTMLInputElement>(null);
-  const { focusedTaskId: storeFocusedId } = useWorkspaceStore();
-  const { taskIdPreview } = useSearch({
-    from: WorkspaceRoute.id,
-  });
 
   const {
     data: { workspace, labels },
   } = useWorkspaceQuery();
   const taskMutation = useTaskUpdateMutation();
-  const focusedTaskId = useMemo(() => (taskIdPreview ? taskIdPreview : storeFocusedId), [storeFocusedId, taskIdPreview]);
 
-  const [selectedLabels, setSelectedLabels] = useState<Label[]>(value);
+  const [selectedLabels, setSelectedLabels] = useState<Label[]>(task.labels);
   const [searchValue, setSearchValue] = useState('');
   const [isRecent, setIsRecent] = useState(!!creationValueChange || !isMobile);
 
@@ -55,7 +45,7 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
   const labelUpdateMutation = useLabelUpdateMutation();
 
   const orderedLabels = useMemo(
-    () => labels.filter((l) => l.projectId === projectId).sort((a, b) => new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime()),
+    () => labels.filter((l) => l.projectId === task.projectId).sort((a, b) => new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime()),
     [labels],
   );
 
@@ -65,22 +55,20 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
     if (searchValue.length) return orderedLabels.filter((l) => l.name.toLowerCase().includes(searchValue));
     if (!isRecent) return selectedLabels;
     // save to recent labels all labels that used in past 3 days
-    changeColumn(workspace.id, projectId, {
+    changeColumn(workspace.id, task.projectId, {
       recentLabels: orderedLabels.filter((l) => dateIsRecent(l.lastUsedAt, 3)),
     });
     return orderedLabels.slice(0, 8);
   }, [isRecent, searchValue, orderedLabels, selectedLabels]);
 
   const updateTaskLabels = async (labels: Label[]) => {
-    if (!focusedTaskId) return;
-
     try {
       await taskMutation.mutateAsync({
-        id: focusedTaskId,
+        id: task.id,
         orgIdOrSlug: workspace.organizationId,
         key: 'labels',
         data: labels,
-        projectId,
+        projectId: task.projectId,
       });
       return;
     } catch (err) {
@@ -130,7 +118,7 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
       orgIdOrSlug: workspace.organizationId,
       name: value,
       color: '#FFA9BA',
-      projectId,
+      projectId: task.projectId,
       useCount: 1,
     });
 
@@ -147,8 +135,8 @@ const SetLabels = ({ value, projectId, creationValueChange, triggerWidth = 320 }
   }, [selectedLabels]);
 
   useEffect(() => {
-    setSelectedLabels(value);
-  }, [value]);
+    setSelectedLabels(task.labels);
+  }, [task.labels]);
 
   return (
     <Command className="relative rounded-lg max-h-[44vh] overflow-y-auto" style={{ width: `${triggerWidth}px` }}>

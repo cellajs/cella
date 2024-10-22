@@ -83,11 +83,7 @@ export const statusVariants = cva('', {
   },
 });
 
-const SelectStatus = ({
-  taskStatus,
-  projectId,
-  creationValueChange,
-}: { taskStatus: TaskStatus; projectId: string; creationValueChange?: (newValue: number) => void }) => {
+const SelectStatus = ({ task, creationValueChange }: { task: Task; creationValueChange?: (newValue: number) => void }) => {
   const { t } = useTranslation();
 
   const { pathname } = useLocation();
@@ -99,7 +95,7 @@ const SelectStatus = ({
     data: { workspace, projects },
   } = useWorkspaceQuery();
   const [searchValue, setSearchValue] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[taskStatus]);
+  const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[task.status]);
   const taskMutation = useTaskUpdateMutation();
 
   const focusedTaskId = useMemo(
@@ -118,9 +114,9 @@ const SelectStatus = ({
     try {
       const isTable = pathname.includes('/table');
       const queryKeys = !isTable
-        ? taskKeys.list({ projectId, orgIdOrSlug: workspace.organizationId })
+        ? taskKeys.list({ projectId: task.projectId, orgIdOrSlug: workspace.organizationId })
         : taskKeys.list({
-            projectId: projectId ?? projects.map((p) => p.id).join('_'),
+            projectId: projects.map((p) => p.id).join('_'),
             orgIdOrSlug: workspace.organizationId,
             status: tableSearch.status,
             q: tableSearch.q,
@@ -130,14 +126,14 @@ const SelectStatus = ({
 
       const query: Query | undefined = queryClient.getQueryData(queryKeys);
       const tasks: Task[] = query ? (isTable ? query.pages?.[0]?.items || [] : query.items || []) : [];
-      const newOrder = getNewStatusTaskOrder(taskStatus, newStatus, tasks);
+      const newOrder = getNewStatusTaskOrder(task.status, newStatus, tasks);
       await taskMutation.mutateAsync({
         id: focusedTaskId,
         orgIdOrSlug: workspace.organizationId,
         key: 'status',
         data: newStatus,
         order: newOrder,
-        projectId,
+        projectId: task.projectId,
       });
     } catch (err) {
       toast.error(t('common:error.update_resource', { resource: t('app:task') }));
@@ -158,8 +154,8 @@ const SelectStatus = ({
   };
 
   useEffect(() => {
-    setSelectedStatus(taskStatuses[taskStatus]);
-  }, [taskStatus]);
+    setSelectedStatus(taskStatuses[task.status]);
+  }, [task.status]);
 
   return (
     <Command className="relative rounded-lg w-60">

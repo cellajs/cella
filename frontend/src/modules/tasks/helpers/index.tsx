@@ -6,11 +6,10 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dropdowner } from '~/modules/common/dropdowner/state';
 import { useTaskUpdateMutation } from '~/modules/common/query-client-provider/tasks';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { TaskImpact } from '~/modules/tasks/create-task-form';
 import SelectImpact, { impacts } from '~/modules/tasks/task-dropdowns/select-impact';
 import SetLabels from '~/modules/tasks/task-dropdowns/select-labels';
 import AssignMembers from '~/modules/tasks/task-dropdowns/select-members';
-import SelectStatus, { taskStatuses, type TaskStatus } from '~/modules/tasks/task-dropdowns/select-status';
+import SelectStatus, { taskStatuses } from '~/modules/tasks/task-dropdowns/select-status';
 import SelectTaskType from '~/modules/tasks/task-dropdowns/select-task-type';
 import { useWorkspaceStore } from '~/store/workspace';
 import type { Project, Subtask, Task } from '~/types/app';
@@ -42,11 +41,11 @@ export const setTaskCardFocus = (id: string) => {
 };
 
 export const handleTaskDropDownClick = (task: Task, field: string, trigger: HTMLElement) => {
-  let component = <SelectTaskType currentType={task.type} projectId={task.projectId} />;
-  if (field.includes('impact')) component = <SelectImpact value={task.impact as TaskImpact} projectId={task.projectId} />;
-  else if (field.includes('labels')) component = <SetLabels value={task.labels} organizationId={task.organizationId} projectId={task.projectId} />;
-  else if (field.includes('assignedTo')) component = <AssignMembers projectId={task.projectId} value={task.assignedTo} />;
-  else if (field.includes('status')) component = <SelectStatus taskStatus={task.status as TaskStatus} projectId={task.projectId} />;
+  let component = <SelectTaskType task={task} />;
+  if (field.includes('impact')) component = <SelectImpact task={task} />;
+  else if (field.includes('labels')) component = <SetLabels task={task} />;
+  else if (field.includes('assignedTo')) component = <AssignMembers task={task} />;
+  else if (field.includes('status')) component = <SelectStatus task={task} />;
   return dropdowner(component, { id: field, trigger, align: field.startsWith('status') || field.startsWith('assignedTo') ? 'end' : 'start' });
 };
 
@@ -120,7 +119,7 @@ export const getNewTaskOrder = (status: number, tasks: Task[] | Subtask[], isSub
     }
   }
   // If no tasks with same status, return 1000, else return +10 for iced or unstarted, -10 for others
-  return filteredTasks.length > 0 ? filteredTasks[index].order + mutation : 1000;
+  return filteredTasks.length > 0 ? filteredTasks[index]?.order + mutation : 1000;
 };
 
 // retrieve unique words from task description
