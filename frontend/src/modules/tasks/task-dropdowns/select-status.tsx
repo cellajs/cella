@@ -19,7 +19,6 @@ import { UnstartedIcon } from '~/modules/tasks/task-dropdowns/status-icons/unsta
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { useWorkspaceQuery } from '~/modules/workspaces/helpers/use-workspace';
 import { WorkspaceRoute } from '~/routes/workspaces';
-import { useWorkspaceStore } from '~/store/workspace';
 import type { Task } from '~/types/app';
 
 export const taskStatuses = [
@@ -87,7 +86,6 @@ const SelectStatus = ({ task, creationValueChange }: { task: Task; creationValue
   const { t } = useTranslation();
 
   const { pathname } = useLocation();
-  const { focusedTaskId: storeFocusedId } = useWorkspaceStore();
   const tableSearch = useSearch({
     from: WorkspaceRoute.id,
   });
@@ -98,11 +96,6 @@ const SelectStatus = ({ task, creationValueChange }: { task: Task; creationValue
   const [selectedStatus, setSelectedStatus] = useState<Status>(taskStatuses[task.status]);
   const taskMutation = useTaskUpdateMutation();
 
-  const focusedTaskId = useMemo(
-    () => (tableSearch.taskIdPreview ? tableSearch.taskIdPreview : storeFocusedId),
-    [storeFocusedId, tableSearch.taskIdPreview],
-  );
-
   const showedStatuses = useMemo(() => {
     if (searchValue.length) return taskStatuses.filter((s) => s.status.includes(searchValue.toLowerCase()));
     return taskStatuses;
@@ -110,7 +103,7 @@ const SelectStatus = ({ task, creationValueChange }: { task: Task; creationValue
 
   const changeTaskStatus = async (newStatus: number) => {
     if (creationValueChange) creationValueChange(newStatus);
-    if (!focusedTaskId) return;
+
     try {
       const isTable = pathname.includes('/table');
       const queryKeys = !isTable
@@ -128,7 +121,7 @@ const SelectStatus = ({ task, creationValueChange }: { task: Task; creationValue
       const tasks: Task[] = query ? (isTable ? query.pages?.[0]?.items || [] : query.items || []) : [];
       const newOrder = getNewStatusTaskOrder(task.status, newStatus, tasks);
       await taskMutation.mutateAsync({
-        id: focusedTaskId,
+        id: task.id,
         orgIdOrSlug: workspace.organizationId,
         key: 'status',
         data: newStatus,
