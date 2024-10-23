@@ -3,8 +3,8 @@ import clsx from 'clsx';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 
-import Logo from '~/modules/app/logo';
-import { footerSections, legalLinks } from '~/modules/marketing/about-config';
+import Logo from '~/modules/common/logo';
+import { footerSections, legalLinks } from '~/modules/marketing/about/about-config';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import NewsletterForm from '~/modules/marketing/newsletter';
 

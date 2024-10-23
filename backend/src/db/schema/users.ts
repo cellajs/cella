@@ -52,6 +52,26 @@ export const usersTable = pgTable(
 
 export const safeUserSelect = omitKeys(usersTable, config.sensitiveFields);
 
+const avoidedFields = [
+  'slug',
+  'firstName',
+  'lastName',
+  'emailVerified',
+  'bio',
+  'language',
+  'newsletter',
+  'lastSeenAt',
+  'lastStartedAt',
+  'lastSignInAt',
+  'createdAt',
+  'modifiedAt',
+  'modifiedBy',
+  'role',
+] as const;
+
+export const baseLimitedUserSelect = omitKeys(safeUserSelect, avoidedFields);
+
 export type UnsafeUserModel = typeof usersTable.$inferSelect;
 export type InsertUserModel = typeof usersTable.$inferInsert;
 export type UserModel = Omit<UnsafeUserModel, (typeof config.sensitiveFields)[number]>;
+export type LimitedUserModel = Omit<UserModel, (typeof avoidedFields)[number]>;

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import useMounted from '~/hooks/use-mounted';
 import { Step, Stepper } from '~/modules/common/stepper';
-import { onDefaultBoardingSteps } from '~/modules/home/onboarding-config';
 import StepperFooter from '~/modules/home/onboarding/footer';
+import { onDefaultBoardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { OnboardingStart } from '~/modules/home/onboarding/start';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';

@@ -1,5 +1,6 @@
 import { sentry } from '@hono/sentry';
 import { config } from 'config';
+import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
@@ -41,5 +42,14 @@ app.use('*', csrf({ origin: config.frontendUrl }));
 
 // Rate limiter
 app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));
+
+// Compress with gzip
+// Apply gzip compression only to GET requests
+app.use('*', (c, next) => {
+  if (c.req.method === 'GET') {
+    return compress()(c, next);
+  }
+  return next();
+});
 
 export default app;

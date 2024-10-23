@@ -4,32 +4,25 @@ const toastMap = new Map<string, string | number>();
 
 export const showToast = (
   text: string,
-  type: 'success' | 'error' | 'info' | 'default' = 'default',
-  options: {
-    id?: number | string;
-  } = {},
+  type: 'success' | 'error' | 'info' | 'warning' | 'default' = 'default',
+  options: { id?: number | string } = {},
 ) => {
   const existingToastId = toastMap.get(text);
 
-  // Dismiss the previous toast if already exist
+  // Dismiss the previous toast if it exists
   if (existingToastId) toast.dismiss(existingToastId);
 
-  let newToastId: string | number;
+  // Determine toast function based on type
+  const toastFn =
+    {
+      success: toast.success,
+      error: toast.error,
+      info: toast.info,
+      warning: toast.warning,
+      default: toast,
+    }[type] || toast;
 
-  // Handle different toast types
-  switch (type) {
-    case 'success':
-      newToastId = toast.success(text, options);
-      break;
-    case 'error':
-      newToastId = toast.error(text, options);
-      break;
-    case 'info':
-      newToastId = toast.info(text, options);
-      break;
-    default:
-      newToastId = toast(text, options);
-  }
+  const newToastId = toastFn(text, options);
 
   toastMap.set(text, newToastId);
 };

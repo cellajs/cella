@@ -40,7 +40,11 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, searchResults
 
   return (
     <div className="relative">
-      <Search size={16} className="absolute left-3 -z-10 top-1/2 -translate-y-1/2" style={{ opacity: searchTerm ? 1 : 0.5 }} />
+      <Search
+        size={16}
+        className="absolute left-3 -z-10 top-1/2 -translate-y-1/2 opacity-50
+      group-data-[search=true]/menu:opacity-100"
+      />
       <Input
         disabled={!hasStarted && isMobile} // Delay to prevent focus on initial render
         type="text"
@@ -49,13 +53,12 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, searchResults
         onChange={(e) => setSearchTerm(e.target.value)}
         className="bg-transparent border-0 px-10"
       />
-      {searchTerm && (
-        <XCircle
-          size={16}
-          className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
-          onClick={() => setSearchTerm('')}
-        />
-      )}
+
+      <XCircle
+        size={16}
+        className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer group-data-[search=false]/menu:hidden"
+        onClick={() => setSearchTerm('')}
+      />
     </div>
   );
 };

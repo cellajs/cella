@@ -6,8 +6,9 @@ export type EntityTables = (typeof entityTables)[keyof typeof entityTables];
 
 export type EntityTableNames = EntityTables['_']['name'];
 
+// TODO this type is a bit redundant, but it was added to make submenus work while not using it in cella directly.
 export type MenuSection = {
-  name: string;
+  name: 'organizations';
   entityType: ContextEntity;
   submenu?: {
     entityType: ContextEntity;

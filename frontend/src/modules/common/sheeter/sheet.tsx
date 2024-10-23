@@ -64,7 +64,7 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
         aria-describedby={undefined}
         className={`${className} items-start`}
       >
-        <StickyBox className={`z-10 flex items-center justify-between bg-background py-4 ${title ? '' : 'hidden'}`}>
+        <StickyBox className={`z-10 flex items-center justify-between bg-background py-3 ${title ? '' : 'hidden'}`}>
           <SheetTitle>{title}</SheetTitle>
         </StickyBox>
         <SheetHeader className={`${description || title ? '' : 'hidden'}`}>

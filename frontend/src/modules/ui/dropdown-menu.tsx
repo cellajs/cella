@@ -1,6 +1,7 @@
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronRight, Circle } from 'lucide-react';
 import * as React from 'react';
+import ReactDOM from 'react-dom';
 
 import { cn } from '~/utils/cn';
 
@@ -54,19 +55,28 @@ DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayNam
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
-  <DropdownMenuPrimitive.Portal>
-    <DropdownMenuPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[150] min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-md',
-        className,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content> & { modal?: boolean }
+>(({ className, modal = true, sideOffset = 4, ...props }, ref) => (
+  <>
+    {!modal &&
+      ReactDOM.createPortal(
+        <div
+          className="fixed inset-0 bg-transparent z-[103]" // Full-screen overlay
+        />,
+        document.body,
       )}
-      {...props}
-    />
-  </DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        className={cn(
+          'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[150] min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-md',
+          className,
+        )}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
+  </>
 ));
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
@@ -158,18 +168,18 @@ DropdownMenuShortcut.displayName = 'DropdownMenuShortcut';
 
 export {
   DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuCheckboxItem,
-  DropdownMenuRadioItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-  DropdownMenuGroup,
-  DropdownMenuPortal,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuRadioGroup,
+  DropdownMenuTrigger,
 };

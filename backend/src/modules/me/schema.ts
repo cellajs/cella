@@ -33,15 +33,16 @@ export const meUserSchema = userSchema.extend({
 export const menuItemSchema = z.object({
   slug: slugSchema,
   id: idSchema,
-  createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
+  createdAt: z.date(),
+  modifiedAt: z.date().nullable(),
   name: nameSchema,
   thumbnailUrl: imageUrlSchema.nullish(),
   entity: z.enum(config.contextEntityTypes),
   membership: membershipInfoSchema,
-  // TODO perhaps use membershipInfoSchema here, since membership should always be present in menu
-  organizationId: z.string().optional().nullable(),
+  organizationId: membershipInfoSchema.shape.organizationId.optional(),
 });
+
+export type MenuItem = z.infer<typeof menuItemSchema>;
 
 export const menuItemsSchema = z.array(
   z.object({
@@ -60,3 +61,5 @@ export const userMenuSchema = z.object(
     {} as Record<MenuSectionName, typeof menuItemsSchema>,
   ),
 );
+
+export type UserMenu = z.infer<typeof userMenuSchema>;

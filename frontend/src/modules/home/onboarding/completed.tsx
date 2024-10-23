@@ -5,7 +5,7 @@ import ConfettiExplosion from 'react-confetti-explosion';
 import { useTranslation } from 'react-i18next';
 import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { sheet } from '~/modules/common/sheeter/state';
-import { onBoardingFinishCallback } from '~/modules/home/onboarding-config';
+import { onBoardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { useNavigationStore } from '~/store/navigation';
 
 export const OnboardingCompleted = () => {

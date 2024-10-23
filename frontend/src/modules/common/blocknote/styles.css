@@ -6,6 +6,10 @@ p.bn-inline-content {
   padding: 0;
 }
 
+.subtask p.bn-inline-content {
+  font-weight: 200;
+}
+
 p.bn-inline-content code {
   background: hsl(var(--muted));
   font-size: 0.85em;
@@ -32,7 +36,7 @@ p.bn-inline-content code {
 }
 
 .bn-container.bn-shadcn b, .bn-container.bn-shadcn strong {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .bn-shadcn .bn-side-menu {

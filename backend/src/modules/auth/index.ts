@@ -485,7 +485,8 @@ const authRoutes = app
     const redirectExistingUserUrl = getRedirectUrl(ctx);
 
     try {
-      const { accessToken } = await githubAuth.validateAuthorizationCode(code);
+      const githubValidation = await githubAuth.validateAuthorizationCode(code);
+      const accessToken = githubValidation.accessToken();
 
       // Get user info from github
       const githubUserResponse = await fetch('https://api.github.com/user', {
@@ -657,7 +658,8 @@ const authRoutes = app
     const redirectExistingUserUrl = getRedirectUrl(ctx);
 
     try {
-      const { accessToken } = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
+      const googleValidation = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
+      const accessToken = googleValidation.accessToken();
 
       // Get user info from google
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
@@ -760,7 +762,8 @@ const authRoutes = app
     const redirectExistingUserUrl = getRedirectUrl(ctx);
 
     try {
-      const { accessToken } = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
+      const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
+      const accessToken = microsoftValidation.accessToken();
 
       // Get user info from microsoft
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', {

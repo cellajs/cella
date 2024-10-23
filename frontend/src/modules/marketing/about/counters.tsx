@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { CountUp } from 'use-count-up';
 import { getPublicCounts } from '~/api/metrics';
-import { counts } from '~/modules/marketing/about-config';
+import { counts } from '~/modules/marketing/about/about-config';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 const Counters = () => {
