@@ -1,12 +1,10 @@
-import { existsSync } from 'node:fs';
 import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
 
 import { fetchRemote } from './fetch-remote.js';
 import { runGitCommand } from './utils/run-git-command.js';
-import { extractIgnorePatterns, pickByIgnorePatterns } from './utils/ignore-patterns.js';
 
-export async function pushUpstream({
+export async function pullFork({
   ignoreFile,
   ignoreList,
   upstreamBranch,
