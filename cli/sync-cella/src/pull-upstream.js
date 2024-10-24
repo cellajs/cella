@@ -3,7 +3,7 @@ import colors from 'picocolors';
 
 import { fetchUpstream } from './fetch-upstream.js'
 import { runGitCommand } from './utils/run-git-command.js'
-import { extractIgnorePatterns, applyIgnorePatterns } from './utils/ignore-patterns.js'
+import { extractIgnorePatterns, pickByIgnorePatterns } from './utils/ignore-patterns.js'
 
 export async function pullUpstream({
   ignoreFile,
@@ -68,7 +68,7 @@ export async function pullUpstream({
     try {
       // Get, filter and reset tracked files
       const trackedFiles = (await runGitCommand({ targetFolder, command: 'ls-files' })).split('\n').filter(Boolean);
-      const ignoredTrackedFiles = applyIgnorePatterns(trackedFiles, ignorePatterns);
+      const ignoredTrackedFiles = pickByIgnorePatterns(trackedFiles, ignorePatterns);
 
       if (ignoredTrackedFiles.length > 0) {
         await runGitCommand({ targetFolder, command: `reset ${ignoredTrackedFiles.join(' ')}` });
@@ -76,7 +76,7 @@ export async function pullUpstream({
 
       // Get, filter and checkout tracked files after reset
       const filesAfterReset = (await runGitCommand({ targetFolder, command: 'ls-files' })).split('\n').filter(Boolean);
-      const filesToCheckout = applyIgnorePatterns(filesAfterReset, ignorePatterns);
+      const filesToCheckout = pickByIgnorePatterns(filesAfterReset, ignorePatterns);
 
       if (filesToCheckout.length > 0) {
         await runGitCommand({ targetFolder, command: `checkout --ours -- ${filesToCheckout.join(' ')}` });
@@ -84,7 +84,7 @@ export async function pullUpstream({
 
       // Get, filter and remove untracked files
       const untrackedFiles = (await runGitCommand({ targetFolder, command: 'ls-files --others --exclude-standard' })).split('\n').filter(Boolean);
-      const ignoredUntrackedFiles = applyIgnorePatterns(untrackedFiles, ignorePatterns);
+      const ignoredUntrackedFiles = pickByIgnorePatterns(untrackedFiles, ignorePatterns);
 
       if (ignoredUntrackedFiles.length > 0) {
         await runGitCommand({ targetFolder, command: `clean -f -x -- ${ignoredUntrackedFiles.join(' ')}` });

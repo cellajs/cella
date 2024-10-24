@@ -4,7 +4,7 @@ import colors from 'picocolors';
 
 import { fetchUpstream } from './fetch-upstream.js'
 import { runGitCommand } from './utils/run-git-command.js'
-import { extractIgnorePatterns, applyIgnorePatterns } from './utils/ignore-patterns.js'
+import { extractIgnorePatterns, excludeByIgnorePatterns } from './utils/ignore-patterns.js'
 
 export async function diverged({
   divergedFile,
@@ -86,7 +86,7 @@ export async function diverged({
 
   // Filter files using ignore patterns
   if (ignorePatterns.length > 0) {
-    filteredFiles = applyIgnorePatterns(filteredFiles, ignorePatterns);
+    filteredFiles = excludeByIgnorePatterns(filteredFiles, ignorePatterns);
   }
   filterSpinnen.success('Filtered diverged files.');
 

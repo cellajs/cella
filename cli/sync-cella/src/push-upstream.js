@@ -5,7 +5,7 @@ import { confirm } from '@inquirer/prompts';
 
 import { fetchUpstream } from './fetch-upstream.js';
 import { runGitCommand } from './utils/run-git-command.js';
-import { extractIgnorePatterns, applyIgnorePatterns } from './utils/ignore-patterns.js';
+import { extractIgnorePatterns, pickByIgnorePatterns } from './utils/ignore-patterns.js';
 
 export async function pushUpstream({
   ignoreFile,
@@ -155,7 +155,7 @@ export async function pushUpstream({
     // Extract ignore patterns and apply them
     const ignorePatterns = await extractIgnorePatterns({ ignoreList, ignoreFile });
     if (ignorePatterns.length > 0) {
-      const ignoredFiles = applyIgnorePatterns(filteredFiles, ignorePatterns);
+      const ignoredFiles = pickByIgnorePatterns(filteredFiles, ignorePatterns);
 
       if (ignoredFiles.length > 0) {
         // Ensure the files exist before attempting to reset or checkout
