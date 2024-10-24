@@ -16,6 +16,7 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
@@ -133,7 +134,7 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
   });
 
   const handleResetRequestSubmit = () => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     // TODO maybe find a better way
     dialog.update('send-reset-password', {

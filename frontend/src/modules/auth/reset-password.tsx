@@ -16,6 +16,7 @@ import type { ApiError } from '~/api';
 import { resetPassword as baseResetPassword } from '~/api/auth';
 import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { ResetPasswordRoute } from '~/routes/auth';
@@ -59,7 +60,7 @@ const ResetPassword = () => {
 
   // Submit new password
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     const { password } = values;
     resetPassword({ token, password });

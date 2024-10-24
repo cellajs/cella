@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import { BlockNote } from '~/modules/common/blocknote';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button } from '~/modules/ui/button';
@@ -51,7 +52,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
   });
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     sendNewsletter({
       organizationIds: values.organizationIds,

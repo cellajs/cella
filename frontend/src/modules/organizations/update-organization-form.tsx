@@ -9,7 +9,6 @@ import type { Organization } from '~/types/common';
 import { config } from 'config';
 import { isValidElement, useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
-import { toast } from 'sonner';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
@@ -78,7 +77,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     mutate(values, {
       onSuccess: (updatedOrganization) => {

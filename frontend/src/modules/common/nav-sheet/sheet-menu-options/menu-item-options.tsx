@@ -2,7 +2,6 @@ import { onlineManager } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
@@ -43,10 +42,7 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
   });
 
   const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {
-    if (!onlineManager.isOnline()) {
-      toast.warning(t('common:action.offline.text'));
-      return;
-    }
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     const { role, id: membershipId, organizationId, archived, muted } = item.membership;
     const membership = { membershipId, role, muted, archived, organizationId };

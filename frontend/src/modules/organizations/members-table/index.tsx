@@ -7,7 +7,6 @@ import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import type { z } from 'zod';
 import { getMembers, updateMembership } from '~/api/memberships';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -151,7 +150,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   };
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     for (const index of indexes) {
       if (column.key === 'role') updateMemberRole(changedRows[index]);
@@ -194,7 +193,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         entityType={entityType}
         dialog
         callback={(members) => {
-          toast.success(t('common:success.delete_members'));
+          showToast(t('common:success.delete_members'), 'success');
           callback(members, 'delete');
         }}
         members={selectedMembers}

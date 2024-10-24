@@ -9,7 +9,6 @@ import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
@@ -102,7 +101,7 @@ const UsersTable = () => {
       callback([updatedUser], 'update');
       showToast(t('common:success.user_role_updated'), 'success');
     },
-    onError: () => toast.error('Error updating role'),
+    onError: () => showToast('Error updating role', 'error'),
   });
 
   // Reset filters
@@ -126,7 +125,7 @@ const UsersTable = () => {
 
   // Update user role
   const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     for (const index of indexes) {
       if (column.key === 'role') updateUserRole(changedRows[index]);
@@ -153,7 +152,7 @@ const UsersTable = () => {
         dialog
         users={selectedUsers}
         callback={(users) => {
-          toast.success(t('common:success.delete_resources', { resources: t('common:users') }));
+          showToast(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
           callback(users, 'delete');
         }}
       />,
