@@ -46,9 +46,7 @@ export const OnboardingCompleted = () => {
         <ConfettiExplosion zIndex={0} duration={5000} force={0.8} particleCount={250} height={'100vh'} width={1500} />
       )}
 
-      {finishedOnboarding && (
-        <Undo size={400} strokeWidth={0.1} className="max-xl:hidden scale-y-75 -mt-40 -mb-12 -translate-x-32 text-primary rotate-[30deg]" />
-      )}
+      {finishedOnboarding && <Undo size={400} strokeWidth={0.1} className="max-lg:hidden scale-y-75 -mt-40 -mb-12  text-primary rotate-[30deg]" />}
       <h1 className="text-3xl font-bold">{t('common:onboarding_completed')}</h1>
       <p className="text-xl text-foreground/90 md:text-2xl font-light leading-7 pb-8">
         {t('common:onboarding_completed.text', { appName: config.name })}
