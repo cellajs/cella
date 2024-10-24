@@ -2,7 +2,7 @@ import { rm, writeFile } from 'node:fs/promises';
 import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
 
-import { fetchUpstream } from './fetch-upstream.js'
+import { fetchRemote } from './fetch-remote.js'
 import { runGitCommand } from './utils/run-git-command.js'
 import { extractIgnorePatterns, excludeByIgnorePatterns } from './utils/ignore-patterns.js'
 
@@ -17,7 +17,7 @@ export async function diverged({
   console.info();
 
   // Fetch upstream changes and checkout local branch
-  await fetchUpstream({ localBranch });
+  await fetchRemote({ localBranch });
 
   // Find common files between upstream and local branch
   const commonSpinner = yoctoSpinner({

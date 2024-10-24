@@ -5,6 +5,10 @@
  * @property {string} divergedFile - Path to the file where diverged files will be listed.
  * @property {string[]} [ignoreList] - Optional. Array of file paths to ignore. Takes precedence over `ignoreFile` if both are provided.
  * @property {string} [ignoreFile] - Optional. Path to a file containing a list of files to ignore. Ignored if `ignoreList` is present.
+ * @property {string} [upstreamBranch] - Name of the upstream branch. Defaults to `development`.
+ * @property {Fork[]} [forks] - Optional. Array of fork reposotories.
+ * @property {string} [forks.name] - Name of the fork repository. Only lowercase characters are allowed.
+ * @property {string} [forks.remoteUrl] - Url to the fork repository.
  */
 
 /**
@@ -16,6 +20,13 @@
 export const config = {
   upstreamBranch: 'development',
   divergedFile: 'cella.diverged.txt',
+  forks: [
+    {
+      name: 'raak',
+      remoteUrl: 'git@github.com:cellajs/raak.git',
+      branch: 'development',
+    },
+  ],
   ignoreList: [
     'README.md',
     'package.json',

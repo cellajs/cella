@@ -1,7 +1,7 @@
 import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
 
-import { fetchUpstream } from './fetch-upstream.js'
+import { fetchRemote } from './fetch-remote.js'
 import { runGitCommand } from './utils/run-git-command.js'
 import { extractIgnorePatterns, pickByIgnorePatterns } from './utils/ignore-patterns.js'
 
@@ -15,7 +15,7 @@ export async function pullUpstream({
   console.info();
 
   // Fetch upstream changes and checkout local branch
-  await fetchUpstream({ localBranch });
+  await fetchRemote({ localBranch });
 
   // Check for local changes
   const statusSpinner = yoctoSpinner({
