@@ -1,12 +1,15 @@
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { showToast } from '~/lib/toasts';
+import { sheet } from '~/modules/common/sheeter/state';
 import { Switch } from '~/modules/ui/switch';
 import { useGeneralStore } from '~/store/general';
+import { useNavigationStore } from '~/store/navigation';
 
 export const NetworkModeSwitch = () => {
   const { t } = useTranslation();
   const { networkMode, setNetworkMode } = useGeneralStore();
+  const { setNavSheetOpen } = useNavigationStore();
 
   const onCheckedChange = (isOffline: boolean) => {
     // setTimeout is used to show the toast after the switch is toggled (QueryProvider updates)
@@ -15,6 +18,10 @@ export const NetworkModeSwitch = () => {
     }, 0);
 
     setNetworkMode(isOffline ? 'offline' : 'online');
+
+    // Close the navigation sheet & set it state to null
+    sheet.remove('nav-sheet');
+    setNavSheetOpen(null);
   };
 
   return (

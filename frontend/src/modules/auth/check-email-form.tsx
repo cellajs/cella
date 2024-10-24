@@ -12,9 +12,9 @@ import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useEffect } from 'react';
-import { toast } from 'sonner';
 import { checkEmail as baseCheckEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import type { Step, TokenData } from '.';
 
 const formSchema = emailBodySchema;
@@ -44,7 +44,7 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     checkEmail(values.email);
   };

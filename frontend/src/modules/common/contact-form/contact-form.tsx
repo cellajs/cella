@@ -2,7 +2,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Mail, MessageSquare, Send, User } from 'lucide-react';
 import type { SubmitHandler } from 'react-hook-form';
-import { toast } from 'sonner';
 import * as z from 'zod';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 
@@ -13,6 +12,7 @@ import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import InputFormField from '~/modules/common/form-fields/input';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
@@ -48,17 +48,17 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const { mutate: createRequest } = useMutation({
     mutationFn: baseCreateRequest,
     onSuccess: () => {
-      toast.success(t('common:message_sent.text'));
+      showToast(t('common:message_sent.text'), 'success');
       if (isDialog) dialog.remove();
       form.reset();
     },
     onError: () => {
-      toast.error(t('common:error.reported_try_later'));
+      showToast(t('common:error.reported_try_later'), 'error');
     },
   });
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     const { email, message } = data;
     createRequest({ email, type: 'contact', message });

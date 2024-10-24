@@ -14,6 +14,7 @@ import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
@@ -96,7 +97,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
   }, [form.unsavedChanges]);
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     create(values);
   };
