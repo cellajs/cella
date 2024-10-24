@@ -12,7 +12,8 @@ import { runGitCommand } from './utils/run-git-command.js';
 
 import { diverged } from './diverged.js';
 import { pullUpstream } from './pull-upstream.js';
-import { pushUpstream } from './push-upstream.js';
+import { pullFork } from './pull-fork.js';
+import { fork } from 'node:child_process';
 
 async function main() {
   console.info(CELLA_TITLE);
@@ -26,7 +27,7 @@ async function main() {
       choices: [
         { name: 'Diverged files', value: 'diverged' },
         { name: 'Pull from upstream', value: 'pull-upstream' },
-        { name: 'Push to upstream', value: 'push-upstream' },
+        { name: 'Pull from fork', value: 'pull-fork' },
         { name: 'Cancel', value: 'cancel' },
       ],
     });
@@ -37,7 +38,7 @@ async function main() {
   }
 
   // Ask for the config file and extract the values
-  const { problems, selectedFile, divergedFile, ignoreFile, ignoreList, upstreamBranch } = await askForConfigFile(cli.configFile);
+  const { problems, selectedFile, divergedFile, ignoreFile, ignoreList, upstreamBranch, forks } = await askForConfigFile(cli.configFile);
 
   if (problems) {
     console.error('Invalid config file: ' + problems[0]);
@@ -62,6 +63,11 @@ async function main() {
 
   if (upstreamBranch) {
     cli.upstreamBranch = upstreamBranch;
+  }
+
+  // @TODO: Add support for multiple forks (ask selection)
+  if (forks?.length === 1) {
+    cli.fork = forks[0];
   }
 
   // Ask for the upstream branch if not provided
@@ -97,24 +103,12 @@ async function main() {
   // Ask for the PR branch name with a default value
   const defaultPrBranchName = `pr-branch-${Date.now()}`;
 
-  if (cli.syncService === 'push-upstream') {
+  if (cli.syncService === 'pull-fork') {
     cli.prBranchName = await input({
       message: 'Enter the PR branch name:',
       default: defaultPrBranchName,
       validate: (input) => input.length > 0 || 'PR branch name cannot be empty.',
     });
-  
-    const changeBranchName = await confirm({
-      message: `The default PR branch is "${cli.prBranchName}". Do you want to change it?`,
-      default: false,
-    });
-  
-    if (changeBranchName) {
-      cli.prBranchName = await input({
-        message: 'Enter your custom PR branch name:',
-        default: cli.prBranchName,
-      });
-    }
   };
 
   // Run the selected sync service and pass the options
@@ -124,7 +118,8 @@ async function main() {
     ignoreList: cli.ignoreList,
     upstreamBranch: cli.upstreamBranch,
     localBranch: cli.localBranch,
-    prBranchName: cli.prBranchName,  // Pass the PR branch name to the options
+    prBranchName: cli.prBranchName,
+    fork: cli.fork,
   };
 
   if (cli.syncService === 'diverged') {
@@ -135,8 +130,8 @@ async function main() {
     return await pullUpstream(options);
   }
 
-  if (cli.syncService === 'push-upstream') {
-    return await pushUpstream(options);
+  if (cli.syncService === 'pull-fork') {
+    return await pullFork(options);
   }
 }
 

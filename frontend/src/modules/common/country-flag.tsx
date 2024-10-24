@@ -1,4 +1,5 @@
 import type React from 'react';
+import { cn } from '~/utils/cn';
 
 interface ImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   countryCode: string;
@@ -14,7 +15,7 @@ export const CountryFlag = ({ countryCode, className, imgType = 'svg', width = 1
 
   return (
     <img
-      className={`inline overflow-hidden shadow-sm ${className}`}
+      className={cn('inline overflow-hidden shadow-sm', className)}
       {...props}
       src={flagUrl}
       alt={`Flag of ${countryCode.toUpperCase()}`}

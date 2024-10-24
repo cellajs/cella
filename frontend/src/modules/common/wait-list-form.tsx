@@ -8,7 +8,6 @@ import type * as z from 'zod';
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { toast } from 'sonner';
 import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
@@ -64,7 +63,7 @@ export const WaitListForm = ({
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     createRequest({
       email: values.email,

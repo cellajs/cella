@@ -10,7 +10,6 @@ import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
-import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
@@ -79,7 +78,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
   });
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     invite(values);
   };

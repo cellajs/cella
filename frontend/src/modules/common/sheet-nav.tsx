@@ -12,9 +12,7 @@ export const SheetNav = ({ tabs }: Props) => {
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(tabs[0]);
 
-  const renderPage = () => {
-    return currentPage.element;
-  };
+  const renderPage = () => currentPage.element;
 
   return (
     <div className="mb-20">
@@ -24,18 +22,18 @@ export const SheetNav = ({ tabs }: Props) => {
             <div key={tab.id} className="relative">
               <Button
                 variant="none"
-                className={`hover:opacity-100 ${currentPage.id === tab.id ? 'opacity-100' : 'opacity-80'}`}
+                data-current={currentPage.id === tab.id}
+                className="peer hover:opacity-100 opacity-80 data-[current=true]:opacity-100"
                 onClick={() => setCurrentPage(tab)}
               >
                 {t(tab.label)}
               </Button>
-              {currentPage.id === tab.id && (
-                <motion.div
-                  key={nanoid()}
-                  transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                  className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
-                />
-              )}
+
+              <motion.div
+                key={nanoid()}
+                transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2 peer-data-[current=false]:hidden"
+              />
             </div>
           ))}
         </nav>

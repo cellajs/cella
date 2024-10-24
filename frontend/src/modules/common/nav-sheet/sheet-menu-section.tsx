@@ -69,7 +69,7 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
   }, [archivedRef, isArchivedVisible]);
 
   return (
-    <>
+    <div className="group/menuSection" data-visible={isSectionVisible}>
       <MenuSectionSticky
         data={data}
         sectionLabel={sectionLabel}
@@ -81,7 +81,7 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
       />
       <div
         ref={sectionRef}
-        className={`grid transition-[grid-template-rows] ${isSectionVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'} ease-in-out duration-300`}
+        className="grid transition-[grid-template-rows] grid-rows-[0fr] group-data-[visible=true]/menuSection:grid-rows-[1fr] ease-in-out duration-300"
       >
         <ul className="overflow-hidden">
           {optionsView ? (
@@ -90,18 +90,16 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
             <SheetMenuItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
           )}
           {!!data.length && (
-            <>
-              <MenuArchiveToggle
-                isSubmenu={false}
-                archiveToggleClick={archiveToggleClick}
-                inactiveCount={data.filter((i) => i.membership.archived).length}
-                isArchivedVisible={isArchivedVisible}
-              />
+            <div
+              className="group/archived"
+              data-have-inactive={!!data.filter((i) => i.membership.archived).length}
+              data-submenu={false}
+              data-archived-visible={isArchivedVisible}
+            >
+              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.filter((i) => i.membership.archived).length} />
               <div
                 ref={archivedRef}
-                className={`grid transition-[grid-template-rows] ${
-                  isArchivedVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                } ease-in-out duration-300`}
+                className="grid transition-[grid-template-rows] grid-rows-[0fr] group-data-[archived-visible=true]/archived:grid-rows-[1fr] ease-in-out duration-300"
               >
                 <ul className="overflow-hidden">
                   {optionsView ? (
@@ -111,10 +109,10 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
                   )}
                 </ul>
               </div>
-            </>
+            </div>
           )}
         </ul>
       </div>
-    </>
+    </div>
   );
 };

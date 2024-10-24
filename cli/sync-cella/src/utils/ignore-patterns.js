@@ -44,15 +44,22 @@ function patternToRegex(pattern) {
     return new RegExp(`^${escapedPattern}$`);
   }
 
-  // Helper function to apply ignore patterns
-export function applyIgnorePatterns(files, ignorePatterns) {
-    return files.filter((file) => {
-      for (const pattern of ignorePatterns) {
-        const regex = patternToRegex(pattern);
-        if (regex.test(file)) {
-          return false; // Ignore the file if the pattern matches
-        }
-      }
-      return true; // Keep the file if no pattern matches
+// Helper function to pick files that match ignore patterns
+export function pickByIgnorePatterns(files, ignorePatterns) {
+  return files.filter((file) => {
+    return ignorePatterns.some((pattern) => {
+      const regex = patternToRegex(pattern);
+      return regex.test(file);
     });
-  }
+  });
+}
+
+// Helper function to exclude files that match ignore patterns
+export function excludeByIgnorePatterns(files, ignorePatterns) {
+  return files.filter((file) => {
+    return !ignorePatterns.some((pattern) => {
+      const regex = patternToRegex(pattern);
+      return regex.test(file);
+    });
+  });
+}

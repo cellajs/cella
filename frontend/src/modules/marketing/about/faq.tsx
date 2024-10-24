@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Trans, useTranslation } from 'react-i18next';
-import { faqsData } from '~/modules/marketing/about-config';
+import { faqsData } from '~/modules/marketing/about/about-config';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 
 const FAQ = () => {

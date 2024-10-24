@@ -35,7 +35,15 @@ const FloatNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: numbe
       {showButtons &&
         items.map((navItem: NavItem, idx: number) => {
           const firstButton = items.length > 1 && idx === 0;
-          return <MobileNavButton key={navItem.id} Icon={navItem.icon} onClick={() => onClick(idx)} direction={firstButton ? 'left' : 'right'} />;
+          return (
+            <MobileNavButton
+              id={navItem.id}
+              key={navItem.id}
+              Icon={navItem.icon}
+              onClick={() => onClick(idx)}
+              direction={firstButton ? 'left' : 'right'}
+            />
+          );
         })}
     </nav>
   );

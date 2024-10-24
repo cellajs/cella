@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { verifyEmail as baseVerifyEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import AuthPage from '~/modules/auth/auth-page';
 import { Button } from '~/modules/ui/button';
 
@@ -23,7 +24,7 @@ const VerifyEmail = () => {
   });
 
   const resendEmail = () => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     verifyEmail({ token, resend: true });
   };

@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page-aside';
@@ -48,7 +49,10 @@ const UserSettingsPage = () => {
       useUserStore.setState((state) => {
         state.user.sessions = state.user.sessions.filter((session) => !variables.includes(session.id));
       });
-      toast.success(variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'));
+      showToast(
+        variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'),
+        'success',
+      );
     },
   });
 
@@ -83,7 +87,7 @@ const UserSettingsPage = () => {
   const invertClass = mode === 'dark' ? 'invert' : '';
 
   const onDeleteSession = (ids: string[]) => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     deleteMySessions(ids);
   };

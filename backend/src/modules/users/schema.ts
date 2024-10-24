@@ -24,6 +24,17 @@ export const userSchema = createSelectSchema(usersTable, {
     }),
   );
 
+export const limitedUserSchema = createSelectSchema(usersTable, {
+  email: z.string().email(),
+}).pick({
+  id: true,
+  name: true,
+  email: true,
+  entity: true,
+  thumbnailUrl: true,
+  bannerUrl: true,
+});
+
 export const usersQuerySchema = paginationQuerySchema.merge(
   z.object({
     sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'membershipCount']).default('createdAt').optional(),

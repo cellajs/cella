@@ -24,6 +24,7 @@ const Welcome = () => {
     <>
       <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
         <DialogContent
+          onEscapeKeyDown={(e) => e.preventDefault()}
           aria-describedby={undefined}
           className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto"
         >

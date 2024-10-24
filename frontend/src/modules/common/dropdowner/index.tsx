@@ -4,36 +4,39 @@ import { type DropDownT, dropdownerState } from '~/modules/common/dropdowner/sta
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 export function DropDowner() {
-  const [dropdowner, setDropdowner] = useState<DropDownT | null>(null);
+  const [dropdown, setDropdown] = useState<DropDownT | null>(null);
 
   useEffect(() => {
     return dropdownerState.subscribe((dropdowner) => {
-      if ('remove' in dropdowner) setDropdowner(null);
-      else setDropdowner(dropdowner);
+      if ('remove' in dropdowner) setDropdown(null);
+      else setDropdown(dropdowner);
     });
   }, []);
-
-  if (!dropdowner?.trigger) return null;
+  if (!dropdown?.trigger) return null;
 
   const dropdownContainer = document.createElement('div');
-  dropdownContainer.classList.add('absolute', 'bottom-0', dropdowner.align === 'start' ? 'left-0' : 'right-0');
-  dropdowner.trigger.appendChild(dropdownContainer);
+  dropdownContainer.classList.add('absolute', 'bottom-0', dropdown.align === 'start' ? 'left-0' : 'right-0');
+  dropdown.trigger.appendChild(dropdownContainer);
 
   return ReactDOM.createPortal(
-    <DropdownMenu key={dropdowner.id} open={true}>
+    <DropdownMenu key={dropdown.id} open={true} modal={dropdown.modal}>
       <DropdownMenuTrigger />
       <DropdownMenuContent
         className="p-0"
         sideOffset={12}
         side="bottom"
-        align={dropdowner.align || 'start'}
+        modal={dropdown.modal}
+        align={dropdown.align || 'start'}
         onCloseAutoFocus={() => {
-          if (dropdowner.refocus && dropdowner.trigger) dropdowner.trigger.focus();
+          if (dropdown.refocus && dropdown.trigger) dropdown.trigger.focus();
         }}
         onEscapeKeyDown={() => dropdownerState.remove()}
-        onInteractOutside={() => dropdownerState.remove()}
+        onInteractOutside={(e) => {
+          const isInside = dropdown.trigger?.contains(e.target as Node);
+          if (!isInside) dropdownerState.remove();
+        }}
       >
-        {dropdowner.content}
+        {dropdown.content}
       </DropdownMenuContent>
     </DropdownMenu>,
     dropdownContainer,

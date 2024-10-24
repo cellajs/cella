@@ -4,7 +4,6 @@ import { config } from 'config';
 import { Check, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { inviteMembers as baseInvite, removeMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
@@ -54,7 +53,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
   };
 
   const onLeave = () => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     leave({
       organizationId: organization.id,

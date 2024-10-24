@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { set_cell_color, start_cells, stop_cells } from '~/modules/app/bg-animation/animation.js';
+import { set_cell_color, start_cells, stop_cells } from '~/modules/common/bg-animation/animation.js';
 import { useThemeStore } from '~/store/theme.js';
 
 function maximize_canvas(c: HTMLCanvasElement) {

@@ -20,6 +20,7 @@ import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
 import { menuSections } from '~/nav-config';
+import { updateMenuItem } from './helpers/update-menu-item';
 import { NetworkModeSwitch } from './network-mode-switch';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
@@ -90,6 +91,9 @@ export const SheetMenu = memo(() => {
             order: newOrder,
             organizationId: sourceItem.organizationId || sourceItem.id,
           });
+
+          const updatedEntity: UserMenuItem = { ...sourceItem, membership: { ...sourceItem.membership, ...updatedMembership } };
+          updateMenuItem(updatedEntity);
           dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership });
         },
       }),
@@ -98,17 +102,16 @@ export const SheetMenu = memo(() => {
 
   return (
     <ScrollArea className="h-full" id="nav-sheet">
-      <div className="p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
+      <div data-search={!!searchTerm} className="group/menu p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
         <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
-        {searchTerm && (
-          <div className="search-results mt-3">
-            {searchResultsListItems().length > 0 ? (
-              searchResultsListItems()
-            ) : (
-              <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
-            )}
-          </div>
-        )}
+
+        <div className="search-results mt-3 group-data-[search=false]/menu:hidden">
+          {searchResultsListItems().length > 0 ? (
+            searchResultsListItems()
+          ) : (
+            <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })} />
+          )}
+        </div>
 
         {!searchTerm && (
           <>

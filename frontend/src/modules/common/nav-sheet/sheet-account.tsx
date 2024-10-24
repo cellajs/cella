@@ -21,16 +21,20 @@ type AccountButtonProps = {
 };
 
 // Create a button for each account action
-const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, action }) => {
-  const btnClass = `${id === 'btn-signout' && 'text-red-600'} hover:bg-accent/50 w-full justify-start text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`;
-
-  return (
-    <Link id={id} to={action} className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass)}>
-      <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
-      {label}
-    </Link>
-  );
-};
+const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, action }) => (
+  <Link
+    data-sign-out={id === 'btn-signout'}
+    id={id}
+    to={action}
+    className={cn(
+      buttonVariants({ variant: 'ghost', size: 'lg' }),
+      'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+    )}
+  >
+    <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
+    {label}
+  </Link>
+);
 
 export const SheetAccount = () => {
   const { t } = useTranslation();
@@ -39,8 +43,6 @@ export const SheetAccount = () => {
 
   const isSystemAdmin = user.role === 'admin';
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
-  const bgClass = user.bannerUrl ? 'bg-background' : numberToColorClass(user.id);
-  const bannerClass = `relative transition-all duration-300 hover:bg-opacity-50 hover:-mx-8 -mx-4 -mt-4 bg-cover bg-center h-24 ${bgClass} bg-opacity-80`;
 
   useEffect(() => {
     if (isMobile) return;
@@ -52,7 +54,10 @@ export const SheetAccount = () => {
     <ScrollArea className="h-full" id="nav-sheet">
       <div ref={buttonWrapper} className="p-3 flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
         <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
-          <div className={bannerClass} style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}>
+          <div
+            data-have-banner={!!user.bannerUrl}
+            className={`data-[have-banner=false]:${numberToColorClass(user.id)} bg-[url('${user.bannerUrl}')] relative transition-all duration-300 hover:bg-opacity-50 hover:-mx-8 -mx-4 -mt-4 bg-cover bg-center h-24 bg-opacity-80`}
+          >
             <AvatarWrap
               className="h-16 w-16 absolute top-4 text-2xl left-[50%] -ml-8 border-bg border-2 rounded-full"
               type="user"

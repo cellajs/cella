@@ -12,7 +12,7 @@ const HamburgerLine = ({
 }: {
   className: string;
   lineColor: string;
-}) => <div className={`ease my-[.19rem] h-0.5 w-6 rounded-full transition duration-300 ${className}`} style={{ backgroundColor: lineColor }} />;
+}) => <div className={cn('ease my-[.19rem] h-0.5 w-6 rounded-full transition duration-300', className)} style={{ backgroundColor: lineColor }} />;
 
 const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) => {
   const { mode } = useThemeStore();

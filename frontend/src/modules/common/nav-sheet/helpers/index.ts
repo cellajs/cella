@@ -1,4 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
+import { menuSections } from '~/nav-config';
+import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenu, UserMenuItem } from '~/types/common';
 
 const sortAndFilterMenu = (data: UserMenuItem[], entityType: ContextEntity, archived: boolean, reverse = false): UserMenuItem[] => {
@@ -38,22 +40,26 @@ export const getRelativeItemOrder = (
   // Find the relative item based on the item's position and the edge (top or bottom)
   const relativeItem = neededItems.find(({ membership }) => (isEdgeTop ? membership.order < itemOrder : membership.order > itemOrder));
 
-  let newOrder: number;
+  // If no relative item found, return new order based on edge
+  if (!relativeItem || relativeItem.membership.order === itemOrder) {
+    return Math.floor(itemOrder) + (isEdgeTop ? -10 : 10);
+  }
+  // If relative item is same as item, return item's order
+  if (relativeItem.id === itemId) return relativeItem.membership.order;
 
-  // Compute the new order based on the conditions
-  if (!relativeItem || relativeItem.membership.order === itemOrder) newOrder = orderChange(itemOrder, isEdgeTop ? 'dec' : 'inc');
-  else if (relativeItem.id === itemId) newOrder = relativeItem.membership.order;
-  else newOrder = (relativeItem.membership.order + itemOrder) / 2;
-
-  return newOrder;
+  // Put the new item in the middle of two items
+  return (relativeItem.membership.order + itemOrder) / 2;
 };
 
-export const orderChange = (order: number, action: 'inc' | 'dec') => {
-  if (action === 'inc') {
-    if (Number.isInteger(order)) return order + 1;
-    return Math.ceil(order);
-  }
+export const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
+  const { menu } = useNavigationStore.getState();
 
-  if (order > 1 && Number.isInteger(order)) return order - 1;
-  return order / 2;
+  const updatedMenu = menuSections.reduce(
+    (acc, { name }) => {
+      if (menu[name]) acc[name] = transform(menu[name]);
+      return acc;
+    },
+    {} as Record<keyof UserMenu, UserMenuItem[]>,
+  );
+  useNavigationStore.setState({ menu: updatedMenu });
 };

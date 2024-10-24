@@ -1,11 +1,11 @@
 import type { NavigateFn } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { User } from '~/types/common';
+import type { LimitedUser } from '~/types/common';
 
 const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
 
-export const openUserPreviewSheet = (user: Omit<User, 'counts'>, navigate: NavigateFn, addSearch = false) => {
+export const openUserPreviewSheet = (user: LimitedUser, navigate: NavigateFn, addSearch = false) => {
   if (addSearch) {
     navigate({
       to: '.',

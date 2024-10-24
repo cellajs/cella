@@ -4,11 +4,20 @@ This document describes how to develop your own app based on Cella.
 Also read the [architecture](./ARCHITECTURE.md) info.
 
 
-## Run it
+## Run with pglite
 
 ```bash
 pnpm install
 pnpm quick
+```
+
+## Run it with full postgres and electric-sync in docker
+
+```bash
+pnpm install
+pnpm docker
+pnpm dev
+pnpm seed
 ```
 
 ## Customize
@@ -32,5 +41,5 @@ pnpm diverged
 Pull upstream changes from cella. Changes in files that are in the cella ignore list will automatically be undone, to reduce conflicts.
 
 ```bash
-pnpm run upstream:pull
+pnpm upstream:pull
 ```

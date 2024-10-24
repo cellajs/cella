@@ -5,6 +5,10 @@
  * @property {string} divergedFile - Path to the file where diverged files will be listed.
  * @property {string[]} [ignoreList] - Optional. Array of file paths to ignore. Takes precedence over `ignoreFile` if both are provided.
  * @property {string} [ignoreFile] - Optional. Path to a file containing a list of files to ignore. Ignored if `ignoreList` is present.
+ * @property {string} [upstreamBranch] - Name of the upstream branch. Defaults to `development`.
+ * @property {Fork[]} [forks] - Optional. Array of fork reposotories.
+ * @property {string} [forks.name] - Name of the fork repository. Only lowercase characters are allowed.
+ * @property {string} [forks.remoteUrl] - Url to the fork repository.
  */
 
 /**
@@ -16,6 +20,13 @@
 export const config = {
   upstreamBranch: 'development',
   divergedFile: 'cella.diverged.txt',
+  forks: [
+    {
+      name: 'raak',
+      remoteUrl: 'git@github.com:cellajs/raak.git',
+      branch: 'development',
+    },
+  ],
   ignoreList: [
     'README.md',
     'package.json',
@@ -39,11 +50,12 @@ export const config = {
     'frontend/src/routes/index.tsx',
     'frontend/src/routes/marketing.tsx',
     'frontend/src/types/app.ts',
-    'frontend/src/modules/app/*',
-    'frontend/src/modules/home/onboarding-config.ts',
-    'frontend/src/modules/marketing/about-config.tsx',
+    'frontend/src/modules/common/logo.tsx',
+    'frontend/src/modules/common/bg-animation/*',
+    'frontend/src/modules/home/onboarding/onboarding-config.ts',
     'frontend/src/modules/marketing/nav.tsx',
     'frontend/src/modules/marketing/footer.tsx',
+    'frontend/src/modules/marketing/about/about-config.tsx',
     'frontend/src/modules/marketing/about/counters.tsx',
     'frontend/src/modules/marketing/about/hero.tsx',
     'frontend/src/modules/marketing/about/index.tsx',

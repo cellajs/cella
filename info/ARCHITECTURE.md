@@ -73,7 +73,6 @@ Both frontend and backend already have modules, such as `authentication`, `users
 
 Zooming in on some of the frontend modules:
 * `common`: a cella-predefined set of reusable react components 
-* `app`: app-specific components that are also reusable (but not from cella). Cella has already added some app-specific components - such as a `Logo` - which you should overwrite with your own code.
 * `ui`: Full with shadcn UI components. They have some small tweaks however and it is to be expected you will customize them yourself further.
 
 A similar situation can be found in the `types` folders of both frontend and backend. you have app-specific types in `app.ts` and predefined cella types in `common.ts`.

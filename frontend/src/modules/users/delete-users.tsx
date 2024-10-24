@@ -3,9 +3,9 @@ import type { User } from '~/types/common';
 
 import { onlineManager } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
+import { showToast } from '~/lib/toasts';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 
@@ -33,7 +33,7 @@ const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
   });
 
   const onDelete = () => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     deleteUsers(users.map((user) => user.id));
   };

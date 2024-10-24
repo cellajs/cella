@@ -1,6 +1,6 @@
 import { type SQL, and, eq } from 'drizzle-orm';
 import { db } from './db';
-import { type UnsafeUserModel, type UserModel, safeUserSelect, usersTable } from './schema/users';
+import { type LimitedUserModel, type UnsafeUserModel, type UserModel, baseLimitedUserSelect, safeUserSelect, usersTable } from './schema/users';
 
 type SafeQuery = typeof safeUserSelect;
 type UnsafeQuery = typeof usersTable;
@@ -22,8 +22,17 @@ export async function getUserBy(field: SafeField | UnsafeField, value: string, t
   return result?.user ?? null;
 }
 
-export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type?: 'unsafe'): Promise<UserModel[] | UnsafeUserModel[]> {
-  const select = type === 'unsafe' ? usersTable : safeUserSelect;
+// Overload signatures
+export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[]): Promise<UserModel[]>;
+export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type: 'unsafe'): Promise<UnsafeUserModel[]>;
+export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type: 'limited'): Promise<LimitedUserModel[]>;
+
+// Implementation
+export async function getUsersByConditions(
+  whereArray: (SQL<unknown> | undefined)[],
+  type?: 'unsafe' | 'limited',
+): Promise<UserModel[] | UnsafeUserModel[] | LimitedUserModel[]> {
+  const select = getSelect(type);
 
   // Execute a database query to select users based on the conditions in 'whereArray'.
   const result = await db
@@ -32,4 +41,11 @@ export async function getUsersByConditions(whereArray: (SQL<unknown> | undefined
     .where(and(...whereArray));
 
   return result.map((el) => el.user);
+}
+
+// Helper function to determine the select value
+function getSelect(type?: 'unsafe' | 'limited') {
+  if (type === 'unsafe') return usersTable;
+  if (type === 'limited') return baseLimitedUserSelect;
+  return safeUserSelect;
 }

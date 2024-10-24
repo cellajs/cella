@@ -92,7 +92,6 @@ export default defineConfig(() => {
         name: config.name,
         short_name: config.name,
         description: config.description,
-        theme_color: config.themeColor,
         icons: [
           {
             src: '/static/icons/icon-192x192.png',

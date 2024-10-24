@@ -11,6 +11,7 @@ import type { z } from 'zod';
 import type { ApiError } from '~/api';
 import { acceptInvite as baseAcceptInvite, checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import AuthPage from '~/modules/auth/auth-page';
 import Spinner from '~/modules/common/spinner';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -45,7 +46,7 @@ const AcceptInvite = () => {
   });
 
   const onSubmit = () => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     acceptInvite({ token });
   };

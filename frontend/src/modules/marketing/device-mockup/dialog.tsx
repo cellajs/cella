@@ -1,7 +1,7 @@
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader } from '~/modules/ui/dialog';
-import DeviceCarousel from './carusel';
+import DeviceCarousel from './carousel';
 
 interface DeviceDialogProps {
   isOpen: boolean;

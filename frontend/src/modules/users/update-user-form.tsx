@@ -17,7 +17,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 
 import { isValidElement } from 'react';
 import type { UseFormProps } from 'react-hook-form';
-import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
@@ -95,7 +94,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     mutate(values, {
       onSuccess: (updatedUser) => {

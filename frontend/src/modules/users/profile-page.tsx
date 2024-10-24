@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Suspense, createContext, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 
-import type { Member, User } from '~/types/common';
+import type { LimitedUser, Member } from '~/types/common';
 
 import { UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -14,23 +14,14 @@ import { useUpdateUserMutation } from '~/modules/users/update-user-form';
 import { useUserStore } from '~/store/user';
 import type { entitySuggestionSchema } from '#/modules/general/schema';
 
-interface UserContextValue {
-  user: Omit<User, 'counts'>;
-}
-
 type OrganizationSuggestions = z.infer<typeof entitySuggestionSchema>;
 
-const isUserMember = (user: Omit<User, 'counts'> | Member): user is Member => {
+const isUserMember = (user: LimitedUser | Member): user is Member => {
   return 'membership' in user && user.membership !== undefined;
 };
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
-export const UserContext = createContext({} as UserContextValue);
-
-const UserProfilePage = ({
-  user,
-  sheet,
-}: { user: (Omit<User, 'counts'> & { organizations?: OrganizationSuggestions[] }) | Member; sheet?: boolean }) => {
+const UserProfilePage = ({ user, sheet }: { user: (LimitedUser & { organizations?: OrganizationSuggestions[] }) | Member; sheet?: boolean }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -63,32 +54,30 @@ const UserProfilePage = ({
 
   return (
     <>
-      <UserContext.Provider value={{ user: user }}>
-        <PageHeader
-          id={user.id}
-          title={user.name}
-          type="user"
-          disableScroll={true}
-          isAdmin={isSelf}
-          thumbnailUrl={user.thumbnailUrl}
-          bannerUrl={user.bannerUrl}
-          panel={
-            isSelf && (
-              <div className="max-xs:hidden flex items-center p-2">
-                <Button size="sm" onClick={handleSettingCLick} aria-label="Account">
-                  <UserCog size={16} />
-                  <span className="max-sm:hidden ml-1">{t('common:settings')}</span>
-                </Button>
-              </div>
-            )
-          }
-        />
-        <Suspense>
-          <div className="container">
-            <ProfilePageContent organizationId={organizationId} userId={user.id} sheet={sheet} />
-          </div>
-        </Suspense>
-      </UserContext.Provider>
+      <PageHeader
+        id={user.id}
+        title={user.name}
+        type="user"
+        disableScroll={true}
+        isAdmin={isSelf}
+        thumbnailUrl={user.thumbnailUrl}
+        bannerUrl={user.bannerUrl}
+        panel={
+          isSelf && (
+            <div className="max-xs:hidden flex items-center p-2">
+              <Button size="sm" onClick={handleSettingCLick} aria-label="Account">
+                <UserCog size={16} />
+                <span className="max-sm:hidden ml-1">{t('common:settings')}</span>
+              </Button>
+            </div>
+          )
+        }
+      />
+      <Suspense>
+        <div className="container">
+          <ProfilePageContent organizationId={organizationId} userId={user.id} sheet={sheet} />
+        </div>
+      </Suspense>
     </>
   );
 };

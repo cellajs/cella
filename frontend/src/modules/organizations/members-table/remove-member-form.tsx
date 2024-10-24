@@ -1,8 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { removeMembers as baseRemoveMembers } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
+import { showToast } from '~/lib/toasts';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import type { ContextEntity, Member } from '~/types/common';
@@ -33,7 +33,7 @@ const RemoveMembersForm = ({ members, entityId, entityType = 'organization', org
   });
 
   const onRemoveMember = () => {
-    if (!onlineManager.isOnline()) return toast.warning(t('common:action.offline.text'));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     removeMembers({
       organizationId,

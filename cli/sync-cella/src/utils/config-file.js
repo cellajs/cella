@@ -11,8 +11,9 @@ async function extractFromJson(configFile) {
     const ignoreFile = config.ignore_file;
     const ignoreList = Array.isArray(config.ignore_list) ? config.ignore_list : [];
     const upstreamBranch = config.upstream_branch;
+    const forks = Array.isArray(config.forks) ? config.forks : [];
 
-    return { divergedFile, ignoreFile, ignoreList, upstreamBranch };
+    return { divergedFile, ignoreFile, ignoreList, upstreamBranch, forks };
   } catch (error) {
     return { problems: [`Error reading or parsing JSON file:: ${error}`] };
   }
@@ -31,6 +32,7 @@ async function extractFromTs(configFile) {
       : [];
     const upstreamBranch = fileContent.match(/upstreamBranch:\s*"([^"]+)"/)?.[1];
 
+    // @TODO: Add fork extraction
     return { divergedFile, ignoreFile, ignoreList, upstreamBranch };
   } catch (error) {
     return { problems: [`Error reading or parsing TS file: ${error}`] };
@@ -46,8 +48,9 @@ async function extractFromJsUsingDynamicImport(configFile) {
     const ignoreFile = config.ignoreFile || null;
     const ignoreList = Array.isArray(config.ignoreList) ? config.ignoreList : [];
     const upstreamBranch = config.upstreamBranch;
+    const forks = Array.isArray(config.forks) ? config.forks : [];
 
-    return { divergedFile, ignoreFile, ignoreList, upstreamBranch };
+    return { divergedFile, ignoreFile, ignoreList, upstreamBranch, forks };
   } catch (error) {
     return { problems: [`Error dynamically importing JS file: ${error}
 `] };

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useThemeStore } from '~/store/theme';
 import { cn } from '~/utils/cn';
-import DeviceCarousel from './carusel';
+import DeviceCarousel from './carousel';
 import DeviceDialog from './dialog';
 import DeviceFrame from './frame';
 

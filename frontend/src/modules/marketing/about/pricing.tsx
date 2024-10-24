@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { WaitListForm } from '~/modules/common/wait-list-form';
-import { pricingPlans } from '~/modules/marketing/about-config';
+import { pricingPlans } from '~/modules/marketing/about/about-config';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 

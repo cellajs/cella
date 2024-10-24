@@ -24,9 +24,6 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
 
   const [coverUrl, setCoverUrl] = useState(url);
 
-  const bannerHeight = url ? 'h-[20vw] min-h-40 sm:min-w-52' : 'h-32'; // : 'h-14';
-  const bannerClass = url ? 'bg-background' : numberToColorClass(id);
-
   const setUrl = (bannerUrl: string) => {
     setCoverUrl(bannerUrl);
     dispatchCustomEvent('updateEntityCover', { bannerUrl, entity: type });
@@ -70,7 +67,8 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
   };
   return (
     <div
-      className={`relative flex bg-cover bg-muted bg-center ${bannerHeight} ${bannerClass}`}
+      data-url={!!url}
+      className={`relative flex bg-cover bg-center h-32 ${numberToColorClass(id)} data-[url=true]:h-[20vw] min-h-40 sm:min-w-52`}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && (

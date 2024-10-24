@@ -1,7 +1,7 @@
 import { config } from 'config';
-import { toast } from 'sonner';
 import { updateSelf } from '~/api/me';
 import { i18n } from '~/lib/i18n';
+import { showToast } from '~/lib/toasts';
 import CountryFlag from '~/modules/common/country-flag';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -39,7 +39,7 @@ const UserLanguage = ({ align = 'end', className = '' }: Props) => {
             key={item.value}
             checked={language === item.value}
             onCheckedChange={() => {
-              if (item.value === 'nl') toast.info('NL (Dutch) language will be available upon release.');
+              if (item.value === 'nl') showToast('NL (Dutch) language will be available upon release.', 'info');
               changeLanguage(item.value);
             }}
           >
