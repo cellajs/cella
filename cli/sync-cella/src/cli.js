@@ -49,7 +49,7 @@ export const command = new Command(NAME)
         if (typeof name === 'string') {
           name = name.trim()
         }
-        if (!['diverged', 'pull-upstream', 'push-upstream'].includes(name)) {
+        if (!['diverged', 'pull-upstream', 'pull-fork'].includes(name)) {
             throw new InvalidArgumentError(`Invalid sync-service: ${name}, supported: "diverged", "pull-upstream", "push-upstream"`)
           }
           syncService = name
