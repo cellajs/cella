@@ -25,7 +25,6 @@ export const config = {
       name: 'raak',
       remoteUrl: 'git@github.com:cellajs/raak.git',
       branch: 'development',
-      config: 'cella.config.js',
     },
   ],
   ignoreList: [
