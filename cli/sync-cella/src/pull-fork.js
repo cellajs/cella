@@ -11,6 +11,9 @@ import { runGitCommand } from './utils/run-git-command.js';
 import { extractValues } from './utils/config-file.js';
 import { extractIgnorePatterns, excludeByIgnorePatterns } from './utils/ignore-patterns.js'
 
+// @TODO: Check if in fork a specific config is used
+// @TODO: Check if we can exclude some files from the fork (do we need to config this in Cella or in Fork?)
+// @TODO: Add in utils/config-file.js for extractFromTs a function to extract config forks 
 export async function pullFork({
   prBranchName,
   fork,
