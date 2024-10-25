@@ -1,6 +1,8 @@
 import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
 
+import { rename, unlink } from 'node:fs/promises';
+
 import { fetchRemote } from './fetch-remote.js';
 import { runGitCommand } from './utils/run-git-command.js';
 
@@ -62,7 +64,45 @@ export async function pullFork({
   // Step 3: Fetch fork
   await fetchRemote({ localBranch: prBranchName, remoteUrl: fork.remoteUrl, remoteName: fork.name });
 
-  // Step 4: Merge changes from fork to 'prBranch'
+  // Step 4: retrive the ignore list from forked repo
+  const retriveSpinner = yoctoSpinner({
+    text: `Retriving ${fork.name}/${fork.branch} ignore list`,
+  }).start();
+
+  let ignoreList = [];
+
+  try {
+    // Step 1: Rename the current cella.config.js to tmp.cella.config.js
+    const originalConfigPath = `${targetFolder}/cella.config.js`;
+    const tempConfigPath = `${targetFolder}/tmp.cella.config.js`;
+
+    // Rename the original config file
+    await rename(originalConfigPath, tempConfigPath);
+
+    // Step 2: Checkout the forked repo config
+    await runGitCommand({ targetFolder, command: `checkout ${fork.name}/${fork.branch} -- cella.config.js` });
+
+    // Step 3: Extract the ignore list
+    const config = await extractValues('cella.config.js');
+    ignoreList = config.ignoreList;
+
+    // Step 4: Remove the new cella.config.js and rename the tmp file back
+    await unlink(originalConfigPath); // Optional: Only if you want to remove the newly checked out config
+    await rename(tempConfigPath, originalConfigPath);
+
+    retriveSpinner.succeed('Successfully retrieved ignore list from forked repo.');
+
+  } catch (e) {
+    console.error(e);
+    retriveSpinner.error('Failed to retrive ignore list from forked repo.');
+    process.exit(1);
+  }
+
+  console.log('ignoreList: ', ignoreList)
+  console.info(`${colors.green('✔')} Successfully merged changes from ${fork.name}/${fork.branch} to ${prBranchName}, resolving conflicts where necessary.`);
+
+  process.exit(1);
+  // Step 5: Merge changes from fork to 'prBranch'
   const mergeSpinner = yoctoSpinner({
     text: `Merging changes from ${fork.name}/${fork.branch} to ${prBranchName}`,
   }).start();
