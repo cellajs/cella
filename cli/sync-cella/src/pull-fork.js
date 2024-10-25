@@ -4,6 +4,8 @@ import colors from 'picocolors';
 import { fetchRemote } from './fetch-remote.js';
 import { runGitCommand } from './utils/run-git-command.js';
 
+import { extractValues } from './utils/config-file.js';
+
 export async function pullFork({
   ignoreFile,
   ignoreList,
@@ -63,6 +65,10 @@ export async function pullFork({
 
   // Step 3: Fetch fork
   await fetchRemote({ localBranch: prBranchName, remoteUrl: fork.remoteUrl, remoteName: fork.name });
+
+  // Step 4: Get forked config file if exists
+  await runGitCommand({ targetFolder, command: `checkout ${remoteName}/${fork.branch} -- ${fork.config}` })
+
 
   console.info(`${colors.green('✔')} Successfully merged changes from ${fork.remoteUrl}/${fork.name} to ${prBranchName}, resolving conflicts where necessary.`);
   console.info();
