@@ -1,3 +1,4 @@
+import { fork } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path'
 
@@ -11,7 +12,7 @@ async function extractFromJson(configFile) {
     const ignoreFile = config.ignore_file;
     const ignoreList = Array.isArray(config.ignore_list) ? config.ignore_list : [];
     const upstreamBranch = config.upstream_branch;
-    const forks = Array.isArray(config.forks) ? config.forks : [];
+    const forks = (Array.isArray(config.forks) ? config.forks : []).filter(fork => fork.name && fork.remoteUrl && fork.branch);
 
     return { divergedFile, ignoreFile, ignoreList, upstreamBranch, forks };
   } catch (error) {
@@ -48,7 +49,7 @@ async function extractFromJsUsingDynamicImport(configFile) {
     const ignoreFile = config.ignoreFile || null;
     const ignoreList = Array.isArray(config.ignoreList) ? config.ignoreList : [];
     const upstreamBranch = config.upstreamBranch;
-    const forks = Array.isArray(config.forks) ? config.forks : [];
+    const forks = (Array.isArray(config.forks) ? config.forks : []).filter(fork => fork.name && fork.remoteUrl && fork.branch);
 
     return { divergedFile, ignoreFile, ignoreList, upstreamBranch, forks };
   } catch (error) {

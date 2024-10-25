@@ -65,7 +65,6 @@ async function main() {
     cli.upstreamBranch = upstreamBranch;
   }
 
-  // @TODO: Add support for multiple forks (ask selection)
   if (forks?.length === 1) {
     cli.fork = forks[0];
   }
@@ -109,6 +108,27 @@ async function main() {
       default: defaultPrBranchName,
       validate: (input) => input.length > 0 || 'PR branch name cannot be empty.',
     });
+
+    if (!cli.fork) {
+      if (!forks.length) {
+        console.error('No valid forks found in the config file.');
+        process.exit(1);
+      }
+
+      cli.fork = await select({
+        message: 'Select the fork you want to pull from:',
+        choices: forks.map(fork => ({ name: fork.name, value: fork })),
+      });
+    } else {
+      const proceed = await confirm({
+        message: `Currently selected fork "${cli.fork.name}" with remote url "${cli.fork.remoteUrl}" and branch "${cli.fork.branch}". Do you want to proceed?`,
+        default: true,
+      });
+  
+      if (!proceed) {
+        process.exit(1);
+      }
+    }
   };
 
   // Run the selected sync service and pass the options
