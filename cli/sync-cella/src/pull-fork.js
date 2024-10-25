@@ -1,12 +1,15 @@
 import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
 
+import { DEFAULT_CONFIG_FILE } from './constants.js';
+
 import { rename, unlink } from 'node:fs/promises';
 
 import { fetchRemote } from './fetch-remote.js';
 import { runGitCommand } from './utils/run-git-command.js';
 
 import { extractValues } from './utils/config-file.js';
+import { extractIgnorePatterns, excludeByIgnorePatterns } from './utils/ignore-patterns.js'
 
 export async function pullFork({
   prBranchName,
@@ -72,23 +75,26 @@ export async function pullFork({
   let ignoreList = [];
 
   try {
-    // Step 1: Rename the current cella.config.js to tmp.cella.config.js
-    const originalConfigPath = `${targetFolder}/cella.config.js`;
-    const tempConfigPath = `${targetFolder}/tmp.cella.config.js`;
+    // Step 1: Rename the current DEFAULT_CONFIG_FILE to tmp.DEFAULT_CONFIG_FILE
+    const originalConfigPath = `${targetFolder}/${DEFAULT_CONFIG_FILE}`;
+    const tempConfigPath = `${targetFolder}/tmp.${DEFAULT_CONFIG_FILE}`;
 
     // Rename the original config file
     await rename(originalConfigPath, tempConfigPath);
 
     // Step 2: Checkout the forked repo config
-    await runGitCommand({ targetFolder, command: `checkout ${fork.name}/${fork.branch} -- cella.config.js` });
+    await runGitCommand({ targetFolder, command: `checkout ${fork.name}/${fork.branch} -- ${DEFAULT_CONFIG_FILE}` });
 
     // Step 3: Extract the ignore list
-    const config = await extractValues('cella.config.js');
+    const config = await extractValues(DEFAULT_CONFIG_FILE);
     ignoreList = config.ignoreList;
 
-    // Step 4: Remove the new cella.config.js and rename the tmp file back
+    // Step 4: Remove the new DEFAULT_CONFIG_FILE and rename the tmp file back
     await unlink(originalConfigPath); // Optional: Only if you want to remove the newly checked out config
     await rename(tempConfigPath, originalConfigPath);
+
+    // step 5: Restor git to the original state
+    await runGitCommand({ targetFolder, command: `checkout ${DEFAULT_CONFIG_FILE}` });
 
     retriveSpinner.success('Successfully retrieved ignore list from forked repo.');
 
@@ -98,10 +104,19 @@ export async function pullFork({
     process.exit(1);
   }
 
-  console.log('ignoreList: ', ignoreList)
-  console.info(`${colors.green('✔')} Successfully merged changes from ${fork.name}/${fork.branch} to ${prBranchName}, resolving conflicts where necessary.`);
+  // Create and apply ignore patterns
+  const ignoreSpinner = yoctoSpinner({
+    text: 'Creating ignore patterns',
+  }).start()
 
-  process.exit(1);
+  const ignorePatterns = await extractIgnorePatterns({ ignoreList });
+
+  if (ignorePatterns.length > 0) {
+    ignoreSpinner.success('Successfully created ignore patterns.');
+  } else {
+    ignoreSpinner.warning('No ignore list found. Proceeding without ignoring files.');
+  }
+  
   // Step 5: Merge changes from fork to 'prBranch'
   const mergeSpinner = yoctoSpinner({
     text: `Merging changes from ${fork.name}/${fork.branch} to ${prBranchName}`,
@@ -110,8 +125,9 @@ export async function pullFork({
   try {
     // List files from local prBranch and convert the file paths to unique directories
     const localFiles = (await runGitCommand({ targetFolder, command: 'ls-files' })).split('\n').filter(Boolean);
+    const filteredLocalFiles = excludeByIgnorePatterns(localFiles, ignorePatterns);
     
-    const uniqueLocalDirs = [...new Set(localFiles
+    const uniqueLocalDirs = [...new Set(filteredLocalFiles
       .map(file => {
         const parts = file.split('/');
         parts.pop(); // Remove the last part (the file name) to get the directory path
@@ -121,8 +137,9 @@ export async function pullFork({
     )];
     // List files from the forked branch and filter `forkedFiles` to include only files in directories from `uniqueLocalDirs`
     const forkedFiles = (await runGitCommand({ targetFolder, command: `ls-tree -r ${fork.name}/${fork.branch} --name-only` })).split('\n').filter(Boolean);
+    const filteredForkedFiles = excludeByIgnorePatterns(forkedFiles, ignorePatterns);
 
-    const filesToCheckout = forkedFiles.filter(file => {
+    const filesToCheckout = filteredForkedFiles.filter(file => {
       // Check if the file's directory is in `uniqueLocalDirs`
       const fileDir = file.split('/').slice(0, -1).join('/');
       return uniqueLocalDirs.includes(fileDir);
