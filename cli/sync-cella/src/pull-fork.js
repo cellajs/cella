@@ -90,7 +90,7 @@ export async function pullFork({
     await unlink(originalConfigPath); // Optional: Only if you want to remove the newly checked out config
     await rename(tempConfigPath, originalConfigPath);
 
-    retriveSpinner.succeed('Successfully retrieved ignore list from forked repo.');
+    retriveSpinner.success('Successfully retrieved ignore list from forked repo.');
 
   } catch (e) {
     console.error(e);
