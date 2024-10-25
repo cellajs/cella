@@ -88,9 +88,12 @@ export async function pullFork({
       return uniqueLocalDirs.includes(fileDir);
     });
 
+    console.log('uniqueLocalDirs: ', uniqueLocalDirs)
+    console.log('forkedFiles.length: ', forkedFiles.length)
+    console.log('filesToCheckout: ', filesToCheckout)
+
     // Checkout all forked files that are in the same directories as the local files
     if (filesToCheckout.length > 0) {
-      console.log('filesToCheckout: ', filesToCheckout)
       await runGitCommand({ targetFolder, command: `checkout ${fork.name}/${fork.branch} -- ${filesToCheckout.join(' ')}` });
     };
 
