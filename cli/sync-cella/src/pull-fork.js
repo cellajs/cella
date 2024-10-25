@@ -90,6 +90,7 @@ export async function pullFork({
 
     // Checkout all forked files that are in the same directories as the local files
     if (filesToCheckout.length > 0) {
+      console.log('filesToCheckout: ', filesToCheckout)
       await runGitCommand({ targetFolder, command: `checkout ${fork.name}/${fork.branch} -- ${filesToCheckout.join(' ')}` });
     };
 
