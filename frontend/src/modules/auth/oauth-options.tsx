@@ -59,61 +59,49 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
   const redirectQuery = redirect ? `?redirect=${redirect}` : '';
 
   return (
-    <>
-      {(enabledStrategies.includes('oauth') || hasPasskey) && (
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="text-muted-foreground px-2">{t('common:or')}</span>
-        </div>
+    <div data-mode={mode} className="group flex flex-col space-y-2">
+      {hasPasskey && (
+        <Button type="button" onClick={() => passkeyAuth(email, successesCallback)} variant="plain" className="w-full gap-1.5">
+          <Fingerprint size={16} />
+          {t('common:passkey_sign_in')}
+        </Button>
       )}
+      {enabledStrategies.includes('oauth') &&
+        config.enabledOauthProviders.map((provider) => {
+          // Map the provider data
+          const providerData = mapOauthProviders.find((p) => p.id === provider);
+          if (!providerData) return;
 
-      <div data-mode={mode} className="group flex flex-col space-y-2">
-        {hasPasskey && actionType === 'signIn' && (
-          <Button type="button" onClick={() => passkeyAuth(email, successesCallback)} variant="plain" className="w-full gap-1.5">
-            <Fingerprint size={16} />
-            {t('common:passkey_sign_in')}
-          </Button>
-        )}
-        {enabledStrategies.includes('oauth') &&
-          config.enabledOauthProviders.map((provider) => {
-            // Map the provider data
-            const providerData = mapOauthProviders.find((p) => p.id === provider);
-            if (!providerData) return;
-
-            return (
-              <Button
-                loading={loading}
-                key={provider}
-                type="button"
-                variant="outline"
-                className="gap-1.5"
-                onClick={() => {
-                  setLoading(true);
-                  if (token) {
-                    acceptInvite({ token, oauth: provider }).then(() => {
-                      window.location.href = config.defaultRedirectPath;
-                    });
-                  } else {
-                    window.location.href = providerData.url + redirectQuery;
-                  }
-                }}
-              >
-                <img
-                  data-provider={provider}
-                  src={`/static/images/${provider.toLowerCase()}-icon.svg`}
-                  alt={provider}
-                  className="w-4 h-4 group-data-[mode=dark]:data-[provider=github]:invert"
-                  loading="lazy"
-                />
-                {token
-                  ? t('common:accept')
-                  : actionType === 'signUp'
-                    ? t('common:sign_up')
-                    : t('common:sign_in_with', { provider: providerData.name })}
-              </Button>
-            );
-          })}
-      </div>
-    </>
+          return (
+            <Button
+              loading={loading}
+              key={provider}
+              type="button"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => {
+                setLoading(true);
+                if (token) {
+                  acceptInvite({ token, oauth: provider }).then(() => {
+                    window.location.href = config.defaultRedirectPath;
+                  });
+                } else {
+                  window.location.href = providerData.url + redirectQuery;
+                }
+              }}
+            >
+              <img
+                data-provider={provider}
+                src={`/static/images/${provider.toLowerCase()}-icon.svg`}
+                alt={provider}
+                className="w-4 h-4 group-data-[mode=dark]:data-[provider=github]:invert"
+                loading="lazy"
+              />
+              {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in_with', { provider: providerData.name })}
+            </Button>
+          );
+        })}
+    </div>
   );
 };
 
