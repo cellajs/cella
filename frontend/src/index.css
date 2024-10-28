@@ -122,5 +122,20 @@
   }
 }
 
+@layer utilities {
+  .submenu-section:before {
+    border-left: 2px dotted hsl(var(--foreground));
+    content: "";
+    display: block;
+    position: absolute;
+    margin-top: 0.5rem;
+    margin-left: 1.7rem;
+    opacity: 0.5;
+    z-index: 0;
+    width: 1px;
+    height: calc(100% - 1.5rem);
+  }
+}
+
 /* Override tailwind here */
 /* @layer components {} */
