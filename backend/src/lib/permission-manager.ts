@@ -1,5 +1,6 @@
 import {
   type AccessPolicyConfiguration,
+  Context as EntityContext,
   HierarchicalEntity,
   type Membership,
   MembershipAdapter,
@@ -16,7 +17,7 @@ import { type EntityModel, resolveEntity } from './entity';
 /**
  * Define hierarchical structure for contexts with roles, and for products without roles.
  */
-// const organization = new EntityContext('organization', ['admin', 'member']);
+new EntityContext('organization', ['admin', 'member']);
 
 /**
  * Initialize the PermissionManager and configure access policies.
@@ -103,7 +104,7 @@ export const getValidEntity = async <T extends ContextEntity>(
 
   return {
     entity,
-    isAllowed: isAllowed || user.role !== 'admin',
+    isAllowed: isAllowed || user.role === 'admin',
     membership: entityMembership,
   };
 };
