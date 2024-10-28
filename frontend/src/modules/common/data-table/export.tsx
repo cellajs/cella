@@ -1,5 +1,6 @@
 import { Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import router from '~/lib/router';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -35,7 +36,13 @@ const Export = <R extends Record<string, any>>({ filename, columns, selectedRows
     <DropdownMenu>
       <TooltipButton className={className} toolTipContent={t('common:export_pdf_csv')}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex max-xs:hidden">
+          <Button
+            variant="outline"
+            className="flex max-xs:hidden"
+            onClick={() => {
+              toast.error(t('common:error.image_upload_failed'));
+            }}
+          >
             <Download size={16} />
             <span className="ml-1 max-xl:hidden">{t('common:export')}</span>
           </Button>

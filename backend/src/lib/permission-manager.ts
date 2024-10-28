@@ -1,7 +1,5 @@
-// Import required modules from '@cellajs/permission-manager'
 import {
   type AccessPolicyConfiguration,
-  Context,
   HierarchicalEntity,
   type Membership,
   MembershipAdapter,
@@ -9,11 +7,16 @@ import {
   type Subject,
   SubjectAdapter,
 } from '@cellajs/permission-manager';
+// Import required modules from '@cellajs/permission-manager'
+import type { MembershipModel } from '#/db/schema/memberships';
+import type { ContextEntity } from '#/types/common';
+import { getContextUser, getMemberships } from './context';
+import { type EntityModel, resolveEntity } from './entity';
 
 /**
  * Define hierarchical structure for contexts with roles, and for products without roles.
  */
-new Context('organization', ['admin', 'member']);
+// const organization = new EntityContext('organization', ['admin', 'member']);
 
 /**
  * Initialize the PermissionManager and configure access policies.
@@ -21,7 +24,7 @@ new Context('organization', ['admin', 'member']);
 const permissionManager = new PermissionManager('permissionManager');
 
 permissionManager.accessPolicies.configureAccessPolicies(({ subject, contexts }: AccessPolicyConfiguration) => {
-  // Configure actions based on the subject (ie. organization)
+  // Configure actions based on the subject
   switch (subject.name) {
     case 'organization':
       contexts.organization.admin({ create: 1, read: 1, update: 1, delete: 1 });
@@ -78,6 +81,32 @@ class AdaptedSubjectAdapter extends SubjectAdapter {
 // Instantiate adapters to be used in the system
 new AdaptedSubjectAdapter();
 new AdaptedMembershipAdapter();
+
+export const getValidEntity = async <T extends ContextEntity>(
+  entityType: T,
+  action: 'create' | 'read' | 'update' | 'delete',
+  idOrSlug: string,
+): Promise<{
+  entity: EntityModel<T> | null;
+  isAllowed: boolean;
+  membership: MembershipModel | null;
+}> => {
+  const entity = (await resolveEntity(entityType, idOrSlug)) || null;
+
+  const user = getContextUser();
+  const memberships = getMemberships();
+
+  // Check if the user is allowed to perform an update action in the organization
+  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
+
+  const entityMembership = memberships.find((m) => entity && [m.organizationId].includes(entity.id) && m.type === entityType) || null;
+
+  return {
+    entity,
+    isAllowed: isAllowed || user.role !== 'admin',
+    membership: entityMembership,
+  };
+};
 
 // Export the configured PermissionManager instance
 export default permissionManager;

@@ -355,7 +355,9 @@ const generalRoutes = app
   .get('/sse', isAuthenticated, async (ctx) => {
     const user = getContextUser();
     return streamSSE(ctx, async (stream) => {
+      ctx.header('Content-Encoding', '');
       streams.set(user.id, stream);
+
       console.info('User connected to SSE', user.id);
       await stream.writeSSE({
         event: 'connected',

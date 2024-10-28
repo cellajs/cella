@@ -14,6 +14,7 @@ import type { UserMenuItem } from './types/common';
 // Set entities paths
 export const baseEntityRoutes = {
   user: '/user/$idOrSlug',
+  userInOrg: '/$orgIdOrSlug/user/$idOrSlug',
   organization: '/$idOrSlug',
 } as const;
 

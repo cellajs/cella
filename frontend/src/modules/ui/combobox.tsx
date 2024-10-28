@@ -67,6 +67,7 @@ const Combobox: React.FC<ComboboxProps> = ({
         <Button
           ref={ref}
           variant="input"
+          // biome-ignore lint/a11y/useSemanticElements: <explanation>
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between truncate font-normal"

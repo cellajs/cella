@@ -14,7 +14,7 @@ export function SimpleHeader({ heading, text, children, className = '' }: Simple
   return (
     <div className={cn('flex h-auto flex-col gap-2 md:gap-3', className)}>
       {heading && <h1 className="font-heading text-xl font-semibold">{t(heading)}</h1>}
-      {text && <p className="max-sm:hidden text-muted-foreground font-light text-base">{t(text)}</p>}
+      {text && <p className="text-muted-foreground font-light text-base">{t(text)}</p>}
       {children}
     </div>
   );

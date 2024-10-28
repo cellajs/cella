@@ -5,13 +5,38 @@ import type { UserMenu, UserMenuItem } from '~/types/common';
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
   const { menu } = useNavigationStore.getState();
 
-  return menuSections.reduce(
+  const updatedMenu = menuSections.reduce(
     (acc, { name }) => {
       if (menu[name]) acc[name] = transform(menu[name]);
       return acc;
     },
     {} as Record<keyof UserMenu, UserMenuItem[]>,
   );
+  useNavigationStore.setState({ menu: updatedMenu });
+};
+
+// Adding new item on local store user's menu
+export const addMenuItem = (newEntity: UserMenuItem, sectionName: keyof UserMenu, parentSlug?: string) => {
+  const menu = useNavigationStore.getState().menu;
+
+  const add = (items: UserMenuItem[]): UserMenuItem[] => {
+    return items.map((item) => {
+      if (!parentSlug || item.slug !== parentSlug) return item;
+
+      // If parent is found, add new entity to its submenu
+      return {
+        ...item,
+        submenu: item.submenu ? [...item.submenu, newEntity] : [newEntity],
+      };
+    });
+  };
+
+  const updatedMenuSection = parentSlug ? add(menu[sectionName]) : [...menu[sectionName], { ...newEntity, submenu: [] }];
+
+  return {
+    ...menu,
+    [sectionName]: updatedMenuSection,
+  };
 };
 
 export const updateMenuItem = (updatedEntity: UserMenuItem) => {

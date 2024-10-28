@@ -1,7 +1,6 @@
 import { FilePanelController, type FilePanelProps, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/shadcn/style.css';
-import DOMPurify from 'dompurify';
 import { type KeyboardEventHandler, useCallback, useEffect, useRef, useState } from 'react';
 import * as Badge from '~/modules/ui/badge';
 import * as Button from '~/modules/ui/button';
@@ -31,8 +30,9 @@ import type { Member } from '~/types/common';
 import type { Block } from '@blocknote/core';
 import { FloatingPortal } from '@floating-ui/react';
 
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
-import { focusEditor, getContentAsString, handleSubmitOnEnter, trimInlineContentText } from '~/modules/common/blocknote/helpers';
+import { focusEditor, getContentAsString, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import './styles.css';
 
 type BlockNoteProps = {
@@ -84,8 +84,15 @@ export const BlockNote = ({
   const emojiPicker = slashMenu ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') : emojis;
 
   const triggerDataUpdate = () => {
+    // if user in Side Menu does not update
+    if (editor.sideMenu.view?.state?.show) return;
+
     // if user in Formatting Toolbar does not update
-    if (editor.getSelection()) return;
+    if (editor.formattingToolbar.shown) return;
+
+    // if user in Slash Menu does not update
+    if (editor.suggestionMenus.shown) return;
+
     // if user in file panel does not update
     if (editor.filePanel?.shown) return;
 
@@ -97,7 +104,6 @@ export const BlockNote = ({
 
     // Converts the editor's contents from Block objects to HTML and sanitizes it
     const descriptionHtml = await editor.blocksToFullHTML(editor.document);
-    const cleanDescription = DOMPurify.sanitize(descriptionHtml);
 
     // Get the current and old block content as strings for comparison
     const newHtml = getContentAsString(editor.document as Block[]);
@@ -107,11 +113,10 @@ export const BlockNote = ({
     // Check if there is any difference in the content
     if (oldHtml !== newHtml) onTextDifference?.();
 
-    // Prepare the content for further updates (trims and sanitizes)
-    const contentToUpdate = trimInlineContentText(cleanDescription);
     // Update the state or trigger the onChange callback in creation mode
-    if (isCreationMode) onChange?.(contentToUpdate);
-    setText(contentToUpdate);
+    if (isCreationMode) onChange?.(descriptionHtml);
+
+    setText(descriptionHtml);
   }, [editor, text, isCreationMode, onChange, onTextDifference, setText]);
 
   const handleKeyDown: KeyboardEventHandler = async (event) => {
@@ -141,6 +146,8 @@ export const BlockNote = ({
     const blockUpdate = async (html: string) => {
       if (wasInitial.current && !isCreationMode) return;
 
+      if (wasInitial.current && isCreationMode && html !== '') return;
+
       const blocks = await editor.tryParseHTMLToBlocks(html);
 
       // Get the current blocks and the new blocks' content as strings to compare them
@@ -151,6 +158,23 @@ export const BlockNote = ({
       if (!isCreationMode && currentBlocks === newBlocksContent) return;
 
       editor.replaceBlocks(editor.document, blocks);
+
+      // Add double-click event listener to images
+      const imageBlocks = blocks.filter((block) => block.type === 'image');
+      const slides = imageBlocks.map((block) => ({ src: block.props.url }));
+      for (const block of blocks) {
+        if (block.type === 'image') {
+          const index = imageBlocks.findIndex((b) => b.id === block.id);
+          const element = document.querySelector(`[data-id="${block.id}"]`);
+          (element as HTMLDivElement).ondblclick = () => {
+            dispatchCustomEvent('openCarousel', {
+              slide: index,
+              slides,
+            });
+          };
+        }
+      }
+
       // Handle focus:
       // 1. In creation mode, focus the editor only if it hasn't been initialized before.
       // 2. Outside creation mode, focus the editor every time.
@@ -168,9 +192,8 @@ export const BlockNote = ({
   const onBeforeLoadHandle = useCallback(async () => {
     // Converts the editor's contents from Block objects to HTML and sanitizes it
     const descriptionHtml = await editor.blocksToFullHTML(editor.document);
-    const cleanDescription = DOMPurify.sanitize(descriptionHtml);
     if (!wasInitial.current) return;
-    updateData(cleanDescription);
+    updateData(descriptionHtml);
   }, [editor, wasInitial]);
 
   useEffect(() => {

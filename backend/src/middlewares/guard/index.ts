@@ -1,7 +1,6 @@
 import type { Context, Next } from 'hono';
-import { getContextUser, getMemberships } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity';
-import permissionManager from '#/lib/permission-manager';
+import { getContextUser } from '#/lib/context';
+import { getValidEntity } from '#/lib/permission-manager';
 export { isAuthenticated } from './is-authenticated';
 
 import { getConnInfo } from '@hono/node-server/conninfo';
@@ -9,6 +8,7 @@ import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { errorResponse } from '#/lib/errors';
 
+import { config } from 'config';
 import { env } from './../../../env';
 
 const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
@@ -38,22 +38,22 @@ export async function isPublicAccess(_: Context, next: Next): Promise<void> {
 
 // Organization access is a hard check for accessing organization-scoped routes.
 export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response | undefined> {
-  const memberships = getMemberships();
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
 
   if (!orgIdOrSlug) return errorResponse(ctx, 400, 'organization_missing', 'warn');
 
-  // Find the organization by id or slug
-  const organization = await resolveEntity('organization', orgIdOrSlug);
+  if (!config.contextEntityTypes.includes('organization')) {
+    return errorResponse(ctx, 403, 'forbidden', 'warn');
+  }
 
-  if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { orgIdOrSlug });
+  const { entity, isAllowed } = await getValidEntity('organization', 'read', orgIdOrSlug);
 
-  // Check if user is allowed to read organization
-  const canReadOrg = permissionManager.isPermissionAllowed(memberships, 'read', organization);
-  if (!canReadOrg) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization', { orgIdOrSlug });
+  if (!entity || !isAllowed) {
+    return errorResponse(ctx, 403, 'forbidden', 'warn');
+  }
 
   // Set organization with membership in context
-  ctx.set('organization', organization);
+  ctx.set('organization', entity);
 
   await next();
 }

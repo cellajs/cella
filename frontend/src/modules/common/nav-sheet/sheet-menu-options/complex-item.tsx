@@ -64,7 +64,7 @@ export const ComplexOptionElement = ({
     <div data-submenu={!!item.submenu} className="group/menuOptions relative my-1">
       <div ref={dragRef}>
         <MenuItemOptions item={item} />
-        {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
+        {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
           <div
             data-have-inactive={!!item.submenu.filter((i) => i.membership.archived).length}
             data-submenu={true}

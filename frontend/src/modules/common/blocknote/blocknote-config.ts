@@ -10,7 +10,7 @@ export const customBlockTypeSelectItems: BlockTypes[] = ['heading', 'paragraph',
 
 // Select with blocks style can be changed and choose to witch style
 export const canChangeStyleForBlocks: BlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
-export const customTextStyleSelect: BasicStyleTypes[] = ['bold', 'italic', 'underline', 'strike'];
+export const customTextStyleSelect: BasicStyleTypes[] = ['bold', 'italic', 'underline', 'strike', 'code'];
 
 // set not more the 9 cos user cant use the num click to activate it
 export const customSlashIndexedItems: SlashMenuItems[] = ['Image', 'Video', 'File', 'Bullet List', 'Numbered List', 'Check List', 'Notify', 'Emoji'];
@@ -19,7 +19,7 @@ export const customSlashNotIndexedItems: SlashMenuItems[] = ['Table', 'Audio', '
 // config for custom formatting bar
 // removed text position left|center|right, also indentation & text coloring
 export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
-  blockTypeSelect: true,
+  blockTypeSelect: false,
   blockStyleSelect: true,
   blockAlignSelect: false,
   textColorSelect: true,

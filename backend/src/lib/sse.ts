@@ -2,7 +2,7 @@ import { streams } from '#/modules/general';
 
 const sendSSE = (userId: string, eventName: string, data: Record<string, unknown>): void => {
   const stream = streams.get(userId);
-  if (stream === undefined) return;
+  if (!stream) return;
 
   stream.writeSSE({
     event: eventName,

@@ -1,10 +1,11 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useCallback, useEffect, useState } from 'react';
 import { customSlashIndexedItems, customSlashNotIndexedItems } from '~/modules/common/blocknote/blocknote-config';
+import type { CustomBlockNoteSchema } from '../types';
 
 const sortList = [...customSlashIndexedItems, ...customSlashNotIndexedItems];
 
-export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>) => {
+export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, editor: CustomBlockNoteSchema) => {
   const { items, selectedIndex, onItemClick } = props;
   const [inputValue, setInputValue] = useState('');
 
@@ -20,7 +21,7 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
   });
 
   const handleKeyPress = useCallback(
-    (e: KeyboardEvent) => {
+    async (e: KeyboardEvent) => {
       const pressedKey = e.key;
 
       // Handle backspace key
@@ -35,12 +36,29 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
       if (!Number.isNaN(itemIndex) && itemIndex >= 0 && itemIndex < customSlashIndexedItems.length && inputValue.length === 0) {
         const item = sortedItems[itemIndex];
         if (!item) return;
-        onItemClick?.(item);
-        e.preventDefault();
+        // media block opens only if document have next block
+        if (item.group === 'Media') {
+          const { nextBlock } = editor.getTextCursorPosition();
+
+          // if exist next block trigger item
+          if (nextBlock) return triggerItemClick(item, e);
+
+          // if no next block create one and trigger item
+          const block = await editor.tryParseMarkdownToBlocks('');
+          editor.replaceBlocks(editor.document, [...editor.document, ...block]);
+          setTimeout(() => triggerItemClick(item, e), 0);
+          return;
+        }
+        triggerItemClick(item, e);
       }
     },
-    [sortedItems, onItemClick],
+    [sortedItems],
   );
+
+  const triggerItemClick = (item: DefaultReactSuggestionItem, event: KeyboardEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    onItemClick?.(item);
+    event.preventDefault();
+  };
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
@@ -56,10 +74,8 @@ export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>
             {index === customSlashIndexedItems.length && <hr className="slash-menu-separator" />}
             <div
               className={`slash-menu-item${isSelected ? ' selected' : ''}`}
-              onClick={() => onItemClick?.(item)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') onItemClick?.(item);
-              }}
+              onMouseDown={(e) => triggerItemClick(item, e)}
+              onKeyDown={() => {}}
               // biome-ignore lint/a11y/useSemanticElements: <explanation>
               role="button"
               tabIndex={0}

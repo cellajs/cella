@@ -28,7 +28,7 @@ const baseActions = {
   cropWidescreenVertical: false,
 };
 
-export const getImageEditorOptions = (mode: 'avatar' | 'cover' | undefined): ImageEditorOptions => {
+export const getImageEditorOptions = (mode: 'avatar' | 'cover' | 'attachment' | undefined): ImageEditorOptions => {
   const aspectRatio = mode === 'cover' ? 3 / 1 : 1; // Default to 1 for 'avatar' and undefined modes
 
   return {

@@ -18,7 +18,7 @@ export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount }: MenuArc
         disabled={inactiveCount < 1}
         variant="secondary"
         className="w-full group mb-1 cursor-pointer bg-background p-0 transition duration-300 focus-visible:outline-none ring-inset focus-visible:ring-offset-0 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground
-        group-data-[submenu=true]/archived:h-8 group-data-[submenu=true]/archived:relative group-data-[submenu=true]/archived:menu-item-sub"
+        group-data-[submenu=true]/archived:h-8"
       >
         <div className="w-14 py-2 flex justify-center items-center">
           <Archive size={16} className="mr-0.5 items-center opacity-75" />

@@ -64,7 +64,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
 
         <div className="flex py-2 flex-col truncate pl-1">
           {/* Page title */}
-          <h1 className="md:text-xl -mt-1 truncate leading-6 font-semibold">{title}</h1>
+          <h1 className="md:text-xl -mt-0.5 md:-mt-1 truncate leading-6 font-semibold">{title}</h1>
 
           {/* Breadcrumb */}
           <Breadcrumb>
@@ -87,7 +87,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
                     <BreadcrumbItem>
                       <BreadcrumbLink className="flex items-center" asChild>
                         <Link to={baseEntityRoutes[fetchedParent.entity]} params={{ idOrSlug: fetchedParent.slug }}>
-                          <span>{fetchedParent.name}</span>
+                          <span className="truncate max-sm:max-w-24">{fetchedParent.name}</span>
                         </Link>
                       </BreadcrumbLink>
                     </BreadcrumbItem>

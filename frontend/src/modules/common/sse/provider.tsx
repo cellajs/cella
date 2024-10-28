@@ -25,7 +25,10 @@ export const SSEProvider: FC<Props> = ({ children }) => {
     });
 
     source.onopen = async () => {
-      if (reconnectAttempt) await Promise.all([getAndSetMe(), getAndSetMenu()]); // Refetch data some sse events might have been skipped
+      if (reconnectAttempt) {
+        await Promise.all([getAndSetMe(), getAndSetMenu()]); // Refetch data some sse events might have been skipped
+        console.info('SSE reconnection successful!');
+      }
       setIsReconnecting(false);
     };
 

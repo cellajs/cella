@@ -9,9 +9,9 @@ import {
   UnnestBlockButton,
 } from '@blocknote/react';
 import { CustomTextAlignSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-align-change';
-import { CustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
 import { CustomTextStyleSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-text-type-change';
 import type { CustomFormatToolBarConfig } from '~/modules/common/blocknote/types';
+import { CustomBlockTypeSelect } from './custom-block-type-change';
 
 export const CustomFormattingToolbar = ({ config }: { config: CustomFormatToolBarConfig }) => (
   <FormattingToolbarController

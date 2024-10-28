@@ -8,10 +8,9 @@ import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { getContextUser, getMemberships } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
-import permissionManager from '#/lib/permission-manager';
+import { getValidEntity } from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -124,20 +123,17 @@ const organizationsRoutes = app
   .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
+    if (!config.contextEntityTypes.includes('organization')) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn');
+    }
+
+    const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'update', idOrSlug);
+
+    if (!organization || !isAllowed || !membership) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn');
+    }
+
     const user = getContextUser();
-    const memberships = getMemberships();
-
-    // Resolve organization
-    const organization = await resolveEntity('organization', idOrSlug);
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { idOrSlug });
-
-    // If not allowed and not admin, return forbidden
-    const canUpdate = permissionManager.isPermissionAllowed(memberships, 'update', organization);
-    if (!canUpdate && user.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
-
-    // TODO remove this and user permission manager once it returns membership
-    const userMembership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization');
-    if (!userMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const updatedFields = ctx.req.valid('json');
     const slug = updatedFields.slug;
@@ -174,7 +170,7 @@ const organizationsRoutes = app
     // Prepare data
     const data = {
       ...updatedOrganization,
-      membership: userMembership,
+      membership,
       counts: {
         memberships: memberCounts,
       },
@@ -188,18 +184,13 @@ const organizationsRoutes = app
   .openapi(organizationRoutesConfig.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    const user = getContextUser();
-    const memberships = getMemberships();
+    if (!config.contextEntityTypes.includes('organization')) {
+      return errorResponse(ctx, 403, 'forbidden', 'warn');
+    }
 
-    const organization = await resolveEntity('organization', idOrSlug);
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { id: idOrSlug });
+    const { entity: organization, membership, isAllowed } = await getValidEntity('organization', 'read', idOrSlug);
 
-    // If not allowed and not admin, return forbidden
-    const canRead = permissionManager.isPermissionAllowed(memberships, 'read', organization);
-    if (!canRead && user.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
-
-    const membership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization');
-    if (!membership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+    if (!organization || !isAllowed || !membership) return errorResponse(ctx, 403, 'forbidden', 'warn');
 
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 

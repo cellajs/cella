@@ -3,7 +3,7 @@ import { db } from '#/db/db';
 import { entityTables } from '#/entity-config';
 import type { Entity } from '#/types/common';
 
-type EntityModel<T extends Entity> = (typeof entityTables)[T]['$inferSelect'];
+export type EntityModel<T extends Entity> = (typeof entityTables)[T]['$inferSelect'];
 
 /**
  * Resolves entity based on ID or Slug and sets the context accordingly.

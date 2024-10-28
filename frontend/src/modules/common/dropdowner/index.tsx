@@ -22,8 +22,7 @@ export function DropDowner() {
     <DropdownMenu key={dropdown.id} open={true} modal={dropdown.modal}>
       <DropdownMenuTrigger />
       <DropdownMenuContent
-        className="p-0"
-        sideOffset={12}
+        className="p-0 data-[side=bottom]:translate-y-2 data-[side=top]:-translate-y-7"
         side="bottom"
         modal={dropdown.modal}
         align={dropdown.align || 'start'}

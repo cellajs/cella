@@ -2,16 +2,17 @@ import { onlineManager } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { showToast } from '~/lib/toasts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import { updateMenuItem } from '~/modules/common/nav-sheet/helpers/menu-operations';
 import Spinner from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import type { UserMenuItem } from '~/types/common';
 import { env } from '../../../../../env';
-import { updateMenuItem } from '../helpers/update-menu-item';
 
 interface MenuItemOptionsProps {
   item: UserMenuItem;
@@ -42,7 +43,10 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
   });
 
   const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) {
+      toast.warning(t('common:action.offline.text'));
+      return;
+    }
 
     const { role, id: membershipId, organizationId, archived, muted } = item.membership;
     const membership = { membershipId, role, muted, archived, organizationId };
@@ -58,8 +62,7 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
       data-archived={item.membership.archived}
       className="group/optionsItem flex relative items-center h-14 w-full p-0 pr-2 justify-start rounded focus:outline-none
         ring-inset ring-muted/25 focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground ring-1 cursor-grab
-        group-data-[submenu=false]/menuOptions:h-12
-        group-data-[submenu=false]/menuOptions:menu-item-sub"
+        group-data-[submenu=false]/menuOptions:h-12"
     >
       {status === 'pending' && (
         <div className="absolute z-10">
@@ -80,7 +83,7 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
       />
 
       <div className="truncate grow py-2 pl-1 text-left">
-        <div className="truncate text-sm leading-5 group-data-[archived=true]/optionsItem:opacity-70">
+        <div className="truncate group-data-[submenu=false]/menuOptions:text-sm leading-5 group-data-[archived=true]/optionsItem:opacity-70">
           {item.name} {env.VITE_DEBUG_UI && <span className="text-muted">#{item.membership.order}</span>}
         </div>
         <div className="flex items-center gap-4 transition-opacity delay-500">

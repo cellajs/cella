@@ -30,7 +30,7 @@ import { i18n } from '#/lib/i18n';
 import { emailSender } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPasswordWithArgon, verifyPasswordWithArgon } from '#/modules/auth/helpers/argon2id';
-import { type AllowedAuthStrategies, CustomHono, type EnabledOauthProviderOptions } from '#/types/common';
+import { CustomHono, type EnabledOauthProviderOptions } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
 import generalRouteConfig from '../general/routes';
 import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
@@ -39,18 +39,19 @@ import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
 
+const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
+
 export const supportedOauthProviders = ['github', 'google', 'microsoft'] as const;
+
 // Scopes for OAuth providers
 const githubScopes = ['user:email'];
 const googleScopes = ['profile', 'email'];
 const microsoftScopes = ['profile', 'email'];
 
+// Check if oauth provider is enabled by config
 function isOAuthEnabled(provider: EnabledOauthProviderOptions): boolean {
-  const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
-  const enabledOauthProviders: readonly string[] = config.enabledOauthProviders;
-
   if (!enabledStrategies.includes('oauth')) return false;
-
   return enabledOauthProviders.includes(provider);
 }
 
@@ -84,9 +85,8 @@ const authRoutes = app
     const { email, password, token } = ctx.req.valid('json');
 
     // Verify if strategy allowed
-    const strategy = 'password' as AllowedAuthStrategies;
-
-    if (!config.enabledAuthenticationStrategies.includes(strategy)) {
+    const strategy = 'password';
+    if (!enabledStrategies.includes(strategy)) {
       return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
     }
 
@@ -225,11 +225,7 @@ const authRoutes = app
     const { email } = ctx.req.valid('json');
 
     const user = await getUserBy('email', email.toLowerCase());
-
-    if (!user) {
-      // t('common:error.invalid_email')
-      return errorResponse(ctx, 400, 'invalid_email', 'warn');
-    }
+    if (!user) return errorResponse(ctx, 400, 'invalid_email', 'warn');
 
     // creating password reset token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
@@ -272,9 +268,8 @@ const authRoutes = app
     const verificationToken = ctx.req.valid('param').token;
 
     // Verify if strategy allowed
-    const strategy = 'password' as AllowedAuthStrategies;
-
-    if (!config.enabledAuthenticationStrategies.includes(strategy)) {
+    const strategy = 'password';
+    if (!enabledStrategies.includes(strategy)) {
       return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
     }
 
@@ -309,9 +304,8 @@ const authRoutes = app
     const { email, password, token } = ctx.req.valid('json');
 
     // Verify if strategy allowed
-    const strategy = 'password' as AllowedAuthStrategies;
-
-    if (!config.enabledAuthenticationStrategies.includes(strategy)) {
+    const strategy = 'password';
+    if (!enabledStrategies.includes(strategy)) {
       return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
     }
 

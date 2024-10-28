@@ -14,14 +14,14 @@ import { updateMembership } from '~/api/memberships';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { getRelativeItemOrder } from '~/modules/common/nav-sheet/helpers';
+import { updateMenuItem } from '~/modules/common/nav-sheet/helpers/menu-operations';
+import { NetworkModeSwitch } from '~/modules/common/nav-sheet/network-mode-switch';
 import { SheetMenuItem } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuSearch } from '~/modules/common/nav-sheet/sheet-menu-search';
 import { MenuSection } from '~/modules/common/nav-sheet/sheet-menu-section';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
 import { menuSections } from '~/nav-config';
-import { updateMenuItem } from './helpers/update-menu-item';
-import { NetworkModeSwitch } from './network-mode-switch';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
 

@@ -45,7 +45,7 @@ const MainNav = () => {
       return dialog(navItem.dialog, {
         id: navItem.id,
         className: navItem.id === 'search' ? 'sm:max-w-2xl p-0 border-0 mb-4' : '',
-        drawerOnMobile: false,
+        drawerOnMobile: navItem.id !== 'search',
         refocus: false,
         hideClose: true,
         autoFocus: !isMobile,

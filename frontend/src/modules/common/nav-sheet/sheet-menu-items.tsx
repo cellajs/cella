@@ -26,11 +26,11 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
 
   return (
     <Link
-      data-regular-item={!searchResults && !item.submenu}
+      data-subitem={!searchResults && !item.submenu}
       data-active={isActive}
       resetScroll={false}
       className={cn(
-        'group/menuItem flex h-14 w-full my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground data-[regular-item=true]:h-12 data-[regular-item=true]:relative data-[regular-item=true]:menu-item-sub data-[active=true]:ring-transparent data-[active=true]:bg-accent',
+        'group/menuItem h-14 w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground data-[subitem=true]:h-12 data-[active=true]:ring-transparent data-[active=true]:bg-accent',
         className,
       )}
       aria-label={item.name}
@@ -38,7 +38,7 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
       params={{ idOrSlug }}
     >
       <AvatarWrap
-        className="z-[1] items-center m-2 group-data-[regular-item=true]/menuItem:my-2 group-data-[regular-item=true]/menuItem:mx-3 group-data-[regular-item=true]/menuItem:text-xs group-data-[regular-item=true]/menuItem:h-8 group-data-[regular-item=true]/menuItem:w-8"
+        className="z-[1] items-center m-2 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-3 group-data-[subitem=true]/menuItem:text-xs group-data-[subitem=true]/menuItem:h-8 group-data-[subitem=true]/menuItem:w-8"
         type={item.entity}
         id={item.id}
         name={item.name}
@@ -46,19 +46,23 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
       />
       <div className="truncate grow py-2 flex flex-col justify-center pr-2 text-left">
         <div
-          className="truncate leading-5 max-sm:pt-2.5 text-base group-data-[regular-item=true]/menuItem:text-sm
-            group-data-[regular-item=true]/menuItem:max-sm:pt-1.5 group-data-[regular-item=true]/menuItem:sm:-mb-1
-            group-data-[regular-item=true]/menuItem:sm:-mt-0.5"
+          className={`truncate leading-5 transition-all group-hover/menuItem:delay-300 duration-200 ease-in-out ${!searchResults && 'pt-2.5'} group-hover/menuItem:pt-0.5 text-base group-data-[subitem=true]/menuItem:text-sm
+            group-data-[subitem=true]/menuItem:sm:-mb-0.5
+            group-data-[subitem=true]/menuItem:sm:-mt-1`}
         >
           {item.name}
         </div>
         <div
           className="max-sm:hidden text-muted-foreground text-sm font-light
-          group-data-[regular-item=true]/menuItem:sm:text-xs
-          group-data-[regular-item=true]/menuItem:sm:-mt-0.5"
+          group-data-[subitem=true]/menuItem:sm:text-xs
+          "
         >
-          {searchResults && <span className="inline transition-all duration-500 ease-in-out group-hover/menuItem:hidden ">{t(item.entity)}</span>}
-          <span className="hidden transition-all duration-500 ease-in-out group-hover/menuItem:inline ">
+          {searchResults && (
+            <span className="absolute transition-opacity duration-200 delay-200 ease-in-out group-hover/menuItem:opacity-0">
+              {t(`app:${item.entity}`)}
+            </span>
+          )}
+          <span className="opacity-0 transition-opacity duration-200 ease-in-out group-hover/menuItem:delay-300 group-hover/menuItem:opacity-100">
             {item.submenu?.length
               ? `${item.submenu?.length} ${t(`app:${item.submenu?.length > 1 ? `${item.submenu[0].entity}s` : item.submenu[0].entity}`).toLowerCase()}`
               : item.membership.role
@@ -104,9 +108,9 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
     return (
       <>
         {filteredItems.map((item) => (
-          <div key={item.id}>
+          <div className={item.submenu?.length && !hideSubmenu ? 'relative submenu-section' : ''} key={item.id}>
             <SheetMenuItem item={item} className={className} />
-            {!item.membership.archived && item.submenu && !!item.submenu.length && !hideSubmenu && (
+            {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
               <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
             )}
           </div>
