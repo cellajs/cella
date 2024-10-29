@@ -1,11 +1,11 @@
 import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { membersQuerySchema } from 'backend/modules/general/schema';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
-import type { RowsChangeData, SortColumn } from 'react-data-grid';
+import type { RowsChangeData } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { getMembers, updateMembership } from '~/api/memberships';
@@ -14,13 +14,13 @@ import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { SortColumn } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
@@ -47,7 +47,6 @@ interface MembersTableProps {
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
-  const search = useSearch({ strict: false });
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
@@ -55,20 +54,20 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const isAdmin = entity.membership?.role === 'admin';
 
   const isMobile = useBreakpoints('max', 'sm');
+  const {
+    search: { q, order, sort, role, userIdPreview },
+    setSearch,
+  } = useSearchParams<'sort' | 'order' | 'q' | 'role' | 'userIdPreview'>({ sort: 'createdAt', order: 'desc' });
 
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<MemberSearch['q']>(search.q);
-  const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const [query, setQuery] = useState<MemberSearch['q']>(q);
 
   // Organization id
   const organizationId = entity.organizationId || entity.id;
 
   // Search query options
-  const q = useDebounce(query, 200);
-  const sort = sortColumns[0]?.columnKey as MemberSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'];
+  const debouncedQuery = useDebounce(query, 250);
   const limit = LIMIT;
 
   // Check if table has enabled filtered
@@ -102,19 +101,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // Map (updated) query data to rows
   useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
 
-  // Save filters in search params
-  if (!isSheet) {
-    const filters = useMemo(
-      () => ({
-        q,
-        sort,
-        order,
-        role,
-      }),
-      [q, role, sortColumns],
-    );
-    useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-  }
   // Table selection
   const selectedMembers = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
@@ -133,9 +119,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   });
 
   const onResetFilters = () => {
-    setQuery('');
     setSelectedRows(new Set<string>());
-    setRole(undefined);
+    setSearch({ q: undefined, role: undefined }, !isSheet);
   };
 
   // Drop selected Rows on search
@@ -144,9 +129,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     setQuery(searchString);
   };
 
-  const onRoleChange = (role?: string) => {
+  const onRoleChange = (newRole?: string) => {
     setSelectedRows(new Set<string>());
-    setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
+    setSearch({ role: newRole === 'all' ? undefined : (newRole as typeof role) }, !isSheet);
   };
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
@@ -215,14 +200,15 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   };
 
   useEffect(() => {
-    setSortColumns(getInitialSortColumns(search));
-  }, [search, entity.id]);
+    if (!debouncedQuery) return;
+    setSearch({ q: debouncedQuery }, !isSheet);
+  }, [debouncedQuery]);
 
   useEffect(() => {
-    if (!rows.length || !('userIdPreview' in search) || !search.userIdPreview) return;
-    const user = rows.find((t) => t.id === search.userIdPreview);
+    if (!rows.length || !userIdPreview) return;
+    const user = rows.find((t) => t.id === userIdPreview);
     if (user) openUserPreviewSheet(user, navigate);
-  }, [rows]);
+  }, [rows, userIdPreview]);
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -310,8 +296,14 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
           isFiltered,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,
-          sortColumns,
-          onSortColumnsChange: setSortColumns,
+          sortColumns: [{ columnKey: sort, direction: order?.toUpperCase() }] as SortColumn[],
+          onSortColumnsChange: (newColumnSort) => {
+            if (!newColumnSort[0]) return setSearch({ sort: undefined, order: order === 'desc' ? 'asc' : 'desc' }, !isSheet);
+            const [{ columnKey, direction }] = newColumnSort;
+            const newSort = columnKey as typeof sort;
+            const newOrder = direction.toLowerCase() as typeof order;
+            setSearch({ sort: newSort, order: newOrder }, !isSheet);
+          },
         }}
       />
     </div>

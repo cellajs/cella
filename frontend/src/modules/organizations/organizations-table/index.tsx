@@ -1,5 +1,4 @@
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { getOrganizations } from '~/api/organizations';
 
@@ -14,18 +13,18 @@ import { inviteMembers } from '~/api/memberships';
 import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 
+import { useEffect } from 'react';
+import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
@@ -35,7 +34,6 @@ import { organizationsQueryOptions } from '~/modules/organizations/organizations
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types/common';
 
@@ -44,20 +42,21 @@ type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 const LIMIT = 40;
 
 const OrganizationsTable = () => {
-  const search = useSearch({ from: OrganizationsTableRoute.id });
   const { t } = useTranslation();
 
   const { user } = useUserStore();
 
+  const {
+    search: { q, order, sort },
+    setSearch,
+  } = useSearchParams<'sort' | 'order' | 'q'>({ sort: 'createdAt', order: 'desc' });
+
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<OrganizationsSearch['q']>(search.q);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const [query, setQuery] = useState<OrganizationsSearch['q']>(q);
 
   // Search query options
-  const q = useDebounce(query, 200);
-  const sort = sortColumns[0]?.columnKey as OrganizationsSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'];
+  const debouncedQuery = useDebounce(query, 250);
   const limit = LIMIT;
 
   const isFiltered = !!q;
@@ -72,20 +71,9 @@ const OrganizationsTable = () => {
   useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
 
   const callback = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
-
   // Build columns
   const [columns, setColumns] = useColumns(callback);
 
-  // Save filters in search params
-  const filters = useMemo(
-    () => ({
-      q,
-      sort,
-      order,
-    }),
-    [q, sort, order],
-  );
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
@@ -117,7 +105,6 @@ const OrganizationsTable = () => {
           .catch(() => toast.error(t('common:error.error')));
       }
     }
-
     setRows(changedRows);
   };
 
@@ -156,6 +143,11 @@ const OrganizationsTable = () => {
       },
     );
   };
+
+  useEffect(() => {
+    if (!debouncedQuery) return;
+    setSearch({ q: debouncedQuery });
+  }, [debouncedQuery]);
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -237,8 +229,14 @@ const OrganizationsTable = () => {
           onRowsChange,
           fetchMore: queryResult.fetchNextPage,
           onSelectedRowsChange: setSelectedRows,
-          sortColumns,
-          onSortColumnsChange: setSortColumns,
+          sortColumns: [{ columnKey: sort, direction: order?.toUpperCase() }] as SortColumn[],
+          onSortColumnsChange: (newColumnSort) => {
+            if (!newColumnSort[0]) return setSearch({ sort: undefined, order: order === 'desc' ? 'asc' : 'desc' });
+            const [{ columnKey, direction }] = newColumnSort;
+            const newSort = columnKey as typeof sort;
+            const newOrder = direction.toLowerCase() as typeof order;
+            setSearch({ sort: newSort, order: newOrder });
+          },
           NoRowsComponent: (
             <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
           ),
