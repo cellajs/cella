@@ -9,7 +9,6 @@ import type { RowsChangeData } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { getMembers, updateMembership } from '~/api/memberships';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
@@ -17,7 +16,6 @@ import { useMutation } from '~/hooks/use-mutations';
 import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import type { SortColumn } from '~/modules/common/data-table/sort-columns';
@@ -36,9 +34,9 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import type { EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
 
-const LIMIT = 40;
-
 type MemberSearch = z.infer<typeof membersQuerySchema>;
+
+const LIMIT = 40;
 
 interface MembersTableProps {
   entity: EntityPage & { membership: MinimumMembershipInfo | null };
@@ -53,7 +51,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const organizationId = entity.organizationId || entity.id;
   const entityType = entity.entity;
   const isAdmin = entity.membership?.role === 'admin';
-  const isMobile = useBreakpoints('max', 'sm');
 
   const {
     search: { q, order, sort, role, userIdPreview },
@@ -89,13 +86,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
 
-  const openUserPreview = (user: Member) => {
-    openUserPreviewSheet(user, navigate, true);
-  };
-
   // Build columns
-  const [columns, setColumns] = useState<ColumnOrColumnGroup<Member>[]>([]);
-  useMemo(() => setColumns(useColumns(t, openUserPreview, isMobile, isAdmin, isSheet)), [isAdmin]);
+  const [columns, setColumns] = useColumns(isAdmin, isSheet);
 
   // Map (updated) query data to rows
   useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
@@ -141,8 +133,10 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
     if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
+    if (column.key !== 'role') return setRows(changedRows);
+
+    // If role is changed, update membership
     for (const index of indexes) {
-      if (column.key !== 'role') continue;
       updateMemberRole(changedRows[index]);
     }
     setRows(changedRows);

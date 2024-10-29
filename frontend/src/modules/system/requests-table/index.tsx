@@ -83,6 +83,7 @@ const RequestsTable = () => {
   const order = sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'];
   const limit = LIMIT;
 
+  // Check if there are active filters
   const isFiltered = !!q;
 
   // Query organizations

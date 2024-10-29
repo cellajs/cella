@@ -1,4 +1,4 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { getOrganizations } from '~/api/organizations';
 
@@ -44,7 +44,6 @@ const LIMIT = 40;
 
 const OrganizationsTable = () => {
   const { t } = useTranslation();
-
   const { user } = useUserStore();
 
   const {
@@ -60,6 +59,7 @@ const OrganizationsTable = () => {
   const debouncedQuery = useDebounce(query, 250);
   const limit = LIMIT;
 
+  // Check if there are active filters
   const isFiltered = !!q;
 
   // Query organizations
@@ -71,30 +71,38 @@ const OrganizationsTable = () => {
   // Map (updated) query data to rows
   useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
 
-  const callback = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
-  // Build columns
-  const [columns, setColumns] = useColumns(callback);
+  // Update query data
+  const updateQueryCache = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
 
-  // Drop selected Rows on search
+  // Build columns
+  const [columns, setColumns] = useColumns(updateQueryCache);
+
+  // Drop selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
     setQuery(searchString);
   };
+
   // Table selection
   const selectedOrganizations = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [rows, selectedRows]);
 
+  // Reset filters
   const onResetFilters = () => {
     setQuery('');
     setSelectedRows(new Set<string>());
   };
 
   const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
-    // mutate member
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+
+    if (column.key !== 'userRole') return setRows(changedRows);
+
+    // If user role is changed, invite user to organization
     for (const index of indexes) {
       const organization = changedRows[index];
-      if (column.key === 'userRole' && organization.membership?.role) {
+      if (organization.membership?.role) {
         inviteMembers({
           idOrSlug: organization.id,
           emails: [user.email],
@@ -114,8 +122,8 @@ const OrganizationsTable = () => {
       <DeleteOrganizations
         organizations={selectedOrganizations}
         callback={(organizations) => {
-          callback(organizations, 'delete');
           showToast(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
+          updateQueryCache(organizations, 'delete');
         }}
         dialog
       />,
@@ -145,6 +153,7 @@ const OrganizationsTable = () => {
     );
   };
 
+  // Debounced text search
   useEffect(() => {
     if (!debouncedQuery) return;
     setSearch({ q: debouncedQuery });
@@ -153,6 +162,7 @@ const OrganizationsTable = () => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        {/* Filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {selectedOrganizations.length > 0 ? (
@@ -177,7 +187,7 @@ const OrganizationsTable = () => {
               user.role === 'admin' && (
                 <Button
                   onClick={() => {
-                    dialog(<CreateOrganizationForm callback={(organization) => callback([organization], 'create')} dialog />, {
+                    dialog(<CreateOrganizationForm callback={(organization) => updateQueryCache([organization], 'create')} dialog />, {
                       className: 'md:max-w-2xl',
                       id: 'create-organization',
                       title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
@@ -200,7 +210,11 @@ const OrganizationsTable = () => {
             <TableSearch value={query} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
+
+        {/* Columns view */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+
+        {/* Export */}
         <Export
           className="max-lg:hidden"
           filename={`${config.slug}-organizations`}
@@ -211,8 +225,12 @@ const OrganizationsTable = () => {
             return items;
           }}
         />
+
+        {/* Focus view */}
         <FocusView iconOnly />
       </div>
+
+      {/* Table */}
       <DataTable<Organization>
         {...{
           columns: columns.filter((column) => column.visible),

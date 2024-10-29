@@ -13,7 +13,6 @@ import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
@@ -56,9 +55,9 @@ const UsersTable = () => {
 
   // Search query options
   const debouncedQuery = useDebounce(query, 250);
-
   const limit = LIMIT;
 
+  // Check if there are active filters
   const isFiltered = role !== undefined || !!q;
 
   // Query users
@@ -66,18 +65,6 @@ const UsersTable = () => {
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
-
-  // Save filters in search params
-  const filters = useMemo(
-    () => ({
-      q,
-      sort,
-      order,
-      role,
-    }),
-    [q, role, order, sort],
-  );
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Map (updated) query data to rows
   useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows });
@@ -87,16 +74,16 @@ const UsersTable = () => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
-  const callback = useMutateInfiniteQueryData(['users', q, sort, order, role], (item) => ['users', item.id]);
+  const updateQueryCache = useMutateInfiniteQueryData(['users', q, sort, order, role], (item) => ['users', item.id]);
 
   // Build columns
-  const [columns, setColumns] = useColumns(callback);
+  const [columns, setColumns] = useColumns(updateQueryCache);
 
   // Update user role
   const { mutate: updateUserRole } = useMutation({
     mutationFn: async (user: User) => await updateUser(user.id, { role: user.role }),
     onSuccess: (updatedUser) => {
-      callback([updatedUser], 'update');
+      updateQueryCache([updatedUser], 'update');
       showToast(t('common:success.user_role_updated'), 'success');
     },
     onError: () => showToast('Error updating role', 'error'),
@@ -125,8 +112,11 @@ const UsersTable = () => {
   const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
     if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
+    if (column.key !== 'role') return setRows(changedRows);
+
+    // If user role is changed, update user
     for (const index of indexes) {
-      if (column.key === 'role') updateUserRole(changedRows[index]);
+      updateUserRole(changedRows[index]);
     }
     setRows(changedRows);
   };
@@ -150,8 +140,8 @@ const UsersTable = () => {
         dialog
         users={selectedUsers}
         callback={(users) => {
+          updateQueryCache(users, 'delete');
           showToast(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
-          callback(users, 'delete');
         }}
       />,
       {
@@ -166,12 +156,14 @@ const UsersTable = () => {
     );
   };
 
+  // Debounced text search
   useEffect(() => {
     if (debouncedQuery === undefined) return;
 
     setSearch({ q: debouncedQuery });
   }, [debouncedQuery]);
 
+  // TODO: Figure out a way to open sheet using url state and using react-query to fetch data, we need an <Outlet /> for this?
   useEffect(() => {
     if (!rows.length || !userIdPreview) return;
     const user = rows.find((t) => t.id === userIdPreview);
@@ -181,6 +173,7 @@ const UsersTable = () => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        {/* Table filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {selectedUsers.length > 0 ? (
@@ -235,10 +228,17 @@ const UsersTable = () => {
           </FilterBarContent>
         </TableFilterBar>
 
+        {/* Columns view */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+
+        {/* Focus view */}
         <FocusView iconOnly />
       </div>
+
+      {/* Container for embedded dialog */}
       <div ref={containerRef} />
+
+      {/* Table */}
       <DataTable<User>
         {...{
           columns: columns.filter((column) => column.visible),
