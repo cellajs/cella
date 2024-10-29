@@ -31,7 +31,7 @@ const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, o
 
 export const SystemRoute = createRoute({
   path: '/system',
-  staticData: { pageTitle: 'System panel', isAuth: true },
+  staticData: { pageTitle: 'System', isAuth: true },
   beforeLoad: ({ location }) => noDirectAccess(location.pathname, 'system', '/users'),
   getParentRoute: () => AppRoute,
   component: () => <SystemPage />,
@@ -41,7 +41,7 @@ export const SystemRoute = createRoute({
 export const UsersTableRoute = createRoute({
   path: '/users',
   validateSearch: usersSearchSchema,
-  staticData: { pageTitle: 'Users', isAuth: true },
+  staticData: { pageTitle: 'users', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ deps: { q, sort, order, role } }) => {
@@ -61,7 +61,7 @@ export const UsersTableRoute = createRoute({
 export const OrganizationsTableRoute = createRoute({
   path: '/organizations',
   validateSearch: organizationsSearchSchema,
-  staticData: { pageTitle: 'Organizations', isAuth: true },
+  staticData: { pageTitle: 'organizations', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {
@@ -81,7 +81,7 @@ export const OrganizationsTableRoute = createRoute({
 export const RequestsTableRoute = createRoute({
   path: '/requests',
   validateSearch: requestSearchSchema,
-  staticData: { pageTitle: 'Requests', isAuth: true },
+  staticData: { pageTitle: 'requests', isAuth: true },
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {
@@ -101,7 +101,7 @@ export const RequestsTableRoute = createRoute({
 export const MetricsRoute = createRoute({
   path: '/metrics',
   validateSearch: requestSearchSchema,
-  staticData: { pageTitle: 'Metrics', isAuth: true },
+  staticData: { pageTitle: 'metrics', isAuth: true },
   getParentRoute: () => SystemRoute,
   component: () => (
     <Suspense>

@@ -2,14 +2,11 @@ import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import type { membersQuerySchema } from 'backend/modules/general/schema';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
-import type { z } from 'zod';
 import { getMembers, updateMembership } from '~/api/memberships';
-import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
@@ -34,8 +31,6 @@ import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import type { EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
 
-type MemberSearch = z.infer<typeof membersQuerySchema>;
-
 const LIMIT = 40;
 
 interface MembersTableProps {
@@ -59,10 +54,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<MemberSearch['q']>(q);
 
   // Search query options
-  const debouncedQuery = useDebounce(query, 250);
   const limit = LIMIT;
 
   // Check if table has active filters
@@ -113,14 +106,13 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // Reset filters
   const onResetFilters = () => {
     setSelectedRows(new Set<string>());
-    setQuery('');
-    setSearch({ role: undefined }, !isSheet);
+    setSearch({ q: '', role: undefined }, !isSheet);
   };
 
   // Clear selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setQuery(searchString);
+    setSearch({ q: searchString });
   };
 
   // Change member role
@@ -198,18 +190,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     );
   };
 
-  // Debounced text search
-  useEffect(() => {
-    if (debouncedQuery === undefined) return;
-    setSearch({ q: debouncedQuery }, !isSheet);
-  }, [debouncedQuery]);
-
-  //TODO find other way
-  useEffect(() => {
-    setSelectedRows(new Set<string>());
-    setQuery('');
-  }, [entity.id]);
-
   // TODO: Figure out a way to open sheet using url state and using react-query to fetch data, we need an <Outlet /> for this?
   useEffect(() => {
     if (!rows.length || !userIdPreview) return;
@@ -270,7 +250,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={query} setQuery={onSearch} />
+            <TableSearch value={q} setQuery={onSearch} />
             <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>

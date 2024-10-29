@@ -44,7 +44,7 @@ export const OrganizationMembersRoute = createRoute({
     ...membersSearchSchema.shape,
     userIdPreview: z.string().optional(),
   }),
-  staticData: { pageTitle: 'Members', isAuth: true },
+  staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
@@ -67,7 +67,7 @@ export const OrganizationMembersRoute = createRoute({
 
 export const OrganizationSettingsRoute = createRoute({
   path: '/settings',
-  staticData: { pageTitle: 'Settings', isAuth: true },
+  staticData: { pageTitle: 'settings', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });

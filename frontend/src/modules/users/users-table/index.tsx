@@ -3,13 +3,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
 
-import type { usersQuerySchema } from 'backend/modules/users/schema';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
-import { useDebounce } from '~/hooks/use-debounce';
+
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
@@ -34,8 +32,6 @@ import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-opt
 import { UsersTableRoute } from '~/routes/system';
 import type { User } from '~/types/common';
 
-type UsersSearch = z.infer<typeof usersQuerySchema>;
-
 const LIMIT = 100;
 
 const UsersTable = () => {
@@ -51,10 +47,7 @@ const UsersTable = () => {
   const [rows, setRows] = useState<User[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
 
-  const [query, setQuery] = useState<UsersSearch['q']>(q);
-
   // Search query options
-  const debouncedQuery = useDebounce(query, 250);
   const limit = LIMIT;
 
   // Check if there are active filters
@@ -91,15 +84,14 @@ const UsersTable = () => {
 
   // Reset filters
   const onResetFilters = () => {
-    setQuery('');
     setSelectedRows(new Set<string>());
-    setSearch({ role: undefined });
+    setSearch({ q: '', role: undefined });
   };
 
-  // Drop selected Rows on search
+  // Clear selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setQuery(searchString);
+    setSearch({ q: searchString });
   };
 
   // Change role filter
@@ -155,13 +147,6 @@ const UsersTable = () => {
       },
     );
   };
-
-  // Debounced text search
-  useEffect(() => {
-    if (debouncedQuery === undefined) return;
-
-    setSearch({ q: debouncedQuery });
-  }, [debouncedQuery]);
 
   // TODO: Figure out a way to open sheet using url state and using react-query to fetch data, we need an <Outlet /> for this?
   useEffect(() => {
@@ -223,7 +208,7 @@ const UsersTable = () => {
           <div className="sm:grow" />
 
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={query} setQuery={onSearch} />
+            <TableSearch value={q} setQuery={onSearch} />
             <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>

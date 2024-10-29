@@ -2,15 +2,12 @@ import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { getOrganizations } from '~/api/organizations';
 
-import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { config } from 'config';
 import { Bird, Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import type { z } from 'zod';
 import { inviteMembers } from '~/api/memberships';
-import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -23,7 +20,6 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 
-import { useEffect } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -38,8 +34,6 @@ import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types/common';
 
-type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
-
 const LIMIT = 40;
 
 const OrganizationsTable = () => {
@@ -53,10 +47,8 @@ const OrganizationsTable = () => {
 
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<OrganizationsSearch['q']>(q);
 
   // Search query options
-  const debouncedQuery = useDebounce(query, 250);
   const limit = LIMIT;
 
   // Check if there are active filters
@@ -80,7 +72,7 @@ const OrganizationsTable = () => {
   // Drop selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setQuery(searchString);
+    setSearch({ q: searchString });
   };
 
   // Table selection
@@ -90,7 +82,7 @@ const OrganizationsTable = () => {
 
   // Reset filters
   const onResetFilters = () => {
-    setQuery('');
+    setSearch({ q: '' });
     setSelectedRows(new Set<string>());
   };
 
@@ -153,12 +145,6 @@ const OrganizationsTable = () => {
     );
   };
 
-  // Debounced text search
-  useEffect(() => {
-    if (!debouncedQuery) return;
-    setSearch({ q: debouncedQuery });
-  }, [debouncedQuery]);
-
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
@@ -207,7 +193,7 @@ const OrganizationsTable = () => {
           <div className="sm:grow" />
 
           <FilterBarContent>
-            <TableSearch value={query} setQuery={onSearch} />
+            <TableSearch value={q} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
 
@@ -221,7 +207,7 @@ const OrganizationsTable = () => {
           columns={columns}
           selectedRows={selectedOrganizations}
           fetchRows={async (limit) => {
-            const { items } = await getOrganizations({ limit, q: query, sort, order });
+            const { items } = await getOrganizations({ limit, q, sort, order });
             return items;
           }}
         />
