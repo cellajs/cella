@@ -1,14 +1,16 @@
-import path from 'node:path';
+import MillionLint from '@million/lint';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
+import path from 'node:path';
 // import { visualizer } from 'rollup-plugin-visualizer';
 import { type UserConfig, defineConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
+import { env } from './env';
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 
 // https://vitejs.dev/config/
@@ -120,7 +122,7 @@ export default defineConfig(() => {
       },
     }),
   );
-
+  if (env.VITE_MILLION_LINT) viteConfig.plugins?.push([MillionLint.vite()]);
   if (config.frontendUrl.includes('https')) viteConfig.plugins?.push([basicSsl()]);
   return viteConfig;
 });
