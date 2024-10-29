@@ -57,7 +57,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const {
     search: { q, order, sort, role, userIdPreview },
     setSearch,
-  } = useSearchParams<'sort' | 'order' | 'q' | 'role' | 'userIdPreview'>({ sort: 'createdAt', order: 'desc' });
+  } = useSearchParams<'sort' | 'order' | 'q' | 'role' | 'userIdPreview'>(undefined, { sort: 'createdAt', order: 'desc' });
 
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
@@ -120,7 +120,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   const onResetFilters = () => {
     setSelectedRows(new Set<string>());
-    setSearch({ q: undefined, role: undefined }, !isSheet);
+    setQuery('');
+    setSearch({ role: undefined }, !isSheet);
   };
 
   // Drop selected Rows on search
@@ -200,7 +201,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   };
 
   useEffect(() => {
-    if (!debouncedQuery) return;
+    if (debouncedQuery === undefined) return;
     setSearch({ q: debouncedQuery }, !isSheet);
   }, [debouncedQuery]);
 

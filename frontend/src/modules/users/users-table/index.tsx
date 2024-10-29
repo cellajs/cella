@@ -1,10 +1,9 @@
 import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
 
 import type { usersQuerySchema } from 'backend/modules/users/schema';
-import type { config } from 'config';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
@@ -15,10 +14,10 @@ import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
@@ -30,6 +29,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
+
 import { useColumns } from '~/modules/users/users-table/columns';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
 import { UsersTableRoute } from '~/routes/system';
@@ -39,25 +39,23 @@ type UsersSearch = z.infer<typeof usersQuerySchema>;
 
 const LIMIT = 100;
 
-type SystemRoles = (typeof config.rolesByType.systemRoles)[number] | undefined;
-
 const UsersTable = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const search = useSearch({ from: UsersTableRoute.id });
+  const {
+    search: { q, order, sort, role, userIdPreview },
+    setSearch,
+  } = useSearchParams<'sort' | 'order' | 'q' | 'role' | 'userIdPreview'>(UsersTableRoute.id, { sort: 'createdAt', order: 'desc' });
   const containerRef = useRef(null);
 
   const [rows, setRows] = useState<User[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<UsersSearch['q']>(search.q);
-  const [role, setRole] = useState<UsersSearch['role']>(search.role);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+
+  const [query, setQuery] = useState<UsersSearch['q']>(q);
 
   // Search query options
-  const q = useDebounce(query, 200);
-  const sort = sortColumns[0]?.columnKey as UsersSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'];
+  const debouncedQuery = useDebounce(query, 250);
 
   const limit = LIMIT;
 
@@ -108,7 +106,7 @@ const UsersTable = () => {
   const onResetFilters = () => {
     setQuery('');
     setSelectedRows(new Set<string>());
-    setRole(undefined);
+    setSearch({ role: undefined });
   };
 
   // Drop selected Rows on search
@@ -118,9 +116,9 @@ const UsersTable = () => {
   };
 
   // Change role filter
-  const onRoleChange = (role?: string) => {
+  const onRoleChange = (newRole?: string) => {
     setSelectedRows(new Set<string>());
-    setRole(role === 'all' ? undefined : (role as SystemRoles));
+    setSearch({ role: newRole === 'all' ? undefined : (newRole as typeof role) });
   };
 
   // Update user role
@@ -169,8 +167,14 @@ const UsersTable = () => {
   };
 
   useEffect(() => {
-    if (!rows.length || !search.userIdPreview) return;
-    const user = rows.find((t) => t.id === search.userIdPreview);
+    if (debouncedQuery === undefined) return;
+
+    setSearch({ q: debouncedQuery });
+  }, [debouncedQuery]);
+
+  useEffect(() => {
+    if (!rows.length || !userIdPreview) return;
+    const user = rows.find((t) => t.id === userIdPreview);
     if (user) openUserPreviewSheet(user, navigate);
   }, [rows]);
 
@@ -252,8 +256,14 @@ const UsersTable = () => {
           isFiltered,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,
-          sortColumns,
-          onSortColumnsChange: setSortColumns,
+          sortColumns: [{ columnKey: sort, direction: order?.toUpperCase() }] as SortColumn[],
+          onSortColumnsChange: (newColumnSort) => {
+            if (!newColumnSort[0]) return setSearch({ sort: undefined, order: order === 'desc' ? 'asc' : 'desc' });
+            const [{ columnKey, direction }] = newColumnSort;
+            const newSort = columnKey as typeof sort;
+            const newOrder = direction.toLowerCase() as typeof order;
+            setSearch({ sort: newSort, order: newOrder });
+          },
         }}
       />
     </div>

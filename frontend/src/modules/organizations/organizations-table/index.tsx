@@ -34,6 +34,7 @@ import { organizationsQueryOptions } from '~/modules/organizations/organizations
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types/common';
 
@@ -49,7 +50,7 @@ const OrganizationsTable = () => {
   const {
     search: { q, order, sort },
     setSearch,
-  } = useSearchParams<'sort' | 'order' | 'q'>({ sort: 'createdAt', order: 'desc' });
+  } = useSearchParams<'sort' | 'order' | 'q'>(OrganizationsTableRoute.id, { sort: 'createdAt', order: 'desc' });
 
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
