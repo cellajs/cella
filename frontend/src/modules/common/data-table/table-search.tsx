@@ -28,7 +28,7 @@ const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (valu
           value={value}
           onChange={(event) => setQuery(event.target.value)}
           style={{ paddingLeft: '2rem' }}
-          className="h-10 w-full border-0"
+          className="h-10 w-full border-0 pr-8"
           ref={inputRef}
         />
         {!!value.length && (

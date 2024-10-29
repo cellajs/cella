@@ -204,6 +204,12 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     setSearch({ q: debouncedQuery }, !isSheet);
   }, [debouncedQuery]);
 
+  //TODO find other way
+  useEffect(() => {
+    setSelectedRows(new Set<string>());
+    setQuery('');
+  }, [entity.id]);
+
   // TODO: Figure out a way to open sheet using url state and using react-query to fetch data, we need an <Outlet /> for this?
   useEffect(() => {
     if (!rows.length || !userIdPreview) return;
