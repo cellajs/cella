@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@evilmartians/lefthook": "^1.8.1",
+    "@evilmartians/lefthook": "^1.8.2",
     "cross-env": "^7.0.3",
     "rimraf": "^6.0.1",
     "turbo": "^2.2.3",
