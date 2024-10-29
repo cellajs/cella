@@ -47,13 +47,14 @@ interface MembersTableProps {
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
-  const containerRef = useRef(null);
   const navigate = useNavigate();
+  const containerRef = useRef(null);
 
+  const organizationId = entity.organizationId || entity.id;
   const entityType = entity.entity;
   const isAdmin = entity.membership?.role === 'admin';
-
   const isMobile = useBreakpoints('max', 'sm');
+
   const {
     search: { q, order, sort, role, userIdPreview },
     setSearch,
@@ -63,14 +64,11 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [query, setQuery] = useState<MemberSearch['q']>(q);
 
-  // Organization id
-  const organizationId = entity.organizationId || entity.id;
-
   // Search query options
   const debouncedQuery = useDebounce(query, 250);
   const limit = LIMIT;
 
-  // Check if table has enabled filtered
+  // Check if table has active filters
   const isFiltered = role !== undefined || !!q;
 
   // Query members
@@ -98,6 +96,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // Build columns
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Member>[]>([]);
   useMemo(() => setColumns(useColumns(t, openUserPreview, isMobile, isAdmin, isSheet)), [isAdmin]);
+
   // Map (updated) query data to rows
   useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
 
@@ -106,40 +105,45 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
-  const callback = useMutateInfiniteQueryData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
+  // Update table data and query cache
+  const updateQueryCache = useMutateInfiniteQueryData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
 
   // Update member role
   const { mutate: updateMemberRole } = useMutation({
     mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role, organizationId }),
     onSuccess: (updatedMembership) => {
       showToast(t('common:success:user_role_updated'), 'success');
-      callback([updatedMembership], 'updateMembership');
+      updateQueryCache([updatedMembership], 'updateMembership');
     },
     onError: () => showToast('Error updating role', 'error'),
   });
 
+  // Reset filters
   const onResetFilters = () => {
     setSelectedRows(new Set<string>());
     setQuery('');
     setSearch({ role: undefined }, !isSheet);
   };
 
-  // Drop selected Rows on search
+  // Clear selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
     setQuery(searchString);
   };
 
+  // Change member role
   const onRoleChange = (newRole?: string) => {
     setSelectedRows(new Set<string>());
     setSearch({ role: newRole === 'all' ? undefined : (newRole as typeof role) }, !isSheet);
   };
 
+  // Update rows
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
     if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     for (const index of indexes) {
-      if (column.key === 'role') updateMemberRole(changedRows[index]);
+      if (column.key !== 'role') continue;
+      updateMemberRole(changedRows[index]);
     }
     setRows(changedRows);
   };
@@ -180,7 +184,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         dialog
         callback={(members) => {
           showToast(t('common:success.delete_members'), 'success');
-          callback(members, 'delete');
+          updateQueryCache(members, 'delete');
         }}
         members={selectedMembers}
       />,
@@ -200,11 +204,13 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     );
   };
 
+  // Debounced text search
   useEffect(() => {
     if (debouncedQuery === undefined) return;
     setSearch({ q: debouncedQuery }, !isSheet);
   }, [debouncedQuery]);
 
+  // TODO: Figure out a way to open sheet using url state and using react-query to fetch data, we need an <Outlet /> for this?
   useEffect(() => {
     if (!rows.length || !userIdPreview) return;
     const user = rows.find((t) => t.id === userIdPreview);
@@ -214,6 +220,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        {/* Filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {selectedMembers.length > 0 ? (
@@ -267,7 +274,11 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
             <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>
+
+        {/* Columns view dropdown */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+
+        {/* Export */}
         {!isSheet && fetchForExport && (
           <Export<Member>
             className="max-lg:hidden"
@@ -277,9 +288,14 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
             fetchRows={fetchForExport}
           />
         )}
+        {/* Focus view */}
         {!isSheet && <FocusView iconOnly />}
       </div>
+
+      {/* Container ref to embed dialog */}
       <div ref={containerRef} />
+
+      {/* Table */}
       <DataTable<Member>
         {...{
           columns: columns.filter((column) => column.visible),

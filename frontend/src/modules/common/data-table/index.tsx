@@ -132,7 +132,7 @@ export const DataTable = <TData,>({
                 onRowsChange={onRowsChange}
                 rows={rows}
                 onCellClick={onCellClick}
-                // NOTICE: Hack to rerender html/css by changing width
+                // Hack to rerender html/css by changing width
                 style={{ blockSize: '100%', marginRight: columns.length % 2 === 0 ? '0' : '.07rem' }}
                 selectedRows={selectedRows}
                 onSelectedRowsChange={onSelectedRowsChange}
@@ -142,6 +142,9 @@ export const DataTable = <TData,>({
                   renderRow,
                   renderCheckbox: ({ onChange, ...props }) => {
                     const withShift = useRef(false);
+
+                    // biome-ignore lint/performance/noDelete: necessary evil to prevent JS warnings
+                    delete props.indeterminate;
 
                     const handleChange = (checked: boolean) => {
                       onChange(checked, withShift.current);

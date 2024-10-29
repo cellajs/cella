@@ -306,11 +306,17 @@ const membershipsRoutes = app
 
     const user = getContextUser();
     const memberships = getMemberships();
+    const organization = getOrganization();
 
     let orderToUpdate = order;
 
-    // Get the membership
-    const membershipToUpdate = memberships.find((membership) => membership.id === membershipId);
+    // Get the membership in valid organization
+    const [membershipToUpdate] = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.id, membershipId), eq(membershipsTable.organizationId, organization.id)))
+      .limit(1);
+
     if (!membershipToUpdate) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { membership: membershipId });
 
     const updatedType = membershipToUpdate.type;
