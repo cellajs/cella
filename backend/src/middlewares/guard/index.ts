@@ -1,6 +1,5 @@
 import type { Context, Next } from 'hono';
-import { getContextUser } from '#/lib/context';
-import { getValidEntity } from '#/lib/permission-manager';
+import { getContextUser, getMemberships } from '#/lib/context';
 export { isAuthenticated } from './is-authenticated';
 
 import { getConnInfo } from '@hono/node-server/conninfo';
@@ -8,7 +7,9 @@ import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { errorResponse } from '#/lib/errors';
 
-import { config } from 'config';
+import { eq, or } from 'drizzle-orm';
+import { db } from '#/db/db';
+import { organizationsTable } from '#/db/schema/organizations';
 import { env } from './../../../env';
 
 const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
@@ -39,21 +40,28 @@ export async function isPublicAccess(_: Context, next: Next): Promise<void> {
 // Organization access is a hard check for accessing organization-scoped routes.
 export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response | undefined> {
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
+  if (!orgIdOrSlug) return errorResponse(ctx, 400, 'invalid_request', 'warn');
 
-  if (!orgIdOrSlug) return errorResponse(ctx, 400, 'organization_missing', 'warn');
+  const memberships = getMemberships();
+  const user = getContextUser();
+  const isSystemAdmin = user.role === 'admin';
 
-  if (!config.contextEntityTypes.includes('organization')) {
-    return errorResponse(ctx, 403, 'forbidden', 'warn');
-  }
+  // Fetch organization
+  const [organization] = await db
+    .select()
+    .from(organizationsTable)
+    .where(or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug)));
 
-  const { entity, isAllowed } = await getValidEntity('organization', 'read', orgIdOrSlug);
+  if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
-  if (!entity || !isAllowed) {
-    return errorResponse(ctx, 403, 'forbidden', 'warn');
-  }
+  // Check if user has access to organization (or is a system admin)
+  const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.type === 'organization') || null;
+  if (!isSystemAdmin && !orgMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
-  // Set organization with membership in context
-  ctx.set('organization', entity);
+  const orgWithMembership = { ...organization, membership: orgMembership };
+
+  // Set organization with membership (can be null for system admins!) in context
+  ctx.set('organization', orgWithMembership);
 
   await next();
 }

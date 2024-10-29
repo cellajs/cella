@@ -123,15 +123,9 @@ const organizationsRoutes = app
   .openapi(organizationRoutesConfig.updateOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    if (!config.contextEntityTypes.includes('organization')) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn');
-    }
-
     const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'update', idOrSlug);
-
-    if (!organization || !isAllowed || !membership) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn');
-    }
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+    if (!isAllowed || !membership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const user = getContextUser();
 
@@ -184,23 +178,14 @@ const organizationsRoutes = app
   .openapi(organizationRoutesConfig.getOrganization, async (ctx) => {
     const { idOrSlug } = ctx.req.valid('param');
 
-    if (!config.contextEntityTypes.includes('organization')) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn');
-    }
-
-    const { entity: organization, membership, isAllowed } = await getValidEntity('organization', 'read', idOrSlug);
-
-    if (!organization || !isAllowed || !membership) return errorResponse(ctx, 403, 'forbidden', 'warn');
+    const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'read', idOrSlug);
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
 
-    const data = {
-      ...organization,
-      membership,
-      counts: {
-        memberships: memberCounts,
-      },
-    };
+    const counts = { memberships: memberCounts };
+    const data = { ...organization, membership, counts };
 
     return ctx.json({ success: true, data }, 200);
   })
@@ -215,15 +200,14 @@ const organizationsRoutes = app
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];
-
     if (!toDeleteIds.length) return errorResponse(ctx, 400, 'invalid_request', 'warn', 'organization');
 
+    // Split ids into allowed and disallowed
     const { allowedIds, disallowedIds } = await splitByAllowance('delete', 'organization', toDeleteIds, memberships);
+    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     // Map errors of organization user is not allowed to delete
     const errors: ErrorType[] = disallowedIds.map((id) => createError(ctx, 404, 'not_found', 'warn', 'organization', { organization: id }));
-
-    if (!allowedIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     // Get ids of members for organizations
     const memberIds = await db

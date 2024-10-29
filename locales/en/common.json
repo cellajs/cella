@@ -126,6 +126,8 @@
   "error.reported_try_or_contact": "An error has been reported. Please try again later and contact support if the problem persists.",
   "error.request_email_is_user": "This email is already linked to an account. Please use a different one!",
   "error.request_exists": "Already received your request. Please use contact form for urgent matters.",
+  "error.invalid_request": "Invalid request",
+  "error.invalid_request.text": "Request is invalid. Please contact support if the problem persists.",
   "error.resource_forbidden": "Forbidden",
   "error.resource_forbidden.text": "You do not have enough permission to access this {{resource}}.",
   "error.resource_not_found": "{{resource}} not found ",

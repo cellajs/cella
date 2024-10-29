@@ -36,15 +36,10 @@ const membershipsRoutes = app
   .openapi(membershipRouteConfig.createMembership, async (ctx) => {
     const { idOrSlug, entityType } = ctx.req.valid('query');
 
-    if (!config.contextEntityTypes.includes(entityType)) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn');
-    }
-
-    const { entity, isAllowed } = await getValidEntity(entityType, 'create', idOrSlug);
-
-    if (!entity || !isAllowed) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn');
-    }
+    // Allowed to invite members to an entity when user has update permission on the entity
+    const { entity, isAllowed } = await getValidEntity(entityType, 'update', idOrSlug);
+    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
+    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
 
     const { emails, role } = ctx.req.valid('json');
 
@@ -80,7 +75,6 @@ const membershipsRoutes = app
       if (entity.entity !== 'organization') {
         $where.push(
           and(
-            // eq(membershipsTable.organizationId, organizationId),
             eq(membershipsTable.type, 'organization'),
             inArray(
               membershipsTable.userId,
@@ -218,15 +212,9 @@ const membershipsRoutes = app
   .openapi(membershipRouteConfig.deleteMemberships, async (ctx) => {
     const { entityType, ids, idOrSlug } = ctx.req.valid('query');
 
-    if (!config.contextEntityTypes.includes(entityType)) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn');
-    }
-
     const { entity, isAllowed } = await getValidEntity(entityType, 'delete', idOrSlug);
-
-    if (!entity || !isAllowed) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn');
-    }
+    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
+    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
 
     const user = getContextUser();
     const entityIdField = entityIdFields[entityType];
@@ -274,9 +262,7 @@ const membershipsRoutes = app
     });
 
     // If the user doesn't have permission to delete any of the memberships, return an error
-    if (allowedTargets.length === 0) {
-      return ctx.json({ success: false, errors: errors }, 200);
-    }
+    if (allowedTargets.length === 0) return ctx.json({ success: false, errors: errors }, 200);
 
     // Delete the memberships
     await db.delete(membershipsTable).where(
@@ -334,24 +320,16 @@ const membershipsRoutes = app
     }
 
     const membershipContextId = membershipToUpdate[updatedEntityIdField];
-
     if (!membershipContextId) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
 
     const membershipContext = await resolveEntity(updatedType, membershipContextId);
-
     if (!membershipContext) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
 
     // Check if user has permission to someone elses membership
     if (user.id !== membershipToUpdate.userId) {
-      if (!config.contextEntityTypes.includes(updatedType)) {
-        return errorResponse(ctx, 403, 'forbidden', 'warn');
-      }
-
       const { entity, isAllowed } = await getValidEntity(updatedType, 'update', membershipContextId);
-
-      if (!entity || !isAllowed) {
-        return errorResponse(ctx, 403, 'forbidden', 'warn');
-      }
+      if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', updatedType);
+      if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', updatedType);
     }
 
     const [updatedMembership] = await db

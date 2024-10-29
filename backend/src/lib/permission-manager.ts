@@ -97,16 +97,16 @@ export const getValidEntity = async <T extends ContextEntity>(
   const user = getContextUser();
   const memberships = getMemberships();
 
-  // Check if the user is allowed to perform an update action in the organization
-  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity);
+  const isSystemAdmin = user.role === 'admin';
 
-  const entityMembership = memberships.find((m) => entity && [m.organizationId].includes(entity.id) && m.type === entityType) || null;
+  // Check if user is allowed to perform an action on entity
+  const isAllowed = permissionManager.isPermissionAllowed(memberships, action, entity) || isSystemAdmin;
+  if (!isAllowed) return { entity: null, isAllowed: false, membership: null };
 
-  return {
-    entity,
-    isAllowed: isAllowed || user.role === 'admin',
-    membership: entityMembership,
-  };
+  // Find membership for entity
+  const membership = memberships.find((m) => entity && [m.organizationId].includes(entity.id) && m.type === entityType) || null;
+
+  return { entity, isAllowed, membership };
 };
 
 // Export the configured PermissionManager instance
