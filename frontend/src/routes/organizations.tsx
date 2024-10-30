@@ -11,15 +11,19 @@ import { baseEntityRoutes } from '~/nav-config';
 import type { Organization as OrganizationType } from '~/types/common';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import type { ErrorType } from '#/lib/errors';
+import { attachmentsQuerySchema } from '#/modules/attachments/schema';
 import { AppRoute } from './general';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
 const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
+const AttachmentsTable = lazy(() => import('~/modules/organizations/attachments-table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 // Search query schema
 export const membersSearchSchema = membersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+
+export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true });
 
 export const OrganizationRoute = createRoute({
   path: baseEntityRoutes.organization,
@@ -62,6 +66,21 @@ export const OrganizationMembersRoute = createRoute({
         <MembersTable entity={organization} />
       </Suspense>
     );
+  },
+});
+
+export const OrganizationAttachmentsRoute = createRoute({
+  path: '/attachments',
+  validateSearch: attachmentsSearchSchema,
+  staticData: { pageTitle: 'Attachments', isAuth: true },
+  getParentRoute: () => OrganizationRoute,
+  loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
+  component: () => {
+    const { idOrSlug } = useParams({ from: OrganizationAttachmentsRoute.id });
+    const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
+
+    if (!organization) return;
+    return <AttachmentsTable organization={organization} />;
   },
 });
 

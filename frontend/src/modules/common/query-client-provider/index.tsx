@@ -9,6 +9,7 @@ import { organizationQueryOptions } from '~/modules/organizations/organization-p
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { useGeneralStore } from '~/store/general';
 import type { ContextEntity } from '~/types/common';
+import './attachments';
 
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 

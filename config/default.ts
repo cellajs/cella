@@ -116,7 +116,7 @@ export const config = {
   // Optional settings
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
-    sync: false, // Realtime updates and sync using Electric Sync
+    sync: true, // Realtime updates and sync using Electric Sync
     registrationEnabled: true, // Allow users to sign up. If disabled, the app is by invitation only
     waitList: false, // Suggest a waitlist for unknown emails when sign up is disabled
   },
@@ -130,7 +130,7 @@ export const config = {
   ] as const,
 
   // All entity types
-  entityTypes: ['user', 'organization'] as const,
+  entityTypes: ['user', 'organization', 'attachment'] as const,
 
   // Page entity types (pages with memberships and users)
   pageEntityTypes: ['user', 'organization'] as const,

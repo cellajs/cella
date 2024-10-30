@@ -1,5 +1,6 @@
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
+import { attachmentsTable } from './db/schema/attachments';
 import type { ContextEntity } from './types/common';
 
 export type EntityTables = (typeof entityTables)[keyof typeof entityTables];
@@ -21,6 +22,7 @@ export type MenuSectionName = MenuSection['name'];
 export const entityTables = {
   user: usersTable,
   organization: organizationsTable,
+  attachment: attachmentsTable,
 } as const;
 
 export const entityIdFields = {
