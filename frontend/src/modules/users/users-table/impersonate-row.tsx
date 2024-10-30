@@ -24,8 +24,8 @@ const ImpersonateRow = ({ user, tabIndex }: Props) => {
 
   const impersonateClick = async () => {
     try {
-      useUserStore.setState({ user: null as unknown as MeUser });
       await impersonationStart(user.id);
+      useUserStore.setState({ user: null as unknown as MeUser });
       await Promise.all([getAndSetMe(), getAndSetMenu()]);
       toast.success(t('common:success.impersonated'));
       navigate({ to: config.defaultRedirectPath, replace: true });
