@@ -56,7 +56,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // Table state
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [q, setQuery] = useState<MemberSearch['q']>(search.q);
+  const [q, setQuery] = useState<MemberSearch['q']>(search.q ?? '');
   const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 

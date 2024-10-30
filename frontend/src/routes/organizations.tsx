@@ -49,7 +49,7 @@ export const OrganizationMembersRoute = createRoute({
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
     const entityType = 'organization';
-    const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug: idOrSlug, entityType, q, sort, order, role, limit: 40 });
+    const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug: idOrSlug, entityType, q: q ?? '', sort, order, role, limit: 40 });
     return offlineFetchInfinite(queryOptions);
   },
   component: () => {

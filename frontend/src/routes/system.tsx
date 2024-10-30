@@ -45,11 +45,9 @@ export const UsersTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ deps: { q, sort, order, role } }) => {
-    const infiniteQueryOptions = usersQueryOptions({ q, sort, order, role, limit: 100 });
+    const infiniteQueryOptions = usersQueryOptions({ q: q ?? '', sort, order, role, limit: 100 });
     const cachedUsers = queryClient.getQueryData(infiniteQueryOptions.queryKey);
-    if (!cachedUsers) {
-      queryClient.fetchInfiniteQuery(infiniteQueryOptions);
-    }
+    if (!cachedUsers) queryClient.fetchInfiniteQuery(infiniteQueryOptions);
   },
   component: () => (
     <Suspense>

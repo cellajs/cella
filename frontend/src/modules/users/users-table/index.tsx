@@ -50,7 +50,8 @@ const UsersTable = () => {
   // Table state
   const [rows, setRows] = useState<User[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [q, setQuery] = useState<UsersSearch['q']>(search.q);
+  const [q, setQuery] = useState<UsersSearch['q']>(search.q ?? '');
+
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
