@@ -12,7 +12,7 @@ import { InviteMemberEmail } from '../../../emails/member-invite';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
-import { entityIdFields } from '#/entity-config';
+import { entityIdFields, menuSections } from '#/entity-config';
 import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -131,9 +131,10 @@ const membershipsRoutes = app
             const createdMembership = await insertMembership({ user: existingUser, role, entity: entity });
 
             // Send a Server-Sent Event (SSE) to the newly added user
-            sendSSEToUsers([existingUser.id], 'update_entity', {
-              ...entity,
-              membership: createdMembership,
+            sendSSEToUsers([existingUser.id], 'add_entity', {
+              newItem: { ...entity, membership: createdMembership },
+              sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
+              // parentSlug : ''   // if it a submenu add parentSlug
             });
           }
 

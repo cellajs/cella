@@ -1,8 +1,18 @@
-import { deleteMenuItem, updateMenuItem } from '~/modules/common/nav-sheet/helpers/menu-operations';
+import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/common/nav-sheet/helpers/menu-operations';
 import { useSSE } from '~/modules/common/sse/use-sse';
 import type { UserMenuItem } from '~/types/common';
 
 const SSE = () => {
+  const addEntity = (e: MessageEvent<string>) => {
+    try {
+      const data = JSON.parse(e.data);
+      const { newItem, sectionName, parentSlug } = data;
+      addMenuItem(newItem as UserMenuItem, sectionName, parentSlug);
+    } catch (error) {
+      console.error('Error parsing main add event', error);
+    }
+  };
+
   const updateEntity = (e: MessageEvent<string>) => {
     try {
       const updatedItem = JSON.parse(e.data);
@@ -20,6 +30,7 @@ const SSE = () => {
       console.error('Error parsing main remove event', error);
     }
   };
+  useSSE('add_entity', (e) => addEntity(e));
   useSSE('update_entity', (e) => updateEntity(e));
   useSSE('remove_entity', (e) => removeEntity(e));
 

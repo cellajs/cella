@@ -33,10 +33,12 @@ export const addMenuItem = (newEntity: UserMenuItem, sectionName: keyof UserMenu
 
   const updatedMenuSection = parentSlug ? add(menu[sectionName]) : [...menu[sectionName], { ...newEntity, submenu: [] }];
 
-  return {
-    ...menu,
-    [sectionName]: updatedMenuSection,
-  };
+  useNavigationStore.setState({
+    menu: {
+      ...menu,
+      [sectionName]: updatedMenuSection,
+    },
+  });
 };
 
 export const updateMenuItem = (updatedEntity: UserMenuItem) => {

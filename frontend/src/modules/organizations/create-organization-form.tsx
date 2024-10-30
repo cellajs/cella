@@ -23,7 +23,6 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
-import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types/common';
 
 interface CreateOrganizationFormProps {
@@ -65,9 +64,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
       nextStep?.();
 
-      useNavigationStore.setState({
-        menu: addMenuItem(createdOrganization, 'organizations'),
-      });
+      addMenuItem(createdOrganization, 'organizations');
       if (!callback) {
         navigate({
           to: '/$idOrSlug/members',
