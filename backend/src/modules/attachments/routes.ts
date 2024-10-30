@@ -64,6 +64,32 @@ class AttachmentRoutesConfig {
     },
   });
 
+  public getAttachment = createRouteConfig({
+    method: 'get',
+    path: '/{id}',
+    guard: [isAuthenticated],
+    tags: ['attachments'],
+    summary: 'Get attachment',
+    description: 'Get an attachment by id.',
+    request: {
+      params: z.object({
+        orgIdOrSlug: idOrSlugSchema.optional(),
+        id: idSchema,
+      }),
+    },
+    responses: {
+      200: {
+        description: 'Attachment',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(attachmentSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
   public deleteAttachments = createRouteConfig({
     method: 'delete',
     path: '/',

@@ -73,6 +73,18 @@ const attachmentsRoutes = app
     );
   })
   /*
+   * Get attachment
+   */
+  .openapi(attachmentsRoutesConfig.getAttachment, async (ctx) => {
+    const { id } = ctx.req.valid('param');
+
+    const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
+
+    if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
+
+    return ctx.json({ success: true, data: attachment }, 200);
+  })
+  /*
    * Delete attachments
    */
   .openapi(attachmentsRoutesConfig.deleteAttachments, async (ctx) => {
