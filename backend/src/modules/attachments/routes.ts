@@ -1,10 +1,10 @@
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
 
 import { createRouteConfig } from '#/lib/route-config';
-import { hasOrgAccess, isAuthenticated } from '#/middlewares/guard';
+import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 
 import { z } from 'zod';
-import { idOrSlugSchema } from '#/utils/schema/common-schemas';
+import { idOrSlugSchema, idSchema } from '#/utils/schema/common-schemas';
 import { attachmentSchema, attachmentsQuerySchema, createAttachmentSchema, deleteAttachmentsQuerySchema } from './schema';
 
 class AttachmentRoutesConfig {
@@ -83,6 +83,46 @@ class AttachmentRoutesConfig {
             schema: successWithErrorsSchema(),
           },
         },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public redirectToAttachment = createRouteConfig({
+    method: 'get',
+    path: '/{id}/link',
+    tags: ['attachments'],
+    guard: [isPublicAccess],
+    summary: 'Redirect to attachment',
+    description: 'Redirect to attachment by id.',
+    request: {
+      params: z.object({
+        id: idSchema,
+      }),
+    },
+    responses: {
+      200: {
+        description: 'Success',
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getAttachmentCover = createRouteConfig({
+    method: 'get',
+    path: '/{id}/cover',
+    guard: [isPublicAccess],
+    tags: ['attachments'],
+    summary: 'Get attachment cover',
+    description: 'Get attachment cover image by id.',
+    request: {
+      params: z.object({
+        id: idSchema,
+      }),
+    },
+    responses: {
+      200: {
+        description: 'Success',
       },
       ...errorResponses,
     },
