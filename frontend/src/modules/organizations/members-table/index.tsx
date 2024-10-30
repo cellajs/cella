@@ -59,6 +59,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const [q, setQuery] = useState<MemberSearch['q']>(search.q ?? '');
   const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as MemberSearch['sort'];
@@ -89,14 +90,11 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   }
 
-  // Total count
-  const totalCount = queryResult.data?.pages[queryResult.data.pages.length - 1].total;
-
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet);
 
   // Map (updated) query data to rows
-  useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows });
+  useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
   // Table selection
   const selectedMembers = useMemo(() => {

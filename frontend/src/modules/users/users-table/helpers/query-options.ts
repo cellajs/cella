@@ -13,27 +13,14 @@ export const usersQueryOptions = ({
 }) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
+  const offset = rowsLength;
 
   return infiniteQueryOptions({
     queryKey: ['users', 'list', q, sort, order, role],
     initialPageParam: 0,
     refetchOnWindowFocus: false,
     retry: 1,
-    queryFn: async ({ pageParam: page, signal }) =>
-      await getUsers(
-        {
-          page,
-          q,
-          sort,
-          order,
-          role,
-          // Fetch more items than the limit if some items were deleted
-          limit: limit + Math.max(limit - rowsLength, 0),
-          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
-          offset: rowsLength - limit > 0 ? undefined : rowsLength,
-        },
-        signal,
-      ),
+    queryFn: async ({ pageParam: page, signal }) => await getUsers({ page, q, sort, order, role, limit, offset }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

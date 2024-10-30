@@ -41,26 +41,13 @@ export const requestsQueryOptions = ({
 }) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
-
+  const offset = rowsLength;
   return infiniteQueryOptions({
     queryKey: ['requests', q, sort, order],
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
-    queryFn: async ({ pageParam: page, signal }) =>
-      await getRequests(
-        {
-          page,
-          q,
-          sort,
-          order,
-          // Fetch more items than the limit if some items were deleted
-          limit: limit + Math.max(limit - rowsLength, 0),
-          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
-          offset: rowsLength - limit > 0 ? undefined : rowsLength,
-        },
-        signal,
-      ),
+    queryFn: async ({ pageParam: page, signal }) => await getRequests({ page, q, sort, order, limit, offset }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
@@ -76,6 +63,7 @@ const RequestsTable = () => {
   const [q, setQuery] = useState<RequestsSearch['q']>(search.q);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as RequestsSearch['sort'];
@@ -86,9 +74,6 @@ const RequestsTable = () => {
 
   // Query organizations
   const queryResult = useSuspenseInfiniteQuery(requestsQueryOptions({ q, sort, order, limit, rowsLength: rows.length }));
-
-  // Total count
-  const totalCount = queryResult.data?.pages[queryResult.data.pages.length - 1].total;
 
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
@@ -105,7 +90,7 @@ const RequestsTable = () => {
   const [columns, setColumns] = useColumns();
 
   // Map (updated) query data to rows
-  useMapQueryDataToRows<Request>({ queryResult, setRows });
+  useMapQueryDataToRows<Request>({ queryResult, setRows, setTotalCount });
 
   // Save filters in search params
   const filters = useMemo(() => ({ q, sort, order }), [q, sortColumns]);

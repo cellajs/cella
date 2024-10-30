@@ -51,9 +51,9 @@ const UsersTable = () => {
   const [rows, setRows] = useState<User[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [q, setQuery] = useState<UsersSearch['q']>(search.q ?? '');
-
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as UsersSearch['sort'];
@@ -66,15 +66,12 @@ const UsersTable = () => {
   // Query users
   const queryResult = useSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit, rowsLength: rows.length }));
 
-  // Total count
-  const totalCount = queryResult.data?.pages[queryResult.data.pages.length - 1].total;
-
   // Save filters in search params
   const filters = useMemo(() => ({ q, sort, order, role }), [q, role, order, sort]);
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Map (updated) query data to rows
-  useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows });
+  useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
   // Table selection
   const selectedUsers = useMemo(() => {

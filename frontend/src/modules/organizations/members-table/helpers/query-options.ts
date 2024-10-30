@@ -17,6 +17,7 @@ export const membersQueryOptions = ({
 }) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
+  const offset = rowsLength;
 
   return infiniteQueryOptions({
     queryKey: ['members', idOrSlug, entityType, q, sort, order, role],
@@ -24,21 +25,7 @@ export const membersQueryOptions = ({
     retry: 1,
     refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) =>
-      getMembers(
-        {
-          page,
-          q,
-          sort,
-          order,
-          role,
-          limit,
-          idOrSlug,
-          orgIdOrSlug,
-          entityType,
-          offset: rowsLength,
-        },
-        signal,
-      ),
+      getMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

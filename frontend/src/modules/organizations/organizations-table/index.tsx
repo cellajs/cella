@@ -53,6 +53,7 @@ const OrganizationsTable = () => {
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [q, setQuery] = useState<OrganizationsSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as OrganizationsSearch['sort'];
@@ -64,11 +65,8 @@ const OrganizationsTable = () => {
   // Query organizations
   const queryResult = useSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit, rowsLength: rows.length }));
 
-  // Total count
-  const totalCount = queryResult.data?.pages[queryResult.data.pages.length - 1].total;
-
   // Map (updated) query data to rows
-  useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
+  useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
   const updateQueryCache = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
 

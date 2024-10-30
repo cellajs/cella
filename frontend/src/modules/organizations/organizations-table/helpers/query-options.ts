@@ -13,26 +13,14 @@ export const organizationsQueryOptions = ({
 }) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
+  const offset = rowsLength;
 
   return infiniteQueryOptions({
     queryKey: ['organizations', q, sort, order],
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
-    queryFn: async ({ pageParam: page, signal }) =>
-      await getOrganizations(
-        {
-          page,
-          q,
-          sort,
-          order,
-          // Fetch more items than the limit if some items were deleted
-          limit: limit + Math.max(limit - rowsLength, 0),
-          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
-          offset: rowsLength - limit > 0 ? undefined : rowsLength,
-        },
-        signal,
-      ),
+    queryFn: async ({ pageParam: page, signal }) => await getOrganizations({ page, q, sort, order, limit, offset }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

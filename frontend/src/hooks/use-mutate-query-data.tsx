@@ -27,6 +27,7 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
   return (items: Item[], action: QueryDataActions) => {
     queryClient.setQueryData<{ items: Item[]; total: number }>(queryKey, (data) => {
       if (!data) return;
+
       const updatedItems = updateItems(items, data.items, action);
       const totalAdjustment = action === 'create' ? items.length : action === 'delete' ? -items.length : 0;
       return { items: updatedItems, total: data.total + totalAdjustment };
@@ -34,20 +35,18 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
   };
 };
 
-export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
+export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGetter: (item: Item) => QueryKey) => {
   return (items: Item[], action: QueryDataActions) => {
     changeInfiniteQueryData(queryKey, items, action);
 
-    if (invalidateKeyGetter) {
-      for (const index in items) {
-        const queryKeyToInvalidate = invalidateKeyGetter(items[index]);
-        queryClient.invalidateQueries({ queryKey: queryKeyToInvalidate });
-      }
+    for (const index in items) {
+      const queryKeyToInvalidate = invalidateKeyGetter(items[index]);
+      queryClient.invalidateQueries({ queryKey: queryKeyToInvalidate });
     }
   };
 };
 
-export const useMutateSimilarInfiniteQueryData = (passedQueryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
+export const useMutateSimilarInfiniteQueryData = (passedQueryKey: QueryKey, invalidateKeyGetter: (item: Item) => QueryKey) => {
   return (items: Item[], action: QueryDataActions) => {
     const queries = queryClient.getQueriesData({ queryKey: passedQueryKey });
 
@@ -56,11 +55,9 @@ export const useMutateSimilarInfiniteQueryData = (passedQueryKey: QueryKey, inva
       changeInfiniteQueryData(queryKey, items, action);
     }
 
-    if (invalidateKeyGetter) {
-      for (const index in items) {
-        const queryKeyToInvalidate = invalidateKeyGetter(items[index]);
-        queryClient.invalidateQueries({ queryKey: queryKeyToInvalidate });
-      }
+    for (const index in items) {
+      const queryKeyToInvalidate = invalidateKeyGetter(items[index]);
+      queryClient.invalidateQueries({ queryKey: queryKeyToInvalidate });
     }
   };
 };
@@ -68,9 +65,12 @@ export const useMutateSimilarInfiniteQueryData = (passedQueryKey: QueryKey, inva
 const changeInfiniteQueryData = (queryKey: QueryKey, items: Item[], action: QueryDataActions) => {
   queryClient.setQueryData<InfiniteData<{ items: Item[]; total: number }>>(queryKey, (data) => {
     if (!data) return;
-    const pages = data.pages.map((page, idx) => ({
+
+    const totalAdjustment = action === 'create' ? items.length : action === 'delete' ? -items.length : 0;
+
+    const pages = data.pages.map((page) => ({
       items: updateItems(items, page.items, action),
-      total: action === 'create' && idx === 0 ? page.total + items.length : page.total,
+      total: page.total + totalAdjustment,
     }));
 
     return { pages, pageParams: data.pageParams };
