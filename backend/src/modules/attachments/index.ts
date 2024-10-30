@@ -1,6 +1,9 @@
 import { db } from '#/db/db';
 
-import { type SQL, count, ilike, inArray } from 'drizzle-orm';
+import { config } from 'config';
+import { type SQL, count, eq, ilike, inArray } from 'drizzle-orm';
+import { html } from 'hono/html';
+import { stream } from 'hono/streaming';
 import { attachmentsTable } from '#/db/schema/attachments';
 import { getContextUser, getMemberships } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -95,6 +98,69 @@ const attachmentsRoutes = app
     logEvent('Attachments deleted', { ids: allowedIds.join() });
 
     return ctx.json({ success: true, errors: errors }, 200);
+  })
+  .openapi(attachmentsRoutesConfig.getAttachmentCover, async (ctx) => {
+    const { id } = ctx.req.valid('param');
+
+    const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
+
+    if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
+
+    // let createdByUser: UserModel | undefined;
+
+    // if (task.createdBy) {
+    //   [createdByUser] = await db.select().from(usersTable).where(eq(usersTable.id, task.createdBy));
+    // }
+
+    // const coverStream = await generateCover({
+    //   title: task.summary,
+    //   avatarUrl: createdByUser?.thumbnailUrl || '',
+    //   name: createdByUser?.name || '',
+    //   position: createdByUser?.role || '',
+    // });
+
+    return stream(ctx, async (stream) => {
+      // const coverStreamWeb = nodeStreamToWebStream(coverStream);
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+      await stream.pipe({} as any);
+    });
+  })
+  .openapi(attachmentsRoutesConfig.redirectToAttachment, async (ctx) => {
+    const { id } = ctx.req.valid('param');
+
+    const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
+
+    if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
+
+    const redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments/${id}`;
+
+    // <title>${task.summary}</title>
+    // <meta name="twitter:title" content="${task.summary}"/>
+    // <meta property="og:title" content="${task.summary}"/>
+    // <meta property="og:image" content="${config.backendUrl}/${task.organizationId}/tasks/${id}/cover"/>
+    // <meta name="twitter:image" content="${config.backendUrl}/${task.organizationId}/tasks/${id}/cover"/>
+    return ctx.html(html`
+      <!doctype html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <title>${attachment.filename}</title>
+          <meta property="og:image" content="${config.frontendUrl}/static/images/thumbnail.png" />
+          <meta name="twitter:image" content="${config.frontendUrl}/static/images/thumbnail.png" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:site" content="@Cella" />
+          <meta name="twitter:creator" content="@Cella" />
+          <meta property="og:url" content="${redirectUrl}" />
+          <meta property="og:type" content="website" />
+          <meta property="og:site_name" content="Cella" />
+          <meta property="og:locale" content="en_US" />
+          <meta name="robots" content="index,follow" />
+        </head>
+        <script>
+          window.location.href = '${redirectUrl}';
+        </script>
+      </html>
+    `);
   });
 
 export default attachmentsRoutes;

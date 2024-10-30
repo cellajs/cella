@@ -1,9 +1,13 @@
 import type { Attachment } from '~/types/common';
 
+import { config } from 'config';
 import type { TFunction } from 'i18next';
+import { CopyCheckIcon, CopyIcon } from 'lucide-react';
+import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import { Button } from '~/modules/ui/button';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean, isSheet: boolean) => {
@@ -20,6 +24,22 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.filename || '-'}</span>
         </a>
       ),
+    },
+    {
+      key: 'edit',
+      name: '',
+      visible: true,
+      sortable: false,
+      width: 32,
+      renderCell: ({ row, tabIndex }) => {
+        const { copyToClipboard, copied } = useCopyToClipboard();
+        const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
+        return (
+          <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={() => copyToClipboard(shareLink)}>
+            {copied ? <CopyCheckIcon size={16} /> : <CopyIcon size={16} />}
+          </Button>
+        );
+      },
     },
     {
       key: 'contentType',
