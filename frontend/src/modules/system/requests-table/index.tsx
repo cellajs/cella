@@ -5,7 +5,9 @@ import { Handshake, Trash, XSquare } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
+import type { z } from 'zod';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -16,6 +18,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
+import type { getRequestsQuerySchema } from 'backend/modules/requests/schema';
 import { config } from 'config';
 import { Bird } from 'lucide-react';
 import { type GetRequestsParams, getRequests } from '~/api/requests';
@@ -23,9 +26,9 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { RequestsTableRoute } from '~/routes/system';
 import type { Request } from '~/types/common';
 
-import useSearchParams from '~/hooks/use-search-params';
 import Export from '~/modules/common/data-table/export';
 import { useColumns } from '~/modules/system/requests-table/columns';
+type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
 export const requestsQueryOptions = ({
   q,
@@ -68,20 +71,17 @@ const RequestsTable = () => {
   const search = useSearch({ from: RequestsTableRoute.id });
   const { t } = useTranslation();
 
-  const {
-    search: { q, order, sort },
-    setSearch,
-  } = useSearchParams<'sort' | 'order' | 'q'>(RequestsTableRoute.id, { sort: 'createdAt', order: 'desc' });
-
+  // Table state
   const [rows, setRows] = useState<Request[]>([]);
-
+  const [q, setQuery] = useState<RequestsSearch['q']>(search.q);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
+  const sort = sortColumns[0]?.columnKey as RequestsSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'];
   const limit = LIMIT;
 
-  // Check if there are active filters
   const isFiltered = !!q;
 
   // Query organizations
@@ -92,7 +92,8 @@ const RequestsTable = () => {
 
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setSearch({ q: searchString });
+
+    setQuery(searchString);
   };
 
   // Table selection
@@ -106,19 +107,23 @@ const RequestsTable = () => {
   // Map (updated) query data to rows
   useMapQueryDataToRows<Request>({ queryResult, setRows });
 
+  // Save filters in search params
+  const filters = useMemo(() => ({ q, sort, order }), [q, sortColumns]);
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+
   const onRowsChange = async (changedRows: Request[]) => {
     setRows(changedRows);
   };
 
-  // Reset filters
   const onResetFilters = () => {
-    setSearch({ q: '' });
+    setQuery('');
     setSelectedRows(new Set<string>());
   };
 
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        {/* Filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {selectedRequests.length > 0 && (
@@ -168,7 +173,11 @@ const RequestsTable = () => {
             <TableSearch value={q} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
+
+        {/* Columns view */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+
+        {/* Export */}
         <Export
           className="max-lg:hidden"
           filename={`${config.slug}-requests`}
@@ -178,8 +187,12 @@ const RequestsTable = () => {
             return items;
           }}
         />
+
+        {/* Focus view */}
         <FocusView iconOnly />
       </div>
+
+      {/* Table */}
       <DataTable<Request>
         {...{
           columns: columns.filter((column) => column.visible),

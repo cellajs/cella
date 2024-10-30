@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
-import type { RowsChangeData } from 'react-data-grid';
+import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { getMembers, updateMembership } from '~/api/memberships';
@@ -16,7 +16,7 @@ import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
-import { type SortColumn, getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
+import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
@@ -306,9 +306,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
           isFiltered,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,
-          // TODO: fix types? data grid uses uppercase for direction and a string type for columnKey
-          sortColumns: [{ columnKey: sort, direction: order?.toUpperCase() }] as SortColumn[],
-          onSortColumnsChange: (newColumnSort = []) => setSortColumns(newColumnSort as SortColumn[]),
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
         }}
       />
     </div>

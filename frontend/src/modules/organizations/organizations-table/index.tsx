@@ -2,25 +2,29 @@ import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { getOrganizations } from '~/api/organizations';
 
+import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
 import { config } from 'config';
 import { Bird, Mailbox, Plus, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import type { z } from 'zod';
 import { inviteMembers } from '~/api/memberships';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
+import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 
-import useSearchParams from '~/hooks/use-search-params';
+import { useSearch } from '@tanstack/react-router';
 import { showToast } from '~/lib/toasts';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
@@ -34,24 +38,27 @@ import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types/common';
 
+type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
+
 const LIMIT = 40;
 
 const OrganizationsTable = () => {
+  const search = useSearch({ from: OrganizationsTableRoute.id });
   const { t } = useTranslation();
+
   const { user } = useUserStore();
 
-  const {
-    search: { q, order, sort },
-    setSearch,
-  } = useSearchParams<'sort' | 'order' | 'q'>(OrganizationsTableRoute.id, { sort: 'createdAt', order: 'desc' });
-
+  // Table state
   const [rows, setRows] = useState<Organization[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
+  const [q, setQuery] = useState<OrganizationsSearch['q']>(search.q);
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
+  const sort = sortColumns[0]?.columnKey as OrganizationsSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'];
   const limit = LIMIT;
 
-  // Check if there are active filters
   const isFiltered = !!q;
 
   // Query organizations
@@ -63,26 +70,27 @@ const OrganizationsTable = () => {
   // Map (updated) query data to rows
   useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });
 
-  // Update query data
   const updateQueryCache = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
 
   // Build columns
   const [columns, setColumns] = useColumns(updateQueryCache);
 
+  // Save filters in search params
+  const filters = useMemo(() => ({ q, sort, order }), [q, sort, order]);
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+
   // Drop selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setSearch({ q: searchString });
+    setQuery(searchString);
   };
-
   // Table selection
   const selectedOrganizations = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [rows, selectedRows]);
 
-  // Reset filters
   const onResetFilters = () => {
-    setSearch({ q: '' });
+    setQuery('');
     setSelectedRows(new Set<string>());
   };
 
@@ -94,18 +102,19 @@ const OrganizationsTable = () => {
     // If user role is changed, invite user to organization
     for (const index of indexes) {
       const organization = changedRows[index];
-      if (organization.membership?.role) {
-        inviteMembers({
-          idOrSlug: organization.id,
-          emails: [user.email],
-          role: organization.membership?.role,
-          entityType: 'organization',
-          organizationId: organization.id,
-        })
-          .then(() => toast.success(t('common:success.your_role_updated')))
-          .catch(() => toast.error(t('common:error.error')));
-      }
+      if (!organization.membership?.role) continue;
+
+      inviteMembers({
+        idOrSlug: organization.id,
+        emails: [user.email],
+        role: organization.membership?.role,
+        entityType: 'organization',
+        organizationId: organization.id,
+      })
+        .then(() => toast.success(t('common:success.your_role_updated')))
+        .catch(() => toast.error(t('common:error.error')));
     }
+
     setRows(changedRows);
   };
 
@@ -211,7 +220,6 @@ const OrganizationsTable = () => {
             return items;
           }}
         />
-
         {/* Focus view */}
         <FocusView iconOnly />
       </div>
@@ -234,14 +242,8 @@ const OrganizationsTable = () => {
           onRowsChange,
           fetchMore: queryResult.fetchNextPage,
           onSelectedRowsChange: setSelectedRows,
-          sortColumns: [{ columnKey: sort, direction: order?.toUpperCase() }] as SortColumn[],
-          onSortColumnsChange: (newColumnSort) => {
-            if (!newColumnSort[0]) return setSearch({ sort: undefined, order: order === 'desc' ? 'asc' : 'desc' });
-            const [{ columnKey, direction }] = newColumnSort;
-            const newSort = columnKey as typeof sort;
-            const newOrder = direction.toLowerCase() as typeof order;
-            setSearch({ sort: newSort, order: newOrder });
-          },
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
           NoRowsComponent: (
             <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
           ),

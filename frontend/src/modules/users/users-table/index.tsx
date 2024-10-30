@@ -1,20 +1,23 @@
 import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
 
+import type { usersQuerySchema } from 'backend/modules/users/schema';
+import type { config } from 'config';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-
+import type { z } from 'zod';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import useSearchParams from '~/hooks/use-search-params';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
+import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
@@ -26,28 +29,34 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
-
 import { useColumns } from '~/modules/users/users-table/columns';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
 import { UsersTableRoute } from '~/routes/system';
 import type { User } from '~/types/common';
 
+type UsersSearch = z.infer<typeof usersQuerySchema>;
+
 const LIMIT = 100;
+
+type SystemRoles = (typeof config.rolesByType.systemRoles)[number] | undefined;
 
 const UsersTable = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const {
-    search: { q, order, sort, role, userIdPreview },
-    setSearch,
-  } = useSearchParams<'sort' | 'order' | 'q' | 'role' | 'userIdPreview'>(UsersTableRoute.id, { sort: 'createdAt', order: 'desc' });
+  const search = useSearch({ from: UsersTableRoute.id });
   const containerRef = useRef(null);
 
+  // Table state
   const [rows, setRows] = useState<User[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
+  const [q, setQuery] = useState<UsersSearch['q']>(search.q);
+  const [role, setRole] = useState<UsersSearch['role']>(search.role);
+  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
+  const sort = sortColumns[0]?.columnKey as UsersSearch['sort'];
+  const order = sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'];
   const limit = LIMIT;
 
   // Check if there are active filters
@@ -58,6 +67,10 @@ const UsersTable = () => {
 
   // Total count
   const totalCount = queryResult.data?.pages[0].total;
+
+  // Save filters in search params
+  const filters = useMemo(() => ({ q, sort, order, role }), [q, role, order, sort]);
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Map (updated) query data to rows
   useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows });
@@ -84,31 +97,29 @@ const UsersTable = () => {
 
   // Reset filters
   const onResetFilters = () => {
+    setQuery('');
     setSelectedRows(new Set<string>());
-    setSearch({ q: '', role: undefined });
+    setRole(undefined);
   };
 
-  // Clear selected rows on search
+  // Drop selected Rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setSearch({ q: searchString });
+    setQuery(searchString);
   };
 
   // Change role filter
-  const onRoleChange = (newRole?: string) => {
+  const onRoleChange = (role?: string) => {
     setSelectedRows(new Set<string>());
-    setSearch({ role: newRole === 'all' ? undefined : (newRole as typeof role) });
+    setRole(role === 'all' ? undefined : (role as SystemRoles));
   };
 
   // Update user role
   const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
     if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
-    if (column.key !== 'role') return setRows(changedRows);
-
-    // If user role is changed, update user
     for (const index of indexes) {
-      updateUserRole(changedRows[index]);
+      if (column.key === 'role') updateUserRole(changedRows[index]);
     }
     setRows(changedRows);
   };
@@ -150,8 +161,8 @@ const UsersTable = () => {
 
   // TODO: Figure out a way to open sheet using url state and using react-query to fetch data, we need an <Outlet /> for this?
   useEffect(() => {
-    if (!rows.length || !userIdPreview) return;
-    const user = rows.find((t) => t.id === userIdPreview);
+    if (!rows.length || !search.userIdPreview) return;
+    const user = rows.find((t) => t.id === search.userIdPreview);
     if (user) openUserPreviewSheet(user, navigate);
   }, [rows]);
 
@@ -241,14 +252,8 @@ const UsersTable = () => {
           isFiltered,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,
-          sortColumns: [{ columnKey: sort, direction: order?.toUpperCase() }] as SortColumn[],
-          onSortColumnsChange: (newColumnSort) => {
-            if (!newColumnSort[0]) return setSearch({ sort: undefined, order: order === 'desc' ? 'asc' : 'desc' });
-            const [{ columnKey, direction }] = newColumnSort;
-            const newSort = columnKey as typeof sort;
-            const newOrder = direction.toLowerCase() as typeof order;
-            setSearch({ sort: newSort, order: newOrder });
-          },
+          sortColumns,
+          onSortColumnsChange: setSortColumns,
         }}
       />
     </div>
