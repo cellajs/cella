@@ -1,10 +1,13 @@
+import { queryOptions } from '@tanstack/react-query';
 import { createRoute, useParams } from '@tanstack/react-router';
 import { membersQuerySchema } from 'backend/modules/general/schema';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
+import { getAttachment } from '~/api/attachments';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
+import AttachmentPage from '~/modules/organizations/attachment-page';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { baseEntityRoutes } from '~/nav-config';
@@ -81,6 +84,34 @@ export const OrganizationAttachmentsRoute = createRoute({
 
     if (!organization) return;
     return <AttachmentsTable organization={organization} />;
+  },
+});
+
+export const OrganizationAttachmentRoute = createRoute({
+  path: '/attachments/$attachmentId',
+  staticData: { pageTitle: 'Attachment', isAuth: true },
+  getParentRoute: () => OrganizationRoute,
+  loader: ({ params: { idOrSlug, attachmentId } }) =>
+    queryClient.ensureQueryData(
+      queryOptions({
+        queryKey: ['attachments', idOrSlug],
+        queryFn: () =>
+          getAttachment({
+            orgIdOrSlug: idOrSlug,
+            id: attachmentId,
+          }),
+      }),
+    ),
+  component: () => {
+    const { idOrSlug } = useParams({ from: OrganizationAttachmentRoute.id });
+    const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
+
+    if (!organization) return;
+    return (
+      <Suspense>
+        <AttachmentPage organization={organization} />
+      </Suspense>
+    );
   },
 });
 

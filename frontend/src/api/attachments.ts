@@ -52,6 +52,12 @@ export const getAttachments = async (
   return json.data;
 };
 
+export const getAttachment = async ({ orgIdOrSlug, id }: { orgIdOrSlug: string; id: string }) => {
+  const response = await client[':id'].$get({ param: { orgIdOrSlug, id } });
+  const json = await handleResponse(response);
+  return json.data;
+};
+
 export type DeleteAttachmentsParams = Parameters<(typeof client)['index']['$delete']>['0']['query'] & {
   orgIdOrSlug: string;
 };

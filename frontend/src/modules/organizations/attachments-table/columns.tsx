@@ -1,5 +1,6 @@
 import type { Attachment } from '~/types/common';
 
+import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import type { TFunction } from 'i18next';
 import { CopyCheckIcon, CopyIcon } from 'lucide-react';
@@ -20,9 +21,17 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       sortable: true,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
-        <a href={row.url} tabIndex={tabIndex} className="flex space-x-2 items-center outline-0 ring-0 group">
+        <Link
+          className="flex space-x-2 items-center outline-0 ring-0 group"
+          tabIndex={tabIndex}
+          to="/$idOrSlug/attachments/$attachmentId"
+          params={{
+            idOrSlug: row.organizationId,
+            attachmentId: row.id,
+          }}
+        >
           <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.filename || '-'}</span>
-        </a>
+        </Link>
       ),
     },
     {
