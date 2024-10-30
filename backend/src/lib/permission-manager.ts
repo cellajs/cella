@@ -94,6 +94,14 @@ export const getValidEntity = async <T extends ContextEntity>(
 }> => {
   const entity = (await resolveEntity(entityType, idOrSlug)) || null;
 
+  if (!entity) {
+    return {
+      entity: null,
+      isAllowed: false,
+      membership: null,
+    };
+  }
+
   const user = getContextUser();
   const memberships = getMemberships();
 

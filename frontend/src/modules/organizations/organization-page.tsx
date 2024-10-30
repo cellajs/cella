@@ -11,9 +11,11 @@ import { OrganizationRoute } from '~/routes/organizations';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
+import { useUserStore } from '~/store/user';
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
+  { id: 'attachments', label: 'common:attachments', path: '/$idOrSlug/attachments' },
   { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
 ];
 
@@ -26,12 +28,12 @@ export const organizationQueryOptions = (idOrSlug: string) =>
 const OrganizationPage = () => {
   const { t } = useTranslation();
   const { idOrSlug } = useParams({ from: OrganizationRoute.id });
-
+  const user = useUserStore((state) => state.user);
   const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
   const organization = organizationQuery.data;
 
-  const isAdmin = organization.membership?.role === 'admin';
-  const tabs = isAdmin ? organizationTabs : [organizationTabs[0]];
+  const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
+  const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 1);
 
   const { mutate } = useUpdateOrganizationMutation(organization.id);
 

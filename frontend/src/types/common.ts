@@ -7,6 +7,7 @@ import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
 import type { z } from 'zod';
 import type { client } from '~/api/me';
+import type { attachmentSchema } from '#/modules/attachments/schema';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 
 // Core types
@@ -22,6 +23,8 @@ export type UserMenu = Extract<InferResponseType<(typeof client.menu)['$get']>, 
 export type UserMenuItem = UserMenu[keyof UserMenu][number];
 
 export type Organization = z.infer<typeof organizationSchema>;
+
+export type Attachment = z.infer<typeof attachmentSchema>;
 
 export type Language = Organization['languages'][number];
 
