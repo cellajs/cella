@@ -46,9 +46,8 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
       />
       <div className="truncate grow py-2 flex flex-col justify-center pr-2 text-left">
         <div
-          className={`truncate leading-5 transition-all group-hover/menuItem:delay-300 duration-200 ease-in-out ${!searchResults && 'pt-2.5'} group-hover/menuItem:pt-0.5 text-base group-data-[subitem=true]/menuItem:text-sm
-            group-data-[subitem=true]/menuItem:sm:-mb-0.5
-            group-data-[subitem=true]/menuItem:sm:-mt-1`}
+          className={`truncate leading-5 transition-all group-hover/menuItem:delay-300 duration-200 ease-in-out ${!searchResults && 'pt-2.5'} group-hover/menuItem:sm:!pt-0 text-base group-data-[subitem=true]/menuItem:text-sm
+            group-data-[subitem=true]/menuItem:sm:-my-0.5 group-data-[subitem=true]/menuItem:sm:pt-1`}
         >
           {item.name}
         </div>
@@ -58,11 +57,11 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
           "
         >
           {searchResults && (
-            <span className="absolute transition-opacity duration-200 delay-200 ease-in-out group-hover/menuItem:opacity-0">
+            <span className="absolute transition-opacity duration-200 delay-200 ease-in-out group-hover/menuItem:sm:opacity-0">
               {t(`app:${item.entity}`)}
             </span>
           )}
-          <span className="opacity-0 transition-opacity duration-200 ease-in-out group-hover/menuItem:delay-300 group-hover/menuItem:opacity-100">
+          <span className="opacity-0 transition-opacity duration-200 ease-in-out group-hover/menuItem:delay-300 group-hover/menuItem:sm:opacity-100">
             {item.submenu?.length
               ? `${item.submenu?.length} ${t(`app:${item.submenu?.length > 1 ? `${item.submenu[0].entity}s` : item.submenu[0].entity}`).toLowerCase()}`
               : item.membership.role
