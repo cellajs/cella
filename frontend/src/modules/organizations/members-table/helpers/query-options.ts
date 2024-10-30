@@ -31,13 +31,11 @@ export const membersQueryOptions = ({
           sort,
           order,
           role,
-          // Fetch more items than the limit if some items were deleted
-          limit: limit + Math.max(page * limit - rowsLength, 0),
+          limit,
           idOrSlug,
           orgIdOrSlug,
           entityType,
-          // If some items were added, offset should be undefined, otherwise it should be the length of the rows
-          offset: rowsLength - page * limit > 0 ? undefined : rowsLength,
+          offset: rowsLength,
         },
         signal,
       ),

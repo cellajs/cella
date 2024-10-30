@@ -13,6 +13,7 @@ const SystemPage = () => {
       <SimpleHeader heading={t('common:system_panel')} text={t('common:system_panel.text')} className="container pt-4 md:pt-6" />
 
       <PageNav
+        className="mt-4"
         tabs={[
           { id: 'users', label: 'users', path: UsersTableRoute.fullPath },
           { id: 'organizations', label: 'organizations', path: OrganizationsTableRoute.fullPath },
