@@ -59,7 +59,7 @@ export const OrganizationMembersRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <MembersTable entity={organization} />
+        <MembersTable key={organization.id} entity={organization} />
       </Suspense>
     );
   },

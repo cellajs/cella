@@ -2,7 +2,7 @@ import type { Member } from '~/types/common';
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
@@ -18,7 +18,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
   const isMobile = useBreakpoints('max', 'sm');
   const navigate = useNavigate();
 
-  const columns = useMemo(() => {
+  const columns = () => {
     const cols: ColumnOrColumnGroup<Member>[] = [
       // For admins add checkbox column
       ...(isAdmin ? [CheckboxColumn] : []),
@@ -100,7 +100,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
     ];
 
     return cols;
-  }, []);
+  };
 
   return useState<ColumnOrColumnGroup<Member>[]>(columns);
 };
