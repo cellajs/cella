@@ -12,8 +12,6 @@ import { Checkbox } from '~/modules/ui/checkbox';
 import '~/modules/common/data-table/style.css';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
-import Spinner from '~/modules/common/spinner';
-import { Button } from '~/modules/ui/button';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -39,15 +37,13 @@ interface DataTableProps<TData> {
   fetchMore?: () => Promise<unknown>;
 }
 
-const NoRows = ({
-  isFiltered,
-  isFetching,
-  customComponent,
-}: {
+interface NoRowsProps {
   isFiltered?: boolean;
   isFetching?: boolean;
   customComponent?: React.ReactNode;
-}) => {
+}
+// When there are no rows, this component is displayed
+const NoRows = ({ isFiltered, isFetching, customComponent }: NoRowsProps) => {
   const { t } = useTranslation();
 
   return (
@@ -60,11 +56,8 @@ const NoRows = ({
   );
 };
 
-const ErrorMessage = ({
-  error,
-}: {
-  error: Error;
-}) => {
+// When there is an error, this component is displayed
+const ErrorMessage = ({ error }: { error: Error }) => {
   return (
     <div className="flex flex-col items-center justify-center h-full w-full bg-background text-muted-foreground">
       <div className="text-center my-8 text-sm text-red-500">{error.message}</div>
@@ -95,19 +88,18 @@ export const DataTable = <TData,>({
   onCellClick,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
+
   const [initialDone, setInitialDone] = useState(false);
-  const { ref: measureRef, inView } = useInView({
-    triggerOnce: false,
-    threshold: 0,
-  });
+  const { ref: measureRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
   useEffect(() => {
-    if (!rows.length || error) return;
-    if (inView && !isFetching) {
-      if (typeof totalCount === 'number' && rows.length >= totalCount) return;
-      fetchMore?.();
-    }
-  }, [inView, error, fetchMore]);
+    console.log('inView', inView, isFetching, rows.length, error);
+    if (!rows.length || error || !fetchMore || isFetching || !inView) return;
+
+    if (typeof totalCount === 'number' && rows.length >= totalCount) return;
+
+    fetchMore();
+  }, [inView, error, rows.length, isFetching]);
 
   useEffect(() => {
     if (initialDone) return;
@@ -123,7 +115,7 @@ export const DataTable = <TData,>({
           ) : !rows.length ? (
             <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
           ) : (
-            <div className="grid rdg-wrapper relative">
+            <div className="grid rdg-wrapper relative pb-8">
               <DataGrid
                 rowHeight={rowHeight}
                 enableVirtualization={enableVirtualization}
@@ -165,29 +157,35 @@ export const DataTable = <TData,>({
                 }}
               />
 
-              {/* Infinite loading measure ref */}
+              {/* Infinite loading measure ref, which increases until 200 rows */}
               <div
-                key={totalCount}
+                key={rows.length}
                 ref={measureRef}
                 className="h-4 w-0 bg-red-700 absolute bottom-0 z-[200]"
                 style={{
-                  height: `${rows.length * 0.2 * rowHeight}px`,
+                  height: `${Math.min(rows.length, 400) * 0.25 * rowHeight}px`,
                   maxHeight: `${rowHeight * limit}px`,
                 }}
               />
 
               {/* Loading */}
-              {isFetching && !error && (
-                <div className="my-4">
-                  <Spinner inline noDelay />
+              {totalCount && totalCount > rows.length && !error && (
+                <div className="flex space-x-1 justify-center items-center relative top-4 h-0 w-full animate-pulse">
+                  <span className="sr-only">Loading...</span>
+                  <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <div className="h-1 w-3 bg-foreground rounded-full animate-bounce" />
                 </div>
               )}
 
-              {/* Infinite scroll is stuck */}
-              {!isFetching && !error && !!totalCount && totalCount > rows.length && (
-                <Button variant="ghost" className="w-full my-6 opacity-30" onClick={fetchMore}>
-                  {t('common:click_fetch.text')}
-                </Button>
+              {/* All is loaded */}
+              {!isFetching && !error && !!totalCount && totalCount <= rows.length && (
+                <div className="opacity-50 w-full text-xl  mt-4 text-center">
+                  <div>&#183;</div>
+                  <div className="-mt-5">&#183;</div>
+                  <div className="-mt-5">&#183;</div>
+                  <div className="-mt-3">&#176;</div>
+                </div>
               )}
 
               {/* Error */}
