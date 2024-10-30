@@ -67,7 +67,7 @@ const UsersTable = () => {
   const queryResult = useSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit, rowsLength: rows.length }));
 
   // Total count
-  const totalCount = queryResult.data?.pages[0].total;
+  const totalCount = queryResult.data?.pages[queryResult.data.pages.length - 1].total;
 
   // Save filters in search params
   const filters = useMemo(() => ({ q, sort, order, role }), [q, role, order, sort]);

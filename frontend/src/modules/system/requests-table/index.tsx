@@ -88,7 +88,7 @@ const RequestsTable = () => {
   const queryResult = useSuspenseInfiniteQuery(requestsQueryOptions({ q, sort, order, limit, rowsLength: rows.length }));
 
   // Total count
-  const totalCount = queryResult.data?.pages[0].total;
+  const totalCount = queryResult.data?.pages[queryResult.data.pages.length - 1].total;
 
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());

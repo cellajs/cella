@@ -65,7 +65,7 @@ const OrganizationsTable = () => {
   const queryResult = useSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit, rowsLength: rows.length }));
 
   // Total count
-  const totalCount = queryResult.data?.pages[0].total;
+  const totalCount = queryResult.data?.pages[queryResult.data.pages.length - 1].total;
 
   // Map (updated) query data to rows
   useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows });

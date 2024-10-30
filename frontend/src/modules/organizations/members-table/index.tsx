@@ -90,7 +90,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   }
 
   // Total count
-  const totalCount = queryResult.data?.pages[0].total;
+  const totalCount = queryResult.data?.pages[queryResult.data.pages.length - 1].total;
 
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet);
@@ -189,7 +189,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
       />,
       {
         className: 'max-w-xl',
-        title: t('common:remove_resource', { resource: t('member').toLowerCase() }),
+        title: t('common:remove_resource', { resource: t('common:member').toLowerCase() }),
         description: (
           <Trans
             i18nKey="common:confirm.remove_members"
