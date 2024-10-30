@@ -72,7 +72,7 @@ const RequestsTable = () => {
 
   const isFiltered = !!q;
 
-  // Query organizations
+  // Query requests
   const queryResult = useSuspenseInfiniteQuery(requestsQueryOptions({ q, sort, order, limit, rowsLength: rows.length }));
 
   const onSearch = (searchString: string) => {
@@ -149,7 +149,9 @@ const RequestsTable = () => {
                 </Button>
               </>
             )}
-            {selectedRequests.length === 0 && <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {selectedRequests.length === 0 && (
+              <TableCount count={totalCount} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            )}
           </FilterBarActions>
 
           <div className="sm:grow" />
