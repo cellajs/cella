@@ -15,7 +15,7 @@ export const usersQueryOptions = ({
   const order = initialOrder || 'desc';
 
   return infiniteQueryOptions({
-    queryKey: ['users', q, sort, order, role],
+    queryKey: ['users', 'list', q, sort, order, role],
     initialPageParam: 0,
     refetchOnWindowFocus: false,
     retry: 1,

@@ -5,8 +5,9 @@ interface Item {
   id: string;
   membership?: { id: string } | null;
 }
+type QueryDataActions = 'create' | 'update' | 'delete' | 'updateMembership';
 
-const updateItems = (items: Item[], dataItems: Item[], action: 'create' | 'update' | 'delete' | 'updateMembership') => {
+const updateItems = (items: Item[], dataItems: Item[], action: QueryDataActions) => {
   switch (action) {
     case 'create':
       return [...items, ...dataItems];
@@ -23,7 +24,7 @@ const updateItems = (items: Item[], dataItems: Item[], action: 'create' | 'updat
 };
 
 export const useMutateQueryData = (queryKey: QueryKey) => {
-  return (items: Item[], action: 'create' | 'update' | 'delete' | 'updateMembership') => {
+  return (items: Item[], action: QueryDataActions) => {
     queryClient.setQueryData<{ items: Item[]; total: number }>(queryKey, (data) => {
       if (!data) return;
       const updatedItems = updateItems(items, data.items, action);
@@ -34,16 +35,8 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
 };
 
 export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
-  return (items: Item[], action: 'create' | 'update' | 'delete' | 'updateMembership') => {
-    queryClient.setQueryData<InfiniteData<{ items: Item[]; total: number }>>(queryKey, (data) => {
-      if (!data) return;
-      const pages = data.pages.map((page, idx) => ({
-        items: idx === 0 && action === 'create' ? updateItems(items, page.items, action) : updateItems(items, page.items, action),
-        total: action === 'create' && idx === 0 ? page.total + items.length : page.total,
-      }));
-
-      return { pages, pageParams: data.pageParams };
-    });
+  return (items: Item[], action: QueryDataActions) => {
+    changeInfiniteQueryData(queryKey, items, action);
 
     if (invalidateKeyGetter) {
       for (const index in items) {
@@ -52,4 +45,34 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
       }
     }
   };
+};
+
+export const useMutateSimilarInfiniteQueryData = (passedQueryKey: QueryKey, invalidateKeyGetter?: (item: Item) => QueryKey) => {
+  return (items: Item[], action: QueryDataActions) => {
+    const queries = queryClient.getQueriesData({ queryKey: passedQueryKey });
+
+    for (const query of queries) {
+      const [queryKey] = query;
+      changeInfiniteQueryData(queryKey, items, action);
+    }
+
+    if (invalidateKeyGetter) {
+      for (const index in items) {
+        const queryKeyToInvalidate = invalidateKeyGetter(items[index]);
+        queryClient.invalidateQueries({ queryKey: queryKeyToInvalidate });
+      }
+    }
+  };
+};
+
+const changeInfiniteQueryData = (queryKey: QueryKey, items: Item[], action: QueryDataActions) => {
+  queryClient.setQueryData<InfiniteData<{ items: Item[]; total: number }>>(queryKey, (data) => {
+    if (!data) return;
+    const pages = data.pages.map((page, idx) => ({
+      items: updateItems(items, page.items, action),
+      total: action === 'create' && idx === 0 ? page.total + items.length : page.total,
+    }));
+
+    return { pages, pageParams: data.pageParams };
+  });
 };

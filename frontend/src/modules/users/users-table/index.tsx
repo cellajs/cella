@@ -11,7 +11,7 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
-import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateSimilarInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
@@ -81,7 +81,7 @@ const UsersTable = () => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
-  const updateQueryCache = useMutateInfiniteQueryData(['users', q, sort, order, role], (item) => ['users', item.id]);
+  const updateQueryCache = useMutateSimilarInfiniteQueryData(['users', 'list'], (item) => ['users', item.id]);
 
   // Build columns
   const [columns, setColumns] = useColumns(updateQueryCache);
