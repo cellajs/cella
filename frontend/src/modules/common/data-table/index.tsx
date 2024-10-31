@@ -2,16 +2,16 @@ import 'react-data-grid/lib/styles.css';
 
 import { Search } from 'lucide-react';
 import { type Key, type ReactNode, useEffect, useState } from 'react';
-import DataGrid, { type RenderRowProps, type CellClickArgs, type CellMouseEvent, type RowsChangeData, type SortColumn } from 'react-data-grid';
+import DataGrid, { type CellClickArgs, type CellMouseEvent, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 
 import { useRef } from 'react';
 import { useInView } from 'react-intersection-observer';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
-import { Checkbox } from '~/modules/ui/checkbox';
-import '~/modules/common/data-table/style.css';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
+import { Checkbox } from '~/modules/ui/checkbox';
 
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -97,7 +97,12 @@ export const DataTable = <TData,>({
 
     if (typeof totalCount === 'number' && rows.length >= totalCount) return;
 
-    fetchMore();
+    // Throttle fetchMore to avoid duplicate calls
+    const fetchMoreTimeout = setTimeout(() => {
+      fetchMore();
+    }, 100);
+
+    return () => clearTimeout(fetchMoreTimeout); // Clear timeout on cleanup
   }, [inView, error, rows.length, isFetching]);
 
   useEffect(() => {
