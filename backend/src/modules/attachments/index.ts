@@ -1,7 +1,7 @@
 import { db } from '#/db/db';
 
 import { config } from 'config';
-import { type SQL, count, eq, ilike, inArray } from 'drizzle-orm';
+import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
 import { attachmentsTable } from '#/db/schema/attachments';
@@ -45,7 +45,16 @@ const attachmentsRoutes = app
   .openapi(attachmentsRoutesConfig.getAttachments, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
-    const filter: SQL | undefined = q ? ilike(attachmentsTable.filename, `%${q}%`) : undefined;
+    const organization = getOrganization();
+
+    // Filter at least by valid organization
+    const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
+
+    // TODO is this case sensitive? util for sanitizing?
+    if (q) {
+      const sanitizedQ = `%${q.trim()}%`;
+      filters.push(ilike(attachmentsTable.filename, sanitizedQ));
+    }
 
     const orderColumn = getOrderColumn(
       {
@@ -59,22 +68,17 @@ const attachmentsRoutes = app
       order,
     );
 
-    const attachmentsQuery = db.select().from(attachmentsTable).where(filter).orderBy(orderColumn);
+    const attachmentsQuery = db
+      .select()
+      .from(attachmentsTable)
+      .where(and(...filters))
+      .orderBy(orderColumn);
 
     const attachments = await attachmentsQuery.offset(Number(offset)).limit(Number(limit));
 
     const [{ total }] = await db.select({ total: count() }).from(attachmentsQuery.as('attachments'));
 
-    return ctx.json(
-      {
-        success: true,
-        data: {
-          items: attachments,
-          total,
-        },
-      },
-      200,
-    );
+    return ctx.json({ success: true, data: { items: attachments, total } }, 200);
   })
   /*
    * Get attachment
@@ -82,7 +86,12 @@ const attachmentsRoutes = app
   .openapi(attachmentsRoutesConfig.getAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
+    const organization = getOrganization();
+
+    const [attachment] = await db
+      .select()
+      .from(attachmentsTable)
+      .where(and(eq(attachmentsTable.id, id), eq(attachmentsTable.organizationId, organization.id)));
 
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
@@ -145,7 +154,6 @@ const attachmentsRoutes = app
     const { id } = ctx.req.valid('param');
 
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
-
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
     const redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments/${id}`;
