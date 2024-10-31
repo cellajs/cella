@@ -39,7 +39,7 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
     return {
       id: nanoid(),
       name,
-      slug: slugify(name, { lower: true }),
+      slug: slugify(name, { lower: true, remove: /[*+~.()_'"!:@]/g }),
       bannerUrl: null,
       color: faker.internet.color(),
       chatSupport: faker.datatype.boolean(),
