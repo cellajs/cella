@@ -133,7 +133,7 @@ export const config = {
   // All entity types
   entityTypes: ['user', 'organization', 'attachment'] as const,
 
-  // Page entity types (pages with memberships and users)
+  // Page entity types (pages with memberships + users)
   pageEntityTypes: ['user', 'organization'] as const,
 
   // Context entity types (memberships)

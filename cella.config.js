@@ -36,6 +36,7 @@ export const config = {
     'info/*',
     'config/default.ts',
     'config/development.ts',
+    'config/production.ts',
     'config/tunnel.ts',
     'cli/create-cella/*',
     'frontend/vite.config.ts',

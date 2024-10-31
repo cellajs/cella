@@ -5,6 +5,8 @@ interface Item {
   id: string;
   membership?: { id: string } | null;
 }
+
+// TODO: add comments in this file
 type QueryDataActions = 'create' | 'update' | 'delete' | 'updateMembership';
 
 const updateItems = (items: Item[], dataItems: Item[], action: QueryDataActions) => {
@@ -23,6 +25,7 @@ const updateItems = (items: Item[], dataItems: Item[], action: QueryDataActions)
   }
 };
 
+// TODO this is not used anymore?
 export const useMutateQueryData = (queryKey: QueryKey) => {
   return (items: Item[], action: QueryDataActions) => {
     queryClient.setQueryData<{ items: Item[]; total: number }>(queryKey, (data) => {
@@ -46,6 +49,7 @@ export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGett
   };
 };
 
+//TODO: can we merge this with useMutateInfiniteQueryData?
 export const useMutateSimilarInfiniteQueryData = (passedQueryKey: QueryKey, invalidateKeyGetter: (item: Item) => QueryKey) => {
   return (items: Item[], action: QueryDataActions) => {
     const queries = queryClient.getQueriesData({ queryKey: passedQueryKey });

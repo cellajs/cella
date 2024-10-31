@@ -7,31 +7,33 @@ export type EntityTables = (typeof entityTables)[keyof typeof entityTables];
 
 export type EntityTableNames = EntityTables['_']['name'];
 
-// TODO this type is a bit redundant, but it was added to make submenus work while not using it in cella directly.
 export type MenuSection = {
-  name: 'organizations';
+  name: (typeof menuSections)[number]['name'];
   entityType: ContextEntity;
   submenu?: {
     entityType: ContextEntity;
-    parentField: 'organizationId';
+    parentField: (typeof entityIdFields)[keyof typeof entityIdFields];
   };
 };
 export type MenuSectionName = MenuSection['name'];
 
-// Define what are the entities and their tables
+// Define entities and their tables
 export const entityTables = {
   user: usersTable,
   organization: organizationsTable,
   attachment: attachmentsTable,
 } as const;
 
+// Define fields to identify an entity
 export const entityIdFields = {
   user: 'userId',
   organization: 'organizationId',
+  attachment: 'attachmentId',
 } as const;
 
-// Define how entities are rendered in user menu
-// Here you declare the menu sections
+// Define entities in user menu
+// Supports submenus by adding a submenu property
+// ie. submenu: { name: 'workspaces', entityType: 'workspace', parentField: 'organizationId' }
 export const menuSections = [
   {
     name: 'organizations',
