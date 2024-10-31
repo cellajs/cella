@@ -252,7 +252,6 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
   }, [api]);
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: <explanation>
     <div ref={ref} role="tablist" className={cn('mx-2 flex justify-center cursor-default', className)} {...props}>
       {Array.from({ length }).map((_, index) => (
         <button

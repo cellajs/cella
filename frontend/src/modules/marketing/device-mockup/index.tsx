@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
+import CarouselDialog from '~/modules/common/carousel-dialog';
+
 import { useThemeStore } from '~/store/theme';
 import { cn } from '~/utils/cn';
-import DeviceCarousel from './carousel';
-import DeviceDialog from './dialog';
+import Carousel from './carousel';
+
 import DeviceFrame from './frame';
 
 type DeviceType = 'mobile' | 'tablet' | 'pc';
@@ -17,6 +20,7 @@ interface DeviceMockupProps {
 
 const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockupProps) => {
   const { mode } = useThemeStore();
+  const { t } = useTranslation();
   const [isOpen, setOpen] = useState(false);
   const [carouselSlide, setCarouselSlide] = useState(0);
 
@@ -38,9 +42,9 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
       <DeviceFrame
         type={type}
         inView={inView}
-        renderCarousel={(isDialog) => <DeviceCarousel slides={slides} onOpenChange={onOpenChange} isDialog={isDialog} />}
+        renderCarousel={(isDialog) => <Carousel slides={slides} onOpenChange={onOpenChange} isDialog={isDialog} />}
       />
-      <DeviceDialog isOpen={isOpen} onOpenChange={setOpen} slides={slides} carouselSlide={carouselSlide} />
+      <CarouselDialog title={t('common:view_screenshot')} isOpen={isOpen} onOpenChange={setOpen} slides={slides} carouselSlide={carouselSlide} />
     </div>
   );
 };
