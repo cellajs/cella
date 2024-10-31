@@ -1,14 +1,11 @@
 import { createEnv } from '@t3-oss/env-core';
 import { z } from 'zod';
 
-const debug = 'false';
-const hasSync = 'true';
-
 export const env = createEnv({
   client: {
     VITE_DEBUG_UI: z
       .string()
-      .default(debug)
+      .default('false')
       .transform((v) => v === 'true'),
     VITE_MILLION_LINT: z
       .string()
@@ -16,11 +13,11 @@ export const env = createEnv({
       .transform((v) => v === 'true'),
     VITE_HAS_SYNC: z
       .string()
-      .default(hasSync)
+      .default('true')
       .transform((v) => v === 'true'),
     VITE_DEBUG_I18N: z
       .string()
-      .default(debug)
+      .default('false')
       .transform((v) => v === 'true'),
   },
   clientPrefix: 'VITE_',
