@@ -156,11 +156,11 @@ const UsersTable = () => {
     );
   };
 
-  // TODO: Figure out a way to open sheet using url state and using react-query to fetch data, we need an <Outlet /> for this?
+  // TODO: Figure out a way to open sheet using url state
   useEffect(() => {
-    if (!rows.length || !search.userIdPreview) return;
-    openUserPreviewSheet(search.userIdPreview);
-  }, [rows]);
+    if (!search.userIdPreview) return;
+    setTimeout(() => openUserPreviewSheet(search.userIdPreview as string), 0);
+  }, []);
 
   return (
     <div className="flex flex-col gap-4 h-full">
