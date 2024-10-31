@@ -436,5 +436,6 @@
   "status_page": "Status page",
   "size": "Size",
   "filename": "Filename",
-  "attachment": "Attachment"
+  "attachment": "Attachment",
+  "content_type": "Content type"
 }

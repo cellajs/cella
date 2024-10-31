@@ -64,7 +64,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
     },
     {
       key: 'contentType',
-      name: t('common:contentType'),
+      name: t('common:content_type'),
       sortable: true,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
