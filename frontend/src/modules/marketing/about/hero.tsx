@@ -31,9 +31,9 @@ export const Hero = ({ title, subtitle, text, children }: HeroProps) => {
           <div className="container flex max-w-5xl flex-col items-center gap-4 text-center">
             <Badge className="hidden sm:block">{t('about:prerelease')}</Badge>
             <h1 className="font-heading test-primary mt-6 mb-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
-              <span>{t(title)}</span>
-              <br />
-              <span className={`bg-gradient-to-br ${gradientClass} bg-clip-text font-bold`}>{t(subtitle)}</span>
+              {title && <span>{t(title)}</span>}
+              {title && subtitle && <br />}
+              {subtitle && <span className={`bg-gradient-to-br ${gradientClass} bg-clip-text font-bold`}>{t(subtitle)}</span>}
             </h1>
             {text && <h2 className="text-foreground/80 mx-auto mb-8 max-w-[48rem] text-xl md:text-2xl">{t(text)}</h2>}
             <div className="space-x-4">{children}</div>

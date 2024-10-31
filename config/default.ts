@@ -17,8 +17,9 @@ export const config = {
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
 
-  description: 'Intuitive TypeScript template to build local-first web apps. Implementation-ready. MIT licensed.',
-  keywords: 'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa',
+  description: 'Intuitive TypeScript template to build web apps with a sync engine. MIT licensed.',
+  keywords:
+    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant feedback, realtime data, sync engine',
 
   supportEmail: 'support@cellajs.com',
   notificationsEmail: 'notifications@cellajs.com',
@@ -42,7 +43,7 @@ export const config = {
 
       Entities can be split into three categories:
       1) Contextual entities (ie organization)
-      2) Product entities (ie ..)
+      2) Product entities (ie attachment)
       3) All entities (ie user, organization)
 
       - SSE stream is not included in this API documentation
