@@ -1,9 +1,8 @@
 import { createEnv } from '@t3-oss/env-core';
-import { config } from 'config';
 import { z } from 'zod';
 
-const debug = config.debug.toString();
-const hasSync = config.has.sync.toString();
+const debug = 'false';
+const hasSync = 'true';
 
 export const env = createEnv({
   client: {
