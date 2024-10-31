@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import CarouselDialog from '~/modules/common/carousel-dialog';
 
+import Carousel from '~/modules/common/carousel';
 import { useThemeStore } from '~/store/theme';
 import { cn } from '~/utils/cn';
-import Carousel from './carousel';
 
 import DeviceFrame from './frame';
 
