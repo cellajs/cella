@@ -1,6 +1,6 @@
 import type { Member } from '~/types/common';
 
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +16,6 @@ import { dateShort } from '~/utils/date-short';
 export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
-  const navigate = useNavigate();
 
   const columns = () => {
     const cols: ColumnOrColumnGroup<Member>[] = [
@@ -37,7 +36,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
-              openUserPreviewSheet(row, navigate, true);
+              openUserPreviewSheet(row.id);
             }}
           >
             <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />

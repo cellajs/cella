@@ -1,5 +1,5 @@
 import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { config } from 'config';
@@ -45,7 +45,6 @@ interface MembersTableProps {
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const containerRef = useRef(null);
 
   const search = useSearch({ strict: false });
@@ -202,12 +201,11 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     );
   };
 
-  // TODO: Figure out a way to open sheet using url state and using react-query to fetch data, we need an <Outlet /> for this?
+  // TODO: Figure out a way to open sheet using url state
   useEffect(() => {
-    if (!rows.length || !('userIdPreview' in search) || !search.userIdPreview) return;
-    const user = rows.find((t) => t.id === search.userIdPreview);
-    if (user) openUserPreviewSheet(user, navigate);
-  }, [rows]);
+    if (!search.userIdPreview) return;
+    setTimeout(() => openUserPreviewSheet(search.userIdPreview as string), 0);
+  }, []);
 
   return (
     <div className="flex flex-col gap-4 h-full">

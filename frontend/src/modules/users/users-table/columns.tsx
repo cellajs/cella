@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { User } from '~/types/common';
 
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import { UserRoundCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -18,7 +18,6 @@ import ImpersonateRow from './impersonate-row';
 
 export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
   const columns = useMemo(() => {
@@ -40,7 +39,7 @@ export const useColumns = (callback: (users: User[], action: 'create' | 'update'
               onClick={(e) => {
                 if (e.metaKey || e.ctrlKey) return;
                 e.preventDefault();
-                openUserPreviewSheet(row, navigate, true);
+                openUserPreviewSheet(row.id);
               }}
             >
               <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />

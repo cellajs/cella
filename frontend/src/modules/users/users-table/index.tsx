@@ -1,5 +1,5 @@
 import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
 
@@ -42,7 +42,6 @@ type SystemRoles = (typeof config.rolesByType.systemRoles)[number] | undefined;
 
 const UsersTable = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const search = useSearch({ from: UsersTableRoute.id });
   const containerRef = useRef(null);
@@ -78,7 +77,7 @@ const UsersTable = () => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
-  const updateQueryCache = useMutateSimilarInfiniteQueryData(['users', 'list'], (item) => ['users', item.id]);
+  const updateQueryCache = useMutateSimilarInfiniteQueryData(['users', 'list'], (item) => ['user', item.id]);
 
   // Build columns
   const [columns, setColumns] = useColumns(updateQueryCache);
@@ -160,8 +159,7 @@ const UsersTable = () => {
   // TODO: Figure out a way to open sheet using url state and using react-query to fetch data, we need an <Outlet /> for this?
   useEffect(() => {
     if (!rows.length || !search.userIdPreview) return;
-    const user = rows.find((t) => t.id === search.userIdPreview);
-    if (user) openUserPreviewSheet(user, navigate);
+    openUserPreviewSheet(search.userIdPreview);
   }, [rows]);
 
   return (

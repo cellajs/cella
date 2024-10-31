@@ -1,42 +1,11 @@
-import type { NavigateFn } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { LimitedUser } from '~/types/common';
+import UserSheet from '~/modules/users/user-sheet';
 
-const UserProfilePage = lazy(() => import('~/modules/users/profile-page'));
-
-export const openUserPreviewSheet = (user: LimitedUser, navigate: NavigateFn, addSearch = false) => {
-  if (addSearch) {
-    navigate({
-      to: '.',
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({
-        ...prev,
-        ...{ userIdPreview: user.id },
-      }),
-    });
-  }
-  sheet.create(
-    <Suspense>
-      <UserProfilePage sheet user={user} />
-    </Suspense>,
-    {
-      className: 'max-w-full lg:max-w-4xl p-0',
-      id: `user-preview-${user.id}`,
-      side: 'right',
-      removeCallback: () => {
-        navigate({
-          to: '.',
-          replace: true,
-          resetScroll: false,
-          search: (prev) => {
-            const { userIdPreview: _, ...nextSearch } = prev;
-            return nextSearch;
-          },
-        });
-        sheet.remove(`user-preview-${user.id}`);
-      },
-    },
-  );
+export const openUserPreviewSheet = (userId: string) => {
+  sheet.create(<UserSheet idOrSlug={userId} />, {
+    className: 'max-w-full lg:max-w-4xl p-0',
+    id: `user-preview-${userId}`,
+    side: 'right',
+    removeCallback: () => sheet.remove(`user-preview-${userId}`),
+  });
 };
