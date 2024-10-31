@@ -1,12 +1,15 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
+import { config } from 'config';
 import { type GetUsersParams, getUsers } from '~/api/users';
 
+const LIMIT = config.requestLimits.users;
+
 export const usersQueryOptions = ({
-  q,
+  q = '',
   sort: initialSort,
   order: initialOrder,
   role,
-  limit = 40,
+  limit = LIMIT,
   rowsLength = 0,
 }: GetUsersParams & {
   rowsLength?: number;

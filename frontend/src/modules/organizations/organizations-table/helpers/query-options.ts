@@ -1,12 +1,14 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
-
+import { config } from 'config';
 import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
 
+const LIMIT = config.requestLimits.organizations;
+
 export const organizationsQueryOptions = ({
-  q,
+  q = '',
   sort: initialSort,
   order: initialOrder,
-  limit = 40,
+  limit = LIMIT,
   rowsLength = 0,
 }: GetOrganizationsParams & {
   rowsLength?: number;

@@ -139,7 +139,16 @@ export const config = {
   contextEntityTypes: ['organization'] as const,
 
   // Product entity types (no memberships)
-  productEntityTypes: [] as const,
+  productEntityTypes: ['attachment'] as const,
+
+  // Request limits
+  requestLimits: {
+    users: 100,
+    members: 40,
+    organizations: 40,
+    requests: 40,
+    attachments: 40,
+  },
 
   // Roles on system and entity level. TODO: split roles by entity type
   rolesByType: { systemRoles: ['user', 'admin'] as const, entityRoles: ['member', 'admin'] as const, allRoles: ['user', 'member', 'admin'] as const },

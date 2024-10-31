@@ -68,17 +68,6 @@ This document describes the high-level architecture of Cella.
 └── tus                       TUS server
 ```
 
-## Modularity
-Both frontend and backend already have modules, such as `authentication`, `users` and `organizations`. The backend modules are split mostly by functionality and/or table. The frontend modules are more split by context in the user interface: `home`, `organizations`, `marketing`. The benefit of modularity is twofold: better code (readability, portability etc) and to make receiving cella updates possible.
-
-Zooming in on some of the frontend modules:
-* `common`: a cella-predefined set of reusable react components 
-* `ui`: Full with shadcn UI components. They have some small tweaks however and it is to be expected you will customize them yourself further.
-
-A similar situation can be found in the `types` folders of both frontend and backend. you have app-specific types in `app.ts` and predefined cella types in `common.ts`.
-
-In the frontend we decided - for now - to keep `routes`, `stores`, `hooks` and `api` together and not nest them in each respective module. This has pros and cons but the idea here is that having them together gives you a quick look into what the complete app has to offer, and to make it easier to strive for consistency. This benefit wil reduce when cella gets more stable, so its likely this will change in the future.
-
 ## Data modeling
 Entities can be split in four types:
 * All entities (user, organization)
@@ -86,10 +75,23 @@ Entities can be split in four types:
 * ContextEntity: Has memberships (organization)
 * ProductEntity: Content related entities without membership
 
-The default cella setup does not have any product entities and only one context: organizations. Have a look at [raak.io](https://github.com/cellajs/raak), our own implementation project using cella to get a more complete picture.
+The default cella setup has one example product entity - `attachments` - and one context: `organizations`. 
 
 ## API Design
 An OpenAPI is built with [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started.
+
+## Modularity
+Both frontend and backend already have modules, such as `authentication`, `users` and `organizations`. The backend modules are split mostly by functionality. The frontend modules are split by the user interface: `home`, `organizations`, `marketing`. The benefit of modularity is twofold: better code (readability, portability etc) and to make receiving cella updates possible.
+
+Zooming in on some of the frontend modules:
+* `common`: a cella-predefined set of reusable react components 
+* `ui`: Full with shadcn UI components. They have some small tweaks however and it is to be expected you will customize them yourself further.
+* `attachments`: product entity module that has support for offline, optimistic updates and realtime sync.
+
+A similar situation can be found in the `types` folders of both frontend and backend. you have app-specific types in `app.ts` and predefined cella types in `common.ts`.
+
+In the frontend we decided - for now - to keep `routes`, `stores`, `hooks` and `api` together and not nest them in each respective module. This has pros and cons but the idea here is that having them together gives you a quick look into what the complete app has to offer, and to make it easier to strive for consistency. This benefit wil reduce when cella gets more stable, so its likely this will change in the future.
+
 
 ## Security
 

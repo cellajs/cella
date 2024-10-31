@@ -18,7 +18,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       key: 'name',
       name: t('common:filename'),
       visible: true,
-      sortable: true,
+      sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <Link
@@ -68,7 +68,7 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
     {
       key: 'size',
       name: t('common:size'),
-      sortable: true,
+      sortable: false,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative group h-full w-full">{row.size || '-'}</div>,

@@ -45,7 +45,7 @@ export const UsersTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
   loader: async ({ deps: { q, sort, order, role } }) => {
-    const infiniteQueryOptions = usersQueryOptions({ q: q ?? '', sort, order, role, limit: 100 });
+    const infiniteQueryOptions = usersQueryOptions({ q, sort, order, role });
     const cachedUsers = queryClient.getQueryData(infiniteQueryOptions.queryKey);
     if (!cachedUsers) queryClient.fetchInfiniteQuery(infiniteQueryOptions);
   },
@@ -63,7 +63,7 @@ export const OrganizationsTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {
-    const infiniteQueryOptions = organizationsQueryOptions({ q, sort, order, limit: 40 });
+    const infiniteQueryOptions = organizationsQueryOptions({ q, sort, order });
     const cachedOrganizations = queryClient.getQueryData(infiniteQueryOptions.queryKey);
     if (!cachedOrganizations) {
       queryClient.fetchInfiniteQuery(infiniteQueryOptions);
@@ -83,7 +83,7 @@ export const RequestsTableRoute = createRoute({
   getParentRoute: () => SystemRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   loader: async ({ deps: { q, sort, order } }) => {
-    const infiniteQueryOptions = requestsQueryOptions({ q, sort, order, limit: 40 });
+    const infiniteQueryOptions = requestsQueryOptions({ q, sort, order });
     const cachedRequests = queryClient.getQueryData(infiniteQueryOptions.queryKey);
     if (!cachedRequests) {
       queryClient.fetchInfiniteQuery(infiniteQueryOptions);

@@ -1,6 +1,6 @@
 import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 
 import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@electric-sql/client';
 import { config } from 'config';
@@ -10,7 +10,6 @@ import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { useDebounce } from '~/hooks/use-debounce';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { queryClient } from '~/lib/router';
@@ -33,11 +32,12 @@ import { useUserStore } from '~/store/user';
 import { type Attachment, type Organization, UploadType } from '~/types/common';
 import { objectKeys } from '~/utils/object';
 import type { attachmentsQuerySchema } from '#/modules/attachments/schema';
+import { env } from '../../../../env';
 import { useColumns } from './columns';
 import { attachmentsQueryOptions } from './helpers/query-options';
 import RemoveAttachmentsForm from './remove-attachments-form';
 
-const LIMIT = 40;
+const LIMIT = config.requestLimits.attachments;
 
 type AttachmentSearch = z.infer<typeof attachmentsQuerySchema>;
 
@@ -71,21 +71,20 @@ const attachmentShape = (organization_id?: string): ShapeStreamOptions => ({
 const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
   const search = useSearch({ strict: false });
-  const containerRef = useRef(null);
   const user = useUserStore((state) => state.user);
   const { networkMode } = useGeneralStore();
 
   const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
-
   const isMobile = useBreakpoints('max', 'sm');
 
+  // Table state
   const [rows, setRows] = useState<Attachment[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [query, setQuery] = useState<AttachmentSearch['q']>(search.q);
+  const [q, setQuery] = useState<AttachmentSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
-  const q = useDebounce(query, 200);
   const sort = sortColumns[0]?.columnKey as AttachmentSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as AttachmentSearch['order'];
   const limit = LIMIT;
@@ -105,29 +104,21 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
     }),
   );
 
-  // Total count
-  const totalCount = queryResult.data?.pages[0].total;
-
   // Build columns
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
   useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet)), [isAdmin]);
+
   // Map (updated) query data to rows
-  useMapQueryDataToRows<Attachment>({ queryResult, setSelectedRows, setRows, selectedRows });
+  useMapQueryDataToRows<Attachment>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
   const { mutate: createAttachment } = useAttachmentCreateMutation();
 
   // Save filters in search params
   if (!isSheet) {
-    const filters = useMemo(
-      () => ({
-        q,
-        sort,
-        order,
-      }),
-      [q, sortColumns],
-    );
+    const filters = useMemo(() => ({ q, sort, order }), [q, sortColumns]);
     useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   }
+
   // Table selection
   const selected = useMemo(() => {
     return rows.filter((row) => selectedRows.has(row.id));
@@ -138,7 +129,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
     setSelectedRows(new Set<string>());
   };
 
-  // Drop selected Rows on search
+  // Clear selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
     setQuery(searchString);
@@ -205,13 +196,9 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
     );
   };
 
-  useEffect(() => {
-    setSortColumns(getInitialSortColumns(search));
-  }, [search, organization.id]);
-
   // Subscribe to task updates
   useEffect(() => {
-    if (networkMode !== 'online' || !config.has.sync) return;
+    if (networkMode !== 'online' || !config.has.sync || !env.VITE_HAS_SYNC) return;
 
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organization.id));
     const unsubscribe = shapeStream.subscribe((messages) => {
@@ -254,19 +241,22 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
 
       const deleteMessage = messages.find((m) => m.headers.operation === 'delete') as ChangeMessage<RawAttachment> | undefined;
       if (deleteMessage) {
-        queryClient.setQueryData<AttachmentInfiniteQueryFnData>(attachmentsQueryOptions({ orgIdOrSlug: organization.id }).queryKey, (data) => {
-          if (!data) return;
-          return {
-            ...data,
-            pages: [
-              {
-                ...data.pages[0],
-                items: data.pages[0].items.filter((item) => item.id !== deleteMessage.value.id),
-              },
-              ...data.pages.slice(1),
-            ],
-          };
-        });
+        queryClient.setQueryData<AttachmentInfiniteQueryFnData>(
+          attachmentsQueryOptions({ orgIdOrSlug: organization.id, rowsLength: rows.length }).queryKey,
+          (data) => {
+            if (!data) return;
+            return {
+              ...data,
+              pages: [
+                {
+                  ...data.pages[0],
+                  items: data.pages[0].items.filter((item) => item.id !== deleteMessage.value.id),
+                },
+                ...data.pages.slice(1),
+              ],
+            };
+          },
+        );
       }
     });
     return () => {
@@ -277,6 +267,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        {/* Filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {selected.length > 0 ? (
@@ -324,13 +315,18 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={query} setQuery={onSearch} />
+            <TableSearch value={q} setQuery={onSearch} />
           </FilterBarContent>
         </TableFilterBar>
+
+        {/* Columns view */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+
+        {/* Focus view */}
         {!isSheet && <FocusView iconOnly />}
       </div>
-      <div ref={containerRef} />
+
+      {/* Data table */}
       <DataTable<Attachment>
         {...{
           columns: columns.filter((column) => column.visible),

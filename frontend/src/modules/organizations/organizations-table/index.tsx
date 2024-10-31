@@ -40,7 +40,7 @@ import type { Organization } from '~/types/common';
 
 type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
-const LIMIT = 40;
+const LIMIT = config.requestLimits.organizations;
 
 const OrganizationsTable = () => {
   const search = useSearch({ from: OrganizationsTableRoute.id });

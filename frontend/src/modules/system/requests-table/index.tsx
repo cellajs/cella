@@ -30,8 +30,10 @@ import Export from '~/modules/common/data-table/export';
 import { useColumns } from '~/modules/system/requests-table/columns';
 type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
+const LIMIT = config.requestLimits.requests;
+
 export const requestsQueryOptions = ({
-  q,
+  q = '',
   sort: initialSort,
   order: initialOrder,
   limit = LIMIT,
@@ -51,8 +53,6 @@ export const requestsQueryOptions = ({
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
-
-const LIMIT = 40;
 
 const RequestsTable = () => {
   const search = useSearch({ from: RequestsTableRoute.id });

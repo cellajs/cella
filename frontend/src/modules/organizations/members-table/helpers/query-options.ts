@@ -1,16 +1,19 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
+import { config } from 'config';
 import { type GetMembersParams, getMembers } from '~/api/memberships';
+
+const LIMIT = config.requestLimits.members;
 
 // Build query to get members with infinite scroll
 export const membersQueryOptions = ({
   idOrSlug,
   orgIdOrSlug,
   entityType,
-  q,
+  q = '',
   sort: initialSort,
   order: initialOrder,
   role,
-  limit = 40,
+  limit = LIMIT,
   rowsLength = 0,
 }: GetMembersParams & {
   rowsLength?: number;

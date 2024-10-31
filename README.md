@@ -18,7 +18,7 @@
 <p>
 	<h1><b>Cella</b></h1>
 <p>
-    <b>Single stack TypeScript template to build local-first SaaS.</b>
+    <b>Single stack TypeScript template to build SaaS with sync & offline capabilities.</b>
     <br />
     <br />
     <a href="https://cellajs.com">Website</a>
@@ -34,9 +34,6 @@
 
 > [!CAUTION]
 > Please be aware this is a prerelease. It does NOT meet production requirements yet and large breaking changes still occur regularly. An alpha version will be released once we have solid tests for at least authentication & authorization. Want to contribute or discuss cella for one of your projects? Let's connect! ✉️ <info@cellajs.com>
-
-> [!NOTE]
-> Due to a new - rewritten, refocused - version of ElectricSQL, we had to revert to basic API calls everywhere. We are now exploring ways to quickly get local-first back into cella.
 
 #### Contents
 - [Installation](#installation)

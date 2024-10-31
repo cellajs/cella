@@ -2,6 +2,7 @@ import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { config } from 'config';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
@@ -35,7 +36,7 @@ import type { membersQuerySchema } from '#/modules/general/schema';
 
 type MemberSearch = z.infer<typeof membersQuerySchema>;
 
-const LIMIT = 40;
+const LIMIT = config.requestLimits.members;
 
 interface MembersTableProps {
   entity: EntityPage & { membership: MinimumMembershipInfo | null };
@@ -56,7 +57,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // Table state
   const [rows, setRows] = useState<Member[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [q, setQuery] = useState<MemberSearch['q']>(search.q ?? '');
+  const [q, setQuery] = useState<MemberSearch['q']>(search.q);
   const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
   const [totalCount, setTotalCount] = useState(0);

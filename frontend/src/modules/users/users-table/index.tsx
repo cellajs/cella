@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
 
 import type { usersQuerySchema } from 'backend/modules/users/schema';
-import type { config } from 'config';
+import { config } from 'config';
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
@@ -36,7 +36,7 @@ import type { User } from '~/types/common';
 
 type UsersSearch = z.infer<typeof usersQuerySchema>;
 
-const LIMIT = 100;
+const LIMIT = config.requestLimits.users;
 
 type SystemRoles = (typeof config.rolesByType.systemRoles)[number] | undefined;
 
@@ -50,7 +50,7 @@ const UsersTable = () => {
   // Table state
   const [rows, setRows] = useState<User[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
-  const [q, setQuery] = useState<UsersSearch['q']>(search.q ?? '');
+  const [q, setQuery] = useState<UsersSearch['q']>(search.q);
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
   const [totalCount, setTotalCount] = useState(0);
