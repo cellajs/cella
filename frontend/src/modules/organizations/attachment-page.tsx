@@ -1,26 +1,17 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import { getAttachment } from '~/api/attachments';
-import { OrganizationAttachmentRoute } from '~/routes/organizations';
-import type { Organization } from '~/types/common';
-
-interface AttachmentPageProps {
-  organization: Organization;
-}
+import { AttachmentRoute } from '~/routes/attachments';
 
 export const attachmentQueryOptions = (orgIdOrSlug: string, id: string) =>
   queryOptions({
     queryKey: ['attachments', id],
-    queryFn: () =>
-      getAttachment({
-        orgIdOrSlug,
-        id,
-      }),
+    queryFn: () => getAttachment({ orgIdOrSlug, id }),
   });
 
-const AttachmentPage = ({ organization }: AttachmentPageProps) => {
-  const { attachmentId } = useParams({ from: OrganizationAttachmentRoute.id });
-  const { data: attachment } = useSuspenseQuery(attachmentQueryOptions(organization.id, attachmentId));
+const AttachmentPage = () => {
+  const { attachmentId, orgIdOrSlug } = useParams({ from: AttachmentRoute.id });
+  const { data: attachment } = useSuspenseQuery(attachmentQueryOptions(orgIdOrSlug, attachmentId));
 
   return (
     <div>

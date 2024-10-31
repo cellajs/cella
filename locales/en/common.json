@@ -435,5 +435,6 @@
   "your_role": "Your role",
   "status_page": "Status page",
   "size": "Size",
-  "filename": "Filename"
+  "filename": "Filename",
+  "attachment": "Attachment"
 }

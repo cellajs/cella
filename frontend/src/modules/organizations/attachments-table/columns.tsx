@@ -24,9 +24,9 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
         <Link
           className="flex space-x-2 items-center outline-0 ring-0 group"
           tabIndex={tabIndex}
-          to="/$idOrSlug/attachments/$attachmentId"
+          to="/$orgIdOrSlug/attachment/$attachmentId"
           params={{
-            idOrSlug: row.organizationId,
+            orgIdOrSlug: row.organizationId,
             attachmentId: row.id,
           }}
         >

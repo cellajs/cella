@@ -114,7 +114,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
       };
     });
 
-    toast.success(t('common:success.create_resource', { resource: t('app:attachment') }));
+    toast.success(t('common:success.create_resource', { resource: t('common:attachment') }));
   },
   onError,
 });

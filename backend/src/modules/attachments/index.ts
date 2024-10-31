@@ -5,7 +5,7 @@ import { type SQL, count, eq, ilike, inArray } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { getContextUser, getMemberships } from '#/lib/context';
+import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -22,12 +22,16 @@ const attachmentsRoutes = app
    */
   .openapi(attachmentsRoutesConfig.createAttachment, async (ctx) => {
     const newAttachment = ctx.req.valid('json');
+
+    const organization = getOrganization();
     const user = getContextUser();
+
     const [createdAttachment] = await db
       .insert(attachmentsTable)
       .values({
         ...newAttachment,
         createdBy: user.id,
+        organizationId: organization.id,
       })
       .returning();
 

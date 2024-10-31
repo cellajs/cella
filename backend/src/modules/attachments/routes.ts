@@ -11,10 +11,10 @@ class AttachmentRoutesConfig {
   public createAttachment = createRouteConfig({
     method: 'post',
     path: '/',
-    guard: isAuthenticated,
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Create attachment',
-    description: 'EXPERIMENTAL. Create a new attachment.',
+    description: 'Create a new attachment.',
     request: {
       body: {
         required: true,
@@ -67,7 +67,7 @@ class AttachmentRoutesConfig {
   public getAttachment = createRouteConfig({
     method: 'get',
     path: '/{id}',
-    guard: [isAuthenticated],
+    guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
     summary: 'Get attachment',
     description: 'Get an attachment by id.',

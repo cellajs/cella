@@ -3,7 +3,13 @@ import { z } from 'zod';
 import { idsQuerySchema, paginationQuerySchema } from '#/utils/schema/common-schemas';
 import { attachmentsTable } from '../../db/schema/attachments';
 
-export const createAttachmentSchema = createInsertSchema(attachmentsTable);
+export const createAttachmentSchema = createInsertSchema(attachmentsTable).omit({
+  entity: true,
+  modifiedAt: true,
+  modifiedBy: true,
+  createdAt: true,
+  createdBy: true,
+});
 
 export const deleteAttachmentsQuerySchema = idsQuerySchema;
 
