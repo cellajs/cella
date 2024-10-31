@@ -58,6 +58,22 @@ export const getAttachment = async ({ orgIdOrSlug, id }: { orgIdOrSlug: string; 
   return json.data;
 };
 
+export type UpdateAttachmentParams = Parameters<(typeof client)[':id']['$put']>['0']['json'] & {
+  orgIdOrSlug: string;
+  id: string;
+};
+
+// Update an attachment
+export const updateAttachment = async ({ orgIdOrSlug, id, ...params }: UpdateAttachmentParams) => {
+  const response = await client[':id'].$put({
+    param: { orgIdOrSlug, id },
+    json: params,
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
 export type DeleteAttachmentsParams = Parameters<(typeof client)['index']['$delete']>['0']['query'] & {
   orgIdOrSlug: string;
 };

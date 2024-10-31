@@ -5,7 +5,7 @@ import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/gua
 
 import { z } from 'zod';
 import { idOrSlugSchema, idSchema } from '#/utils/schema/common-schemas';
-import { attachmentSchema, attachmentsQuerySchema, createAttachmentSchema, deleteAttachmentsQuerySchema } from './schema';
+import { attachmentSchema, attachmentsQuerySchema, createAttachmentSchema, deleteAttachmentsQuerySchema, updateAttachmentBodySchema } from './schema';
 
 class AttachmentRoutesConfig {
   public createAttachment = createRouteConfig({
@@ -80,6 +80,39 @@ class AttachmentRoutesConfig {
     responses: {
       200: {
         description: 'Attachment',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(attachmentSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public updateAttachment = createRouteConfig({
+    method: 'put',
+    path: '/{id}',
+    guard: [isAuthenticated],
+    tags: ['attachments'],
+    summary: 'Update attachment',
+    description: 'Update attachment by id.',
+    request: {
+      params: z.object({
+        orgIdOrSlug: idOrSlugSchema.optional(),
+        id: idSchema,
+      }),
+      body: {
+        content: {
+          'application/json': {
+            schema: updateAttachmentBodySchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Attachment was updated',
         content: {
           'application/json': {
             schema: successWithDataSchema(attachmentSchema),

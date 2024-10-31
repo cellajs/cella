@@ -9,6 +9,7 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { Button } from '~/modules/ui/button';
+import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean, isSheet: boolean) => {
@@ -28,7 +29,8 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
     },
     {
       key: 'name',
-      name: t('common:filename'),
+      name: t('common:name'),
+      editable: true,
       visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
@@ -42,8 +44,25 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
             attachmentId: row.id,
           }}
         >
-          <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.filename || '-'}</span>
+          <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
         </Link>
+      ),
+      ...(isAdmin && {
+        renderEditCell: ({ row, onRowChange }) => (
+          <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
+        ),
+      }),
+    },
+    {
+      key: 'filename',
+      name: t('common:filename'),
+      visible: true,
+      sortable: false,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row, tabIndex }) => (
+        <span tabIndex={tabIndex} className="group-hover:underline underline-offset-4 truncate font-medium">
+          {row.filename || '-'}
+        </span>
       ),
     },
     {
