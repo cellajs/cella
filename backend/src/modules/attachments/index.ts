@@ -156,7 +156,7 @@ const attachmentsRoutes = app
     const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, id));
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
-    const redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachments/${id}`;
+    const redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachment/${id}`;
 
     // <title>${task.summary}</title>
     // <meta name="twitter:title" content="${task.summary}"/>
