@@ -1,4 +1,4 @@
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager, useMutation, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 
@@ -6,9 +6,10 @@ import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@elect
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { Trash, Upload, XSquare } from 'lucide-react';
-import type { SortColumn } from 'react-data-grid';
+import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
+import { updateAttachment } from '~/api/attachments';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
@@ -113,6 +114,16 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
 
   const { mutate: createAttachment } = useAttachmentCreateMutation();
 
+  // Update attachment name
+  const { mutate: updateAttachmentName } = useMutation({
+    mutationFn: async (attachment: Attachment) =>
+      await updateAttachment({ id: attachment.id, orgIdOrSlug: attachment.organizationId, name: attachment.name }),
+    onSuccess: () => {
+      showToast(t('common:success:attachment_name_updated'), 'success');
+    },
+    onError: () => showToast('Error updating name', 'error'),
+  });
+
   // Save filters in search params
   if (!isSheet) {
     const filters = useMemo(() => ({ q, sort, order }), [q, sortColumns]);
@@ -133,6 +144,20 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
     setQuery(searchString);
+  };
+
+  // Update rows
+  const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+
+    if (column.key === 'name') {
+      // If name is changed, update the attachment
+      for (const index of indexes) {
+        updateAttachmentName(changedRows[index]);
+      }
+    }
+
+    setRows(changedRows);
   };
 
   // Open the upload dialog
@@ -332,7 +357,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
           columns: columns.filter((column) => column.visible),
           rowHeight: 42,
           enableVirtualization: false,
-          // onRowsChange,
+          onRowsChange,
           rows,
           limit,
           totalCount,

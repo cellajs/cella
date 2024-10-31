@@ -26,10 +26,14 @@ const attachmentsRoutes = app
     const organization = getOrganization();
     const user = getContextUser();
 
+    // Get the name of the attachment without the extension
+    const name = newAttachment.filename.split('.').slice(0, -1).join('.');
+
     const [createdAttachment] = await db
       .insert(attachmentsTable)
       .values({
         ...newAttachment,
+        name,
         createdBy: user.id,
         organizationId: organization.id,
       })
@@ -96,6 +100,29 @@ const attachmentsRoutes = app
     if (!attachment) return errorResponse(ctx, 404, 'not_found', 'warn', 'attachment');
 
     return ctx.json({ success: true, data: attachment }, 200);
+  })
+  /*
+   * Update an organization by id or slug
+   */
+  .openapi(attachmentsRoutesConfig.updateAttachment, async (ctx) => {
+    const { id } = ctx.req.valid('param');
+    const user = getContextUser();
+
+    const updatedFields = ctx.req.valid('json');
+
+    const [updatedAttachment] = await db
+      .update(attachmentsTable)
+      .set({
+        ...updatedFields,
+        modifiedAt: new Date(),
+        modifiedBy: user.id,
+      })
+      .where(eq(attachmentsTable.id, id))
+      .returning();
+
+    logEvent('Attachment updated', { attachment: updatedAttachment.id });
+
+    return ctx.json({ success: true, data: updatedAttachment }, 200);
   })
   /*
    * Delete attachments

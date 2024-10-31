@@ -73,6 +73,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
     const optimisticId = id || nanoid();
     const newAttachment: Attachment = {
       ...variables,
+      name: variables.filename.split('.').slice(0, -1).join('.'),
       id: optimisticId,
       entity: 'attachment',
       createdAt: new Date().toISOString(),
