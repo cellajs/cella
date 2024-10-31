@@ -15,6 +15,18 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
   const columns: ColumnOrColumnGroup<Attachment>[] = [
     ...(isAdmin ? [CheckboxColumn] : []),
     {
+      key: 'thumbnail',
+      name: '',
+      visible: true,
+      sortable: false,
+      width: 32,
+      renderCell: ({ row }) => (
+        <div className="cursor-pointer w-full flex justify-center items-center">
+          <img src={row.url} alt={row.filename} className="h-8 w-8 rounded-md" />
+        </div>
+      ),
+    },
+    {
       key: 'name',
       name: t('common:filename'),
       visible: true,
