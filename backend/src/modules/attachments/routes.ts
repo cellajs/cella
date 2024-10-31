@@ -16,6 +16,7 @@ class AttachmentRoutesConfig {
     summary: 'Create attachment',
     description: 'Create a new attachment.',
     request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       body: {
         required: true,
         content: {

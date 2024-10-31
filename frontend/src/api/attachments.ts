@@ -9,7 +9,7 @@ type CreateAttachmentParams = Parameters<(typeof client.index)['$post']>['0']['j
 
 // Create a new attachment
 export const createAttachment = async (task: CreateAttachmentParams) => {
-  const response = await client.index.$post({ json: task });
+  const response = await client.index.$post({ param: { orgIdOrSlug: task.organizationId }, json: task });
   const json = await handleResponse(response);
   return json.data;
 };
