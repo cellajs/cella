@@ -3,7 +3,8 @@
 import { Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react';
 import * as React from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+
+import { Button } from '~/modules/ui/button';
 import { TooltipButton } from '../tooltip-button';
 import PanViewer from './image-viewer-setup';
 
@@ -63,53 +64,31 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(({ im
   return (
     <>
       {showButtons && (
-        <ToggleGroup
-          type="single"
-          variant="merged"
-          className="gap-0 flex left-[calc(50vw-5rem)] shadow-sm rounded-sm bottom-3 absolute z-20 select-none"
-          onValueChange={(value) => {
-            switch (value) {
-              case 'zoomIn':
-                zoomIn();
-                break;
-              case 'zoomOut':
-                zoomOut();
-                break;
-              case 'rotateRight':
-                rotateRight();
-                break;
-              case 'resetAll':
-                resetAll();
-                break;
-              default:
-                break;
-            }
-          }}
-        >
+        <div className="absolute z-20 flex items-center justify-center inline-flex left-[calc(50vw-5rem)] bottom-3 gap-0 rounded-md text-sm shadow-sm bg-transparent ring-offset-background">
           <TooltipButton toolTipContent="Zoom in">
-            <ToggleGroupItem value="zoomIn" className="bg-background hover:bg-accent text-accent-foreground">
+            <Button onClick={zoomIn} className="bg-background border border-input rounded-r-none hover:bg-accent text-accent-foreground">
               <Plus size={14} />
-            </ToggleGroupItem>
+            </Button>
           </TooltipButton>
 
           <TooltipButton toolTipContent="Zoom out">
-            <ToggleGroupItem value="zoomOut" className="bg-background hover:bg-accent text-accent-foreground">
+            <Button onClick={zoomOut} className="bg-background border border-input rounded-none hover:bg-accent text-accent-foreground">
               <Minus size={14} />
-            </ToggleGroupItem>
+            </Button>
           </TooltipButton>
 
           <TooltipButton toolTipContent="Rotate right">
-            <ToggleGroupItem value="rotateRight" className="bg-background hover:bg-accent text-accent-foreground">
+            <Button onClick={rotateRight} className="bg-background border border-input rounded-none hover:bg-accent text-accent-foreground">
               <RotateCwSquare size={14} />
-            </ToggleGroupItem>
+            </Button>
           </TooltipButton>
 
           <TooltipButton toolTipContent="Reset">
-            <ToggleGroupItem value="resetAll" className="bg-background hover:bg-accent text-accent-foreground">
+            <Button onClick={resetAll} className="bg-background border border-input rounded-l-none hover:bg-accent text-accent-foreground">
               <RefreshCw size={14} />
-            </ToggleGroupItem>
+            </Button>
           </TooltipButton>
-        </ToggleGroup>
+        </div>
       )}
 
       <PanViewer
