@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
-import { getEntityPath } from '~/nav-config';
+import { getEntityRoute } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenuItem } from '~/types/common';
 import { cn } from '~/utils/cn';
@@ -22,7 +22,7 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
   const isActive = currentIdOrSlug === item.slug || currentIdOrSlug === item.id;
 
   // Build route path for the entity
-  const { idOrSlug, path } = useMemo(() => getEntityPath(item), [item]);
+  const { params, path } = useMemo(() => getEntityRoute(item), [item]);
 
   return (
     <Link
@@ -35,7 +35,7 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
       )}
       aria-label={item.name}
       to={path}
-      params={{ idOrSlug }}
+      params={params}
     >
       <AvatarWrap
         className="z-[1] items-center m-2 group-data-[subitem=true]/menuItem:my-2 group-data-[subitem=true]/menuItem:mx-3 group-data-[subitem=true]/menuItem:text-xs group-data-[subitem=true]/menuItem:h-8 group-data-[subitem=true]/menuItem:w-8"

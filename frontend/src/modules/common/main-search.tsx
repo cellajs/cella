@@ -14,7 +14,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { getEntityPath, suggestionSections } from '~/nav-config';
+import { getEntityRoute, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { Button } from '../ui/button';
 import Spinner from './spinner';
@@ -77,12 +77,12 @@ export const MainSearch = () => {
     // Update recent searches with the search value
     updateRecentSearches(searchValue);
 
-    const { idOrSlug, path } = getEntityPath(suggestion);
+    const entityRoute = getEntityRoute(suggestion);
 
     navigate({
-      to: path,
+      to: entityRoute.path,
       resetScroll: false,
-      params: { idOrSlug },
+      params: entityRoute.params,
     });
 
     dialog.remove(false);
