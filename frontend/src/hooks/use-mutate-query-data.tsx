@@ -38,29 +38,22 @@ export const useMutateQueryData = (queryKey: QueryKey) => {
   };
 };
 
-export const useMutateInfiniteQueryData = (queryKey: QueryKey, invalidateKeyGetter: (item: Item) => QueryKey) => {
+export const useMutateInfiniteQueryData = (passedQueryKey: QueryKey, invalidateKeyGetter: (item: Item) => QueryKey) => {
   return (items: Item[], action: QueryDataActions) => {
-    changeInfiniteQueryData(queryKey, items, action);
+    const passedQueryData = queryClient.getQueryData(passedQueryKey);
+    const passedQuery: [QueryKey, unknown] = [passedQueryKey, passedQueryData];
 
-    for (const index in items) {
-      const queryKeyToInvalidate = invalidateKeyGetter(items[index]);
-      queryClient.invalidateQueries({ queryKey: queryKeyToInvalidate });
-    }
-  };
-};
+    // get similar queries
+    const similarQueries = queryClient.getQueriesData({ queryKey: passedQueryKey });
+    // queries to update
+    const queriesToWorkOn = passedQueryData ? [passedQuery] : similarQueries;
 
-//TODO: can we merge this with useMutateInfiniteQueryData?
-export const useMutateSimilarInfiniteQueryData = (passedQueryKey: QueryKey, invalidateKeyGetter: (item: Item) => QueryKey) => {
-  return (items: Item[], action: QueryDataActions) => {
-    const queries = queryClient.getQueriesData({ queryKey: passedQueryKey });
+    // update  query data
+    for (const [queryKey] of queriesToWorkOn) changeInfiniteQueryData(queryKey, items, action);
 
-    for (const query of queries) {
-      const [queryKey] = query;
-      changeInfiniteQueryData(queryKey, items, action);
-    }
-
-    for (const index in items) {
-      const queryKeyToInvalidate = invalidateKeyGetter(items[index]);
+    // invalidate queries
+    for (const item of items) {
+      const queryKeyToInvalidate = invalidateKeyGetter(item);
       queryClient.invalidateQueries({ queryKey: queryKeyToInvalidate });
     }
   };

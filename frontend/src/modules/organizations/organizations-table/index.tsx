@@ -68,7 +68,7 @@ const OrganizationsTable = () => {
   // Map (updated) query data to rows
   useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
-  const updateQueryCache = useMutateInfiniteQueryData(['organizations', q, sort, order], (item) => ['organizations', item.id]);
+  const updateQueryCache = useMutateInfiniteQueryData(['organizations'], (item) => ['organizations', item.id]);
 
   // Build columns
   const [columns, setColumns] = useColumns(updateQueryCache);
