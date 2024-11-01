@@ -1,5 +1,3 @@
-// This code is originally authored by https://github.com/mgorabbani (https://github.com/mgorabbani/react-image-pan-zoom-rotate).
-
 import * as React from 'react';
 
 export interface IDragData {
@@ -69,6 +67,7 @@ export default class ReactPanZoom extends React.PureComponent<IReactPanZoomProps
   };
 
   public state = this.getInitialState();
+
   public componentDidUpdate(prevProps: IReactPanZoomProps) {
     const { zoom } = this.props;
     if (prevProps.zoom !== zoom) {
@@ -221,6 +220,11 @@ export default class ReactPanZoom extends React.PureComponent<IReactPanZoomProps
   private onMouseLeave = () => {
     document.removeEventListener('wheel', this.preventDefault, false);
   };
+
+  // Change visibility from private to public
+  public componentWillUnmount() {
+    document.removeEventListener('wheel', this.preventDefault, false);
+  }
 
   private updateMousePosition = (pageX: number, pageY: number) => {
     if (!this.state.mouseDown) return;

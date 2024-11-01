@@ -3,7 +3,6 @@
 import { Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react';
 import * as React from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-
 import { Button } from '~/modules/ui/button';
 import { TooltipButton } from '../tooltip-button';
 import PanViewer from './image-viewer-setup';
@@ -11,8 +10,7 @@ import PanViewer from './image-viewer-setup';
 type ReactPanZoomProps = {
   image: string;
   alt?: string;
-  // biome-ignore lint/suspicious/noExplicitAny: by author
-  ref?: any;
+  ref?: React.Ref<HTMLImageElement>;
   resetImageState?: boolean;
   imageClass?: string;
   showButtons?: boolean;
@@ -35,26 +33,13 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(({ im
   };
 
   React.useEffect(() => {
-    if (resetImageState) {
-      resetAll();
-    }
-  }, [resetImageState]); // Run when resetImageState changes
+    if (resetImageState) resetAll();
+  }, [resetImageState]);
 
-  const zoomIn = () => {
-    setZoom((prevZoom) => prevZoom + 0.2);
-  };
-
-  const zoomOut = () => {
-    setZoom((prevZoom) => (prevZoom >= 1 ? prevZoom - 0.2 : prevZoom));
-  };
-
-  const rotateRight = () => {
-    setRotation((prevRotation) => (prevRotation === 3 ? 0 : prevRotation + 1));
-  };
-
-  // const flipImage = () => {
-  //   setFlip((prevFlip) => !prevFlip);
-  // };
+  const zoomIn = () => setZoom((prevZoom) => prevZoom + 0.2);
+  const zoomOut = () => setZoom((prevZoom) => (prevZoom >= 1 ? prevZoom - 0.2 : prevZoom));
+  const rotateRight = () => setRotation((prevRotation) => (prevRotation === 3 ? 0 : prevRotation + 1));
+  // const flipImage = () => setFlip((prevFlip) => !prevFlip)};
 
   const onPan = (dx: number, dy: number) => {
     setDx(dx);
@@ -117,7 +102,6 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(({ im
   );
 });
 
-ReactPanZoom.displayName = 'ReactPanZoom'; // Set display name for better debugging
+ReactPanZoom.displayName = 'ReactPanZoom';
 
-export { PanViewer };
 export default ReactPanZoom;
