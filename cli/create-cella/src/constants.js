@@ -25,6 +25,7 @@ export const TO_CLEAN = [
 // Files to copy/paste after downloading
 export const TO_COPY = {
     './backend/.env.example': './backend/.env',
+    './frontend/.env.example': './frontend/.env',
     './tus/.env.example': './tus/.env',
     './info/QUICKSTART.md': 'README.md',
 };
