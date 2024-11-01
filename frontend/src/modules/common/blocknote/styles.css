@@ -10,6 +10,10 @@ p.bn-inline-content {
   font-weight: 200;
 }
 
+.bn-inline-content:has(> .ProseMirror-trailingBreak)::before {
+  color: var(--bloknote-placeholder);
+}
+
 p.bn-inline-content code {
   background: hsl(var(--muted));
   font-size: 0.85em;
