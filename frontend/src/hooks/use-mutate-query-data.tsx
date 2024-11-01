@@ -7,7 +7,7 @@ interface Item {
 }
 
 // TODO: add comments in this file
-type QueryDataActions = 'create' | 'update' | 'delete' | 'updateMembership';
+export type QueryDataActions = 'create' | 'update' | 'delete' | 'updateMembership';
 
 const updateItems = (items: Item[], dataItems: Item[], action: QueryDataActions) => {
   switch (action) {
