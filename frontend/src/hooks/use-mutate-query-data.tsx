@@ -46,15 +46,13 @@ export const useMutateEntityQueryData = (queryKey: QueryKey) => {
 
       // Iterate through each entry in the data
       for (const [key, value] of Object.entries(data)) {
-        if (Array.isArray(value)) {
-          const hasEntityInList = value.some((el) => el.entity === entity);
-          if (!hasEntityInList) continue; // Skip if entity is not in the list
-          updatedData[key] = updateArrayItems(value, items, action);
-        }
-        // Handle cases where the value is a single entity
         if ('entity' in value && value.entity === entity) {
           const [newItem] = items;
           updatedData[key] = updateItem(value, newItem, action);
+        }
+        if (Array.isArray(value)) {
+          const filteredArray = value.filter((el) => el.entity === entity);
+          updatedData[key] = updateArrayItems(filteredArray, items, action);
         }
       }
 
@@ -64,7 +62,6 @@ export const useMutateEntityQueryData = (queryKey: QueryKey) => {
 };
 
 // Helpers functions
-
 const updateArrayItems = <T extends Item>(items: T[], dataItems: T[], action: QueryDataActions) => {
   // Determine how to handle dataItems in the items array based on action type
   switch (action) {
