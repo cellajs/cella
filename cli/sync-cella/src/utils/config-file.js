@@ -32,7 +32,7 @@ async function extractUsingDynamicImport(configFile) {
 
     return { divergedFile, ignoreFile, ignoreList, upstreamBranch, forks };
   } catch (error) {
-    return { problems: [`Error dynamically importing JS file: ${error}
+    return { problems: [`Error dynamically importing JS/TS file: ${error}
 `] };
   }
 }
