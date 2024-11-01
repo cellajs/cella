@@ -1,4 +1,3 @@
-import { fork } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path'
 
@@ -20,28 +19,8 @@ async function extractFromJson(configFile) {
   }
 }
 
-// Function to extract paths from .ts or .js (without dynamic import for simplicity)
-async function extractFromTs(configFile) {
-  try {
-    const fileContent = await readFile(configFile, 'utf-8');
-
-    const divergedFile = fileContent.match(/divergedFile:\s*"([^"]+)"/)?.[1];
-    const ignoreFile = fileContent.match(/ignoreFile:\s*"([^"]+)"/)?.[1];
-    const ignoreListMatch = fileContent.match(/ignoreList:\s*\[([^\]]*)\]/);
-    const ignoreList = ignoreListMatch
-      ? ignoreListMatch[1].split(',').map(item => item.trim().replace(/['"]/g, ''))
-      : [];
-    const upstreamBranch = fileContent.match(/upstreamBranch:\s*"([^"]+)"/)?.[1];
-
-    // @TODO: Add fork extraction
-    return { divergedFile, ignoreFile, ignoreList, upstreamBranch };
-  } catch (error) {
-    return { problems: [`Error reading or parsing TS file: ${error}`] };
-  }
-}
-
 // Function to extract paths using dynamic import for ES modules
-async function extractFromJsUsingDynamicImport(configFile) {
+async function extractUsingDynamicImport(configFile) {
   try {
     const { config } = await import(resolve(configFile));
 
@@ -65,9 +44,9 @@ export async function extractValues(configFile) {
   if (fileExt === '.json') {
     return extractFromJson(configFile);
   } else if (fileExt === '.js') 
-    return extractFromJsUsingDynamicImport(configFile);
+    return extractUsingDynamicImport(configFile);
   else if (fileExt === '.ts') {
-    return extractFromTs(configFile);
+    return extractUsingDynamicImport(configFile);
   } else {
     return { problems: [`Unsupported file format: ${fileExt}. Only .json, .ts, and .js are supported.`] };
   }
