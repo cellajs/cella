@@ -72,7 +72,7 @@ export const OrganizationMembersRoute = createRoute({
 export const OrganizationAttachmentsRoute = createRoute({
   path: '/attachments',
   validateSearch: attachmentsSearchSchema,
-  staticData: { pageTitle: 'Attachments', isAuth: true },
+  staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   component: () => {

@@ -49,7 +49,7 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(({ im
   return (
     <>
       {showButtons && (
-        <div className="absolute z-20 flex items-center justify-center inline-flex left-[calc(50vw-5rem)] bottom-3 gap-0 rounded-md text-sm shadow-sm bg-transparent ring-offset-background">
+        <div className="absolute z-20 flex items-center justify-center left-[calc(50vw-5rem)] bottom-3 gap-0 rounded-md text-sm shadow-sm bg-transparent ring-offset-background">
           <TooltipButton toolTipContent="Zoom in">
             <Button onClick={zoomIn} className="bg-background border border-input rounded-r-none hover:bg-accent text-accent-foreground">
               <Plus size={14} />
