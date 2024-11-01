@@ -15,7 +15,7 @@ export const organizationsQueryOptions = ({
 }) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
-  const offset = rowsLength;
+  const offset = q.length > 0 ? 0 : rowsLength;
 
   return infiniteQueryOptions({
     queryKey: ['organizations', q, sort, order],
