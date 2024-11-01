@@ -12,6 +12,7 @@ type CarouselOptions = UseCarouselParameters[0];
 type CarouselPlugin = UseCarouselParameters[1];
 
 type CarouselProps = {
+  isDialog?: boolean;
   opts?: CarouselOptions;
   plugins?: CarouselPlugin;
   orientation?: 'horizontal' | 'vertical';
@@ -40,7 +41,7 @@ function useCarousel() {
 }
 
 const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & CarouselProps>(
-  ({ orientation = 'horizontal', opts, setApi, plugins, className, children, ...props }, ref) => {
+  ({ orientation = 'horizontal', opts, setApi, plugins, isDialog = false, className, children, ...props }, ref) => {
     const [carouselRef, api] = useEmblaCarousel(
       {
         ...opts,
@@ -67,7 +68,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
     }, [api]);
 
     const handleKeyDown = React.useCallback(
-      (event: React.KeyboardEvent<HTMLDivElement>) => {
+      (event: KeyboardEvent) => {
         if (event.key === 'ArrowLeft') {
           event.preventDefault();
           scrollPrev();
@@ -101,6 +102,23 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
       };
     }, [api, onSelect]);
 
+    // Define the mouse enter handler
+    const handleMouseEnter = () => {
+      if (api && !isDialog) document.addEventListener('keydown', handleKeyDown);
+    };
+
+    // Define the mouse leave handler
+    const handleMouseLeave = () => {
+      if (!isDialog) document.removeEventListener('keydown', handleKeyDown);
+    };
+
+    //remove keydown listener on unmount
+    React.useEffect(() => {
+      if (!api) return;
+      if (isDialog) document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [api]);
+
     return (
       <CarouselContext.Provider
         value={{
@@ -116,7 +134,8 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
       >
         <div
           ref={ref}
-          onKeyDownCapture={handleKeyDown}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           className={cn('relative', className)}
           // biome-ignore lint/a11y/useSemanticElements: <explanation>
           role="region"
@@ -129,6 +148,7 @@ const Carousel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
     );
   },
 );
+
 Carousel.displayName = 'Carousel';
 
 const CarouselContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => {

@@ -13,11 +13,13 @@ interface CarouselProps {
 const Carousel = ({ slides, onOpenChange, isDialog = false, slide = 0 }: CarouselProps) => {
   const [current, setCurrent] = useState(0);
   const imageClass = isDialog ? 'object-contain' : '';
+  const autoplay = Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true });
 
   return (
     <BaseCarousel
+      isDialog={isDialog}
       opts={{ duration: 20, loop: true, startIndex: slide }}
-      plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]}
+      plugins={isDialog ? [] : [autoplay]}
       className="w-full h-full group"
       setApi={(api) => {
         if (!api) return;
