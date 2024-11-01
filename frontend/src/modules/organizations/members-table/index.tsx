@@ -91,7 +91,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   }
 
   // Build columns
-  const [columns, setColumns] = useColumns(isAdmin, isSheet);
+  const [columns, setColumns] = useColumns(isAdmin, isSheet, organizationId);
 
   // Map (updated) query data to rows
   useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
@@ -204,7 +204,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // TODO: Figure out a way to open sheet using url state
   useEffect(() => {
     if (!search.userIdPreview) return;
-    setTimeout(() => openUserPreviewSheet(search.userIdPreview as string), 0);
+    setTimeout(() => openUserPreviewSheet(search.userIdPreview as string, organizationId), 0);
   }, []);
 
   return (

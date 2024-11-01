@@ -4,9 +4,9 @@
 import { Squirrel } from 'lucide-react';
 import ContentPlaceholder from '../common/content-placeholder';
 
-const ProfilePageContent = ({ sheet, userId, organizationId }: { userId: string; organizationId?: string; sheet?: boolean }) => {
+const ProfilePageContent = ({ sheet, userId, orgIdOrSlug }: { userId: string; orgIdOrSlug?: string; sheet?: boolean }) => {
   // const { data: user } = useQuery({
-  //   queryKey: ['users', userId],
+  //   queryKey: ['user', userId],
   //   queryFn: () => getUser(userId),
   //   // Disable the query when `organizationId` is available
   //   enabled: !organizationId,
@@ -15,7 +15,7 @@ const ProfilePageContent = ({ sheet, userId, organizationId }: { userId: string;
   console.info('ProfilePageContent', { userId, sheet });
 
   // Don't render anything until `orgId` is available
-  if (!organizationId) return <div>Do a get organizations request here</div>;
+  if (!orgIdOrSlug) return <div>Do a get organizations request here</div>;
 
   return <ContentPlaceholder Icon={Squirrel} title={'Default user page'} />;
 };

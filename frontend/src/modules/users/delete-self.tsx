@@ -29,7 +29,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
     mutationFn: baseDeleteSelf,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['users', user.id],
+        queryKey: ['user', user.id],
       });
 
       // Clear all user data

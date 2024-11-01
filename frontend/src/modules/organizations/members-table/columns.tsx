@@ -13,7 +13,7 @@ import { renderSelect } from '~/modules/common/data-table/select-column';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
+export const useColumns = (isAdmin: boolean, isSheet: boolean, organizationId: string) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -29,14 +29,14 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => (
           <Link
-            to="/user/$idOrSlug"
+            to="/$orgIdOrSlug/user/$idOrSlug"
             tabIndex={tabIndex}
-            params={{ idOrSlug: row.slug }}
+            params={{ idOrSlug: row.slug, orgIdOrSlug: organizationId }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
-              openUserPreviewSheet(row.id);
+              openUserPreviewSheet(row.id, organizationId);
             }}
           >
             <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />

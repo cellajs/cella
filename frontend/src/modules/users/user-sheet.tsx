@@ -11,11 +11,11 @@ export const userQueryOptions = (idOrSlug: string) =>
     queryFn: () => getUser(idOrSlug),
   });
 
-const UserSheet = ({ idOrSlug }: { idOrSlug: string }) => {
+const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: string }) => {
   const navigate = useNavigate();
 
   // Query members
-  const { data } = useQuery(userQueryOptions(idOrSlug));
+  const { data: user } = useQuery(userQueryOptions(idOrSlug));
 
   useEffect(() => {
     // Add search parameter on mount
@@ -43,9 +43,8 @@ const UserSheet = ({ idOrSlug }: { idOrSlug: string }) => {
     };
   }, []);
 
-  if (!data) return null;
-
-  return <UserProfilePage sheet user={data} />;
+  if (!user) return null;
+  return <UserProfilePage sheet user={user} orgIdOrSlug={orgIdOrSlug} />;
 };
 
 export default UserSheet;

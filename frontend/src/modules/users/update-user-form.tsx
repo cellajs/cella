@@ -50,7 +50,7 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
     mutationKey: ['me', 'update', idOrSlug],
     mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
     onSuccess: (updatedUser) => {
-      queryClient.setQueryData(['users', updatedUser.id], updatedUser);
+      queryClient.setQueryData(['user', updatedUser.id], updatedUser);
     },
     gcTime: 1000 * 10,
   });

@@ -23,7 +23,7 @@ const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
     onSuccess: () => {
       for (const user of users) {
         queryClient.invalidateQueries({
-          queryKey: ['users', user.id],
+          queryKey: ['user', user.id],
         });
       }
 
