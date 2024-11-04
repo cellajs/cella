@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.4.0",
+    "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^1.4.0",
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.0.3",
     "@blocknote/core": "^0.17.1",
     "@blocknote/react": "^0.17.1",

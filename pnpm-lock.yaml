@@ -294,6 +294,9 @@ importers:
       '@atlaskit/pragmatic-drag-and-drop':
         specifier: ^1.4.0
         version: 1.4.0
+      '@atlaskit/pragmatic-drag-and-drop-auto-scroll':
+        specifier: ^1.4.0
+        version: 1.4.0
       '@atlaskit/pragmatic-drag-and-drop-hitbox':
         specifier: ^1.0.3
         version: 1.0.3
@@ -737,6 +740,9 @@ packages:
     resolution: {integrity: sha512-Va+Fq1QzKkSgmiYINSp3cASFhMsbdRH/kmCk2feijhC+yNjGoC056CRqihrVFhR8MY8HOZHdlYm2Ns2lmszCiw==}
     peerDependencies:
       zod: ^3.20.2
+
+  '@atlaskit/pragmatic-drag-and-drop-auto-scroll@1.4.0':
+    resolution: {integrity: sha512-5GoikoTSW13UX76F9TDeWB8x3jbbGlp/Y+3aRkHe1MOBMkrWkwNpJ42MIVhhX/6NSeaZiPumP0KbGJVs2tOWSQ==}
 
   '@atlaskit/pragmatic-drag-and-drop-hitbox@1.0.3':
     resolution: {integrity: sha512-/Sbu/HqN2VGLYBhnsG7SbRNg98XKkbF6L7XDdBi+izRybfaK1FeMfodPpm/xnBHPJzwYMdkE0qtLyv6afhgMUA==}
@@ -2794,6 +2800,7 @@ packages:
 
   '@evilmartians/lefthook@1.8.2':
     resolution: {integrity: sha512-SZdQk3W9q7tcJwnSwEMUubQqVIK7SHxv52hEAnV7o3nPI+xKcmd+rN0hZIJg07wjBaJRAjzdvoQySKQQYPW5Qw==}
+    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -11055,6 +11062,11 @@ snapshots:
     dependencies:
       openapi3-ts: 4.4.0
       zod: 3.23.8
+
+  '@atlaskit/pragmatic-drag-and-drop-auto-scroll@1.4.0':
+    dependencies:
+      '@atlaskit/pragmatic-drag-and-drop': 1.4.0
+      '@babel/runtime': 7.26.0
 
   '@atlaskit/pragmatic-drag-and-drop-hitbox@1.0.3':
     dependencies:

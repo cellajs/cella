@@ -1,8 +1,9 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ContextEntity, DraggableItemData, UserMenu, UserMenuItem } from '~/types/common';
 
 import { useNavigationStore } from '~/store/navigation';
 
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
@@ -44,6 +45,7 @@ export const SheetMenu = memo(() => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 
+  const scrollViewportRef = useRef(null);
   const pwaEnabled = config.has.pwa;
 
   const searchResultsListItems = useCallback(() => {
@@ -69,7 +71,12 @@ export const SheetMenu = memo(() => {
 
   // monitoring drop event
   useEffect(() => {
+    if (!scrollViewportRef.current) return;
     return combine(
+      autoScrollForElements({
+        element: scrollViewportRef.current,
+        getAllowedAxis: () => 'vertical',
+      }),
       monitorForElements({
         canMonitor({ source }) {
           return isPageData(source.data);
@@ -101,7 +108,7 @@ export const SheetMenu = memo(() => {
   }, [menu]);
 
   return (
-    <ScrollArea className="h-full" id="nav-sheet">
+    <ScrollArea className="h-full" id="nav-sheet" viewPortRef={scrollViewportRef}>
       <div data-search={!!searchTerm} className="group/menu p-3 min-h-[calc(100vh-0.5rem)] flex flex-col">
         <SheetMenuSearch menu={menu} searchTerm={searchTerm} setSearchTerm={setSearchTerm} searchResultsChange={setSearchResults} />
 
