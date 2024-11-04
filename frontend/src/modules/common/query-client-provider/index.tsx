@@ -45,6 +45,8 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
     if (networkMode === 'online') return;
 
     (async () => {
+      await waitFor(1000); // wait for a second to avoid server overload
+
       // Invalidate and prefetch me and menu
       const meQueryOptions: UseQueryOptions = {
         queryKey: ['me'],
