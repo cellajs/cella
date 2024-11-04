@@ -1,6 +1,16 @@
 import * as Sentry from '@sentry/react';
 import { config } from 'config';
 
+// Initialize Sentry
+window.ononline = () => {
+  initSentry();
+};
+
+// Close Sentry when offline to avoid sending errors
+window.onoffline = () => {
+  Sentry.close();
+};
+
 export const initSentry = () => {
   // Send errors to Sentry
   Sentry.init({
