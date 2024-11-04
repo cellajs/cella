@@ -25,6 +25,8 @@ async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryOptions)
   return offlineFetch(options);
 }
 
+const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const prefetchMembers = async (
   item: {
     slug: string;
@@ -64,6 +66,8 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
             const options = organizationQueryOptions(item.slug);
             prefetchQuery(options);
             prefetchMembers(item, item.slug);
+
+            await waitFor(1000); // wait for a second to avoid server overload
           }
         }
       }
