@@ -318,9 +318,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^3.9.1
         version: 3.9.1(react-hook-form@7.53.1(react@18.3.1))
-      '@million/lint':
-        specifier: ^1.0.11
-        version: 1.0.11(rollup@2.79.2)(webpack-sources@3.2.3)
       '@oslojs/encoding':
         specifier: ^1.1.0
         version: 1.1.0
@@ -601,6 +598,9 @@ importers:
       '@faker-js/faker':
         specifier: ^9.1.0
         version: 9.1.0
+      '@million/lint':
+        specifier: ^1.0.11
+        version: 1.0.11(rollup@2.79.2)(webpack-sources@3.2.3)
       '@redux-devtools/extension':
         specifier: ^3.3.0
         version: 3.3.0(redux@5.0.1)
@@ -2794,7 +2794,6 @@ packages:
 
   '@evilmartians/lefthook@1.8.2':
     resolution: {integrity: sha512-SZdQk3W9q7tcJwnSwEMUubQqVIK7SHxv52hEAnV7o3nPI+xKcmd+rN0hZIJg07wjBaJRAjzdvoQySKQQYPW5Qw==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 

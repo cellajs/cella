@@ -221,16 +221,17 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
     );
   };
 
-  // Subscribe to task updates
+  // Subscribe to attachments updates
   useEffect(() => {
     if (networkMode !== 'online' || !config.has.sync || !env.VITE_HAS_SYNC) return;
 
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organization.id));
+    const queryKey = attachmentsQueryOptions({ orgIdOrSlug: organization.id }).queryKey;
     const unsubscribe = shapeStream.subscribe((messages) => {
       const createMessage = messages.find((m) => m.headers.operation === 'insert') as ChangeMessage<RawAttachment> | undefined;
       if (createMessage) {
         const value = createMessage.value;
-        queryClient.setQueryData<AttachmentInfiniteQueryFnData>(attachmentsQueryOptions({ orgIdOrSlug: organization.id }).queryKey, (data) => {
+        queryClient.setQueryData<AttachmentInfiniteQueryFnData>(queryKey, (data) => {
           if (!data) return;
           const created = {} as unknown as Attachment;
           // TODO: Refactor
@@ -264,24 +265,65 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
         });
       }
 
+      const updateMessage = messages.find((m) => m.headers.operation === 'update') as ChangeMessage<RawAttachment> | undefined;
+      if (updateMessage) {
+        const value = updateMessage.value;
+        queryClient.setQueryData(queryKey, (data) => {
+          if (!data) return;
+          return {
+            ...data,
+            pages: data.pages.map((page) => {
+              return {
+                ...page,
+                items: page.items.map((attachment) => {
+                  if (attachment.id === value.id) {
+                    const updated = {
+                      ...attachment,
+                    } as unknown as Attachment;
+                    // TODO: Refactor
+                    for (const key of objectKeys(value)) {
+                      if (key === 'content_type') {
+                        updated.contentType = value[key];
+                      } else if (key === 'organization_id') {
+                        updated.organizationId = value[key];
+                      } else if (key === 'created_at') {
+                        updated.createdAt = value[key];
+                      } else if (key === 'created_by') {
+                        updated.createdBy = value[key];
+                      } else if (key === 'modified_at') {
+                        updated.modifiedAt = value[key];
+                      } else if (key === 'modified_by') {
+                        updated.modifiedBy = value[key];
+                      } else {
+                        updated[key] = value[key] as never;
+                      }
+                    }
+                    return updated;
+                  }
+
+                  return attachment;
+                }),
+              };
+            }),
+          };
+        });
+      }
+
       const deleteMessage = messages.find((m) => m.headers.operation === 'delete') as ChangeMessage<RawAttachment> | undefined;
       if (deleteMessage) {
-        queryClient.setQueryData<AttachmentInfiniteQueryFnData>(
-          attachmentsQueryOptions({ orgIdOrSlug: organization.id, rowsLength: rows.length }).queryKey,
-          (data) => {
-            if (!data) return;
-            return {
-              ...data,
-              pages: [
-                {
-                  ...data.pages[0],
-                  items: data.pages[0].items.filter((item) => item.id !== deleteMessage.value.id),
-                },
-                ...data.pages.slice(1),
-              ],
-            };
-          },
-        );
+        queryClient.setQueryData<AttachmentInfiniteQueryFnData>(queryKey, (data) => {
+          if (!data) return;
+          return {
+            ...data,
+            pages: [
+              {
+                ...data.pages[0],
+                items: data.pages[0].items.filter((item) => item.id !== deleteMessage.value.id),
+              },
+              ...data.pages.slice(1),
+            ],
+          };
+        });
       }
     });
     return () => {
