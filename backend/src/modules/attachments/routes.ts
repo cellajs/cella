@@ -151,7 +151,8 @@ class AttachmentRoutesConfig {
   public shapeProxy = createRouteConfig({
     method: 'get',
     path: '/shape-proxy',
-    guard: [isAuthenticated, hasOrgAccess],
+    // guard: [isAuthenticated, hasOrgAccess],
+    guard: [isPublicAccess],
     tags: ['attachments'],
     summary: 'Shape proxy',
     description: 'Get shape proxy for attachment.',

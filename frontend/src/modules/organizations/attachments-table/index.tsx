@@ -68,7 +68,11 @@ const attachmentShape = (organization_id?: string): ShapeStreamOptions => ({
     maxDelay: 32000,
     multiplier: 2,
   },
-  fetchClient: (input, init) => fetch(input, { ...init, credentials: 'include' }),
+  fetchClient: (input, init) =>
+    fetch(input, {
+      ...init,
+      // credentials: 'include'
+    }),
 });
 
 const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTableProps) => {
