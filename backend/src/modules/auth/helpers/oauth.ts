@@ -13,7 +13,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import type { OauthProviderOptions } from '#/types/common';
 import { sendVerificationEmail } from './verify-email';
 
-// Create a session before redirecting to the oauth provider
+// Create a session before redirecting to oauth provider
 export const createSession = (ctx: Context, provider: string, state: string, codeVerifier?: string, redirect?: string) => {
   setCookie(ctx, 'oauth_state', state);
 
@@ -23,18 +23,21 @@ export const createSession = (ctx: Context, provider: string, state: string, cod
   logEvent('User redirected', { strategy: provider });
 };
 
-// Get the redirect URL from the cookie or use default
+// Get redirect URL from cookie or use default
 export const getRedirectUrl = (ctx: Context, firstSignIn?: boolean): string => {
   const redirectCookie = getCookie(ctx, 'oauth_redirect');
   const redirectCookieUrl = redirectCookie ? decodeURIComponent(redirectCookie) : '';
-  let redirectUrl = config.frontendUrl + config.defaultRedirectPath;
+  let redirectPath = config.defaultRedirectPath;
 
   if (redirectCookie) {
-    redirectUrl = redirectCookieUrl.startsWith('http') ? decodeURIComponent(redirectCookie) : config.frontendUrl + redirectCookieUrl;
+    if (redirectCookieUrl.startsWith('http')) return decodeURIComponent(redirectCookie);
+    redirectPath = redirectCookieUrl;
   }
-  if (firstSignIn) redirectUrl = config.frontendUrl + config.firstSignInRedirectPath;
-  return redirectUrl;
+
+  if (firstSignIn) redirectPath = config.firstSignInRedirectPath;
+  return config.frontendUrl + redirectPath;
 };
+
 // Insert oauth account into db
 export const insertOauthAccount = async (userId: string, providerId: OauthProviderOptions, providerUserId: string) => {
   await db.insert(oauthAccountsTable).values({ providerId, providerUserId, userId });
@@ -48,7 +51,7 @@ export const findOauthAccount = async (providerId: OauthProviderOptions, provide
     .where(and(eq(oauthAccountsTable.providerId, providerId), eq(oauthAccountsTable.providerUserId, providerUserId)));
 };
 
-// Create a slug from email
+// Create slug from email
 export const slugFromEmail = (email: string) => {
   const [alias] = email.split('@');
   return slugify(alias, { lower: true });
@@ -60,24 +63,19 @@ export const splitFullName = (name: string) => {
   return { firstName: firstName || '', lastName: lastName || '' };
 };
 
-// Handle existing user
-export const handleExistingUser = async (
-  ctx: Context,
-  existingUser: User,
-  providerId: OauthProviderOptions,
-  {
-    providerUser,
-    isEmailVerified,
-    redirectUrl,
-  }: {
-    providerUser: Pick<InsertUserModel, 'thumbnailUrl' | 'bio' | 'firstName' | 'lastName' | 'id' | 'email'>;
-    isEmailVerified: boolean;
-    redirectUrl: string;
-  },
-) => {
+interface Params {
+  providerUser: Pick<InsertUserModel, 'thumbnailUrl' | 'bio' | 'firstName' | 'lastName' | 'id' | 'email'>;
+  isEmailVerified: boolean;
+  redirectUrl: string;
+}
+
+// Update existing user
+export const updateExistingUser = async (ctx: Context, existingUser: User, providerId: OauthProviderOptions, params: Params) => {
+  const { providerUser, isEmailVerified, redirectUrl } = params;
+
   await insertOauthAccount(existingUser.id, providerId, providerUser.id);
 
-  // Update user with provider data if not already present
+  // Update user with auth provider data if not already present
   await db
     .update(usersTable)
     .set({

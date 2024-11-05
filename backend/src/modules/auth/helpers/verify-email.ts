@@ -14,6 +14,6 @@ export const sendVerificationEmail = (email: string) => {
       }),
     });
   } catch (err) {
-    return logEvent('Verification email sending failed');
+    return logEvent('Verification email could not be sent');
   }
 };
