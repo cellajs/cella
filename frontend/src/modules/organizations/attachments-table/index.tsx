@@ -60,13 +60,15 @@ interface AttachmentsTableProps {
 }
 
 const attachmentShape = (organization_id?: string): ShapeStreamOptions => ({
-  url: new URL('/v1/shape/attachments', config.electricUrl).href,
+  url: new URL(`/${organization_id}/attachments/shape-proxy`, config.backendUrl).href,
+  // url: new URL('/v1/shape/attachments', config.electricUrl).href,
   where: organization_id ? `organization_id = '${organization_id}'` : undefined,
   backoffOptions: {
     initialDelay: 500,
     maxDelay: 32000,
     multiplier: 2,
   },
+  fetchClient: (input, init) => fetch(input, { ...init, credentials: 'include' }),
 });
 
 const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTableProps) => {

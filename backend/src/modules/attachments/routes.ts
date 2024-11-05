@@ -148,6 +148,24 @@ class AttachmentRoutesConfig {
     },
   });
 
+  public shapeProxy = createRouteConfig({
+    method: 'get',
+    path: '/shape-proxy',
+    guard: [isAuthenticated, hasOrgAccess],
+    tags: ['attachments'],
+    summary: 'Shape proxy',
+    description: 'Get shape proxy for attachment.',
+    request: {
+      params: z.object({ orgIdOrSlug: idOrSlugSchema }),
+    },
+    responses: {
+      200: {
+        description: 'Success',
+      },
+      ...errorResponses,
+    },
+  });
+
   public redirectToAttachment = createRouteConfig({
     method: 'get',
     path: '/{id}/link',
