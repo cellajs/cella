@@ -94,6 +94,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
           {
             ...previousData.pages[0],
             items: [newAttachment, ...previousData.pages[0].items],
+            total: previousData.pages[0].total + 1,
           },
           ...previousData.pages.slice(1),
         ],
@@ -135,7 +136,7 @@ queryClient.setMutationDefaults(attachmentKeys.delete(), {
       const updatedItems = items.filter((item) => !ids.includes(item.id));
       return {
         ...oldData,
-        pages: [{ ...oldData.pages[0], items: updatedItems }, ...oldData.pages.slice(1)],
+        pages: [{ ...oldData.pages[0], items: updatedItems, total: updatedItems.length }, ...oldData.pages.slice(1)],
       };
     });
 

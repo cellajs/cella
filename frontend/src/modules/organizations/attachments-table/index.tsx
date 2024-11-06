@@ -15,6 +15,7 @@ import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
+import CarouselDialog from '~/modules/common/carousel-dialog';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -84,6 +85,8 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   const [q, setQuery] = useState<AttachmentSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
   const [totalCount, setTotalCount] = useState(0);
+  const [carouselOpen, setCarouselOpen] = useState(false);
+  const [carouselSlide, setCarouselSlide] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as AttachmentSearch['sort'];
@@ -105,9 +108,14 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
     }),
   );
 
+  const openCarouselDialog = (open: boolean, slide: number) => {
+    setCarouselOpen(open);
+    setCarouselSlide(slide);
+  };
+
   // Build columns
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
-  useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet)), [isAdmin]);
+  useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openCarouselDialog)), [isAdmin]);
 
   // Map (updated) query data to rows
   useMapQueryDataToRows<Attachment>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
@@ -332,90 +340,99 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   }, [networkMode]);
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
-        {/* Filter bar */}
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-          <FilterBarActions>
-            {selected.length > 0 ? (
-              <>
-                <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
-                  <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
-                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">{selected.length}</Badge>
-                    <motion.span layoutId="attachments-filter-bar-icon">
-                      <Trash size={16} />
-                    </motion.span>
-
-                    <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
-                  </motion.button>
-                </Button>
-
-                <Button asChild variant="ghost" onClick={() => setSelectedRows(new Set<string>())}>
-                  <motion.button
-                    transition={{
-                      bounce: 0,
-                      duration: 0.2,
-                    }}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: -20, opacity: 0 }}
-                  >
-                    <XSquare size={16} />
-                    <span className="ml-1">{t('common:clear')}</span>
-                  </motion.button>
-                </Button>
-              </>
-            ) : (
-              !isFiltered &&
-              isAdmin && (
-                <Button asChild onClick={openUploadDialog}>
-                  <motion.button transition={{ duration: 0.1 }} layoutId="attachments-filter-bar-button">
-                    <motion.span layoutId="attachments-filter-bar-icon">
-                      <Upload size={16} />
-                    </motion.span>
-                    <span className="ml-1">{t('common:upload')}</span>
-                  </motion.button>
-                </Button>
-              )
-            )}
-            {selected.length === 0 && <TableCount count={totalCount} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
-          </FilterBarActions>
-          <div className="sm:grow" />
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={q} setQuery={onSearch} />
-          </FilterBarContent>
-        </TableFilterBar>
-
-        {/* Columns view */}
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-
-        {/* Focus view */}
-        {!isSheet && <FocusView iconOnly />}
-      </div>
-
-      {/* Data table */}
-      <DataTable<Attachment>
-        {...{
-          columns: columns.filter((column) => column.visible),
-          rowHeight: 42,
-          enableVirtualization: false,
-          onRowsChange,
-          rows,
-          limit,
-          totalCount,
-          rowKeyGetter: (row) => row.id,
-          error: queryResult.error,
-          isLoading: queryResult.isLoading,
-          isFetching: queryResult.isFetching,
-          fetchMore: queryResult.fetchNextPage,
-          isFiltered,
-          selectedRows,
-          onSelectedRowsChange: setSelectedRows,
-          sortColumns,
-          onSortColumnsChange: setSortColumns,
-        }}
+    <>
+      <CarouselDialog
+        title={t('common:view_screenshot')}
+        isOpen={carouselOpen}
+        onOpenChange={setCarouselOpen}
+        slides={rows.map((el) => ({ src: el.url }))}
+        carouselSlide={carouselSlide}
       />
-    </div>
+      <div className="flex flex-col gap-4 h-full">
+        <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+          {/* Filter bar */}
+          <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
+            <FilterBarActions>
+              {selected.length > 0 ? (
+                <>
+                  <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
+                    <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
+                      <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">{selected.length}</Badge>
+                      <motion.span layoutId="attachments-filter-bar-icon">
+                        <Trash size={16} />
+                      </motion.span>
+
+                      <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+                    </motion.button>
+                  </Button>
+
+                  <Button asChild variant="ghost" onClick={() => setSelectedRows(new Set<string>())}>
+                    <motion.button
+                      transition={{
+                        bounce: 0,
+                        duration: 0.2,
+                      }}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: -20, opacity: 0 }}
+                    >
+                      <XSquare size={16} />
+                      <span className="ml-1">{t('common:clear')}</span>
+                    </motion.button>
+                  </Button>
+                </>
+              ) : (
+                !isFiltered &&
+                isAdmin && (
+                  <Button asChild onClick={openUploadDialog}>
+                    <motion.button transition={{ duration: 0.1 }} layoutId="attachments-filter-bar-button">
+                      <motion.span layoutId="attachments-filter-bar-icon">
+                        <Upload size={16} />
+                      </motion.span>
+                      <span className="ml-1">{t('common:upload')}</span>
+                    </motion.button>
+                  </Button>
+                )
+              )}
+              {selected.length === 0 && <TableCount count={totalCount} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            </FilterBarActions>
+            <div className="sm:grow" />
+            <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
+              <TableSearch value={q} setQuery={onSearch} />
+            </FilterBarContent>
+          </TableFilterBar>
+
+          {/* Columns view */}
+          <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+
+          {/* Focus view */}
+          {!isSheet && <FocusView iconOnly />}
+        </div>
+
+        {/* Data table */}
+        <DataTable<Attachment>
+          {...{
+            columns: columns.filter((column) => column.visible),
+            rowHeight: 42,
+            enableVirtualization: false,
+            onRowsChange,
+            rows,
+            limit,
+            totalCount,
+            rowKeyGetter: (row) => row.id,
+            error: queryResult.error,
+            isLoading: queryResult.isLoading,
+            isFetching: queryResult.isFetching,
+            fetchMore: queryResult.fetchNextPage,
+            isFiltered,
+            selectedRows,
+            onSelectedRowsChange: setSelectedRows,
+            sortColumns,
+            onSortColumnsChange: setSortColumns,
+          }}
+        />
+      </div>
+    </>
   );
 };
 

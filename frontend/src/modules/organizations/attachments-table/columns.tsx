@@ -12,7 +12,13 @@ import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boolean, isAdmin: boolean, isSheet: boolean) => {
+export const useColumns = (
+  t: TFunction<'translation', undefined>,
+  isMobile: boolean,
+  isAdmin: boolean,
+  isSheet: boolean,
+  openCarouselDialog: (open: boolean, slide: number) => void,
+) => {
   const columns: ColumnOrColumnGroup<Attachment>[] = [
     ...(isAdmin ? [CheckboxColumn] : []),
     {
@@ -21,8 +27,8 @@ export const useColumns = (t: TFunction<'translation', undefined>, isMobile: boo
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row }) => (
-        <div className="cursor-pointer w-full flex justify-center items-center">
+      renderCell: ({ row, rowIdx }) => (
+        <div onClick={() => openCarouselDialog(true, rowIdx)} onKeyDown={() => {}} className="cursor-pointer w-full flex justify-center items-center">
           <img src={row.url} alt={row.filename} className="h-8 w-8 rounded-md" />
         </div>
       ),
