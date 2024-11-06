@@ -7,27 +7,27 @@ const roleEnum = config.rolesByType.systemRoles;
 export const usersTable = pgTable(
   'users',
   {
-    id: varchar('id').primaryKey(),
-    entity: varchar('entity', { enum: ['user'] })
+    id: varchar().primaryKey(),
+    entity: varchar({ enum: ['user'] })
       .notNull()
       .default('user'),
     hashedPassword: varchar('hashed_password'),
-    slug: varchar('slug').unique().notNull(),
+    slug: varchar().unique().notNull(),
     unsubscribeToken: varchar('unsubscribe_token').unique().notNull(),
-    name: varchar('name').notNull(),
+    name: varchar().notNull(),
     firstName: varchar('first_name'),
     lastName: varchar('last_name'),
-    email: varchar('email').notNull().unique(),
+    email: varchar().notNull().unique(),
     emailVerified: boolean('email_verified').notNull().default(false),
-    bio: varchar('bio'),
-    language: varchar('language', {
+    bio: varchar(),
+    language: varchar({
       enum: ['en', 'nl'],
     })
       .notNull()
       .default(config.defaultLanguage),
     bannerUrl: varchar('banner_url'),
     thumbnailUrl: varchar('thumbnail_url'),
-    newsletter: boolean('newsletter').notNull().default(false),
+    newsletter: boolean().notNull().default(false),
     lastSeenAt: timestamp('last_seen_at'), // last time any GET request has been made
     lastStartedAt: timestamp('last_started_at'), // last time GET me
     lastSignInAt: timestamp('last_sign_in_at'), // last time user went through authentication flow

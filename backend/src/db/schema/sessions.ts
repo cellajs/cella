@@ -4,7 +4,7 @@ import { usersTable } from '#/db/schema/users';
 export const sessionsTable = pgTable(
   'sessions',
   {
-    id: varchar('id').primaryKey(),
+    id: varchar().primaryKey(),
     userId: varchar('user_id')
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
@@ -13,11 +13,11 @@ export const sessionsTable = pgTable(
       .notNull()
       .default('desktop'),
     deviceOs: varchar('device_os'),
-    browser: varchar('browser'),
+    browser: varchar(),
     authStrategy: varchar('auth_strategy', {
       enum: ['github', 'google', 'microsoft', 'password', 'passkey'],
     }),
-    type: varchar('type', {
+    type: varchar({
       enum: ['regular', 'impersonation'],
     })
       .notNull()

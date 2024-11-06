@@ -10,20 +10,20 @@ const languages = config.languages.map((lang) => lang.value) as [string, ...stri
 export const organizationsTable = pgTable(
   'organizations',
   {
-    id: varchar('id').primaryKey().$defaultFn(nanoid),
-    entity: varchar('entity', { enum: ['organization'] })
+    id: varchar().primaryKey().$defaultFn(nanoid),
+    entity: varchar({ enum: ['organization'] })
       .notNull()
       .default('organization'),
-    name: varchar('name').notNull(),
+    name: varchar().notNull(),
     shortName: varchar('short_name'),
-    slug: varchar('slug').unique().notNull(),
-    country: varchar('country'),
-    timezone: varchar('timezone'),
+    slug: varchar().unique().notNull(),
+    country: varchar(),
+    timezone: varchar(),
     defaultLanguage: varchar('default_language', { enum: languages }).notNull().default(config.defaultLanguage),
-    languages: json('languages').$type<Language[]>().notNull().default([config.defaultLanguage]),
+    languages: json().$type<Language[]>().notNull().default([config.defaultLanguage]),
     notificationEmail: varchar('notification_email'),
     emailDomains: json('email_domains').$type<string[]>().notNull().default([]),
-    color: varchar('color'),
+    color: varchar(),
     thumbnailUrl: varchar('thumbnail_url'),
     bannerUrl: varchar('banner_url'),
     logoUrl: varchar('logo_url'),

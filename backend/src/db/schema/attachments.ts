@@ -4,15 +4,15 @@ import { organizationsTable } from './organizations';
 import { usersTable } from './users';
 
 export const attachmentsTable = pgTable('attachments', {
-  id: varchar('id').primaryKey().$defaultFn(nanoid),
-  name: varchar('name').notNull().default('attachment'),
-  filename: varchar('filename').notNull(),
+  id: varchar().primaryKey().$defaultFn(nanoid),
+  name: varchar().notNull().default('attachment'),
+  filename: varchar().notNull(),
   contentType: varchar('content_type').notNull(),
-  size: varchar('size').notNull(),
-  entity: varchar('entity', { enum: ['attachment'] })
+  size: varchar().notNull(),
+  entity: varchar({ enum: ['attachment'] })
     .notNull()
     .default('attachment'),
-  url: varchar('url').notNull(),
+  url: varchar().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   createdBy: varchar('created_by').references(() => usersTable.id, {
     onDelete: 'set null',

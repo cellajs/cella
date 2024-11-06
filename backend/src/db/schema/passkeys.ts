@@ -3,7 +3,7 @@ import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 
 export const passkeysTable = pgTable('passkeys', {
-  id: varchar('id').primaryKey().$defaultFn(nanoid),
+  id: varchar().primaryKey().$defaultFn(nanoid),
   userEmail: varchar('user_email')
     .notNull()
     .references(() => usersTable.email, { onDelete: 'cascade' }),
