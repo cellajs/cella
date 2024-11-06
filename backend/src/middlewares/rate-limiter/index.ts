@@ -4,7 +4,7 @@ import { type IRateLimiterPostgresOptions, RateLimiterMemory, RateLimiterPostgre
 import { errorResponse } from '#/lib/errors';
 
 import { env } from '#/../env';
-import { queryClient } from '#/db/db';
+import { db } from '#/db/db';
 import { getContextUser } from '#/lib/context';
 import type { Env } from '#/types/app';
 
@@ -100,7 +100,7 @@ export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions
     ? new RateLimiterMemory(options)
     : new RateLimiterPostgres({
         ...options,
-        storeClient: queryClient,
+        storeClient: db.$client,
       });
 
 export const rateLimiter = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'> = defaultOptions, mode: RateLimiterMode = 'fail') =>

@@ -11,7 +11,7 @@ export const requestsTable = pgTable(
     message: varchar(),
     email: varchar().notNull(),
     type: varchar({ enum: requestTypeEnum }).notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
   },
   (table) => {
     return {

@@ -9,18 +9,18 @@ const roleEnum = config.rolesByType.entityRoles;
 export const membershipsTable = pgTable('memberships', {
   id: varchar().primaryKey().$defaultFn(nanoid),
   type: varchar({ enum: config.contextEntityTypes }).notNull(),
-  userId: varchar('user_id')
+  userId: varchar()
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' }),
   role: varchar({ enum: roleEnum }).notNull().default('member'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  createdBy: varchar('created_by').references(() => usersTable.id, { onDelete: 'set null' }),
-  modifiedAt: timestamp('modified_at'),
-  modifiedBy: varchar('modified_by').references(() => usersTable.id, { onDelete: 'set null' }),
+  createdAt: timestamp().defaultNow().notNull(),
+  createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
+  modifiedAt: timestamp(),
+  modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   archived: boolean().default(false).notNull(),
   muted: boolean().default(false).notNull(),
-  order: doublePrecision('sort_order').notNull(),
-  organizationId: varchar('organization_id')
+  order: doublePrecision().notNull(),
+  organizationId: varchar()
     .notNull()
     .references(() => organizationsTable.id, { onDelete: 'cascade' }),
 });

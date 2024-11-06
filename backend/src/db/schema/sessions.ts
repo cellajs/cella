@@ -5,16 +5,16 @@ export const sessionsTable = pgTable(
   'sessions',
   {
     id: varchar().primaryKey(),
-    userId: varchar('user_id')
+    userId: varchar()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    deviceName: varchar('device_name'),
-    deviceType: varchar('device_type', { enum: ['desktop', 'mobile'] })
+    deviceName: varchar(),
+    deviceType: varchar({ enum: ['desktop', 'mobile'] })
       .notNull()
       .default('desktop'),
-    deviceOs: varchar('device_os'),
+    deviceOs: varchar(),
     browser: varchar(),
-    authStrategy: varchar('auth_strategy', {
+    authStrategy: varchar({
       enum: ['github', 'google', 'microsoft', 'password', 'passkey'],
     }),
     type: varchar({
@@ -22,9 +22,9 @@ export const sessionsTable = pgTable(
     })
       .notNull()
       .default('regular'),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
-    adminUserId: varchar('admin_user_id').references(() => usersTable.id, { onDelete: 'cascade' }),
+    createdAt: timestamp().defaultNow().notNull(),
+    expiresAt: timestamp({ withTimezone: true, mode: 'date' }).notNull(),
+    adminUserId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
   },
   (table) => {
     return {

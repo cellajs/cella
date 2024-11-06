@@ -4,12 +4,12 @@ import { nanoid } from '#/utils/nanoid';
 
 export const passkeysTable = pgTable('passkeys', {
   id: varchar().primaryKey().$defaultFn(nanoid),
-  userEmail: varchar('user_email')
+  userEmail: varchar()
     .notNull()
     .references(() => usersTable.email, { onDelete: 'cascade' }),
-  credentialId: varchar('credential_id').notNull(),
-  publicKey: varchar('public_key').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  credentialId: varchar().notNull(),
+  publicKey: varchar().notNull(),
+  createdAt: timestamp().defaultNow().notNull(),
 });
 
 export type PasskeyModel = typeof passkeysTable.$inferSelect;

@@ -33,6 +33,7 @@ import { useGeneralStore } from '~/store/general';
 import { useUserStore } from '~/store/user';
 import { type Attachment, type Organization, UploadType } from '~/types/common';
 import { objectKeys } from '~/utils/object';
+import { attachmentsTableColumns } from '#/db/schema/attachments';
 import type { attachmentsQuerySchema } from '#/modules/attachments/schema';
 import { env } from '../../../../env';
 import { useColumns } from './columns';
@@ -61,6 +62,20 @@ interface AttachmentsTableProps {
   organization: Organization;
   isSheet?: boolean;
 }
+
+const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
+  const columnEntries = Object.entries(attachmentsTableColumns);
+  const attachment = {} as unknown as Attachment;
+  for (const key of objectKeys(rawAttachment)) {
+    const columnEntry = columnEntries.find(([, c]) => c.name === key);
+    if (!columnEntry) {
+      continue;
+    }
+    const columnName = columnEntry[0] as keyof Attachment;
+    attachment[columnName] = rawAttachment[key] as never;
+  }
+  return attachment;
+};
 
 const attachmentShape = (organization_id?: string): ShapeStreamOptions => ({
   url: new URL('/v1/shape/attachments', config.electricUrl).href,
@@ -242,31 +257,13 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
         const value = createMessage.value;
         queryClient.setQueryData<AttachmentInfiniteQueryFnData>(queryKey, (data) => {
           if (!data) return;
-          const created = {} as unknown as Attachment;
-          // TODO: Refactor
-          for (const key of objectKeys(value)) {
-            if (key === 'content_type') {
-              created.contentType = value[key];
-            } else if (key === 'organization_id') {
-              created.organizationId = value[key];
-            } else if (key === 'created_at') {
-              created.createdAt = value[key];
-            } else if (key === 'created_by') {
-              created.createdBy = value[key];
-            } else if (key === 'modified_at') {
-              created.modifiedAt = value[key];
-            } else if (key === 'modified_by') {
-              created.modifiedBy = value[key];
-            } else {
-              created[key] = value[key] as never;
-            }
-          }
+          const createdAttachment = parseRawAttachment(value);
           return {
             ...data,
             pages: [
               {
                 ...data.pages[0],
-                items: [created, ...data.pages[0].items],
+                items: [createdAttachment, ...data.pages[0].items],
               },
               ...data.pages.slice(1),
             ],
@@ -286,28 +283,11 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
                 ...page,
                 items: page.items.map((attachment) => {
                   if (attachment.id === value.id) {
-                    const updated = {
+                    const updatedAttachment = {
                       ...attachment,
-                    } as unknown as Attachment;
-                    // TODO: Refactor
-                    for (const key of objectKeys(value)) {
-                      if (key === 'content_type') {
-                        updated.contentType = value[key];
-                      } else if (key === 'organization_id') {
-                        updated.organizationId = value[key];
-                      } else if (key === 'created_at') {
-                        updated.createdAt = value[key];
-                      } else if (key === 'created_by') {
-                        updated.createdBy = value[key];
-                      } else if (key === 'modified_at') {
-                        updated.modifiedAt = value[key];
-                      } else if (key === 'modified_by') {
-                        updated.modifiedBy = value[key];
-                      } else {
-                        updated[key] = value[key] as never;
-                      }
-                    }
-                    return updated;
+                      ...parseRawAttachment(value),
+                    };
+                    return updatedAttachment;
                   }
 
                   return attachment;

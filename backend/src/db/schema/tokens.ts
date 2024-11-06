@@ -11,10 +11,10 @@ export const tokensTable = pgTable('tokens', {
   type: varchar({ enum: tokenTypeEnum }).notNull(),
   email: varchar(),
   role: varchar({ enum: roleEnum }),
-  userId: varchar('user_id').references(() => usersTable.id, { onDelete: 'cascade' }),
-  organizationId: varchar('organization_id').references(() => organizationsTable.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+  userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
+  organizationId: varchar().references(() => organizationsTable.id, { onDelete: 'cascade' }),
+  createdAt: timestamp().defaultNow().notNull(),
+  expiresAt: timestamp({ withTimezone: true, mode: 'date' }).notNull(),
 });
 
 export type TokenModel = typeof tokensTable.$inferSelect;

@@ -11,30 +11,30 @@ export const usersTable = pgTable(
     entity: varchar({ enum: ['user'] })
       .notNull()
       .default('user'),
-    hashedPassword: varchar('hashed_password'),
+    hashedPassword: varchar(),
     slug: varchar().unique().notNull(),
-    unsubscribeToken: varchar('unsubscribe_token').unique().notNull(),
+    unsubscribeToken: varchar().unique().notNull(),
     name: varchar().notNull(),
-    firstName: varchar('first_name'),
-    lastName: varchar('last_name'),
+    firstName: varchar(),
+    lastName: varchar(),
     email: varchar().notNull().unique(),
-    emailVerified: boolean('email_verified').notNull().default(false),
+    emailVerified: boolean().notNull().default(false),
     bio: varchar(),
     language: varchar({
       enum: ['en', 'nl'],
     })
       .notNull()
       .default(config.defaultLanguage),
-    bannerUrl: varchar('banner_url'),
-    thumbnailUrl: varchar('thumbnail_url'),
+    bannerUrl: varchar(),
+    thumbnailUrl: varchar(),
     newsletter: boolean().notNull().default(false),
-    lastSeenAt: timestamp('last_seen_at'), // last time any GET request has been made
-    lastStartedAt: timestamp('last_started_at'), // last time GET me
-    lastSignInAt: timestamp('last_sign_in_at'), // last time user went through authentication flow
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    modifiedAt: timestamp('modified_at'),
-    modifiedBy: varchar('modified_by'),
-    role: varchar('role', { enum: roleEnum }).notNull().default('user'),
+    lastSeenAt: timestamp(), // last time any GET request has been made
+    lastStartedAt: timestamp(), // last time GET me
+    lastSignInAt: timestamp(), // last time user went through authentication flow
+    createdAt: timestamp().defaultNow().notNull(),
+    modifiedAt: timestamp(),
+    modifiedBy: varchar(),
+    role: varchar({ enum: roleEnum }).notNull().default('user'),
   },
   (table) => {
     return {

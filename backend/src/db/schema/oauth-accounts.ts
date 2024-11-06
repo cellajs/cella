@@ -8,12 +8,12 @@ export const supportedOauthProviders = ['github', 'google', 'microsoft'] as cons
 export const oauthAccountsTable = pgTable(
   'oauth_accounts',
   {
-    providerId: varchar('provider_id', { enum: supportedOauthProviders }).notNull(),
-    providerUserId: varchar('provider_user_id').notNull(),
-    userId: varchar('user_id')
+    providerId: varchar({ enum: supportedOauthProviders }).notNull(),
+    providerUserId: varchar().notNull(),
+    userId: varchar()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
   },
   (table) => {
     return {
