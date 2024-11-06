@@ -6,7 +6,7 @@ import type { UploadParams, UploadType } from '~/types/common';
 
 import '@uppy/core/dist/style.min.css';
 
-export type UppyMeta = { public?: boolean };
+export type UppyMeta = { public?: boolean; contentType?: string };
 // biome-ignore lint/complexity/noBannedTypes: no other way to define this type
 export type UppyBody = {};
 
@@ -38,6 +38,13 @@ export async function ImadoUppy(
     ...uppyOptions,
     meta: {
       public: isPublic,
+    },
+    onBeforeFileAdded: (file) => {
+      file.meta = {
+        ...file.meta,
+        contentType: file.type,
+      };
+      return file;
     },
   })
     .use(Tus, {
