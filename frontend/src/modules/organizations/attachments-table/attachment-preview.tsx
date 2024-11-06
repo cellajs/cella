@@ -1,21 +1,21 @@
 import { File, FileAudio, FileText, FileVideo } from 'lucide-react';
 import type React from 'react';
 
-interface AttachmentPreviewIconProps {
+interface AttachmentPreviewProps {
   url: string;
   contentType: string;
   name: string;
   openCarouselDialog: () => void;
 }
 
-const AttachmentPreviewIcon = ({ url, contentType, name, openCarouselDialog }: AttachmentPreviewIconProps) => {
+const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ url, contentType, name, openCarouselDialog }) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== 'Enter') return;
-    openCarouselDialog();
+    if (e.key === 'Enter') openCarouselDialog();
   };
 
-  const renderAttachmentPreviewIcon = (iconSize = 20) => {
-    if (contentType.includes('image')) return <img src={url} alt={name} className="h-8 w-8 rounded-md" loading="lazy" />;
+  const renderIcon = (iconSize = 24) => {
+    if (contentType.includes('image'))
+      return <img src={url} alt={name} className="h-8 w-8 rounded-md object-cover" loading="lazy" decoding="async" />;
 
     if (contentType.includes('video')) return <FileVideo size={iconSize} />;
     if (contentType.includes('pdf')) return <FileText size={iconSize} />;
@@ -25,10 +25,10 @@ const AttachmentPreviewIcon = ({ url, contentType, name, openCarouselDialog }: A
   };
 
   return (
-    <div onClick={openCarouselDialog} onKeyDown={handleKeyDown} className="cursor-pointer w-full flex justify-center items-center">
-      {renderAttachmentPreviewIcon()}
+    <div className="cursor-pointer w-full flex justify-center" onClick={openCarouselDialog} onKeyDown={handleKeyDown} aria-label={`Preview ${name}`}>
+      {renderIcon()}
     </div>
   );
 };
 
-export default AttachmentPreviewIcon;
+export default AttachmentPreview;
