@@ -41,6 +41,8 @@ import RemoveAttachmentsForm from './remove-attachments-form';
 
 const LIMIT = config.requestLimits.attachments;
 
+const maxAttachmentsUpload = 20;
+
 type AttachmentSearch = z.infer<typeof attachmentsQuerySchema>;
 
 type RawAttachment = {
@@ -178,10 +180,10 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
           uppyOptions={{
             restrictions: {
               maxFileSize: 10 * 1024 * 1024, // 10MB
-              maxNumberOfFiles: 1,
+              maxNumberOfFiles: maxAttachmentsUpload,
               allowedFileTypes: ['*/*'],
               minFileSize: null,
-              maxTotalFileSize: 10 * 1024 * 1024, // 10MB
+              maxTotalFileSize: 10 * 1024 * 1024 * maxAttachmentsUpload, // for maxAttachmentsUpload files at 10MB max each
               minNumberOfFiles: null,
               requiredMetaFields: [],
             },
@@ -189,15 +191,14 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
           plugins={['webcam', 'image-editor', 'screen-capture', 'audio']}
           imageMode="attachment"
           callback={(result) => {
-            for (const res of result) {
-              createAttachment({
-                url: res.url,
-                size: String(res.file.size || 0),
-                contentType: res.file.type,
-                filename: res.file.name || 'unknown',
-                organizationId: organization.id,
-              });
-            }
+            const attachments = result.map((a) => ({
+              url: a.url,
+              size: String(a.file.size || 0),
+              contentType: a.file.type,
+              filename: a.file.name || 'unknown',
+              organizationId: organization.id,
+            }));
+            createAttachment({ attachments, organizationId: organization.id });
             dialog.remove(true, 'upload-attachment');
           }}
         />

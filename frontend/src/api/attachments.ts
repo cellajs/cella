@@ -8,8 +8,14 @@ export const client = attachmentsHc(config.backendUrl, clientConfig);
 type CreateAttachmentParams = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Create a new attachment
-export const createAttachment = async (task: CreateAttachmentParams) => {
-  const response = await client.index.$post({ param: { orgIdOrSlug: task.organizationId }, json: task });
+export const createAttachment = async ({
+  attachments,
+  organizationId,
+}: {
+  attachments: CreateAttachmentParams;
+  organizationId: string;
+}) => {
+  const response = await client.index.$post({ param: { orgIdOrSlug: organizationId }, json: attachments });
   const json = await handleResponse(response);
   return json.data;
 };

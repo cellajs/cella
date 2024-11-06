@@ -362,6 +362,7 @@
   "success.archived_resource": "{{resource}} has been archived.",
   "success.create_newsletter": "Newsletter has been sent.",
   "success.create_resource": "{{resource}} has been created.",
+  "success.create_resources_with_number": "{{number}} of {{resource}} has been created.",
   "success.delete_attachments": "Attachments have been removed.",
   "success.delete_members": "Members have been removed.",
   "success.delete_resource": "{{resource}} has been deleted.",

@@ -31,7 +31,7 @@ class AttachmentRoutesConfig {
         description: 'Attachment',
         content: {
           'application/json': {
-            schema: successWithDataSchema(attachmentSchema),
+            schema: successWithDataSchema(z.array(attachmentSchema)),
           },
         },
       },
