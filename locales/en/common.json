@@ -432,6 +432,7 @@
   "verify_my_email": "Verify my email address",
   "view": "View",
   "view_attachment": "View attachment",
+  "view_attachment_of": "View attachments of {{name}}",
   "view_options": "View options",
   "view_profile": "View profile",
   "view_screenshot": "View screenshot",

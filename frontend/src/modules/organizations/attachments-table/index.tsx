@@ -342,10 +342,10 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   return (
     <>
       <CarouselDialog
-        title={t('common:view_screenshot')}
+        title={t('common:view_attachment_of', { name: organization.name })}
         isOpen={carouselOpen}
         onOpenChange={setCarouselOpen}
-        slides={rows.map((el) => ({ src: el.url }))}
+        slides={rows.map((el) => ({ src: el.url, fileType: el.contentType }))}
         carouselSlide={carouselSlide}
       />
       <div className="flex flex-col gap-4 h-full">

@@ -8,6 +8,7 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import AttachmentPreviewIcon from '~/modules/organizations/attachments-table/attachment-preview';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
@@ -27,10 +28,8 @@ export const useColumns = (
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row, rowIdx }) => (
-        <div onClick={() => openCarouselDialog(true, rowIdx)} onKeyDown={() => {}} className="cursor-pointer w-full flex justify-center items-center">
-          <img src={row.url} alt={row.filename} className="h-8 w-8 rounded-md" />
-        </div>
+      renderCell: ({ row: { url, filename, contentType }, rowIdx }) => (
+        <AttachmentPreviewIcon url={url} name={filename} openCarouselDialog={() => openCarouselDialog(true, rowIdx)} contentType={contentType} />
       ),
     },
     {

@@ -7,7 +7,7 @@ interface CarouselDialogProps {
   isOpen: boolean;
   title: string;
   carouselSlide: number;
-  slides?: { src: string }[];
+  slides?: { src: string; fileType?: string }[];
   onOpenChange: (open: boolean) => void;
 }
 
