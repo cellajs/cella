@@ -26,11 +26,13 @@ import { FocusView } from '~/modules/common/focus-view';
 
 import { useSearch } from '@tanstack/react-router';
 import { showToast } from '~/lib/toasts';
+import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import { useColumns } from '~/modules/organizations/organizations-table/columns';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
+import NewsletterDraft from '~/modules/system/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -136,20 +138,32 @@ const OrganizationsTable = () => {
   };
 
   const openNewsletterSheet = () => {
-    sheet.create(
-      <OrganizationsNewsletterForm
-        sheet
-        organizationIds={selectedOrganizations.map((o) => o.id)}
-        dropSelectedOrganization={() => setSelectedRows(new Set<string>())}
-      />,
+    const newsletterTabs = [
       {
-        className: 'max-w-full lg:max-w-4xl',
-        title: t('common:newsletter'),
-        description: t('common:newsletter.text'),
-        id: 'newsletter-form',
-        side: 'right',
+        id: 'write',
+        label: 'common:write',
+        element: (
+          <OrganizationsNewsletterForm
+            sheet
+            organizationIds={selectedOrganizations.map((o) => o.id)}
+            dropSelectedOrganization={() => setSelectedRows(new Set<string>())}
+          />
+        ),
       },
-    );
+
+      {
+        id: 'draft',
+        label: 'common:draft',
+        element: <NewsletterDraft />,
+      },
+    ];
+    sheet.create(<SheetNav tabs={newsletterTabs} />, {
+      className: 'max-w-full lg:max-w-4xl',
+      title: t('common:newsletter'),
+      description: t('common:newsletter.text'),
+      id: 'newsletter-form',
+      side: 'right',
+    });
   };
 
   return (

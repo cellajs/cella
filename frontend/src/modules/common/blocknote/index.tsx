@@ -33,6 +33,8 @@ import { FloatingPortal } from '@floating-ui/react';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
 import { focusEditor, getContentAsString, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
+import type { FileTypesNames } from '~/modules/common/blocknote/types';
+
 import './styles.css';
 
 type BlockNoteProps = {
@@ -47,13 +49,23 @@ type BlockNoteProps = {
   emojis?: boolean;
   members?: Member[];
   updateData: (html: string) => void;
-  filePanel?: (props: FilePanelProps) => JSX.Element;
   onChange?: (value: string) => void;
   onFocus?: () => void;
   onEscapeClick?: () => void;
   onEnterClick?: () => void;
   onTextDifference?: () => void;
-};
+} & (
+  | {
+      // filePanel and allowedFilePanelTypes req to add together
+      filePanel: (props: FilePanelProps) => JSX.Element;
+      allowedFilePanelTypes: FileTypesNames[];
+    }
+  | {
+      // if neither is provided, it allows the omission of both
+      filePanel?: never;
+      allowedFilePanelTypes?: never;
+    }
+);
 
 export const BlockNote = ({
   id,
@@ -65,6 +77,8 @@ export const BlockNote = ({
   emojis = true,
   trailingBlock = true,
   updateDataOnBeforeLoad = false,
+  // on default file panel allowed all types
+  allowedFilePanelTypes = ['image', 'video', 'audio', 'file'],
   members,
   updateData,
   filePanel,
@@ -223,7 +237,7 @@ export const BlockNote = ({
       {slashMenu && (
         <FloatingPortal>
           <div className="bn-ui-container">
-            <CustomSlashMenu editor={editor} />
+            <CustomSlashMenu editor={editor} allowedFilePanelTypes={allowedFilePanelTypes} />
           </div>
         </FloatingPortal>
       )}

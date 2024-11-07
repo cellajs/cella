@@ -5,6 +5,7 @@ import { EmailContainer } from './components/container';
 import { EmailHeader } from './components/email-header';
 import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
+import { updateSourcesFromDataUrl } from './helpers';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
@@ -48,7 +49,7 @@ export const organizationsNewsletter = ({ userLanguage: lng, authorEmail, conten
       >
         <Text>{subject}</Text>
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: we need send it cos blackNote return an html*/}
-        <div dangerouslySetInnerHTML={{ __html: content }} />
+        <div dangerouslySetInnerHTML={{ __html: updateSourcesFromDataUrl(content) }} />
         <Link
           style={{
             fontSize: '.75rem',

@@ -17,7 +17,7 @@ export const SheetNav = ({ tabs }: Props) => {
   return (
     <div className="mb-20">
       {tabs.length > 1 && (
-        <nav className="flex gap-2 pb-4">
+        <nav className="flex justify-center gap-2 pb-4">
           {tabs.map((tab) => (
             <div key={tab.id} className="relative">
               <Button

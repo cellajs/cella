@@ -63,6 +63,7 @@
     "hono": "4.6.8",
     "i18next": "^23.16.4",
     "isbot": "^5.1.17",
+    "jsdom": "^25.0.1",
     "jsonwebtoken": "^9.0.2",
     "jsx-email": "^2.1.2",
     "locales": "workspace:*",
@@ -83,6 +84,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^9.1.0",
+    "@types/jsdom": "^21.1.7",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.8.6",
     "@types/node-cron": "^3.0.11",

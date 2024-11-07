@@ -1,16 +1,29 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useCallback, useEffect, useState } from 'react';
 import { customSlashIndexedItems, customSlashNotIndexedItems } from '~/modules/common/blocknote/blocknote-config';
-import type { CustomBlockNoteSchema } from '../types';
+import type { CustomBlockNoteSchema, FileTypesNames } from '~/modules/common/blocknote/types';
 
 const sortList = [...customSlashIndexedItems, ...customSlashNotIndexedItems];
 
-export const slashMenu = (props: SuggestionMenuProps<DefaultReactSuggestionItem>, editor: CustomBlockNoteSchema) => {
+const fileTypes = ['File', 'Image', 'Video', 'Audio'];
+
+export const slashMenu = (
+  props: SuggestionMenuProps<DefaultReactSuggestionItem>,
+  editor: CustomBlockNoteSchema,
+  allowedFilePanelTypes: FileTypesNames[],
+) => {
   const { items, selectedIndex, onItemClick } = props;
   const [inputValue, setInputValue] = useState('');
 
+  // Find and remove the first matching item
+  const filteredSortList = sortList.filter((item) => {
+    if (!fileTypes.includes(item)) return true;
+    if ((allowedFilePanelTypes as string[]).includes(item.toLowerCase())) return true;
+    return false;
+  });
+
   // Create a mapping from title to index for quick lookup
-  const sortOrder = new Map((sortList as string[]).map((title, index) => [title, index]));
+  const sortOrder = new Map((filteredSortList as string[]).map((title, index) => [title, index]));
   const sortedItems = items.sort((a, b) => {
     const indexA = sortOrder.get(a.title);
     const indexB = sortOrder.get(b.title);

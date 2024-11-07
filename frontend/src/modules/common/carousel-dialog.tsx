@@ -3,11 +3,13 @@ import { DialogTitle } from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader } from '~/modules/ui/dialog';
 import Carousel from './carousel';
 
+export type Slides = { src: string; fileType?: string };
+
 interface CarouselDialogProps {
   isOpen: boolean;
   title: string;
   carouselSlide: number;
-  slides?: { src: string; fileType?: string }[];
+  slides?: Slides[];
   onOpenChange: (open: boolean) => void;
 }
 

@@ -15,6 +15,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
 import { BlockNote } from '~/modules/common/blocknote';
 import { sheet } from '~/modules/common/sheeter/state';
+import UppyFilePanel from '~/modules/common/upload/blocknote-upload-panel';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -97,7 +98,9 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
                     defaultValue={value}
                     onChange={onChange}
                     updateData={onChange}
-                    className="min-h-20 pl-10 pr-6"
+                    className="min-h-20 pl-10 pr-6 p-3 border rounded-md"
+                    allowedFilePanelTypes={['image', 'file']}
+                    filePanel={UppyFilePanel()}
                   />
                 </Suspense>
               </FormControl>
