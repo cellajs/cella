@@ -221,7 +221,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
       {
         id: 'upload-attachment',
         drawerOnMobile: false,
-        title: t('common:upload_attachment'),
+        title: t('common:upload_attachments'),
         className: 'md:max-w-xl',
       },
     );
