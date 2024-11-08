@@ -1,6 +1,6 @@
 import { JSDOM } from 'jsdom';
 
-export const updateSourcesFromDataUrl = (passedHTML: string): string => {
+export const updateBlocknoteHTML = (passedHTML: string): string => {
   // Parse the HTML string with JSDOM
   const dom = new JSDOM(passedHTML);
   const document = dom.window.document;
@@ -21,15 +21,15 @@ export const updateSourcesFromDataUrl = (passedHTML: string): string => {
     }
 
     // Add if email send library support video & audio
-    // if (contentType === 'video') {
-    //   const videoElement = el.querySelector('video');
-    //   if (videoElement) videoElement.setAttribute('src', url);
-    // }
+    if (contentType === 'video') {
+      const videoElement = el.querySelector('video');
+      if (videoElement) videoElement.setAttribute('src', url);
+    }
 
-    // if (contentType === 'audio') {
-    //   const audioElement = el.querySelector('audio');
-    //   if (audioElement) audioElement.setAttribute('src', url);
-    // }
+    if (contentType === 'audio') {
+      const audioElement = el.querySelector('audio');
+      if (audioElement) audioElement.setAttribute('src', url);
+    }
 
     if (contentType === 'file') {
       const fileLinkElement = document.createElement('a');
