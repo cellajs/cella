@@ -1,13 +1,11 @@
 import type { PartialBlock } from '@blocknote/core';
 import { type FilePanelProps, useBlockNoteEditor } from '@blocknote/react';
 import { DialogDescription } from '@radix-ui/react-dialog';
-import type { UppyFile } from '@uppy/core';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UppyBody, UppyMeta } from '~/lib/imado';
 import UploadUppy from '~/modules/common/upload/upload-uppy';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { UploadType } from '~/types/common';
+import { UploadType, type UploadedUppyFile } from '~/types/common';
 
 const blockTypes = {
   image: {
@@ -29,7 +27,7 @@ const blockTypes = {
 };
 
 interface UppyFilePanelProps {
-  onCreateCallback?: (result: { file: UppyFile<UppyMeta, UppyBody>; url: string }[]) => void;
+  onCreateCallback?: (result: UploadedUppyFile[]) => void;
 }
 
 const UppyFilePanel: React.FC<UppyFilePanelProps & FilePanelProps> = ({ onCreateCallback, ...props }) => {

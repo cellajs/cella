@@ -1,3 +1,4 @@
+import type { UppyFile } from '@uppy/core';
 import type { membersSchema } from 'backend/modules/general/schema';
 import type { membershipInfoSchema, membershipSchema } from 'backend/modules/memberships/schema';
 import type { organizationSchema } from 'backend/modules/organizations/schema';
@@ -7,6 +8,7 @@ import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
 import type { z } from 'zod';
 import type { client } from '~/api/me';
+import type { UppyBody, UppyMeta } from '~/lib/imado';
 import type { attachmentSchema } from '#/modules/attachments/schema';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 
@@ -56,6 +58,8 @@ export interface UploadParams {
   public: boolean;
   organizationId?: string;
 }
+
+export type UploadedUppyFile = { file: UppyFile<UppyMeta, UppyBody>; url: string };
 
 // Drag and drop data
 export type DraggableItemData<T> = {

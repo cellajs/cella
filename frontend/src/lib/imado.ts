@@ -2,7 +2,7 @@ import { type UploadResult, Uppy, type UppyFile, type UppyOptions } from '@uppy/
 import Tus from '@uppy/tus';
 import { config } from 'config';
 import { getUploadToken } from '~/api/general';
-import type { UploadParams, UploadType } from '~/types/common';
+import type { UploadParams, UploadType, UploadedUppyFile } from '~/types/common';
 
 import '@uppy/core/dist/style.min.css';
 
@@ -17,7 +17,7 @@ interface ImadoUploadParams extends UploadParams {
     onFileEditorComplete?: (data: UppyFile<UppyMeta, UppyBody>) => void;
     onUploadStart?: (data: string) => void;
     onError?: (error: Error) => void;
-    onComplete?: (mappedResult: { file: UppyFile<UppyMeta, UppyBody>; url: string }[], result: UploadResult<UppyMeta, UppyBody>) => void;
+    onComplete?: (mappedResult: UploadedUppyFile[], result: UploadResult<UppyMeta, UppyBody>) => void;
   };
 }
 
@@ -70,7 +70,7 @@ export async function ImadoUppy(
       console.info('Upload complete:', result);
       if (!useImadoAPI) console.warn('Imado API is disabled, files will not be uploaded to Imado.');
 
-      let mappedResult: { file: UppyFile<UppyMeta, UppyBody>; url: string }[] = [];
+      let mappedResult: UploadedUppyFile[] = [];
 
       if (result.successful && useImadoAPI) {
         mappedResult = result.successful.map((file) => {
