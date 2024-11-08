@@ -11,7 +11,7 @@ import { setSessionCookie } from './cookies';
 import { insertOauthAccount } from './oauth';
 import { sendVerificationEmail } from './verify-email';
 
-// Handle creating a user
+// Handle creating a user by password or oauth provider
 export const handleCreateUser = async (
   ctx: Context,
   data: Omit<InsertUserModel, 'unsubscribeToken'>,
@@ -27,11 +27,11 @@ export const handleCreateUser = async (
   // If sign up is disabled, return an error
   if (!config.has.registrationEnabled && !options?.isInvite) return errorResponse(ctx, 403, 'sign_up_disabled', 'warn');
 
-  // Check if the slug is available
+  // Check if slug is available
   const slugAvailable = await checkSlugAvailable(data.slug);
 
   try {
-    // Insert the user into the database
+    // Insert user into database
     const [user] = await db
       .insert(usersTable)
       .values({
@@ -47,19 +47,20 @@ export const handleCreateUser = async (
       })
       .returning();
 
-    // If a provider is passed, insert the oauth account
+    // If a provider is passed, insert oauth account
     if (options?.provider) {
       await insertOauthAccount(data.id, options.provider.id, options.provider.userId);
-      // await setSessionCookie(ctx, data.id, options.provider.id.toLowerCase());
     }
 
-    // If the email is not verified, send a verification email
+    // If email is not verified, send verification email
     if (!data.emailVerified) {
       sendVerificationEmail(data.email);
     } else {
-      await setSessionCookie(ctx, user.id, 'password');
+      await setSessionCookie(ctx, user.id, options?.provider?.id || 'password');
     }
+
     if (options?.redirectUrl) return ctx.redirect(options.redirectUrl, 302);
+
     return ctx.json({ success: true }, 200);
   } catch (error) {
     // If the email already exists, return an error
@@ -68,7 +69,7 @@ export const handleCreateUser = async (
     }
 
     if (error instanceof Error) {
-      const strategy = options?.provider ? options.provider.id : 'EMAIL';
+      const strategy = options?.provider ? options.provider.id : 'password';
       const errorMessage = error.message;
       logEvent('Error creating user', { strategy, errorMessage }, 'error');
     }

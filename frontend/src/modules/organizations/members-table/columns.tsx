@@ -1,4 +1,4 @@
-import type { Member } from '~/types/common';
+import { renderSelect } from '~/modules/common/data-table/select-column';
 
 import { Link } from '@tanstack/react-router';
 import { config } from 'config';
@@ -9,8 +9,8 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import { renderSelect } from '~/modules/common/data-table/select-column';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import type { Member } from '~/types/common';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (isAdmin: boolean, isSheet: boolean, organizationId: string) => {

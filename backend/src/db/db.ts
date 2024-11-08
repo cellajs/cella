@@ -12,22 +12,16 @@ const dbConfig: DrizzleConfig = {
   casing: 'snake_case',
 };
 
+const connection = env.PGLITE
+  ? { dataDir: './.db' }
+  : {
+      connectionString: env.DATABASE_URL,
+      connectionTimeoutMillis: 10000,
+    };
+
 // biome-ignore lint/suspicious/noExplicitAny: Can be two different types
 export const db: PgDatabase<any> & {
   $client: PGlite | NodePgClient;
-} = env.PGLITE
-  ? pgliteDrizzle({
-      connection: {
-        dataDir: './.db',
-      },
-      ...dbConfig,
-    })
-  : pgDrizzle({
-      connection: {
-        connectionString: env.DATABASE_URL,
-        connectionTimeoutMillis: 10000,
-      },
-      ...dbConfig,
-    });
+} = env.PGLITE ? pgliteDrizzle({ connection, ...dbConfig }) : pgDrizzle({ connection, ...dbConfig });
 
 export const coalesce = <T>(column: T, value: number) => sql`COALESCE(${column}, ${value})`.mapWith(Number);

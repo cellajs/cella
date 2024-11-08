@@ -27,6 +27,9 @@ const SignIn = () => {
   const { t } = useTranslation();
   const { lastUser } = useUserStore();
 
+  const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+  const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
+
   const [step, setStep] = useState<Step>('check');
   const [email, setEmail] = useState('');
   const [hasPasskey, setHasPasskey] = useState(false);
@@ -71,9 +74,9 @@ const SignIn = () => {
     <AuthPage>
       {!error ? (
         <>
-          {step === 'check' && <CheckEmailForm tokenData={tokenData} setStep={handleCheckEmail} />}
-          {step === 'signIn' && <SignInForm tokenData={tokenData} email={email} resetToInitialStep={resetToInitialStep} />}
-          {step === 'signUp' && <SignUpForm tokenData={tokenData} email={email} resetToInitialStep={resetToInitialStep} />}
+          {step === 'check' && emailEnabled && <CheckEmailForm tokenData={tokenData} setStep={handleCheckEmail} />}
+          {step === 'signIn' && emailEnabled && <SignInForm tokenData={tokenData} email={email} resetToInitialStep={resetToInitialStep} />}
+          {step === 'signUp' && emailEnabled && <SignUpForm tokenData={tokenData} email={email} resetToInitialStep={resetToInitialStep} />}
           {step === 'waitList' && <WaitListForm buttonContent={t('common:request_access')} email={email} changeEmail={resetToInitialStep} />}
           {step === 'inviteOnly' && (
             <>
@@ -81,7 +84,21 @@ const SignIn = () => {
               <h2 className="text-xl text-center pb-4 mt-4">{t('common:invite_only.text', { appName: config.name })}</h2>
             </>
           )}
-          {step !== 'inviteOnly' && step !== 'waitList' && <OauthOptions email={email} actionType={step} hasPasskey={hasPasskey} />}
+
+          {step !== 'inviteOnly' && step !== 'waitList' && (
+            <>
+              {/* TODO: refactor */}
+              {((enabledStrategies.includes('oauth') && enabledStrategies.includes('password')) ||
+                (hasPasskey && enabledStrategies.includes('password')) ||
+                (enabledStrategies.includes('passkey') && enabledStrategies.includes('oauth') && step === 'check')) && (
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="text-muted-foreground px-2">{t('common:or')}</span>
+                </div>
+              )}
+
+              <OauthOptions email={email} actionType={step} hasPasskey={hasPasskey} />
+            </>
+          )}
         </>
       ) : (
         <>

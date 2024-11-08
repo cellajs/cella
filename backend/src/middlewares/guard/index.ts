@@ -47,10 +47,8 @@ export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response |
   const isSystemAdmin = user.role === 'admin';
 
   // Fetch organization
-  const [organization] = await db
-    .select()
-    .from(organizationsTable)
-    .where(or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug)));
+  const idOrSlugFilter = or(eq(organizationsTable.id, orgIdOrSlug), eq(organizationsTable.slug, orgIdOrSlug));
+  const [organization] = await db.select().from(organizationsTable).where(idOrSlugFilter);
 
   if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
