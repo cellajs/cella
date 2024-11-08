@@ -69,8 +69,8 @@ export const slashMenu = (
   );
 
   const triggerItemClick = (item: DefaultReactSuggestionItem, event: KeyboardEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    onItemClick?.(item);
     event.preventDefault();
+    onItemClick?.(item);
   };
 
   useEffect(() => {

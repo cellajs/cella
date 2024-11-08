@@ -2,6 +2,7 @@ import {
   ColorStyleButton,
   CreateLinkButton,
   FileCaptionButton,
+  FileDownloadButton,
   FileReplaceButton,
   FormattingToolbar,
   FormattingToolbarController,
@@ -23,6 +24,7 @@ export const CustomFormattingToolbar = ({ config }: { config: CustomFormatToolBa
 
         {config.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
         {config.replaceFile && <FileReplaceButton key={'replaceFileButton'} />}
+        <FileDownloadButton key={'downloadButton'} />
 
         {config.textColorSelect && <ColorStyleButton key={'colorStyleButton'} />}
 

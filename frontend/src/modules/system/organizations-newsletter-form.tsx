@@ -100,7 +100,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
                     updateData={onChange}
                     className="min-h-20 pl-10 pr-6 p-3 border rounded-md"
                     allowedFilePanelTypes={['image', 'file']}
-                    filePanel={UppyFilePanel()}
+                    filePanel={(props) => <UppyFilePanel {...props} />}
                   />
                 </Suspense>
               </FormControl>
