@@ -19,8 +19,8 @@ const commonModulesList = [
     description:
       'Multiple authentication methods are included: email/password combination, OAuth with Github. Other Oauth providers and passkey support are work in progress.',
   },
-  { name: 'attachments', description: 'EXPERIMENTAL. Be able to leverage different attachment types within an entity.' },
-  { name: 'metrics', description: 'EXPERIMENTAL. Observability endpoints.' },
+  { name: 'attachments', description: 'Be able to leverage different attachment types within an entity.' },
+  { name: 'metrics', description: 'Observability endpoints.' },
 ];
 
 // Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference

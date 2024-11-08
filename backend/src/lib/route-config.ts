@@ -18,6 +18,7 @@ export type Route<
   },
 > = ReturnType<typeof createRoute<P, Omit<R, 'guard'>>>;
 
+// Custom wrapper around hono createRoute to extend it with setting guard and other middleware.
 export const createRouteConfig = <
   P extends string,
   R extends Omit<RouteOptions, 'path'> & {
