@@ -22,7 +22,7 @@ export const config = {
   divergedFile: 'cella.diverged.txt',
   forks: [
     {
-      name: 'raak',
+      name: 'fork',
       remoteUrl: 'git@github.com:cellajs/raak.git',
       branch: 'development',
     },
