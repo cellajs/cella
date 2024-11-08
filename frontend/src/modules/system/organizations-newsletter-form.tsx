@@ -101,7 +101,6 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
                     className="min-h-20 pl-10 pr-6 p-3 border rounded-md"
                     allowedFilePanelTypes={['image', 'file']}
                     filePanel={(props) => <UppyFilePanel {...props} />}
-                    altClickOpensPreview
                   />
                 </Suspense>
               </FormControl>
