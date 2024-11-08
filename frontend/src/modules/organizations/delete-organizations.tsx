@@ -8,6 +8,7 @@ import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
+import { deleteMenuItem } from '~/modules/common/nav-sheet/helpers/menu-operations';
 
 interface Props {
   organizations: Organization[];
@@ -25,8 +26,8 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
         queryClient.invalidateQueries({
           queryKey: ['organizations', organization.id],
         });
+        deleteMenuItem(organization.id);
       }
-
       if (isDialog) dialog.remove();
       callback?.(organizations);
     },

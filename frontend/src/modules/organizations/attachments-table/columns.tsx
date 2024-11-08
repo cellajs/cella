@@ -89,7 +89,7 @@ export const useColumns = (
     {
       key: 'contentType',
       name: t('common:content_type'),
-      sortable: true,
+      sortable: false,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
       minWidth: 140,

@@ -35,6 +35,8 @@ export const SignInForm = ({
 
   const { redirect } = useSearch({ from: SignInRoute.id });
 
+  const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+
   const { mutate: signIn, isPending } = useMutation({
     mutationFn: baseSignIn,
     onSuccess: () => {
@@ -93,7 +95,7 @@ export const SignInForm = ({
             </FormItem>
           )}
         />
-        {config.enabledAuthenticationStrategies.includes('password') && (
+        {enabledStrategies.includes('password') && (
           <>
             <FormField
               control={form.control}
