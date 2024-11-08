@@ -29,10 +29,12 @@ const blockTypes = {
 
 const UppyFilePanel =
   (
-    onCreateCallback?: (result: {
-      file: UppyFile<UppyMeta, UppyBody>;
-      url: string;
-    }) => void,
+    onCreateCallback?: (
+      result: {
+        file: UppyFile<UppyMeta, UppyBody>;
+        url: string;
+      }[],
+    ) => void,
   ) =>
   (props: FilePanelProps) => {
     const { t } = useTranslation();
@@ -65,7 +67,6 @@ const UppyFilePanel =
             imageMode="attachment"
             callback={async (result) => {
               for (const res of result) {
-                onCreateCallback?.(res);
                 const updateData: PartialBlock = {
                   props: {
                     name: res.file.name,
@@ -74,6 +75,7 @@ const UppyFilePanel =
                 };
                 editor.updateBlock(block, updateData);
               }
+              onCreateCallback?.(result);
             }}
           />
         </DialogContent>
