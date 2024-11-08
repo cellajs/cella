@@ -44,8 +44,12 @@ const Carousel = ({ slides, onOpenChange, isDialog = false, slide = 0 }: Carouse
           );
         })}
       </CarouselContent>
-      <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-100" />
-      <CarouselNext className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-100" />
+      {(slides?.length ?? 0) > 1 && (
+        <>
+          <CarouselPrevious className="left-4 lg:left-8 opacity-0 transition-opacity group-hover:opacity-100" />
+          <CarouselNext className="right-4 lg:right-8 opacity-0 transition-opacity group-hover:opacity-100" />
+        </>
+      )}
       {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)]" />}
     </BaseCarousel>
   );

@@ -46,7 +46,7 @@ const NewsletterDraft = () => {
         <p className="text-muted-foreground text-3xl text-center">
           {i18n.t('backend:email.newsletter_title', { orgName: 'Organization Name', lng })}
         </p>
-        <section className="rounded-lg my-6 border p-6 w-[70%]">
+        <section className="rounded-lg my-6 border p-6">
           <p className="text-muted-foreground font-light">{form.getValues('subject')}</p>
           {/* biome-ignore lint/security/noDangerouslySetInnerHtml: blackNote html*/}
           <div className="text-muted-foreground font-light" dangerouslySetInnerHTML={{ __html: form.getValues('content') }} />

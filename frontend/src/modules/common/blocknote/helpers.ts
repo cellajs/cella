@@ -1,4 +1,4 @@
-import type { Block } from '@blocknote/core';
+import type { Block, PropSchema, Props } from '@blocknote/core';
 import type { Slides } from '../carousel-dialog';
 import type { CustomBlockNoteSchema } from './types';
 
@@ -103,4 +103,10 @@ export const updateSourcesFromDataUrl = (openDialog?: (slide: number) => void) =
     }
   }
   return urls;
+};
+
+// Type guard to check if a block has a `url` property
+export const getUrlFromProps = (props: Props<PropSchema>): string | null => {
+  if (props && typeof props.url === 'string') return props.url;
+  return null;
 };
