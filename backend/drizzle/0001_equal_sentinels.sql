@@ -1,1 +1,0 @@
-ALTER TABLE "attachments" ADD COLUMN "name" varchar DEFAULT 'attachment' NOT NULL;
