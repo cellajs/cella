@@ -12,7 +12,9 @@ const link = {
 export const EmailReplyTo = ({ email, emailText }: { email?: string; emailText?: string }) => (
   <>
     <AppLogo />
-    <Text style={{ marginTop: '1.25rem', gap: '0.25rem', textAlign: 'center' as const }}>
+    <Text
+      style={{ marginTop: '1.25rem', gap: '0.25rem', textAlign: 'center' as const, alignItems: 'center', display: 'flex', justifyContent: 'center' }}
+    >
       {email && (
         <Link style={link} href={`mailto:${email}`}>
           {emailText ? emailText : i18n.t('backend:email.inviter_email')}
