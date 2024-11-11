@@ -30,13 +30,12 @@ import type { Member } from '~/types/common';
 import type { Block } from '@blocknote/core';
 import { FloatingPortal } from '@floating-ui/react';
 
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import router from '~/lib/router';
 import { focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { FileTypesNames } from '~/modules/common/blocknote/types';
 
-import { useTranslation } from 'react-i18next';
-import CarouselDialog, { type Slides } from '../carousel-dialog';
+import { openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
+
 import './styles.css';
 
 type BlockNoteProps = {
@@ -92,21 +91,12 @@ export const BlockNote = ({
   onFocus,
   onTextDifference,
 }: BlockNoteProps) => {
-  const { t } = useTranslation();
   const { mode } = useThemeStore();
   const wasInitial = useRef(false);
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
 
   const isCreationMode = !!onChange;
   const [text, setText] = useState<string>(defaultValue);
-  const [slides, setSlides] = useState<Slides[]>([]);
-  const [carouselOpen, setCarouselOpen] = useState(false);
-  const [carouselSlide, setCarouselSlide] = useState(0);
-
-  const openCarouselDialog = (slide: number) => {
-    setCarouselOpen(true);
-    setCarouselSlide(slide);
-  };
 
   const emojiPicker = slashMenu ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') : emojis;
 
@@ -186,22 +176,6 @@ export const BlockNote = ({
 
       editor.replaceBlocks(editor.document, blocks);
 
-      // Add double-click event listener to images
-      const imageBlocks = blocks.filter((block) => block.type === 'image');
-      const slides = imageBlocks.map((block) => ({ src: block.props.url }));
-      for (const block of blocks) {
-        if (block.type === 'image') {
-          const index = imageBlocks.findIndex((b) => b.id === block.id);
-          const element = document.querySelector(`[data-id="${block.id}"]`);
-          (element as HTMLDivElement).ondblclick = () => {
-            dispatchCustomEvent('openCarousel', {
-              slide: index,
-              slides,
-            });
-          };
-        }
-      }
-
       // Handle focus:
       // 1. In creation mode, focus the editor only if it hasn't been initialized before.
       // 2. Outside creation mode, focus the editor every time.
@@ -225,6 +199,9 @@ export const BlockNote = ({
 
   const openCarouselPreview: MouseEventHandler = (event) => {
     if (!altClickOpensPreview || !event.altKey) return;
+    event.preventDefault();
+    editor.formattingToolbar.closeMenu();
+
     const { type, props } = editor.getTextCursorPosition().block;
 
     const url = getUrlFromProps(props);
@@ -240,12 +217,8 @@ export const BlockNote = ({
       return true;
     });
 
-    // Update slides state with new slides
-    setSlides(newSlides);
-
-    // Find the slide index after the state update
     const slideNum = newSlides.findIndex(({ src }) => src === url);
-    openCarouselDialog(slideNum);
+    openCarouselDialog(slideNum, newSlides);
   };
 
   useEffect(() => {
@@ -255,71 +228,62 @@ export const BlockNote = ({
   }, [onBeforeLoadHandle]);
 
   return (
-    <>
-      <CarouselDialog
-        title={t('common:view_attachment_of', { name: 'blocknote' })}
-        isOpen={carouselOpen}
-        onOpenChange={setCarouselOpen}
-        slides={slides}
-        carouselSlide={carouselSlide}
-      />
-      <BlockNoteView
-        id={id}
-        data-color-scheme={mode}
-        theme={mode}
-        editor={editor}
-        shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip, Select, Label, Input, Card, Badge, Toggle, Tabs }}
-        onChange={onBlockNoteChange}
-        onFocus={onFocus}
-        onClick={openCarouselPreview}
-        onBlur={triggerDataUpdate}
-        onKeyDown={handleKeyDown}
-        sideMenu={false}
-        slashMenu={!slashMenu}
-        formattingToolbar={!formattingToolbar}
-        emojiPicker={!emojiPicker}
-        filePanel={!filePanel}
-        className={className}
-      >
-        {slashMenu && (
-          <FloatingPortal>
-            <div className="bn-ui-container">
-              <CustomSlashMenu editor={editor} allowedFilePanelTypes={allowedFilePanelTypes} />
-            </div>
-          </FloatingPortal>
-        )}
-
-        {formattingToolbar && (
-          <FloatingPortal>
-            <div className="bn-ui-container">
-              <CustomFormattingToolbar config={customFormattingToolBarConfig} />
-            </div>
-          </FloatingPortal>
-        )}
-
-        {sideMenu && <CustomSideMenu />}
-
+    <BlockNoteView
+      id={id}
+      data-color-scheme={mode}
+      theme={mode}
+      editor={editor}
+      shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip, Select, Label, Input, Card, Badge, Toggle, Tabs }}
+      onChange={onBlockNoteChange}
+      onFocus={onFocus}
+      onClick={openCarouselPreview}
+      onBlur={triggerDataUpdate}
+      onKeyDown={handleKeyDown}
+      sideMenu={false}
+      slashMenu={!slashMenu}
+      formattingToolbar={!formattingToolbar}
+      emojiPicker={!emojiPicker}
+      filePanel={!filePanel}
+      className={className}
+    >
+      {slashMenu && (
         <FloatingPortal>
           <div className="bn-ui-container">
-            <Mention members={members} editor={editor} />
+            <CustomSlashMenu editor={editor} allowedFilePanelTypes={allowedFilePanelTypes} />
           </div>
         </FloatingPortal>
+      )}
 
-        {emojiPicker && (
-          <FloatingPortal>
-            <div className="bn-ui-container">
-              <GridSuggestionMenuController
-                triggerCharacter={':'}
-                // Changes the Emoji Picker to only have 10 columns & min length of 0.
-                columns={5}
-                minQueryLength={0}
-              />
-            </div>
-          </FloatingPortal>
-        )}
+      {formattingToolbar && (
+        <FloatingPortal>
+          <div className="bn-ui-container">
+            <CustomFormattingToolbar config={customFormattingToolBarConfig} />
+          </div>
+        </FloatingPortal>
+      )}
 
-        {filePanel && <FilePanelController filePanel={filePanel} />}
-      </BlockNoteView>
-    </>
+      {sideMenu && <CustomSideMenu />}
+
+      <FloatingPortal>
+        <div className="bn-ui-container">
+          <Mention members={members} editor={editor} />
+        </div>
+      </FloatingPortal>
+
+      {emojiPicker && (
+        <FloatingPortal>
+          <div className="bn-ui-container">
+            <GridSuggestionMenuController
+              triggerCharacter={':'}
+              // Changes the Emoji Picker to only have 10 columns & min length of 0.
+              columns={5}
+              minQueryLength={0}
+            />
+          </div>
+        </FloatingPortal>
+      )}
+
+      {filePanel && <FilePanelController filePanel={filePanel} />}
+    </BlockNoteView>
   );
 };

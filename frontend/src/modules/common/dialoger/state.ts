@@ -9,6 +9,7 @@ export type DialogT = {
   drawerOnMobile?: boolean;
   container?: HTMLElement | null;
   className?: string;
+  headerClassName?: string;
   refocus?: boolean;
   containerBackdrop?: boolean;
   containerBackdropClassName?: string;
