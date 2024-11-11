@@ -78,6 +78,17 @@ export const slashMenu = (
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [handleKeyPress]);
 
+  // to be able to use in sheet
+  useEffect(() => {
+    const bodyStyle = document.body.style;
+    const pointerEventsOnOpen = bodyStyle.pointerEvents;
+    bodyStyle.pointerEvents = 'auto';
+
+    return () => {
+      bodyStyle.pointerEvents = pointerEventsOnOpen;
+    };
+  }, []);
+
   return (
     <div className="slash-menu">
       {sortedItems.map((item, index) => {
