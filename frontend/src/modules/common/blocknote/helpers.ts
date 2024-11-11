@@ -1,4 +1,5 @@
-import type { Block } from '@blocknote/core';
+import type { Block, PropSchema, Props } from '@blocknote/core';
+import type { Slides } from '../carousel-dialog';
 import type { CustomBlockNoteSchema } from './types';
 
 export const getContentAsString = (blocks: Block[]) => {
@@ -27,5 +28,85 @@ export const handleSubmitOnEnter = (editor: CustomBlockNoteSchema): CustomBlockN
     const updatedLastBlock = { ...lastBlock, content: lastBlockContent };
     return [...blocks.slice(0, -1), updatedLastBlock] as CustomBlockNoteSchema['document'];
   }
+  return null;
+};
+
+export const updateSourcesFromDataUrl = (openDialog?: (slide: number) => void) => {
+  // Select all elements that have a 'data-url' attribute
+  const elementsWithDataUrl = document.querySelectorAll('[data-url]');
+  // Exit early if no matching elements are found
+  if (elementsWithDataUrl.length === 0) return;
+  const urls: Slides[] = [];
+
+  const onElClick = (e: MouseEvent) => {
+    if (!openDialog || !e.target) return;
+    e.preventDefault();
+    const target = e.target as HTMLImageElement | HTMLVideoElement | HTMLAudioElement;
+    // Find the slide based on the currentSrc of the target
+    const slideNum = urls.findIndex(({ src }) => src === target.currentSrc);
+
+    openDialog(slideNum >= 0 ? slideNum : 0);
+  };
+
+  for (const element of elementsWithDataUrl) {
+    const url = element.getAttribute('data-url');
+    const contentType = element.getAttribute('data-content-type') || 'file';
+
+    if (!url) continue;
+
+    urls.push({ src: url, fileType: contentType });
+
+    switch (contentType) {
+      case 'image': {
+        const imageElement = element.querySelector('img');
+        if (imageElement) {
+          imageElement.onclick = onElClick;
+          imageElement.setAttribute('src', url);
+        }
+        break;
+      }
+
+      case 'video': {
+        const videoElement = element.querySelector('video');
+        if (videoElement) {
+          videoElement.onclick = onElClick;
+          videoElement.setAttribute('src', url);
+        }
+        break;
+      }
+
+      case 'audio': {
+        const audioElement = element.querySelector('audio');
+        if (audioElement) {
+          audioElement.onclick = onElClick;
+          audioElement.setAttribute('src', url);
+        }
+        break;
+      }
+
+      case 'file': {
+        const fileLinkElement = document.createElement('a');
+        fileLinkElement.setAttribute('href', url);
+
+        const fileName = element.getAttribute('data-name') || 'file';
+        fileLinkElement.setAttribute('download', fileName);
+
+        fileLinkElement.onclick = onElClick;
+        // Move the original element (el) inside the <a> tag
+        element.parentNode?.replaceChild(fileLinkElement, element);
+        fileLinkElement.appendChild(element);
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+  return urls;
+};
+
+// Type guard to check if a block has a `url` property
+export const getUrlFromProps = (props: Props<PropSchema>): string | null => {
+  if (props && typeof props.url === 'string') return props.url;
   return null;
 };

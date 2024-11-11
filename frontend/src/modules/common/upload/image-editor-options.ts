@@ -29,14 +29,16 @@ const baseActions = {
 };
 
 export const getImageEditorOptions = (mode: 'avatar' | 'cover' | 'attachment' | undefined): ImageEditorOptions => {
-  const aspectRatio = mode === 'cover' ? 3 / 1 : 1; // Default to 1 for 'avatar' and undefined modes
-
-  return {
+  const options: ImageEditorOptions = {
     quality: 0.9,
     actions: baseActions,
-    cropperOptions: {
-      ...baseCropperOptions,
-      aspectRatio,
-    },
+    cropperOptions: baseCropperOptions,
   };
+
+  if (!options.cropperOptions) return options;
+
+  if (mode === 'cover') options.cropperOptions.aspectRatio = 3 / 1;
+  if (mode === 'avatar') options.cropperOptions.aspectRatio = 1;
+
+  return options;
 };

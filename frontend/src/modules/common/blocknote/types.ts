@@ -1,5 +1,7 @@
 import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
 
+export type FileTypesNames = 'image' | 'video' | 'audio' | 'file';
+
 export type BlockAlignTypes = 'right' | 'center' | 'left';
 
 export type BlockTypes = 'heading' | 'paragraph' | 'bulletListItem' | 'numberedListItem' | 'checkListItem';

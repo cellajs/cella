@@ -56,27 +56,24 @@ const attachmentsRoutes = app
    * Create attachment
    */
   .openapi(attachmentsRoutesConfig.createAttachment, async (ctx) => {
-    const newAttachment = ctx.req.valid('json');
+    const newAttachments = ctx.req.valid('json');
 
     const organization = getOrganization();
     const user = getContextUser();
 
-    // Get the name of the attachment without the extension
-    const name = newAttachment.filename.split('.').slice(0, -1).join('.');
+    const fixedNewAttachments = newAttachments.map((el) => ({
+      ...el,
+      name: el.filename.split('.').slice(0, -1).join('.'),
+      createdBy: user.id,
+      organizationId: organization.id,
+    }));
 
-    const [createdAttachment] = await db
-      .insert(attachmentsTable)
-      .values({
-        ...newAttachment,
-        name,
-        createdBy: user.id,
-        organizationId: organization.id,
-      })
-      .returning();
+    const createdAttachments = await db.insert(attachmentsTable).values(fixedNewAttachments).returning();
 
-    logEvent('Attachment created', { attachment: createdAttachment.id });
+    logEvent(`${createdAttachments.length} attachments have been created`);
+    // Store the created attachment
 
-    return ctx.json({ success: true, data: createdAttachment }, 200);
+    return ctx.json({ success: true, data: createdAttachments }, 200);
   })
   /*
    * Get attachments

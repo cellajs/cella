@@ -100,11 +100,7 @@ const usersRoutes = app
     // Check if the users exist
     for (const id of userIds) {
       if (!targets.some((target) => target.id === id)) {
-        errors.push(
-          createError(ctx, 404, 'not_found', 'warn', 'user', {
-            user: id,
-          }),
-        );
+        errors.push(createError(ctx, 404, 'not_found', 'warn', 'user', { user: id }));
       }
     }
 
@@ -113,11 +109,7 @@ const usersRoutes = app
       const userId = target.id;
 
       if (user.role !== 'admin' && user.id !== userId) {
-        errors.push(
-          createError(ctx, 403, 'delete_forbidden', 'warn', 'user', {
-            user: userId,
-          }),
-        );
+        errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'user', { user: userId }));
         return false;
       }
 
@@ -229,6 +221,7 @@ const usersRoutes = app
     logEvent('User updated', { user: updatedUser.id });
 
     const data = transformDatabaseUserWithCount(updatedUser, memberships);
+
     return ctx.json({ success: true, data }, 200);
   });
 

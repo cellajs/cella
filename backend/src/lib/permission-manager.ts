@@ -8,7 +8,7 @@ import {
   type Subject,
   SubjectAdapter,
 } from '@cellajs/permission-manager';
-// Import required modules from '@cellajs/permission-manager'
+
 import type { MembershipModel } from '#/db/schema/memberships';
 import type { ContextEntity } from '#/types/common';
 import { getContextUser, getMemberships } from './context';

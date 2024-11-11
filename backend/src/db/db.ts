@@ -1,25 +1,27 @@
-import { drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
+import { type NodePgClient, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
 import { drizzle as pgliteDrizzle } from 'drizzle-orm/pglite';
-import pg from 'pg';
 import { env } from '#/../env';
 
+import type { PGlite } from '@electric-sql/pglite';
 import { config } from 'config';
-import { sql } from 'drizzle-orm';
+import { type DrizzleConfig, sql } from 'drizzle-orm';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 
-export const queryClient = env.PGLITE
-  ? await (await import('@electric-sql/pglite')).PGlite.create({
-      dataDir: './.db',
-    })
-  : new pg.Pool({
+const dbConfig: DrizzleConfig = {
+  logger: config.debug,
+  casing: 'snake_case',
+};
+
+const connection = env.PGLITE
+  ? { dataDir: './.db' }
+  : {
       connectionString: env.DATABASE_URL,
       connectionTimeoutMillis: 10000,
-    });
+    };
 
-const dbConfig = {
-  logger: config.debug,
-};
 // biome-ignore lint/suspicious/noExplicitAny: Can be two different types
-export const db: PgDatabase<any> = queryClient instanceof pg.Pool ? pgDrizzle(queryClient, dbConfig) : pgliteDrizzle(queryClient, dbConfig);
+export const db: PgDatabase<any> & {
+  $client: PGlite | NodePgClient;
+} = env.PGLITE ? pgliteDrizzle({ connection, ...dbConfig }) : pgDrizzle({ connection, ...dbConfig });
 
 export const coalesce = <T>(column: T, value: number) => sql`COALESCE(${column}, ${value})`.mapWith(Number);

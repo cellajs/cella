@@ -1,5 +1,5 @@
 {
-  "id": "36f89a8d-02da-4e6b-b6b0-9355c9dada94",
+  "id": "f9ab7262-683f-420e-b7cb-31bf121650bc",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -13,6 +13,13 @@
           "type": "varchar",
           "primaryKey": true,
           "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'attachment'"
         },
         "filename": {
           "name": "filename",
@@ -120,7 +127,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.memberships": {
       "name": "memberships",
@@ -190,8 +198,8 @@
           "notNull": true,
           "default": false
         },
-        "sort_order": {
-          "name": "sort_order",
+        "order": {
+          "name": "order",
           "type": "double precision",
           "primaryKey": false,
           "notNull": true
@@ -259,7 +267,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.oauth_accounts": {
       "name": "oauth_accounts",
@@ -316,7 +325,8 @@
           ]
         }
       },
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.organizations": {
       "name": "organizations",
@@ -537,7 +547,8 @@
             "slug"
           ]
         }
-      }
+      },
+      "checkConstraints": {}
     },
     "public.passkeys": {
       "name": "passkeys",
@@ -592,7 +603,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.requests": {
       "name": "requests",
@@ -664,7 +676,8 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.sessions": {
       "name": "sessions",
@@ -786,7 +799,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.tokens": {
       "name": "tokens",
@@ -872,7 +886,8 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
     "public.users": {
       "name": "users",
@@ -1103,8 +1118,8 @@
             "slug"
           ]
         },
-        "users_unsubscribe_token_unique": {
-          "name": "users_unsubscribe_token_unique",
+        "users_unsubscribeToken_unique": {
+          "name": "users_unsubscribeToken_unique",
           "nullsNotDistinct": false,
           "columns": [
             "unsubscribe_token"
@@ -1117,12 +1132,14 @@
             "email"
           ]
         }
-      }
+      },
+      "checkConstraints": {}
     }
   },
   "enums": {},
   "schemas": {},
   "sequences": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

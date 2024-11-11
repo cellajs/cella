@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS "attachments" (
 	"id" varchar PRIMARY KEY NOT NULL,
+	"name" varchar DEFAULT 'attachment' NOT NULL,
 	"filename" varchar NOT NULL,
 	"content_type" varchar NOT NULL,
 	"size" varchar NOT NULL,
@@ -23,7 +24,7 @@ CREATE TABLE IF NOT EXISTS "memberships" (
 	"modified_by" varchar,
 	"archived" boolean DEFAULT false NOT NULL,
 	"muted" boolean DEFAULT false NOT NULL,
-	"sort_order" double precision NOT NULL,
+	"order" double precision NOT NULL,
 	"organization_id" varchar NOT NULL
 );
 --> statement-breakpoint
@@ -127,7 +128,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"modified_by" varchar,
 	"role" varchar DEFAULT 'user' NOT NULL,
 	CONSTRAINT "users_slug_unique" UNIQUE("slug"),
-	CONSTRAINT "users_unsubscribe_token_unique" UNIQUE("unsubscribe_token"),
+	CONSTRAINT "users_unsubscribeToken_unique" UNIQUE("unsubscribe_token"),
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint

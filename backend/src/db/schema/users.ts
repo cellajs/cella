@@ -7,34 +7,34 @@ const roleEnum = config.rolesByType.systemRoles;
 export const usersTable = pgTable(
   'users',
   {
-    id: varchar('id').primaryKey(),
-    entity: varchar('entity', { enum: ['user'] })
+    id: varchar().primaryKey(),
+    entity: varchar({ enum: ['user'] })
       .notNull()
       .default('user'),
-    hashedPassword: varchar('hashed_password'),
-    slug: varchar('slug').unique().notNull(),
-    unsubscribeToken: varchar('unsubscribe_token').unique().notNull(),
-    name: varchar('name').notNull(),
-    firstName: varchar('first_name'),
-    lastName: varchar('last_name'),
-    email: varchar('email').notNull().unique(),
-    emailVerified: boolean('email_verified').notNull().default(false),
-    bio: varchar('bio'),
-    language: varchar('language', {
+    hashedPassword: varchar(),
+    slug: varchar().unique().notNull(),
+    unsubscribeToken: varchar().unique().notNull(),
+    name: varchar().notNull(),
+    firstName: varchar(),
+    lastName: varchar(),
+    email: varchar().notNull().unique(),
+    emailVerified: boolean().notNull().default(false),
+    bio: varchar(),
+    language: varchar({
       enum: ['en', 'nl'],
     })
       .notNull()
       .default(config.defaultLanguage),
-    bannerUrl: varchar('banner_url'),
-    thumbnailUrl: varchar('thumbnail_url'),
-    newsletter: boolean('newsletter').notNull().default(false),
-    lastSeenAt: timestamp('last_seen_at'), // last time any GET request has been made
-    lastStartedAt: timestamp('last_started_at'), // last time GET me
-    lastSignInAt: timestamp('last_sign_in_at'), // last time user went through authentication flow
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    modifiedAt: timestamp('modified_at'),
-    modifiedBy: varchar('modified_by'),
-    role: varchar('role', { enum: roleEnum }).notNull().default('user'),
+    bannerUrl: varchar(),
+    thumbnailUrl: varchar(),
+    newsletter: boolean().notNull().default(false),
+    lastSeenAt: timestamp(), // last time any GET request has been made
+    lastStartedAt: timestamp(), // last time GET me
+    lastSignInAt: timestamp(), // last time user went through authentication flow
+    createdAt: timestamp().defaultNow().notNull(),
+    modifiedAt: timestamp(),
+    modifiedBy: varchar(),
+    role: varchar({ enum: roleEnum }).notNull().default('user'),
   },
   (table) => {
     return {
@@ -52,8 +52,8 @@ export const usersTable = pgTable(
 
 export const safeUserSelect = omitKeys(usersTable, config.sensitiveFields);
 
-const avoidedFields = [
-  'slug',
+// TODO are we actually using this ?
+const detailedFields = [
   'firstName',
   'lastName',
   'emailVerified',
@@ -69,9 +69,9 @@ const avoidedFields = [
   'role',
 ] as const;
 
-export const baseLimitedUserSelect = omitKeys(safeUserSelect, avoidedFields);
+export const baseLimitedUserSelect = omitKeys(safeUserSelect, detailedFields);
 
 export type UnsafeUserModel = typeof usersTable.$inferSelect;
 export type InsertUserModel = typeof usersTable.$inferInsert;
 export type UserModel = Omit<UnsafeUserModel, (typeof config.sensitiveFields)[number]>;
-export type LimitedUserModel = Omit<UserModel, (typeof avoidedFields)[number]>;
+export type LimitedUserModel = Omit<UserModel, (typeof detailedFields)[number]>;

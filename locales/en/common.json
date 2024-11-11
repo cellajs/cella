@@ -63,6 +63,7 @@
   "created_at": "Created",
   "created_by": "Created by",
   "dark": "Dark",
+  "draft": "Draft",
   "decline_request": "Decline request",
   "default_language": "Default language",
   "default_language.text": "The language that will be given to new members.",
@@ -362,6 +363,7 @@
   "success.archived_resource": "{{resource}} has been archived.",
   "success.create_newsletter": "Newsletter has been sent.",
   "success.create_resource": "{{resource}} has been created.",
+  "success.create_resources_with_number": "{{number}} of {{resource}} has been created.",
   "success.delete_attachments": "Attachments have been removed.",
   "success.delete_members": "Members have been removed.",
   "success.delete_resource": "{{resource}} has been deleted.",
@@ -432,6 +434,7 @@
   "verify_my_email": "Verify my email address",
   "view": "View",
   "view_attachment": "View attachment",
+  "view_attachment_of": "View attachments of {{name}}",
   "view_options": "View options",
   "view_profile": "View profile",
   "view_screenshot": "View screenshot",
@@ -441,7 +444,9 @@
   "waitlist_request.text": "Get early access to {{appName}}. We will not send marketing mails.",
   "website_url": "Website url",
   "welcome_back": "Welcome back",
+  "write": "Write",
   "without_color": "Without color",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "upload_attachments": "Upload attachments"
 }

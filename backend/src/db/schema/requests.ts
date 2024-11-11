@@ -7,11 +7,11 @@ export type RequestType = (typeof requestTypeEnum)[number];
 export const requestsTable = pgTable(
   'requests',
   {
-    id: varchar('id').primaryKey().$defaultFn(nanoid),
-    message: varchar('message'),
-    email: varchar('email').notNull(),
-    type: varchar('type', { enum: requestTypeEnum }).notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    id: varchar().primaryKey().$defaultFn(nanoid),
+    message: varchar(),
+    email: varchar().notNull(),
+    type: varchar({ enum: requestTypeEnum }).notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
   },
   (table) => {
     return {

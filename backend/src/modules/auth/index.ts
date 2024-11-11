@@ -14,7 +14,7 @@ import { encodeBase64 } from '@oslojs/encoding';
 import slugify from 'slugify';
 import { githubAuth, googleAuth, microsoftAuth } from '#/db/lucia';
 
-import { createSession, findOauthAccount, getRedirectUrl, handleExistingUser, slugFromEmail, splitFullName } from './helpers/oauth';
+import { createSession, findOauthAccount, getRedirectUrl, slugFromEmail, splitFullName, updateExistingUser } from './helpers/oauth';
 
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
@@ -33,7 +33,7 @@ import { hashPasswordWithArgon, verifyPasswordWithArgon } from '#/modules/auth/h
 import { CustomHono, type EnabledOauthProviderOptions } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
 import generalRouteConfig from '../general/routes';
-import { removeSessionCookie, setCookie, setImpersonationSessionCookie, setSessionCookie } from './helpers/cookies';
+import { removeSessionCookie, setCookie, setSessionCookie } from './helpers/cookies';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
@@ -360,7 +360,7 @@ const authRoutes = app
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
     const { targetUserId } = ctx.req.valid('query');
-    await setImpersonationSessionCookie(ctx, targetUserId, user.id);
+    await setSessionCookie(ctx, targetUserId, user.id, 'impersonation');
 
     return ctx.json({ success: true }, 200);
   })
@@ -575,7 +575,7 @@ const authRoutes = app
       // Check if user already exists
       const existingUser = await getUserBy('email', userEmail);
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, strategy, {
+        return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: String(githubUser.id),
             email: githubUserEmail,
@@ -682,7 +682,7 @@ const authRoutes = app
       const existingUser = await getUserBy('email', user.email.toLowerCase());
 
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, strategy, {
+        return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: user.sub,
             email: user.email,
@@ -787,7 +787,7 @@ const authRoutes = app
       // Check if user already exists
       const existingUser = await getUserBy('email', user.email.toLowerCase());
       if (existingUser) {
-        return await handleExistingUser(ctx, existingUser, strategy, {
+        return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: user.sub,
             email: user.email,

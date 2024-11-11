@@ -44,6 +44,7 @@ export const requestsQueryOptions = ({
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
   const offset = q.length > 0 ? 0 : rowsLength;
+
   return infiniteQueryOptions({
     queryKey: ['requests', q, sort, order],
     initialPageParam: 0,
