@@ -18,7 +18,7 @@ export const useColumns = (
   isMobile: boolean,
   isAdmin: boolean,
   isSheet: boolean,
-  openCarouselDialog: (open: boolean, slide: number) => void,
+  openCarouselDialog: (slide: number) => void,
 ) => {
   const columns: ColumnOrColumnGroup<Attachment>[] = [
     ...(isAdmin ? [CheckboxColumn] : []),
@@ -29,7 +29,7 @@ export const useColumns = (
       sortable: false,
       width: 32,
       renderCell: ({ row: { url, filename, contentType }, rowIdx }) => (
-        <AttachmentPreviewIcon url={url} name={filename} openCarouselDialog={() => openCarouselDialog(true, rowIdx)} contentType={contentType} />
+        <AttachmentPreviewIcon url={url} name={filename} openCarouselDialog={() => openCarouselDialog(rowIdx)} contentType={contentType} />
       ),
     },
     {

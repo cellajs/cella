@@ -39,6 +39,12 @@ export const CustomDragHandleButton = <
       props.blockDragStart(eventData, props.block);
     }
   };
+
+  // Prevent form submission when clicking the drag handle button
+  const handleButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
   return (
     <Components.Generic.Menu.Root
       onOpenChange={(open: boolean) => {
@@ -60,6 +66,7 @@ export const CustomDragHandleButton = <
         </Components.Generic.Menu.Trigger>
       ) : (
         <Components.SideMenu.Button
+          onClick={handleButtonClick}
           label="Drag button"
           draggable={true}
           onDragStart={handleDragStart}

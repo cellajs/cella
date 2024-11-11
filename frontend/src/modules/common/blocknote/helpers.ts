@@ -1,6 +1,6 @@
 import type { Block, PropSchema, Props } from '@blocknote/core';
-import type { Slides } from '../carousel-dialog';
-import type { CustomBlockNoteSchema } from './types';
+import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
+import { type Slides, openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
 
 export const getContentAsString = (blocks: Block[]) => {
   const blocksStringifyContent = blocks
@@ -31,21 +31,25 @@ export const handleSubmitOnEnter = (editor: CustomBlockNoteSchema): CustomBlockN
   return null;
 };
 
-export const updateSourcesFromDataUrl = (openDialog?: (slide: number) => void) => {
+export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = true) => {
+  const parentElement = document.getElementById(elementId);
+
+  if (!parentElement) return;
+
   // Select all elements that have a 'data-url' attribute
-  const elementsWithDataUrl = document.querySelectorAll('[data-url]');
+  const elementsWithDataUrl = parentElement.querySelectorAll('[data-url]');
   // Exit early if no matching elements are found
   if (elementsWithDataUrl.length === 0) return;
   const urls: Slides[] = [];
 
   const onElClick = (e: MouseEvent) => {
-    if (!openDialog || !e.target) return;
+    if (!e.target || !openPreviewDialog) return;
     e.preventDefault();
     const target = e.target as HTMLImageElement | HTMLVideoElement | HTMLAudioElement;
     // Find the slide based on the currentSrc of the target
     const slideNum = urls.findIndex(({ src }) => src === target.currentSrc);
 
-    openDialog(slideNum >= 0 ? slideNum : 0);
+    openCarouselDialog(slideNum, urls);
   };
 
   for (const element of elementsWithDataUrl) {
@@ -102,7 +106,6 @@ export const updateSourcesFromDataUrl = (openDialog?: (slide: number) => void) =
         break;
     }
   }
-  return urls;
 };
 
 // Type guard to check if a block has a `url` property

@@ -15,10 +15,10 @@ const SystemPage = () => {
       <PageNav
         className="mt-4"
         tabs={[
-          { id: 'users', label: 'users', path: UsersTableRoute.fullPath },
-          { id: 'organizations', label: 'organizations', path: OrganizationsTableRoute.fullPath },
-          { id: 'requests', label: 'requests', path: RequestsTableRoute.fullPath },
-          { id: 'metrics', label: 'metrics', path: MetricsRoute.fullPath },
+          { id: 'users', label: 'common:users', path: UsersTableRoute.fullPath },
+          { id: 'organizations', label: 'common:organizations', path: OrganizationsTableRoute.fullPath },
+          { id: 'requests', label: 'common:requests', path: RequestsTableRoute.fullPath },
+          { id: 'metrics', label: 'common:metrics', path: MetricsRoute.fullPath },
         ]}
       />
 

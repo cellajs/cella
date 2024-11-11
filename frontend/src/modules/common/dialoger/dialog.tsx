@@ -23,6 +23,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
     containerBackdropClassName,
     autoFocus,
     hideClose,
+    headerClassName = '',
   } = dialog;
 
   const closeDialog = () => {
@@ -68,7 +69,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
         className={className}
         container={container}
       >
-        <DialogHeader className={`${title || description ? '' : 'hidden'}`}>
+        <DialogHeader className={`${title || description ? headerClassName : 'hidden'}`}>
           <DialogTitle className={`${title || title ? '' : 'hidden'} leading-6 h-6`}>{title}</DialogTitle>
           <DialogDescription className={`${description ? '' : 'hidden'}`}>{description}</DialogDescription>
         </DialogHeader>

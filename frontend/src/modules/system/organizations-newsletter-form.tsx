@@ -66,6 +66,23 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
     form.reset();
   };
 
+  // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
+  const isDirty = () => {
+    const { dirtyFields } = form.formState;
+    const fieldsKeys = Object.keys(dirtyFields);
+    if (fieldsKeys.length === 0) return false;
+    if (fieldsKeys.includes('content') && fieldsKeys.length === 1) {
+      const content = form.getValues('content');
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, 'text/html');
+      const emptyPElements = Array.from(doc.querySelectorAll('p.bn-inline-content'));
+
+      // Check if any <p> element has non-empty text content
+      return emptyPElements.some((el) => el.textContent && el.textContent.trim() !== '');
+    }
+    return true;
+  };
+
   if (form.loading) return null;
 
   return (
@@ -110,11 +127,11 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+          <Button type="submit" disabled={!isDirty()} loading={isPending}>
             <Send size={16} className="mr-2" />
             {t('common:send')}
           </Button>
-          <Button type="reset" variant="secondary" className={form.formState.isDirty ? '' : 'invisible'} aria-label="Cancel" onClick={cancel}>
+          <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label="Cancel" onClick={cancel}>
             {t('common:cancel')}
           </Button>
         </div>
