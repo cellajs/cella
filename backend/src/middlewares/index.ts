@@ -27,11 +27,13 @@ app.get('/ping', (c) => c.text('pong'));
 // Logger
 app.use('*', logger(logEvent));
 
-const corsOptions = {
+const electricHeaders = ['electric-cursor', 'electric-handle', 'electric-schema', 'electric-offset', 'electric-up-to-date'];
+const corsOptions: Parameters<typeof cors>[0] = {
   origin: config.frontendUrl,
   credentials: true,
   allowMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
   allowHeaders: [],
+  exposeHeaders: electricHeaders,
 };
 
 // CORS
