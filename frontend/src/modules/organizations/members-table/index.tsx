@@ -130,6 +130,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   const onRoleChange = (role?: string) => {
     setSelectedRows(new Set<string>());
+    setRows([]); // to set offset of a new query to 0
     setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
   };
 

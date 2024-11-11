@@ -109,6 +109,7 @@ const UsersTable = () => {
   // Change role filter
   const onRoleChange = (role?: string) => {
     setSelectedRows(new Set<string>());
+    setRows([]); // to set offset of a new query to 0
     setRole(role === 'all' ? undefined : (role as SystemRoles));
   };
 
