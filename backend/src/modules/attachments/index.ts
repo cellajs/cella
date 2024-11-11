@@ -18,6 +18,39 @@ const app = new CustomHono();
 // Attachment endpoints
 const attachmentsRoutes = app
   /*
+   * Proxy to electric
+   */
+  .openapi(attachmentsRoutesConfig.shapeProxy, async (ctx) => {
+    const url = new URL(ctx.req.url);
+
+    // Constuct the upstream URL
+    const originUrl = new URL(`${config.electricUrl}/v1/shape?table=attachments`);
+
+    // Copy over the relevant query params that the Electric client adds
+    // so that we return the right part of the Shape log.
+    url.searchParams.forEach((value, key) => {
+      if (['live', 'handle', 'offset', 'cursor'].includes(key)) {
+        originUrl.searchParams.set(key, value);
+      }
+    });
+
+    // When proxying long-polling requests, content-encoding & content-length are added
+    // erroneously (saying the body is gzipped when it's not) so we'll just remove
+    // them to avoid content decoding errors in the browser.
+    let res = await fetch(originUrl.toString());
+    if (res.headers.get('content-encoding')) {
+      const headers = new Headers(res.headers);
+      headers.delete('content-encoding');
+      headers.delete('content-length');
+      res = new Response(res.body, {
+        status: res.status,
+        statusText: res.statusText,
+        headers,
+      });
+    }
+    return res;
+  })
+  /*
    * Create attachment
    */
   .openapi(attachmentsRoutesConfig.createAttachment, async (ctx) => {

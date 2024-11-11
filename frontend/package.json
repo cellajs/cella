@@ -21,7 +21,7 @@
     "@blocknote/core": "^0.19.0",
     "@blocknote/react": "^0.19.0",
     "@blocknote/shadcn": "^0.19.0",
-    "@electric-sql/client": "^0.6.5",
+    "@electric-sql/client": "^0.7.1",
     "@floating-ui/react": "^0.26.27",
     "@github/mini-throttle": "^2.1.1",
     "@hookform/resolvers": "^3.9.1",
