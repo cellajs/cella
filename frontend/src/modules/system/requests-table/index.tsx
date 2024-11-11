@@ -43,7 +43,7 @@ export const requestsQueryOptions = ({
 }) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
-  const offset = q.length > 0 ? 0 : rowsLength;
+  const offset = rowsLength;
 
   return infiniteQueryOptions({
     queryKey: ['requests', q, sort, order],
@@ -78,7 +78,7 @@ const RequestsTable = () => {
 
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-
+    setRows([]); // to set offset of a new query to 0
     setQuery(searchString);
   };
 

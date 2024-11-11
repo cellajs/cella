@@ -130,6 +130,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   // Clear selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
+    setRows([]); // to set offset of a new query to 0
     setQuery(searchString);
   };
 

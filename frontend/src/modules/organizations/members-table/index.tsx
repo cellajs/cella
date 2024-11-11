@@ -124,6 +124,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // Drop selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
+    setRows([]); // to set offset of a new query to 0
     setQuery(searchString);
   };
 
