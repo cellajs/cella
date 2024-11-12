@@ -34,7 +34,7 @@ import router from '~/lib/router';
 import { focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { FileTypesNames } from '~/modules/common/blocknote/types';
 
-import { openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
+import { type Slides, openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
 
 import './styles.css';
 
@@ -191,11 +191,9 @@ export const BlockNote = ({
   }, [defaultValue]);
 
   const onBeforeLoadHandle = useCallback(async () => {
-    // Converts the editor's contents from Block objects to HTML and sanitizes it
-    const descriptionHtml = await editor.blocksToFullHTML(editor.document);
     if (!wasInitial.current) return;
-    updateData(descriptionHtml);
-  }, [editor, wasInitial]);
+    updateData(text);
+  }, [text, wasInitial]);
 
   const openCarouselPreview: MouseEventHandler = (event) => {
     if (!altClickOpensPreview || !event.altKey) return;
@@ -206,7 +204,7 @@ export const BlockNote = ({
 
     const url = getUrlFromProps(props);
     if (!allowedFilePanelTypes.includes(type as FileTypesNames) || !url || url.length === 0) return;
-    const newSlides: { src: string; fileType: string }[] = [];
+    const newSlides: Slides[] = [];
 
     // Collect slides based on valid file types
     editor.forEachBlock(({ type, props }) => {
