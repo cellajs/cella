@@ -292,31 +292,25 @@ const generalRoutes = app
           $or.push(ilike(table.email, `%${q}%`));
         }
 
-        // For users, no need to join memberships, just perform the search
-        if (entityType === 'user') {
-          return db
-            .select(baseSelect)
-            .from(table)
-            .where(or(...$or))
-            .limit(10);
-        }
-
-        // For other entities, perform the join with memberships
+        // Perform the join with memberships
         const $where = and(
           or(...$or),
-          eq(membershipsTable.userId, user.id),
+          entityType !== 'user' ? eq(membershipsTable.userId, user.id) : undefined,
           inArray(membershipsTable.organizationId, organizationIds),
           eq(membershipsTable[entityIdField], table.id),
         );
 
         // Execute the query using inner join with memberships table
         return db
-          .select({
+          .selectDistinct({
             ...baseSelect,
-            membership: membershipSelect,
+            ...(entityType !== 'user' && { membership: membershipSelect }),
           })
           .from(table)
-          .leftJoin(membershipsTable, and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType)))
+          .leftJoin(
+            membershipsTable,
+            and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? 'organization' : entityType)),
+          )
           .where($where)
           .limit(10);
       })
