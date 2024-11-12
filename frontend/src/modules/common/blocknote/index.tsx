@@ -16,7 +16,8 @@ import * as Tooltip from '~/modules/ui/tooltip';
 import { useThemeStore } from '~/store/theme';
 
 import {
-  customFormattingToolBarConfig,
+  allowedFileTypes,
+  allowedTypes,
   customSchema,
   customSlashIndexedItems,
   customSlashNotIndexedItems,
@@ -32,11 +33,12 @@ import { FloatingPortal } from '@floating-ui/react';
 
 import router from '~/lib/router';
 import { focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
-import type { FileTypesNames } from '~/modules/common/blocknote/types';
+import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
 
 import { type Slides, openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
 
-import './styles.css';
+import '~/modules/common/blocknote/app-specific-custom/styles.css';
+import '~/modules/common/blocknote/styles.css';
 
 type BlockNoteProps = {
   id: string;
@@ -49,6 +51,7 @@ type BlockNoteProps = {
   trailingBlock?: boolean;
   altClickOpensPreview?: boolean;
   emojis?: boolean;
+  allowedBlockTypes?: (BasicBlockBaseTypes | CellaCustomBlockTypes)[];
   members?: Member[];
   updateData: (html: string) => void;
   onChange?: (value: string) => void;
@@ -58,14 +61,14 @@ type BlockNoteProps = {
   onTextDifference?: () => void;
 } & (
   | {
-      // filePanel and allowedFilePanelTypes req to add together
+      // filePanel and allowedFileBlockTypes req to add together
       filePanel: (props: FilePanelProps) => JSX.Element;
-      allowedFilePanelTypes: FileTypesNames[];
+      allowedFileBlockTypes: BasicFileBlockTypes[];
     }
   | {
       // if neither is provided, it allows the omission of both
       filePanel?: never;
-      allowedFilePanelTypes?: never;
+      allowedFileBlockTypes?: never;
     }
 );
 
@@ -80,8 +83,10 @@ export const BlockNote = ({
   trailingBlock = true,
   updateDataOnBeforeLoad = false,
   altClickOpensPreview = false,
-  // on default file panel allowed all types
-  allowedFilePanelTypes = ['image', 'video', 'audio', 'file'],
+  // allow default types
+  allowedBlockTypes = allowedTypes,
+  // allow default filetypes
+  allowedFileBlockTypes = allowedFileTypes,
   members,
   updateData,
   filePanel,
@@ -98,11 +103,13 @@ export const BlockNote = ({
   const isCreationMode = !!onChange;
   const [text, setText] = useState<string>(defaultValue);
 
-  const emojiPicker = slashMenu ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') : emojis;
+  const emojiPicker = slashMenu
+    ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') && allowedBlockTypes.includes('emoji')
+    : emojis;
 
   const triggerDataUpdate = () => {
     // if user in Side Menu does not update
-    if (editor.sideMenu.view?.state?.show) return;
+    if (editor.sideMenu.view?.menuFrozen) return;
 
     // if user in Formatting Toolbar does not update
     if (editor.formattingToolbar.shown) return;
@@ -197,19 +204,20 @@ export const BlockNote = ({
 
   const openCarouselPreview: MouseEventHandler = (event) => {
     if (!altClickOpensPreview || !event.altKey) return;
+    const allowedTypes: readonly string[] = allowedFileBlockTypes;
     event.preventDefault();
     editor.formattingToolbar.closeMenu();
 
     const { type, props } = editor.getTextCursorPosition().block;
 
     const url = getUrlFromProps(props);
-    if (!allowedFilePanelTypes.includes(type as FileTypesNames) || !url || url.length === 0) return;
+    if (!allowedTypes.includes(type) || !url || url.length === 0) return;
     const newSlides: Slides[] = [];
 
     // Collect slides based on valid file types
     editor.forEachBlock(({ type, props }) => {
       const blockUrl = getUrlFromProps(props);
-      if (allowedFilePanelTypes.includes(type as FileTypesNames) && blockUrl && blockUrl.length > 0) {
+      if (allowedTypes.includes(type) && blockUrl && blockUrl.length > 0) {
         newSlides.push({ src: blockUrl, fileType: type });
       }
       return true;
@@ -247,7 +255,7 @@ export const BlockNote = ({
       {slashMenu && (
         <FloatingPortal>
           <div className="bn-ui-container">
-            <CustomSlashMenu editor={editor} allowedFilePanelTypes={allowedFilePanelTypes} />
+            <CustomSlashMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />
           </div>
         </FloatingPortal>
       )}
@@ -255,12 +263,12 @@ export const BlockNote = ({
       {formattingToolbar && (
         <FloatingPortal>
           <div className="bn-ui-container">
-            <CustomFormattingToolbar config={customFormattingToolBarConfig} />
+            <CustomFormattingToolbar />
           </div>
         </FloatingPortal>
       )}
 
-      {sideMenu && <CustomSideMenu />}
+      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
 
       <FloatingPortal>
         <div className="bn-ui-container">

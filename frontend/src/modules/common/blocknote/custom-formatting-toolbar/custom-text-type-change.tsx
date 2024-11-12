@@ -1,8 +1,8 @@
 import type { BlockSchema, InlineContentSchema, StyleSchema } from '@blocknote/core';
 import { BasicTextStyleButton, blockTypeSelectItems, useBlockNoteEditor, useDictionary, useEditorContentOrSelectionChange } from '@blocknote/react';
 import { useMemo, useState } from 'react';
-import { canChangeStyleForBlocks, customTextStyleSelect } from '~/modules/common/blocknote/blocknote-config';
-import type { BlockTypes } from '~/modules/common/blocknote/types';
+import { formattingToolBarStyleForBlocks, formattingToolBarTextStyleSelect } from '~/modules/common/blocknote/blocknote-config';
+import type { BasicBlockTypes } from '~/modules/common/blocknote/types';
 
 export const CustomTextStyleSelect = () => {
   const dict = useDictionary();
@@ -11,7 +11,7 @@ export const CustomTextStyleSelect = () => {
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 
   const filteredItems = useMemo(() => {
-    return blockTypeSelectItems(dict).filter((item) => canChangeStyleForBlocks.includes(item.type as BlockTypes));
+    return blockTypeSelectItems(dict).filter((item) => formattingToolBarStyleForBlocks.includes(item.type as BasicBlockTypes));
   }, [editor, dict]);
   const shouldShow: boolean = useMemo(() => filteredItems.find((item) => item.type === block.type) !== undefined, [block.type, filteredItems]);
 
@@ -22,7 +22,7 @@ export const CustomTextStyleSelect = () => {
 
   return (
     <>
-      {customTextStyleSelect.map((el) => (
+      {formattingToolBarTextStyleSelect.map((el) => (
         <BasicTextStyleButton basicTextStyle={el} key={`${el}StyleButton`} />
       ))}
     </>

@@ -1,5 +1,5 @@
 import { defaultProps, filterSuggestionItems, insertOrUpdateBlock } from '@blocknote/core';
-import { createReactBlockSpec, getDefaultReactSlashMenuItems } from '@blocknote/react';
+import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
 
 import { MessageCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -13,7 +13,7 @@ import {
 } from '~/modules/ui/dropdown-menu';
 
 import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
-import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteSchema, IconType } from '~/modules/common/blocknote/types';
 
 // The Notify block.
 export const Notify = createReactBlockSpec(
@@ -76,19 +76,29 @@ export const Notify = createReactBlockSpec(
 );
 
 // Slash menu item to insert an Notify block
-const insertNotify = (editor: CustomBlockNoteSchema) => ({
+// add key on custom slash items it check allowance by it
+export const insertSlashNotifyItem = (editor: CustomBlockNoteSchema) => ({
   title: 'Notify',
+  key: 'notify',
   onItemClick: () => {
     insertOrUpdateBlock(editor, {
       type: 'notify',
     });
   },
   aliases: ['notify', 'notification', 'emphasize', 'warning', 'error', 'info', 'success'],
-  group: 'Other',
+  group: 'Custom',
   icon: <MessageCircle size={16} />,
 });
 
-export const getNotifyItems = async (query: string, editor: CustomBlockNoteSchema) => {
+// Side menu item to insert an Notify block
+export const insertSideNotifyItem = (): BlockTypeSelectItem => ({
+  name: 'Notify',
+  type: 'notify',
+  isSelected: (block: { type: string }) => block.type === 'notify',
+  icon: MessageCircle as IconType,
+});
+
+export const getSlashNotifySlashItem = (query: string, editor: CustomBlockNoteSchema) => {
   // Gets all default slash menu items and `insertNotify` item.
-  return filterSuggestionItems([...getDefaultReactSlashMenuItems(editor), insertNotify(editor)], query);
+  return filterSuggestionItems([insertSlashNotifyItem(editor)], query);
 };

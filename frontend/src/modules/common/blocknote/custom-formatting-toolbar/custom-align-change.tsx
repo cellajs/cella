@@ -1,6 +1,6 @@
 import { TextAlignButton, useComponentsContext } from '@blocknote/react';
 import { ChevronDown, MoveHorizontal } from 'lucide-react';
-import { customTextAlignItems } from '~/modules/common/blocknote/blocknote-config';
+import { formattingToolBarTextAlignItems } from '~/modules/common/blocknote/blocknote-config';
 
 export const CustomTextAlignSelect = () => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
@@ -16,7 +16,7 @@ export const CustomTextAlignSelect = () => {
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown>
         <Components.Generic.Menu.Item className="no-hover-bg">
-          {customTextAlignItems.map((el) => (
+          {formattingToolBarTextAlignItems.map((el) => (
             <TextAlignButton textAlignment={el} key={`textAlign${el.charAt(0).toUpperCase() + el.slice(1)}Button`} />
           ))}
         </Components.Generic.Menu.Item>

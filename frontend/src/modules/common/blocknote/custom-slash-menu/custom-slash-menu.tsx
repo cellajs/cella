@@ -1,37 +1,44 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useCallback, useEffect, useState } from 'react';
-import { customSlashIndexedItems, customSlashNotIndexedItems } from '~/modules/common/blocknote/blocknote-config';
-import type { CustomBlockNoteSchema, FileTypesNames } from '~/modules/common/blocknote/types';
+import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowedType } from '~/modules/common/blocknote/blocknote-config';
+import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema, MenusItemsTitle } from '~/modules/common/blocknote/types';
 
-const sortList = [...customSlashIndexedItems, ...customSlashNotIndexedItems];
-
-const fileTypes = ['File', 'Image', 'Video', 'Audio'];
+const indexedItems: readonly string[] = customSlashIndexedItems;
+const notIndexedItems: readonly string[] = customSlashNotIndexedItems;
 
 export const slashMenu = (
   props: SuggestionMenuProps<DefaultReactSuggestionItem>,
   editor: CustomBlockNoteSchema,
-  allowedFilePanelTypes: FileTypesNames[],
+  allowedTypes: (CellaCustomBlockTypes | BasicBlockTypes)[],
 ) => {
   const { items, selectedIndex, onItemClick } = props;
   const [inputValue, setInputValue] = useState('');
 
-  // Find and remove the first matching item
-  const filteredSortList = sortList.filter((item) => {
-    if (!fileTypes.includes(item)) return true;
-    if ((allowedFilePanelTypes as string[]).includes(item.toLowerCase())) return true;
-    return false;
-  });
+  const allowedBlockTypes: readonly string[] = allowedTypes;
+  // Filter function to check if the MenusItemsTitle has an allowed type
+  const isAllowed = (item: string) => {
+    const allowedType = menusTitleToAllowedType[item as MenusItemsTitle];
+    return allowedType && allowedBlockTypes.includes(allowedType);
+  };
+
+  // Apply the filter to customSlashIndexedItems and customSlashNotIndexedItems
+  const slashMenuIndexed = indexedItems.filter(isAllowed);
+  const slashMenuNotIndexed = notIndexedItems.filter(isAllowed);
+
+  const sortList = [...slashMenuIndexed, ...slashMenuNotIndexed];
 
   // Create a mapping from title to index for quick lookup
-  const sortOrder = new Map((filteredSortList as string[]).map((title, index) => [title, index]));
-  const sortedItems = items.sort((a, b) => {
-    const indexA = sortOrder.get(a.title);
-    const indexB = sortOrder.get(b.title);
-    // If both titles exist in sortOrder, compare their indices
-    if (indexA !== undefined && indexB !== undefined) return indexA - indexB;
-    // If one title is not found, keep it at the end
-    return indexA === undefined ? 1 : -1;
-  });
+  const sortOrder = new Map(sortList.map((title, index) => [title, index]));
+  const sortedItems = items
+    .filter(({ title }) => sortList.includes(title))
+    .sort((a, b) => {
+      const indexA = sortOrder.get(a.title);
+      const indexB = sortOrder.get(b.title);
+      // If both titles exist in sortOrder, compare their indices
+      if (indexA !== undefined && indexB !== undefined) return indexA - indexB;
+      // If one title is not found, keep it at the end
+      return indexA === undefined ? 1 : -1;
+    });
 
   const handleKeyPress = useCallback(
     async (e: KeyboardEvent) => {
@@ -95,7 +102,7 @@ export const slashMenu = (
         const isSelected = selectedIndex === index;
         return (
           <div key={item.title}>
-            {index === customSlashIndexedItems.length && <hr className="slash-menu-separator" />}
+            {index === slashMenuIndexed.length && <hr className="slash-menu-separator" />}
             <div
               className={`slash-menu-item${isSelected ? ' selected' : ''}`}
               onMouseDown={(e) => triggerItemClick(item, e)}
@@ -108,7 +115,7 @@ export const slashMenu = (
                 {item.icon}
                 {item.title}
               </div>
-              {!inputValue.length && index < customSlashIndexedItems.length && <span className="slash-menu-item-badge">{index + 1}</span>}
+              {!inputValue.length && index < slashMenuIndexed.length && <span className="slash-menu-item-badge">{index + 1}</span>}
             </div>
           </div>
         );

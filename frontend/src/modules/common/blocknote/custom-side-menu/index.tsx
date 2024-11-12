@@ -1,21 +1,25 @@
 import { DragHandleMenu, SideMenu, SideMenuController } from '@blocknote/react';
-import { CustomDragHandleButton } from './drag-handle-button';
-import { ResetBlockTypeItem } from './reset-block-type';
+import { CustomDragHandleButton } from '~/modules/common/blocknote/custom-side-menu/drag-handle-button';
+import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/reset-block-type';
 
-const typeOnSlashMenuAppearance = ['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem'];
+import { sideMenuOpenOnTypes } from '~/modules/common/blocknote/blocknote-config';
+import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 
 // in this menu we have only drag button
-export const CustomSideMenu = () => (
+export const CustomSideMenu = ({
+  editor,
+  allowedTypes,
+}: { editor: CustomBlockNoteSchema; allowedTypes: (CellaCustomBlockTypes | BasicBlockTypes)[] }) => (
   <SideMenuController
     sideMenu={(props) => (
       <SideMenu {...props}>
         <CustomDragHandleButton
-          haveDropDown={typeOnSlashMenuAppearance.includes(props.block.type)}
+          haveDropDown={sideMenuOpenOnTypes.includes(props.block.type)}
           dragHandleMenu={(props) => (
             <>
-              {typeOnSlashMenuAppearance.includes(props.block.type) ? (
+              {sideMenuOpenOnTypes.includes(props.block.type) ? (
                 <DragHandleMenu {...props}>
-                  <ResetBlockTypeItem {...props} />
+                  <ResetBlockTypeItem editor={editor} props={props} allowedTypes={allowedTypes} />
                 </DragHandleMenu>
               ) : null}
             </>

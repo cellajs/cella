@@ -1,42 +1,41 @@
-import type { Block, BlockConfig, BlockSchema, InlineContentSchema, StyleSchema } from '@blocknote/core';
-import {
-  type BlockTypeSelectItem,
-  type DragHandleMenuProps,
-  blockTypeSelectItems,
-  useBlockNoteEditor,
-  useComponentsContext,
-  useDictionary,
-} from '@blocknote/react';
+import type { Block, BlockConfig, InlineContentSchema, StyleSchema } from '@blocknote/core';
+import { type BlockTypeSelectItem, type DragHandleMenuProps, useComponentsContext, useDictionary } from '@blocknote/react';
 import { useMemo } from 'react';
-import { customBlockTypeSelectItems } from '~/modules/common/blocknote/blocknote-config';
-import type { BlockTypes } from '~/modules/common/blocknote/types';
+import { customBlockTypeSelectItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
+import { focusEditor } from '~/modules/common/blocknote/helpers';
+import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema } from '../types';
 
-export function ResetBlockTypeItem(props: DragHandleMenuProps) {
+interface ResetBlockTypeItemProp {
+  editor: CustomBlockNoteSchema;
+  props: DragHandleMenuProps;
+  allowedTypes: (CellaCustomBlockTypes | BasicBlockTypes)[];
+  typeChangeCallback?: (editor: CustomBlockNoteSchema) => void;
+}
+export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes, typeChangeCallback }: ResetBlockTypeItemProp) {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
 
-  const editor = useBlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>();
+  const filteredSelectItems = customBlockTypeSelectItems.filter((i) => allowedTypes.includes(i));
 
   const filteredItems = useMemo(() => {
-    return blockTypeSelectItems(dict).filter((item) => customBlockTypeSelectItems.includes(item.type as BlockTypes));
+    return getSideMenuItems(dict).filter((item) => filteredSelectItems.includes(item.type as BasicBlockTypes | CellaCustomBlockTypes));
   }, [editor, dict]);
 
-  const shouldShow: boolean = useMemo(
-    () => filteredItems.find((item) => item.type === props.block.type) !== undefined,
-    [props.block.type, filteredItems],
-  );
+  const shouldShow: boolean = useMemo(() => filteredItems.find((item) => item.type === block.type) !== undefined, [block.type, filteredItems]);
 
   const fullItems = useMemo(() => {
     const onClick = (item: BlockTypeSelectItem) => {
-      editor.focus();
+      typeChangeCallback?.(editor);
 
-      editor.updateBlock(props.block, {
-        type: item.type,
+      // Update the selected block
+      editor.updateBlock(block, {
+        type: item.type as Exclude<BasicBlockTypes, 'emoji'> | CellaCustomBlockTypes,
         //In our case we pass props cos by it we get heading level: 1 | 2 | 3
-        // biome-ignore lint/suspicious/noExplicitAny: required by author
-        props: item.props as any,
+        props: item.props,
       });
+      // to reset editor focus so side menu open state does not block the on blur update
+      setTimeout(() => focusEditor(editor, block.id), 0);
     };
 
     return filteredItems.map((item) => {
@@ -46,10 +45,10 @@ export function ResetBlockTypeItem(props: DragHandleMenuProps) {
         title: name,
         icon: <Icon size={16} />,
         onClick: () => onClick(item),
-        isSelected: isSelected(props.block as unknown as Block<Record<string, BlockConfig>, InlineContentSchema, StyleSchema>),
+        isSelected: isSelected(block as unknown as Block<Record<string, BlockConfig>, InlineContentSchema, StyleSchema>),
       };
     });
-  }, [props.block, filteredItems, editor]);
+  }, [block, filteredItems, editor]);
 
   if (!shouldShow || !editor.isEditable) return null;
 
@@ -57,9 +56,9 @@ export function ResetBlockTypeItem(props: DragHandleMenuProps) {
     <>
       {fullItems.map((el) => {
         let isSelected = false;
-        if (props.block.type === 'heading') {
-          isSelected = el.title.includes(props.block.props.level.toString());
-        } else isSelected = props.block.type === el.type;
+        if (block.type === 'heading') {
+          isSelected = el.title.includes(block.props.level.toString());
+        } else isSelected = block.type === el.type;
         return (
           <Components.Generic.Menu.Item className="bn-menu-item" key={el.title} onClick={el.onClick} icon={el.icon} checked={isSelected}>
             {el.title}

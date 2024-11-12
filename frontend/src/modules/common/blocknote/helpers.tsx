@@ -12,10 +12,10 @@ export const getContentAsString = (blocks: Block[]) => {
   return blocksStringifyContent;
 };
 
-export const focusEditor = (editor: CustomBlockNoteSchema) => {
+export const focusEditor = (editor: CustomBlockNoteSchema, blockId?: string) => {
   const lastBlock = editor.document[editor.document.length - 1];
   editor.focus();
-  editor.setTextCursorPosition(lastBlock.id, 'end');
+  editor.setTextCursorPosition(blockId ?? lastBlock.id, 'end');
 };
 
 export const handleSubmitOnEnter = (editor: CustomBlockNoteSchema): CustomBlockNoteSchema['document'] | null => {
@@ -108,7 +108,7 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
   }
 };
 
-// Type guard to check if a block has a `url` property
+// get url property of el
 export const getUrlFromProps = (props: Props<PropSchema>): string | null => {
   if (props && typeof props.url === 'string') return props.url;
   return null;

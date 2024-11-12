@@ -11,9 +11,9 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { customBlockTypeSelectItems } from '~/modules/common/blocknote/blocknote-config';
-import type { BlockTypes } from '~/modules/common/blocknote/types';
+import type { BasicBlockTypes } from '~/modules/common/blocknote/types';
 
-export const CustomBlockTypeSelect = () => {
+export const CellaCustomBlockTypeselect = () => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
@@ -26,7 +26,7 @@ export const CustomBlockTypeSelect = () => {
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 
   const filteredItems = useMemo(() => {
-    return blockTypeSelectItems(dict).filter((item) => customBlockTypeSelectItems.includes(item.type as BlockTypes));
+    return blockTypeSelectItems(dict).filter((item) => customBlockTypeSelectItems.includes(item.type as BasicBlockTypes));
   }, [editor, dict]);
 
   const shouldShow: boolean = useMemo(() => filteredItems.find((item) => item.type === block.type) !== undefined, [block.type, filteredItems]);

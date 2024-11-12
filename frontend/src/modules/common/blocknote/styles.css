@@ -11,7 +11,7 @@ p.bn-inline-content {
 }
 
 .bn-inline-content:has(> .ProseMirror-trailingBreak)::before {
-  color: var(--bloknote-placeholder);
+  color: hsl(var(--bloknote-placeholder));
 }
 
 p.bn-inline-content code {
@@ -98,7 +98,9 @@ p.bn-inline-content code {
 .bn-menu-item {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  gap: 14px;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .bn-dropdown-button {

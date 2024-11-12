@@ -10,12 +10,12 @@ import {
   UnnestBlockButton,
 } from '@blocknote/react';
 import { useEffect } from 'react';
+import { customFormattingToolBarConfig } from '~/modules/common/blocknote/blocknote-config';
 import { CustomTextAlignSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-align-change';
+import { CellaCustomBlockTypeselect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
 import { CustomTextStyleSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-text-type-change';
-import type { CustomFormatToolBarConfig } from '~/modules/common/blocknote/types';
-import { CustomBlockTypeSelect } from './custom-block-type-change';
 
-export const CustomFormattingToolbar = ({ config }: { config: CustomFormatToolBarConfig }) => (
+export const CustomFormattingToolbar = () => (
   <FormattingToolbarController
     formattingToolbar={() => {
       // to be able to use in sheet
@@ -30,19 +30,19 @@ export const CustomFormattingToolbar = ({ config }: { config: CustomFormatToolBa
       }, []);
       return (
         <FormattingToolbar>
-          {config.blockTypeSelect && <CustomBlockTypeSelect />}
-          {config.blockStyleSelect && <CustomTextStyleSelect />}
-          {config.blockAlignSelect && <CustomTextAlignSelect />}
+          {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeselect />}
+          {customFormattingToolBarConfig.blockStyleSelect && <CustomTextStyleSelect />}
+          {customFormattingToolBarConfig.blockAlignSelect && <CustomTextAlignSelect />}
 
-          {config.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
-          {config.replaceFile && <FileReplaceButton key={'replaceFileButton'} />}
+          {customFormattingToolBarConfig.fileCaption && <FileCaptionButton key={'fileCaptionButton'} />}
+          {customFormattingToolBarConfig.replaceFile && <FileReplaceButton key={'replaceFileButton'} />}
           <FileDownloadButton key={'downloadButton'} />
 
-          {config.textColorSelect && <ColorStyleButton key={'colorStyleButton'} />}
+          {customFormattingToolBarConfig.textColorSelect && <ColorStyleButton key={'colorStyleButton'} />}
 
-          {config.createLink && <CreateLinkButton key={'createLinkButton'} />}
+          {customFormattingToolBarConfig.createLink && <CreateLinkButton key={'createLinkButton'} />}
 
-          {config.blockNestingSelect && (
+          {customFormattingToolBarConfig.blockNestingSelect && (
             <>
               <NestBlockButton key={'nestBlockButton'} />
               <UnnestBlockButton key={'unnestBlockButton'} />

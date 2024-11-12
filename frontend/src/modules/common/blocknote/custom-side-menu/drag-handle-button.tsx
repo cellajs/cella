@@ -17,6 +17,7 @@ type CustomDragHandleButtonProps<
   haveDropDown?: boolean;
   position?: 'left' | 'right' | 'top' | 'bottom';
 };
+
 export const CustomDragHandleButton = <
   BSchema extends BlockSchema = DefaultBlockSchema,
   I extends InlineContentSchema = DefaultInlineContentSchema,
