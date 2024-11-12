@@ -51,13 +51,11 @@ export const sheetVariants = cva(
 interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>, VariantProps<typeof sheetVariants> {
   onClick?: () => void; // Adding onClick prop
   hideClose?: boolean;
+  scrollableOverlay?: boolean;
 }
 const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Content>, SheetContentProps>(
-  ({ side = 'right', className, children, hideClose = false, onClick, ...props }, ref) => (
-    <>
-      <SheetOverlay
-        onClick={onClick} // Using the passed onClick function
-      />
+  ({ side = 'right', className, children, scrollableOverlay = false, hideClose = false, onClick, ...props }, ref) => {
+    const content = (
       <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
         {!hideClose && (
           <SheetPrimitive.Close
@@ -70,8 +68,17 @@ const SheetContent = React.forwardRef<React.ElementRef<typeof SheetPrimitive.Con
         )}
         {children}
       </SheetPrimitive.Content>
-    </>
-  ),
+    );
+
+    return scrollableOverlay ? (
+      <SheetOverlay onClick={onClick}>{content}</SheetOverlay>
+    ) : (
+      <>
+        <SheetOverlay onClick={onClick} />
+        {content}
+      </>
+    );
+  },
 );
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 

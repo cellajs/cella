@@ -7,6 +7,7 @@ export type SheetT = {
   hideClose?: boolean;
   open?: boolean;
   canToggle?: boolean;
+  scrollableOverlay?: boolean;
   modal?: boolean;
   side?: 'bottom' | 'top' | 'right' | 'left';
   removeCallback?: () => void;

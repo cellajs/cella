@@ -9,7 +9,18 @@ export interface SheetProp {
 }
 
 export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
-  const { id, modal = true, side: sheetSide, open, description, title, hideClose = false, className: sheetClassName, content } = sheet;
+  const {
+    id,
+    modal = true,
+    side: sheetSide,
+    open,
+    description,
+    scrollableOverlay,
+    title,
+    hideClose = false,
+    className: sheetClassName,
+    content,
+  } = sheet;
   const sheetRef = useRef<HTMLDivElement>(null);
 
   // State to retain side value even after sheet removal
@@ -56,6 +67,7 @@ export default function DesktopSheet({ sheet, removeSheet }: SheetProp) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={modal}>
       <SheetContent
+        scrollableOverlay={scrollableOverlay}
         ref={sheetRef}
         onEscapeKeyDown={handleEscapeKeyDown}
         onInteractOutside={handleInteractOutside}
