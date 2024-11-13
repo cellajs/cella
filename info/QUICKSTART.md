@@ -4,14 +4,14 @@ This document describes how to develop your own app based on Cella.
 Also read the [architecture](./ARCHITECTURE.md) info.
 
 
-## Run with pglite
+## Run with [pglite](https://pglite.dev/)
 
 ```bash
 pnpm install
 pnpm quick
 ```
 
-## Run it with full postgres and electric-sync in docker
+## Run it with full postgres and [electric-sync](https://electric-sql.com/) in docker
 
 ```bash
 pnpm install
@@ -28,7 +28,7 @@ pnpm seed
 
 
 ## Cella CLI
-Currently, Cella CLI is limited to creating a cella project, listing diverged files and pulling upstream changes. Config can be found in cella.config.js.
+Cella CLI is currently limited to: creating a cella project, listing diverged files and pulling upstream changes. Config can be found in `cella.config.js`.
 
 ### 1. List diverged
 Receive a list of files that have diverged from cella itself. The files you have ignored in cella.config.js will not be listed.
@@ -38,7 +38,7 @@ pnpm diverged
 ```
 
 ### 2. Pull upstream
-Pull upstream changes from cella. Changes in files that are in the cella ignore list will automatically be undone, to reduce conflicts.
+Pull upstream changes from cella. Changes in files that are in the cella ignore list will automatically be undone to reduce conflicts.
 
 ```bash
 pnpm upstream:pull
