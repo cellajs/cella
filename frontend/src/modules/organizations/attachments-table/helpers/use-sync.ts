@@ -54,7 +54,7 @@ export const useSync = (organizationId: string) => {
 
   // Subscribe to attachments updates
   useEffect(() => {
-    if (networkMode !== 'online' || !config.has.sync || !env.VITE_HAS_SYNC) return;
+    if (networkMode !== 'online' || !config.has.sync || (!env.VITE_HAS_SYNC && config.mode === 'development')) return;
 
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organizationId));
     const queryKey = attachmentsQueryOptions({ orgIdOrSlug: organizationId }).queryKey;
