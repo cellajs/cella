@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 interface Props {
   user: User;
-  callback: (users: User[], action: 'create' | 'update' | 'delete') => void;
+  callback: (users: User[]) => void;
   tabIndex: number;
 }
 
@@ -24,7 +24,7 @@ const UpdateRow = ({ user, callback, tabIndex }: Props) => {
           <CardTitle>{t('common:general')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <UpdateUserForm user={user} sheet callback={(user) => callback([user], 'update')} />
+          <UpdateUserForm user={user} sheet callback={(user) => callback([user])} />
         </CardContent>
       </Card>,
       {

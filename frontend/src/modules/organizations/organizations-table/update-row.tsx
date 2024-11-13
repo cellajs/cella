@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 interface Props {
   organization: Organization;
-  callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void;
+  callback: (organizations: Organization[]) => void;
   tabIndex: number;
 }
 
@@ -23,7 +23,7 @@ const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
           <CardTitle>{t('common:general')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <UpdateOrganizationForm organization={organization} sheet callback={(organization) => callback([organization], 'update')} />
+          <UpdateOrganizationForm organization={organization} sheet callback={(organization) => callback([organization])} />
         </CardContent>
       </Card>,
       {

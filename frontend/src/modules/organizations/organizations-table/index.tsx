@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 import type { z } from 'zod';
 import { inviteMembers } from '~/api/memberships';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
-import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -25,6 +24,9 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 
 import { useSearch } from '@tanstack/react-router';
+import { useMutateCreateData } from '~/hooks/use-mutate-query-data/create';
+import { useMutateDeleteData } from '~/hooks/use-mutate-query-data/delete';
+import { useMutateUpdateData } from '~/hooks/use-mutate-query-data/update';
 import { showToast } from '~/lib/toasts';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -70,10 +72,12 @@ const OrganizationsTable = () => {
   // Map (updated) query data to rows
   useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
-  const updateQueryCache = useMutateInfiniteQueryData(['organizations'], (item) => ['organizations', item.id]);
+  const createQuery = useMutateCreateData(['organizations'], (item) => ['organizations', item.id]);
+  const updateQuery = useMutateUpdateData(['organizations'], (item) => ['organizations', item.id]);
+  const deleteQuery = useMutateDeleteData(['organizations'], (item) => ['organizations', item.id]);
 
   // Build columns
-  const [columns, setColumns] = useColumns(updateQueryCache);
+  const [columns, setColumns] = useColumns((orgs: Organization[]) => updateQuery(orgs, 'update'));
 
   // Save filters in search params
   const filters = useMemo(() => ({ q, sort, order }), [q, sort, order]);
@@ -125,7 +129,7 @@ const OrganizationsTable = () => {
         organizations={selectedOrganizations}
         callback={(organizations) => {
           showToast(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
-          updateQueryCache(organizations, 'delete');
+          deleteQuery(organizations);
         }}
         dialog
       />,
@@ -196,7 +200,7 @@ const OrganizationsTable = () => {
               user.role === 'admin' && (
                 <Button
                   onClick={() => {
-                    dialog(<CreateOrganizationForm callback={(organization) => updateQueryCache([organization], 'create')} dialog />, {
+                    dialog(<CreateOrganizationForm callback={(organization) => createQuery([organization])} dialog />, {
                       className: 'md:max-w-2xl',
                       id: 'create-organization',
                       title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),

@@ -12,7 +12,7 @@ import HeaderCell from '~/modules/common/data-table/header-cell';
 import UpdateRow from '~/modules/organizations/organizations-table/update-row';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (callback: (organizations: Organization[], action: 'create' | 'update' | 'delete') => void) => {
+export const useColumns = (callback: (organizations: Organization[]) => void) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 

@@ -11,7 +11,8 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
-import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateDeleteData } from '~/hooks/use-mutate-query-data/delete';
+import { useMutateUpdateData } from '~/hooks/use-mutate-query-data/update';
 import { useMutation } from '~/hooks/use-mutations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
@@ -77,16 +78,17 @@ const UsersTable = () => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
-  const updateQueryCache = useMutateInfiniteQueryData(['users', 'list'], (item) => ['user', item.id]);
+  const updateQuery = useMutateUpdateData(['users', 'list'], (item) => ['user', item.id]);
+  const deleteQuery = useMutateDeleteData(['users', 'list'], (item) => ['user', item.id]);
 
   // Build columns
-  const [columns, setColumns] = useColumns(updateQueryCache);
+  const [columns, setColumns] = useColumns((users: User[]) => updateQuery(users, 'update'));
 
   // Update user role
   const { mutate: updateUserRole } = useMutation({
     mutationFn: async (user: User) => await updateUser(user.id, { role: user.role }),
     onSuccess: (updatedUser) => {
-      updateQueryCache([updatedUser], 'update');
+      updateQuery([updatedUser], 'update');
       showToast(t('common:success.user_role_updated'), 'success');
     },
     onError: () => showToast('Error updating role', 'error'),
@@ -142,7 +144,7 @@ const UsersTable = () => {
         dialog
         users={selectedUsers}
         callback={(users) => {
-          updateQueryCache(users, 'delete');
+          deleteQuery(users);
           showToast(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
         }}
       />,

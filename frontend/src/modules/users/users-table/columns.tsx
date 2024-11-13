@@ -16,7 +16,7 @@ import UpdateRow from '~/modules/users/users-table/update-row';
 import { dateShort } from '~/utils/date-short';
 import ImpersonateRow from './impersonate-row';
 
-export const useColumns = (callback: (users: User[], action: 'create' | 'update' | 'delete') => void) => {
+export const useColumns = (callback: (users: User[]) => void) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
 

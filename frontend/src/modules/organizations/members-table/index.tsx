@@ -10,7 +10,8 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { getMembers, updateMembership } from '~/api/memberships';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
-import { useMutateInfiniteQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateDeleteData } from '~/hooks/use-mutate-query-data/delete';
+import { useMutateUpdateData } from '~/hooks/use-mutate-query-data/update';
 import { useMutation } from '~/hooks/use-mutations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
@@ -102,14 +103,15 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   }, [selectedRows, rows]);
 
   // Update table data and query cache
-  const updateQueryCache = useMutateInfiniteQueryData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
+  const updateQuery = useMutateUpdateData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
+  const deleteQuery = useMutateDeleteData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
 
   // Update member role
   const { mutate: updateMemberRole } = useMutation({
     mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role, organizationId }),
     onSuccess: (updatedMembership) => {
       showToast(t('common:success:user_role_updated'), 'success');
-      updateQueryCache([updatedMembership], 'updateMembership');
+      updateQuery([updatedMembership], 'updateMembership');
     },
     onError: () => showToast('Error updating role', 'error'),
   });
@@ -183,7 +185,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         dialog
         callback={(members) => {
           showToast(t('common:success.delete_members'), 'success');
-          updateQueryCache(members, 'delete');
+          deleteQuery(members);
         }}
         members={selectedMembers}
       />,
