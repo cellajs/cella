@@ -26,10 +26,8 @@ const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
   const columnEntries = Object.entries(attachmentsTableColumns);
   const attachment = {} as unknown as Attachment;
   for (const key of objectKeys(rawAttachment)) {
-    const columnEntry = columnEntries.find(([, c]) => c.name === key);
-    if (!columnEntry) {
-      continue;
-    }
+    const columnEntry = columnEntries.find(([, columnName]) => columnName === key);
+    if (!columnEntry) continue;
     const columnName = columnEntry[0] as keyof Attachment;
     attachment[columnName] = rawAttachment[key] as never;
   }

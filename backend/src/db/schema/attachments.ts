@@ -1,4 +1,5 @@
 import { getTableColumns } from 'drizzle-orm';
+import { toSnakeCase } from 'drizzle-orm/casing';
 import { pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
@@ -29,7 +30,10 @@ export const attachmentsTable = pgTable('attachments', {
     }),
 });
 
-export const attachmentsTableColumns = getTableColumns(attachmentsTable);
+// Get table columns and convert to snake_case
+export const attachmentsTableColumns = Object.fromEntries(
+  Object.entries(getTableColumns(attachmentsTable)).map(([key, column]) => [key, toSnakeCase(column.name)]),
+);
 
 export type AttachmentModel = typeof attachmentsTable.$inferSelect;
 export type InsertAttachmentModel = typeof attachmentsTable.$inferInsert;
