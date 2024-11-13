@@ -89,7 +89,7 @@ const UsersTable = () => {
     mutationFn: async (user: User) => await updateUser(user.id, { role: user.role }),
     onSuccess: (updatedUser) => {
       updateQuery([updatedUser], 'update');
-      showToast(t('common:success.user_role_updated'), 'success');
+      showToast(t('common:success.update_item', { item: t('common:role') }), 'success');
     },
     onError: () => showToast('Error updating role', 'error'),
   });

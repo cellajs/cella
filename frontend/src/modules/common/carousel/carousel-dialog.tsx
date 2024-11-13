@@ -13,7 +13,7 @@ export const openCarouselDialog = (slide: number, slides: Slides[], title?: stri
       id: 'file-preview',
       className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
       headerClassName: 'absolute p-3 w-full backdrop-blur-sm bg-background/50',
-      title: title ?? t('common:view_attachment'),
+      title: title ?? t('common:view_item', { item: t('common:attachment').toLowerCase() }),
       autoFocus: true,
     },
   );

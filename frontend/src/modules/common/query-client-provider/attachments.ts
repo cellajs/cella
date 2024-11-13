@@ -133,7 +133,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
       };
     });
 
-    toast.success(t('common:success.create_resources_with_number', { number: createdAttachments.length, resource: t('common:attachment') }));
+    toast.success(t('common:success.create_resources', { resources: t('common:attachments') }));
   },
 
   onError,

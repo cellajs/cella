@@ -116,7 +116,7 @@ const OrganizationsTable = () => {
         entityType: 'organization',
         organizationId: organization.id,
       })
-        .then(() => toast.success(t('common:success.your_role_updated')))
+        .then(() => toast.success(t('common:success.role_updated')))
         .catch(() => toast.error(t('common:error.error')));
     }
 

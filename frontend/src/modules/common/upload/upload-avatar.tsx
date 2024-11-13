@@ -50,7 +50,7 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
       {
         id: 'upload-image',
         drawerOnMobile: false,
-        title: t('common:upload_image'),
+        title: t('common:upload_item', { item: t('common:profile_picture').toLowerCase() }),
         className: 'md:max-w-xl',
       },
     );

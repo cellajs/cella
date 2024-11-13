@@ -106,7 +106,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
     mutationFn: async (attachment: Attachment) =>
       await updateAttachment({ id: attachment.id, orgIdOrSlug: attachment.organizationId, name: attachment.name }),
     onSuccess: () => {
-      showToast(t('common:success:attachment_name_updated'), 'success');
+      showToast(t('common:success.name_updated'), 'success');
     },
     onError: () => showToast('Error updating name', 'error'),
   });
@@ -184,7 +184,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
       {
         id: 'upload-attachment',
         drawerOnMobile: false,
-        title: t('common:upload_attachments'),
+        title: t('common:upload_item', { item: t('common:attachments').toLowerCase() }),
         className: 'md:max-w-xl',
       },
     );
@@ -196,14 +196,14 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
         organizationId={organization.id}
         dialog
         callback={() => {
-          showToast(t('common:success.delete_attachments'), 'success');
+          showToast(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success');
         }}
         attachments={selected}
       />,
       {
         className: 'max-w-xl',
         title: t('common:remove_resource', { resource: t('attachment').toLowerCase() }),
-        description: t('common:confirm.remove_attachments'),
+        description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
       },
     );
   };

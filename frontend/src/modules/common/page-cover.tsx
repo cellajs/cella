@@ -60,7 +60,7 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
       {
         id: 'page-cover',
         drawerOnMobile: false,
-        title: t('common:upload_cover'),
+        title: t('common:upload_item', { item: t('common:cover').toLowerCase() }),
         className: 'md:max-w-xl',
       },
     );
@@ -80,7 +80,7 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
           onMouseOver={() => UploadUppy.preload()}
         >
           <Upload size={16} />
-          <span className="ml-1">{t('common:upload_cover')}</span>
+          <span className="ml-1">{t('common:upload_item', { item: t('common:cover').toLowerCase() })}</span>
         </Button>
       )}
     </div>

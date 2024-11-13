@@ -110,7 +110,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { mutate: updateMemberRole } = useMutation({
     mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role, organizationId }),
     onSuccess: (updatedMembership) => {
-      showToast(t('common:success:user_role_updated'), 'success');
+      showToast(t('common:success.item_updated', { item: t('common:role') }), 'success');
       updateQuery([updatedMembership], 'updateMembership');
     },
     onError: () => showToast('Error updating role', 'error'),

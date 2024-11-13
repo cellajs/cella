@@ -41,7 +41,7 @@ const UppyFilePanel: React.FC<UppyFilePanelProps & FilePanelProps> = ({ onCreate
     <Dialog defaultOpen onOpenChange={() => editor.filePanel?.closeMenu()}>
       <DialogContent className="md:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="h-6">{t(`common:upload_${type}`)}</DialogTitle>
+          <DialogTitle className="h-6">{t('common:upload_item', { item: t(`common:${type}`).toLowerCase() })}</DialogTitle>
           <DialogDescription className="hidden" />
         </DialogHeader>
         <UploadUppy

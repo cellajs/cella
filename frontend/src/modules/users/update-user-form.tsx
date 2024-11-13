@@ -100,8 +100,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       onSuccess: (updatedUser) => {
         if (isSelf) {
           updateUser(updatedUser);
-          showToast(t('common:success.you_updated'), 'success');
-        } else showToast(t('common:success.updated_user'), 'success');
+          showToast(t('common:success.profile_updated'), 'success');
+        } else showToast(t('common:success.update_item', t('common:user')), 'success');
         form.reset(updatedUser);
         if (isSheet) sheet.remove('update-user');
         nextStep?.();
