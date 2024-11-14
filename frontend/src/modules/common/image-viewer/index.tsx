@@ -1,8 +1,9 @@
 // This code is originally authored by https://github.com/mgorabbani (https://github.com/mgorabbani/react-image-pan-zoom-rotate).
 
-import { Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react';
+import { Grab, Hand, Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react';
 import * as React from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import { Button } from '~/modules/ui/button';
 import { TooltipButton } from '../tooltip-button';
 import PanViewer from './image-viewer-setup';
@@ -15,17 +16,18 @@ type ReactPanZoomProps = {
   resetImageState?: boolean;
   imageClass?: string;
   showButtons?: boolean;
-  enablePan?: boolean;
+  togglePanState?: boolean;
 };
 
 const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
-  ({ image, alt, resetImageState, showButtons, imageClass, customButton, enablePan = true }, ref) => {
+  ({ image, alt, resetImageState, showButtons, imageClass, togglePanState = false }, ref) => {
     const isDesktop = useBreakpoints('min', 'xl', true);
     const [dx, setDx] = React.useState(0);
     const [dy, setDy] = React.useState(0);
     const [zoom, setZoom] = React.useState(isDesktop ? 0.9 : 1);
     const [rotation, setRotation] = React.useState(0);
     const [flip, setFlip] = React.useState(false);
+    const [panState, setPanState] = React.useState(!togglePanState);
 
     const resetAll = () => {
       setDx(0);
@@ -71,7 +73,19 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
               </Button>
             </TooltipButton>
 
-            {customButton && customButton}
+            {togglePanState !== undefined && (
+              <TooltipButton toolTipContent="Toggle pan view">
+                <Button
+                  onClick={() => {
+                    setPanState(!panState);
+                    dispatchCustomEvent('toggleCarouselDrag', panState);
+                  }}
+                  className="bg-background border border-input rounded-none hover:bg-accent text-accent-foreground"
+                >
+                  {panState ? <Grab size={14} /> : <Hand size={14} />}
+                </Button>
+              </TooltipButton>
+            )}
 
             <TooltipButton toolTipContent="Reset">
               <Button onClick={resetAll} className="bg-background border border-input rounded-l-none hover:bg-accent text-accent-foreground">
@@ -85,7 +99,7 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
           className="w-full h-full flex justify-center items-center z-10"
           zoom={zoom}
           setZoom={setZoom}
-          enablePan={enablePan}
+          enablePan={panState}
           pandx={dx}
           pandy={dy}
           onPan={onPan}
