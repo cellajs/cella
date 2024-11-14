@@ -26,7 +26,8 @@
     "studio": "drizzle-kit studio --config drizzle.config.ts",
     "emails:build": "email build ./emails",
     "emails:create": "email create",
-    "emails:preview": "email preview ./emails"
+    "emails:preview": "email preview ./emails",
+    "test": "pnpm vitest"
   },
   "dependencies": {
     "@aws-sdk/cloudfront-signer": "^3.686.0",
