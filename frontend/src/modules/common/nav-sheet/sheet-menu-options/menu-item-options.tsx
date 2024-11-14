@@ -91,13 +91,13 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
             Icon={item.membership.archived ? ArchiveRestore : Archive}
             title={item.membership.archived ? t('common:restore') : t('common:archive')}
             onClick={() => handleUpdateMembershipKey('archive')}
-            subtask={!item.submenu}
+            subitem={!item.submenu}
           />
           <OptionButtons
             Icon={item.membership.muted ? Bell : BellOff}
             title={item.membership.muted ? t('common:unmute') : t('common:mute')}
             onClick={() => handleUpdateMembershipKey('mute')}
-            subtask={!item.submenu}
+            subitem={!item.submenu}
           />
         </div>
       </div>
@@ -109,9 +109,9 @@ interface OptionButtonsProps {
   Icon: React.ElementType;
   title: string;
   onClick: () => void;
-  subtask?: boolean;
+  subitem?: boolean;
 }
-const OptionButtons = ({ Icon, title, onClick, subtask = false }: OptionButtonsProps) => (
+const OptionButtons = ({ Icon, title, onClick, subitem = false }: OptionButtonsProps) => (
   <Button
     variant="link"
     size="sm"
@@ -119,7 +119,7 @@ const OptionButtons = ({ Icon, title, onClick, subtask = false }: OptionButtonsP
     aria-label={`Click ${title}`}
     onClick={onClick}
   >
-    <Icon size={subtask ? 12 : 14} className="mr-1" />
+    <Icon size={subitem ? 12 : 14} className="mr-1" />
     {title}
   </Button>
 );

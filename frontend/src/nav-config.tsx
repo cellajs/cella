@@ -18,7 +18,7 @@ export const baseEntityRoutes = {
   organization: '/$idOrSlug',
 } as const;
 
-export type NavItemId = 'menu' | 'home' | 'search' | 'account' | 'workspace-menu' | 'workspace-add-task' | 'stop_impersonation';
+export type NavItemId = 'menu' | 'home' | 'search' | 'account' | 'stop_impersonation';
 
 // Here you declare your base shown main navigation items
 export const baseNavItems: NavItemId[] = ['menu', 'home', 'search', 'account'];

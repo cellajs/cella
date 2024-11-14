@@ -6,10 +6,6 @@ p.bn-inline-content {
   padding: 0;
 }
 
-.subtask p.bn-inline-content {
-  font-weight: 200;
-}
-
 .bn-inline-content:has(> .ProseMirror-trailingBreak)::before {
   color: hsl(var(--bloknote-placeholder));
 }
