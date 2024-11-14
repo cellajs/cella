@@ -19,7 +19,7 @@ const MainNavLoader = () => {
         data-waited={hasWaited}
         data-loading={isLoading}
         className={`w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0
-          data-[loading=true]:${config.navLogoAnimation}
+          ${config.navLogoAnimation}
           data-[waited=true]:data-[loading=false]:ease-in-out  
           data-[waited=true]:data-[loading=false]:opacity-0
           data-[waited=true]:data-[loading=false]:scale-0`}
