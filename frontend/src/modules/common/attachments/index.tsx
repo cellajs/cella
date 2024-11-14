@@ -11,6 +11,8 @@ interface AttachmentItemProps {
   showButtons?: boolean;
   itemClassName?: string;
   containerClassName?: string;
+  enablePan?: boolean;
+  reactPanZoomCustomButtons?: React.ReactNode;
 }
 
 export const AttachmentItem = ({
@@ -21,12 +23,21 @@ export const AttachmentItem = ({
   imagePanZoom = false,
   itemClassName,
   containerClassName,
+  enablePan,
+  reactPanZoomCustomButtons,
 }: AttachmentItemProps) => {
   return (
     <div className={containerClassName}>
       {type.includes('image') &&
         (imagePanZoom ? (
-          <ReactPanZoom image={source} alt={altName} imageClass={itemClassName} showButtons={showButtons} />
+          <ReactPanZoom
+            image={source}
+            alt={altName}
+            enablePan={enablePan}
+            imageClass={itemClassName}
+            showButtons={showButtons}
+            customButton={reactPanZoomCustomButtons}
+          />
         ) : (
           <img src={source} alt={altName} className={`${itemClassName} w-full h-full`} />
         ))}
