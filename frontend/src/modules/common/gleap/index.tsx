@@ -1,6 +1,7 @@
 import { config } from 'config';
 import Gleap from 'gleap';
 import { useEffect } from 'react';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import '~/modules/common/gleap/style.css';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types/common';
@@ -12,6 +13,14 @@ declare global {
 }
 
 Gleap.initialize(config.gleapToken);
+
+window.ononline = () => {
+  Gleap.initialize(config.gleapToken);
+};
+
+window.onoffline = () => {
+  Gleap.destroy();
+};
 
 const setGleapUser = (user: User) => {
   if (!window.Gleap) return;
@@ -31,28 +40,35 @@ const setGleapUser = (user: User) => {
 
 const GleapSupport = () => {
   const { user } = useUserStore();
+  const { isOnline } = useOnlineManager();
 
   useEffect(() => {
-    window.Gleap = Gleap;
+    if (isOnline) {
+      window.Gleap = Gleap;
 
-    // Set Gleap user on mount
-    if (user && window.Gleap && !window.Gleap.isUserIdentified()) setGleapUser(user);
+      // Set Gleap user on mount
+      if (user && window.Gleap && !window.Gleap.isUserIdentified()) setGleapUser(user);
 
-    // Update Gleap user on user change
-    useUserStore.subscribe((state) => {
-      const user: User = state.user;
+      // Update Gleap user on user change
+      const unsubscribe = useUserStore.subscribe((state) => {
+        const user: User = state.user;
 
-      if (user) return setGleapUser(user);
+        if (user) return setGleapUser(user);
 
-      // Clear Gleap user on sign out
-      window.Gleap?.clearIdentity();
-    });
+        // Clear Gleap user on sign out
+        window.Gleap?.clearIdentity();
+      });
 
-    return () => {
-      window.Gleap?.destroy();
-      window.Gleap = undefined;
-    };
-  }, []);
+      return () => {
+        unsubscribe();
+        window.Gleap?.destroy();
+        window.Gleap = undefined;
+      };
+    }
+
+    window.Gleap?.destroy();
+    window.Gleap = undefined;
+  }, [isOnline, user]);
 
   return null;
 };
