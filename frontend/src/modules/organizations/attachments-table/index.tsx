@@ -12,6 +12,7 @@ import type { z } from 'zod';
 import { updateAttachment } from '~/api/attachments';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
 import { openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
@@ -24,7 +25,7 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
-import { useAttachmentCreateMutation } from '~/modules/common/query-client-provider/attachments';
+import { attachmentKeys, useAttachmentCreateMutation } from '~/modules/common/query-client-provider/attachments';
 import UploadUppy from '~/modules/common/upload/upload-uppy';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -97,6 +98,8 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
   useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openPreviewDialog)), [isAdmin, openPreviewDialog]);
 
+  const mutateQuery = useMutateQueryData(attachmentKeys.list({ orgIdOrSlug: organization.id, q, sort, order }));
+
   // Map (updated) query data to rows
   useMapQueryDataToRows<Attachment>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
@@ -143,6 +146,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
       // If name is changed, update the attachment
       for (const index of indexes) {
         updateAttachmentName(changedRows[index]);
+        mutateQuery.update([changedRows[index]]);
       }
     }
 

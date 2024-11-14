@@ -10,18 +10,6 @@ import type {
 import { queryClient } from '~/lib/router';
 import type { Entity } from '~/types/common';
 
-// Type guard
-
-//determine if the data is QueryData
-export const isQueryData = (data: unknown): data is EntityQueryData => {
-  return typeof data === 'object' && data !== null && 'items' in data && 'total' in data;
-};
-
-// determine if the data is InfiniteEntityQueryData
-export const isInfiniteQueryData = (data: unknown): data is InfiniteEntityQueryData => {
-  return typeof data === 'object' && data !== null && 'pages' in data && 'pageParams' in data;
-};
-
 // determine if the data is ArbitraryEntityQueryData
 export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQueryData => {
   if (typeof data !== 'object' || data === null) return false;

@@ -1,5 +1,5 @@
-import type { InfiniteData } from '@tanstack/react-query';
-import type { MinimumEntityItem, MinimumMembershipInfo } from '~/types/common';
+import type { InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
+import type { ContextEntity, MinimumEntityItem, MinimumMembershipInfo } from '~/types/common';
 
 export interface ItemData {
   id: string;
@@ -9,11 +9,13 @@ export type EntityData = MinimumEntityItem & { membership: MinimumMembershipInfo
 
 export type QueryDataActions = 'create' | 'update' | 'delete' | 'updateMembership';
 
+export type EntityQueryData = QueryData<ItemData>;
+export type InfiniteEntityQueryData = InfiniteQueryData<ItemData>;
 export type ArbitraryEntityQueryData = Record<string, EntityData | EntityData[]>;
 
-export type EntityQueryData = {
-  items: ItemData[];
-  total: number;
-};
-
-export type InfiniteEntityQueryData = InfiniteData<EntityQueryData>;
+export interface UseMutateQueryDataReturn {
+  create: (items: ItemData[] | EntityData[], entity?: ContextEntity) => void;
+  update: (items: ItemData[] | EntityData[], entity?: ContextEntity) => void;
+  updateMembership: (items: ItemData[] | EntityData[], entity?: ContextEntity) => void;
+  remove: (items: ItemData[] | EntityData[], entity?: ContextEntity) => void;
+}

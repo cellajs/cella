@@ -1,13 +1,13 @@
-import { type QueryKey, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/api/memberships';
 
 import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
-import { formatUpdatedData, getQueryItems, handleNoOldData } from '~/modules/common/query-client-provider/helpers';
 import { membersKeys } from '~/modules/common/query-client-provider/members/keys';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
-import type { ContextEntity, Member, Membership } from '~/types/common';
+import type { Member, Membership } from '~/types/common';
+import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/utils/mutate-query';
 
 type MemberQueryData = QueryData<Member>;
 type InfiniteMemberQueryData = InfiniteQueryData<Member>;
@@ -38,7 +38,10 @@ const onError = (_: Error, __: UpdateMembershipProp & RemoveMembersProps, contex
 queryClient.setMutationDefaults(membersKeys.update(), {
   mutationFn: updateMembership,
   onSuccess: async (updatedMembership, { idOrSlug, entityType, orgIdOrSlug }) => {
-    const queries = getQueries(idOrSlug, entityType, orgIdOrSlug);
+    const exactKey = membersKeys.list({ idOrSlug, entityType, orgIdOrSlug });
+    const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
+
+    const queries = getQueries<Member>(exactKey, similarKey);
 
     for (const query of queries) {
       const [activeKey] = query;
@@ -65,8 +68,10 @@ queryClient.setMutationDefaults(membersKeys.delete(), {
     const { ids, idOrSlug, entityType, orgIdOrSlug } = variables;
 
     const context: MemberContextProp[] = [];
+    const exactKey = membersKeys.list({ idOrSlug, entityType, orgIdOrSlug });
+    const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
 
-    const queries = await getPreviousData(idOrSlug, entityType, orgIdOrSlug);
+    const queries = await getCancelingRefetchQueries<Member>(exactKey, similarKey);
 
     for (const [queryKey, previousData] of queries) {
       // Optimistically update to the new value
@@ -105,42 +110,3 @@ function deletedMembers(members: Member[], ids: string[]) {
     })
     .filter(Boolean) as Member[];
 }
-
-const getPreviousData = async (idOrSlug: string, entityType: ContextEntity, orgIdOrSlug: string) => {
-  // Snapshot the previous value
-  const queries = getQueries(idOrSlug, entityType, orgIdOrSlug);
-
-  for (const query of queries) {
-    const [queryKey, _] = query;
-    // Cancel any outgoing refetches
-    // (so they don't overwrite our optimistic update)
-    await queryClient.cancelQueries({ queryKey });
-  }
-  return queries;
-};
-
-const getExact = (idOrSlug: string, entityType: ContextEntity, orgIdOrSlug: string): [QueryKey, InfiniteMemberQueryData | undefined][] => {
-  const queryKey = membersKeys.list({ idOrSlug, entityType, orgIdOrSlug });
-  return [[queryKey, queryClient.getQueryData<InfiniteMemberQueryData>(queryKey)]];
-};
-
-const getSimilar = (
-  idOrSlug: string,
-  entityType: ContextEntity,
-  orgIdOrSlug: string,
-): [QueryKey, InfiniteMemberQueryData | MemberQueryData | undefined][] => {
-  return queryClient.getQueriesData<InfiniteMemberQueryData | MemberQueryData>({
-    queryKey: membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug }),
-  });
-};
-
-const getQueries = (
-  idOrSlug: string,
-  entityType: ContextEntity,
-  orgIdOrSlug: string,
-): [QueryKey, InfiniteMemberQueryData | MemberQueryData | undefined][] => {
-  const exactQuery = getExact(idOrSlug, entityType, orgIdOrSlug);
-  const similarQueries = getSimilar(idOrSlug, entityType, orgIdOrSlug);
-
-  return [...exactQuery, ...similarQueries];
-};

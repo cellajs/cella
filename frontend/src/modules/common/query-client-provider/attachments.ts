@@ -1,12 +1,12 @@
-import { type QueryKey, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { toast } from 'sonner';
 import { type GetAttachmentsParams, createAttachment, deleteAttachments } from '~/api/attachments';
 import { queryClient } from '~/lib/router';
+import type { ContextProp, InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
 import type { Attachment } from '~/types/common';
+import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
-import { formatUpdatedData, getQueryItems, handleNoOldData } from './helpers';
-import type { ContextProp, InfiniteQueryData, QueryData } from './types';
 
 type AttachmentQueryData = QueryData<Attachment>;
 export type AttachmentInfiniteQueryData = InfiniteQueryData<Attachment>;
@@ -79,7 +79,10 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
       optimisticIds.push(optimisticId);
     }
 
-    const queries = await getPreviousData(organizationId);
+    const exactKey = attachmentKeys.list({ orgIdOrSlug: organizationId });
+    const similarKey = attachmentKeys.similar({ orgIdOrSlug: organizationId });
+
+    const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
 
     for (const [queryKey, previousData] of queries) {
       // Optimistically update the list
@@ -99,7 +102,10 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
   },
 
   onSuccess: (createdAttachments, { organizationId }, context) => {
-    const queries = getQueries(organizationId);
+    const exactKey = attachmentKeys.list({ orgIdOrSlug: organizationId });
+    const similarKey = attachmentKeys.similar({ orgIdOrSlug: organizationId });
+
+    const queries = getQueries<Attachment>(exactKey, similarKey);
 
     for (const query of queries) {
       const [activeKey] = query;
@@ -130,8 +136,10 @@ queryClient.setMutationDefaults(attachmentKeys.delete(), {
     const { ids, orgIdOrSlug } = variables;
 
     const context: AttachmentContextProp[] = [];
+    const exactKey = attachmentKeys.list({ orgIdOrSlug });
+    const similarKey = attachmentKeys.similar({ orgIdOrSlug });
 
-    const queries = await getPreviousData(orgIdOrSlug);
+    const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
 
     for (const [queryKey, previousData] of queries) {
       // Optimistically update to the new value
@@ -151,34 +159,3 @@ queryClient.setMutationDefaults(attachmentKeys.delete(), {
   },
   onError,
 });
-
-const getPreviousData = async (orgIdOrSlug: string) => {
-  // Snapshot the previous value
-  const queries = getQueries(orgIdOrSlug);
-
-  for (const query of queries) {
-    const [queryKey, _] = query;
-    // Cancel any outgoing refetches
-    // (so they don't overwrite our optimistic update)
-    await queryClient.cancelQueries({ queryKey });
-  }
-  return queries;
-};
-
-const getExact = (orgIdOrSlug: string): [QueryKey, AttachmentInfiniteQueryData | undefined][] => {
-  const queryKey = attachmentKeys.list({ orgIdOrSlug });
-  return [[queryKey, queryClient.getQueryData<AttachmentInfiniteQueryData>(queryKey)]];
-};
-
-const getSimilar = (orgIdOrSlug: string): [QueryKey, AttachmentInfiniteQueryData | AttachmentQueryData | undefined][] => {
-  return queryClient.getQueriesData<AttachmentInfiniteQueryData | AttachmentQueryData>({
-    queryKey: attachmentKeys.similar({ orgIdOrSlug }),
-  });
-};
-
-const getQueries = (orgIdOrSlug: string): [QueryKey, AttachmentInfiniteQueryData | AttachmentQueryData | undefined][] => {
-  const exactQuery = getExact(orgIdOrSlug);
-  const similarQueries = getSimilar(orgIdOrSlug);
-
-  return [...exactQuery, ...similarQueries];
-};

@@ -1,5 +1,6 @@
 import type { GetMembersParams } from '~/api/memberships';
 
+// keys separate so org loader doesn't throw err
 export const membersKeys = {
   all: () => ['members'] as const,
   list: (filters?: GetMembersParams) => [...membersKeys.all(), filters] as const,
