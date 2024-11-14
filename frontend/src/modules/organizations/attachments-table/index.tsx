@@ -109,7 +109,8 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   const { mutate: updateAttachmentName } = useMutation({
     mutationFn: async (attachment: Attachment) =>
       await updateAttachment({ id: attachment.id, orgIdOrSlug: attachment.organizationId, name: attachment.name }),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      mutateQuery.update([data]);
       showToast(t('common:success.name_updated'), 'success');
     },
     onError: () => showToast('Error updating name', 'error'),
@@ -146,7 +147,6 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
       // If name is changed, update the attachment
       for (const index of indexes) {
         updateAttachmentName(changedRows[index]);
-        mutateQuery.update([changedRows[index]]);
       }
     }
 
