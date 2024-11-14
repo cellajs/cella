@@ -2,13 +2,14 @@ import { type ChangeMessage, ShapeStream, type ShapeStreamOptions } from '@elect
 import { config } from 'config';
 import { useEffect } from 'react';
 import { queryClient } from '~/lib/router';
-import type { AttachmentInfiniteQueryFnData } from '~/modules/common/query-client-provider/attachments';
+
+import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/attachments';
+import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
 import { useGeneralStore } from '~/store/general';
 import type { Attachment } from '~/types/common';
 import { objectKeys } from '~/utils/object';
 import { attachmentsTableColumns } from '#/db/schema/attachments';
 import { env } from '../../../../../env';
-import { attachmentsQueryOptions } from './query-options';
 
 type RawAttachment = {
   id: string;
@@ -62,7 +63,7 @@ export const useSync = (organizationId: string) => {
       const createMessage = messages.find((m) => m.headers.operation === 'insert') as ChangeMessage<RawAttachment> | undefined;
       if (createMessage) {
         const value = createMessage.value;
-        queryClient.setQueryData<AttachmentInfiniteQueryFnData>(queryKey, (data) => {
+        queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
           if (!data) return;
           const createdAttachment = parseRawAttachment(value);
           return {
@@ -107,7 +108,7 @@ export const useSync = (organizationId: string) => {
 
       const deleteMessage = messages.find((m) => m.headers.operation === 'delete') as ChangeMessage<RawAttachment> | undefined;
       if (deleteMessage) {
-        queryClient.setQueryData<AttachmentInfiniteQueryFnData>(queryKey, (data) => {
+        queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
           if (!data) return;
           return {
             ...data,

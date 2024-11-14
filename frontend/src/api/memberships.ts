@@ -25,37 +25,36 @@ export const inviteMembers = async ({ idOrSlug, entityType, organizationId, ...r
   await handleResponse(response);
 };
 
-interface RemoveMembersProps {
+export type RemoveMembersProps = {
+  orgIdOrSlug: string;
   idOrSlug: string;
-  ids: string[];
   entityType: ContextEntity;
-  organizationId: string;
-}
+  ids: string[];
+};
 
-export const removeMembers = async ({ idOrSlug, entityType, ids, organizationId }: RemoveMembersProps) => {
+export const removeMembers = async ({ idOrSlug, entityType, ids, orgIdOrSlug }: RemoveMembersProps) => {
   const response = await client.index.$delete({
-    param: { orgIdOrSlug: organizationId },
+    param: { orgIdOrSlug },
     query: { idOrSlug, entityType, ids },
   });
 
   await handleResponse(response);
 };
-export type UpdateMenuOptionsProp = {
-  membershipId: string;
-  organizationId: string;
-  role?: Membership['role'];
-  archived?: boolean;
-  muted?: boolean;
-  order?: number;
-};
+
+export type UpdateMembershipProp = {
+  idOrSlug: string;
+  entityType: ContextEntity;
+  orgIdOrSlug: string;
+  id: string;
+} & Parameters<(typeof client)[':id']['$put']>['0']['json'];
 
 // Update membership in entity
-export const updateMembership = async (values: UpdateMenuOptionsProp) => {
-  const { membershipId, role, archived, muted, order, organizationId } = values;
+export const updateMembership = async (values: UpdateMembershipProp) => {
+  const { id, role, archived, muted, order, orgIdOrSlug } = values;
   const response = await client[':id'].$put({
     param: {
-      orgIdOrSlug: organizationId,
-      id: membershipId,
+      orgIdOrSlug,
+      id,
     },
     json: { role, archived, muted, order },
   });

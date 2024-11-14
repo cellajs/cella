@@ -56,7 +56,7 @@ const JoinLeaveButton = ({ organization }: Props) => {
     if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     leave({
-      organizationId: organization.id,
+      orgIdOrSlug: organization.id,
       idOrSlug: organization.id,
       entityType: 'organization',
       ids: [user.id],

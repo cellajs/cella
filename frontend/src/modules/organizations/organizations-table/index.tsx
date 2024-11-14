@@ -24,9 +24,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 
 import { useSearch } from '@tanstack/react-router';
-import { useMutateCreateData } from '~/hooks/use-mutate-query-data/create';
-import { useMutateDeleteData } from '~/hooks/use-mutate-query-data/delete';
-import { useMutateUpdateData } from '~/hooks/use-mutate-query-data/update';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { showToast } from '~/lib/toasts';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -72,12 +70,10 @@ const OrganizationsTable = () => {
   // Map (updated) query data to rows
   useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
-  const createQuery = useMutateCreateData(['organizations'], (item) => ['organizations', item.id]);
-  const updateQuery = useMutateUpdateData(['organizations'], (item) => ['organizations', item.id]);
-  const deleteQuery = useMutateDeleteData(['organizations'], (item) => ['organizations', item.id]);
+  const mutateQuery = useMutateQueryData(['organizations', 'list'], (item) => ['organizations', item.id], ['update', 'delete']);
 
   // Build columns
-  const [columns, setColumns] = useColumns((orgs: Organization[]) => updateQuery(orgs, 'update'));
+  const [columns, setColumns] = useColumns(mutateQuery.update);
 
   // Save filters in search params
   const filters = useMemo(() => ({ q, sort, order }), [q, sort, order]);
@@ -129,7 +125,7 @@ const OrganizationsTable = () => {
         organizations={selectedOrganizations}
         callback={(organizations) => {
           showToast(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
-          deleteQuery(organizations);
+          mutateQuery.remove(organizations);
         }}
         dialog
       />,
@@ -200,7 +196,7 @@ const OrganizationsTable = () => {
               user.role === 'admin' && (
                 <Button
                   onClick={() => {
-                    dialog(<CreateOrganizationForm callback={(organization) => createQuery([organization])} dialog />, {
+                    dialog(<CreateOrganizationForm callback={(organization) => mutateQuery.create([organization])} dialog />, {
                       className: 'md:max-w-2xl',
                       id: 'create-organization',
                       title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),

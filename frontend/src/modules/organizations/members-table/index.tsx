@@ -8,12 +8,10 @@ import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { getMembers, updateMembership } from '~/api/memberships';
+import { getMembers } from '~/api/memberships';
 import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
-import { useMutateDeleteData } from '~/hooks/use-mutate-query-data/delete';
-import { useMutateUpdateData } from '~/hooks/use-mutate-query-data/update';
-import { useMutation } from '~/hooks/use-mutations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -26,6 +24,8 @@ import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
+import { useMembersUpdateMutation } from '~/modules/common/query-client-provider/members';
+import { membersKeys } from '~/modules/common/query-client-provider/members/keys';
 import { useColumns } from '~/modules/organizations/members-table/columns';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
@@ -102,19 +102,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
-  // Update table data and query cache
-  const updateQuery = useMutateUpdateData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
-  const deleteQuery = useMutateDeleteData(['members', entity.slug, entityType, q, sort, order, role], (item) => ['members', item.id]);
-
-  // Update member role
-  const { mutate: updateMemberRole } = useMutation({
-    mutationFn: async (user: Member) => await updateMembership({ membershipId: user.membership.id, role: user.membership.role, organizationId }),
-    onSuccess: (updatedMembership) => {
-      showToast(t('common:success.update_item', { item: t('common:role') }), 'success');
-      updateQuery([updatedMembership], 'updateMembership');
-    },
-    onError: () => showToast('Error updating role', 'error'),
-  });
+  const updateMemberMembership = useMembersUpdateMutation();
 
   // Reset filters
   const onResetFilters = () => {
@@ -144,7 +132,19 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
     // If role is changed, update membership
     for (const index of indexes) {
-      updateMemberRole(changedRows[index]);
+      updateMemberMembership.mutateAsync(
+        { ...changedRows[index].membership, orgIdOrSlug: organizationId, idOrSlug: entity.slug, entityType },
+        {
+          onSuccess(data, variables, context) {
+            queryClient.getMutationDefaults(membersKeys.update()).onSuccess?.(data, variables, context);
+            showToast(t('common:success.update_item', { item: t('common:role') }), 'success');
+          },
+          onError(error, variables, context) {
+            queryClient.getMutationDefaults(membersKeys.update()).onError?.(error, variables, context);
+            showToast('Error updating role', 'error');
+          },
+        },
+      );
     }
     setRows(changedRows);
   };
@@ -156,7 +156,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
       order,
       role,
       limit,
-      idOrSlug: entity.id,
+      idOrSlug: entity.slug,
       orgIdOrSlug: organizationId,
       entityType,
     });
@@ -176,19 +176,10 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     });
   };
 
+  // pass to dialog same identification witch fetch the query
   const openRemoveDialog = () => {
     dialog(
-      <RemoveMembersForm
-        organizationId={organizationId}
-        entityId={entity.id}
-        entityType={entityType}
-        dialog
-        callback={(members) => {
-          showToast(t('common:success.delete_members'), 'success');
-          deleteQuery(members);
-        }}
-        members={selectedMembers}
-      />,
+      <RemoveMembersForm organizationId={organizationId} entityIdOrSlug={entity.slug} entityType={entityType} dialog members={selectedMembers} />,
       {
         className: 'max-w-xl',
         title: t('common:remove_resource', { resource: t('common:member').toLowerCase() }),

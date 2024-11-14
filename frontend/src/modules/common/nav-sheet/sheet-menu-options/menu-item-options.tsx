@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { type UpdateMenuOptionsProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
+import { type UpdateMembershipProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { showToast } from '~/lib/toasts';
@@ -22,7 +22,7 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
   const { t } = useTranslation();
 
   const { mutate: updateMembership, status } = useMutation({
-    mutationFn: (values: UpdateMenuOptionsProp) => baseUpdateMembership(values),
+    mutationFn: (values: UpdateMembershipProp) => baseUpdateMembership(values),
     onSuccess: (updatedMembership) => {
       let toastMessage: string | undefined;
 
@@ -48,12 +48,11 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
       return;
     }
 
-    const { role, id: membershipId, organizationId, archived, muted } = item.membership;
-    const membership = { membershipId, role, muted, archived, organizationId };
+    const membership = item.membership;
 
     if (key === 'archive') membership.archived = !item.membership.archived;
     if (key === 'mute') membership.muted = !item.membership.muted;
-    updateMembership(membership);
+    updateMembership({ ...membership, idOrSlug: item.id, entityType: item.entity, orgIdOrSlug: membership.organizationId });
   };
 
   return (

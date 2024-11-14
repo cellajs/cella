@@ -21,7 +21,7 @@ export const attachmentsQueryOptions = ({
   const offset = rowsLength;
 
   return infiniteQueryOptions({
-    queryKey: attachmentKeys.list({ orgIdOrSlug }),
+    queryKey: attachmentKeys.list({ orgIdOrSlug, q, sort, order }),
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,

@@ -18,7 +18,7 @@ export const organizationsQueryOptions = ({
   const offset = rowsLength;
 
   return infiniteQueryOptions({
-    queryKey: ['organizations', q, sort, order],
+    queryKey: ['organizations', 'list', q, sort, order],
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,

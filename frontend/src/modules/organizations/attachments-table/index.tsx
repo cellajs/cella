@@ -5,6 +5,7 @@ import { Suspense, useCallback, useMemo, useState } from 'react';
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { Trash, Upload, XSquare } from 'lucide-react';
+import { nanoid } from 'nanoid';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -170,6 +171,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
           imageMode="attachment"
           callback={(result) => {
             const attachments = result.map((a) => ({
+              id: nanoid(),
               url: a.url,
               size: String(a.file.size || 0),
               contentType: a.file.type,

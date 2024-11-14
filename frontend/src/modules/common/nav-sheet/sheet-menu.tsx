@@ -94,9 +94,11 @@ export const SheetMenu = memo(() => {
           const newOrder = getRelativeItemOrder(menu, sourceItem.entity, sourceItem.membership.archived, sourceItem.id, targetData.order, edge);
 
           const updatedMembership = await updateMembership({
-            membershipId: sourceItem.membership.id,
+            id: sourceItem.membership.id,
             order: newOrder,
-            organizationId: sourceItem.organizationId || sourceItem.id,
+            orgIdOrSlug: sourceItem.organizationId || sourceItem.id,
+            idOrSlug: sourceItem.id,
+            entityType: sourceItem.entity,
           });
 
           const updatedEntity: UserMenuItem = { ...sourceItem, membership: { ...sourceItem.membership, ...updatedMembership } };

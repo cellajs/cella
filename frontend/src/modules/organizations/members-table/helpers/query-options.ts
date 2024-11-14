@@ -1,6 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetMembersParams, getMembers } from '~/api/memberships';
+import { membersKeys } from '~/modules/common/query-client-provider/members/keys';
 
 const LIMIT = config.requestLimits.members;
 
@@ -23,7 +24,7 @@ export const membersQueryOptions = ({
   const offset = rowsLength;
 
   return infiniteQueryOptions({
-    queryKey: ['members', idOrSlug, entityType, q, sort, order, role],
+    queryKey: membersKeys.list({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role }),
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
