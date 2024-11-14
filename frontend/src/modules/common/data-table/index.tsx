@@ -161,19 +161,19 @@ export const DataTable = <TData,>({
                 }}
               />
 
-              {/* Infinite loading measure ref, which increases until 200 rows */}
+              {/* Infinite loading measure ref, which increases until 50 rows */}
               <div
                 key={rows.length}
                 ref={measureRef}
                 className="h-4 w-0 bg-red-700 absolute bottom-0 z-[200]"
                 style={{
-                  height: `${Math.min(rows.length, 400) * 0.25 * rowHeight}px`,
+                  height: `${Math.min(rows.length, 200) * 0.25 * rowHeight}px`,
                   maxHeight: `${rowHeight * limit}px`,
                 }}
               />
 
               {/* Loading */}
-              {totalCount && totalCount > rows.length && !error && (
+              {isFetching && totalCount && totalCount > rows.length && !error && (
                 <div className="flex space-x-1 justify-center items-center relative top-4 h-0 w-full animate-pulse">
                   <span className="sr-only">Loading...</span>
                   <div className="h-1 w-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]" />
