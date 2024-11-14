@@ -1,5 +1,6 @@
 import { config } from 'config';
 import { type FC, createContext, createElement, useEffect, useState } from 'react';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 
 export const SSEContext = createContext<EventSource | null>(null);
@@ -9,6 +10,8 @@ export const SSEConsumer = SSEContext.Consumer;
 type Props = React.PropsWithChildren;
 
 export const SSEProvider: FC<Props> = ({ children }) => {
+  const { isOnline } = useOnlineManager();
+
   const [source, setSource] = useState<EventSource | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
 
@@ -45,10 +48,14 @@ export const SSEProvider: FC<Props> = ({ children }) => {
   };
 
   useEffect(() => {
-    const eventSource = createSource();
-    setSource(eventSource);
-    return () => eventSource.close();
-  }, []);
+    if (isOnline) {
+      const eventSource = createSource();
+      setSource(eventSource);
+      return () => eventSource.close();
+    }
+    // Clean up the source if it exists when going offline
+    source?.close();
+  }, [isOnline]);
 
   // Effect to handle reconnecting when the tab becomes visible again
   useEffect(() => {
