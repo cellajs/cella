@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type DefaultError, onlineManager, useMutation } from '@tanstack/react-query';
+import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -22,7 +22,7 @@ import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { cleanUrl } from '~/utils/clean-url';
 
@@ -77,8 +77,6 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   useBeforeUnload(form.formState.isDirty);
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     mutate(values, {
       onSuccess: (updatedOrganization) => {
         if (isSheet) sheet.remove('update-organization');
@@ -226,9 +224,9 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!form.formState.isDirty} loading={isPending}>
+          <SubmitButton disabled={!form.formState.isDirty} loading={isPending}>
             {t('common:save_changes')}
-          </Button>
+          </SubmitButton>
           <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
             {t('common:cancel')}
           </Button>

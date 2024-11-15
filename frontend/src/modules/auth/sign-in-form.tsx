@@ -5,18 +5,16 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
-import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown, Send } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
@@ -111,10 +109,10 @@ export const SignInForm = ({
               )}
             />
 
-            <Button type="submit" loading={isPending} className="w-full">
+            <SubmitButton loading={isPending} className="w-full">
               {t('common:sign_in')}
               <ArrowRight size={16} className="ml-2" />
-            </Button>
+            </SubmitButton>
             <ResetPasswordRequest email={email} />
           </>
         )}
@@ -136,8 +134,6 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
   });
 
   const handleResetRequestSubmit = () => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     // TODO maybe find a better way
     dialog.update('send-reset-password', {
       content: (
@@ -164,10 +160,10 @@ export const ResetPasswordRequest = ({ email }: { email: string }) => {
           }}
           required
         />
-        <Button className="w-full" disabled={!resetEmailRef.current} loading={isPending} onClick={handleResetRequestSubmit}>
+        <SubmitButton className="w-full" disabled={!resetEmailRef.current} loading={isPending} onClick={handleResetRequestSubmit}>
           <Send size={16} className="mr-2" />
           {t('common:send_reset_link')}
-        </Button>
+        </SubmitButton>
       </div>,
       {
         id: 'send-reset-password',

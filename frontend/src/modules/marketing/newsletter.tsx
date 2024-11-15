@@ -1,4 +1,3 @@
-import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useRef } from 'react';
@@ -7,8 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
-import { Button } from '~/modules/ui/button';
+import { SubmitButton } from '~/modules/ui/button';
 
 const NewsletterForm = () => {
   const { t } = useTranslation();
@@ -24,8 +22,6 @@ const NewsletterForm = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     let email = formRef.current?.email.value;
     if (!email) return;
@@ -47,9 +43,9 @@ const NewsletterForm = () => {
           className="block w-full rounded-2xl border border-gray-300/40 bg-transparent py-4 pl-6 pr-20 text-base/6 text-gray-200 ring-4 ring-primary/10 transition placeholder:text-gray-300/50 focus:border-gray-300 focus:outline-none focus:ring-primary/20"
         />
         <div className="absolute inset-y-1 right-1 flex justify-end">
-          <Button type="submit" variant="link" aria-label="Submit email for newsletter" loading={isPending} className="h-full text-white rounded-xl">
+          <SubmitButton variant="link" aria-label="Submit email for newsletter" loading={isPending} className="h-full text-white rounded-xl">
             <Send className="w-4" />
-          </Button>
+          </SubmitButton>
         </div>
       </div>
     </form>

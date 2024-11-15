@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 
 interface DeleteFormProps {
   onDelete: () => void;
@@ -12,9 +12,9 @@ export const DeleteForm = ({ onDelete, onCancel, pending }: DeleteFormProps) => 
 
   return (
     <div className="flex flex-col-reverse sm:flex-row gap-2">
-      <Button type="submit" variant="destructive" onClick={onDelete} aria-label="Delete" loading={pending}>
+      <SubmitButton variant="destructive" onClick={onDelete} aria-label="Delete" loading={pending}>
         {t('common:delete')}
-      </Button>
+      </SubmitButton>
       <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>
         {t('common:cancel')}
       </Button>

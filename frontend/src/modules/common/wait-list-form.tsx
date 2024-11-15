@@ -13,7 +13,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
 import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
@@ -107,7 +107,7 @@ export const WaitListForm = ({
             </FormItem>
           )}
         />
-        <Button type="submit" size="xl" loading={isPending} className={`w-full ${emailField && 'rounded-full ring-4 ring-primary/10'}`}>
+        <SubmitButton size="xl" loading={isPending} className={`w-full ${emailField && 'rounded-full ring-4 ring-primary/10'}`}>
           {buttonContent ? (
             buttonContent
           ) : (
@@ -116,7 +116,7 @@ export const WaitListForm = ({
               <ArrowRight size={16} className="ml-2" />
             </>
           )}
-        </Button>
+        </SubmitButton>
       </form>
     </Form>
   );

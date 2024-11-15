@@ -4,9 +4,8 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import AuthPage from '~/modules/auth/auth-page';
-import { Button } from '~/modules/ui/button';
+import { SubmitButton } from '~/modules/ui/button';
 
-import { onlineManager } from '@tanstack/react-query';
 import { passwordSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { ArrowRight, Loader2 } from 'lucide-react';
@@ -16,7 +15,6 @@ import type { ApiError } from '~/api';
 import { resetPassword as baseResetPassword } from '~/api/auth';
 import { checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { ResetPasswordRoute } from '~/routes/auth';
@@ -60,8 +58,6 @@ const ResetPassword = () => {
 
   // Submit new password
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     const { password } = values;
     resetPassword({ token, password });
   };
@@ -102,10 +98,10 @@ const ResetPassword = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit" loading={isPending} className="w-full">
+            <SubmitButton loading={isPending} className="w-full">
               {t('common:reset')}
               <ArrowRight size={16} className="ml-2" />
-            </Button>
+            </SubmitButton>
           </form>
         ) : (
           <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">

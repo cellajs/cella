@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type InviteMemberProps, inviteMembers } from '~/api/memberships';
 
-import { onlineManager } from '@tanstack/react-query';
 import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
@@ -16,7 +15,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import SelectRole from '~/modules/common/form-fields/select-role-radio';
 import { QueryCombobox } from '~/modules/common/query-combobox';
 import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types/common';
 
@@ -72,8 +71,6 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
   });
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     invite(values);
   };
 
@@ -106,13 +103,13 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
           )}
         />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" loading={isPending} className="relative">
+          <SubmitButton loading={isPending} className="relative">
             {!!form.getValues('emails')?.length && (
               <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{form.getValues('emails')?.length}</Badge>
             )}
             <Send size={16} className="mr-2" />
             {t('common:invite')}
-          </Button>
+          </SubmitButton>
           {form.formState.isDirty && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()}>
               {t('common:cancel')}

@@ -5,7 +5,6 @@ import type { SubmitHandler } from 'react-hook-form';
 import * as z from 'zod';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 
-import { onlineManager } from '@tanstack/react-query';
 import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createRequest as baseCreateRequest } from '~/api/requests';
@@ -15,7 +14,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
 import InputFormField from '~/modules/common/form-fields/input';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
 
@@ -58,8 +57,6 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   });
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     const { email, message } = data;
     createRequest({ email, type: 'contact', message });
   };
@@ -88,10 +85,10 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
               <InputFormField control={form.control} name="email" label={t('common:email')} type="email" icon={<Mail size={16} />} required />
               <InputFormField control={form.control} name="message" label={t('common:message')} type="textarea" icon={<MessageSquare size={16} />} />
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button type="submit">
+                <SubmitButton>
                   <Send size={16} className="mr-2" />
                   {t('common:send')}
-                </Button>
+                </SubmitButton>
                 <Button type="reset" variant="secondary" onClick={cancel} className={form.formState.isDirty ? '' : 'invisible'}>
                   {t('common:cancel')}
                 </Button>

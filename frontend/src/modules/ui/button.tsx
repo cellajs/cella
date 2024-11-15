@@ -1,9 +1,13 @@
 import { Slot } from '@radix-ui/react-slot';
+import { onlineManager } from '@tanstack/react-query';
 import { type VariantProps, cva } from 'class-variance-authority';
-import { Loader2 } from 'lucide-react';
+import { t } from 'i18next';
+import { Loader2, TriangleAlert } from 'lucide-react';
 import * as React from 'react';
+import { showToast } from '~/lib/toasts';
 
 import { cn } from '~/utils/cn';
+import { TooltipButton } from '../common/tooltip-button';
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none [&:not(.absolute)]:active:translate-y-[.07rem] disabled:opacity-50',
@@ -80,4 +84,31 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = 'Button';
 
-export { Button, buttonVariants };
+const SubmitButton = React.forwardRef<HTMLButtonElement, Omit<ButtonProps, 'type'>>(({ onClick, children, ...props }, ref) => {
+  const [isOnline, setIsOnline] = React.useState(onlineManager.isOnline());
+
+  React.useEffect(() => {
+    const unsubscribe = onlineManager.subscribe((online) => setIsOnline(online));
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+    if (!isOnline) {
+      e.preventDefault();
+      return showToast(t('common:action.offline.text'), 'warning');
+    }
+    onClick?.(e);
+  };
+
+  const buttonContent = (
+    <Button ref={ref} type="submit" onClick={handleClick} {...props}>
+      {!isOnline && <TriangleAlert className="mr-2" size={16} />}
+      {children}
+    </Button>
+  );
+
+  return <>{isOnline ? buttonContent : <TooltipButton toolTipContent={t('common:offline.text')}>{buttonContent}</TooltipButton>}</>;
+});
+
+export { Button, SubmitButton, buttonVariants };

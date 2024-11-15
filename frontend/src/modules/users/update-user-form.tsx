@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type DefaultError, onlineManager, useMutation } from '@tanstack/react-query';
+import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateUserBodySchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,7 @@ import { updateSelf } from '~/api/me';
 import { type UpdateUserParams, updateUser } from '~/api/users';
 
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 
@@ -94,7 +94,6 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
   const onSubmit = (values: FormValues) => {
     if (!user) return;
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
     mutate(values, {
       onSuccess: (updatedUser) => {
@@ -201,9 +200,9 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
         <div className="flex flex-col sm:flex-row gap-2">
           {children}
-          <Button type="submit" disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending}>
+          <SubmitButton disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending}>
             {t(`common:${hiddenFields?.length ? 'continue' : 'save_changes'}`)}
-          </Button>
+          </SubmitButton>
           {!children && (
             <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.formState.isDirty ? '' : 'invisible'}>
               {t('common:cancel')}

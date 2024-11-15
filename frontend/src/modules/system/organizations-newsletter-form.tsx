@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
 import '@blocknote/shadcn/style.css';
-import { onlineManager } from '@tanstack/react-query';
 import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
 import { Send } from 'lucide-react';
 import { Suspense } from 'react';
@@ -12,11 +11,10 @@ import { toast } from 'sonner';
 import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
 import { BlockNote } from '~/modules/common/blocknote';
 import { sheet } from '~/modules/common/sheeter/state';
 import UppyFilePanel from '~/modules/common/upload/blocknote-upload-panel';
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
@@ -53,8 +51,6 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
   });
 
   const onSubmit = (values: FormValues) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     sendNewsletter({
       organizationIds: values.organizationIds,
       subject: values.subject,
@@ -128,10 +124,10 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button type="submit" disabled={!isDirty()} loading={isPending}>
+          <SubmitButton disabled={!isDirty()} loading={isPending}>
             <Send size={16} className="mr-2" />
             {t('common:send')}
-          </Button>
+          </SubmitButton>
           <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label="Cancel" onClick={cancel}>
             {t('common:cancel')}
           </Button>

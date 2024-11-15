@@ -1,7 +1,6 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
-import { onlineManager } from '@tanstack/react-query';
 import type { checkTokenSchema } from 'backend/modules/general/schema';
 import { config } from 'config';
 import { ArrowRight, Loader2 } from 'lucide-react';
@@ -11,10 +10,9 @@ import type { z } from 'zod';
 import type { ApiError } from '~/api';
 import { acceptInvite as baseAcceptInvite, checkToken as baseCheckToken } from '~/api/general';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
 import AuthPage from '~/modules/auth/auth-page';
 import Spinner from '~/modules/common/spinner';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { acceptInviteRoute } from '~/routes/general';
 import { cn } from '~/utils/cn';
 
@@ -46,8 +44,6 @@ const AcceptInvite = () => {
   });
 
   const onSubmit = () => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     acceptInvite({ token });
   };
 
@@ -66,10 +62,10 @@ const AcceptInvite = () => {
 
       {tokenData?.email && !error ? (
         <div className="space-y-4">
-          <Button type="submit" loading={isPending} className="w-full" onClick={onSubmit}>
+          <SubmitButton loading={isPending} className="w-full" onClick={onSubmit}>
             {t('common:accept')}
             <ArrowRight size={16} className="ml-2" />
-          </Button>
+          </SubmitButton>
         </div>
       ) : (
         <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">

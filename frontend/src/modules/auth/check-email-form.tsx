@@ -4,17 +4,15 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 
-import { Button } from '~/modules/ui/button';
+import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
-import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useEffect } from 'react';
 import { checkEmail as baseCheckEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
 import type { Step, TokenData } from '.';
 
 const formSchema = emailBodySchema;
@@ -44,8 +42,6 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     checkEmail(values.email);
   };
 
@@ -82,10 +78,10 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
             </FormItem>
           )}
         />
-        <Button type="submit" loading={isPending} className="w-full">
+        <SubmitButton loading={isPending} className="w-full">
           {t('common:continue')}
           <ArrowRight size={16} className="ml-2" />
-        </Button>
+        </SubmitButton>
       </form>
     </Form>
   );

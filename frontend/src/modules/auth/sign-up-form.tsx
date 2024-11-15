@@ -5,15 +5,13 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 
-import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
 import { signUp as baseSignUp } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
-import { Button } from '~/modules/ui/button';
+import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import type { TokenData } from '.';
@@ -55,8 +53,6 @@ export const SignUpForm = ({
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     signUp({
       ...values,
       token: tokenData?.token,
@@ -114,10 +110,10 @@ export const SignUpForm = ({
             </FormItem>
           )}
         />
-        <Button type="submit" loading={isPending} className="w-full">
+        <SubmitButton loading={isPending} className="w-full">
           {t('common:sign_up')}
           <ArrowRight size={16} className="ml-2" />
-        </Button>
+        </SubmitButton>
       </form>
     </Form>
   );
