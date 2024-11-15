@@ -1,3 +1,4 @@
+import { onlineManager } from '@tanstack/react-query';
 import type React from 'react';
 import { cn } from '~/utils/cn';
 
@@ -13,6 +14,7 @@ export const CountryFlag = ({ countryCode, className, imgType = 'svg', width = 1
 
   const flagUrl = imgType === 'svg' ? `/static/flags/${countryCode.toLowerCase()}.svg` : `/static/flags/png/${countryCode.toLowerCase()}.png`;
 
+  if (!onlineManager.isOnline()) return null;
   return (
     <img
       className={cn('inline overflow-hidden shadow-sm', className)}
