@@ -21,7 +21,7 @@ const organizationTabs: PageNavTab[] = [
 
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
-    queryKey: ['organizations', idOrSlug],
+    queryKey: ['organization', idOrSlug],
     queryFn: () => getOrganization(idOrSlug),
   });
 

@@ -70,7 +70,7 @@ const OrganizationsTable = () => {
   // Map (updated) query data to rows
   useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
-  const mutateQuery = useMutateQueryData(['organizations', 'list'], (item) => ['organizations', item.id], ['update', 'delete']);
+  const mutateQuery = useMutateQueryData(['organizations', 'list']);
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);

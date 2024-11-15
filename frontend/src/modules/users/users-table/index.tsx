@@ -77,7 +77,7 @@ const UsersTable = () => {
     return rows.filter((row) => selectedRows.has(row.id));
   }, [selectedRows, rows]);
 
-  const mutateQuery = useMutateQueryData(['users', 'list'], (item) => ['user', item.id], ['update', 'delete']);
+  const mutateQuery = useMutateQueryData(['users', 'list'], (item) => ['user', item.id], ['update']);
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);

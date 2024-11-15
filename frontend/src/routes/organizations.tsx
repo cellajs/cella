@@ -58,7 +58,7 @@ export const OrganizationMembersRoute = createRoute({
   },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
-    const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
+    const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
 
     if (!organization) return;
     return (
@@ -77,7 +77,7 @@ export const OrganizationAttachmentsRoute = createRoute({
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationAttachmentsRoute.id });
-    const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
+    const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
 
     if (!organization) return;
     return (
@@ -94,7 +94,7 @@ export const OrganizationSettingsRoute = createRoute({
   getParentRoute: () => OrganizationRoute,
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
-    const organization: OrganizationType | undefined = queryClient.getQueryData(['organizations', idOrSlug]);
+    const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
     if (!organization) return;
     return (
       <Suspense>

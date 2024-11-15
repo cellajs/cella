@@ -19,7 +19,7 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
     onSuccess: () => {
       for (const organization of organizations) {
         queryClient.invalidateQueries({
-          queryKey: ['organizations', organization.id],
+          queryKey: ['organization', organization.id],
         });
         deleteMenuItem(organization.id);
       }
