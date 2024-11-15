@@ -3,6 +3,7 @@ import { Command as CommandPrimitive } from 'cmdk';
 import { Search, XCircle } from 'lucide-react';
 import * as React from 'react';
 
+import Spinner from '~/modules/common/spinner';
 import { Dialog, DialogContent } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 
@@ -37,12 +38,18 @@ interface CommandInputProps extends React.ComponentPropsWithoutRef<typeof Comman
 interface ZeroValSet {
   clearValue?: (newVal: string) => void;
   wrapClassName?: string;
+  isSearching?: boolean;
 }
 
 const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & ZeroValSet>(
-  ({ className, wrapClassName, value, clearValue, ...props }, ref) => (
+  ({ className, wrapClassName, isSearching = false, value, clearValue, ...props }, ref) => (
     <div className={cn('flex items-center group border-b px-3 relative', wrapClassName)} cmdk-input-wrapper="">
-      <Search size={16} className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
+      {isSearching ? (
+        <Spinner className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" inline />
+      ) : (
+        <Search size={16} className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
+      )}
+
       <CommandPrimitive.Input
         value={value}
         ref={ref}
@@ -125,12 +132,12 @@ const CommandLoading = React.forwardRef<
 export {
   Command,
   CommandDialog,
-  CommandInput,
-  CommandList,
   CommandEmpty,
   CommandGroup,
+  CommandInput,
   CommandItem,
-  CommandShortcut,
-  CommandSeparator,
+  CommandList,
   CommandLoading,
+  CommandSeparator,
+  CommandShortcut,
 };

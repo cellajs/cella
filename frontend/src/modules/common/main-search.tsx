@@ -12,12 +12,11 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dialog } from '~/modules/common/dialoger/state';
 import StickyBox from '~/modules/common/sticky-box';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading, CommandSeparator } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
 import { Button } from '../ui/button';
-import Spinner from './spinner';
 
 export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
@@ -99,6 +98,7 @@ export const MainSearch = () => {
         clearValue={setSearchValue}
         className="h-12 text-lg"
         autoFocus
+        isSearching={isFetching}
         wrapClassName="text-lg"
         placeholder={t('common:placeholder.search')}
         onValueChange={(searchValue) => {
@@ -111,11 +111,6 @@ export const MainSearch = () => {
         }}
       />
       <ScrollArea id={'suggestion-search'} ref={scrollAreaRef} className="sm:h-[40vh] overflow-y-auto">
-        {isFetching && (
-          <CommandLoading className="mt-2">
-            <Spinner inline />
-          </CommandLoading>
-        )}
         {
           <CommandList className="h-full">
             {suggestions.total === 0 && (
@@ -125,7 +120,9 @@ export const MainSearch = () => {
                     <ContentPlaceholder
                       className="h-full"
                       Icon={Search}
-                      title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })}
+                      title={
+                        isFetching ? t('common:search_in_progress') : t('common:no_resource_found', { resource: t('common:results').toLowerCase() })
+                      }
                     />
                   </CommandEmpty>
                 )}
