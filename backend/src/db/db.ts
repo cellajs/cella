@@ -7,7 +7,7 @@ import { config } from 'config';
 import { type DrizzleConfig, sql } from 'drizzle-orm';
 import type { PgDatabase } from 'drizzle-orm/pg-core';
 
-const dbConfig: DrizzleConfig = {
+export const dbConfig: DrizzleConfig = {
   logger: config.debug,
   casing: 'snake_case',
 };
