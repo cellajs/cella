@@ -41,18 +41,23 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
       if (toastMessage) showToast(toastMessage, 'success');
     },
   });
-
   const handleUpdateMembershipKey = (key: 'archive' | 'mute') => {
     if (!onlineManager.isOnline()) {
       toast.warning(t('common:action.offline.text'));
       return;
     }
 
-    const membership = item.membership;
+    const membership = { ...item.membership }; // Clone the membership to make it mutable
 
     if (key === 'archive') membership.archived = !item.membership.archived;
     if (key === 'mute') membership.muted = !item.membership.muted;
-    updateMembership({ ...membership, idOrSlug: item.id, entityType: item.entity, orgIdOrSlug: membership.organizationId });
+
+    updateMembership({
+      ...membership,
+      idOrSlug: item.id,
+      entityType: item.entity,
+      orgIdOrSlug: membership.organizationId,
+    });
   };
 
   return (
