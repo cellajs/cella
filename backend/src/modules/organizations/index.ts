@@ -237,17 +237,24 @@ const organizationsRoutes = app
     const user = getContextUser();
     const { organizationIds, subject, content } = ctx.req.valid('json');
 
-    // TODO simplify this? // For test purposes
-    if (typeof env.SEND_ALL_TO_EMAIL === 'string' && env.NODE_ENV === 'development') {
+    // For test purposes
+    if (env.NODE_ENV === 'development') {
       const unsafeUser = await getUserBy('id', user.id, 'unsafe');
-      const unsubscribeToken = unsafeUser ? unsafeUser.unsubscribeToken : '';
-      const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${unsubscribeToken}`;
+      const unsubscribeLink = unsafeUser ? `${config.backendUrl}/unsubscribe?token=${unsafeUser.unsubscribeToken}` : '';
 
-      // generating email html
+      // Generate email HTML
       const emailHtml = await render(
-        organizationsNewsletter({ userLanguage: user.language, subject, content, unsubscribeLink, authorEmail: user.email, orgName: 'SOME NAME' }),
+        organizationsNewsletter({
+          userLanguage: user.language,
+          subject,
+          content: user.newsletter ? content : 'You`ve unsubscribed from news letters',
+          unsubscribeLink,
+          authorEmail: user.email,
+          orgName: 'SOME NAME',
+        }),
       );
-      emailSender.send(env.SEND_ALL_TO_EMAIL, user.newsletter ? subject : 'User unsubscribed from newsletter', emailHtml);
+
+      emailSender.send(env.SEND_ALL_TO_EMAIL ?? user.email, subject, emailHtml);
     } else {
       // Get members
       const organizationsMembersEmails = await db
