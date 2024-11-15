@@ -35,9 +35,9 @@ const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
   return attachment;
 };
 
-const attachmentShape = (organizationId?: string): ShapeStreamOptions => ({
+const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
   url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
-  where: organizationId ? `organization_id = '${organizationId}'` : undefined,
+  where: `organization_id="${organizationId}"`,
   backoffOptions: {
     initialDelay: 500,
     maxDelay: 32000,
@@ -59,13 +59,21 @@ export const useSync = (organizationId: string) => {
 
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organizationId));
     const queryKey = attachmentsQueryOptions({ orgIdOrSlug: organizationId }).queryKey;
+
     const unsubscribe = shapeStream.subscribe((messages) => {
       const createMessage = messages.find((m) => m.headers.operation === 'insert') as ChangeMessage<RawAttachment> | undefined;
+
       if (createMessage) {
         const value = createMessage.value;
         queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
           if (!data) return;
+
+          // Avoid adding an already existing attachment
+          const alreadyExists = data.pages[0].items.some((attachment) => attachment.id === value.id);
+          if (alreadyExists) return data;
+
           const createdAttachment = parseRawAttachment(value);
+
           return {
             ...data,
             pages: [
@@ -97,7 +105,6 @@ export const useSync = (organizationId: string) => {
                     };
                     return updatedAttachment;
                   }
-
                   return attachment;
                 }),
               };
@@ -123,6 +130,7 @@ export const useSync = (organizationId: string) => {
         });
       }
     });
+
     return () => {
       unsubscribe();
     };

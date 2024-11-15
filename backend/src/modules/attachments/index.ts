@@ -29,7 +29,7 @@ const attachmentsRoutes = app
     // Copy over the relevant query params that the Electric client adds
     // so that we return the right part of the Shape log.
     url.searchParams.forEach((value, key) => {
-      if (['live', 'handle', 'offset', 'cursor'].includes(key)) {
+      if (['live', 'handle', 'offset', 'cursor', 'where'].includes(key)) {
         originUrl.searchParams.set(key, value);
       }
     });
