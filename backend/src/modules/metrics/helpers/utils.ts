@@ -1,20 +1,27 @@
-export const parsePromMetrics = (text: string): Record<string, string | number>[] => {
+export const parsePromMetrics = (text: string, metricName: string): Record<string, string | number>[] => {
+  // Split the text into lines, trim each line, and keep only the ones starting with the metricName
   const lines = text
     .split('\n')
     .map((line) => line.trim())
-    .filter((line) => line.startsWith('Requests'));
+    .filter((line) => line.startsWith(metricName));
 
+  // Process each line that starts with the metricName to extract labels
   return lines
     .map((line) => {
-      // Match the pattern to extract labels
-      const match = line.match(/Requests{([^}]*)}\s(\d+)/);
+      const match = line.match(/{([^}]*)}/);
       if (!match) return null;
+
+      // Extract the part containing the labels from the match
       const [, labels] = match;
-      return labels.split(',').reduce<Record<string, string>>((acc, label) => {
-        const [key, val] = label.split('=');
-        acc[key.trim()] = val.replace(/"/g, '').trim();
-        return acc;
-      }, {});
+
+      // Transform the labels into valid JSON
+      const jsonString = `{${labels.replace(/(\w+)=/g, '"$1":')}}`;
+
+      try {
+        return JSON.parse(jsonString);
+      } catch (err) {
+        return null; // If parsing fails, return null
+      }
     })
     .filter((metric) => metric !== null);
 };

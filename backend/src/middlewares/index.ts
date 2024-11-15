@@ -4,10 +4,10 @@ import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
+import { observatoryMiddleware } from '#/middlewares/observatory/';
 import { CustomHono } from '#/types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
-import { observatoryMiddleware } from './observatory-middleware';
 import { rateLimiter } from './rate-limiter';
 
 const app = new CustomHono();
