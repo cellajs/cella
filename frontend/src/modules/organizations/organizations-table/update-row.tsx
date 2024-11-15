@@ -31,6 +31,7 @@ const UpdateRow = ({ organization, callback, tabIndex }: Props) => {
         side: 'right',
         className: 'max-w-full lg:max-w-4xl',
         title: t('common:edit_resource', { resource: t('common:organization').toLowerCase() }),
+        scrollableOverlay: true,
       },
     );
   };
