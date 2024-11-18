@@ -31,7 +31,8 @@
     "start": "turbo start --filter backend --filter frontend --filter tus",
     "upstream:pull": "node ./cli/sync-cella/index.js pull-upstream --config-file cella.config.js",
     "fork:pull": "node ./cli/sync-cella/index.js pull-fork --config-file cella.config.js",
-    "diverged": "node ./cli/sync-cella/index.js diverged --config-file cella.config.js"
+    "diverged": "node ./cli/sync-cella/index.js diverged --config-file cella.config.js",
+    "test": "pnpm --filter backend test"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -39,7 +40,8 @@
     "cross-env": "^7.0.3",
     "rimraf": "^6.0.1",
     "turbo": "^2.2.3",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   },
   "packageManager": "pnpm@9.1.2",
   "dependencies": {
