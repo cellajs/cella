@@ -11,13 +11,17 @@ interface CarouselProps {
   isDialog?: boolean;
 }
 
-const Carousel = ({ slides, isDialog = false, slide = 0 }: CarouselProps) => {
+const Carousel = ({ slides = [], isDialog = false, slide = 0 }: CarouselProps) => {
   const [current, setCurrent] = useState(0);
   const itemClass = isDialog ? 'object-contain' : '';
   const autoplay = Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true });
-  const [watchDrag, setWatchDrag] = useState(true);
+  const [watchDrag, setWatchDrag] = useState(slides.length > 1);
 
-  useEventListener('toggleCarouselDrag', (e) => setWatchDrag(e.detail));
+  useEventListener('toggleCarouselDrag', (e) => {
+    const shouldWatchDrag = e.detail && slides.length > 1;
+    setWatchDrag(shouldWatchDrag);
+  });
+
   return (
     <BaseCarousel
       isDialog={isDialog}
