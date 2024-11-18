@@ -53,12 +53,9 @@ export const menusTitleToAllowedType = {
 // set not more the 9 cos user cant use the num click to activate it
 export const customSlashIndexedItems: MenusItemsTitle[] = ['Image', 'Video', 'File', 'Bullet List', 'Numbered List', 'Check List', 'Notify', 'Emoji'];
 
-export const getSlashMenuItems = async (query: string, editor: CustomBlockNoteSchema) => [
-  ...getDefaultReactSlashMenuItems(editor),
-  ...getSlashNotifySlashItem(query, editor),
-];
-
 export const customSlashNotIndexedItems: MenusItemsTitle[] = ['Table', 'Audio', 'Heading 1', 'Heading 2', 'Heading 3', 'Paragraph', 'Code Block'];
+
+export const getSlashMenuItems = (editor: CustomBlockNoteSchema) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
 
 // SideMenu
 // blocks in array can be changed in the other types from this array

@@ -157,12 +157,11 @@ p.bn-inline-content code {
   margin-bottom: 0.25rem;
 }
 
-.slash-menu-item:hover {
-  background-color: hsl(var(--accent) / 0.5);
-}
-
-.slash-menu-item.selected {
+.slash-menu-item[aria-selected="true"] {
   background-color: hsl(var(--accent));
+}
+.slash-menu-item:hover {
+  background-color: hsl(var(--accent) / 0.6);
 }
 
 .summary {

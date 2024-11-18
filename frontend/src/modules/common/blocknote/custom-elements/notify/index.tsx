@@ -1,4 +1,4 @@
-import { defaultProps, filterSuggestionItems, insertOrUpdateBlock } from '@blocknote/core';
+import { defaultProps, insertOrUpdateBlock } from '@blocknote/core';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
 
 import { MessageCircle } from 'lucide-react';
@@ -98,7 +98,7 @@ export const insertSideNotifyItem = (): BlockTypeSelectItem => ({
   icon: MessageCircle as IconType,
 });
 
-export const getSlashNotifySlashItem = (query: string, editor: CustomBlockNoteSchema) => {
+export const getSlashNotifySlashItem = (editor: CustomBlockNoteSchema) => {
   // Gets all default slash menu items and `insertNotify` item.
-  return filterSuggestionItems([insertSlashNotifyItem(editor)], query);
+  return insertSlashNotifyItem(editor);
 };
