@@ -45,7 +45,7 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & Zero
   ({ className, wrapClassName, isSearching = false, value, clearValue, ...props }, ref) => (
     <div className={cn('flex items-center group border-b px-3 relative', wrapClassName)} cmdk-input-wrapper="">
       {isSearching ? (
-        <Spinner className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" inline />
+        <Spinner className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" inline noDelay />
       ) : (
         <Search size={16} className="mr-2 group-[.text-lg]:w-5 h-auto shrink-0" style={{ opacity: value ? 1 : 0.5 }} />
       )}

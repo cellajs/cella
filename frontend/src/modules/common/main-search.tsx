@@ -115,14 +115,12 @@ export const MainSearch = () => {
           <CommandList className="h-full">
             {suggestions.total === 0 && (
               <>
-                {!!searchValue.length && (
+                {!!searchValue.length && !isFetching && (
                   <CommandEmpty className="h-full">
                     <ContentPlaceholder
                       className="h-full"
                       Icon={Search}
-                      title={
-                        isFetching ? t('common:search_in_progress') : t('common:no_resource_found', { resource: t('common:results').toLowerCase() })
-                      }
+                      title={t('common:no_resource_found', { resource: t('common:results').toLowerCase() })}
                     />
                   </CommandEmpty>
                 )}
