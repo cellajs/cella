@@ -270,23 +270,15 @@ export const BlockNote = ({
 
       {sideMenu && <CustomSideMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
 
-      <FloatingPortal>
-        <div className="bn-ui-container">
-          <Mention members={members} editor={editor} />
-        </div>
-      </FloatingPortal>
+      {members?.length && <Mention members={members} editor={editor} />}
 
       {emojiPicker && (
-        <FloatingPortal>
-          <div className="bn-ui-container">
-            <GridSuggestionMenuController
-              triggerCharacter={':'}
-              // Changes the Emoji Picker to only have 10 columns & min length of 0.
-              columns={5}
-              minQueryLength={0}
-            />
-          </div>
-        </FloatingPortal>
+        <GridSuggestionMenuController
+          triggerCharacter={':'}
+          // Changes the Emoji Picker to only have 10 columns & min length of 0.
+          columns={5}
+          minQueryLength={0}
+        />
       )}
 
       {filePanel && <FilePanelController filePanel={filePanel} />}

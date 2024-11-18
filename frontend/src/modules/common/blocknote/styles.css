@@ -154,6 +154,15 @@ p.bn-inline-content code {
   background-color: hsl(var(--accent));
 }
 
+.summary {
+  padding: 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  border-left: 3px solid hsl(var(--primary));
+  background-color: hsl(var(--secondary));
+  margin: 8px 0;
+}
+
 .notify {
   display: flex;
   justify-content: center;

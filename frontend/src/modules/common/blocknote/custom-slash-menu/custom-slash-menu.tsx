@@ -97,7 +97,7 @@ export const slashMenu = (
   }, []);
 
   return (
-    <div className="slash-menu">
+    <div className="bn-shadcn slash-menu">
       {sortedItems.map((item, index) => {
         const isSelected = selectedIndex === index;
         return (
