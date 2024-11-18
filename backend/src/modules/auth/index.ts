@@ -360,7 +360,7 @@ const authRoutes = app
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
     const { targetUserId } = ctx.req.valid('query');
-    await setSessionCookie(ctx, targetUserId, user.id, 'impersonation');
+    await setSessionCookie(ctx, targetUserId, null, 'impersonation', user.id);
 
     return ctx.json({ success: true }, 200);
   })
