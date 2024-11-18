@@ -97,7 +97,7 @@ export const slashMenu = (
   }, []);
 
   return (
-    <div className="bn-shadcn slash-menu">
+    <div data-radix-popper-content-wrapper className="bn-shadcn slash-menu">
       {sortedItems.map((item, index) => {
         const isSelected = selectedIndex === index;
         return (

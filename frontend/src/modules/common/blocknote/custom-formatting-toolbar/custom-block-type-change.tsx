@@ -78,7 +78,7 @@ export const CellaCustomBlockTypeselect = () => {
           <ChevronDown size={16} />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
-      <Components.Generic.Menu.Dropdown className="bn-menu-dropdown">
+      <Components.Generic.Menu.Dropdown data-radix-popper-content-wrapper className="bn-shadcn bn-menu-dropdown">
         {fullItems.map((el) => (
           <Components.Generic.Menu.Item className="bn-menu-item" key={el.title} onClick={el.onClick} icon={el.icon} checked={el.isSelected}>
             {el.title}

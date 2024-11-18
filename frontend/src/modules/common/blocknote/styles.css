@@ -25,12 +25,24 @@ p.bn-inline-content code {
   visibility: visible;
 }
 
+.bn-grid-suggestion-menu-item[aria-selected="true"],
+.bn-grid-suggestion-menu-item:hover {
+  background-color: hsl(var(--accent)) !important;
+}
+
+.bn-grid-suggestion-menu-empty-item,
+.bn-grid-suggestion-menu-loader {
+  padding: 0.5rem;
+}
+
 .bn-grid-suggestion-menu {
-  background-color: hsl(var(--popover));
-  border: 1px solid hsl(var(--border));
-  z-index: 9999 !important;
-  max-height: 40vh !important;
-  overflow-y: auto;
+  max-height: 25rem !important;
+  background-color: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 4px 0 rgb(0 0 0 / 0.1) !important;
+  gap: 0.75rem !important;
+  padding: 1rem !important;
 }
 
 .bn-shadcn .bn-block-outer,
@@ -107,7 +119,6 @@ p.bn-inline-content code {
 .slash-menu {
   max-height: 40vh;
   overflow-y: auto;
-  z-index: 9999 !important;
   background-color: hsl(var(--popover));
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
