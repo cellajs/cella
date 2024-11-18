@@ -98,7 +98,7 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-full;
+    @apply bg-background text-foreground min-h-full overscroll-none;
   }
 
   /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size */
