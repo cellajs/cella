@@ -211,7 +211,9 @@ const UsersTable = () => {
                 </Button>
               )
             )}
-            {selectedUsers.length === 0 && <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {!queryResult.isLoading && selectedUsers.length === 0 && (
+              <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            )}
           </FilterBarActions>
 
           <div className="sm:grow" />

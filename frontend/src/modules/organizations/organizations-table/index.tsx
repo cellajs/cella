@@ -208,7 +208,7 @@ const OrganizationsTable = () => {
                 </Button>
               )
             )}
-            {selectedOrganizations.length === 0 && (
+            {!queryResult.isLoading && selectedOrganizations.length === 0 && (
               <TableCount count={totalCount} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>

@@ -150,7 +150,7 @@ const RequestsTable = () => {
                 </Button>
               </>
             )}
-            {selectedRequests.length === 0 && (
+            {!queryResult.isLoading && selectedRequests.length === 0 && (
               <TableCount count={totalCount} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>

@@ -4,7 +4,7 @@ import { Suspense, useCallback, useMemo, useState } from 'react';
 
 import { config } from 'config';
 import { motion } from 'framer-motion';
-import { Trash, Upload, XSquare } from 'lucide-react';
+import { Paperclip, Trash, Upload, XSquare } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
 import { openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -261,7 +262,9 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
                 </Button>
               )
             )}
-            {selected.length === 0 && <TableCount count={totalCount} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {!queryResult.isLoading && selected.length === 0 && (
+              <TableCount count={totalCount} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            )}
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
@@ -296,6 +299,9 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
+          NoRowsComponent: (
+            <ContentPlaceholder Icon={Paperclip} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
+          ),
         }}
       />
     </div>

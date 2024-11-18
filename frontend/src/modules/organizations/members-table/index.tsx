@@ -251,7 +251,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
                 </Button>
               )
             )}
-            {selectedMembers.length === 0 && <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {!queryResult.isLoading && selectedMembers.length === 0 && (
+              <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />
+            )}
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
