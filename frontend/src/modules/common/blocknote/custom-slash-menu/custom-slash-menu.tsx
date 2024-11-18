@@ -53,7 +53,7 @@ export const slashMenu = (
       // Convert pressed key to an index
       const itemIndex = Number.parseInt(pressedKey, 10) - 1;
       // Check if the pressed key corresponds to an item
-      if (!Number.isNaN(itemIndex) && itemIndex >= 0 && itemIndex < customSlashIndexedItems.length && inputValue.length === 0) {
+      if (!Number.isNaN(itemIndex) && itemIndex >= 0 && itemIndex < slashMenuIndexed.length && inputValue.length === 0) {
         const item = sortedItems[itemIndex];
         if (!item) return;
         // media block opens only if document have next block
@@ -97,7 +97,7 @@ export const slashMenu = (
   }, []);
 
   return (
-    <div data-radix-popper-content-wrapper className="bn-shadcn slash-menu">
+    <div className="slash-menu">
       {sortedItems.map((item, index) => {
         const isSelected = selectedIndex === index;
         return (
