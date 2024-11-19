@@ -1,5 +1,5 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 
 export const slashMenu = (
@@ -10,15 +10,13 @@ export const slashMenu = (
 ) => {
   const { items, selectedIndex, onItemClick } = props;
 
-  const [inputValue] = useState('');
-
-  const handleKeyPress = useCallback(async (e: KeyboardEvent) => {
+  const handleKeyPress = async (e: KeyboardEvent) => {
     const { key: pressedKey } = e;
 
     // Convert pressed key to an index
     const itemIndex = Number.parseInt(pressedKey, 10) - 1;
     // Check if the pressed key corresponds to an item
-    if (!Number.isNaN(itemIndex) && itemIndex >= 0 && itemIndex < indexedItemCount && inputValue.length === 0) {
+    if (!Number.isNaN(itemIndex) && itemIndex >= 0 && itemIndex < indexedItemCount) {
       const item = items[itemIndex];
       if (!item) return;
       // media block opens only if document have next block
@@ -35,7 +33,7 @@ export const slashMenu = (
       }
       return triggerItemClick(item, e);
     }
-  }, []);
+  };
 
   const triggerItemClick = (item: DefaultReactSuggestionItem, event: KeyboardEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.preventDefault();
@@ -45,7 +43,7 @@ export const slashMenu = (
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [handleKeyPress]);
+  }, []);
 
   // to be able to use in sheet
   useEffect(() => {
