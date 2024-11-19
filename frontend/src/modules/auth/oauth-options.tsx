@@ -44,19 +44,15 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
 
   const [loading, setLoading] = useState(false);
 
-  let redirect = '';
-  if (token) {
-    const searchResult = useSearch({
-      from: SignInRoute.id,
-    });
-    redirect = searchResult.redirect ?? '';
-  }
+  const searchResult = useSearch({
+    from: SignInRoute.id,
+  });
+  const redirectPath = searchResult.redirect ?? config.defaultRedirectPath;
+
   const successesCallback = () => {
     toast.success(t('common:success.passkey_sign_in'));
-    navigate({ to: config.defaultRedirectPath, replace: true });
+    navigate({ to: redirectPath, replace: true });
   };
-
-  const redirectQuery = redirect ? `?redirect=${redirect}` : '';
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
@@ -83,10 +79,10 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
                 setLoading(true);
                 if (token) {
                   acceptInvite({ token, oauth: provider }).then(() => {
-                    window.location.href = config.defaultRedirectPath;
+                    window.location.href = redirectPath;
                   });
                 } else {
-                  window.location.href = providerData.url + redirectQuery;
+                  window.location.href = `${providerData.url}?redirect=${redirectPath}`;
                 }
               }}
             >
