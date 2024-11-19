@@ -12,6 +12,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -24,8 +25,9 @@ import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import type { Organization } from '~/types/common';
 
 interface CreateOrganizationFormProps {
-  callback?: (organization: Organization) => void;
+  callback?: (org: Organization) => void;
   dialog?: boolean;
+  replaceToCreatedOrg?: boolean;
   labelDirection?: LabelDirectionType;
   children?: React.ReactNode;
 }
@@ -34,7 +36,13 @@ const formSchema = createOrganizationBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callback, dialog: isDialog, labelDirection = 'top', children }) => {
+const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
+  dialog: isDialog,
+  labelDirection = 'top',
+  children,
+  callback,
+  replaceToCreatedOrg,
+}) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { nextStep } = useStepper();
@@ -54,6 +62,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
 
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
+  const mutateQuery = useMutateQueryData(['organizations', 'list']);
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createOrganization,
@@ -63,7 +72,14 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
       nextStep?.();
 
       addMenuItem(createdOrganization, 'organizations');
-      if (!callback) {
+
+      if (isDialog) dialog.remove(true, 'create-organization');
+
+      mutateQuery.create([createdOrganization]);
+
+      callback?.(createdOrganization);
+
+      if (replaceToCreatedOrg) {
         navigate({
           to: '/$idOrSlug/members',
           params: {
@@ -71,9 +87,6 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({ callbac
           },
         });
       }
-
-      if (isDialog) dialog.remove(true, 'create-organization');
-      callback?.(createdOrganization);
     },
   });
 

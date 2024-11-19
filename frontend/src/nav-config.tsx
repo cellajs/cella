@@ -36,7 +36,7 @@ export const menuSections: SectionItem[] = [
   {
     name: 'organizations',
     entityType: 'organization',
-    createForm: <CreateOrganizationForm dialog />,
+    createForm: <CreateOrganizationForm replaceToCreatedOrg dialog />,
     label: 'common:organizations',
   },
 ];

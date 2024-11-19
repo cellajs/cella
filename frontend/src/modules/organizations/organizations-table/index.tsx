@@ -196,7 +196,7 @@ const OrganizationsTable = () => {
               user.role === 'admin' && (
                 <Button
                   onClick={() => {
-                    dialog(<CreateOrganizationForm callback={(organization) => mutateQuery.create([organization])} dialog />, {
+                    dialog(<CreateOrganizationForm dialog />, {
                       className: 'md:max-w-2xl',
                       id: 'create-organization',
                       title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
