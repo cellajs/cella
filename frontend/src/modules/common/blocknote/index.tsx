@@ -107,7 +107,7 @@ export const BlockNote = ({
     ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') && allowedBlockTypes.includes('emoji')
     : emojis;
 
-  const triggerDataUpdate = () => {
+  const triggerDataUpdate = (passedText?: string) => {
     // if user in Side Menu does not update
     if (editor.sideMenu.view?.menuFrozen) return;
 
@@ -120,7 +120,7 @@ export const BlockNote = ({
     // if user in file panel does not update
     if (editor.filePanel?.shown) return;
 
-    updateData(text);
+    updateData(passedText ?? text);
   };
 
   const onBlockNoteChange = useCallback(async () => {
@@ -159,8 +159,11 @@ export const BlockNote = ({
         })
       ) {
         const blocksToUpdate = handleSubmitOnEnter(editor);
-        if (blocksToUpdate) editor.replaceBlocks(editor.document, blocksToUpdate);
-        triggerDataUpdate();
+        if (blocksToUpdate) {
+          // Converts the editor's contents from Block objects to HTML and sanitizes it
+          const descriptionHtml = await editor.blocksToFullHTML(editor.document);
+          triggerDataUpdate(descriptionHtml);
+        }
         onEnterClick?.();
       }
     }
@@ -243,7 +246,7 @@ export const BlockNote = ({
       onChange={onBlockNoteChange}
       onFocus={onFocus}
       onClick={openCarouselPreview}
-      onBlur={triggerDataUpdate}
+      onBlur={() => triggerDataUpdate()}
       onKeyDown={handleKeyDown}
       sideMenu={false}
       slashMenu={!slashMenu}
