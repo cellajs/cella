@@ -29,6 +29,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, organizationId: s
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => (
           <Link
+            id={`user-cell-${row.id}`}
             to="/$orgIdOrSlug/user/$idOrSlug"
             tabIndex={tabIndex}
             params={{ idOrSlug: row.slug, orgIdOrSlug: organizationId }}

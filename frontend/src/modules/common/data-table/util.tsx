@@ -6,6 +6,11 @@ export const openUserPreviewSheet = (userId: string, orgIdOrSlug?: string) => {
     className: 'max-w-full lg:max-w-4xl p-0',
     id: `user-preview-${userId}`,
     side: 'right',
-    removeCallback: () => sheet.remove(`user-preview-${userId}`),
+    removeCallback: () => {
+      setTimeout(() => {
+        const userCell = document.getElementById(`user-cell-${userId}`);
+        if (userCell) userCell.focus();
+      }, 0);
+    },
   });
 };

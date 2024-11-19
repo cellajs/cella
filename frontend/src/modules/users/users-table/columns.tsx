@@ -30,22 +30,21 @@ export const useColumns = (callback: (users: User[]) => void) => {
         sortable: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => (
-          <div className="inline-flex justify-between items-center w-full">
-            <Link
-              to="/user/$idOrSlug"
-              tabIndex={tabIndex}
-              params={{ idOrSlug: row.slug }}
-              className="flex space-x-2 items-center outline-0 ring-0 group"
-              onClick={(e) => {
-                if (e.metaKey || e.ctrlKey) return;
-                e.preventDefault();
-                openUserPreviewSheet(row.id);
-              }}
-            >
-              <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
-              <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
-            </Link>
-          </div>
+          <Link
+            id={`user-cell-${row.id}`}
+            to="/user/$idOrSlug"
+            tabIndex={tabIndex}
+            params={{ idOrSlug: row.slug }}
+            className="flex space-x-2 items-center outline-0 ring-0 group"
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey) return;
+              e.preventDefault();
+              openUserPreviewSheet(row.id);
+            }}
+          >
+            <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
+            <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
+          </Link>
         ),
       },
       {
