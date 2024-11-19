@@ -54,7 +54,7 @@ export const findOauthAccount = async (providerId: OauthProviderOptions, provide
 // Create slug from email
 export const slugFromEmail = (email: string) => {
   const [alias] = email.split('@');
-  return slugify(alias, { lower: true });
+  return slugify(alias, { lower: true, strict: true });
 };
 
 // Split full name into first and last name

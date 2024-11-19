@@ -547,7 +547,7 @@ const authRoutes = app
         return errorResponse(ctx, 400, 'no_email_found', 'warn');
       }
 
-      const slug = slugify(githubUser.login, { lower: true });
+      const slug = slugify(githubUser.login, { lower: true, strict: true });
       const { firstName, lastName } = splitFullName(githubUser.name || slug);
 
       // Check if user has an invite token
@@ -596,7 +596,7 @@ const authRoutes = app
         ctx,
         {
           id: userId,
-          slug: slugify(githubUser.login, { lower: true }),
+          slug: slugify(githubUser.login, { lower: true, strict: true }),
           email: primaryEmail.email.toLowerCase(),
           name: githubUser.name || githubUser.login,
           thumbnailUrl: githubUser.avatar_url,
