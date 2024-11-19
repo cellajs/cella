@@ -9,6 +9,7 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import AttachmentPreviewIcon from '~/modules/organizations/attachments-table/attachment-preview';
+import { formatBytes } from '~/modules/organizations/attachments-table/helpers';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
@@ -107,7 +108,7 @@ export const useColumns = (
       sortable: false,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative group h-full w-full">{row.size || '-'}</div>,
+      renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative group h-full w-full">{formatBytes(row.size)}</div>,
       width: 100,
     },
     {
