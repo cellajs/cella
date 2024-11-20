@@ -80,7 +80,18 @@ export type GetMembersParams = RequiredGetMembersParams & OptionalGetMembersPara
 
 // Get a list of members in an entity
 export const getMembers = async (
-  { idOrSlug, orgIdOrSlug, entityType, q, sort = 'id', order = 'asc', role, page = 0, limit = 50, offset }: GetMembersParams,
+  {
+    idOrSlug,
+    orgIdOrSlug,
+    entityType,
+    q,
+    sort = 'id',
+    order = 'asc',
+    role,
+    page = 0,
+    limit = config.requestLimits.members,
+    offset,
+  }: GetMembersParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.members.$get(

@@ -24,7 +24,10 @@ export type GetRequestsParams = Omit<Parameters<(typeof client.index)['$get']>['
 };
 
 // Get all app action requests
-export const getRequests = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetRequestsParams, signal?: AbortSignal) => {
+export const getRequests = async (
+  { q, sort = 'id', order = 'asc', page = 0, limit = config.requestLimits.requests, offset }: GetRequestsParams,
+  signal?: AbortSignal,
+) => {
   const response = await client.index.$get(
     {
       query: {

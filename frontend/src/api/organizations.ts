@@ -35,7 +35,7 @@ export type GetOrganizationsParams = Omit<Parameters<(typeof client.index)['$get
 
 // Get a list of organizations
 export const getOrganizations = async (
-  { q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetOrganizationsParams,
+  { q, sort = 'id', order = 'asc', page = 0, limit = config.requestLimits.organizations, offset }: GetOrganizationsParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(

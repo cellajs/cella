@@ -29,7 +29,7 @@ export type GetAttachmentsParams = Omit<Parameters<(typeof client)['index']['$ge
 
 // Get a list of attachments
 export const getAttachments = async (
-  { orgIdOrSlug, q, sort = 'id', order = 'asc', page = 0, limit = 50, offset }: GetAttachmentsParams,
+  { orgIdOrSlug, q, sort = 'id', order = 'asc', page = 0, limit = config.requestLimits.attachments, offset }: GetAttachmentsParams,
   signal?: AbortSignal,
 ) => {
   const response = await client.index.$get(

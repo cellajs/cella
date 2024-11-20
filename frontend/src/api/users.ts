@@ -22,7 +22,10 @@ export type GetUsersParams = Omit<Parameters<(typeof client.index)['$get']>['0']
 };
 
 // Get a list of users in system
-export const getUsers = async ({ q, sort = 'id', order = 'asc', page = 0, limit = 2, role, offset }: GetUsersParams, signal?: AbortSignal) => {
+export const getUsers = async (
+  { q, sort = 'id', order = 'asc', page = 0, limit = config.requestLimits.users, role, offset }: GetUsersParams,
+  signal?: AbortSignal,
+) => {
   const response = await client.index.$get(
     {
       query: {
