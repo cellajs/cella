@@ -1,6 +1,7 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type {
   ArbitraryEntityQueryData,
+  ContextEntityData,
   EntityData,
   EntityQueryData,
   InfiniteEntityQueryData,
@@ -15,8 +16,8 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
   if (typeof data !== 'object' || data === null) return false;
 
   return Object.entries(data).every(([_, value]) => {
-    if (!Array.isArray(value)) return 'entity' in value && 'id' in value && 'slug' in value;
-    return value.every((item) => 'entity' in item && 'id' in item && 'slug' in value);
+    if (!Array.isArray(value)) return 'entity' in value && 'id' in value;
+    return value.every((item) => 'entity' in item && 'id' in item);
   });
 };
 
@@ -54,24 +55,39 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
   });
 };
 
-export const changeArbitraryQueryData = (queryKey: QueryKey, items: EntityData[], action: QueryDataActions, entity: Entity) => {
+export const changeArbitraryQueryData = (
+  queryKey: QueryKey,
+  items: EntityData[] | ContextEntityData[],
+  action: QueryDataActions,
+  entity: Entity,
+  keyToOperateIn?: string,
+) => {
   queryClient.setQueryData<ArbitraryEntityQueryData>(queryKey, (data) => {
-    if (!data) return data;
-    const updatedData = { ...data };
+    if (!data || !items.length) return data;
 
-    // Iterate through each entry in the data
+    const updatedData = { ...data }; // Create a copy of the data to modify
+
     for (const [key, value] of Object.entries(data)) {
-      if ('entity' in value && value.entity === entity) {
-        const [newItem] = items;
-        updatedData[key] = updateItem(value, newItem, action);
+      if (keyToOperateIn === key) {
+        // If the value is an array, use updateArrayItems; otherwise, update the item directly
+        updatedData[key] = Array.isArray(value) ? updateArrayItems(value, items, action) : updateItem(value, items[0], action);
+        continue;
       }
-      if (Array.isArray(value)) {
+
+      if ('entity' in value && value.entity === entity) {
+        updatedData[key] = updateItem(value, items[0], action);
+        continue;
+      }
+
+      // If the value is an array, check for entities within it and apply the action
+      if (Array.isArray(value) && value.some((el) => el.entity === entity)) {
         const filteredArray = value.filter((el) => el.entity === entity);
         updatedData[key] = updateArrayItems(filteredArray, items, action);
       }
     }
 
-    return updatedData; // Return the modified data
+    // Return the modified data after all operations
+    return updatedData;
   });
 };
 
