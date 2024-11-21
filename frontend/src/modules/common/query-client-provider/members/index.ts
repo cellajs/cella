@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/api/memberships';
 
+import { config } from 'config';
 import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
@@ -12,6 +13,8 @@ import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItem
 type MemberQueryData = QueryData<Member>;
 type InfiniteMemberQueryData = InfiniteQueryData<Member>;
 type MemberContextProp = ContextProp<Member, string | null>;
+
+const limit = config.requestLimits.members;
 
 export const useMembersUpdateMutation = () => {
   return useMutation<Membership, Error, UpdateMembershipProp>({
@@ -55,7 +58,7 @@ queryClient.setMutationDefaults(membersKeys.update(), {
         if (!oldData) return oldData;
         const prevItems = getQueryItems(oldData);
         const updatedData = updateMembers(prevItems, updatedMembership);
-        return formatUpdatedData(oldData, updatedData);
+        return formatUpdatedData(oldData, updatedData, limit);
       });
     }
   },
@@ -80,7 +83,7 @@ queryClient.setMutationDefaults(membersKeys.delete(), {
           if (!old) return handleNoOldData(previousData);
           const prevItems = getQueryItems(old);
           const updatedMemberships = deletedMembers(prevItems, ids);
-          return formatUpdatedData(old, updatedMemberships);
+          return formatUpdatedData(old, updatedMemberships, limit);
         });
       }
       context.push([queryKey, previousData, null]);

@@ -13,19 +13,44 @@ export const getQueryItems = <T>(prevItems: QueryData<T> | InfiniteQueryData<T>)
 };
 
 /**
- * Formats the updated data by preserving the structure of prev data and inserting new items.
+ * Formats the updated data by preserving the structure of prev data and inserting new items in chunks.
  * Handles both regular query data and infinite query data formats.
  * @param prevData - Previous query data, which can be either QueryData or InfiniteQueryData.
  * @param updatedData - New items to replace the previous data.
+ * @param limit - Optional limit for chunk size when splitting the updated data (only used for InfiniteQueryData).
  * @returns - The updated query data formatted in the appropriate structure.
  */
-export const formatUpdatedData = <T>(prevData: InfiniteQueryData<T> | QueryData<T>, updatedData: T[]) => {
-  // QueryData, update it with the new data
+export function formatUpdatedData<T>(
+  prevData: InfiniteQueryData<T> | QueryData<T>,
+  updatedData: T[],
+  limit?: number,
+): InfiniteQueryData<T> | QueryData<T> {
   if (isQueryData(prevData)) return { total: updatedData.length, items: updatedData };
 
-  //  InfiniteQueryData, update the pages with the new data
-  return { ...prevData, pages: [{ total: updatedData.length, items: updatedData }] };
-};
+  // Determine the effective limit without modifying the function parameter
+  const pageItemsLimit = limit ?? (prevData.pages.length > 1 ? prevData.pages[0].items.length : undefined);
+
+  // If no effective limit, return all updated data in a single page
+  if (!pageItemsLimit) {
+    return {
+      ...prevData,
+      pages: [{ total: updatedData.length, items: updatedData }],
+    };
+  }
+  // InfiniteQueryData, split the updatedData by the limit and update the pages
+  const chunks: T[][] = [];
+  for (let i = 0; i < updatedData.length; i += pageItemsLimit) {
+    chunks.push(updatedData.slice(i, i + pageItemsLimit));
+  }
+
+  return {
+    ...prevData,
+    pages: chunks.map((chunk) => ({
+      total: updatedData.length,
+      items: chunk,
+    })),
+  };
+}
 
 /**
  * Handles the case where there is no previous data, returning an empty structure

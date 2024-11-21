@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { config } from 'config';
 import { t } from 'i18next';
 import { toast } from 'sonner';
 import { type GetAttachmentsParams, createAttachment, deleteAttachments } from '~/api/attachments';
@@ -20,6 +21,8 @@ export const attachmentKeys = {
   create: () => [...attachmentKeys.all(), 'create'] as const,
   delete: () => [...attachmentKeys.all(), 'delete'] as const,
 };
+
+const limit = config.requestLimits.attachments;
 
 export type AttachmentsCreateMutationQueryFnVariables = Parameters<typeof createAttachment>[0];
 
@@ -91,7 +94,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
           if (!oldData) return handleNoOldData(oldData);
           const prevItems = getQueryItems(oldData);
           const updatedItems = [...newAttachments, ...prevItems];
-          return formatUpdatedData(oldData, updatedItems);
+          return formatUpdatedData(oldData, updatedItems, limit);
         });
       }
 
@@ -121,7 +124,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
           const createdItem = optimisticAttachments.find((created) => created.id === item.id);
           return createdItem ? { ...item, ...createdItem } : item;
         });
-        return formatUpdatedData(oldData, updatedItems);
+        return formatUpdatedData(oldData, updatedItems, limit);
       });
     }
     toast.success(t('common:success.create_resources', { resources: t('common:attachments') }));
@@ -149,7 +152,7 @@ queryClient.setMutationDefaults(attachmentKeys.delete(), {
           const prevItems = getQueryItems(oldData);
           const updatedItems = prevItems.filter((item) => !ids.includes(item.id));
 
-          return formatUpdatedData(oldData, updatedItems);
+          return formatUpdatedData(oldData, updatedItems, limit);
         });
       }
       context.push([queryKey, previousData, null]);
