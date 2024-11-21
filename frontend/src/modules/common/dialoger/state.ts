@@ -85,11 +85,17 @@ class Observer {
   remove = (refocus = true, id?: number | string) => {
     if (id) {
       this.publish({ id, remove: true, refocus });
+      const dialog = this.dialogs.find((dialog) => dialog.id === id);
+      if (!dialog) return;
+      if (isDialog(dialog)) dialog.removeCallback?.();
       this.dialogs = this.dialogs.filter((dialog) => dialog.id !== id);
       return;
     }
     // Remove all dialogs
-    for (const dialog of this.dialogs) this.publish({ id: dialog.id, remove: true, refocus });
+    for (const dialog of this.dialogs) {
+      if (isDialog(dialog)) dialog.removeCallback?.();
+      this.publish({ id: dialog.id, remove: true, refocus });
+    }
     this.dialogs = [];
   };
 

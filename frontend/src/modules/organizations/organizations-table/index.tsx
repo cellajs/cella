@@ -1,4 +1,4 @@
-import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { getOrganizations } from '~/api/organizations';
 
@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { inviteMembers } from '~/api/memberships';
-import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -51,11 +51,8 @@ const OrganizationsTable = () => {
   const { user } = useUserStore();
 
   // Table state
-  const [rows, setRows] = useState<Organization[]>([]);
-  const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [q, setQuery] = useState<OrganizationsSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
-  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as OrganizationsSearch['sort'];
@@ -65,10 +62,9 @@ const OrganizationsTable = () => {
   const isFiltered = !!q;
 
   // Query organizations
-  const queryResult = useSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit, rowsLength: rows.length }));
-
-  // Map (updated) query data to rows
-  useMapQueryDataToRows<Organization>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
+  const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
+    ({ rowsLength }) => organizationsQueryOptions({ q, sort, order, limit, rowsLength }),
+  );
 
   const mutateQuery = useMutateQueryData(['organizations', 'list']);
 
@@ -208,7 +204,7 @@ const OrganizationsTable = () => {
                 </Button>
               )
             )}
-            {!queryResult.isLoading && selectedOrganizations.length === 0 && (
+            {!isLoading && selectedOrganizations.length === 0 && (
               <TableCount count={totalCount} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>
@@ -246,15 +242,15 @@ const OrganizationsTable = () => {
           totalCount,
           rowHeight: 42,
           rowKeyGetter: (row) => row.id,
-          error: queryResult.error,
-          isLoading: queryResult.isLoading,
-          isFetching: queryResult.isFetching,
+          error,
+          isLoading,
+          isFetching,
           enableVirtualization: false,
           isFiltered,
           limit,
           selectedRows,
           onRowsChange,
-          fetchMore: queryResult.fetchNextPage,
+          fetchMore: fetchNextPage,
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,

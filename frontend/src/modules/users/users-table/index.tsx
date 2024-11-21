@@ -1,4 +1,4 @@
-import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '~/api/users';
@@ -10,7 +10,7 @@ import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
@@ -47,12 +47,9 @@ const UsersTable = () => {
   const containerRef = useRef(null);
 
   // Table state
-  const [rows, setRows] = useState<User[]>([]);
-  const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [q, setQuery] = useState<UsersSearch['q']>(search.q);
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
-  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as UsersSearch['sort'];
@@ -63,14 +60,13 @@ const UsersTable = () => {
   const isFiltered = role !== undefined || !!q;
 
   // Query users
-  const queryResult = useSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit, rowsLength: rows.length }));
+  const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
+    ({ rowsLength }) => usersQueryOptions({ q, sort, order, role, limit, rowsLength }),
+  );
 
   // Save filters in search params
   const filters = useMemo(() => ({ q, sort, order, role }), [q, role, order, sort]);
   useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-
-  // Map (updated) query data to rows
-  useMapQueryDataToRows<User>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
   // Table selection
   const selectedUsers = useMemo(() => {
@@ -211,7 +207,7 @@ const UsersTable = () => {
                 </Button>
               )
             )}
-            {!queryResult.isLoading && selectedUsers.length === 0 && (
+            {!isLoading && selectedUsers.length === 0 && (
               <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>
@@ -245,10 +241,10 @@ const UsersTable = () => {
           limit,
           totalCount,
           rowKeyGetter: (row) => row.id,
-          error: queryResult.error,
-          isLoading: queryResult.isLoading,
-          isFetching: queryResult.isFetching,
-          fetchMore: queryResult.fetchNextPage,
+          error,
+          isLoading,
+          isFetching,
+          fetchMore: fetchNextPage,
           isFiltered,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,

@@ -1,4 +1,4 @@
-import { onlineManager, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -9,7 +9,7 @@ import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { getMembers } from '~/api/memberships';
-import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
@@ -55,12 +55,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const isAdmin = entity.membership?.role === 'admin';
 
   // Table state
-  const [rows, setRows] = useState<Member[]>([]);
-  const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [q, setQuery] = useState<MemberSearch['q']>(search.q);
   const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
-  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as MemberSearch['sort'];
@@ -71,18 +68,19 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const isFiltered = role !== undefined || !!q;
 
   // Query members
-  const queryResult = useSuspenseInfiniteQuery(
-    membersQueryOptions({
-      idOrSlug: entity.slug,
-      entityType,
-      orgIdOrSlug: organizationId,
-      q,
-      sort,
-      order,
-      role,
-      limit,
-      rowsLength: rows.length,
-    }),
+  const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
+    ({ rowsLength }) =>
+      membersQueryOptions({
+        idOrSlug: entity.slug,
+        entityType,
+        orgIdOrSlug: organizationId,
+        q,
+        sort,
+        order,
+        role,
+        limit,
+        rowsLength,
+      }),
   );
 
   // Save filters in search params
@@ -93,9 +91,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet, organizationId);
-
-  // Map (updated) query data to rows
-  useMapQueryDataToRows<Member>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
 
   // Table selection
   const selectedMembers = useMemo(() => {
@@ -251,7 +246,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
                 </Button>
               )
             )}
-            {!queryResult.isLoading && selectedMembers.length === 0 && (
+            {!isLoading && selectedMembers.length === 0 && (
               <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>
@@ -293,10 +288,10 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
           limit,
           totalCount,
           rowKeyGetter: (row) => row.id,
-          error: queryResult.error,
-          isLoading: queryResult.isLoading,
-          isFetching: queryResult.isFetching,
-          fetchMore: queryResult.fetchNextPage,
+          error,
+          isLoading,
+          isFetching,
+          fetchMore: fetchNextPage,
           isFiltered,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,

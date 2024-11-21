@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Handshake, Trash, XSquare } from 'lucide-react';
@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -60,11 +60,8 @@ const RequestsTable = () => {
   const { t } = useTranslation();
 
   // Table state
-  const [rows, setRows] = useState<Request[]>([]);
   const [q, setQuery] = useState<RequestsSearch['q']>(search.q);
-  const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
-  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as RequestsSearch['sort'];
@@ -74,7 +71,9 @@ const RequestsTable = () => {
   const isFiltered = !!q;
 
   // Query requests
-  const queryResult = useSuspenseInfiniteQuery(requestsQueryOptions({ q, sort, order, limit, rowsLength: rows.length }));
+  const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
+    ({ rowsLength }) => requestsQueryOptions({ q, sort, order, limit, rowsLength }),
+  );
 
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
@@ -89,9 +88,6 @@ const RequestsTable = () => {
 
   // Build columns
   const [columns, setColumns] = useColumns();
-
-  // Map (updated) query data to rows
-  useMapQueryDataToRows<Request>({ queryResult, setRows, setTotalCount });
 
   // Save filters in search params
   const filters = useMemo(() => ({ q, sort, order }), [q, sortColumns]);
@@ -150,7 +146,7 @@ const RequestsTable = () => {
                 </Button>
               </>
             )}
-            {!queryResult.isLoading && selectedRequests.length === 0 && (
+            {!isLoading && selectedRequests.length === 0 && (
               <TableCount count={totalCount} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>
@@ -188,14 +184,14 @@ const RequestsTable = () => {
           totalCount,
           rowHeight: 42,
           rowKeyGetter: (row) => row.id,
-          error: queryResult.error,
-          isLoading: queryResult.isLoading,
-          isFetching: queryResult.isFetching,
+          error,
+          isLoading,
+          isFetching,
           enableVirtualization: false,
           isFiltered,
           limit,
           onRowsChange,
-          fetchMore: queryResult.fetchNextPage,
+          fetchMore: fetchNextPage,
           sortColumns,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,

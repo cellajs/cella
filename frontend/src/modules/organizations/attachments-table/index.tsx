@@ -1,4 +1,4 @@
-import { onlineManager, useMutation, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { Suspense, useCallback, useMemo, useState } from 'react';
 
@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { updateAttachment } from '~/api/attachments';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import useMapQueryDataToRows from '~/hooks/use-map-query-data-to-rows';
+import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
@@ -60,11 +60,8 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   const isMobile = useBreakpoints('max', 'sm');
 
   // Table state
-  const [rows, setRows] = useState<Attachment[]>([]);
-  const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [q, setQuery] = useState<AttachmentSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
-  const [totalCount, setTotalCount] = useState(0);
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as AttachmentSearch['sort'];
@@ -75,15 +72,16 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   const isFiltered = !!q;
 
   // Query attachments
-  const queryResult = useSuspenseInfiniteQuery(
-    attachmentsQueryOptions({
-      orgIdOrSlug: organization.id,
-      q,
-      sort,
-      order,
-      limit,
-      rowsLength: rows.length,
-    }),
+  const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
+    ({ rowsLength }) =>
+      attachmentsQueryOptions({
+        orgIdOrSlug: organization.id,
+        q,
+        sort,
+        order,
+        limit,
+        rowsLength,
+      }),
   );
 
   const openPreviewDialog = useCallback(
@@ -100,10 +98,6 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openPreviewDialog)), [isAdmin, openPreviewDialog]);
 
   const mutateQuery = useMutateQueryData(attachmentKeys.list({ orgIdOrSlug: organization.id, q, sort, order }));
-
-  // Map (updated) query data to rows
-  useMapQueryDataToRows<Attachment>({ queryResult, setSelectedRows, setRows, selectedRows, setTotalCount });
-
   const { mutate: createAttachment } = useAttachmentCreateMutation();
 
   // Update attachment name
@@ -262,7 +256,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
                 </Button>
               )
             )}
-            {!queryResult.isLoading && selected.length === 0 && (
+            {!isLoading && selected.length === 0 && (
               <TableCount count={totalCount} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />
             )}
           </FilterBarActions>
@@ -290,10 +284,10 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
           limit,
           totalCount,
           rowKeyGetter: (row) => row.id,
-          error: queryResult.error,
-          isLoading: queryResult.isLoading,
-          isFetching: queryResult.isFetching,
-          fetchMore: queryResult.fetchNextPage,
+          error,
+          isLoading,
+          isFetching,
+          fetchMore: fetchNextPage,
           isFiltered,
           selectedRows,
           onSelectedRowsChange: setSelectedRows,

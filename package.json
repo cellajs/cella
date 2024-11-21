@@ -36,12 +36,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@evilmartians/lefthook": "^1.8.2",
+    "@evilmartians/lefthook": "^1.8.4",
     "cross-env": "^7.0.3",
     "rimraf": "^6.0.1",
-    "turbo": "^2.2.3",
+    "turbo": "^2.3.0",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^2.1.5"
   },
   "packageManager": "pnpm@9.1.2",
   "dependencies": {
