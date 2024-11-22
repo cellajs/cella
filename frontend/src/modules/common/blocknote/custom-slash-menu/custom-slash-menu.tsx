@@ -1,5 +1,5 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 
 export const slashMenu = (
@@ -9,9 +9,13 @@ export const slashMenu = (
   originalItemCount: number,
 ) => {
   const { items, selectedIndex, onItemClick } = props;
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const handleKeyPress = async (e: KeyboardEvent) => {
     const { key: pressedKey } = e;
+
+    //prevent index click if search is active
+    if (items.length !== originalItemCount) return;
 
     // Convert pressed key to an index
     const itemIndex = Number.parseInt(pressedKey, 10) - 1;
@@ -19,7 +23,7 @@ export const slashMenu = (
     if (!Number.isNaN(itemIndex) && itemIndex >= 0 && itemIndex < indexedItemCount) {
       const item = items[itemIndex];
       if (!item) return;
-      // media block opens only if document have next block
+      // media block opens only if document has next block
       if (item.group === 'Media') {
         const { nextBlock } = editor.getTextCursorPosition();
 
@@ -56,17 +60,25 @@ export const slashMenu = (
     };
   }, []);
 
+  useEffect(() => {
+    if (!selectedIndex) return;
+    const selectedItem = itemRefs.current[selectedIndex];
+    if (selectedItem) selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [selectedIndex]);
+
   return (
     <div className="slash-menu">
       {items.map((item, index) => (
         <div key={item.title}>
           {index === indexedItemCount && items.length === originalItemCount && <hr className="slash-menu-separator" />}
           <div
+            // biome-ignore lint/suspicious/noAssignInExpressions: to enable scroll into selected item
+            ref={(el) => (itemRefs.current[index] = el)}
             className="slash-menu-item"
             aria-selected={selectedIndex === index}
             onMouseDown={(e) => triggerItemClick(item, e)}
             onKeyDown={() => {}}
-            // biome-ignore lint/a11y/useSemanticElements: <explanation>
+            // biome-ignore lint/a11y/useSemanticElements: req by author
             role="button"
             tabIndex={0}
           >

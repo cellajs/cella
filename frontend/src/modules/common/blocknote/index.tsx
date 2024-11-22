@@ -255,13 +255,7 @@ export const BlockNote = ({
       filePanel={!filePanel}
       className={className}
     >
-      {slashMenu && (
-        <FloatingPortal>
-          <div className="bn-ui-container">
-            <CustomSlashMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />
-          </div>
-        </FloatingPortal>
-      )}
+      {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
 
       {formattingToolbar && (
         <FloatingPortal>
