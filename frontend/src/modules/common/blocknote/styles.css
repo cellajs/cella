@@ -251,3 +251,21 @@ p.bn-inline-content code {
   margin-bottom: 0.4em;
   cursor: pointer;
 }
+
+.bn-shadcn table {
+  position: relative;
+  top: -16px;
+  left: -16px;
+  padding-bottom: 16px;
+  overflow-y: hidden;
+}
+
+.bn-shadcn th {
+  border: 1px solid hsl(var(--table-border));
+  border-collapse: collapse;
+}
+.bn-shadcn td {
+  padding: 4px;
+  border: 1px solid hsl(var(--table-border));
+  border-collapse: collapse;
+}

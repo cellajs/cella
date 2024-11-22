@@ -16,27 +16,9 @@ export interface CustomFormatToolBarConfig {
 export type BlockAlignTypes = 'right' | 'center' | 'left';
 export type BlockStyleTypes = 'bold' | 'italic' | 'underline' | 'strike' | 'code';
 
-export type CellaCustomBlockTypes = 'notify';
 export type BasicFileBlockTypes = 'image' | 'video' | 'audio' | 'file';
 export type BasicBlockBaseTypes = 'emoji' | 'table' | 'paragraph' | 'heading' | 'codeBlock' | 'bulletListItem' | 'numberedListItem' | 'checkListItem';
 export type BasicBlockTypes = BasicBlockBaseTypes | BasicFileBlockTypes;
-
-export type MenusItemsTitle =
-  | 'Image'
-  | 'Video'
-  | 'File'
-  | 'Bullet List'
-  | 'Numbered List'
-  | 'Check List'
-  | 'Notify'
-  | 'Emoji'
-  | 'Table'
-  | 'Audio'
-  | 'Heading 1'
-  | 'Heading 2'
-  | 'Heading 3'
-  | 'Code Block'
-  | 'Paragraph';
 
 // from react-icon to satisfy side menu icon type for custom elements
 interface IconBaseProps extends React.SVGAttributes<SVGElement> {
@@ -47,3 +29,30 @@ interface IconBaseProps extends React.SVGAttributes<SVGElement> {
 }
 
 export type IconType = (props: IconBaseProps) => JSX.Element;
+
+// Declare a module to allow augmentation
+declare module '~/modules/common/blocknote/types' {
+  export interface ExtendableTypes {
+    BlockTypes: 'notify';
+    ItemsTitle:
+      | 'Image'
+      | 'Video'
+      | 'File'
+      | 'Bullet List'
+      | 'Numbered List'
+      | 'Check List'
+      | 'Notify'
+      | 'Emoji'
+      | 'Table'
+      | 'Audio'
+      | 'Heading 1'
+      | 'Heading 2'
+      | 'Heading 3'
+      | 'Code Block'
+      | 'Paragraph';
+  }
+}
+
+// Combine ExtendableTypes with your base types
+export type CellaCustomBlockTypes = ExtendableTypes['BlockTypes'];
+export type MenusItemsTitle = ExtendableTypes['ItemsTitle'];

@@ -70,6 +70,13 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
 
   if (!parentElement) return;
 
+  // to set tables column width
+  for (const td of parentElement.querySelectorAll('td')) {
+    const cell = td as HTMLTableCellElement;
+    const width = cell.getAttribute('colwidth') ?? '120';
+    cell.style.width = `${width}px`;
+  }
+
   // Select all elements that have a 'data-url' attribute
   const elementsWithDataUrl = parentElement.querySelectorAll('[data-url]');
   // Exit early if no matching elements are found

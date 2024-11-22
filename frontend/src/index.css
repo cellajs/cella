@@ -11,6 +11,7 @@
   :root {
     --base: 14px;
 
+    --table-border: 48 100% 5%;
     --media-secondary-color: 240 5% 92%;
     --bloknote-placeholder: 240 6% 92%;
     --chart-1: 12 76% 61%;
@@ -44,6 +45,7 @@
 
   .bn-container.bn-shadcn.dark,
   .dark {
+    --table-border: 228 100% 95%;
     --media-secondary-color: 240 3.7% 15%;
     --bloknote-placeholder: 240 3.7% 20%;
     --chart-1: 220 70% 50%;
