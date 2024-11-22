@@ -252,14 +252,6 @@ p.bn-inline-content code {
   cursor: pointer;
 }
 
-.bn-shadcn table {
-  position: relative;
-  top: -16px;
-  left: -16px;
-  padding-bottom: 16px;
-  overflow-y: hidden;
-}
-
 .bn-shadcn th {
   border: 1px solid hsl(var(--table-border));
   border-collapse: collapse;

@@ -70,11 +70,18 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
 
   if (!parentElement) return;
 
-  // to set tables column width
+  // to set tables column width and line break if it's empty
   for (const td of parentElement.querySelectorAll('td')) {
     const cell = td as HTMLTableCellElement;
     const width = cell.getAttribute('colwidth') ?? '120';
     cell.style.width = `${width}px`;
+
+    const paragraph = cell.querySelector('p');
+    if (paragraph && !paragraph?.innerText.length) {
+      // If no <br> exists inside the <p>, add one
+      const lineBreak = document.createElement('br');
+      paragraph.appendChild(lineBreak);
+    }
   }
 
   // Select all elements that have a 'data-url' attribute
