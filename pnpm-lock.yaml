@@ -32,7 +32,7 @@ importers:
         version: 5.6.3
       vitest:
         specifier: ^2.1.5
-        version: 2.1.5(@types/node@22.9.1)(jsdom@25.0.1(canvas@2.11.2))(terser@5.36.0)
+        version: 2.1.5(@types/node@22.9.1)(jsdom@25.0.1)(terser@5.36.0)
 
   backend:
     dependencies:
@@ -511,14 +511,14 @@ importers:
         specifier: 4.6.10
         version: 4.6.10
       i18next:
-        specifier: 23.16.5
-        version: 23.16.5
+        specifier: ^23.16.8
+        version: 23.16.8
       i18next-browser-languagedetector:
-        specifier: 8.0.0
+        specifier: ^8.0.0
         version: 8.0.0
       i18next-http-backend:
-        specifier: 2.6.2
-        version: 2.6.2
+        specifier: ^2.7.1
+        version: 2.7.1
       idb-keyval:
         specifier: ^6.2.1
         version: 6.2.1
@@ -569,7 +569,7 @@ importers:
         version: 7.53.2(react@18.3.1)
       react-i18next:
         specifier: ^15.1.1
-        version: 15.1.1(i18next@23.16.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 15.1.1(i18next@23.16.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-intersection-observer:
         specifier: ^9.13.1
         version: 9.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2838,7 +2838,6 @@ packages:
 
   '@evilmartians/lefthook@1.8.4':
     resolution: {integrity: sha512-n5aODynRZKSYmDajD8UCd5yy5ste2lJUTSGmv+D+4OP0UUWZqF4qJ/r7+2Ifo6K6WdsknVhVsPsEl4LugTbrug==}
-    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -7774,11 +7773,8 @@ packages:
   i18next-browser-languagedetector@8.0.0:
     resolution: {integrity: sha512-zhXdJXTTCoG39QsrOCiOabnWj2jecouOqbchu3EfhtSHxIB5Uugnm9JaizenOy39h7ne3+fLikIjeW88+rgszw==}
 
-  i18next-http-backend@2.6.2:
-    resolution: {integrity: sha512-Hp/kd8/VuoxIHmxsknJXjkTYYHzivAyAF15pzliKzk2TiXC25rZCEerb1pUFoxz4IVrG3fCvQSY51/Lu4ECV4A==}
-
-  i18next@23.16.5:
-    resolution: {integrity: sha512-KTlhE3EP9x6pPTAW7dy0WKIhoCpfOGhRQlO+jttQLgzVaoOjWwBWramu7Pp0i+8wDNduuzXfe3kkVbzrKyrbTA==}
+  i18next-http-backend@2.7.1:
+    resolution: {integrity: sha512-vPksHIckysGgykCD8JwCr2YsJEml9Cyw+Yu2wtb4fQ7xIn9RH/hkUDh5UkwnIzb0kSL4SJ30Ab/sCInhQxbCgg==}
 
   i18next@23.16.8:
     resolution: {integrity: sha512-06r/TitrM88Mg5FdUXAKL96dJMzgqLE5dv3ryBAra4KCwD9mJ4ndOTS95ZuymIGoE+2hzfdaMak2X11/es7ZWg==}
@@ -19552,15 +19548,11 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.26.0
 
-  i18next-http-backend@2.6.2:
+  i18next-http-backend@2.7.1:
     dependencies:
       cross-fetch: 4.0.0
     transitivePeerDependencies:
       - encoding
-
-  i18next@23.16.5:
-    dependencies:
-      '@babel/runtime': 7.26.0
 
   i18next@23.16.8:
     dependencies:
@@ -21757,15 +21749,6 @@ snapshots:
     dependencies:
       react: 18.3.1
 
-  react-i18next@15.1.1(i18next@23.16.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      '@babel/runtime': 7.26.0
-      html-parse-stringify: 3.0.1
-      i18next: 23.16.5
-      react: 18.3.1
-    optionalDependencies:
-      react-dom: 18.3.1(react@18.3.1)
-
   react-i18next@15.1.1(i18next@23.16.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.26.0
@@ -23551,7 +23534,7 @@ snapshots:
       fsevents: 2.3.3
       terser: 5.36.0
 
-  vitest@2.1.5(@types/node@22.9.1)(jsdom@25.0.1(canvas@2.11.2))(terser@5.36.0):
+  vitest@2.1.5(@types/node@22.9.1)(jsdom@25.0.1)(terser@5.36.0):
     dependencies:
       '@vitest/expect': 2.1.5
       '@vitest/mocker': 2.1.5(vite@5.4.11(@types/node@22.9.1)(terser@5.36.0))
