@@ -164,15 +164,6 @@ p.bn-inline-content code {
   background-color: hsl(var(--accent) / 0.6);
 }
 
-.summary {
-  padding: 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  border-left: 3px solid hsl(var(--primary));
-  background-color: hsl(var(--secondary));
-  margin: 8px 0;
-}
-
 .notify {
   display: flex;
   justify-content: center;
@@ -251,4 +242,12 @@ p.bn-inline-content code {
 
 .inline-content {
   flex-grow: 1;
+}
+
+/* For showing saved checkListItem */
+.bn-block-content[data-content-type="checkListItem"] > input {
+  margin: 0;
+  margin-inline-end: 0.5em;
+  margin-bottom: 0.4em;
+  cursor: pointer;
 }

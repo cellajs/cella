@@ -1,6 +1,5 @@
 import { FilePanelController, type FilePanelProps, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import '@blocknote/shadcn/style.css';
 import { type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useRef, useState } from 'react';
 import * as Badge from '~/modules/ui/badge';
 import * as Button from '~/modules/ui/button';
@@ -37,6 +36,7 @@ import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } 
 
 import { type Slides, openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
 
+import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 

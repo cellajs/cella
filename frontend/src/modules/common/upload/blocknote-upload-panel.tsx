@@ -7,7 +7,7 @@ import UploadUppy from '~/modules/common/upload/upload-uppy';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { UploadType, type UploadedUppyFile } from '~/types/common';
 
-const blockTypes = {
+const basicBlockTypes = {
   image: {
     allowedFileTypes: ['image/*'],
     plugins: ['image-editor', 'screen-capture', 'webcam'],
@@ -35,7 +35,7 @@ const UppyFilePanel: React.FC<UppyFilePanelProps & FilePanelProps> = ({ onCreate
   const { block } = props;
 
   const editor = useBlockNoteEditor();
-  const type = (block.type as keyof typeof blockTypes) || 'file';
+  const type = (block.type as keyof typeof basicBlockTypes) || 'file';
 
   return (
     <Dialog defaultOpen onOpenChange={() => editor.filePanel?.closeMenu()}>
@@ -51,14 +51,14 @@ const UppyFilePanel: React.FC<UppyFilePanelProps & FilePanelProps> = ({ onCreate
             restrictions: {
               maxFileSize: 10 * 1024 * 1024, // 10MB
               maxNumberOfFiles: 1,
-              allowedFileTypes: blockTypes[type].allowedFileTypes,
+              allowedFileTypes: basicBlockTypes[type].allowedFileTypes,
               minFileSize: null,
               maxTotalFileSize: 10 * 1024 * 1024, // 10MB
               minNumberOfFiles: null,
               requiredMetaFields: [],
             },
           }}
-          plugins={blockTypes[type].plugins}
+          plugins={basicBlockTypes[type].plugins}
           imageMode="attachment"
           callback={async (result) => {
             for (const res of result) {

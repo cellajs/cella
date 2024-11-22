@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { type DropDownT, dropdownerState } from '~/modules/common/dropdowner/state';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -6,18 +6,24 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/module
 export function DropDowner() {
   const [dropdown, setDropdown] = useState<DropDownT | null>(null);
 
+  const dropdownContainerRef = React.useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     return dropdownerState.subscribe((dropdowner) => {
       if ('remove' in dropdowner) setDropdown(null);
       else setDropdown(dropdowner);
     });
   }, []);
+
   if (!dropdown?.trigger) return null;
 
-  const dropdownContainer = document.createElement('div');
-  dropdownContainer.classList.add('absolute', 'bottom-0', dropdown.align === 'start' ? 'left-0' : 'right-0');
-  dropdown.trigger.appendChild(dropdownContainer);
+  // Only create the container once, using the ref to keep it persistent
+  if (!dropdownContainerRef.current) {
+    dropdownContainerRef.current = document.createElement('div');
+    dropdownContainerRef.current.classList.add('absolute', 'bottom-0', dropdown.align === 'start' ? 'left-0' : 'right-0');
+  }
 
+  dropdown.trigger.appendChild(dropdownContainerRef.current);
   return ReactDOM.createPortal(
     <DropdownMenu key={dropdown.id} open={true} modal={dropdown.modal}>
       <DropdownMenuTrigger />
@@ -38,6 +44,6 @@ export function DropDowner() {
         {dropdown.content}
       </DropdownMenuContent>
     </DropdownMenu>,
-    dropdownContainer,
+    dropdownContainerRef.current,
   );
 }

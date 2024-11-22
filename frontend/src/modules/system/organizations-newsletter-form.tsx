@@ -3,7 +3,6 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import '@blocknote/shadcn/style.css';
 import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
 import { Send } from 'lucide-react';
 import { Suspense } from 'react';
@@ -17,6 +16,10 @@ import UppyFilePanel from '~/modules/common/upload/blocknote-upload-panel';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+
+import '@blocknote/shadcn/style.css';
+import '~/modules/common/blocknote/app-specific-custom/styles.css';
+import '~/modules/common/blocknote/styles.css';
 
 interface NewsletterFormProps {
   organizationIds: string[];
