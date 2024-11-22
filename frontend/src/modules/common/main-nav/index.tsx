@@ -16,6 +16,7 @@ export type NavItem = {
   icon: React.ElementType<LucideProps>;
   sheet?: React.ReactNode;
   dialog?: React.ReactNode;
+  element?: React.ReactNode;
   href?: string;
   mirrorOnMobile?: boolean;
 };
