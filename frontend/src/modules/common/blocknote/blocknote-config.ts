@@ -98,10 +98,10 @@ export const customSchema = BlockNoteSchema.create({
   },
 });
 
-// Extend the interface for additional Custom block types and menus Titles
-// declare module '~/modules/common/blocknote/types' {
-//   export interface ExtendableTypes {
-//     BlockTypes: 'example';
-//     ItemsTitle: 'Example';
-//   }
-// }
+//Extend the interface for additional Custom block types and menus Titles
+declare module '~/modules/common/blocknote/types' {
+  export interface ExtendableBlocknoteTypes {
+    BlockTypes: BaseCustomBlockTypes;
+    ItemsTitle: BaseMenusItemsTitle;
+  }
+}

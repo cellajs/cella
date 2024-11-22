@@ -30,29 +30,25 @@ interface IconBaseProps extends React.SVGAttributes<SVGElement> {
 
 export type IconType = (props: IconBaseProps) => JSX.Element;
 
-// Declare a module to allow augmentation
-declare module '~/modules/common/blocknote/types' {
-  export interface ExtendableTypes {
-    BlockTypes: 'notify';
-    ItemsTitle:
-      | 'Image'
-      | 'Video'
-      | 'File'
-      | 'Bullet List'
-      | 'Numbered List'
-      | 'Check List'
-      | 'Notify'
-      | 'Emoji'
-      | 'Table'
-      | 'Audio'
-      | 'Heading 1'
-      | 'Heading 2'
-      | 'Heading 3'
-      | 'Code Block'
-      | 'Paragraph';
-  }
-}
+export type BaseCustomBlockTypes = 'notify';
+
+export type BaseMenusItemsTitle =
+  | 'Image'
+  | 'Video'
+  | 'File'
+  | 'Bullet List'
+  | 'Numbered List'
+  | 'Check List'
+  | 'Notify'
+  | 'Emoji'
+  | 'Table'
+  | 'Audio'
+  | 'Heading 1'
+  | 'Heading 2'
+  | 'Heading 3'
+  | 'Code Block'
+  | 'Paragraph';
 
 // Combine ExtendableTypes with your base types
-export type CellaCustomBlockTypes = ExtendableTypes['BlockTypes'];
-export type MenusItemsTitle = ExtendableTypes['ItemsTitle'];
+export type CellaCustomBlockTypes = ExtendableBlocknoteTypes['BlockTypes'];
+export type MenusItemsTitle = ExtendableBlocknoteTypes['ItemsTitle'];
