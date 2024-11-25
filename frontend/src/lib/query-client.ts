@@ -19,6 +19,11 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 export const onError = (error: Error) => {
   if (error instanceof ApiError) {
     const statusCode = Number(error.status);
+
+    // Set down alerts
+    if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');
+    else if (statusCode === 504) useAlertStore.getState().setDownAlert('offline');
+
     // Abort if /me or /me/menu, it should fail silently
     if (error.path && ['/me', '/me/menu'].includes(error.path)) return;
 
@@ -35,10 +40,6 @@ export const onError = (error: Error) => {
     // Show toast
     if (error.severity === 'info') showToast(errorMessage || error.message, 'info');
     else showToast(errorMessage || error.message, 'error');
-
-    // Set down alerts
-    if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');
-    else if (statusCode === 504) useAlertStore.getState().setDownAlert('offline');
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
