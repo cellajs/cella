@@ -12,7 +12,7 @@ import {
 import { useEffect } from 'react';
 import { customFormattingToolBarConfig } from '~/modules/common/blocknote/blocknote-config';
 import { CustomTextAlignSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-align-change';
-import { CellaCustomBlockTypeselect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
+import { CellaCustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
 import { CustomTextStyleSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-text-type-change';
 
 export const CustomFormattingToolbar = () => (
@@ -30,7 +30,7 @@ export const CustomFormattingToolbar = () => (
       }, []);
       return (
         <FormattingToolbar>
-          {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeselect />}
+          {customFormattingToolBarConfig.blockTypeSelect && <CellaCustomBlockTypeSelect />}
           {customFormattingToolBarConfig.blockStyleSelect && <CustomTextStyleSelect />}
           {customFormattingToolBarConfig.blockAlignSelect && <CustomTextAlignSelect />}
 
