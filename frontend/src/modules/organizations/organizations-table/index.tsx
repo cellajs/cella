@@ -63,7 +63,7 @@ const OrganizationsTable = () => {
 
   // Query organizations
   const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
-    ({ rowsLength }) => organizationsQueryOptions({ q, sort, order, limit, rowsLength }),
+    organizationsQueryOptions({ q, sort, order, limit }),
   );
 
   const mutateQuery = useMutateQueryData(['organizations', 'list']);
@@ -78,7 +78,6 @@ const OrganizationsTable = () => {
   // Drop selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setRows([]); // to set offset of a new query to 0
     setQuery(searchString);
   };
   // Table selection

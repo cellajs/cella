@@ -1,28 +1,20 @@
 import { type InfiniteData, type QueryKey, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import type { QueryData } from '~/modules/common/query-client-provider/types';
 
-interface TQueryFnData<T> {
-  items: T[];
-  total: number;
-}
-
-type OptionsCallback<T, TQueryKey extends QueryKey = QueryKey> = (params: { rowsLength: number }) => Parameters<
+type Options<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
   typeof useSuspenseInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, number>
 >[0];
 
 // Custom hook to map query result data to rows
 export const useDataFromSuspenseInfiniteQuery = <T extends { id: string } = { id: string }, TQueryKey extends QueryKey = QueryKey>(
-  optionsCallback: OptionsCallback<TQueryFnData<T>, TQueryKey>,
+  options: Options<QueryData<T>, TQueryKey>,
 ) => {
   const [rows, setRows] = useState<T[]>([]);
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [totalCount, setTotalCount] = useState(0);
 
-  const queryResult = useSuspenseInfiniteQuery(
-    optionsCallback({
-      rowsLength: rows.length,
-    }),
-  );
+  const queryResult = useSuspenseInfiniteQuery(options);
 
   useEffect(() => {
     // Flatten the array of pages to get all items

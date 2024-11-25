@@ -73,15 +73,13 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
 
   // Query attachments
   const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
-    ({ rowsLength }) =>
-      attachmentsQueryOptions({
-        orgIdOrSlug: organization.id,
-        q,
-        sort,
-        order,
-        limit,
-        rowsLength,
-      }),
+    attachmentsQueryOptions({
+      orgIdOrSlug: organization.id,
+      q,
+      sort,
+      order,
+      limit,
+    }),
   );
 
   const openPreviewDialog = useCallback(
@@ -130,7 +128,6 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   // Clear selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setRows([]); // to set offset of a new query to 0
     setQuery(searchString);
   };
 
@@ -140,9 +137,7 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
 
     if (column.key === 'name') {
       // If name is changed, update the attachment
-      for (const index of indexes) {
-        updateAttachmentName(changedRows[index]);
-      }
+      for (const index of indexes) updateAttachmentName(changedRows[index]);
     }
 
     setRows(changedRows);
