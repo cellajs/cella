@@ -10,7 +10,7 @@
   "homepage": "https://cellajs.com",
   "type": "module",
   "engines": {
-    "node": ">=20.14.0"
+    "node": ">=20.14.0 <23.0.0"
   },
   "publishConfig": {
     "access": "public"
