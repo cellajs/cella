@@ -69,18 +69,16 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   // Query members
   const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
-    ({ rowsLength }) =>
-      membersQueryOptions({
-        idOrSlug: entity.slug,
-        entityType,
-        orgIdOrSlug: organizationId,
-        q,
-        sort,
-        order,
-        role,
-        limit,
-        rowsLength,
-      }),
+    membersQueryOptions({
+      idOrSlug: entity.slug,
+      entityType,
+      orgIdOrSlug: organizationId,
+      q,
+      sort,
+      order,
+      role,
+      limit,
+    }),
   );
 
   // Save filters in search params
@@ -109,13 +107,11 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // Drop selected rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setRows([]); // to set offset of a new query to 0
     setQuery(searchString);
   };
 
   const onRoleChange = (role?: string) => {
     setSelectedRows(new Set<string>());
-    setRows([]); // to set offset of a new query to 0
     setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
   };
 

@@ -2,6 +2,7 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetMembersParams, getMembers } from '~/api/memberships';
 import { membersKeys } from '~/modules/common/query-client-provider/members/keys';
+import { getPaginatedOffset } from '~/utils/mutate-query';
 
 const LIMIT = config.requestLimits.members;
 
@@ -15,13 +16,10 @@ export const membersQueryOptions = ({
   order: initialOrder,
   role,
   limit = LIMIT,
-  rowsLength = 0,
-}: GetMembersParams & {
-  rowsLength?: number;
-}) => {
+}: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
-  const offset = rowsLength;
+  const offset = getPaginatedOffset(membersKeys.list({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role }));
 
   return infiniteQueryOptions({
     queryKey: membersKeys.list({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role }),

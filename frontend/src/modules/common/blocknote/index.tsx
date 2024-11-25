@@ -28,7 +28,6 @@ import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
 import type { Member } from '~/types/common';
 
 import type { Block } from '@blocknote/core';
-import { FloatingPortal } from '@floating-ui/react';
 
 import router from '~/lib/router';
 import { focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
@@ -257,13 +256,7 @@ export const BlockNote = ({
     >
       {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
 
-      {formattingToolbar && (
-        <FloatingPortal>
-          <div className="bn-ui-container">
-            <CustomFormattingToolbar />
-          </div>
-        </FloatingPortal>
-      )}
+      {formattingToolbar && <CustomFormattingToolbar />}
 
       {sideMenu && <CustomSideMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
 

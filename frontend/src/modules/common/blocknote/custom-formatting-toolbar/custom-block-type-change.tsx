@@ -13,7 +13,7 @@ import { useMemo, useState } from 'react';
 import { customBlockTypeSelectItems } from '~/modules/common/blocknote/blocknote-config';
 import type { BasicBlockTypes } from '~/modules/common/blocknote/types';
 
-export const CellaCustomBlockTypeselect = () => {
+export const CellaCustomBlockTypeSelect = () => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
