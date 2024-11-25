@@ -3,6 +3,7 @@ import { Command, InvalidArgumentError } from 'commander';
 import { NAME } from './constants';
 import { packageJson } from './utils/package-json';
 import { validateProjectName } from './utils/validate-project-name';
+import { Fork } from './utils/config-file';
 
 interface CommandOptions {
   configFile?: string;
@@ -18,6 +19,11 @@ interface CLI {
   configFile: string;
   packageManager: string;
   localBranch: string;
+  divergedFile?: string;
+  ignoreFile?: string;
+  ignoreList?: string[];
+  fork?: Fork;
+  prBranchName?: string;
 }
 
 let syncService = '';
