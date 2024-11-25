@@ -144,6 +144,7 @@ export const config = {
 
   // Request limits
   requestLimits: {
+    default: 40,
     users: 100,
     members: 40,
     organizations: 40,
