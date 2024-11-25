@@ -1,25 +1,19 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetUsersParams, getUsers } from '~/api/users';
+import { getPaginatedOffset } from '~/utils/mutate-query';
 
 const LIMIT = config.requestLimits.users;
 
-export const usersQueryOptions = ({
-  q = '',
-  sort: initialSort,
-  order: initialOrder,
-  role,
-  limit = LIMIT,
-  rowsLength = 0,
-}: GetUsersParams & {
-  rowsLength?: number;
-}) => {
+export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrder, role, limit = LIMIT }: GetUsersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
-  const offset = rowsLength;
+
+  const queryKey = ['users', 'list', q, sort, order, role];
+  const offset = getPaginatedOffset(queryKey);
 
   return infiniteQueryOptions({
-    queryKey: ['users', 'list', q, sort, order, role],
+    queryKey,
     initialPageParam: 0,
     refetchOnWindowFocus: false,
     retry: 1,
