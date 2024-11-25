@@ -1,0 +1,7 @@
+{
+  "name": "locales",
+  "type": "module",
+  "exports": {
+    ".": "./**"
+  }
+}

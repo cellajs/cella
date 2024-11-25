@@ -1,0 +1,4 @@
+.tsqd-open-btn-container,
+.TanStackRouterDevtools > button {
+  display: none !important;
+}

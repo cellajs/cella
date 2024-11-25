@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>
+    <%= title %>
+  </title>
+  <meta name="description" content="<%= description %>" />
+  <meta name="keywords" content="<%= keywords %>" />
+  <meta name="author" content="<%= author %>" />
+
+  <meta property="og:title" content="<%= title %>" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="<%= url %>" />
+  <meta property="og:description" content="<%= description %>" />
+  <meta property="og:site_name" content="<%= title %>" />
+  <meta property="og:image" content="/static/images/thumbnail.png">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= title %>">
+  <meta name="twitter:description" content="<%= description %>">
+  <meta name="twitter:image" content="/static/images/thumbnail.png">
+  <meta name="twitter:site" content="<%= twitter %>">
+
+  <link rel="logo" type="image/png" href="/static/logo/logo.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/static/icons/icon-512x512.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png" />
+
+  <!-- <meta name="msapplication-TileColor" content="<%= color %>" />
+  <meta name="theme-color" content="<%= color %>" /> -->
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+
+  <!-- Simple analytics -->
+  <script async defer src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+</head>
+
+<body class="group/body">
+  <div id="root"></div>
+  <script type="module" src="/src/index.tsx"></script>
+</body>
+
+</html>

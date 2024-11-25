@@ -1,0 +1,3 @@
+.focus-view #main-block-app-content *:not(.focus-view-container, .focus-view-container *) {
+  display: none;
+}

@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "types": ["vite/client", "vite-plugin-pwa/client"],
+
+    /* Bundler mode */
+    "jsx": "react-jsx",
+
+    "paths": {
+      "#/*": ["../backend/src/*"],
+      "~/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*", "vite.config.ts", "../config/*", "../backend/**/*", "../locales/*", "env.ts"],
+  "exclude": ["**/node_modules", "**/dist", "**/.*/"]
+}
