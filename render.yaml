@@ -1,0 +1,119 @@
+previewsExpireAfterDays: 3
+
+# Make sure to replace everything with *.cella* with own domain name(s), etc
+
+services:
+  # Backend
+  - type: web
+    name: cella-backend
+    runtime: node
+    region: frankfurt
+    rootDir: backend
+    buildCommand: pnpm install && pnpm build
+    # preDeployCommand: pnpm predeploy
+    startCommand: pnpm start
+    numInstances: 1
+    healthCheckPath: /ping
+    previews:
+      generation: manual
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: UNSUBSCRIBE_TOKEN_SECRET
+        sync: false
+      - key: ARGON_SECRET
+        sync: false
+      - key: TUS_UPLOAD_API_SECRET
+        sync: false
+      - key: AWS_CLOUDFRONT_KEY_ID
+        sync: false
+      - key: AWS_CLOUDFRONT_PRIVATE_KEY
+        sync: false
+    buildFilter:
+      paths:
+        - backend/**/*.?s
+
+  # TUS upload server
+  - type: web
+    name: cella-tus
+    runtime: node
+    region: frankfurt
+    rootDir: tus
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    numInstances: 1
+    previews:
+      generation: manual
+    envVars:
+      - key: TUS_UPLOAD_API_SECRET
+        sync: false
+      - key: AWS_S3_UPLOAD_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_S3_UPLOAD_SECRET_ACCESS_KEY
+        sync: false
+    buildFilter:
+      paths:
+        - tus/**/*.?s
+
+  # Frontend
+  - type: web
+    name: cella-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: pnpm install && pnpm build
+    staticPublishPath: ./dist
+    previews:
+      generation: manual
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Content-Security-Policy
+        value: |
+          default-src 'self';
+          script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com *.gleap.io;
+          connect-src 'self' blob: *.cellajs.com *.gleap.io wss://ws.gleap.io;
+          img-src 'self' blob: https: data:;
+          media-src 'self' blob: data: https://i.ytimg.com *.gleap.io;
+          frame-src 'self' *.youtube.com *.vimeo.com *.paddle.com *.gleap.io;
+          style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+          font-src 'self' data: https://fonts.gstatic.com;
+      - path: /*
+        name: Referrer-Policy
+        value: same-origin
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=15768000
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), midi=()
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: SKIP_INSTALL_DEPS
+        sync: true
+        value: true
+      - key: NODE_VERSION
+        sync: true
+        value: 22
+    buildFilter:
+      paths:
+        - frontend/**/*.?s
+
+# Postgres database
+databases:
+  - name: cella-db
+    databaseName: cella
+    region: frankfurt
+    plan: starter
+    previewPlan: starter
+    postgresMajorVersion: 16

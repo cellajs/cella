@@ -1,0 +1,40 @@
+[build]
+  base = "."
+  publish = "./frontend/dist/"
+  command = "pnpm run build:fe"
+  environment = { NODE_ENV = 'production', NODE_VERSION = 20 }
+
+# The following redirect is intended for SPAs that handle routing internally.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Production context: all deploys from the Production branch
+# set in your site’s Branches settings in the UI will inherit
+# these settings. You can define environment variables
+# here but we recommend using the Netlify UI for sensitive
+# values to keep them out of your source repository.
+[context.production]
+  environment = { NODE_ENV = 'production', NODE_VERSION = 20 }
+
+# Set security headers and make sure to replace *.cellajs.com with your domain name(s) 
+# [[headers]]
+#   for = "/*"
+#     [headers.values]
+#       X-Content-Type-Options = "nosniff"
+#       Content-Security-Policy = '''
+#           default-src 'self';
+#           script-src 'self' *.cellajs.com *.vimeo.com *.googleapis.com;
+#           connect-src 'self' blob: *.cellajs.com;
+#           img-src 'self' blob: https: data:;
+#           media-src 'self' blob: data: https://i.ytimg.com;
+#           frame-src 'self' *.youtube.com *.vimeo.com;
+#           style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+#           font-src 'self' data: https://fonts.gstatic.com;
+#       '''
+#       Referrer-Policy = "same-origin"
+#       Strict-Transport-Security = "max-age=15768000"
+#       X-XSS-Protection = "1; mode=block"
+#       X-Frame-Options= "SAMEORIGIN"
+#       Permissions-Policy = "camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), midi=()"
