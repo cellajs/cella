@@ -43,7 +43,7 @@ app.use('*', cors(corsOptions));
 app.use('*', csrf({ origin: config.frontendUrl }));
 
 // Rate limiter
-app.use('*', rateLimiter({ limit: 50, windowMs: 60 * 60 * 1000, keyPrefix: 'common_fail' }, 'fail'));
+app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));
 
 // Compress with gzip
 // Apply gzip compression only to GET requests
