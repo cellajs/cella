@@ -1,9 +1,14 @@
 import { organizationsTable } from '#/db/schema/organizations';
 import { usersTable } from '#/db/schema/users';
+import type { config } from 'config';
 import { attachmentsTable } from './db/schema/attachments';
 import type { ContextEntity } from './types/common';
 
 export type EntityTables = (typeof entityTables)[keyof typeof entityTables];
+
+export type FilteredEntityIdFields = {
+  [K in keyof typeof entityIdFields]: K extends (typeof config.contextEntityTypes)[number] ? (typeof entityIdFields)[K] : never;
+}[keyof typeof entityIdFields];
 
 export type EntityTableNames = EntityTables['_']['name'];
 
@@ -12,7 +17,7 @@ export type MenuSection = {
   entityType: ContextEntity;
   submenu?: {
     entityType: ContextEntity;
-    parentField: (typeof entityIdFields)[keyof typeof entityIdFields];
+    parentField: FilteredEntityIdFields;
   };
 };
 export type MenuSectionName = MenuSection['name'];

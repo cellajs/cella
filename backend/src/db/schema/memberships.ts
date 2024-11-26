@@ -1,14 +1,10 @@
 import { usersTable } from '#/db/schema/users';
-import { entityIdFields, entityTables } from '#/entity-config';
+import { type FilteredEntityIdFields, entityIdFields, entityTables } from '#/entity-config';
 import { nanoid } from '#/utils/nanoid';
 import { config } from 'config';
 import { type PgColumn, boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 const roleEnum = config.rolesByType.entityRoles;
-
-type FilteredEntityIdFields = {
-  [K in keyof typeof entityIdFields]: K extends (typeof config.contextEntityTypes)[number] ? (typeof entityIdFields)[K] : never;
-}[keyof typeof entityIdFields];
 
 export const membershipsTable = createDynamicMembershipTable();
 
