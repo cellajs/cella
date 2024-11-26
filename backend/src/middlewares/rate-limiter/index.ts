@@ -5,7 +5,7 @@ import { type ConfigType, type GeneralConfigType, rateLimiter as honoRateLimiter
 import { errorResponse } from '#/lib/errors';
 
 import { env } from '#/../env';
-import { db } from '#/db/db';
+import { connection } from '#/db/db';
 import { getContextUser } from '#/lib/context';
 import type { Env } from '#/types/app';
 
@@ -34,7 +34,9 @@ const defaultOptions = {
 };
 
 function rateLimiterMiddleware<E extends Env = Env, P extends string = string, I extends Input = Input>(
-  options: Omit<GeneralConfigType<ConfigType<E, P, I>>, 'store' | 'keyGenerator'> & { keyPrefix?: string } = defaultOptions,
+  options: Omit<GeneralConfigType<ConfigType<E, P, I>>, 'store' | 'keyGenerator'> & {
+    keyPrefix?: string;
+  } = defaultOptions,
   mode: RateLimiterMode = 'fail',
 ): MiddlewareHandler<E, P, I> {
   return async (ctx, next) => {
@@ -52,7 +54,7 @@ function rateLimiterMiddleware<E extends Env = Env, P extends string = string, I
     return honoRateLimiter({
       ...options,
       // biome-ignore lint/suspicious/noExplicitAny: TODO: fix this
-      store: !env.PGLITE ? (new PostgresStore(db.$client, options.keyPrefix ?? 'aggregated_store') as any) : undefined,
+      store: !env.PGLITE ? (new PostgresStore(connection, options.keyPrefix ?? 'aggregated_store') as any) : undefined,
       keyGenerator: () => usernameIPkey,
       skipFailedRequests: mode === 'success',
       skipSuccessfulRequests: mode === 'fail',
@@ -65,7 +67,9 @@ function rateLimiterMiddleware<E extends Env = Env, P extends string = string, I
 }
 
 export function rateLimiter<E extends Env = Env, P extends string = string, I extends Input = Input>(
-  options: Omit<GeneralConfigType<ConfigType<E, P, I>>, 'store' | 'keyGenerator'> & { keyPrefix?: string } = defaultOptions,
+  options: Omit<GeneralConfigType<ConfigType<E, P, I>>, 'store' | 'keyGenerator'> & {
+    keyPrefix?: string;
+  } = defaultOptions,
   mode: RateLimiterMode = 'fail',
 ) {
   return rateLimiterMiddleware(options, mode);
