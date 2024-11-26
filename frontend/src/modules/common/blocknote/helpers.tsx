@@ -46,6 +46,15 @@ export const getContentAsString = (blocks: Block[]) => {
   return blocksStringifyContent;
 };
 
+export const compareIsContentSame = async (editor: CustomBlockNoteSchema, text: string) => {
+  // Get the current and old block content as strings for comparison
+  const newHtml = getContentAsString(editor.document as Block[]);
+  const oldBlocks = await editor.tryParseHTMLToBlocks(text);
+  const oldHtml = getContentAsString(oldBlocks as Block[]);
+
+  return oldHtml === newHtml;
+};
+
 export const focusEditor = (editor: CustomBlockNoteSchema, blockId?: string) => {
   const lastBlock = editor.document[editor.document.length - 1];
   editor.focus();
