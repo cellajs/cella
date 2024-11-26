@@ -24,6 +24,9 @@ importers:
       rimraf:
         specifier: ^6.0.1
         version: 6.0.1
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
       turbo:
         specifier: ^2.3.1
         version: 2.3.1
@@ -32,7 +35,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^2.1.5
-        version: 2.1.5(@types/node@22.9.3)(jsdom@25.0.1)(terser@5.36.0)
+        version: 2.1.5(@types/node@22.9.3)(jsdom@25.0.1(canvas@2.11.2))(terser@5.36.0)
 
   backend:
     dependencies:
@@ -23536,7 +23539,7 @@ snapshots:
       fsevents: 2.3.3
       terser: 5.36.0
 
-  vitest@2.1.5(@types/node@22.9.3)(jsdom@25.0.1)(terser@5.36.0):
+  vitest@2.1.5(@types/node@22.9.3)(jsdom@25.0.1(canvas@2.11.2))(terser@5.36.0):
     dependencies:
       '@vitest/expect': 2.1.5
       '@vitest/mocker': 2.1.5(vite@5.4.11(@types/node@22.9.3)(terser@5.36.0))
