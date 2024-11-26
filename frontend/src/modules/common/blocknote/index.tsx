@@ -30,7 +30,7 @@ import type { Member } from '~/types/common';
 import type { Block } from '@blocknote/core';
 
 import router from '~/lib/router';
-import { focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
+import { compareIsContentSame, focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
 
 import { type Slides, openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
@@ -106,7 +106,7 @@ export const BlockNote = ({
     ? [...customSlashIndexedItems, ...customSlashNotIndexedItems].includes('Emoji') && allowedBlockTypes.includes('emoji')
     : emojis;
 
-  const triggerDataUpdate = (passedText?: string) => {
+  const triggerDataUpdate = async (passedText?: string) => {
     // if user in Side Menu does not update
     if (editor.sideMenu.view?.menuFrozen) return;
 
@@ -119,7 +119,11 @@ export const BlockNote = ({
     // if user in file panel does not update
     if (editor.filePanel?.shown) return;
 
-    updateData(passedText ?? text);
+    const textToUpdate = passedText ?? text;
+    // Check if there is any difference in the content
+    if (await compareIsContentSame(editor, defaultValue)) return;
+
+    updateData(textToUpdate);
   };
 
   const onBlockNoteChange = useCallback(async () => {
@@ -128,13 +132,9 @@ export const BlockNote = ({
     // Converts the editor's contents from Block objects to HTML and sanitizes it
     const descriptionHtml = await editor.blocksToFullHTML(editor.document);
 
-    // Get the current and old block content as strings for comparison
-    const newHtml = getContentAsString(editor.document as Block[]);
-    const oldBlocks = await editor.tryParseHTMLToBlocks(text);
-    const oldHtml = getContentAsString(oldBlocks as Block[]);
-
+    const contentSame = await compareIsContentSame(editor, text);
     // Check if there is any difference in the content
-    if (oldHtml !== newHtml) onTextDifference?.();
+    if (!contentSame) onTextDifference?.();
 
     // Update the state or trigger the onChange callback in creation mode
     if (isCreationMode) onChange?.(descriptionHtml);
@@ -200,7 +200,7 @@ export const BlockNote = ({
   }, [defaultValue]);
 
   const onBeforeLoadHandle = useCallback(async () => {
-    if (!wasInitial.current) return;
+    if (!wasInitial.current || (await compareIsContentSame(editor, defaultValue))) return;
     updateData(text);
   }, [text, wasInitial]);
 
