@@ -105,7 +105,7 @@ export const getQueries = <T>(exactQueryKey: QueryKey, similarQueryKey?: QueryKe
 
   // If a similar query key is provided, get similar queries and merge with the exact queries
   if (similarQueryKey) {
-    const similarQueries = getSimilar<T>(similarQueryKey);
+    const similarQueries = getSimilarQueries<T>(similarQueryKey);
     queries = [...exactQuery, ...similarQueries];
   }
 
@@ -118,7 +118,7 @@ const getExact = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> 
 };
 
 // Retrieves queries that are similar to given query key
-const getSimilar = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> | QueryData<T> | undefined][] => {
+export const getSimilarQueries = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T> | QueryData<T> | undefined][] => {
   return queryClient.getQueriesData<InfiniteQueryData<T> | QueryData<T>>({
     queryKey: passedQueryKey,
   });
@@ -126,7 +126,6 @@ const getSimilar = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T
 
 export function getPaginatedOffset<T>(queryKey: QueryKey): number {
   const queryData = queryClient.getQueryData<InfiniteQueryData<T>>(queryKey);
-
   if (!queryData?.pages) return 0;
 
   return queryData.pages.reduce((count, page) => count + (page.items?.length || 0), 0);
