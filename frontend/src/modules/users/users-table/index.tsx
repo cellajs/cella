@@ -61,7 +61,7 @@ const UsersTable = () => {
 
   // Query users
   const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
-    ({ rowsLength }) => usersQueryOptions({ q, sort, order, role, limit, rowsLength }),
+    usersQueryOptions({ q, sort, order, role, limit }),
   );
 
   // Save filters in search params
@@ -98,14 +98,12 @@ const UsersTable = () => {
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setRows([]); // to set offset of a new query to 0
     setQuery(searchString);
   };
 
   // Change role filter
   const onRoleChange = (role?: string) => {
     setSelectedRows(new Set<string>());
-    setRows([]); // to set offset of a new query to 0
     setRole(role === 'all' ? undefined : (role as SystemRoles));
   };
 

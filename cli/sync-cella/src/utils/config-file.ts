@@ -1,13 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 
-interface Fork {
+export interface Fork {
   name: string;
   remoteUrl: string;
   branch: string;
 }
 
-interface Config {
+export interface Config {
   divergedFile: string | null;
   ignoreFile: string | null;
   ignoreList: string[];

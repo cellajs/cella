@@ -123,3 +123,11 @@ const getSimilar = <T>(passedQueryKey: QueryKey): [QueryKey, InfiniteQueryData<T
     queryKey: passedQueryKey,
   });
 };
+
+export function getPaginatedOffset<T>(queryKey: QueryKey): number {
+  const queryData = queryClient.getQueryData<InfiniteQueryData<T>>(queryKey);
+
+  if (!queryData?.pages) return 0;
+
+  return queryData.pages.reduce((count, page) => count + (page.items?.length || 0), 0);
+}

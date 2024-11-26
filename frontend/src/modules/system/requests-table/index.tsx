@@ -28,25 +28,20 @@ import type { Request } from '~/types/common';
 
 import Export from '~/modules/common/data-table/export';
 import { useColumns } from '~/modules/system/requests-table/columns';
+import { getPaginatedOffset } from '~/utils/mutate-query';
 type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
 const LIMIT = config.requestLimits.requests;
 
-export const requestsQueryOptions = ({
-  q = '',
-  sort: initialSort,
-  order: initialOrder,
-  limit = LIMIT,
-  rowsLength = 0,
-}: GetRequestsParams & {
-  rowsLength?: number;
-}) => {
+export const requestsQueryOptions = ({ q = '', sort: initialSort, order: initialOrder, limit = LIMIT }: GetRequestsParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
-  const offset = rowsLength;
+
+  const queryKey = ['requests', 'list', q, sort, order];
+  const offset = getPaginatedOffset(queryKey);
 
   return infiniteQueryOptions({
-    queryKey: ['requests', 'list', q, sort, order],
+    queryKey,
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
@@ -72,12 +67,11 @@ const RequestsTable = () => {
 
   // Query requests
   const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
-    ({ rowsLength }) => requestsQueryOptions({ q, sort, order, limit, rowsLength }),
+    requestsQueryOptions({ q, sort, order, limit }),
   );
 
   const onSearch = (searchString: string) => {
     if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setRows([]); // to set offset of a new query to 0
     setQuery(searchString);
   };
 
