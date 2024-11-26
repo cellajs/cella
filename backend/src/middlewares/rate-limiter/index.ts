@@ -1,7 +1,6 @@
-import type { Context, Input, MiddlewareHandler } from 'hono';
+import type { MiddlewareHandler } from 'hono';
 
-import { PostgresStore } from '@acpr/rate-limit-postgresql';
-import { type ConfigType, type GeneralConfigType, rateLimiter as honoRateLimiter } from 'hono-rate-limiter';
+import { type IRateLimiterPostgresOptions, RateLimiterMemory, RateLimiterPostgres, RateLimiterRes } from 'rate-limiter-flexible';
 import { errorResponse } from '#/lib/errors';
 
 import { env } from '#/../env';
@@ -26,17 +25,11 @@ type RateLimiterMode = 'success' | 'fail' | 'limit';
 
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
 
-// Default options to limit fail requests ('fail' mode)
-const defaultOptions = {
-  // tableName: "rate_limits", // Name of table in database
-  limit: 5, // 5 requests
-  windowMs: 60 * 60 * 1000, // within 1 hour
-};
+function rateLimiterMiddleware(this: RateLimiterPostgres | RateLimiterMemory, mode: RateLimiterMode = 'fail'): MiddlewareHandler<Env> {
+  if (mode === 'success' || mode === 'fail') {
+    this.points = this.points - 1;
+  }
 
-function rateLimiterMiddleware<E extends Env = Env, P extends string = string, I extends Input = Input>(
-  options: Omit<GeneralConfigType<ConfigType<E, P, I>>, 'store' | 'keyGenerator'> & { keyPrefix?: string } = defaultOptions,
-  mode: RateLimiterMode = 'fail',
-): MiddlewareHandler<E, P, I> {
   return async (ctx, next) => {
     const ipAddr = ctx.req.header('x-forwarded-for');
     const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.raw.clone().json() : undefined;
@@ -49,33 +42,59 @@ function rateLimiterMiddleware<E extends Env = Env, P extends string = string, I
 
     const usernameIPkey = getUsernameIPkey(username, ipAddr);
 
-    return honoRateLimiter({
-      ...options,
-      // biome-ignore lint/suspicious/noExplicitAny: TODO: fix this
-      store: !env.PGLITE ? (new PostgresStore(db.$client, options.keyPrefix ?? 'aggregated_store') as any) : undefined,
-      keyGenerator: () => usernameIPkey,
-      skipFailedRequests: mode === 'success',
-      skipSuccessfulRequests: mode === 'fail',
-      handler: (ctx: Context) =>
-        errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, {
-          usernameIPkey,
-        }),
-    })(ctx, next);
+    const res = await this.get(usernameIPkey);
+    let retrySecs = 0;
+    // Check if IP or Username + IP is already blocked
+    if (res !== null && res.consumedPoints > this.points) {
+      retrySecs = Math.round(res.msBeforeNext / 1000) || 1;
+    }
+    if (retrySecs > 0) {
+      ctx.header('Retry-After', String(retrySecs));
+      return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { usernameIPkey });
+    }
+    if (mode === 'limit') {
+      try {
+        await this.consume(usernameIPkey);
+      } catch (rlRejected) {
+        if (rlRejected instanceof RateLimiterRes) {
+          ctx.header('Retry-After', String(Math.round(rlRejected.msBeforeNext / 1000) || 1));
+          return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { usernameIPkey });
+        }
+        throw rlRejected;
+      }
+    }
+    await next();
+    if (ctx.res.status === 200) {
+      if (mode === 'success') {
+        try {
+          await this.consume(usernameIPkey);
+        } catch {}
+      } else if (mode === 'fail') {
+        await this.delete(usernameIPkey);
+      }
+    } else if (mode === 'fail') {
+      try {
+        await this.consume(usernameIPkey);
+      } catch {}
+    }
   };
 }
 
-export function rateLimiter<E extends Env = Env, P extends string = string, I extends Input = Input>(
-  options: Omit<GeneralConfigType<ConfigType<E, P, I>>, 'store' | 'keyGenerator'> & { keyPrefix?: string } = defaultOptions,
-  mode: RateLimiterMode = 'fail',
-) {
-  return rateLimiterMiddleware(options, mode);
-}
+// Default options to limit fail requests ('fail' mode)
+const defaultOptions = {
+  tableName: 'rate_limits', // Name of table in database
+  points: 5, // 5 requests
+  duration: 60 * 60, // within 1 hour
+  blockDuration: 60 * 10, // Block for 10 minutes
+};
+export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'> = defaultOptions) =>
+  env.PGLITE
+    ? new RateLimiterMemory(options)
+    : new RateLimiterPostgres({
+        ...options,
+        storeClient: db.$client,
+      });
+export const rateLimiter = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'> = defaultOptions, mode: RateLimiterMode = 'fail') =>
+  rateLimiterMiddleware.call(getRateLimiterInstance(options), mode);
 
-export const authRateLimiter = rateLimiter(
-  {
-    limit: 1,
-    windowMs: 60 * 60 * 1000,
-    keyPrefix: 'auth_fail',
-  },
-  'fail',
-);
+export const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');

@@ -119,6 +119,7 @@ export default defineConfig(() => {
         globIgnores: ['static/flags/**/*'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
       },
     }),
   );

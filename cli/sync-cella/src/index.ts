@@ -12,18 +12,8 @@ import { runGitCommand } from './utils/run-git-command.ts';
 
 import { diverged, DivergedOptions } from './diverged.ts';
 
-import { pullUpstream } from './pull-upstream.js';
-import { pullFork } from './pull-fork.js';
-
-interface CliOptions {
-  divergedFile?: string;
-  ignoreFile?: string;
-  ignoreList?: string[];
-  upstreamBranch?: string;
-  localBranch?: string;
-  prBranchName?: string;
-  fork?: Fork;
-}
+import { pullUpstream, PullUpstreamOptions } from './pull-upstream.ts';
+import { pullFork, PullForkOptions } from './pull-fork.ts';
 
 async function main(): Promise<void> {
   console.info(CELLA_TITLE);
@@ -143,19 +133,31 @@ async function main(): Promise<void> {
         localBranch: cli.localBranch,
     };
     return await diverged(options);
-  } else {
-    const options: CliOptions = {
-        divergedFile: cli.divergedFile,
-        ignoreFile: cli.ignoreFile,
-        ignoreList: cli.ignoreList,
-        upstreamBranch: cli.upstreamBranch,
-        localBranch: cli.localBranch,
-        prBranchName: cli.prBranchName,
-        fork: cli.fork,
+  }
+  
+  if (cli.syncService === 'pull-fork') {
+    if (!cli.prBranchName || !cli.fork) {
+      console.error('PR branch name and fork are required for this service.');
+      process.exit(1);
+    }
+
+    const options: PullForkOptions = {
+      prBranchName: cli.prBranchName,
+      fork: cli.fork,
+    }
+
+    return await pullFork(options);
+  }
+  
+  if (cli.syncService === 'pull-upstream') {
+    const options: PullUpstreamOptions = {
+      ignoreFile: cli.ignoreFile,
+      ignoreList: cli.ignoreList,
+      upstreamBranch: cli.upstreamBranch,
+      localBranch: cli.localBranch,
     };
 
-    if (cli.syncService === 'pull-upstream') return await pullUpstream(options);
-    if (cli.syncService === 'pull-fork') return await pullFork(options);
+    return await pullUpstream(options);
   }
 }
 
