@@ -12,7 +12,7 @@ export const dbConfig: DrizzleConfig = {
   casing: 'snake_case',
 };
 
-const connection = env.PGLITE
+export const connection = env.PGLITE
   ? process.env.NODE_ENV === 'test'
     ? // in-memory database for tests
       {}

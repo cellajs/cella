@@ -67,7 +67,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
           if (item.entity === 'organization') {
             const options = organizationQueryOptions(item.slug);
             prefetchQuery(options);
-            prefetchMembers(item, item.slug);
+            prefetchMembers(item, item.id);
 
             await waitFor(1000); // wait for a second to avoid server overload
           }
