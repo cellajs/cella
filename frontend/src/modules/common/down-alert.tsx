@@ -64,8 +64,11 @@ export const DownAlert = () => {
 
         <AlertDescription className="pr-8 font-light">
           <strong>{downAlert === 'maintenance' ? t('common:maintenance_mode') : t('common:offline')}</strong>
-          <span className="max-sm:hidden mx-2">&#183;</span>
+          <span className="mx-2">&#183;</span>
           <span className="max-sm:hidden">{downAlert === 'maintenance' ? t('common:maintenance_mode.text') : offlineText}</span>
+          <button type="button" className="inline-block sm:hidden font-semibold" onClick={cancelAlert}>
+            {t('common:continue')}
+          </button>
           {config.statusUrl && (
             <>
               <span className="sm:hidden mx-2">&#183;</span>
