@@ -9,9 +9,8 @@ interface ResetBlockTypeItemProp {
   editor: CustomBlockNoteSchema;
   props: DragHandleMenuProps;
   allowedTypes: (CellaCustomBlockTypes | BasicBlockTypes)[];
-  typeChangeCallback?: (editor: CustomBlockNoteSchema) => void;
 }
-export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes, typeChangeCallback }: ResetBlockTypeItemProp) {
+export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes }: ResetBlockTypeItemProp) {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
@@ -25,8 +24,12 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes, typ
   const shouldShow: boolean = useMemo(() => filteredItems.find((item) => item.type === block.type) !== undefined, [block.type, filteredItems]);
 
   const fullItems = useMemo(() => {
-    const onClick = (item: BlockTypeSelectItem) => {
-      typeChangeCallback?.(editor);
+    const onClick = (item: BlockTypeSelectItem & { oneInstanceOnly?: string }) => {
+      if (item.oneInstanceOnly) {
+        const blockAlreadyExists = editor.document.find((block) => block.type === item.type);
+        // Convert block to a paragraph if it exists
+        if (blockAlreadyExists) editor.updateBlock(blockAlreadyExists, { type: 'paragraph' });
+      }
 
       // Update the selected block
       editor.updateBlock(block, {
