@@ -174,7 +174,6 @@ const membershipsRoutes = app
             userLanguage: targetUser?.language || user.language,
             userThumbnailUrl: targetUser?.thumbnailUrl,
             inviteBy: user.name,
-            inviterEmail: user.email,
             organizationName: organization.name,
             organizationThumbnailUrl: organization.logoUrl || organization.thumbnailUrl,
             token,

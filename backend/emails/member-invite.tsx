@@ -15,7 +15,6 @@ import type { BasicTemplateType } from './types';
 interface Props extends BasicTemplateType {
   token: string;
   inviteBy: string;
-  inviterEmail: string;
   organizationName?: string;
   organizationThumbnailUrl?: string | null;
 }

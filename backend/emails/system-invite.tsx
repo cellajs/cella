@@ -16,7 +16,6 @@ import type { BasicTemplateType } from './types';
 interface Props extends BasicTemplateType {
   token: string;
   inviteBy: string;
-  inviterEmail: string;
 }
 
 const appName = config.name;

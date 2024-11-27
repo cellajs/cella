@@ -9,7 +9,6 @@ import { updateBlocknoteHTML } from './helpers';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
-  authorEmail: string;
   orgName: string;
   content: string;
   subject: string;
