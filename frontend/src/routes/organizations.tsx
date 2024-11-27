@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
+import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { baseEntityRoutes } from '~/nav-config';
@@ -77,6 +78,12 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
+  loader: ({ params: { idOrSlug }, deps: { q, sort, order } }) => {
+    const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
+    const orgIdOrSlug = organization?.id || idOrSlug;
+    const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
+    return offlineFetchInfinite(queryOptions);
+  },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationAttachmentsRoute.id });
     const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
@@ -84,7 +91,7 @@ export const OrganizationAttachmentsRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <AttachmentsTable organization={organization} />
+        <AttachmentsTable key={organization.id} organization={organization} />
       </Suspense>
     );
   },
