@@ -1,15 +1,15 @@
 import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
 
-import { DEFAULT_CONFIG_FILE } from './constants.js';
+import { DEFAULT_CONFIG_FILE } from './constants.ts';
 
 import { rename, unlink } from 'node:fs/promises';
 
-import { fetchRemote } from './fetch-remote.js';
-import { runGitCommand } from './utils/run-git-command.js';
+import { fetchRemote } from './fetch-remote.ts';
+import { runGitCommand } from './utils/run-git-command.ts';
 
-import { extractValues } from './utils/config-file.js';
-import { extractIgnorePatterns, excludeByIgnorePatterns } from './utils/ignore-patterns.js';
+import { extractValues } from './utils/config-file.ts';
+import { extractIgnorePatterns, excludeByIgnorePatterns } from './utils/ignore-patterns.ts';
 
 interface Fork {
   name: string;

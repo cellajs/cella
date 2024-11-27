@@ -18,12 +18,12 @@
     "node": ">=20.14.0"
   },
   "type": "module",
-  "main": "index.js",
+  "main": "index.ts",
   "bin": {
-    "create-cella": "index.js"
+    "create-cella": "tsx index.ts"
   },
   "scripts": {
-    "create": "node index.js"
+    "create": "tsx index.ts"
   },
   "packageManager": "pnpm@9.11.0",
   "dependencies": {
@@ -34,5 +34,8 @@
     "picocolors": "^1.1.0",
     "validate-npm-package-name": "^5.0.1",
     "yocto-spinner": "^0.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
   }
 }
