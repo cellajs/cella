@@ -298,6 +298,10 @@ importers:
       yocto-spinner:
         specifier: ^0.1.0
         version: 0.1.0
+    devDependencies:
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
 
   config: {}
 
@@ -16338,7 +16342,7 @@ snapshots:
 
   '@smithy/is-array-buffer@2.2.0':
     dependencies:
-      tslib: 2.8.0
+      tslib: 2.8.1
 
   '@smithy/is-array-buffer@3.0.0':
     dependencies:

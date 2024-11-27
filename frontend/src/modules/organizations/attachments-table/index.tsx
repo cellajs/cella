@@ -1,4 +1,3 @@
-import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { Suspense, useCallback, useMemo, useState } from 'react';
 
@@ -9,10 +8,8 @@ import { nanoid } from 'nanoid';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { updateAttachment } from '~/api/attachments';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
 import { openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
@@ -26,7 +23,7 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
-import { attachmentKeys, useAttachmentCreateMutation } from '~/modules/common/query-client-provider/attachments';
+import { useAttachmentCreateMutation, useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/attachments';
 import UploadUppy from '~/modules/common/upload/upload-uppy';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -95,19 +92,9 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
   useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openPreviewDialog)), [isAdmin, openPreviewDialog]);
 
-  const mutateQuery = useMutateQueryData(attachmentKeys.list({ orgIdOrSlug: organization.id, q, sort, order }));
   const { mutate: createAttachment } = useAttachmentCreateMutation();
 
-  // Update attachment name
-  const { mutate: updateAttachmentName } = useMutation({
-    mutationFn: async (attachment: Attachment) =>
-      await updateAttachment({ id: attachment.id, orgIdOrSlug: attachment.organizationId, name: attachment.name }),
-    onSuccess: (data) => {
-      mutateQuery.update([data]);
-      showToast(t('common:success.name_updated'), 'success');
-    },
-    onError: () => showToast('Error updating name', 'error'),
-  });
+  const attachmentUpdateMutation = useAttachmentUpdateMutation();
 
   // Save filters in search params
   if (!isSheet) {
@@ -133,11 +120,16 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
 
   // Update rows
   const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     if (column.key === 'name') {
       // If name is changed, update the attachment
-      for (const index of indexes) updateAttachmentName(changedRows[index]);
+      for (const index of indexes) {
+        const attachment = changedRows[index];
+        attachmentUpdateMutation.mutate({
+          id: attachment.id,
+          orgIdOrSlug: organization.id,
+          name: attachment.name,
+        });
+      }
     }
 
     setRows(changedRows);

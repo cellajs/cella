@@ -2,25 +2,17 @@ import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { t } from 'i18next';
 import { toast } from 'sonner';
-import { type GetAttachmentsParams, createAttachment, deleteAttachments } from '~/api/attachments';
+import { createAttachment, deleteAttachments, updateAttachment } from '~/api/attachments';
 import { queryClient } from '~/lib/router';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
 import type { Attachment } from '~/types/common';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
+import { attachmentKeys } from './keys';
 
 type AttachmentQueryData = QueryData<Attachment>;
 export type AttachmentInfiniteQueryData = InfiniteQueryData<Attachment>;
 type AttachmentContextProp = ContextProp<Attachment, string[] | null>;
-
-export const attachmentKeys = {
-  all: () => ['attachments'] as const,
-  lists: () => [...attachmentKeys.all(), 'list'] as const,
-  list: (filters?: GetAttachmentsParams) => [...attachmentKeys.lists(), filters] as const,
-  similar: (filters?: Pick<GetAttachmentsParams, 'orgIdOrSlug'>) => [...attachmentKeys.lists(), filters] as const,
-  create: () => [...attachmentKeys.all(), 'create'] as const,
-  delete: () => [...attachmentKeys.all(), 'delete'] as const,
-};
 
 const limit = config.requestLimits.attachments;
 
@@ -30,6 +22,15 @@ export const useAttachmentCreateMutation = () => {
   return useMutation<Attachment[], Error, AttachmentsCreateMutationQueryFnVariables>({
     mutationKey: attachmentKeys.create(),
     mutationFn: createAttachment,
+  });
+};
+
+export type AttachmentsUpdateMutationQueryFnVariables = Parameters<typeof updateAttachment>[0];
+
+export const useAttachmentUpdateMutation = () => {
+  return useMutation<boolean, Error, AttachmentsUpdateMutationQueryFnVariables>({
+    mutationKey: attachmentKeys.update(),
+    mutationFn: updateAttachment,
   });
 };
 
@@ -44,7 +45,7 @@ export const useAttachmentDeleteMutation = () => {
 
 const onError = (
   _: Error,
-  __: AttachmentsCreateMutationQueryFnVariables & AttachmentsDeleteMutationQueryFnVariables,
+  __: AttachmentsCreateMutationQueryFnVariables & AttachmentsDeleteMutationQueryFnVariables & AttachmentsUpdateMutationQueryFnVariables,
   context?: AttachmentContextProp[],
 ) => {
   if (context?.length) {
@@ -130,6 +131,44 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
     toast.success(t('common:success.create_resources', { resources: t('common:attachments') }));
   },
 
+  onError,
+});
+
+queryClient.setMutationDefaults(attachmentKeys.update(), {
+  mutationFn: updateAttachment,
+  onMutate: async (variables: AttachmentsUpdateMutationQueryFnVariables) => {
+    const { orgIdOrSlug } = variables;
+
+    const context: AttachmentContextProp[] = [];
+
+    const optimisticIds: string[] = [];
+
+    const exactKey = attachmentKeys.list({ orgIdOrSlug });
+    const similarKey = attachmentKeys.similar({ orgIdOrSlug });
+
+    const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
+
+    for (const [queryKey, previousData] of queries) {
+      // Optimistically update the list
+      if (previousData) {
+        queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(queryKey, (oldData) => {
+          if (!oldData) return handleNoOldData(oldData);
+          const prevItems = getQueryItems(oldData);
+          const updatedItems = prevItems.map((item) => {
+            if (item.id === variables.id) {
+              return { ...item, ...variables };
+            }
+            return item;
+          });
+          return formatUpdatedData(oldData, updatedItems, limit);
+        });
+      }
+
+      context.push([queryKey, previousData, optimisticIds]);
+    }
+
+    return context;
+  },
   onError,
 });
 

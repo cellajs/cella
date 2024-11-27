@@ -15,12 +15,12 @@
     "node": ">=20.14.0"
   },
   "type": "module",
-  "main": "index.js",
+  "main": "index.ts",
   "bin": {
-    "sync": "index.js"
+    "sync": "tsx index.ts"
   },
   "scripts": {
-    "sync": "node index.js"
+    "sync": "tsx index.ts"
   },
   "packageManager": "pnpm@9.11.0",
   "dependencies": {
@@ -31,5 +31,8 @@
     "picocolors": "^1.1.0",
     "validate-npm-package-name": "^5.0.1",
     "yocto-spinner": "^0.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
   }
 }
