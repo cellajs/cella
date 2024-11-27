@@ -24,4 +24,8 @@ export const emailBodySchema = z.object({
   email: userSchema.shape.email,
 });
 
+export const signInResponse = z.object({
+  emailVerified: z.boolean(),
+});
+
 export const passkeyChallengeQuerySchema = z.object({ challengeBase64: z.string() });

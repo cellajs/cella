@@ -179,9 +179,7 @@ class GeneralRoutesConfig {
       },
       302: {
         description: 'Redirect to github',
-        headers: z.object({
-          Location: z.string(),
-        }),
+        headers: z.object({ Location: z.string() }),
       },
       ...errorResponses,
     },

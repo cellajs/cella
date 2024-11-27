@@ -47,7 +47,7 @@ export const signIn = async ({ email, password, token }: { email: string; passwo
   });
 
   const json = await handleResponse(response);
-  return json.success;
+  return json.data;
 };
 
 // Start impersonation session by system admin
