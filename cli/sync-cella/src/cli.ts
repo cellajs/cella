@@ -1,5 +1,5 @@
-import { basename, resolve } from 'node:path';
 import { Command, InvalidArgumentError } from 'commander';
+import { basename, resolve } from 'node:path';
 import { NAME } from './constants';
 import { packageJson } from './utils/package-json';
 import { validateProjectName } from './utils/validate-project-name';
