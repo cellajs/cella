@@ -2,12 +2,12 @@ import { config } from 'config';
 import { Column, Row, Section, Text } from 'jsx-email';
 import { i18n } from '../../backend/src/lib/i18n';
 
+import { AppLogo } from './components/app-logo';
 import { ArrowRight } from './components/arrow-right';
 import Avatar from './components/avatar';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
-import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
 import UserName from './components/user-name';
 import type { BasicTemplateType } from './types';
@@ -22,7 +22,7 @@ interface Props extends BasicTemplateType {
 
 const appName = config.name;
 
-export const InviteMemberEmail = ({ userName, userLanguage: lng, inviteBy, organizationName, inviterEmail, token }: Props) => {
+export const InviteMemberEmail = ({ userName, userLanguage: lng, inviteBy, organizationName, token }: Props) => {
   const orgName = organizationName || i18n.t('common:unknown_organization', { lng });
 
   return (
@@ -54,13 +54,13 @@ export const InviteMemberEmail = ({ userName, userLanguage: lng, inviteBy, organ
           borderWidth: '1px',
           borderStyle: 'solid',
           borderColor: '#eaeaea',
-          padding: '1rem',
+          padding: '1.5rem',
         }}
       >
         <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />
         <UserName beforeText={i18n.t('backend:email.invite_to_organization_description', { lng, orgName, appName })} userName={inviteBy} />
 
-        <Row>
+        <Row style={{ margin: '1.5rem 0 1rem' }}>
           <Column align="right">
             <Avatar name={userName} type="user" />
           </Column>
@@ -75,7 +75,7 @@ export const InviteMemberEmail = ({ userName, userLanguage: lng, inviteBy, organ
         <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>{i18n.t('backend:email.invite_expire', { lng })}</Text>
       </Section>
 
-      <EmailReplyTo email={inviterEmail} />
+      <AppLogo />
       <Footer />
     </EmailContainer>
   );

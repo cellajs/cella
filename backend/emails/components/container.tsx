@@ -13,7 +13,7 @@ export const EmailContainer = ({ previewText, bodyStyle, containerStyle, childre
     <Preview>{previewText}</Preview>
     <Tailwind>
       <Body style={{ backgroundColor: 'white', fontFamily: 'sans-serif', margin: 'auto', ...bodyStyle }}>
-        <Container style={{ width: '26rem', margin: '0 auto', ...containerStyle }}>{children}</Container>
+        <Container style={{ width: '30rem', margin: '0 auto', ...containerStyle }}>{children}</Container>
       </Body>
     </Tailwind>
   </Html>

@@ -9,7 +9,6 @@ import Avatar from './components/avatar';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
-import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
 import UserName from './components/user-name';
 import type { BasicTemplateType } from './types';
@@ -22,7 +21,7 @@ interface Props extends BasicTemplateType {
 
 const appName = config.name;
 
-export const InviteSystemEmail = ({ userName, userLanguage: lng, inviteBy, inviterEmail, token }: Props) => {
+export const InviteSystemEmail = ({ userName, userLanguage: lng, inviteBy, token }: Props) => {
   return (
     <EmailContainer
       previewText={i18n.t('backend:email.invite_preview_text', { appName, lng })}
@@ -52,13 +51,13 @@ export const InviteSystemEmail = ({ userName, userLanguage: lng, inviteBy, invit
           borderWidth: '1px',
           borderStyle: 'solid',
           borderColor: '#eaeaea',
-          padding: '1rem',
+          padding: '1.5rem',
         }}
       >
         <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />
         <UserName beforeText={i18n.t('backend:email.invite_description', { lng, appName })} userName={inviteBy} />
 
-        <Row>
+        <Row style={{ margin: '1.5rem 0 1rem' }}>
           <Column align="right">
             <Avatar name={userName} type="user" />
           </Column>
@@ -73,7 +72,7 @@ export const InviteSystemEmail = ({ userName, userLanguage: lng, inviteBy, invit
         <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>{i18n.t('backend:email.invite_expire', { lng })}</Text>
       </Section>
 
-      <EmailReplyTo email={inviterEmail} />
+      <AppLogo />
       <Footer />
     </EmailContainer>
   );
