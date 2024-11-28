@@ -26,9 +26,9 @@ interface CLIConfig {
 }
 
 // Initialize CLI variables
-let directory: string | null;
-let newBranchName: string | null;
-let createNewBranch: boolean | null;
+let directory: string | null = null;
+let newBranchName: string | null = null;
+let createNewBranch: boolean | null = null;
 const packageManager = 'pnpm';
 
 // Set up the CLI command using Commander
