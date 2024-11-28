@@ -8,7 +8,7 @@ import type { ContextProp, InfiniteQueryData, QueryData } from '~/modules/common
 import type { Attachment } from '~/types/common';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
-import { attachmentKeys } from './keys';
+import { attachmentKeys } from '../keys';
 
 type AttachmentQueryData = QueryData<Attachment>;
 export type AttachmentInfiniteQueryData = InfiniteQueryData<Attachment>;

@@ -22,7 +22,7 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
-import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/attachments';
+import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
 import { useColumns } from '~/modules/organizations/attachments-table/columns';
 import { openUploadDialog } from '~/modules/organizations/attachments-table/helpers';
 import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';

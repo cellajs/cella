@@ -1,7 +1,7 @@
 import { t } from 'i18next';
 import { Suspense } from 'react';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useAttachmentCreateMutation } from '~/modules/common/query-client-provider/attachments';
+import { useAttachmentCreateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
 import UploadUppy from '~/modules/common/upload/upload-uppy';
 import { UploadType, type UploadedUppyFile } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
