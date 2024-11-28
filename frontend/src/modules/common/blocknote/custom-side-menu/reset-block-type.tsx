@@ -24,7 +24,7 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes }: R
   const shouldShow: boolean = useMemo(() => filteredItems.find((item) => item.type === block.type) !== undefined, [block.type, filteredItems]);
 
   const fullItems = useMemo(() => {
-    const onClick = (item: BlockTypeSelectItem & { oneInstanceOnly?: string }) => {
+    const onClick = (item: BlockTypeSelectItem & { oneInstanceOnly?: boolean }) => {
       if (item.oneInstanceOnly) {
         const blockAlreadyExists = editor.document.find((block) => block.type === item.type);
         // Convert block to a paragraph if it exists

@@ -102,16 +102,16 @@ const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action
 
     case 'update':
       // update existing items in dataItems
-      return dataItems.map((item) => items.find((i) => i.id === item.id) || item);
+      return items.map((item) => dataItems.find((i) => i.id === item.id) || item);
 
     case 'delete':
       // filter out items in dataItems that match an id
-      return dataItems.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id));
+      return items.filter((item) => !dataItems.some((deletedItem) => deletedItem.id === item.id));
 
     case 'updateMembership': {
       // update the membership field in dataItems
-      return dataItems.map((item) => {
-        const updatedItem = items.find((i) => item.membership && i.id === item.membership.id);
+      return items.map((item) => {
+        const updatedItem = dataItems.find((i) => item.membership && i.id === item.membership.id);
         return updatedItem ? { ...item, membership: { ...item.membership, ...updatedItem } } : item;
       });
     }
