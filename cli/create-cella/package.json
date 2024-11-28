@@ -18,12 +18,15 @@
     "node": ">=20.14.0"
   },
   "type": "module",
-  "main": "index.ts",
+  "main": "./src/index.ts",
   "bin": {
-    "create-cella": "index.ts"
+    "create-cella": "index.js"
   },
   "scripts": {
-    "create": "tsx index.ts"
+    "create": "tsx ./src/index.ts",
+    "clean": "rimraf ./dist",
+    "build": "unbuild",
+    "prepublishOnly": "pnpm run build"
   },
   "packageManager": "pnpm@9.11.0",
   "dependencies": {
@@ -33,7 +36,10 @@
     "giget": "^1.2.3",
     "picocolors": "^1.1.0",
     "validate-npm-package-name": "^5.0.1",
-    "yocto-spinner": "^0.1.0",
-    "tsx": "^4.19.2"
+    "yocto-spinner": "^0.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "unbuild": "^2.0.0"
   }
 }
