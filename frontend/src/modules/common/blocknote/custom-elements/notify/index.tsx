@@ -91,7 +91,7 @@ export const insertSlashNotifyItem = (editor: CustomBlockNoteSchema) => ({
 });
 
 // Side menu item to insert an Notify block
-export const insertSideNotifyItem = (): BlockTypeSelectItem => ({
+export const insertSideNotifyItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
   name: 'Notify',
   type: 'notify',
   isSelected: (block: { type: string }) => block.type === 'notify',

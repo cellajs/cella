@@ -10,6 +10,7 @@ import { TEMPLATE_URL } from './constants.ts';
 import { install, generate } from './utils/run-package-manager-command.ts';
 import { cleanTemplate } from './utils/clean-template.ts';
 import { runGitCommand } from './utils/run-git-command.ts';
+import { addRemote } from './add-remote.ts';
 
 interface CreateOptions {
   projectName: string;
@@ -152,6 +153,9 @@ export async function create({
   } else {
     console.info(`${colors.yellow('⚠')} --skip-git > Skip git init`);
   }
+
+  // Add Cella as upstream remote
+  await addRemote({ targetFolder });
 
   // Final success message indicating project creation
   console.info();
