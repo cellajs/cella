@@ -11,6 +11,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 import attachmentsRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -84,10 +85,8 @@ const attachmentsRoutes = app
     // Filter at least by valid organization
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
 
-    // TODO is this case sensitive? util for sanitizing?
     if (q) {
-      const sanitizedQ = `%${q.trim()}%`;
-      filters.push(ilike(attachmentsTable.filename, sanitizedQ));
+      filters.push(ilike(attachmentsTable.filename, prepareStringForILikeFilter(q)));
     }
 
     const orderColumn = getOrderColumn(

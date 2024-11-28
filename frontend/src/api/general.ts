@@ -17,7 +17,7 @@ export const getUploadToken = async (type: UploadType, query: UploadParams = { p
 
   const preparedQuery = {
     public: String(query.public),
-    organizationId: id,
+    organization: id,
   };
 
   const response = await client['upload-token'].$get({ query: preparedQuery });

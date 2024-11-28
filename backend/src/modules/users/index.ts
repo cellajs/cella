@@ -10,9 +10,10 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
-import { transformDatabaseUserWithCount } from './helpers/transform-database-user';
+import { getUserMembershipsCount, transformDatabaseUserWithCount } from './helpers/transform-database-user';
 import usersRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -58,7 +59,8 @@ const usersRoutes = app
 
     const filters = [];
     if (q) {
-      filters.push(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)));
+      const query = prepareStringForILikeFilter(q);
+      filters.push(or(ilike(usersTable.name, query), ilike(usersTable.email, query)));
     }
     if (role) filters.push(eq(usersTable.role, role));
 
@@ -160,13 +162,7 @@ const usersRoutes = app
     }
 
     // Get the user's membership count
-    // TODO: put in a helper function
-    const [{ memberships }] = await db
-      .select({
-        memberships: count(),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, targetUser.id));
+    const memberships = await getUserMembershipsCount(targetUser.id);
 
     return ctx.json({ success: true, data: transformDatabaseUserWithCount(targetUser, memberships) }, 200);
   })
@@ -209,20 +205,12 @@ const usersRoutes = app
       .where(eq(usersTable.id, targetUser.id))
       .returning();
 
-    // Get the user's membership count
-    // TODO: put in a helper function
-    const [{ memberships }] = await db
-      .select({
-        memberships: count(),
-      })
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, updatedUser.id));
-
     logEvent('User updated', { user: updatedUser.id });
 
-    const data = transformDatabaseUserWithCount(updatedUser, memberships);
+    // Get the user's membership count
+    const memberships = await getUserMembershipsCount(targetUser.id);
 
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json({ success: true, data: transformDatabaseUserWithCount(targetUser, memberships) }, 200);
   });
 
 export default usersRoutes;

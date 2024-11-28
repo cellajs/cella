@@ -80,6 +80,11 @@ p.bn-inline-content code {
   border-radius: 2rem;
 }
 
+.bn-block .bn-editor {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+}
+
 .bn-shadcn .bn-editor {
   white-space: pre-wrap !important;
   word-break: break-word !important;
@@ -99,10 +104,15 @@ p.bn-inline-content code {
 }
 
 .bn-toolbar.bn-formatting-toolbar {
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem;
   gap: 0.5rem;
   background-color: hsl(var(--popover));
   border: 1px solid hsl(var(--border));
+}
+
+.bn-toolbar.bn-formatting-toolbar button {
+  height: 2rem;
+  width: 2rem;
 }
 
 .bn-menu-item {

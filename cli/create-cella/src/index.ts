@@ -1,17 +1,28 @@
 #!/usr/bin/env node
 
-import { basename, resolve } from 'node:path'
-import { existsSync } from 'node:fs'
+import { basename, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 
 import { input, confirm, select } from '@inquirer/prompts';
 
-import { cli } from './cli.js'
-import { validateProjectName } from './utils/validate-project-name.js'
-import { isEmptyDirectory } from './utils/is-empty-directory.js'
-import { create } from './create.js'
-import { CELLA_TITLE, VERSION, WEBSITE, AUTHOR } from './constants.js'
+import { cli } from './cli';
+import { validateProjectName } from './utils/validate-project-name.ts';
+import { isEmptyDirectory } from './utils/is-empty-directory.ts';
+import { create } from './create.ts';
+import { CELLA_TITLE, VERSION, WEBSITE, AUTHOR } from './constants.ts';
 
-async function main() {
+interface CreateOptions {
+  projectName: string;
+  targetFolder: string;
+  newBranchName?: string | null;
+  skipInstall: boolean;
+  skipGit: boolean;
+  skipClean: boolean;
+  skipGenerate: boolean;
+  packageManager: string;
+}
+
+async function main(): Promise<void> {
   console.info(CELLA_TITLE);
 
   // Display CLI version and created by information
@@ -28,7 +39,7 @@ async function main() {
   }
 
   // Skip generating sql files if --skipGenerate flag is provided
-  if (cli.options.skipGenerate === true) { 
+  if (cli.options.skipGenerate === true) {
     cli.options.skipGenerate = true;
   }
 
@@ -73,14 +84,14 @@ async function main() {
       message: 'Enter the new branch name',
       default: 'development',
       validate: (name) => {
-        const validation = validateProjectName(basename(resolve(name)))
+        const validation = validateProjectName(basename(resolve(name)));
         return validation.valid ? true : `Invalid branch name: ${validation.problems[0]}`;
       },
     });
   }
 
-  const targetFolder = resolve(cli.directory)
-  const projectName = basename(targetFolder)
+  const targetFolder = resolve(cli.directory);
+  const projectName = basename(targetFolder);
 
   // Check if the target folder exists and is not empty
   if (existsSync(targetFolder) && !(await isEmptyDirectory(targetFolder))) {
@@ -94,13 +105,14 @@ async function main() {
         { name: 'Ignore existing files and continue', value: 'ignore' },
       ],
     });
+
     if (action === 'cancel') {
       process.exit(1);
     }
   }
-  
+
   // Proceed with the project creation
-  await create({
+  const createOptions: CreateOptions = {
     projectName,
     targetFolder,
     newBranchName: cli.newBranchName,
@@ -109,7 +121,9 @@ async function main() {
     skipClean: cli.options.skipClean,
     skipGenerate: cli.options.skipGenerate,
     packageManager: cli.packageManager,
-  });
+  };
+
+  await create(createOptions);
 }
 
-main().catch(console.error)
+main().catch(console.error);

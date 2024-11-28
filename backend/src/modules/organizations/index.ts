@@ -17,6 +17,7 @@ import { CustomHono } from '#/types/common';
 import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 import organizationsNewsletter from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
@@ -70,7 +71,7 @@ const organizationsRoutes = app
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
     const user = getContextUser();
 
-    const filter: SQL | undefined = q ? ilike(organizationsTable.name, `%${q}%`) : undefined;
+    const filter: SQL | undefined = q ? ilike(organizationsTable.name, prepareStringForILikeFilter(q)) : undefined;
 
     const organizationsQuery = db.select().from(organizationsTable).where(filter);
 

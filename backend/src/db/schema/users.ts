@@ -52,7 +52,6 @@ export const usersTable = pgTable(
 
 export const safeUserSelect = omitKeys(usersTable, config.sensitiveFields);
 
-// TODO are we actually using this ?
 const detailedFields = [
   'firstName',
   'lastName',

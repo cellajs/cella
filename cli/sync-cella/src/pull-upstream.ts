@@ -1,9 +1,9 @@
 import yoctoSpinner from 'yocto-spinner';
 import colors from 'picocolors';
 
-import { fetchRemote } from './fetch-remote.js';
-import { runGitCommand } from './utils/run-git-command.js';
-import { extractIgnorePatterns, pickByIgnorePatterns } from './utils/ignore-patterns.js';
+import { fetchRemote } from './fetch-remote.ts';
+import { runGitCommand } from './utils/run-git-command.ts';
+import { extractIgnorePatterns, pickByIgnorePatterns } from './utils/ignore-patterns.ts';
 
 export interface PullUpstreamOptions {
   ignoreFile?: string; // Optional path to an ignore file

@@ -11,12 +11,12 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
+import { config } from 'config';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/entity-config';
 import { getContextUser, getMemberships } from '#/lib/context';
-import { config } from 'config';
 import { getPreparedSessions } from './helpers/get-sessions';
 import type { MenuItem, UserMenu } from './schema';
 
@@ -63,7 +63,7 @@ const meRoutes = app
 
     // Fetch function for each menu section, including handling submenus
     const fetchMenuItemsForSection = async (section: MenuSection) => {
-      let submenus: MenuItem[];
+      let submenu: MenuItem[] = [];
       const mainTable = entityTables[section.entityType];
       const mainEntityIdField = entityIdFields[section.entityType];
 
@@ -89,7 +89,7 @@ const meRoutes = app
         const subTable = entityTables[section.submenu.entityType];
         const subEntityIdField = entityIdFields[section.submenu.entityType];
 
-        submenus = await db
+        submenu = await db
           .select({
             slug: subTable.slug,
             id: subTable.id,
@@ -109,12 +109,10 @@ const meRoutes = app
 
       return entity.map((entity) => ({
         ...entity,
-        submenu: section.submenu
-          ? submenus.filter((p) => {
-              const parentField = section.submenu?.parentField;
-              return parentField ? p.membership[parentField] === entity.id : false;
-            })
-          : [],
+        submenu: submenu.filter((p) => {
+          const parentField = section.submenu?.parentField;
+          return parentField ? p.membership[parentField] === entity.id : false;
+        }),
       }));
     };
 
