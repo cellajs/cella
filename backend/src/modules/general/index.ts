@@ -138,7 +138,6 @@ const generalRoutes = app
           userThumbnailUrl: targetUser?.thumbnailUrl,
           userLanguage: targetUser?.language || user.language,
           inviteBy: user.name,
-          inviterEmail: user.email,
           token,
         }),
       );

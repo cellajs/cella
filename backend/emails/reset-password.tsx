@@ -3,9 +3,9 @@ import { Link, Section, Text } from 'jsx-email';
 import { config } from 'config';
 import { i18n } from '../../backend/src/lib/i18n';
 
+import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
-import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
 import UserName from './components/user-name';
 import type { BasicTemplateType } from './types';
@@ -63,7 +63,7 @@ export const ResetPasswordEmail = ({ userName, userLanguage: lng, resetPasswordL
           {i18n.t('backend:email.reset_password_text_3', { lng })}
         </Text>
       </Section>
-      <EmailReplyTo />
+      <AppLogo />
       <Footer />
     </EmailContainer>
   );

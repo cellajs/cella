@@ -250,7 +250,6 @@ const organizationsRoutes = app
           subject,
           content: user.newsletter ? content : 'You`ve unsubscribed from news letters',
           unsubscribeLink,
-          authorEmail: user.email,
           orgName: 'SOME NAME',
         }),
       );
@@ -294,12 +293,11 @@ const organizationsRoutes = app
             subject,
             content,
             unsubscribeLink,
-            authorEmail: user.email,
             orgName: organization?.name ?? 'Organization',
           }),
         );
 
-        emailSender.send(member.email, subject, emailHtml);
+        emailSender.send(member.email, subject, emailHtml, user.email);
       }
     }
 
