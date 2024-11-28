@@ -79,7 +79,7 @@ export const SheetMenu = memo(() => {
       }),
       monitorForElements({
         canMonitor({ source }) {
-          return isPageData(source.data);
+          return isPageData(source.data) && !source.data.item.membership.archived;
         },
         async onDrop({ source, location }) {
           const target = location.current.dropTargets[0];
