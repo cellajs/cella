@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 
 import { basename, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
