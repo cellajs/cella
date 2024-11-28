@@ -10,6 +10,7 @@ import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { getUserMembershipsCount, transformDatabaseUserWithCount } from './helpers/transform-database-user';
@@ -58,7 +59,8 @@ const usersRoutes = app
 
     const filters = [];
     if (q) {
-      filters.push(or(ilike(usersTable.name, `%${q}%`), ilike(usersTable.email, `%${q}%`)));
+      const query = prepareStringForILikeFilter(q);
+      filters.push(or(ilike(usersTable.name, query), ilike(usersTable.email, query)));
     }
     if (role) filters.push(eq(usersTable.role, role));
 

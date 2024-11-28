@@ -1,4 +1,4 @@
-import { type SQL, and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 
@@ -23,6 +23,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 import { insertMembership } from './helpers/insert-membership';
 import membershipRouteConfig from './routes';
 
@@ -366,10 +367,18 @@ const membershipsRoutes = app
 
     const entityIdField = entityIdFields[entity.entity];
 
-    // TODO use filter query helper to avoid code duplication. Also, this specific filter is missing name search?
-    const filter: SQL | undefined = q ? ilike(usersTable.email, `%${q}%`) : undefined;
+    // Build search filters
+    const $or = [];
+    if (q) {
+      const query = prepareStringForILikeFilter(q);
+      $or.push(ilike(usersTable.name, query), ilike(usersTable.email, query));
+    }
 
-    const usersQuery = db.select().from(usersTable).where(filter).as('users');
+    const usersQuery = db
+      .select()
+      .from(usersTable)
+      .where(or(...$or))
+      .as('users');
     const membersFilters = [eq(membershipsTable[entityIdField], entity.id), eq(membershipsTable.type, entityType)];
 
     if (role) membersFilters.push(eq(membershipsTable.role, role));
