@@ -59,8 +59,8 @@ export const suggestionSections: SuggestionSection[] = [
 export const getEntityRoute = (item: UserMenuItem | SuggestionType) => {
   const path = baseEntityRoutes[item.entity];
 
-  const idOrSlug = item.slug || item.id || '';
-  const orgIdOrSlug = item.organizationId || '';
+  const idOrSlug = item.slug || item.id;
+  const orgIdOrSlug = item.entity === 'organization' ? item.id : item.organizationId;
 
   return { path, params: { idOrSlug, orgIdOrSlug } };
 };

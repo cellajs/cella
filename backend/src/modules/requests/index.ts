@@ -7,6 +7,7 @@ import { errorResponse } from '#/lib/errors';
 import { sendSlackNotification } from '#/lib/notification';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 import requestsRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -55,7 +56,7 @@ const requestsRoutes = app
   .openapi(requestsRoutesConfig.getRequests, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
-    const filter: SQL | undefined = q ? ilike(requestsTable.email, `%${q}%`) : undefined;
+    const filter: SQL | undefined = q ? ilike(requestsTable.email, prepareStringForILikeFilter(q)) : undefined;
 
     const requestsQuery = db.select().from(requestsTable).where(filter);
 

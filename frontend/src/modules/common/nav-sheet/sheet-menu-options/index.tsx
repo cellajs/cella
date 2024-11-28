@@ -28,6 +28,7 @@ export const SheetMenuItemsOptions = ({ data, shownOption }: { data: UserMenuIte
   return filteredItems.map((item) => (
     <ComplexOptionElement
       key={item.id}
+      unarchiveItems={filteredItems}
       item={item}
       shownOption={shownOption}
       hideSubmenu={hideSubmenu}

@@ -63,7 +63,7 @@ const meRoutes = app
 
     // Fetch function for each menu section, including handling submenus
     const fetchMenuItemsForSection = async (section: MenuSection) => {
-      let submenus: MenuItem[];
+      let submenu: MenuItem[] = [];
       const mainTable = entityTables[section.entityType];
       const mainEntityIdField = entityIdFields[section.entityType];
 
@@ -89,7 +89,7 @@ const meRoutes = app
         const subTable = entityTables[section.submenu.entityType];
         const subEntityIdField = entityIdFields[section.submenu.entityType];
 
-        submenus = await db
+        submenu = await db
           .select({
             slug: subTable.slug,
             id: subTable.id,
@@ -107,10 +107,12 @@ const meRoutes = app
           .innerJoin(membershipsTable, eq(membershipsTable[subEntityIdField], subTable.id));
       }
 
-      // TODO: typescript issue with submenus being undefined
       return entity.map((entity) => ({
         ...entity,
-        submenu: section.submenu ? submenus : [],
+        submenu: submenu.filter((p) => {
+          const parentField = section.submenu?.parentField;
+          return parentField ? p.membership[parentField] === entity.id : false;
+        }),
       }));
     };
 

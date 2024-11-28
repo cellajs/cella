@@ -3,9 +3,9 @@ import { Section, Text } from 'jsx-email';
 import { config } from 'config';
 import { i18n } from '../../backend/src/lib/i18n';
 
+import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
-import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
 import type { BasicTemplateType } from './types';
 
@@ -28,6 +28,7 @@ export const VerificationEmail = ({ userLanguage: lng, verificationLink = baseUr
         fontWeight: 300,
         color: '#404040',
         lineHeight: '1.5',
+        width: '32rem',
       }}
     >
       <Section
@@ -40,10 +41,11 @@ export const VerificationEmail = ({ userLanguage: lng, verificationLink = baseUr
           marginTop: '2rem',
         }}
       >
-        <Text>{i18n.t('backend:email.verification_text_1', { lng })}</Text>
+        <Text>{i18n.t('backend:email.verification_text_1', { lng, appName })}</Text>
+
         <EmailButton ButtonText={i18n.t('common:verify_my_email', { lng })} href={verificationLink} />
       </Section>
-      <EmailReplyTo />
+      <AppLogo />
       <Footer />
     </EmailContainer>
   );

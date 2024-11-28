@@ -1,22 +1,21 @@
 import { Link, Section, Text } from 'jsx-email';
 import { i18n } from '../src/lib/i18n';
 
+import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailHeader } from './components/email-header';
-import { EmailReplyTo } from './components/email-reply-to';
 import { Footer } from './components/footer';
 import { updateBlocknoteHTML } from './helpers';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
-  authorEmail: string;
   orgName: string;
   content: string;
   subject: string;
   unsubscribeLink: string;
 }
 
-export const organizationsNewsletter = ({ userLanguage: lng, authorEmail, content, subject, unsubscribeLink, orgName }: Props) => {
+export const organizationsNewsletter = ({ userLanguage: lng, content, subject, unsubscribeLink, orgName }: Props) => {
   return (
     <EmailContainer
       previewText={subject}
@@ -61,7 +60,7 @@ export const organizationsNewsletter = ({ userLanguage: lng, authorEmail, conten
         </Link>
       </Section>
 
-      <EmailReplyTo email={authorEmail} emailText={i18n.t('backend:email.author_email')} />
+      <AppLogo />
       <Footer />
     </EmailContainer>
   );

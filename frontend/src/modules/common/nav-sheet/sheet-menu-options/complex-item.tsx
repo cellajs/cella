@@ -12,6 +12,7 @@ import { getDraggableItemData } from '~/utils/drag-drop';
 
 interface ComplexOptionElementProps {
   item: UserMenuItem;
+  unarchiveItems: UserMenuItem[];
   shownOption: 'archived' | 'unarchive';
   hideSubmenu: boolean;
   isSubmenuArchivedVisible?: boolean;
@@ -19,6 +20,7 @@ interface ComplexOptionElementProps {
 }
 export const ComplexOptionElement = ({
   item,
+  unarchiveItems,
   shownOption,
   isSubmenuArchivedVisible = false,
   hideSubmenu,
@@ -28,7 +30,12 @@ export const ComplexOptionElement = ({
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
   const handleCanDrop = (sourceData: Record<string | symbol, unknown>) => {
-    return isPageData(sourceData) && sourceData.item.id !== item.id && sourceData.itemType === item.entity;
+    return (
+      isPageData(sourceData) &&
+      sourceData.item.id !== item.id &&
+      sourceData.itemType === item.entity &&
+      unarchiveItems.some((i) => i.id === sourceData.item.id)
+    );
   };
 
   // create draggable & dropTarget elements and auto scroll
@@ -40,6 +47,7 @@ export const ComplexOptionElement = ({
       draggable({
         element,
         dragHandle: element,
+        canDrag: () => !item.membership.archived,
         getInitialData: () => data,
       }),
       dropTargetForElements({

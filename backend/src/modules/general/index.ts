@@ -26,6 +26,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { CustomHono } from '#/types/common';
+import { prepareStringForILikeFilter } from '#/utils/sql';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRouteConfig from './routes';
@@ -42,12 +43,10 @@ const generalRoutes = app
    * Get upload token
    */
   .openapi(generalRouteConfig.getUploadToken, async (ctx) => {
-    const isPublic = ctx.req.query('public');
     const user = getContextUser();
-    // TODO: validate query param organization?
-    const organizationId = ctx.req.query('organizationId');
+    const { public: isPublic, organization } = ctx.req.valid('query');
 
-    const sub = organizationId ? `${organizationId}/${user.id}` : user.id;
+    const sub = organization ? `${organization}/${user.id}` : user.id;
 
     const token = jwt.sign(
       {
@@ -139,7 +138,6 @@ const generalRoutes = app
           userThumbnailUrl: targetUser?.thumbnailUrl,
           userLanguage: targetUser?.language || user.language,
           inviteBy: user.name,
-          inviterEmail: user.email,
           token,
         }),
       );
@@ -287,9 +285,13 @@ const generalRoutes = app
         };
 
         // Build search filters
-        const $or = [ilike(table.name, `%${q}%`)];
-        if ('email' in table) {
-          $or.push(ilike(table.email, `%${q}%`));
+        const $or = [];
+        if (q) {
+          const query = prepareStringForILikeFilter(q);
+          $or.push(ilike(table.name, query));
+          if ('email' in table) {
+            $or.push(ilike(table.email, query));
+          }
         }
 
         // Perform the join with memberships

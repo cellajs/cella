@@ -10,6 +10,7 @@ import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { useGeneralStore } from '~/store/general';
 import type { ContextEntity } from '~/types/common';
 import './attachments';
+import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
 
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -36,6 +37,11 @@ const prefetchMembers = async (
 ) => {
   const membersOptions = membersQueryOptions({ idOrSlug: item.slug, orgIdOrSlug, entityType: item.entity, limit: 40 });
   prefetchQuery(membersOptions);
+};
+
+const prefetchAttachments = async (orgIdOrSlug: string) => {
+  const attachmentsOptions = attachmentsQueryOptions({ orgIdOrSlug, limit: 40 });
+  prefetchQuery(attachmentsOptions);
 };
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
@@ -68,6 +74,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
             const options = organizationQueryOptions(item.slug);
             prefetchQuery(options);
             prefetchMembers(item, item.id);
+            prefetchAttachments(item.id);
 
             await waitFor(1000); // wait for a second to avoid server overload
           }
