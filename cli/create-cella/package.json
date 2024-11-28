@@ -20,7 +20,7 @@
   "type": "module",
   "main": "index.ts",
   "bin": {
-    "create-cella": "tsx index.ts"
+    "create-cella": "index.ts"
   },
   "scripts": {
     "create": "tsx index.ts"
