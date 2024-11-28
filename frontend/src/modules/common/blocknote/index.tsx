@@ -36,6 +36,7 @@ import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } 
 import { type Slides, openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
 
 import '@blocknote/shadcn/style.css';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 
@@ -98,6 +99,7 @@ export const BlockNote = ({
   const { mode } = useThemeStore();
   const wasInitial = useRef(false);
   const editor = useCreateBlockNote({ schema: customSchema, trailingBlock });
+  const isMobile = useBreakpoints('max', 'sm');
 
   const isCreationMode = !!onChange;
   const [text, setText] = useState<string>(defaultValue);
@@ -256,8 +258,10 @@ export const BlockNote = ({
     >
       {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
 
-      {formattingToolbar && <CustomFormattingToolbar />}
+      {/* Hide formatting toolbar on mobile */}
+      {!isMobile && formattingToolbar && <CustomFormattingToolbar />}
 
+      {/* By default hides on mobile */}
       {sideMenu && <CustomSideMenu editor={editor} allowedTypes={[...allowedBlockTypes, ...allowedFileBlockTypes]} />}
 
       {members?.length && <Mention members={members} editor={editor} />}

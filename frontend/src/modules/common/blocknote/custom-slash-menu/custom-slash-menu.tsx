@@ -1,5 +1,6 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import type { CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 
 export const slashMenu = (
@@ -10,12 +11,13 @@ export const slashMenu = (
 ) => {
   const { items, selectedIndex, onItemClick } = props;
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const isMobile = useBreakpoints('max', 'sm');
 
   const handleKeyPress = async (e: KeyboardEvent) => {
     const { key: pressedKey } = e;
 
-    //prevent index click if search is active
-    if (items.length !== originalItemCount) return;
+    //prevent index click if search is active or if it's mobile
+    if (isMobile || items.length !== originalItemCount) return;
 
     // Convert pressed key to an index
     const itemIndex = Number.parseInt(pressedKey, 10) - 1;
@@ -70,7 +72,7 @@ export const slashMenu = (
     <div className="slash-menu">
       {items.map((item, index) => (
         <div key={item.title}>
-          {index === indexedItemCount && items.length === originalItemCount && <hr className="slash-menu-separator" />}
+          {!isMobile && index === indexedItemCount && items.length === originalItemCount && <hr className="slash-menu-separator" />}
           <div
             // biome-ignore lint/suspicious/noAssignInExpressions: to enable scroll into selected item
             ref={(el) => (itemRefs.current[index] = el)}
@@ -86,7 +88,9 @@ export const slashMenu = (
               {item.icon}
               {item.title}
             </div>
-            {items.length === originalItemCount && index < indexedItemCount && <span className="slash-menu-item-badge">{index + 1}</span>}
+            {!isMobile && items.length === originalItemCount && index < indexedItemCount && (
+              <span className="slash-menu-item-badge">{index + 1}</span>
+            )}
           </div>
         </div>
       ))}
