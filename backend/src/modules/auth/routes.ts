@@ -6,7 +6,14 @@ import { authRateLimiter } from '#/middlewares/rate-limiter';
 import { signInRateLimiter } from '#/middlewares/rate-limiter/sign-in';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { cookieSchema, passwordSchema } from '#/utils/schema/common-schemas';
-import { authBodySchema, emailBodySchema, passkeyChallengeQuerySchema, passkeyCreationBodySchema, passkeyVerificationBodySchema } from './schema';
+import {
+  authBodySchema,
+  emailBodySchema,
+  passkeyChallengeQuerySchema,
+  passkeyCreationBodySchema,
+  passkeyVerificationBodySchema,
+  signInResponse,
+} from './schema';
 
 class AuthRoutesConfig {
   public impersonationSignIn = createRouteConfig({
@@ -310,13 +317,9 @@ class AuthRoutesConfig {
         }),
         content: {
           'application/json': {
-            schema: successWithoutDataSchema,
+            schema: successWithDataSchema(signInResponse),
           },
         },
-      },
-      302: {
-        description: 'Email address not verified',
-        headers: z.object({ Location: z.string() }),
       },
       ...errorResponses,
     },
@@ -360,9 +363,7 @@ class AuthRoutesConfig {
     responses: {
       302: {
         description: 'Redirect to frontend',
-        headers: z.object({
-          Location: z.string(),
-        }),
+        headers: z.object({ Location: z.string() }),
       },
       ...errorResponses,
     },
@@ -459,9 +460,7 @@ class AuthRoutesConfig {
     responses: {
       302: {
         description: 'Redirect to frontend',
-        headers: z.object({
-          Location: z.string(),
-        }),
+        headers: z.object({ Location: z.string() }),
       },
       ...errorResponses,
     },
@@ -483,9 +482,7 @@ class AuthRoutesConfig {
     responses: {
       302: {
         description: 'Redirect to Microsoft',
-        headers: z.object({
-          Location: z.string(),
-        }),
+        headers: z.object({ Location: z.string() }),
       },
       ...errorResponses,
     },
@@ -509,9 +506,7 @@ class AuthRoutesConfig {
     responses: {
       302: {
         description: 'Redirect to frontend',
-        headers: z.object({
-          Location: z.string(),
-        }),
+        headers: z.object({ Location: z.string() }),
       },
       ...errorResponses,
     },

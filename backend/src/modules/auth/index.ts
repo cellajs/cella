@@ -313,9 +313,7 @@ const authRoutes = app
     if (token) {
       const response = await fetch(`${config.backendUrl + generalRouteConfig.checkToken.path}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
       });
 
@@ -333,20 +331,13 @@ const authRoutes = app
 
     if (!validPassword) return errorResponse(ctx, 400, 'invalid_password', 'warn');
 
-    const isEmailVerified = user.emailVerified || tokenData?.email === user.email;
+    const emailVerified = user.emailVerified || tokenData?.email === user.email;
 
-    // Send verify email if email not verified
-    if (!isEmailVerified) {
-      sendVerificationEmail(email);
+    // If email is not verified, send a verification email
+    if (!emailVerified) sendVerificationEmail(email);
+    else await setSessionCookie(ctx, user.id, 'password');
 
-      // TODO return ctx.redirect(`${config.frontendUrl}/auth/verify-email`);
-      // return ctx.json({}, 302, {
-      //   Location: `${config.frontendUrl}/auth/verify-email`,
-      // });
-    } else {
-      await setSessionCookie(ctx, user.id, 'password');
-    }
-    return ctx.json({ success: true }, 200);
+    return ctx.json({ success: true, data: { emailVerified } }, 200);
   })
   /*
    * Impersonate sign in

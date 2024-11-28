@@ -37,13 +37,13 @@ export const SignInForm = ({
 
   const { mutate: signIn, isPending } = useMutation({
     mutationFn: baseSignIn,
-    onSuccess: () => {
+    onSuccess: ({ emailVerified }) => {
       // Redirect to the invite page if token is present
       // Otherwise, redirect to a redirect URL or to home
-      const to = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
+      const verifiedUserTo = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
       const params = { token: tokenData?.token };
 
-      navigate({ to, params, replace: true });
+      navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
     },
   });
 
