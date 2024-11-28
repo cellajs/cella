@@ -3,6 +3,9 @@ export const NAME = 'create-cella';
 // URL of the template repository
 export const TEMPLATE_URL = 'github:cellajs/cella';
 
+// URL to the Cella repository
+export const CELLA_REMOTE_URL: string = 'git@github.com:cellajs/cella.git';
+
 // Import package.json dynamically for version and website information
 import packageJson from '../package.json' assert { type: 'json' };
 
