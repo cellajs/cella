@@ -1,6 +1,6 @@
 import { eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
-import { type InsertMembershipModel, type MembershipModel, membershipsTable } from '#/db/schema/memberships';
+import { type InsertMembershipModel, type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -10,11 +10,21 @@ interface Props<T> {
   user: UserModel;
   role: MembershipModel['role'];
   entity: T;
+  parentEntity?: {
+    entity: ContextEntity;
+    id: string;
+  };
   createdBy?: UserModel['id'];
 }
 
 // Helper function to insert a membership and give it proper order number
-export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({ user, role, entity, createdBy = user.id }: Props<T>) => {
+export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({
+  user,
+  role,
+  entity,
+  parentEntity,
+  createdBy = user.id,
+}: Props<T>) => {
   // Get the max order number
   const [{ maxOrder }] = await db
     .select({
@@ -23,7 +33,6 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, user.id));
 
-  //TODO - make this generic
   const newMembership: InsertMembershipModel = {
     organizationId: '',
     type: entity.entity,
@@ -36,19 +45,16 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
   newMembership.organizationId = entity.organizationId ?? entity.id;
   const entityIdField = entityIdFields[entity.entity];
 
+  if (parentEntity) {
+    const idFieldKey = entityIdFields[parentEntity.entity];
+    newMembership[idFieldKey] = parentEntity.id;
+  }
+
   // If you add more entities to membership
   newMembership[entityIdField] = entity.id;
 
   // Insert
-  const [result] = await db.insert(membershipsTable).values(newMembership).returning({
-    id: membershipsTable.id,
-    role: membershipsTable.role,
-    archived: membershipsTable.archived,
-    muted: membershipsTable.muted,
-    order: membershipsTable.order,
-    userId: membershipsTable.userId,
-    organizationId: membershipsTable.organizationId,
-  });
+  const [result] = await db.insert(membershipsTable).values(newMembership).returning(membershipSelect);
 
   // Log
   logEvent(`User added to ${entity.entity}`, { user: user.id, id: entity.id });

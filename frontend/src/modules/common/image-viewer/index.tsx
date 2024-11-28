@@ -1,8 +1,5 @@
-// This code is originally authored by https://github.com/mgorabbani (https://github.com/mgorabbani/react-image-pan-zoom-rotate).
-
 import { Grab, Hand, Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react';
 import * as React from 'react';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { Button } from '~/modules/ui/button';
 import { TooltipButton } from '../tooltip-button';
@@ -20,19 +17,36 @@ type ReactPanZoomProps = {
 };
 
 const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
-  ({ image, alt, resetImageState, showButtons, imageClass, togglePanState = false }, ref) => {
-    const isDesktop = useBreakpoints('min', 'xl', true);
+  ({ image, alt, resetImageState, showButtons, imageClass, togglePanState = false }, forwardedRef) => {
     const [dx, setDx] = React.useState(0);
     const [dy, setDy] = React.useState(0);
-    const [zoom, setZoom] = React.useState(isDesktop ? 0.9 : 1);
+    const [zoom, setZoom] = React.useState(1);
     const [rotation, setRotation] = React.useState(0);
     const [flip, setFlip] = React.useState(false);
     const [panState, setPanState] = React.useState(!togglePanState);
 
+    const imgRef = React.useRef<HTMLImageElement>(null);
+
+    const calculateInitialZoom = () => {
+      const imageElement = imgRef.current;
+      if (imageElement) {
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        const renderedWidth = imageElement.offsetWidth;
+        const renderedHeight = imageElement.offsetHeight;
+
+        const scaleX = windowWidth / renderedWidth;
+        const scaleY = windowHeight / renderedHeight;
+
+        setZoom(Math.min(scaleX, scaleY)); // Set zoom based on rendered size
+      }
+    };
+
     const resetAll = () => {
       setDx(0);
       setDy(0);
-      setZoom(isDesktop ? 0.9 : 1);
+      calculateInitialZoom();
       setRotation(0);
       setFlip(false);
     };
@@ -42,7 +56,7 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
     }, [resetImageState]);
 
     const zoomIn = () => setZoom((prevZoom) => prevZoom + 0.2);
-    const zoomOut = () => setZoom((prevZoom) => (prevZoom >= 1 ? prevZoom - 0.2 : prevZoom));
+    const zoomOut = () => setZoom((prevZoom) => (prevZoom >= 0.4 ? prevZoom - 0.2 : prevZoom));
     const rotateRight = () => setRotation((prevRotation) => (prevRotation === 3 ? 0 : prevRotation + 1));
     // const flipImage = () => setFlip((prevFlip) => !prevFlip)};
 
@@ -50,6 +64,21 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
       setDx(dx);
       setDy(dy);
     };
+
+    // Calculate zoom based on the rendered image size
+    React.useEffect(() => {
+      const imageElement = imgRef.current;
+      imageElement?.addEventListener('load', calculateInitialZoom); // Wait for image load if not
+      return () => imageElement?.removeEventListener('load', calculateInitialZoom);
+    }, [image]);
+
+    // Use the forwarded ref (combine imgRef with the passed ref if available)
+    React.useEffect(() => {
+      if (!forwardedRef) return;
+      // Call function ref if passed
+      if (typeof forwardedRef === 'function') forwardedRef(imgRef.current);
+      else (forwardedRef as React.MutableRefObject<HTMLImageElement | null>).current = imgRef.current;
+    }, [forwardedRef]);
 
     return (
       <>
@@ -107,6 +136,7 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
           key={dx}
         >
           <img
+            ref={imgRef}
             style={{
               transform: `rotate(${rotation * 90}deg) scaleX(${flip ? -1 : 1})`,
               width: '100%',
@@ -114,14 +144,11 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
             className={imageClass}
             src={image}
             alt={alt}
-            ref={ref}
           />
         </PanViewer>
       </>
     );
   },
 );
-
-ReactPanZoom.displayName = 'ReactPanZoom';
 
 export default ReactPanZoom;

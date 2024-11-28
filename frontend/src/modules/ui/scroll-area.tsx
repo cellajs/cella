@@ -29,7 +29,13 @@ const ScrollArea = React.forwardRef<
     }
 >(({ className, children, id, size, viewPortRef, ...props }, ref) => (
   <ScrollAreaPrimitive.Root ref={ref} className={cn('relative overflow-auto', className)} {...props}>
-    <ScrollAreaPrimitive.Viewport id={`${id}-viewport`} ref={viewPortRef} className="h-full w-full [&>div]:!block rounded-[inherit]">
+    <ScrollAreaPrimitive.Viewport
+      id={`${id}-viewport`}
+      // to prevent warning on autoscroll set from Pragmatic DnD
+      style={{ overflowY: 'scroll' }}
+      ref={viewPortRef}
+      className="h-full w-full [&>div]:!block rounded-[inherit]"
+    >
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar size={size} />

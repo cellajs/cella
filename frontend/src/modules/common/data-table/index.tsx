@@ -5,6 +5,7 @@ import { type Key, type ReactNode, useEffect, useState } from 'react';
 import DataGrid, { type CellClickArgs, type CellMouseEvent, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 
+import { config } from 'config';
 import { useRef } from 'react';
 import { useInView } from 'react-intersection-observer';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -72,7 +73,7 @@ export const DataTable = <TData,>({
   rowKeyGetter,
   error,
   isLoading,
-  limit = 40,
+  limit = config.requestLimits.default,
   isFetching,
   NoRowsComponent,
   isFiltered,

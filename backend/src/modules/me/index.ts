@@ -109,7 +109,10 @@ const meRoutes = app
 
       return entity.map((entity) => ({
         ...entity,
-        submenu,
+        submenu: submenu.filter((p) => {
+          const parentField = section.submenu?.parentField;
+          return parentField ? p.membership[parentField] === entity.id : false;
+        }),
       }));
     };
 
