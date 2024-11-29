@@ -1,8 +1,7 @@
 import { basename, resolve } from 'node:path';
 import { Command, InvalidArgumentError } from 'commander';
 
-import { NAME } from './constants.ts';
-import { packageJson } from './utils/package-json.ts';
+import { NAME, VERSION } from './constants.ts';
 import { validateProjectName } from './utils/validate-project-name.ts';
 
 // Define types for CLI options
@@ -34,7 +33,7 @@ const packageManager = 'pnpm';
 // Set up the CLI command using Commander
 export const command = new Command(NAME)
   .version(
-    packageJson.version,
+    VERSION,
     '-v, --version',
     `Output the current version of ${NAME}.`
   )
