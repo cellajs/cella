@@ -29,7 +29,7 @@ export async function fetchRemote({
     } catch (error: any) {
       // If the remote doesn't exist, it throws a fatal error
       const errorMessage = typeof error === 'string' ? error : error?.message || '';
-      if (errorMessage.includes('fatal: No such remote')) {
+      if (errorMessage.includes('No such remote')) {
         remote = null;
       } else {
         throw error;
