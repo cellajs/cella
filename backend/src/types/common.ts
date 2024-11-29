@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import type { config } from 'config';
 import type { Schema } from 'hono';
 
+import type { entityIdFields } from '#/entity-config';
 import type { failWithErrorSchema } from '#/utils/schema/common-schemas';
 import type { Env } from './app';
 
@@ -16,6 +17,9 @@ export type BaseEntityModel<T extends Entity> = {
 export type Entity = (typeof config.entityTypes)[number];
 
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
+export type ContextEntityIdFields = {
+  [K in keyof typeof entityIdFields]: K extends ContextEntity ? (typeof entityIdFields)[K] : never;
+}[keyof typeof entityIdFields];
 
 export type ProductEntity = (typeof config.productEntityTypes)[number];
 

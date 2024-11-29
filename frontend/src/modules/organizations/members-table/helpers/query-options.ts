@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetMembersParams, getMembers } from '~/api/memberships';
-import { membersKeys } from '~/modules/common/query-client-provider/members/keys';
+import { membersKeys } from '~/modules/common/query-client-provider/keys';
 import { getPaginatedOffset } from '~/utils/mutate-query';
 
 const LIMIT = config.requestLimits.members;

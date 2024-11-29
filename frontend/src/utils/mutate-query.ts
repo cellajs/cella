@@ -101,15 +101,14 @@ export const getCancelingRefetchQueries = async <T>(exactQueryKey: QueryKey, sim
 export const getQueries = <T>(exactQueryKey: QueryKey, similarQueryKey?: QueryKey): [QueryKey, InfiniteQueryData<T> | QueryData<T> | undefined][] => {
   // Get exact queries matching the passed query key
   const exactQuery = getExact<T>(exactQueryKey);
-  let queries = exactQuery;
 
   // If a similar query key is provided, get similar queries and merge with the exact queries
   if (similarQueryKey) {
     const similarQueries = getSimilarQueries<T>(similarQueryKey);
-    queries = [...exactQuery, ...similarQueries];
+    return [...exactQuery, ...similarQueries];
   }
 
-  return queries;
+  return exactQuery;
 };
 
 // Retrieves query data by a given query key
