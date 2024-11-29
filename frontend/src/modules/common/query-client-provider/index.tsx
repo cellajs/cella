@@ -3,7 +3,7 @@ import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
 import { persister, queryClient } from '~/lib/router';
-import { userMenuPrefetchConfig } from '~/menu-prefetch-config';
+import { mapQuery, userMenuPrefetchConfig } from '~/menu-prefetch-config';
 import { prefetchAttachments, prefetchMembers, prefetchQuery, waitFor } from '~/modules/common/query-client-provider/helpers';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { useGeneralStore } from '~/store/general';
@@ -41,11 +41,19 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       for (const section of Object.values(menu)) {
         for (const item of section) {
           const config = userMenuPrefetchConfig[item.entity];
-          const options = config.queryOptions(item.slug);
+          const options = mapQuery(item);
           prefetchQuery(options);
           if (config.prefetchMembers) prefetchMembers(item, item.id);
           if (config.prefetchAttachments) prefetchAttachments(item.id);
           await waitFor(1000); // wait for a second to avoid server overload
+
+          for (const subItem of item.submenu ?? []) {
+            const config = userMenuPrefetchConfig[subItem.entity];
+            const options = mapQuery(item);
+            prefetchQuery(options);
+            if (config.prefetchMembers) prefetchMembers(subItem, subItem.id);
+            if (config.prefetchAttachments) prefetchAttachments(subItem.id);
+          }
         }
       }
     })();
