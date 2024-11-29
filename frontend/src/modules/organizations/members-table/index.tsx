@@ -159,7 +159,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
       id: `user-invite-${entity.id}`,
       drawerOnMobile: false,
       className: 'w-auto shadow-none relative z-[60] max-w-4xl',
-      container: containerRef.current,
+      //TODO mb rework sheet to find a way use dialog with ref in sheet
+      container: isSheet ? containerRef.current : null,
       containerBackdrop: true,
       containerBackdropClassName: 'z-50',
       title: t('common:invite'),
