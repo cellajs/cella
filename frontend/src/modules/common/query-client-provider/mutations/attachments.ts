@@ -8,6 +8,7 @@ import type { ContextProp, InfiniteQueryData, QueryData } from '~/modules/common
 import type { Attachment } from '~/types/common';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
+import { compareQueryKeys } from '../helpers';
 import { attachmentKeys } from '../keys';
 
 type AttachmentQueryData = QueryData<Attachment>;
@@ -117,7 +118,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
       queryClient.setQueryData<AttachmentInfiniteQueryData | AttachmentQueryData>(activeKey, (oldData) => {
         if (!oldData) return handleNoOldData(oldData);
         const prevItems = getQueryItems(oldData);
-        const [_, __, optimisticIds] = context.find(([key]) => JSON.stringify(key) === JSON.stringify(activeKey)) ?? [];
+        const [_, __, optimisticIds] = context.find(([key]) => compareQueryKeys(key, activeKey)) ?? [];
         const ids = optimisticIds || [];
         const optimisticAttachments = createdAttachments.filter((el) => ids.includes(el.id));
 
