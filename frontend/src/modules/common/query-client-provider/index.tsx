@@ -1,48 +1,18 @@
-import type { UseInfiniteQueryOptions, UseQueryOptions } from '@tanstack/react-query';
+import type { UseQueryOptions } from '@tanstack/react-query';
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
-import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { persister, queryClient } from '~/lib/router';
-import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
-import { organizationQueryOptions } from '~/modules/organizations/organization-page';
+import { userMenuPrefetchConfig } from '~/menu-prefetch-config';
+import { prefetchAttachments, prefetchMembers, prefetchQuery, waitFor } from '~/modules/common/query-client-provider/helpers';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { useGeneralStore } from '~/store/general';
-import type { ContextEntity } from '~/types/common';
-import './attachments';
-import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
+
+const mutationFiles = import.meta.glob('./mutations/*');
+// dynamically import each file
+for (const importFunc of Object.values(mutationFiles)) await importFunc();
 
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
-
-type InferType<T> = T extends UseQueryOptions<infer D> ? D : T extends UseInfiniteQueryOptions<infer D> ? D : never;
-// biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
-async function prefetchQuery<T extends UseQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
-// biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
-async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
-async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryOptions) {
-  if ('getNextPageParam' in options) {
-    return offlineFetchInfinite(options);
-  }
-  return offlineFetch(options);
-}
-
-const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const prefetchMembers = async (
-  item: {
-    slug: string;
-    entity: ContextEntity;
-  },
-  orgIdOrSlug: string,
-) => {
-  const membersOptions = membersQueryOptions({ idOrSlug: item.slug, orgIdOrSlug, entityType: item.entity, limit: 40 });
-  prefetchQuery(membersOptions);
-};
-
-const prefetchAttachments = async (orgIdOrSlug: string) => {
-  const attachmentsOptions = attachmentsQueryOptions({ orgIdOrSlug, limit: 40 });
-  prefetchQuery(attachmentsOptions);
-};
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { networkMode } = useGeneralStore();
@@ -60,6 +30,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
         gcTime: GC_TIME,
       };
       prefetchQuery(meQueryOptions);
+
       const menuQueryOptions = {
         queryKey: ['menu'],
         queryFn: getAndSetMenu,
@@ -67,25 +38,20 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       } satisfies UseQueryOptions;
       const menu = await prefetchQuery(menuQueryOptions);
 
-      // TODO can we make this dynamic by adding more props in an entity map?
       for (const section of Object.values(menu)) {
         for (const item of section) {
-          if (item.entity === 'organization') {
-            const options = organizationQueryOptions(item.slug);
-            prefetchQuery(options);
-            prefetchMembers(item, item.id);
-            prefetchAttachments(item.id);
-
-            await waitFor(1000); // wait for a second to avoid server overload
-          }
+          const config = userMenuPrefetchConfig[item.entity];
+          const options = config.queryOptions(item.slug);
+          prefetchQuery(options);
+          if (config.prefetchMembers) prefetchMembers(item, item.id);
+          if (config.prefetchAttachments) prefetchAttachments(item.id);
+          await waitFor(1000); // wait for a second to avoid server overload
         }
       }
     })();
   }, [networkMode]);
 
-  if (networkMode === 'online') {
-    return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
-  }
+  if (networkMode === 'online') return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
 
   return (
     <PersistQueryClientProvider

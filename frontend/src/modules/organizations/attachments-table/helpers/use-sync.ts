@@ -3,7 +3,7 @@ import { config } from 'config';
 import { useEffect } from 'react';
 import { queryClient } from '~/lib/router';
 
-import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/attachments';
+import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
 import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
 import { useGeneralStore } from '~/store/general';
 import type { Attachment } from '~/types/common';

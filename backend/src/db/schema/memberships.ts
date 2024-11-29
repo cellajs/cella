@@ -1,8 +1,9 @@
-import { usersTable } from '#/db/schema/users';
-import { type FilteredEntityIdFields, entityIdFields, entityTables } from '#/entity-config';
-import { nanoid } from '#/utils/nanoid';
 import { config } from 'config';
 import { type PgColumn, boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { usersTable } from '#/db/schema/users';
+import { entityIdFields, entityTables } from '#/entity-config';
+import type { ContextEntityIdFields } from '#/types/common';
+import { nanoid } from '#/utils/nanoid';
 
 const roleEnum = config.rolesByType.entityRoles;
 
@@ -11,7 +12,6 @@ export const membershipsTable = createDynamicMembershipTable();
 // Create dynamic membership table
 function createDynamicMembershipTable() {
   const dynamicFields = generateDynamicFields();
-
   return pgTable('memberships', {
     id: varchar().primaryKey().$defaultFn(nanoid),
     type: varchar({ enum: config.contextEntityTypes }).notNull(),
@@ -29,7 +29,8 @@ function createDynamicMembershipTable() {
     ...dynamicFields,
   });
 }
-// Dynamic part of the select (based on contextEntityTypes)
+
+// Dynamic part of the select based on contextEntityTypes that you can set in config
 const membershipDynamicSelect = config.contextEntityTypes.reduce(
   (fields, entityType) => {
     const fieldName = entityIdFields[entityType];
@@ -37,7 +38,7 @@ const membershipDynamicSelect = config.contextEntityTypes.reduce(
     if (Object.prototype.hasOwnProperty.call(membershipsTable, fieldName)) fields[fieldName] = membershipsTable[fieldName];
     return fields;
   },
-  {} as Record<FilteredEntityIdFields, PgColumn>,
+  {} as Record<ContextEntityIdFields, PgColumn>,
 );
 
 // Merge the static and dynamic select fields
@@ -66,7 +67,7 @@ function generateDynamicFields() {
 
       return fields;
     },
-    {} as Record<FilteredEntityIdFields, ReturnType<typeof varchar>>,
+    {} as Record<ContextEntityIdFields, ReturnType<typeof varchar>>,
   );
 }
 

@@ -1,10 +1,9 @@
 import { useSearch } from '@tanstack/react-router';
-import { Suspense, useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { Paperclip, Trash, Upload, XSquare } from 'lucide-react';
-import { nanoid } from 'nanoid';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -23,30 +22,29 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
-import { useAttachmentCreateMutation, useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/attachments';
-import UploadUppy from '~/modules/common/upload/upload-uppy';
+import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
+import { useColumns } from '~/modules/organizations/attachments-table/columns';
+import { openUploadDialog } from '~/modules/organizations/attachments-table/helpers';
+import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
+import { useSync } from '~/modules/organizations/attachments-table/helpers/use-sync';
+import RemoveAttachmentsForm from '~/modules/organizations/attachments-table/remove-attachments-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/store/user';
-import { type Attachment, type Organization, UploadType } from '~/types/common';
+import type { Attachment, Organization } from '~/types/common';
 import type { attachmentsQuerySchema } from '#/modules/attachments/schema';
-import { useColumns } from './columns';
-import { attachmentsQueryOptions } from './helpers/query-options';
-import { useSync } from './helpers/use-sync';
-import RemoveAttachmentsForm from './remove-attachments-form';
 
 const LIMIT = config.requestLimits.attachments;
-
-const maxAttachmentsUpload = 20;
 
 type AttachmentSearch = z.infer<typeof attachmentsQuerySchema>;
 
 interface AttachmentsTableProps {
   organization: Organization;
+  canUploadAttachments?: boolean;
   isSheet?: boolean;
 }
 
-const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTableProps) => {
+const AttachmentsTable = ({ organization, canUploadAttachments = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
   const search = useSearch({ strict: false });
   const user = useUserStore((state) => state.user);
@@ -92,8 +90,6 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
   useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openPreviewDialog)), [isAdmin, openPreviewDialog]);
 
-  const { mutate: createAttachment } = useAttachmentCreateMutation();
-
   const attachmentUpdateMutation = useAttachmentUpdateMutation();
 
   // Save filters in search params
@@ -133,49 +129,6 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
     }
 
     setRows(changedRows);
-  };
-
-  // Open the upload dialog
-  const openUploadDialog = () => {
-    dialog(
-      <Suspense>
-        <UploadUppy
-          isPublic={true}
-          uploadType={UploadType.Personal}
-          uppyOptions={{
-            restrictions: {
-              maxFileSize: 10 * 1024 * 1024, // 10MB
-              maxNumberOfFiles: maxAttachmentsUpload,
-              allowedFileTypes: ['*/*'],
-              minFileSize: null,
-              maxTotalFileSize: 10 * 1024 * 1024 * maxAttachmentsUpload, // for maxAttachmentsUpload files at 10MB max each
-              minNumberOfFiles: null,
-              requiredMetaFields: [],
-            },
-          }}
-          plugins={['webcam', 'image-editor', 'screen-capture', 'audio']}
-          imageMode="attachment"
-          callback={(result) => {
-            const attachments = result.map((a) => ({
-              id: nanoid(),
-              url: a.url,
-              size: String(a.file.size || 0),
-              contentType: a.file.type,
-              filename: a.file.name || 'unknown',
-              organizationId: organization.id,
-            }));
-            createAttachment({ attachments, organizationId: organization.id });
-            dialog.remove(true, 'upload-attachment');
-          }}
-        />
-      </Suspense>,
-      {
-        id: 'upload-attachment',
-        drawerOnMobile: false,
-        title: t('common:upload_item', { item: t('common:attachments').toLowerCase() }),
-        className: 'md:max-w-xl',
-      },
-    );
   };
 
   const openRemoveDialog = () => {
@@ -231,9 +184,10 @@ const AttachmentsTable = ({ organization, isSheet = false }: AttachmentsTablePro
                 </Button>
               </>
             ) : (
+              canUploadAttachments &&
               !isFiltered &&
               isAdmin && (
-                <Button asChild onClick={openUploadDialog}>
+                <Button asChild onClick={() => openUploadDialog(organization.id)}>
                   <motion.button transition={{ duration: 0.1 }} layoutId="attachments-filter-bar-button">
                     <motion.span layoutId="attachments-filter-bar-icon">
                       <Upload size={16} />
