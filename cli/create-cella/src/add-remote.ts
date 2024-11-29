@@ -27,12 +27,7 @@ export async function addRemote({
       remote = await runGitCommand({ targetFolder, command: `remote get-url ${remoteName}` });
     } catch (error: any) {
       // If the remote doesn't exist, it throws a fatal error
-      const errorMessage = typeof error === 'string' ? error : error?.message || '';
-      if (errorMessage.includes('fatal: No such remote')) {
-        remote = null;
-      } else {
-        throw error;
-      }
+      remote = null;
     }
 
     // Add or update the remote if it doesn't exist or differs from `remoteUrl`
