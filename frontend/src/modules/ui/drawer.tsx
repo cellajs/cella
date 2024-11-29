@@ -4,7 +4,7 @@ import { Drawer as DrawerPrimitive } from 'vaul';
 
 import { cn } from '~/utils/cn';
 
-const DrawerVariants = cva('fixed z-[115] p-4 overflow-y-auto flex flex-col rounded-t-2.5 border bg-background', {
+const DrawerVariants = cva('fixed z-[115] p-4 overflow-x-hidden flex flex-col rounded-t-2.5 border bg-background', {
   variants: {
     direction: {
       top: 'inset-x-0 top-0 mb-24 flex-col',
