@@ -23,10 +23,11 @@
     "create-cella": "index.js"
   },
   "scripts": {
-    "create": "tsx ./src/index.ts",
+    "start": "tsx ./src/index.ts",
     "clean": "rimraf ./dist",
     "build": "unbuild",
-    "prepublishOnly": "pnpm run build"
+    "test-build": "pnpm run build && node index.js",
+    "prepare": "pnpm run build"
   },
   "packageManager": "pnpm@9.11.0",
   "dependencies": {
