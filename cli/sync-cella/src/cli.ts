@@ -1,7 +1,6 @@
 import { Command, InvalidArgumentError } from 'commander';
 import { basename, resolve } from 'node:path';
-import { NAME } from './constants';
-import { packageJson } from './utils/package-json';
+import { NAME, VERSION } from './constants';
 import { validateProjectName } from './utils/validate-project-name';
 import { Fork } from './utils/config-file';
 
@@ -33,7 +32,7 @@ const packageManager = 'pnpm';
 const localBranch = '';
 
 export const command = new Command(NAME)
-  .version(packageJson.version, '-v, --version', `Output the current version of ${NAME}.`)
+  .version(VERSION, '-v, --version', `Output the current version of ${NAME}.`)
   .argument('[sync-service]')
   .usage('[sync-service] [options]')
   .helpOption('-h, --help', 'Display this help message.')
