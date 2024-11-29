@@ -1,6 +1,6 @@
 {
   "name": "@cellajs/create-cella",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "private": false,
   "license": "MIT",
   "description": "Create your own app in seconds with Cella: a TypeScript template for local-first web apps.",
