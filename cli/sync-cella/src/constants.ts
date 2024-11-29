@@ -1,6 +1,12 @@
 // Application name
 export const NAME: string = 'sync-cella';
 
+// Import package.json dynamically for version and website information
+import packageJson from '../package.json' assert { type: 'json' };
+
+// Export version from package.json
+export const VERSION: string = packageJson.version;
+
 // URL to the Cella repository
 export const CELLA_REMOTE_URL: string = 'git@github.com:cellajs/cella.git';
 

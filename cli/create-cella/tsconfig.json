@@ -11,5 +11,5 @@
       "composite": false,
     },
     "moduleResolution": "Bundler",
-    "include": ["src", "build.config.ts"]
+    "include": ["src", "tsup.config.ts"]
   }

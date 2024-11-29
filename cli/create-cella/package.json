@@ -23,9 +23,10 @@
     "create-cella": "index.js"
   },
   "scripts": {
-    "create": "tsx ./src/index.ts",
+    "start": "tsx ./src/index.ts",
     "clean": "rimraf ./dist",
-    "build": "unbuild",
+    "build": "tsup",
+    "test-build": "pnpm run build && node index.js",
     "prepublishOnly": "pnpm run build"
   },
   "packageManager": "pnpm@9.11.0",
@@ -39,7 +40,7 @@
     "yocto-spinner": "^0.1.0"
   },
   "devDependencies": {
-    "tsx": "^4.19.2",
-    "unbuild": "^2.0.0"
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2"
   }
 }
