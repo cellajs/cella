@@ -36,11 +36,14 @@ export const OrganizationRoute = createRoute({
     return offlineFetch(queryOptions);
   },
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
-  component: () => (
-    <Suspense>
-      <OrganizationPage />
-    </Suspense>
-  ),
+  component: () => {
+    const { idOrSlug } = useParams({ from: OrganizationRoute.id });
+    return (
+      <Suspense>
+        <OrganizationPage key={idOrSlug} />
+      </Suspense>
+    );
+  },
 });
 
 export const OrganizationMembersRoute = createRoute({
@@ -66,7 +69,7 @@ export const OrganizationMembersRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <MembersTable key={organization.id} entity={organization} />
+        <MembersTable entity={organization} />
       </Suspense>
     );
   },
@@ -91,7 +94,7 @@ export const OrganizationAttachmentsRoute = createRoute({
     if (!organization) return;
     return (
       <Suspense>
-        <AttachmentsTable key={organization.id} organization={organization} />
+        <AttachmentsTable organization={organization} />
       </Suspense>
     );
   },
