@@ -10,15 +10,13 @@ import { UploadType } from '~/types/common';
 const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));
 
 interface UploadAvatarProps extends AvatarWrapProps {
-  setUrl: (url: string) => void;
+  setUrl: (url: string | null) => void;
 }
 
 export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps) => {
   const { t } = useTranslation();
 
-  const removeImage = () => {
-    setUrl('');
-  };
+  const removeImage = () => setUrl(null);
 
   // Open the upload dialog
   const openUploadDialog = () => {

@@ -103,7 +103,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
     }
   }, [languages, defaultLanguage]);
 
-  const setImageUrl = (url: string) => {
+  const setImageUrl = (url: string | null) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 
