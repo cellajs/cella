@@ -9,8 +9,11 @@ import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { useGeneralStore } from '~/store/general';
 
 const mutationFiles = import.meta.glob('./mutations/*');
-// dynamically import each file
-for (const importFunc of Object.values(mutationFiles)) await importFunc();
+
+// Dynamically import each file sequentially
+(async () => {
+  for (const importFunc of Object.values(mutationFiles)) await importFunc();
+})();
 
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
