@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { resolve, extname } from 'node:path';
+import { extname, resolve } from 'node:path';
 
 export interface Fork {
   name: string;
