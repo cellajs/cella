@@ -44,18 +44,19 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       for (const section of Object.values(menu)) {
         for (const item of section) {
           const config = userMenuPrefetchConfig[item.entity];
+          const organizationId = item.organizationId || item.id;
           const options = mapQuery(item);
           prefetchQuery(options);
-          if (config.prefetchMembers) prefetchMembers(item, item.id);
-          if (config.prefetchAttachments) prefetchAttachments(item.id);
+          if (config.prefetchMembers) prefetchMembers(item, organizationId);
+          if (config.prefetchAttachments) prefetchAttachments(organizationId);
           await waitFor(1000); // wait for a second to avoid server overload
 
           for (const subItem of item.submenu ?? []) {
             const config = userMenuPrefetchConfig[subItem.entity];
             const options = mapQuery(subItem);
             prefetchQuery(options);
-            if (config.prefetchMembers) prefetchMembers(subItem, subItem.id);
-            if (config.prefetchAttachments) prefetchAttachments(subItem.id);
+            if (config.prefetchMembers) prefetchMembers(subItem, subItem.organizationId);
+            if (config.prefetchAttachments) prefetchAttachments(subItem.organizationId);
           }
         }
       }
