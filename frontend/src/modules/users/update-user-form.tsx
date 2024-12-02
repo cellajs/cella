@@ -50,7 +50,7 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
     mutationKey: ['me', 'update', idOrSlug],
     mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
     onSuccess: (updatedUser) => {
-      queryClient.setQueryData(['user', updatedUser.id], updatedUser);
+      queryClient.setQueryData(['user', updatedUser.slug], updatedUser);
     },
     gcTime: 1000 * 10,
   });
@@ -125,7 +125,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
     }
   }, [form.unsavedChanges]);
 
-  const setImageUrl = (url: string) => {
+  const setImageUrl = (url: string | null) => {
     form.setValue('thumbnailUrl', url, { shouldDirty: true });
   };
 

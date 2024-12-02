@@ -22,7 +22,7 @@ export const UserProfileRoute = createRoute({
     const { data: user } = useSuspenseQuery(userQueryOptions(idOrSlug));
     return (
       <Suspense>
-        <UserProfilePage user={user} />
+        <UserProfilePage key={idOrSlug} user={user} />
       </Suspense>
     );
   },
@@ -41,7 +41,7 @@ export const UserInOrgProfileRoute = createRoute({
     const { data: user } = useSuspenseQuery(userQueryOptions(idOrSlug));
     return (
       <Suspense>
-        <UserProfilePage user={user} orgIdOrSlug={orgIdOrSlug} />
+        <UserProfilePage key={idOrSlug} user={user} orgIdOrSlug={orgIdOrSlug} />
       </Suspense>
     );
   },

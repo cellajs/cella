@@ -42,7 +42,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
     <>
       <div id="tabs-position" ref={inViewRef} />
       <StickyBox className={cn('flex gap-1 justify-center border-b bg-background/75 backdrop-blur-sm z-[80]', className)}>
-        <div className="hidden group-[.is-sticky]/sticky:block">
+        <div className="hidden md:group-[.is-sticky]/sticky:block">
           <div className="absolute left-0 h-full flex items-center">
             {avatar && <AvatarWrap className="m-3 h-5 w-5 text-xs" type="organization" id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />}
             <div className="truncate leading-5 font-semibold text-sm max-w-42 sm:block">{title}</div>

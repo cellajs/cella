@@ -32,6 +32,7 @@ export const config = {
     'package.json',
     'pnpm-lock.yaml',
     'render.yaml',
+    'compose.yaml',
     'cella.config.js',
     'info/*',
     'config/default.ts',
@@ -62,6 +63,7 @@ export const config = {
     'frontend/src/modules/marketing/about/index.tsx',
     'frontend/src/modules/marketing/about/why.tsx',
     'frontend/src/modules/users/profile-page-content.tsx',
+    'frontend/package.json',
     'backend/package.json',
     'backend/drizzle/*',
     'backend/scripts/seeds/data/*',
@@ -71,5 +73,6 @@ export const config = {
     'backend/src/lib/permission-manager.ts',
     'locales/en/about.json',
     'locales/en/app.json',
+    'turbo.json',
   ],
 };

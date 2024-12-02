@@ -49,7 +49,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
 
           for (const subItem of item.submenu ?? []) {
             const config = userMenuPrefetchConfig[subItem.entity];
-            const options = mapQuery(item);
+            const options = mapQuery(subItem);
             prefetchQuery(options);
             if (config.prefetchMembers) prefetchMembers(subItem, subItem.id);
             if (config.prefetchAttachments) prefetchAttachments(subItem.id);

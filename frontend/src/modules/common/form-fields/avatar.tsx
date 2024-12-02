@@ -13,7 +13,7 @@ interface Props {
   };
   type: Parameters<typeof UploadAvatar>[0]['type'];
   url?: string | null;
-  setUrl: (url: string) => void;
+  setUrl: (url: string | null) => void;
 }
 
 const AvatarFormField = ({ control, label, name, entity, type, url, setUrl }: Props) => (
