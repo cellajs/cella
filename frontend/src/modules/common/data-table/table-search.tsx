@@ -11,7 +11,6 @@ const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (valu
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState(value);
-  const [resetQuery, setResetQuery] = useState(false);
 
   const debouncedQuery = useDebounce(inputValue, 250);
 
@@ -19,17 +18,15 @@ const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (valu
     inputRef.current?.focus();
   };
 
-  const handleReset = () => {
-    setResetQuery(true);
-    setInputValue(''); // Reset the input field
-    setQuery(''); // Immediately reset the query
-  };
-
   useEffect(() => {
-    if (!debouncedQuery && resetQuery) return;
-    setResetQuery(false);
+    if (!debouncedQuery) return;
     setQuery(debouncedQuery);
   }, [debouncedQuery]);
+
+  useEffect(() => {
+    if (value !== '') return;
+    setInputValue('');
+  }, [value]);
 
   // Focus input when filter button clicked (mobile)
   useEffect(() => {
@@ -48,7 +45,11 @@ const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (valu
         ref={inputRef}
       />
       {!!inputValue.length && (
-        <XCircle size={16} className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer" onClick={handleReset} />
+        <XCircle
+          size={16}
+          className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
+          onClick={() => setQuery('')}
+        />
       )}
     </div>
   );
