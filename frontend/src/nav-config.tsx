@@ -54,7 +54,6 @@ export const suggestionSections: SuggestionSection[] = [
 ];
 
 // App specific entity path resolver
-// TODO review this again, I dont like the fallback to empty string
 export const getEntityRoute = (item: UserMenuItem | SuggestionType) => {
   const {
     entity,
