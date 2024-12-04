@@ -49,8 +49,6 @@ const MembersTable = forwardRef(({ entity, isSheet = false, tableFilterBar }: Me
   const isAdmin = entity.membership?.role === 'admin';
 
   // Table state
-  const [q, setQuery] = useState<MemberSearch['q']>(search.q);
-  const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
   // Search query options
@@ -59,7 +57,7 @@ const MembersTable = forwardRef(({ entity, isSheet = false, tableFilterBar }: Me
   const limit = LIMIT;
 
   // Check if there are active filters
-  const isFiltered = role !== undefined || !!q;
+  const isFiltered = search.role !== undefined || !!search.q;
 
   // Query members
   const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
@@ -67,17 +65,17 @@ const MembersTable = forwardRef(({ entity, isSheet = false, tableFilterBar }: Me
       idOrSlug: entity.slug,
       entityType,
       orgIdOrSlug: organizationId,
-      q,
+      q: search.q,
       sort,
       order,
-      role,
+      role: search.role,
       limit,
     }),
   );
 
   // Save filters in search params
   if (!isSheet) {
-    const filters = useMemo(() => ({ q, sort, order, role }), [q, role, sortColumns]);
+    const filters = useMemo(() => ({ sort, order }), [sortColumns]);
     useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   }
 
@@ -118,10 +116,10 @@ const MembersTable = forwardRef(({ entity, isSheet = false, tableFilterBar }: Me
 
   const fetchForExport = async (limit: number) => {
     const data = await getMembers({
-      q,
+      q: search.q,
       sort,
       order,
-      role,
+      role: search.role,
       limit,
       idOrSlug: entity.slug,
       orgIdOrSlug: organizationId,
@@ -163,12 +161,6 @@ const MembersTable = forwardRef(({ entity, isSheet = false, tableFilterBar }: Me
       },
     );
   };
-
-  useEffect(() => {
-    if (search.role === role && search.q === q) return;
-    if (search.role !== role) setRole(search.role as MemberSearch['role']);
-    if (search.q !== q) setQuery(search.q);
-  }, [search.q, search.role]);
 
   // TODO: Figure out a way to open sheet using url state
   useEffect(() => {
