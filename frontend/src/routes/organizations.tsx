@@ -17,7 +17,7 @@ import { AppRoute } from './general';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
-const MembersTable = lazy(() => import('~/modules/organizations/members-table'));
+const MembersTable = lazy(() => import('~/modules/organizations/members-table/table-wrapper'));
 const AttachmentsTable = lazy(() => import('~/modules/organizations/attachments-table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 

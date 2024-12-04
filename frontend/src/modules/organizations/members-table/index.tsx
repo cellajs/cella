@@ -18,12 +18,10 @@ import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
+import { FilterBarActions, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
-import SelectRole from '~/modules/common/form-fields/select-role';
 import { membersKeys } from '~/modules/common/query-client-provider/keys';
 import { useMembersUpdateMutation } from '~/modules/common/query-client-provider/mutations/members';
 import { useColumns } from '~/modules/organizations/members-table/columns';
@@ -35,16 +33,17 @@ import InviteUsers from '~/modules/users/invite-users';
 import type { EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
 import type { membersQuerySchema } from '#/modules/general/schema';
 
-type MemberSearch = z.infer<typeof membersQuerySchema>;
+export type MemberSearch = z.infer<typeof membersQuerySchema>;
 
 const LIMIT = config.requestLimits.members;
 
 interface MembersTableProps {
   entity: EntityPage & { membership: MinimumMembershipInfo | null };
   isSheet?: boolean;
+  children: React.ReactNode;
 }
 
-const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
+const MembersTable = ({ entity, isSheet = false, children }: MembersTableProps) => {
   const { t } = useTranslation();
   const containerRef = useRef(null);
 
@@ -102,17 +101,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     setQuery('');
     setSelectedRows(new Set<string>());
     setRole(undefined);
-  };
-
-  // Drop selected rows on search
-  const onSearch = (searchString: string) => {
-    if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setQuery(searchString);
-  };
-
-  const onRoleChange = (role?: string) => {
-    setSelectedRows(new Set<string>());
-    setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
   };
 
   // Update rows
@@ -188,6 +176,13 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     );
   };
 
+  useEffect(() => {
+    if (search.role === role && search.q === q) return;
+    if (selectedRows.size > 0) setSelectedRows(new Set<string>());
+    if (search.role !== role) setRole(search.role as MemberSearch['role']);
+    if (search.q !== q) setQuery(search.q);
+  }, [search.q, search.role]);
+
   // TODO: Figure out a way to open sheet using url state
   useEffect(() => {
     if (!search.userIdPreview) return;
@@ -248,10 +243,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
             )}
           </FilterBarActions>
           <div className="sm:grow" />
-          <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-            <TableSearch value={q} setQuery={onSearch} />
-            <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
-          </FilterBarContent>
+          {children}
         </TableFilterBar>
 
         {/* Columns view dropdown */}
