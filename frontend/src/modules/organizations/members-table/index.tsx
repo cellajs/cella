@@ -1,10 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { config } from 'config';
-import { motion } from 'framer-motion';
-import { Mail, Trash, XSquare } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -17,8 +15,6 @@ import { DataTable } from '~/modules/common/data-table';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
-import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
@@ -27,8 +23,6 @@ import { useMembersUpdateMutation } from '~/modules/common/query-client-provider
 import { useColumns } from '~/modules/organizations/members-table/columns';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
 import InviteUsers from '~/modules/users/invite-users';
 import type { EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
 import type { membersQuerySchema } from '#/modules/general/schema';
@@ -40,10 +34,11 @@ const LIMIT = config.requestLimits.members;
 interface MembersTableProps {
   entity: EntityPage & { membership: MinimumMembershipInfo | null };
   isSheet?: boolean;
-  children: React.ReactNode;
+  tableFilterBar: React.ReactNode;
 }
 
-const MembersTable = ({ entity, isSheet = false, children }: MembersTableProps) => {
+// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+const MembersTable = forwardRef(({ entity, isSheet = false, tableFilterBar }: MembersTableProps, ref: React.Ref<any>) => {
   const { t } = useTranslation();
   const containerRef = useRef(null);
 
@@ -95,13 +90,6 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableProps) 
   }, [selectedRows, rows]);
 
   const updateMemberMembership = useMembersUpdateMutation();
-
-  // Reset filters
-  const onResetFilters = () => {
-    setQuery('');
-    setSelectedRows(new Set<string>());
-    setRole(undefined);
-  };
 
   // Update rows
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
@@ -178,7 +166,6 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableProps) 
 
   useEffect(() => {
     if (search.role === role && search.q === q) return;
-    if (selectedRows.size > 0) setSelectedRows(new Set<string>());
     if (search.role !== role) setRole(search.role as MemberSearch['role']);
     if (search.q !== q) setQuery(search.q);
   }, [search.q, search.role]);
@@ -189,62 +176,26 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableProps) 
     setTimeout(() => openUserPreviewSheet(search.userIdPreview as string, organizationId), 0);
   }, []);
 
+  // Expose methods via ref using useImperativeHandle
+  useImperativeHandle(ref, () => ({
+    setColumns,
+    clearSelection: () => setSelectedRows(new Set<string>()),
+    fetchForExport,
+    openRemoveDialog,
+    openInviteDialog,
+  }));
+
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
-        {/* Filter bar */}
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-          <FilterBarActions>
-            {selectedMembers.length > 0 ? (
-              <>
-                <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
-                  <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
-                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">
-                      {selectedMembers.length}
-                    </Badge>
-                    <motion.span layoutId="members-filter-bar-icon">
-                      <Trash size={16} />
-                    </motion.span>
-
-                    <span className="ml-1 max-xs:hidden">{entity.id ? t('common:remove') : t('common:delete')}</span>
-                  </motion.button>
-                </Button>
-
-                <Button asChild variant="ghost" onClick={() => setSelectedRows(new Set<string>())}>
-                  <motion.button
-                    transition={{
-                      bounce: 0,
-                      duration: 0.2,
-                    }}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: -20, opacity: 0 }}
-                  >
-                    <XSquare size={16} />
-                    <span className="ml-1">{t('common:clear')}</span>
-                  </motion.button>
-                </Button>
-              </>
-            ) : (
-              !isFiltered &&
-              isAdmin && (
-                <Button asChild onClick={openInviteDialog}>
-                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
-                    <motion.span layoutId="members-filter-bar-icon">
-                      <Mail size={16} />
-                    </motion.span>
-                    <span className="ml-1">{t('common:invite')}</span>
-                  </motion.button>
-                </Button>
-              )
-            )}
-            {!isLoading && selectedMembers.length === 0 && (
-              <TableCount count={totalCount} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-            )}
-          </FilterBarActions>
-          <div className="sm:grow" />
-          {children}
-        </TableFilterBar>
+    <div
+      id={`members-table-${entity.id}`}
+      data-total-count={totalCount}
+      data-selected={selectedMembers.length}
+      ref={ref}
+      className="flex flex-col gap-4 h-full"
+    >
+      <div className="flex items-center max-sm:justify-between md:gap-2">
+        {/* Table Filter Bar */}
+        {tableFilterBar}
 
         {/* Columns view dropdown */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
@@ -259,6 +210,7 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableProps) 
             fetchRows={fetchForExport}
           />
         )}
+
         {/* Focus view */}
         {!isSheet && <FocusView iconOnly />}
       </div>
@@ -290,6 +242,6 @@ const MembersTable = ({ entity, isSheet = false, children }: MembersTableProps) 
       />
     </div>
   );
-};
+});
 
 export default MembersTable;
