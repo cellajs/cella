@@ -14,7 +14,6 @@ import type { UserMenuItem } from './types/common';
 // Set entities paths
 export const baseEntityRoutes = {
   user: '/user/$idOrSlug',
-  userInOrg: '/$orgIdOrSlug/user/$idOrSlug',
   organization: '/$idOrSlug',
 } as const;
 
@@ -57,10 +56,17 @@ export const suggestionSections: SuggestionSection[] = [
 // App specific entity path resolver
 // TODO review this again, I dont like the fallback to empty string
 export const getEntityRoute = (item: UserMenuItem | SuggestionType) => {
-  const path = baseEntityRoutes[item.entity];
+  const {
+    entity,
+    id,
+    slug,
+    membership: { organizationId },
+  } = item;
 
-  const idOrSlug = item.slug || item.id;
-  const orgIdOrSlug = item.entity === 'organization' ? item.id : item.organizationId;
+  const path = baseEntityRoutes[entity];
+
+  const idOrSlug = slug || id;
+  const orgIdOrSlug = entity === 'organization' ? id : organizationId;
 
   return { path, params: { idOrSlug, orgIdOrSlug } };
 };
