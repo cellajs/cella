@@ -5,7 +5,12 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 import { Input } from '~/modules/ui/input';
 
-const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (value: string) => void }) => {
+interface TableSearchProps {
+  value?: string;
+  setQuery: (value: string) => void;
+}
+
+const TableSearch = ({ value = '', setQuery }: TableSearchProps) => {
   const { t } = useTranslation();
   const { isFilterActive } = useContext(TableFilterBarContext);
 
@@ -14,21 +19,18 @@ const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (valu
 
   const debouncedQuery = useDebounce(inputValue, 250);
 
-  const handleClick = () => {
-    inputRef.current?.focus();
-  };
+  const handleClick = () => inputRef.current?.focus();
 
   useEffect(() => {
-    if (!debouncedQuery) return;
     setQuery(debouncedQuery);
   }, [debouncedQuery]);
 
+  // Reset input value when the external value changes
   useEffect(() => {
-    if (value !== '') return;
-    setInputValue('');
+    if (!value) setInputValue('');
   }, [value]);
 
-  // Focus input when filter button clicked (mobile)
+  // Focus input when filter button is active (for mobile)
   useEffect(() => {
     if (isFilterActive) inputRef.current?.focus();
   }, [isFilterActive]);
@@ -39,11 +41,13 @@ const TableSearch = ({ value = '', setQuery }: { value?: string; setQuery: (valu
       <Input
         placeholder={t('common:placeholder.search')}
         value={inputValue}
-        onChange={(event) => setInputValue(event.target.value)} // Update local state directly
+        onChange={(e) => setInputValue(e.target.value)}
+        ref={inputRef}
         style={{ paddingLeft: '2rem' }}
         className="h-10 w-full border-0 pr-8"
-        ref={inputRef}
+        aria-label={t('common:placeholder.search')}
       />
+      {/* Clear Button */}
       {!!inputValue.length && (
         <XCircle
           size={16}
