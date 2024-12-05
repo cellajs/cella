@@ -5,7 +5,6 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import { config } from 'config';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { Trans, useTranslation } from 'react-i18next';
-import type { z } from 'zod';
 import { getMembers } from '~/api/memberships';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
@@ -20,26 +19,22 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import { membersKeys } from '~/modules/common/query-client-provider/keys';
 import { useMembersUpdateMutation } from '~/modules/common/query-client-provider/mutations/members';
-import type { MembersTableMethods } from '~/modules/organizations/members-table';
+import type { MemberSearch, MembersTableMethods, MembersTableProps } from '~/modules/organizations/members-table';
 import { useColumns } from '~/modules/organizations/members-table/columns';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
 import InviteUsers from '~/modules/users/invite-users';
-import type { EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
-import type { membersQuerySchema } from '#/modules/general/schema';
-
-export type MemberSearch = z.infer<typeof membersQuerySchema>;
+import type { Member } from '~/types/common';
 
 const LIMIT = config.requestLimits.members;
 
-interface MembersTableProps {
-  entity: EntityPage & { membership: MinimumMembershipInfo | null };
-  isSheet?: boolean;
+type BaseMembersTableProps = MembersTableProps & {
+  tableId: string;
   tableFilterBar: React.ReactNode;
-}
+};
 
-export const BaseMembersTable = forwardRef<MembersTableMethods, MembersTableProps>(
-  ({ entity, isSheet = false, tableFilterBar }: MembersTableProps, ref) => {
+export const BaseMembersTable = forwardRef<MembersTableMethods, BaseMembersTableProps>(
+  ({ entity, tableId, tableFilterBar, isSheet = false }: BaseMembersTableProps, ref) => {
     const { t } = useTranslation();
     const containerRef = useRef(null);
 
@@ -172,20 +167,13 @@ export const BaseMembersTable = forwardRef<MembersTableMethods, MembersTableProp
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
-      setColumns,
       clearSelection: () => setSelectedRows(new Set<string>()),
-      fetchForExport,
       openRemoveDialog,
       openInviteDialog,
     }));
 
     return (
-      <div
-        id={`members-table-${entity.id}`}
-        data-total-count={totalCount}
-        data-selected={selectedMembers.length}
-        className="flex flex-col gap-4 h-full"
-      >
+      <div id={tableId} data-total-count={totalCount} data-selected={selectedMembers.length} className="flex flex-col gap-4 h-full">
         <div className="flex items-center max-sm:justify-between md:gap-2">
           {/* Table Filter Bar */}
           {tableFilterBar}
