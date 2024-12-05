@@ -69,3 +69,8 @@ export type DraggableItemData<T> = {
   dragItem: true;
   order: number;
 };
+
+export type BaseTableMethods = {
+  clearSelection: () => void;
+  openRemoveDialog: () => void;
+};
