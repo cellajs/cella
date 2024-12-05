@@ -30,9 +30,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, organizationId: s
         renderCell: ({ row, tabIndex }) => (
           <Link
             id={`user-cell-${row.id}`}
-            to="/$orgIdOrSlug/user/$idOrSlug"
+            to="/user/$idOrSlug"
             tabIndex={tabIndex}
-            params={{ idOrSlug: row.slug, orgIdOrSlug: organizationId }}
+            params={{ idOrSlug: row.slug }}
             className="flex space-x-2 items-center outline-0 ring-0 group"
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
