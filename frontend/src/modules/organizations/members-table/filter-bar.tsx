@@ -8,12 +8,12 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import type { MemberSearch } from '~/modules/organizations/members-table';
+import type { MemberSearch } from '~/modules/organizations/members-table/table';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { EntityPage, MinimumMembershipInfo } from '~/types/common';
 
-const MembersTableFilterBar = ({
+export const MembersTableFilterBar = ({
   entity,
   clearSelection,
   openInviteDialog,
@@ -132,4 +132,3 @@ const MembersTableFilterBar = ({
     </TableFilterBar>
   );
 };
-export default MembersTableFilterBar;

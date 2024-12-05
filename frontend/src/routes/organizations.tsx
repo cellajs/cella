@@ -17,7 +17,7 @@ import { AppRoute } from './general';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
-const MembersTable = lazy(() => import('~/modules/organizations/members-table/table-wrapper'));
+const OrgMembersTable = lazy(() => import('~/modules/organizations/members-table/organization-members-table'));
 const AttachmentsTable = lazy(() => import('~/modules/organizations/attachments-table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
@@ -62,17 +62,11 @@ export const OrganizationMembersRoute = createRoute({
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
     return offlineFetchInfinite(queryOptions);
   },
-  component: () => {
-    const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
-    const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
-
-    if (!organization) return;
-    return (
-      <Suspense>
-        <MembersTable entity={organization} />
-      </Suspense>
-    );
-  },
+  component: () => (
+    <Suspense>
+      <OrgMembersTable />
+    </Suspense>
+  ),
 });
 
 export const OrganizationAttachmentsRoute = createRoute({
