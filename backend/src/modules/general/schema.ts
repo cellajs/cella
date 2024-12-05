@@ -38,11 +38,10 @@ export const entitySuggestionSchema = z.object({
   slug: slugSchema,
   id: idSchema,
   name: nameSchema,
-  organizationId: idSchema.optional(),
   email: z.string().optional(),
   thumbnailUrl: imageUrlSchema.nullable().optional(),
   entity: pageEntityTypeSchema,
-  membership: membershipInfoSchema.nullable().optional(),
+  membership: membershipInfoSchema,
 });
 
 export type Suggestion = z.infer<typeof entitySuggestionSchema>;

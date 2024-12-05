@@ -306,10 +306,10 @@ const generalRoutes = app
         return db
           .selectDistinct({
             ...baseSelect,
-            ...(entityType !== 'user' && { membership: membershipSelect }),
+            membership: membershipSelect,
           })
           .from(table)
-          .leftJoin(
+          .innerJoin(
             membershipsTable,
             and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? 'organization' : entityType)),
           )
