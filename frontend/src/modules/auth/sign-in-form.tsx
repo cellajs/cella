@@ -10,15 +10,14 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 
 import { config } from 'config';
-import { ArrowRight, ChevronDown, Send } from 'lucide-react';
-import { useEffect, useRef } from 'react';
-import { toast } from 'sonner';
-import { sendResetPasswordEmail as baseSendResetPasswordEmail, signIn as baseSignIn } from '~/api/auth';
+import { ArrowRight, ChevronDown } from 'lucide-react';
+import { useEffect } from 'react';
+import { signIn as baseSignIn } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import { dialog } from '~/modules/common/dialoger/state';
+import type { TokenData } from '~/modules/auth';
+import { ResetPasswordRequest } from '~/modules/auth/reset-password/dialog';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import type { TokenData } from '.';
 
 const formSchema = authBodySchema;
 
@@ -118,65 +117,5 @@ export const SignInForm = ({
         )}
       </form>
     </Form>
-  );
-};
-
-export const ResetPasswordRequest = ({ email }: { email: string }) => {
-  const { t } = useTranslation();
-  const resetEmailRef = useRef(email);
-
-  const { mutate: sendResetPasswordEmail, isPending } = useMutation({
-    mutationFn: baseSendResetPasswordEmail,
-    onSuccess: () => {
-      toast.success(t('common:success.reset_link_sent'));
-      dialog.remove();
-    },
-  });
-
-  const handleResetRequestSubmit = () => {
-    // TODO maybe find a better way
-    dialog.update('send-reset-password', {
-      content: (
-        <div>
-          <Input type="email" className="mb-4" defaultValue={email} />
-          <Button className="w-full" loading={true} />
-        </div>
-      ),
-    });
-    sendResetPasswordEmail(resetEmailRef.current);
-  };
-
-  const openDialog = () => {
-    dialog(
-      <div>
-        <Input
-          type="email"
-          autoFocus
-          className="mb-4"
-          placeholder={t('common:email')}
-          defaultValue={email} // Set the default value instead of value
-          onChange={(e) => {
-            resetEmailRef.current = e.target.value;
-          }}
-          required
-        />
-        <SubmitButton className="w-full" disabled={!resetEmailRef.current} loading={isPending} onClick={handleResetRequestSubmit}>
-          <Send size={16} className="mr-2" />
-          {t('common:send_reset_link')}
-        </SubmitButton>
-      </div>,
-      {
-        id: 'send-reset-password',
-        className: 'md:max-w-xl',
-        title: t('common:reset_password'),
-        description: t('common:reset_password.text'),
-      },
-    );
-  };
-
-  return (
-    <Button variant="ghost" type="button" size="sm" className="w-full font-normal" onClick={openDialog}>
-      {t('common:forgot_password')}
-    </Button>
   );
 };
