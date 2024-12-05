@@ -12,7 +12,6 @@ export type RequestsTableMethods = BaseTableMethods & {
 };
 
 const RequestsTable = () => {
-  console.log(24);
   const tableId = 'requests-table';
   const dataTableRef = useRef<RequestsTableMethods | null>(null);
 

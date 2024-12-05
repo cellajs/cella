@@ -150,7 +150,7 @@ export const BaseOrganizationsTable = forwardRef<OrganizationsTableMethods, Base
       openRemoveDialog,
       openNewsletterSheet,
     }));
-    console.log(24);
+
     return (
       <div id={tableId} data-total-count={totalCount} data-selected={selectedOrganizations.length} className="flex flex-col gap-4 h-full">
         <div className={'flex items-center max-sm:justify-between md:gap-2'}>
