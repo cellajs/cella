@@ -1,6 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
 import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
-import { getOrganizations } from '~/api/organizations';
 
 import { config } from 'config';
 import { Bird } from 'lucide-react';
@@ -12,20 +11,17 @@ import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import ColumnsView from '~/modules/common/data-table/columns-view';
-import Export from '~/modules/common/data-table/export';
 import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
-import { FocusView } from '~/modules/common/focus-view';
 
 import { useSearch } from '@tanstack/react-router';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { showToast } from '~/lib/toasts';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import type { OrganizationsSearch, OrganizationsTableMethods } from '~/modules/organizations/organizations-table';
-import { useColumns } from '~/modules/organizations/organizations-table/columns';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import NewsletterDraft from '~/modules/system/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
@@ -34,15 +30,16 @@ import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types/common';
 
 const LIMIT = config.requestLimits.organizations;
-type BaseOrganizationsTableProps = { tableId: string; tableFilterBar: React.ReactNode };
+type BaseOrganizationsTableProps = { tableId: string; columns: ColumnOrColumnGroup<Organization>[] };
 
-export const BaseOrganizationsTable = forwardRef<OrganizationsTableMethods, BaseOrganizationsTableProps>(
-  ({ tableId, tableFilterBar }: BaseOrganizationsTableProps, ref) => {
+const BaseOrganizationsTable = forwardRef<OrganizationsTableMethods, BaseOrganizationsTableProps>(
+  ({ tableId, columns }: BaseOrganizationsTableProps, ref) => {
     const search = useSearch({ from: OrganizationsTableRoute.id });
     const { t } = useTranslation();
 
     const { user } = useUserStore();
 
+    const mutateQuery = useMutateQueryData(['organizations', 'list']);
     // Table state
     const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
@@ -56,11 +53,6 @@ export const BaseOrganizationsTable = forwardRef<OrganizationsTableMethods, Base
     // Query organizations
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
       useDataFromSuspenseInfiniteQuery(organizationsQueryOptions({ q: search.q, sort, order, limit }));
-
-    const mutateQuery = useMutateQueryData(['organizations', 'list']);
-
-    // Build columns
-    const [columns, setColumns] = useColumns(mutateQuery.update);
 
     // Save filters in search params
     const filters = useMemo(() => ({ sort, order }), [sort, order]);
@@ -152,29 +144,7 @@ export const BaseOrganizationsTable = forwardRef<OrganizationsTableMethods, Base
     }));
 
     return (
-      <div id={tableId} data-total-count={totalCount} data-selected={selectedOrganizations.length} className="flex flex-col gap-4 h-full">
-        <div className={'flex items-center max-sm:justify-between md:gap-2'}>
-          {/* Filter bar */}
-          {tableFilterBar}
-
-          {/* Columns view */}
-          <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-
-          {/* Export */}
-          <Export
-            className="max-lg:hidden"
-            filename={`${config.slug}-organizations`}
-            columns={columns}
-            selectedRows={selectedOrganizations}
-            fetchRows={async (limit) => {
-              const { items } = await getOrganizations({ limit, q: search.q, sort, order });
-              return items;
-            }}
-          />
-          {/* Focus view */}
-          <FocusView iconOnly />
-        </div>
-
+      <div id={tableId} data-total-count={totalCount} data-selected={selectedOrganizations.length}>
         {/* Table */}
         <DataTable<Organization>
           {...{
@@ -204,3 +174,5 @@ export const BaseOrganizationsTable = forwardRef<OrganizationsTableMethods, Base
     );
   },
 );
+
+export default BaseOrganizationsTable;
