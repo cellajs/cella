@@ -1,22 +1,16 @@
-import { useSearch } from '@tanstack/react-router';
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from 'react';
+import { type Dispatch, type SetStateAction, forwardRef, useCallback, useImperativeHandle, useMemo } from 'react';
 
-import { config } from 'config';
 import { Paperclip } from 'lucide-react';
-import type { RowsChangeData, SortColumn } from 'react-data-grid';
+import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
 import { openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
-import ColumnsView from '~/modules/common/data-table/columns-view';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
-import { FocusView } from '~/modules/common/focus-view';
 import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/organizations/attachments-table';
 import { useColumns } from '~/modules/organizations/attachments-table/columns';
@@ -24,48 +18,28 @@ import { attachmentsQueryOptions } from '~/modules/organizations/attachments-tab
 import { useSync } from '~/modules/organizations/attachments-table/helpers/use-sync';
 import RemoveAttachmentsForm from '~/modules/organizations/attachments-table/remove-attachments-form';
 import { useUserStore } from '~/store/user';
-import type { Attachment, BaseTableMethods } from '~/types/common';
+import type { Attachment, BaseTableMethods, BaseTableProps, BaseTableQueryVariables } from '~/types/common';
 
-const LIMIT = config.requestLimits.attachments;
+type BaseAttachmentsTableProps = AttachmentsTableProps &
+  BaseTableProps<Attachment> & {
+    setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Attachment>[]>>;
+    queryVars: BaseTableQueryVariables<AttachmentSearch>;
+  };
 
-type BaseAttachmentsTableProps = AttachmentsTableProps & {
-  tableId: string;
-  tableFilterBar: React.ReactNode;
-};
-
-export const BaseAttachmentsTable = forwardRef<BaseTableMethods, BaseAttachmentsTableProps>(
-  ({ organization, tableId, tableFilterBar, isSheet = false }: BaseAttachmentsTableProps, ref) => {
+const BaseAttachmentsTable = forwardRef<BaseTableMethods, BaseAttachmentsTableProps>(
+  ({ organization, tableId, columns, setColumns, sortColumns, setSortColumns, queryVars, isSheet = false }: BaseAttachmentsTableProps, ref) => {
     const { t } = useTranslation();
-    const search = useSearch({ strict: false });
     const user = useUserStore((state) => state.user);
 
     useSync(organization.id);
 
+    const { q, sort, order, limit } = queryVars;
     const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
     const isMobile = useBreakpoints('max', 'sm');
 
-    // Table state
-    const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
-
-    // Search query options
-    const sort = sortColumns[0]?.columnKey as AttachmentSearch['sort'];
-    const order = sortColumns[0]?.direction.toLowerCase() as AttachmentSearch['order'];
-    const limit = LIMIT;
-
-    // Check if table has enabled filtered
-    const isFiltered = !!search.q;
-
     // Query attachments
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(
-        attachmentsQueryOptions({
-          orgIdOrSlug: organization.id,
-          q: search.q,
-          sort,
-          order,
-          limit,
-        }),
-      );
+      useDataFromSuspenseInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit }));
 
     const openPreviewDialog = useCallback(
       (slideNum: number) =>
@@ -76,23 +50,14 @@ export const BaseAttachmentsTable = forwardRef<BaseTableMethods, BaseAttachments
       [rows],
     );
 
-    // Build columns
-    const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
     useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openPreviewDialog)), [isAdmin, openPreviewDialog]);
-
-    const attachmentUpdateMutation = useAttachmentUpdateMutation();
-
-    // Save filters in search params
-    if (!isSheet) {
-      const filters = useMemo(() => ({ sort, order }), [sortColumns]);
-      useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-    }
 
     // Table selection
     const selected = useMemo(() => {
       return rows.filter((row) => selectedRows.has(row.id));
     }, [selectedRows, rows]);
 
+    const attachmentUpdateMutation = useAttachmentUpdateMutation();
     // Update rows
     const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
       if (column.key === 'name') {
@@ -135,19 +100,7 @@ export const BaseAttachmentsTable = forwardRef<BaseTableMethods, BaseAttachments
     }));
 
     return (
-      <div id={tableId} data-total-count={totalCount} data-selected={selected.length} className="flex flex-col gap-4 h-full">
-        <div className={'flex items-center max-sm:justify-between md:gap-2'}>
-          {/* Filter bar */}
-          {tableFilterBar}
-
-          {/* Columns view */}
-          <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-
-          {/* Focus view */}
-          {!isSheet && <FocusView iconOnly />}
-        </div>
-
-        {/* Data table */}
+      <div id={tableId} data-total-count={totalCount} data-selected={selected.length}>
         <DataTable<Attachment>
           {...{
             columns: columns.filter((column) => column.visible),
@@ -162,7 +115,7 @@ export const BaseAttachmentsTable = forwardRef<BaseTableMethods, BaseAttachments
             isLoading,
             isFetching,
             fetchMore: fetchNextPage,
-            isFiltered,
+            isFiltered: !!q,
             selectedRows,
             onSelectedRowsChange: setSelectedRows,
             sortColumns,
@@ -176,3 +129,4 @@ export const BaseAttachmentsTable = forwardRef<BaseTableMethods, BaseAttachments
     );
   },
 );
+export default BaseAttachmentsTable;

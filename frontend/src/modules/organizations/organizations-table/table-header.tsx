@@ -1,8 +1,8 @@
 import { config } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
@@ -10,19 +10,15 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import type { OrganizationsTableMethods } from '~/modules/organizations/organizations-table';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { Organization } from '~/types/common';
-import type { OrganizationsTableMethods } from '.';
+import type { BaseTableHeaderProps, Organization } from '~/types/common';
 
-type OrganizationsTableHeaderProps = {
-  tableId: string;
-  q: string;
-  setQuery: (q: string) => void;
-  columns: ColumnOrColumnGroup<Organization>[];
-  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Organization>[]>>;
-  fetchExport: (limit: number) => Promise<Organization[]>;
-} & OrganizationsTableMethods;
+type OrganizationsTableHeaderProps = OrganizationsTableMethods &
+  BaseTableHeaderProps<Organization> & {
+    fetchExport: (limit: number) => Promise<Organization[]>;
+  };
 
 export const OrganizationsTableHeader = ({
   tableId,

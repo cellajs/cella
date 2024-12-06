@@ -1,28 +1,17 @@
-import { type Dispatch, type SetStateAction, forwardRef, useImperativeHandle, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { DataTable } from '~/modules/common/data-table';
 
 import { Bird } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import type { Request } from '~/types/common';
+import type { BaseTableProps, BaseTableQueryVariables, Request } from '~/types/common';
 
-import type { SortColumn } from 'react-data-grid';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { RequestsSearch, RequestsTableMethods } from '~/modules/system/requests-table';
-import { requestsQueryOptions } from './helpers/query-option';
+import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-option';
 
-type BaseRequestsTableProps = {
-  tableId: string;
-  columns: ColumnOrColumnGroup<Request>[];
-  sortColumns: SortColumn[];
-  setSortColumns: Dispatch<SetStateAction<SortColumn[]>>;
-  queryVars: {
-    q: RequestsSearch['q'] | undefined;
-    sort: RequestsSearch['sort'] | undefined;
-    order: RequestsSearch['order'] | undefined;
-    limit: number;
-  };
+type BaseRequestsTableProps = BaseTableProps<Request> & {
+  queryVars: BaseTableQueryVariables<RequestsSearch>;
 };
 
 const BaseRequestsTable = forwardRef<RequestsTableMethods, BaseRequestsTableProps>(
