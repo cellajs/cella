@@ -37,6 +37,11 @@ export const OrganizationsTableHeader = ({
   const [total, setTotal] = useState(0);
 
   const isFiltered = !!q;
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    clearSelection();
+    setQuery(searchString);
+  };
 
   const onResetFilters = () => {
     setQuery('');
@@ -113,7 +118,7 @@ export const OrganizationsTableHeader = ({
         <div className="sm:grow" />
 
         <FilterBarContent>
-          <TableSearch value={q} setQuery={setQuery} />
+          <TableSearch value={q} setQuery={onSearch} />
         </FilterBarContent>
       </TableFilterBar>
 
