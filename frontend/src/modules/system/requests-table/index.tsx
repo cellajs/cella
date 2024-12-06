@@ -10,6 +10,7 @@ import { useColumns } from '~/modules/system/requests-table/columns';
 import { RequestsTableHeaderBar } from '~/modules/system/requests-table/table-header';
 import { RequestsTableRoute } from '~/routes/system';
 import type { BaseTableMethods, Request } from '~/types/common';
+import { arraysHaveSameElements } from '~/utils';
 import type { getRequestsQuerySchema } from '#/modules/requests/schema';
 
 const BaseRequestsTable = lazy(() => import('~/modules/system/requests-table/table'));
@@ -31,10 +32,10 @@ const RequestsTable = () => {
 
   // Update total and selected counts
   const updateCounts = (newSelected: Request[], newTotal: number) => {
-    if (newTotal === total) return;
-    setSelected(newSelected);
-    setTotal(newTotal);
+    if (newTotal !== total) setTotal(newTotal);
+    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
+
   // Search query options
   const sort = sortColumns[0]?.columnKey as RequestsSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'];
