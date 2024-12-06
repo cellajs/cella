@@ -15,6 +15,7 @@ import { WaitListForm } from '~/modules/common/wait-list-form';
 import { buttonVariants } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
+import { shouldShowDivider } from '~/utils';
 import { cn } from '~/utils/cn';
 
 export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitList';
@@ -87,16 +88,12 @@ const SignIn = () => {
 
           {step !== 'inviteOnly' && step !== 'waitList' && (
             <>
-              {/* TODO: refactor */}
-              {((enabledStrategies.includes('oauth') && enabledStrategies.includes('password')) ||
-                (hasPasskey && enabledStrategies.includes('password')) ||
-                (enabledStrategies.includes('passkey') && enabledStrategies.includes('oauth') && step === 'check')) && (
+              {shouldShowDivider(hasPasskey, step) && (
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="text-muted-foreground px-2">{t('common:or')}</span>
                 </div>
               )}
-
-              <OauthOptions email={email} actionType={step} hasPasskey={hasPasskey} />
+              <OauthOptions email={email} actionType={step} showPasskey={hasPasskey && enabledStrategies.includes('passkey')} />
             </>
           )}
         </>

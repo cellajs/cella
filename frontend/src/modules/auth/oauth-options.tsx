@@ -6,12 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/api/auth';
 import { acceptInvite } from '~/api/general';
+import type { Step } from '~/modules/auth';
 import { Button } from '~/modules/ui/button';
 import { passkeyAuth } from '~/modules/users/helpers';
 import { SignInRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
 import type { EnabledOauthProviderOptions } from '#/types/common';
-import type { Step } from '.';
 
 export const mapOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
@@ -26,15 +26,14 @@ interface OauthOptions {
   name: string;
   url: string;
 }
-// Filter the OAuth providers to only include enabled providers
 
 interface OauthOptionsProps {
   actionType: Step;
   email: string;
-  hasPasskey?: boolean;
+  showPasskey?: boolean;
 }
 
-const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptionsProps) => {
+const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: OauthOptionsProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { mode } = useThemeStore();
@@ -56,7 +55,7 @@ const OauthOptions = ({ email, actionType = 'signIn', hasPasskey }: OauthOptions
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      {hasPasskey && (
+      {showPasskey && (
         <Button type="button" onClick={() => passkeyAuth(email, successesCallback)} variant="plain" className="w-full gap-1.5">
           <Fingerprint size={16} />
           {t('common:passkey_sign_in')}
