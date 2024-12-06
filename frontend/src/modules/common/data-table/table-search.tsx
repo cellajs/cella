@@ -27,7 +27,7 @@ const TableSearch = ({ value = '', setQuery }: TableSearchProps) => {
 
   // Reset input value when the external value changes
   useEffect(() => {
-    if (!value) setInputValue('');
+    if (value !== inputValue) setInputValue('');
   }, [value]);
 
   // Focus input when filter button is active (for mobile)

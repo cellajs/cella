@@ -19,15 +19,17 @@ export const membersQueryOptions = ({
 }: GetMembersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
+
+  const queryKey = membersKeys.list({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
   const offset = getPaginatedOffset(membersKeys.list({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role }));
 
   return infiniteQueryOptions({
-    queryKey: membersKeys.list({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role }),
+    queryKey,
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) =>
-      getMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal),
+      await getMembers({ page, q, sort, order, role, limit, idOrSlug, orgIdOrSlug, entityType, offset }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };
