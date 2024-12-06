@@ -1,7 +1,6 @@
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { Handshake, Trash, XSquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
@@ -9,18 +8,20 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
-import type { RequestsTableMethods } from '~/modules/system/requests-table';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { BaseTableHeaderProps, Request } from '~/types/common';
+import type { BaseTableHeaderProps, BaseTableMethods, Request } from '~/types/common';
 
-type RequestsTableHeaderBarProps = RequestsTableMethods &
+type RequestsTableHeaderBarProps = BaseTableMethods &
   BaseTableHeaderProps<Request> & {
+    openInviteDialog: () => void;
+    openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Request[]>;
   };
 
 export const RequestsTableHeaderBar = ({
-  tableId,
+  total,
+  selected,
   q,
   setQuery,
   columns,
@@ -31,9 +32,6 @@ export const RequestsTableHeaderBar = ({
   fetchExport,
 }: RequestsTableHeaderBarProps) => {
   const { t } = useTranslation();
-
-  const [selected, setSelected] = useState(0);
-  const [total, setTotal] = useState(0);
 
   const isFiltered = !!q;
   // Drop selected Rows on search
@@ -47,43 +45,15 @@ export const RequestsTableHeaderBar = ({
     clearSelection();
   };
 
-  useEffect(() => {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    // Create a MutationObserver to watch for attribute changes
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type !== 'attributes' || (mutation.attributeName !== 'data-selected' && mutation.attributeName !== 'data-total-count')) return;
-
-        if (mutation.attributeName === 'data-selected') {
-          const selectedValue = table.getAttribute('data-selected');
-          setSelected(Number(selectedValue) || 0);
-        }
-        if (mutation.attributeName === 'data-total-count') {
-          const totalValue = table.getAttribute('data-total-count');
-          setTotal(Number(totalValue) || 0);
-        }
-      }
-    });
-
-    // Configure the observer to watch for attribute changes
-    observer.observe(table, {
-      attributes: true,
-    });
-    return () => observer.disconnect();
-  }, [tableId]);
-
   return (
     <div className={'flex items-center max-sm:justify-between md:gap-2'}>
       {/* Filter bar */}
-
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
-          {selected > 0 && (
+          {selected.length > 0 && (
             <>
               <div className="relative inline-flex items-center gap-2">
-                <Badge className="px-1 py-0 min-w-5 flex justify-center  animate-in zoom-in">{selected}</Badge>
+                <Badge className="px-1 py-0 min-w-5 flex justify-center  animate-in zoom-in">{selected.length}</Badge>
                 <Button asChild variant="success" onClick={openInviteDialog}>
                   <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="req-filter-bar-button-invite">
                     <motion.span layoutId="req-filter-bar-icon-successes">
@@ -118,7 +88,7 @@ export const RequestsTableHeaderBar = ({
               </Button>
             </>
           )}
-          {selected === 0 && <TableCount count={total} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected.length === 0 && <TableCount count={total} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </FilterBarActions>
 
         <div className="sm:grow" />

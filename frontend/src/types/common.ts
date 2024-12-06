@@ -74,15 +74,14 @@ export type DraggableItemData<T> = {
 };
 
 export type BaseTableProps<T> = {
-  tableId: string;
   columns: ColumnOrColumnGroup<T>[];
   sortColumns: SortColumn[];
   setSortColumns: Dispatch<SetStateAction<SortColumn[]>>;
+  updateCounts: (selected: T[], total: number) => void;
 };
 
 export type BaseTableMethods = {
   clearSelection: () => void;
-  openRemoveDialog: () => void;
 };
 
 export type BaseTableQueryVariables<T extends { q?: unknown; sort?: unknown; order?: unknown }> = {
@@ -93,7 +92,8 @@ export type BaseTableQueryVariables<T extends { q?: unknown; sort?: unknown; ord
 };
 
 export type BaseTableHeaderProps<T> = {
-  tableId: string;
+  total: number;
+  selected: T[];
   q: string;
   setQuery: (q: string) => void;
   columns: ColumnOrColumnGroup<T>[];

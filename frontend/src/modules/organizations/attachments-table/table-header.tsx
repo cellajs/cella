@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { Trash, Upload, XSquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -13,11 +12,16 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { Attachment, BaseTableHeaderProps, BaseTableMethods } from '~/types/common';
 
-type AttachmentsTableHeaderProps = AttachmentsTableProps & BaseTableMethods & BaseTableHeaderProps<Attachment>;
+type AttachmentsTableHeaderProps = AttachmentsTableProps &
+  BaseTableMethods &
+  BaseTableHeaderProps<Attachment> & {
+    openRemoveDialog: () => void;
+  };
 
 export const AttachmentsTableHeader = ({
   organization,
-  tableId,
+  total,
+  selected,
   q,
   setQuery,
   columns,
@@ -28,9 +32,6 @@ export const AttachmentsTableHeader = ({
   canUploadAttachments = true,
 }: AttachmentsTableHeaderProps) => {
   const { t } = useTranslation();
-
-  const [selected, setSelected] = useState(0);
-  const [total, setTotal] = useState(0);
 
   const isFiltered = !!q;
   const isAdmin = organization.membership?.role === 'admin';
@@ -46,43 +47,16 @@ export const AttachmentsTableHeader = ({
     clearSelection();
   };
 
-  useEffect(() => {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    // Create a MutationObserver to watch for attribute changes
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type !== 'attributes' || (mutation.attributeName !== 'data-selected' && mutation.attributeName !== 'data-total-count')) return;
-
-        if (mutation.attributeName === 'data-selected') {
-          const selectedValue = table.getAttribute('data-selected');
-          setSelected(Number(selectedValue) || 0);
-        }
-        if (mutation.attributeName === 'data-total-count') {
-          const totalValue = table.getAttribute('data-total-count');
-          setTotal(Number(totalValue) || 0);
-        }
-      }
-    });
-
-    // Configure the observer to watch for attribute changes
-    observer.observe(table, {
-      attributes: true,
-    });
-    return () => observer.disconnect();
-  }, [tableId]);
-
   return (
     <div className={'flex items-center max-sm:justify-between md:gap-2'}>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
-          {selected > 0 ? (
+          {selected.length > 0 ? (
             <>
               <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
                 <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">{selected}</Badge>
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">{selected.length}</Badge>
                   <motion.span layoutId="attachments-filter-bar-icon">
                     <Trash size={16} />
                   </motion.span>
@@ -120,7 +94,7 @@ export const AttachmentsTableHeader = ({
               </Button>
             )
           )}
-          {selected === 0 && <TableCount count={total} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected.length === 0 && <TableCount count={total} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">

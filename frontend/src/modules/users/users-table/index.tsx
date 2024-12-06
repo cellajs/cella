@@ -10,26 +10,41 @@ import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import type { usersQuerySchema } from '#/modules/users/schema';
 
+import { useTranslation } from 'react-i18next';
+import { showToast } from '~/lib/toasts';
+import { dialog } from '~/modules/common/dialoger/state';
+import DeleteUsers from '~/modules/users/delete-users';
+import InviteUsers from '~/modules/users/invite-users';
 import { useColumns } from '~/modules/users/users-table/columns';
 import { UsersTableHeader } from '~/modules/users/users-table/table-header';
 import { UsersTableRoute } from '~/routes/system';
-import type { BaseTableMethods } from '~/types/common';
+import type { BaseTableMethods, User } from '~/types/common';
 
 const BaseUsersTable = lazy(() => import('~/modules/users/users-table/table'));
 const LIMIT = config.requestLimits.users;
 
 export type UsersSearch = z.infer<typeof usersQuerySchema>;
-export type UsersTableMethods = BaseTableMethods & {
-  openInviteDialog: (container: HTMLElement | null) => void;
-};
 
 const UsersTable = () => {
+  const { t } = useTranslation();
   const search = useSearch({ from: UsersTableRoute.id });
+  const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
   const [q, setQuery] = useState<UsersSearch['q']>(search.q);
   const [role, setRole] = useState<UsersSearch['role']>(search.role);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+
+  // State for selected and total counts
+  const [total, setTotal] = useState(0);
+  const [selected, setSelected] = useState<User[]>([]);
+
+  // Update total and selected counts
+  const updateCounts = (newSelected: User[], newTotal: number) => {
+    if (newTotal === total) return;
+    setSelected(newSelected);
+    setTotal(newTotal);
+  };
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as UsersSearch['sort'];
@@ -45,19 +60,43 @@ const UsersTable = () => {
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);
 
-  const tableId = 'users-table';
-  const dataTableRef = useRef<UsersTableMethods | null>(null);
-
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
   const openInviteDialog = (container: HTMLElement | null) => {
-    if (dataTableRef.current) dataTableRef.current.openInviteDialog(container);
+    dialog(<InviteUsers mode={'email'} dialog />, {
+      id: 'user-invite',
+      drawerOnMobile: false,
+      className: 'w-auto shadow-none relative z-[60] max-w-4xl',
+      container,
+      containerBackdrop: true,
+      containerBackdropClassName: 'z-50',
+      title: t('common:invite'),
+      description: `${t('common:invite_users.text')}`,
+    });
   };
 
   const openRemoveDialog = () => {
-    if (dataTableRef.current) dataTableRef.current.openRemoveDialog();
+    dialog(
+      <DeleteUsers
+        dialog
+        users={selected}
+        callback={(users) => {
+          mutateQuery.remove(users);
+          showToast(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
+        }}
+      />,
+      {
+        drawerOnMobile: false,
+        className: 'max-w-xl',
+        title: t('common:delete'),
+        description: t('common:confirm.delete_resource', {
+          name: selected.map((u) => u.email).join(', '),
+          resource: selected.length > 1 ? t('common:users').toLowerCase() : t('common:user').toLowerCase(),
+        }),
+      },
+    );
   };
 
   // TODO: Figure out a way to open sheet using url state
@@ -69,7 +108,8 @@ const UsersTable = () => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <UsersTableHeader
-        tableId={tableId}
+        total={total}
+        selected={selected}
         q={q ?? ''}
         setQuery={setQuery}
         role={role}
@@ -82,8 +122,8 @@ const UsersTable = () => {
       />
       <Suspense>
         <BaseUsersTable
+          updateCounts={updateCounts}
           ref={dataTableRef}
-          tableId={tableId}
           columns={columns}
           sortColumns={sortColumns}
           setSortColumns={setSortColumns}

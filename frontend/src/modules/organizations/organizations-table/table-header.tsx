@@ -1,6 +1,5 @@
 import { config } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
@@ -10,18 +9,20 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import type { OrganizationsTableMethods } from '~/modules/organizations/organizations-table';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { BaseTableHeaderProps, Organization } from '~/types/common';
+import type { BaseTableHeaderProps, BaseTableMethods, Organization } from '~/types/common';
 
-type OrganizationsTableHeaderProps = OrganizationsTableMethods &
+type OrganizationsTableHeaderProps = BaseTableMethods &
   BaseTableHeaderProps<Organization> & {
+    openRemoveDialog: () => void;
+    openNewsletterSheet: () => void;
     fetchExport: (limit: number) => Promise<Organization[]>;
   };
 
 export const OrganizationsTableHeader = ({
-  tableId,
+  total,
+  selected,
   q,
   setQuery,
   columns,
@@ -32,9 +33,6 @@ export const OrganizationsTableHeader = ({
   fetchExport,
 }: OrganizationsTableHeaderProps) => {
   const { t } = useTranslation();
-
-  const [selected, setSelected] = useState(0);
-  const [total, setTotal] = useState(0);
 
   const isFiltered = !!q;
   // Drop selected Rows on search
@@ -48,46 +46,20 @@ export const OrganizationsTableHeader = ({
     clearSelection();
   };
 
-  useEffect(() => {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    // Create a MutationObserver to watch for attribute changes
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type !== 'attributes' || (mutation.attributeName !== 'data-selected' && mutation.attributeName !== 'data-total-count')) return;
-
-        if (mutation.attributeName === 'data-selected') {
-          const selectedValue = table.getAttribute('data-selected');
-          setSelected(Number(selectedValue) || 0);
-        }
-        if (mutation.attributeName === 'data-total-count') {
-          const totalValue = table.getAttribute('data-total-count');
-          setTotal(Number(totalValue) || 0);
-        }
-      }
-    });
-
-    // Configure the observer to watch for attribute changes
-    observer.observe(table, {
-      attributes: true,
-    });
-    return () => observer.disconnect();
-  }, [tableId]);
   return (
     <div className={'flex items-center max-sm:justify-between md:gap-2'}>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
-          {selected > 0 ? (
+          {selected.length > 0 ? (
             <>
               <Button onClick={openNewsletterSheet} className="relative">
-                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selected}</Badge>
+                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selected.length}</Badge>
                 <Mailbox size={16} />
                 <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
               </Button>
               <Button variant="destructive" className="relative" onClick={openRemoveDialog}>
-                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selected}</Badge>
+                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selected.length}</Badge>
                 <Trash size={16} />
                 <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
               </Button>
@@ -112,7 +84,7 @@ export const OrganizationsTableHeader = ({
               </Button>
             )
           )}
-          {selected === 0 && <TableCount count={total} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected.length === 0 && <TableCount count={total} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </FilterBarActions>
 
         <div className="sm:grow" />
@@ -126,14 +98,8 @@ export const OrganizationsTableHeader = ({
       <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
       {/* Export */}
-      <Export
-        className="max-lg:hidden"
-        filename={`${config.slug}-organizations`}
-        columns={columns}
-        // TODO get way to export selected rows
-        // selectedRows={selected}
-        fetchRows={fetchExport}
-      />
+      <Export className="max-lg:hidden" filename={`${config.slug}-organizations`} columns={columns} selectedRows={selected} fetchRows={fetchExport} />
+
       {/* Focus view */}
       <FocusView iconOnly />
     </div>
