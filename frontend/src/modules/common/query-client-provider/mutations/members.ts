@@ -83,7 +83,7 @@ queryClient.setMutationDefaults(membersKeys.delete(), {
           if (!old) return handleNoOldData(previousData);
           const prevItems = getQueryItems(old);
           const updatedMemberships = deletedMembers(prevItems, ids);
-          return formatUpdatedData(old, updatedMemberships, limit);
+          return formatUpdatedData(old, updatedMemberships, limit, -ids.length);
         });
       }
       context.push([queryKey, previousData, null]);

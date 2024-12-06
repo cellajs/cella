@@ -96,7 +96,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
           if (!oldData) return handleNoOldData(oldData);
           const prevItems = getQueryItems(oldData);
           const updatedItems = [...newAttachments, ...prevItems];
-          return formatUpdatedData(oldData, updatedItems, limit);
+          return formatUpdatedData(oldData, updatedItems, limit, newAttachments.length);
         });
       }
 
@@ -126,7 +126,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
           const createdItem = optimisticAttachments.find((created) => created.id === item.id);
           return createdItem ? { ...item, ...createdItem } : item;
         });
-        return formatUpdatedData(oldData, updatedItems, limit);
+        return formatUpdatedData(oldData, updatedItems, limit, createdAttachments.length);
       });
     }
     toast.success(t('common:success.create_resources', { resources: t('common:attachments') }));
@@ -192,7 +192,7 @@ queryClient.setMutationDefaults(attachmentKeys.delete(), {
           const prevItems = getQueryItems(oldData);
           const updatedItems = prevItems.filter((item) => !ids.includes(item.id));
 
-          return formatUpdatedData(oldData, updatedItems, limit);
+          return formatUpdatedData(oldData, updatedItems, limit, -ids.length);
         });
       }
       context.push([queryKey, previousData, null]);
