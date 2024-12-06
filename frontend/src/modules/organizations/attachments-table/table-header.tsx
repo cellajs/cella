@@ -1,47 +1,48 @@
-import { config } from 'config';
 import { motion } from 'framer-motion';
-import { Handshake, Trash, XSquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Trash, Upload, XSquare } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ColumnsView from '~/modules/common/data-table/columns-view';
-import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
-import type { RequestsTableMethods } from '~/modules/system/requests-table';
+import type { AttachmentsTableProps } from '~/modules/organizations/attachments-table';
+import { openUploadDialog } from '~/modules/organizations/attachments-table/helpers';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { BaseTableHeaderProps, Request } from '~/types/common';
+import type { Attachment, BaseTableHeaderProps, BaseTableMethods } from '~/types/common';
 
-type RequestsTableHeaderBarProps = RequestsTableMethods &
-  BaseTableHeaderProps<Request> & {
-    fetchExport: (limit: number) => Promise<Request[]>;
-  };
+type AttachmentsTableHeaderProps = AttachmentsTableProps & BaseTableMethods & BaseTableHeaderProps<Attachment>;
 
-export const RequestsTableHeaderBar = ({
+export const AttachmentsTableHeader = ({
+  organization,
   tableId,
   q,
   setQuery,
   columns,
   setColumns,
   clearSelection,
-  openInviteDialog,
   openRemoveDialog,
-  fetchExport,
-}: RequestsTableHeaderBarProps) => {
+  isSheet = false,
+  canUploadAttachments = true,
+}: AttachmentsTableHeaderProps) => {
   const { t } = useTranslation();
 
   const [selected, setSelected] = useState(0);
   const [total, setTotal] = useState(0);
 
   const isFiltered = !!q;
+  const isAdmin = organization.membership?.role === 'admin';
 
   const onResetFilters = () => {
     setQuery('');
     clearSelection();
   };
 
+  const filters = useMemo(() => ({ q }), [q]);
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   useEffect(() => {
     const table = document.getElementById(tableId);
     if (!table) return;
@@ -72,31 +73,21 @@ export const RequestsTableHeaderBar = ({
   return (
     <div className={'flex items-center max-sm:justify-between md:gap-2'}>
       {/* Filter bar */}
-
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
-          {selected > 0 && (
+          {selected > 0 ? (
             <>
-              <div className="relative inline-flex items-center gap-2">
-                <Badge className="px-1 py-0 min-w-5 flex justify-center  animate-in zoom-in">{selected}</Badge>
-                <Button asChild variant="success" onClick={openInviteDialog}>
-                  <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="req-filter-bar-button-invite">
-                    <motion.span layoutId="req-filter-bar-icon-successes">
-                      <Handshake size={16} />
-                    </motion.span>
-                    <span className="ml-1 max-xs:hidden">{t('common:accept')}</span>
-                  </motion.button>
-                </Button>
+              <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
+                <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">{selected}</Badge>
+                  <motion.span layoutId="attachments-filter-bar-icon">
+                    <Trash size={16} />
+                  </motion.span>
 
-                <Button asChild variant="destructive" onClick={openRemoveDialog}>
-                  <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="req-filter-bar-button-delete">
-                    <motion.span layoutId="req-filter-bar-icon-delete">
-                      <Trash size={16} />
-                    </motion.span>
-                    <span className="ml-1 max-xs:hidden">{t('common:delete')}</span>
-                  </motion.button>
-                </Button>
-              </div>
+                  <span className="ml-1 max-xs:hidden">{t('common:remove')}</span>
+                </motion.button>
+              </Button>
+
               <Button asChild variant="ghost" onClick={clearSelection}>
                 <motion.button
                   transition={{
@@ -108,17 +99,28 @@ export const RequestsTableHeaderBar = ({
                   exit={{ x: -20, opacity: 0 }}
                 >
                   <XSquare size={16} />
-                  <span className="ml-1">{t('common:clear')}</span>{' '}
+                  <span className="ml-1">{t('common:clear')}</span>
                 </motion.button>
               </Button>
             </>
+          ) : (
+            canUploadAttachments &&
+            !isFiltered &&
+            isAdmin && (
+              <Button asChild onClick={() => openUploadDialog(organization.id)}>
+                <motion.button transition={{ duration: 0.1 }} layoutId="attachments-filter-bar-button">
+                  <motion.span layoutId="attachments-filter-bar-icon">
+                    <Upload size={16} />
+                  </motion.span>
+                  <span className="ml-1">{t('common:upload')}</span>
+                </motion.button>
+              </Button>
+            )
           )}
-          {selected === 0 && <TableCount count={total} type="request" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+          {selected === 0 && <TableCount count={total} type="attachment" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
         </FilterBarActions>
-
         <div className="sm:grow" />
-
-        <FilterBarContent>
+        <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
           <TableSearch value={q} setQuery={setQuery} />
         </FilterBarContent>
       </TableFilterBar>
@@ -126,11 +128,8 @@ export const RequestsTableHeaderBar = ({
       {/* Columns view */}
       <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
-      {/* Export */}
-      <Export className="max-lg:hidden" filename={`${config.slug}-requests`} columns={columns} fetchRows={fetchExport} />
-
       {/* Focus view */}
-      <FocusView iconOnly />
+      {!isSheet && <FocusView iconOnly />}
     </div>
   );
 };

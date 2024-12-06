@@ -9,10 +9,10 @@ import type { SortColumn } from 'react-data-grid';
 import { getOrganizations } from '~/api/organizations';
 import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
+import { useColumns } from '~/modules/organizations/organizations-table/columns';
+import { OrganizationsTableHeader } from '~/modules/organizations/organizations-table/table-header';
 import { OrganizationsTableRoute } from '~/routes/system';
 import type { BaseTableMethods } from '~/types/common';
-import { useColumns } from './columns';
-import { OrganizationsTableHeader } from './table-header';
 
 const BaseOrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table/table'));
 const LIMIT = config.requestLimits.organizations;

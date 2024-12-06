@@ -1,8 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
-import { type Dispatch, type SetStateAction, forwardRef, useImperativeHandle, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useMemo } from 'react';
 
 import { Bird } from 'lucide-react';
-import type { RowsChangeData, SortColumn } from 'react-data-grid';
+import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { inviteMembers } from '~/api/memberships';
@@ -13,7 +13,6 @@ import { dialog } from '~/modules/common/dialoger/state';
 
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { showToast } from '~/lib/toasts';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
@@ -22,19 +21,10 @@ import { organizationsQueryOptions } from '~/modules/organizations/organizations
 import NewsletterDraft from '~/modules/system/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
 import { useUserStore } from '~/store/user';
-import type { Organization } from '~/types/common';
+import type { BaseTableProps, BaseTableQueryVariables, Organization } from '~/types/common';
 
-type BaseOrganizationsTableProps = {
-  tableId: string;
-  columns: ColumnOrColumnGroup<Organization>[];
-  sortColumns: SortColumn[];
-  setSortColumns: Dispatch<SetStateAction<SortColumn[]>>;
-  queryVars: {
-    q: OrganizationsSearch['q'] | undefined;
-    sort: OrganizationsSearch['sort'] | undefined;
-    order: OrganizationsSearch['order'] | undefined;
-    limit: number | undefined;
-  };
+type BaseOrganizationsTableProps = BaseTableProps<Organization> & {
+  queryVars: BaseTableQueryVariables<OrganizationsSearch>;
 };
 
 const BaseOrganizationsTable = forwardRef<OrganizationsTableMethods, BaseOrganizationsTableProps>(
