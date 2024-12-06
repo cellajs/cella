@@ -19,6 +19,7 @@ import { useColumns } from '~/modules/users/users-table/columns';
 import { UsersTableHeader } from '~/modules/users/users-table/table-header';
 import { UsersTableRoute } from '~/routes/system';
 import type { BaseTableMethods, User } from '~/types/common';
+import { arraysHaveSameElements } from '~/utils';
 
 const BaseUsersTable = lazy(() => import('~/modules/users/users-table/table'));
 const LIMIT = config.requestLimits.users;
@@ -41,9 +42,8 @@ const UsersTable = () => {
 
   // Update total and selected counts
   const updateCounts = (newSelected: User[], newTotal: number) => {
-    if (newTotal === total) return;
-    setSelected(newSelected);
-    setTotal(newTotal);
+    if (newTotal !== total) setTotal(newTotal);
+    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
   // Search query options

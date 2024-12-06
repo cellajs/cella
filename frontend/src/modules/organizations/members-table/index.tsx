@@ -16,6 +16,7 @@ import RemoveMembersForm from '~/modules/organizations/members-table/remove-memb
 import { MembersTableHeader } from '~/modules/organizations/members-table/table-header';
 import InviteUsers from '~/modules/users/invite-users';
 import type { BaseTableMethods, EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
+import { arraysHaveSameElements } from '~/utils';
 
 const BaseMembersTable = lazy(() => import('~/modules/organizations/members-table/table'));
 const LIMIT = config.requestLimits.members;
@@ -42,9 +43,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   // Update total and selected counts
   const updateCounts = (newSelected: Member[], newTotal: number) => {
-    if (newTotal === total) return;
-    setSelected(newSelected);
-    setTotal(newTotal);
+    if (newTotal !== total) setTotal(newTotal);
+    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
   // Search query options

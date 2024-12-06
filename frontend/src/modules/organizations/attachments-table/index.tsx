@@ -13,6 +13,7 @@ import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns'
 import { dialog } from '~/modules/common/dialoger/state';
 import { AttachmentsTableHeader } from '~/modules/organizations/attachments-table/table-header';
 import type { Attachment, BaseTableMethods, Organization } from '~/types/common';
+import { arraysHaveSameElements } from '~/utils';
 import RemoveAttachmentsForm from './remove-attachments-form';
 
 const BaseAttachmentsTable = lazy(() => import('~/modules/organizations/attachments-table/table'));
@@ -40,9 +41,8 @@ const AttachmentsTable = ({ organization, canUploadAttachments = true, isSheet =
 
   // Update total and selected counts
   const updateCounts = (newSelected: Attachment[], newTotal: number) => {
-    if (newTotal === total) return;
-    setSelected(newSelected);
-    setTotal(newTotal);
+    if (newTotal !== total) setTotal(newTotal);
+    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
   // Build columns

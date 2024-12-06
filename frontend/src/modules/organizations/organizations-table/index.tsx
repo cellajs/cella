@@ -21,6 +21,7 @@ import NewsletterDraft from '~/modules/system/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
 import { OrganizationsTableRoute } from '~/routes/system';
 import type { BaseTableMethods, Organization } from '~/types/common';
+import { arraysHaveSameElements } from '~/utils';
 
 const BaseOrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table/table'));
 const LIMIT = config.requestLimits.organizations;
@@ -43,9 +44,8 @@ const OrganizationsTable = () => {
 
   // Update total and selected counts
   const updateCounts = (newSelected: Organization[], newTotal: number) => {
-    if (newTotal === total) return;
-    setSelected(newSelected);
-    setTotal(newTotal);
+    if (newTotal !== total) setTotal(newTotal);
+    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
   // Search query options
