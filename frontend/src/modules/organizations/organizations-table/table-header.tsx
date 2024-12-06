@@ -1,10 +1,7 @@
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { Mailbox, Plus, Trash, XSquare } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getOrganizations } from '~/api/organizations';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -13,34 +10,35 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-import type { RequestsSearch } from '~/modules/system/requests-table';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { OrganizationsTableRoute } from '~/routes/system';
-import type { BaseTableMethods, Organization } from '~/types/common';
+import type { Organization } from '~/types/common';
+import type { OrganizationsTableMethods } from '.';
 
 type OrganizationsTableHeaderProps = {
   tableId: string;
+  q: string;
+  setQuery: (q: string) => void;
   columns: ColumnOrColumnGroup<Organization>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Organization>[]>>;
-} & BaseTableMethods & { openNewsletterSheet: () => void };
+  fetchExport: (limit: number) => Promise<Organization[]>;
+} & OrganizationsTableMethods;
 
 export const OrganizationsTableHeader = ({
   tableId,
+  q,
+  setQuery,
   columns,
   setColumns,
   openRemoveDialog,
   openNewsletterSheet,
   clearSelection,
+  fetchExport,
 }: OrganizationsTableHeaderProps) => {
   const { t } = useTranslation();
-  const search = useSearch({ from: OrganizationsTableRoute.id });
 
   const [selected, setSelected] = useState(0);
   const [total, setTotal] = useState(0);
-
-  // Table state
-  const [q, setQuery] = useState<RequestsSearch['q']>(search.q);
 
   const isFiltered = !!q;
 
@@ -48,9 +46,6 @@ export const OrganizationsTableHeader = ({
     setQuery('');
     clearSelection();
   };
-
-  const filters = useMemo(() => ({ q }), [q]);
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   useEffect(() => {
     const table = document.getElementById(tableId);
@@ -136,10 +131,7 @@ export const OrganizationsTableHeader = ({
         columns={columns}
         // TODO get way to export selected rows
         // selectedRows={selected}
-        fetchRows={async (limit) => {
-          const { items } = await getOrganizations({ limit, q, sort: search.sort, order: search.order });
-          return items;
-        }}
+        fetchRows={fetchExport}
       />
       {/* Focus view */}
       <FocusView iconOnly />

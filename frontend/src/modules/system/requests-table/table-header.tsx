@@ -1,44 +1,43 @@
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { motion } from 'framer-motion';
 import { Handshake, Trash, XSquare } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react';
+import { type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getRequests } from '~/api/requests';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ColumnsView, { type ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
-import type { RequestsSearch, RequestsTableMethods } from '~/modules/system/requests-table';
+import type { RequestsTableMethods } from '~/modules/system/requests-table';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { Request } from '~/types/common';
 
 type RequestsTableHeaderBarProps = RequestsTableMethods & {
   tableId: string;
+  q: string;
+  setQuery: (q: string) => void;
   columns: ColumnOrColumnGroup<Request>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Request>[]>>;
+  fetchExport: (limit: number) => Promise<Request[]>;
 };
 
 export const RequestsTableHeaderBar = ({
   tableId,
+  q,
+  setQuery,
   columns,
   setColumns,
   clearSelection,
   openInviteDialog,
   openRemoveDialog,
+  fetchExport,
 }: RequestsTableHeaderBarProps) => {
   const { t } = useTranslation();
-  const search = useSearch({ strict: false });
 
   const [selected, setSelected] = useState(0);
   const [total, setTotal] = useState(0);
-
-  // Table state
-  const [q, setQuery] = useState<RequestsSearch['q']>(search.q);
 
   const isFiltered = !!q;
 
@@ -46,9 +45,6 @@ export const RequestsTableHeaderBar = ({
     setQuery('');
     clearSelection();
   };
-
-  const filters = useMemo(() => ({ q }), [q]);
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   useEffect(() => {
     const table = document.getElementById(tableId);
@@ -135,15 +131,7 @@ export const RequestsTableHeaderBar = ({
       <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
       {/* Export */}
-      <Export
-        className="max-lg:hidden"
-        filename={`${config.slug}-requests`}
-        columns={columns}
-        fetchRows={async (limit) => {
-          const { items } = await getRequests({ limit, q, sort: search.sort, order: search.order });
-          return items;
-        }}
-      />
+      <Export className="max-lg:hidden" filename={`${config.slug}-requests`} columns={columns} fetchRows={fetchExport} />
 
       {/* Focus view */}
       <FocusView iconOnly />

@@ -1,20 +1,16 @@
 import { onlineManager } from '@tanstack/react-query';
-import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
+import { type Dispatch, type SetStateAction, forwardRef, useImperativeHandle, useMemo } from 'react';
 
-import { config } from 'config';
 import { Bird } from 'lucide-react';
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { inviteMembers } from '~/api/memberships';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 
-import { useSearch } from '@tanstack/react-router';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { showToast } from '~/lib/toasts';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
@@ -25,38 +21,33 @@ import type { OrganizationsSearch, OrganizationsTableMethods } from '~/modules/o
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import NewsletterDraft from '~/modules/system/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
-import { OrganizationsTableRoute } from '~/routes/system';
 import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types/common';
 
-const LIMIT = config.requestLimits.organizations;
-type BaseOrganizationsTableProps = { tableId: string; columns: ColumnOrColumnGroup<Organization>[] };
+type BaseOrganizationsTableProps = {
+  tableId: string;
+  columns: ColumnOrColumnGroup<Organization>[];
+  sortColumns: SortColumn[];
+  setSortColumns: Dispatch<SetStateAction<SortColumn[]>>;
+  queryVars: {
+    q: OrganizationsSearch['q'] | undefined;
+    sort: OrganizationsSearch['sort'] | undefined;
+    order: OrganizationsSearch['order'] | undefined;
+    limit: number | undefined;
+  };
+};
 
 const BaseOrganizationsTable = forwardRef<OrganizationsTableMethods, BaseOrganizationsTableProps>(
-  ({ tableId, columns }: BaseOrganizationsTableProps, ref) => {
-    const search = useSearch({ from: OrganizationsTableRoute.id });
+  ({ tableId, columns, sortColumns, setSortColumns, queryVars }: BaseOrganizationsTableProps, ref) => {
     const { t } = useTranslation();
-
     const { user } = useUserStore();
+    const { q, sort, order, limit } = queryVars;
 
     const mutateQuery = useMutateQueryData(['organizations', 'list']);
-    // Table state
-    const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
-
-    // Search query options
-    const sort = sortColumns[0]?.columnKey as OrganizationsSearch['sort'];
-    const order = sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'];
-    const limit = LIMIT;
-
-    const isFiltered = !!search.q;
 
     // Query organizations
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
-      useDataFromSuspenseInfiniteQuery(organizationsQueryOptions({ q: search.q, sort, order, limit }));
-
-    // Save filters in search params
-    const filters = useMemo(() => ({ sort, order }), [sort, order]);
-    useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
+      useDataFromSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
 
     // Table selection
     const selectedOrganizations = useMemo(() => {
@@ -157,7 +148,7 @@ const BaseOrganizationsTable = forwardRef<OrganizationsTableMethods, BaseOrganiz
             isLoading,
             isFetching,
             enableVirtualization: false,
-            isFiltered,
+            isFiltered: !!q,
             limit,
             selectedRows,
             onRowsChange,
