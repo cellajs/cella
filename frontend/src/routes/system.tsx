@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
-import { requestsQueryOptions } from '~/modules/system/requests-table/table';
+import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-option';
 import SystemPage from '~/modules/system/system-page';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
 import { noDirectAccess } from '~/utils/no-direct-access';
