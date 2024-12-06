@@ -15,8 +15,7 @@ export const attachmentsQueryOptions = ({ orgIdOrSlug, q = '', sort: initialSort
     initialPageParam: 0,
     retry: 1,
     refetchOnWindowFocus: false,
-
-    queryFn: async ({ pageParam: page, signal }) => getAttachments({ page, q, sort, order, limit, orgIdOrSlug }, signal),
+    queryFn: async ({ pageParam: page, signal }) => await getAttachments({ page, q, sort, order, limit, orgIdOrSlug }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
   });
 };

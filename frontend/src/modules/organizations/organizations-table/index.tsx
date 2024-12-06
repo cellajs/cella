@@ -1,123 +1,73 @@
-import { onlineManager } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
-import { getOrganizations } from '~/api/organizations';
-
-import type { getOrganizationsQuerySchema } from 'backend/modules/organizations/schema';
-import { config } from 'config';
-import { Bird, Mailbox, Plus, Trash, XSquare } from 'lucide-react';
-import type { RowsChangeData, SortColumn } from 'react-data-grid';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { Suspense, lazy, useMemo, useRef, useState } from 'react';
 import type { z } from 'zod';
-import { inviteMembers } from '~/api/memberships';
-import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { DataTable } from '~/modules/common/data-table';
-import ColumnsView from '~/modules/common/data-table/columns-view';
-import Export from '~/modules/common/data-table/export';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
-import TableCount from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import TableSearch from '~/modules/common/data-table/table-search';
-import { dialog } from '~/modules/common/dialoger/state';
-import { FocusView } from '~/modules/common/focus-view';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import type { getOrganizationsQuerySchema } from '#/modules/organizations/schema';
 
 import { useSearch } from '@tanstack/react-router';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { config } from 'config';
+import type { SortColumn } from 'react-data-grid';
+import { useTranslation } from 'react-i18next';
+import { getOrganizations } from '~/api/organizations';
+import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import { showToast } from '~/lib/toasts';
+import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
+import { dialog } from '~/modules/common/dialoger/state';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
-import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import { useColumns } from '~/modules/organizations/organizations-table/columns';
-import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
+import { OrganizationsTableHeader } from '~/modules/organizations/organizations-table/table-header';
 import NewsletterDraft from '~/modules/system/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
 import { OrganizationsTableRoute } from '~/routes/system';
-import { useUserStore } from '~/store/user';
-import type { Organization } from '~/types/common';
+import type { BaseTableMethods, Organization } from '~/types/common';
+import { arraysHaveSameElements } from '~/utils';
 
-type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
-
+const BaseOrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table/table'));
 const LIMIT = config.requestLimits.organizations;
 
+export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
+
 const OrganizationsTable = () => {
-  const search = useSearch({ from: OrganizationsTableRoute.id });
   const { t } = useTranslation();
+  const search = useSearch({ from: OrganizationsTableRoute.id });
+  const dataTableRef = useRef<BaseTableMethods | null>(null);
 
-  const { user } = useUserStore();
-
+  const mutateQuery = useMutateQueryData(['organizations', 'list']);
   // Table state
   const [q, setQuery] = useState<OrganizationsSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+
+  // State for selected and total counts
+  const [total, setTotal] = useState(0);
+  const [selected, setSelected] = useState<Organization[]>([]);
+
+  // Update total and selected counts
+  const updateCounts = (newSelected: Organization[], newTotal: number) => {
+    if (newTotal !== total) setTotal(newTotal);
+    if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
+  };
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as OrganizationsSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'];
   const limit = LIMIT;
 
-  const isFiltered = !!q;
-
-  // Query organizations
-  const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } = useDataFromSuspenseInfiniteQuery(
-    organizationsQueryOptions({ q, sort, order, limit }),
-  );
-
-  const mutateQuery = useMutateQueryData(['organizations', 'list']);
+  // Save filters in search params
+  const filters = useMemo(() => ({ q, sort, order }), [q, sortColumns]);
+  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);
 
-  // Save filters in search params
-  const filters = useMemo(() => ({ q, sort, order }), [q, sort, order]);
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-
-  // Drop selected rows on search
-  const onSearch = (searchString: string) => {
-    if (selectedRows.size > 0) setSelectedRows(new Set<string>());
-    setQuery(searchString);
-  };
-  // Table selection
-  const selectedOrganizations = useMemo(() => {
-    return rows.filter((row) => selectedRows.has(row.id));
-  }, [rows, selectedRows]);
-
-  const onResetFilters = () => {
-    setQuery('');
-    setSelectedRows(new Set<string>());
+  const clearSelection = () => {
+    if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
-  const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
-    if (column.key !== 'userRole') return setRows(changedRows);
-
-    // If user role is changed, invite user to organization
-    for (const index of indexes) {
-      const organization = changedRows[index];
-      if (!organization.membership?.role) continue;
-
-      inviteMembers({
-        idOrSlug: organization.id,
-        emails: [user.email],
-        role: organization.membership?.role,
-        entityType: 'organization',
-        organizationId: organization.id,
-      })
-        .then(() => toast.success(t('common:success.role_updated')))
-        .catch(() => toast.error(t('common:error.error')));
-    }
-
-    setRows(changedRows);
-  };
-
-  const openDeleteDialog = () => {
+  const openRemoveDialog = () => {
     dialog(
       <DeleteOrganizations
-        organizations={selectedOrganizations}
+        organizations={selected}
         callback={(organizations) => {
           showToast(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
           mutateQuery.remove(organizations);
@@ -138,13 +88,7 @@ const OrganizationsTable = () => {
       {
         id: 'write',
         label: 'common:write',
-        element: (
-          <OrganizationsNewsletterForm
-            sheet
-            organizationIds={selectedOrganizations.map((o) => o.id)}
-            dropSelectedOrganization={() => setSelectedRows(new Set<string>())}
-          />
-        ),
+        element: <OrganizationsNewsletterForm sheet organizationIds={selected.map((o) => o.id)} dropSelectedOrganization={clearSelection} />,
       },
 
       {
@@ -163,101 +107,40 @@ const OrganizationsTable = () => {
     });
   };
 
+  const fetchExport = async (limit: number) => {
+    const { items } = await getOrganizations({ limit, q, sort: search.sort, order: search.order });
+    return items;
+  };
+
   return (
     <div className="flex flex-col gap-4 h-full">
-      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
-        {/* Filter bar */}
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-          <FilterBarActions>
-            {selectedOrganizations.length > 0 ? (
-              <>
-                <Button onClick={openNewsletterSheet} className="relative">
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedOrganizations.length}</Badge>
-                  <Mailbox size={16} />
-                  <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
-                </Button>
-                <Button variant="destructive" className="relative" onClick={openDeleteDialog}>
-                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedOrganizations.length}</Badge>
-                  <Trash size={16} />
-                  <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
-                </Button>
-                <Button variant="ghost" onClick={() => setSelectedRows(new Set<string>())}>
-                  <XSquare size={16} />
-                  <span className="ml-1">{t('common:clear')}</span>
-                </Button>
-              </>
-            ) : (
-              !isFiltered &&
-              user.role === 'admin' && (
-                <Button
-                  onClick={() => {
-                    dialog(<CreateOrganizationForm dialog />, {
-                      className: 'md:max-w-2xl',
-                      id: 'create-organization',
-                      title: t('common:create_resource', { resource: t('common:organization').toLowerCase() }),
-                    });
-                  }}
-                >
-                  <Plus size={16} />
-                  <span className="ml-1">{t('common:create')}</span>
-                </Button>
-              )
-            )}
-            {!isLoading && selectedOrganizations.length === 0 && (
-              <TableCount count={totalCount} type="organization" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-            )}
-          </FilterBarActions>
-
-          <div className="sm:grow" />
-
-          <FilterBarContent>
-            <TableSearch value={q} setQuery={onSearch} />
-          </FilterBarContent>
-        </TableFilterBar>
-
-        {/* Columns view */}
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-
-        {/* Export */}
-        <Export
-          className="max-lg:hidden"
-          filename={`${config.slug}-organizations`}
-          columns={columns}
-          selectedRows={selectedOrganizations}
-          fetchRows={async (limit) => {
-            const { items } = await getOrganizations({ limit, q, sort, order });
-            return items;
-          }}
-        />
-        {/* Focus view */}
-        <FocusView iconOnly />
-      </div>
-
-      {/* Table */}
-      <DataTable<Organization>
-        {...{
-          columns: columns.filter((column) => column.visible),
-          rows,
-          totalCount,
-          rowHeight: 42,
-          rowKeyGetter: (row) => row.id,
-          error,
-          isLoading,
-          isFetching,
-          enableVirtualization: false,
-          isFiltered,
-          limit,
-          selectedRows,
-          onRowsChange,
-          fetchMore: fetchNextPage,
-          onSelectedRowsChange: setSelectedRows,
-          sortColumns,
-          onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
-          ),
-        }}
+      <OrganizationsTableHeader
+        total={total}
+        selected={selected}
+        columns={columns}
+        q={q ?? ''}
+        setQuery={setQuery}
+        setColumns={setColumns}
+        clearSelection={clearSelection}
+        openRemoveDialog={openRemoveDialog}
+        openNewsletterSheet={openNewsletterSheet}
+        fetchExport={fetchExport}
       />
+      <Suspense>
+        <BaseOrganizationsTable
+          ref={dataTableRef}
+          columns={columns}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
+          queryVars={{
+            q,
+            sort,
+            order,
+            limit,
+          }}
+          updateCounts={updateCounts}
+        />
+      </Suspense>
     </div>
   );
 };

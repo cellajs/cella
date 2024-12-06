@@ -6,9 +6,12 @@ import type { requestSchema } from 'backend/modules/requests/schema';
 import type { limitedUserSchema, userSchema } from 'backend/modules/users/schema';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
+import type { Dispatch, SetStateAction } from 'react';
+import type { SortColumn } from 'react-data-grid';
 import type { z } from 'zod';
 import type { client } from '~/api/me';
 import type { UppyBody, UppyMeta } from '~/lib/imado';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { attachmentSchema } from '#/modules/attachments/schema';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 
@@ -68,4 +71,31 @@ export type DraggableItemData<T> = {
   itemType: Entity;
   dragItem: true;
   order: number;
+};
+
+export type BaseTableProps<T> = {
+  columns: ColumnOrColumnGroup<T>[];
+  sortColumns: SortColumn[];
+  setSortColumns: Dispatch<SetStateAction<SortColumn[]>>;
+  updateCounts: (selected: T[], total: number) => void;
+};
+
+export type BaseTableMethods = {
+  clearSelection: () => void;
+};
+
+export type BaseTableQueryVariables<T extends { q?: unknown; sort?: unknown; order?: unknown }> = {
+  q: T['q'] | undefined;
+  sort: T['sort'] | undefined;
+  order: T['order'] | undefined;
+  limit: number | undefined;
+};
+
+export type BaseTableHeaderProps<T> = {
+  total: number;
+  selected: T[];
+  q: string;
+  setQuery: (q: string) => void;
+  columns: ColumnOrColumnGroup<T>[];
+  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<T>[]>>;
 };
