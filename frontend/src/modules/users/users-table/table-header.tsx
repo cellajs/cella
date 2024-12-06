@@ -3,28 +3,23 @@ import { Mail, Trash, XSquare } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
-import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import type { MemberSearch, MembersTableMethods, MembersTableProps } from '~/modules/organizations/members-table/';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { BaseTableHeaderProps, Member } from '~/types/common';
+import type { BaseTableHeaderProps, User } from '~/types/common';
+import type { UsersSearch, UsersTableMethods } from '.';
 
-type MembersTableHeaderProps = MembersTableProps &
-  MembersTableMethods &
-  BaseTableHeaderProps<Member> & {
-    role: MemberSearch['role'];
-    setRole: (role: MemberSearch['role']) => void;
-
-    fetchExport: (limit: number) => Promise<Member[]>;
+type UsersTableHeaderProps = UsersTableMethods &
+  BaseTableHeaderProps<User> & {
+    role: UsersSearch['role'];
+    setRole: (role: UsersSearch['role']) => void;
   };
 
-export const MembersTableHeader = ({
-  entity,
+export const UsersTableHeader = ({
   tableId,
   q,
   setQuery,
@@ -32,12 +27,10 @@ export const MembersTableHeader = ({
   setRole,
   columns,
   setColumns,
-  isSheet = false,
-  fetchExport,
   clearSelection,
   openInviteDialog,
   openRemoveDialog,
-}: MembersTableHeaderProps) => {
+}: UsersTableHeaderProps) => {
   const { t } = useTranslation();
   const containerRef = useRef(null);
 
@@ -45,8 +38,6 @@ export const MembersTableHeader = ({
   const [total, setTotal] = useState(0);
 
   const isFiltered = role !== undefined || !!q;
-  const isAdmin = entity.membership?.role === 'admin';
-  const entityType = entity.entity;
 
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
@@ -56,7 +47,7 @@ export const MembersTableHeader = ({
   // Drop selected Rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
+    setRole(role === 'all' ? undefined : (role as UsersSearch['role']));
   };
 
   const onResetFilters = () => {
@@ -94,8 +85,8 @@ export const MembersTableHeader = ({
 
   return (
     <>
-      <div className="flex items-center max-sm:justify-between md:gap-2">
-        {/* Table Filter Bar */}
+      <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+        {/* Table filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
             {selected > 0 ? (
@@ -106,8 +97,7 @@ export const MembersTableHeader = ({
                     <motion.span layoutId="members-filter-bar-icon">
                       <Trash size={16} />
                     </motion.span>
-
-                    <span className="ml-1 max-xs:hidden">{entity.id ? t('common:remove') : t('common:delete')}</span>
+                    <span className="ml-1 max-xs:hidden">{t('common:delete')}</span>
                   </motion.button>
                 </Button>
 
@@ -122,15 +112,13 @@ export const MembersTableHeader = ({
                     exit={{ x: -20, opacity: 0 }}
                   >
                     <XSquare size={16} />
-                    <span className="ml-1">{t('common:clear')}</span>
+                    <span className="ml-1">{t('common:clear')}</span>{' '}
                   </motion.button>
                 </Button>
               </>
             ) : (
-              !isFiltered &&
-              isAdmin && (
-                //TODO mb rework sheet to find a way use dialog with ref in sheet
-                <Button asChild onClick={() => openInviteDialog(isSheet ? null : containerRef.current)}>
+              !isFiltered && (
+                <Button asChild onClick={() => openInviteDialog(containerRef.current)}>
                   <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
                     <motion.span layoutId="members-filter-bar-icon">
                       <Mail size={16} />
@@ -142,33 +130,23 @@ export const MembersTableHeader = ({
             )}
             {selected === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
+
           <div className="sm:grow" />
+
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
             <TableSearch value={q} setQuery={onSearch} />
-            <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
+            <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           </FilterBarContent>
         </TableFilterBar>
 
-        {/* Columns view dropdown */}
+        {/* Columns view */}
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
 
-        {/* Export */}
-        {!isSheet && (
-          <Export
-            className="max-lg:hidden"
-            filename={`${entityType} members`}
-            columns={columns}
-            // TODO get way to export selected rows
-            // selectedRows={selectedMembers}
-            fetchRows={fetchExport}
-          />
-        )}
-
         {/* Focus view */}
-        {!isSheet && <FocusView iconOnly />}
+        <FocusView iconOnly />
       </div>
 
-      {/* Container ref to embed dialog */}
+      {/* Container for embedded dialog */}
       <div ref={containerRef} />
     </>
   );

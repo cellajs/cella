@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion';
 import { Trash, Upload, XSquare } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
@@ -36,13 +35,17 @@ export const AttachmentsTableHeader = ({
   const isFiltered = !!q;
   const isAdmin = organization.membership?.role === 'admin';
 
+  // Drop selected Rows on search
+  const onSearch = (searchString: string) => {
+    clearSelection();
+    setQuery(searchString);
+  };
+
   const onResetFilters = () => {
     setQuery('');
     clearSelection();
   };
 
-  const filters = useMemo(() => ({ q }), [q]);
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
   useEffect(() => {
     const table = document.getElementById(tableId);
     if (!table) return;
@@ -121,7 +124,7 @@ export const AttachmentsTableHeader = ({
         </FilterBarActions>
         <div className="sm:grow" />
         <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
-          <TableSearch value={q} setQuery={setQuery} />
+          <TableSearch value={q} setQuery={onSearch} />
         </FilterBarContent>
       </TableFilterBar>
 
