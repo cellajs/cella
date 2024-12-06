@@ -9,24 +9,32 @@ import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns'
 import { useColumns } from '~/modules/system/requests-table/columns';
 import { RequestsTableHeaderBar } from '~/modules/system/requests-table/table-header';
 import { RequestsTableRoute } from '~/routes/system';
-import type { BaseTableMethods } from '~/types/common';
+import type { BaseTableMethods, Request } from '~/types/common';
 import type { getRequestsQuerySchema } from '#/modules/requests/schema';
 
 const BaseRequestsTable = lazy(() => import('~/modules/system/requests-table/table'));
 const LIMIT = config.requestLimits.requests;
 
 export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
-export type RequestsTableMethods = BaseTableMethods & {
-  openInviteDialog: () => void;
-};
 
 const RequestsTable = () => {
   const search = useSearch({ from: RequestsTableRoute.id });
+  const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
   const [q, setQuery] = useState<RequestsSearch['q']>(search.q);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
 
+  // State for selected and total counts
+  const [total, setTotal] = useState(0);
+  const [selected, setSelected] = useState<Request[]>([]);
+
+  // Update total and selected counts
+  const updateCounts = (newSelected: Request[], newTotal: number) => {
+    if (newTotal === total) return;
+    setSelected(newSelected);
+    setTotal(newTotal);
+  };
   // Search query options
   const sort = sortColumns[0]?.columnKey as RequestsSearch['sort'];
   const order = sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'];
@@ -39,20 +47,12 @@ const RequestsTable = () => {
   // Build columns
   const [columns, setColumns] = useColumns();
 
-  const tableId = 'requests-table';
-  const dataTableRef = useRef<RequestsTableMethods | null>(null);
-
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
-
-  const openRemoveDialog = () => {
-    if (dataTableRef.current) dataTableRef.current.openRemoveDialog();
-  };
-
-  const openInviteDialog = () => {
-    if (dataTableRef.current) dataTableRef.current.openInviteDialog();
-  };
+  //TODO implement accept and remove of request
+  const openRemoveDialog = () => console.log('removed');
+  const openInviteDialog = () => console.log('invited');
 
   const fetchExport = async (limit: number) => {
     const { items } = await getRequests({ q, sort, order, limit });
@@ -62,7 +62,8 @@ const RequestsTable = () => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <RequestsTableHeaderBar
-        tableId={tableId}
+        total={total}
+        selected={selected}
         columns={columns}
         setColumns={setColumns}
         q={q ?? ''}
@@ -74,7 +75,6 @@ const RequestsTable = () => {
       />
       <Suspense>
         <BaseRequestsTable
-          tableId={tableId}
           columns={columns}
           sortColumns={sortColumns}
           setSortColumns={setSortColumns}
@@ -84,6 +84,7 @@ const RequestsTable = () => {
             order,
             limit,
           }}
+          updateCounts={updateCounts}
         />
       </Suspense>
     </div>

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
@@ -9,23 +9,25 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import type { MemberSearch, MembersTableMethods, MembersTableProps } from '~/modules/organizations/members-table/';
+import type { MemberSearch, MembersTableProps } from '~/modules/organizations/members-table/';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { BaseTableHeaderProps, Member } from '~/types/common';
+import type { BaseTableHeaderProps, BaseTableMethods, Member } from '~/types/common';
 
 type MembersTableHeaderProps = MembersTableProps &
-  MembersTableMethods &
+  BaseTableMethods &
   BaseTableHeaderProps<Member> & {
     role: MemberSearch['role'];
     setRole: (role: MemberSearch['role']) => void;
-
+    openInviteDialog: (container: HTMLElement | null) => void;
+    openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Member[]>;
   };
 
 export const MembersTableHeader = ({
   entity,
-  tableId,
+  total,
+  selected,
   q,
   setQuery,
   role,
@@ -40,9 +42,6 @@ export const MembersTableHeader = ({
 }: MembersTableHeaderProps) => {
   const { t } = useTranslation();
   const containerRef = useRef(null);
-
-  const [selected, setSelected] = useState(0);
-  const [total, setTotal] = useState(0);
 
   const isFiltered = role !== undefined || !!q;
   const isAdmin = entity.membership?.role === 'admin';
@@ -65,44 +64,17 @@ export const MembersTableHeader = ({
     setRole(undefined);
   };
 
-  useEffect(() => {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    // Create a MutationObserver to watch for attribute changes
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type !== 'attributes' || (mutation.attributeName !== 'data-selected' && mutation.attributeName !== 'data-total-count')) return;
-
-        if (mutation.attributeName === 'data-selected') {
-          const selectedValue = table.getAttribute('data-selected');
-          setSelected(Number(selectedValue) || 0);
-        }
-        if (mutation.attributeName === 'data-total-count') {
-          const totalValue = table.getAttribute('data-total-count');
-          setTotal(Number(totalValue) || 0);
-        }
-      }
-    });
-
-    // Configure the observer to watch for attribute changes
-    observer.observe(table, {
-      attributes: true,
-    });
-    return () => observer.disconnect();
-  }, [tableId]);
-
   return (
     <>
       <div className="flex items-center max-sm:justify-between md:gap-2">
         {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
-            {selected > 0 ? (
+            {selected.length > 0 ? (
               <>
                 <Button asChild variant="destructive" onClick={openRemoveDialog} className="relative">
                   <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
-                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">{selected}</Badge>
+                    <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5 animate-in zoom-in">{selected.length}</Badge>
                     <motion.span layoutId="members-filter-bar-icon">
                       <Trash size={16} />
                     </motion.span>
@@ -140,7 +112,7 @@ export const MembersTableHeader = ({
                 </Button>
               )
             )}
-            {selected === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {selected.length === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">
@@ -154,14 +126,7 @@ export const MembersTableHeader = ({
 
         {/* Export */}
         {!isSheet && (
-          <Export
-            className="max-lg:hidden"
-            filename={`${entityType} members`}
-            columns={columns}
-            // TODO get way to export selected rows
-            // selectedRows={selectedMembers}
-            fetchRows={fetchExport}
-          />
+          <Export className="max-lg:hidden" filename={`${entityType} members`} columns={columns} selectedRows={selected} fetchRows={fetchExport} />
         )}
 
         {/* Focus view */}

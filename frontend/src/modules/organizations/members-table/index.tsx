@@ -7,31 +7,45 @@ import type { membersQuerySchema } from '#/modules/general/schema';
 
 import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
+import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/organizations/members-table/columns';
+import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
 import { MembersTableHeader } from '~/modules/organizations/members-table/table-header';
-import type { BaseTableMethods, EntityPage, MinimumMembershipInfo } from '~/types/common';
+import InviteUsers from '~/modules/users/invite-users';
+import type { BaseTableMethods, EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
 
 const BaseMembersTable = lazy(() => import('~/modules/organizations/members-table/table'));
 const LIMIT = config.requestLimits.members;
 
 export type MemberSearch = z.infer<typeof membersQuerySchema>;
-export type MembersTableMethods = BaseTableMethods & {
-  openInviteDialog: (container?: HTMLElement | null) => void;
-};
 export interface MembersTableProps {
   entity: EntityPage & { membership: MinimumMembershipInfo | null };
   isSheet?: boolean;
 }
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
+  const { t } = useTranslation();
   const search = useSearch({ strict: false });
+  const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
   const [q, setQuery] = useState<MemberSearch['q']>(search.q);
   const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
   const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+
+  // State for selected and total counts
+  const [total, setTotal] = useState(0);
+  const [selected, setSelected] = useState<Member[]>([]);
+
+  // Update total and selected counts
+  const updateCounts = (newSelected: Member[], newTotal: number) => {
+    if (newTotal === total) return;
+    setSelected(newSelected);
+    setTotal(newTotal);
+  };
 
   // Search query options
   const sort = sortColumns[0]?.columnKey as MemberSearch['sort'];
@@ -50,19 +64,37 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet, organizationId);
 
-  const tableId = `members-table-${entity.id}`;
-  const dataTableRef = useRef<MembersTableMethods | null>(null);
-
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
   const openInviteDialog = (container?: HTMLElement | null) => {
-    if (dataTableRef.current) dataTableRef.current.openInviteDialog(container);
+    dialog(<InviteUsers entity={entity} mode={null} dialog />, {
+      id: `user-invite-${entity.id}`,
+      drawerOnMobile: false,
+      className: 'w-auto shadow-none relative z-[60] max-w-4xl',
+      container,
+      containerBackdrop: true,
+      containerBackdropClassName: 'z-50',
+      title: t('common:invite'),
+      description: `${t('common:invite_users.text')}`,
+    });
   };
 
   const openRemoveDialog = () => {
-    if (dataTableRef.current) dataTableRef.current.openRemoveDialog();
+    dialog(<RemoveMembersForm organizationId={organizationId} entityIdOrSlug={entity.slug} entityType={entity.entity} dialog members={selected} />, {
+      className: 'max-w-xl',
+      title: t('common:remove_resource', { resource: t('common:member').toLowerCase() }),
+      description: (
+        <Trans
+          i18nKey="common:confirm.remove_members"
+          values={{
+            entity: entity.entity,
+            emails: selected.map((member) => member.email).join(', '),
+          }}
+        />
+      ),
+    });
   };
 
   const fetchExport = async (limit: number) => {
@@ -88,8 +120,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <MembersTableHeader
-        tableId={tableId}
         entity={entity}
+        total={total}
+        selected={selected}
         q={q ?? ''}
         setQuery={setQuery}
         role={role}
@@ -105,7 +138,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         <BaseMembersTable
           entity={entity}
           ref={dataTableRef}
-          tableId={tableId}
           columns={columns}
           sortColumns={sortColumns}
           setSortColumns={setSortColumns}
@@ -116,6 +148,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
             order,
             limit,
           }}
+          updateCounts={updateCounts}
         />
       </Suspense>
     </div>
