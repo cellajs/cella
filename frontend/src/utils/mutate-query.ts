@@ -18,14 +18,16 @@ export const getQueryItems = <T>(prevItems: QueryData<T> | InfiniteQueryData<T>)
  * @param prevData - Previous query data, which can be either QueryData or InfiniteQueryData.
  * @param updatedData - New items to replace the previous data.
  * @param limit - Optional limit for chunk size when splitting the updated data (only used for InfiniteQueryData).
+ * @param addToTotal - Optional total count to add to prev total.
  * @returns - The updated query data formatted in the appropriate structure.
  */
 export function formatUpdatedData<T>(
   prevData: InfiniteQueryData<T> | QueryData<T>,
   updatedData: T[],
   limit?: number,
+  addToTotal = 0,
 ): InfiniteQueryData<T> | QueryData<T> {
-  if (isQueryData(prevData)) return { total: updatedData.length, items: updatedData };
+  if (isQueryData(prevData)) return { total: prevData.total + addToTotal, items: updatedData };
 
   // Determine the effective limit without modifying the function parameter
   const pageItemsLimit = limit ?? (prevData.pages.length > 1 ? prevData.pages[0].items.length : undefined);
@@ -34,7 +36,7 @@ export function formatUpdatedData<T>(
   if (!pageItemsLimit) {
     return {
       ...prevData,
-      pages: [{ total: updatedData.length, items: updatedData }],
+      pages: [{ total: prevData.pages[0].total + addToTotal, items: updatedData }],
     };
   }
   // InfiniteQueryData, split the updatedData by the limit and update the pages
@@ -45,8 +47,8 @@ export function formatUpdatedData<T>(
 
   return {
     ...prevData,
-    pages: chunks.map((chunk) => ({
-      total: updatedData.length,
+    pages: chunks.map((chunk, index) => ({
+      total: prevData.pages[index].total + addToTotal,
       items: chunk,
     })),
   };

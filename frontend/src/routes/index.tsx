@@ -5,7 +5,7 @@ import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
 import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/routes/marketing';
 import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system';
-import { UserInOrgProfileRoute, UserProfileRoute, UserSettingsRoute } from '~/routes/users';
+import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
 import { AppRoute, ErrorNoticeRoute, PublicRoute, UnsubscribeRoute, acceptInviteRoute, rootRoute } from './general';
 
 export const routeTree = rootRoute.addChildren([
@@ -25,7 +25,6 @@ export const routeTree = rootRoute.addChildren([
     WelcomeRoute,
     SystemRoute.addChildren([UsersTableRoute, OrganizationsTableRoute, RequestsTableRoute, MetricsRoute]),
     UserProfileRoute,
-    UserInOrgProfileRoute,
     UserSettingsRoute,
     // App specific routes here
     AttachmentRoute,
