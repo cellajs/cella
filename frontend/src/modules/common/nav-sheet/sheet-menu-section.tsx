@@ -1,6 +1,6 @@
-import type React from 'react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import useUpdateTabIndex from '~/hooks/use-update-tab-index';
 import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
@@ -47,26 +47,8 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
     setArchivedVisible(!isArchivedVisible);
   };
 
-  // TODO - refactor this into a generic hook?
-  // Helper function to set or remove 'tabindex' attribute
-  const updateTabIndex = (ref: React.RefObject<HTMLElement>, isVisible: boolean) => {
-    if (!ref.current) return;
-
-    const elements = ref.current.querySelectorAll<HTMLElement>('*');
-    for (let i = 0; i < elements.length; i++) {
-      const el = elements[i];
-      if (isVisible) el.removeAttribute('tabindex');
-      else el.setAttribute('tabindex', '-1');
-    }
-  };
-
-  useEffect(() => {
-    updateTabIndex(sectionRef, isSectionVisible);
-  }, [sectionRef, isSectionVisible]);
-
-  useEffect(() => {
-    updateTabIndex(archivedRef, isArchivedVisible);
-  }, [archivedRef, isArchivedVisible]);
+  useUpdateTabIndex(sectionRef, isSectionVisible);
+  useUpdateTabIndex(archivedRef, isArchivedVisible);
 
   return (
     <div className="group/menuSection" data-visible={isSectionVisible}>
