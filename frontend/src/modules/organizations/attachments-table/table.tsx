@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction, forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo } from 'react';
+import { type Dispatch, type SetStateAction, forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
 
 import { Paperclip } from 'lucide-react';
 import type { RowsChangeData } from 'react-data-grid';
@@ -48,8 +48,6 @@ const BaseAttachmentsTable = memo(
         [rows],
       );
 
-      useMemo(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openPreviewDialog)), [isAdmin, openPreviewDialog]);
-
       const attachmentUpdateMutation = useAttachmentUpdateMutation();
       // Update rows
       const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
@@ -67,6 +65,8 @@ const BaseAttachmentsTable = memo(
 
         setRows(changedRows);
       };
+
+      useEffect(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openPreviewDialog)), [isAdmin, openPreviewDialog]);
 
       useEffect(() => {
         updateCounts(
