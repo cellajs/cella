@@ -166,7 +166,7 @@ const usersRoutes = app
       .where(and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.type, 'organization')));
 
     const jointMembership = memberships.find((membership) =>
-      targetUserMembership.some((targetMembetship) => targetMembetship.organizationId === membership.organizationId),
+      targetUserMembership.some((targetMembership) => targetMembership.organizationId === membership.organizationId),
     );
 
     if (user.role !== 'admin' && !jointMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
