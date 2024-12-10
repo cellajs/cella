@@ -5,7 +5,7 @@ import { auth } from '#/db/lucia';
 import { membershipsTable } from '#/db/schema/memberships';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
-import { getContextUser } from '#/lib/context';
+import { getContextUser, getMemberships } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
@@ -150,21 +150,31 @@ const usersRoutes = app
   .openapi(usersRoutesConfig.getUser, async (ctx) => {
     const idOrSlug = ctx.req.param('idOrSlug');
     const user = getContextUser();
+    const memberships = getMemberships();
+
+    if (idOrSlug === user.id || idOrSlug === user.slug) {
+      return ctx.json({ success: true, data: transformDatabaseUserWithCount(user, memberships.length) }, 200);
+    }
 
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
 
     if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
 
-    // Now only admins or the user themselves can view a user
-    // TODO allow organization members to view each other using getMemberships
-    if (user.role !== 'admin' && user.id !== targetUser.id) {
-      return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
-    }
+    const targetUserMembership = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, targetUser.id), eq(membershipsTable.type, 'organization')));
 
-    // Get the user's membership count
-    const memberships = await getUserMembershipsCount(targetUser.id);
+    const jointMembership = memberships.find((membership) =>
+      targetUserMembership.some((targetMembetship) => targetMembetship.organizationId === membership.organizationId),
+    );
 
-    return ctx.json({ success: true, data: transformDatabaseUserWithCount(targetUser, memberships) }, 200);
+    if (user.role !== 'admin' && !jointMembership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'user', { user: targetUser.id });
+
+    // Get target user's membership count
+    const targetUserMembershipsCount = await getUserMembershipsCount(targetUser.id);
+
+    return ctx.json({ success: true, data: transformDatabaseUserWithCount(targetUser, targetUserMembershipsCount) }, 200);
   })
   /*
    * Update a user by id or slug
