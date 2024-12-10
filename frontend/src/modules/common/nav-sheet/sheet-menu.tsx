@@ -41,7 +41,13 @@ export type SectionItem = {
 
 export const SheetMenu = memo(() => {
   const { t } = useTranslation();
-  const { menu, keepOpenPreference, hideSubmenu, toggleHideSubmenu, toggleKeepOpenPreference } = useNavigationStore();
+
+  const menu = useNavigationStore((state) => state.menu);
+  const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
+  const hideSubmenu = useNavigationStore((state) => state.hideSubmenu);
+  const toggleHideSubmenu = useNavigationStore((state) => state.toggleHideSubmenu);
+  const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
+
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<UserMenuItem[]>([]);
 

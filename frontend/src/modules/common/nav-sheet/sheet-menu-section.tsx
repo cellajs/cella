@@ -20,7 +20,7 @@ interface MenuSectionProps {
 
 export const MenuSection = ({ data, sectionType, sectionLabel, entityType, createForm }: MenuSectionProps) => {
   const { t } = useTranslation();
-  const { activeSections } = useNavigationStore();
+  const activeSections = useNavigationStore((state) => state.activeSections);
 
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
