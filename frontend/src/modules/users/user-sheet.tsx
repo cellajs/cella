@@ -3,7 +3,9 @@ import { useEffect } from 'react';
 
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { getUser } from '~/api/users';
-import UserProfilePage from './profile-page';
+import { sheet } from '~/modules/common/sheeter/state';
+import Spinner from '~/modules/common/spinner';
+import UserProfilePage from '~/modules/users/profile-page';
 
 export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({
@@ -15,7 +17,7 @@ const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: 
   const navigate = useNavigate();
 
   // Query members
-  const { data: user } = useQuery(userQueryOptions(idOrSlug));
+  const { data: user, isError, isLoading } = useQuery(userQueryOptions(idOrSlug));
 
   useEffect(() => {
     // Add search parameter on mount
@@ -43,8 +45,18 @@ const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: 
     };
   }, []);
 
-  if (!user) return null;
-  return <UserProfilePage sheet user={user} orgIdOrSlug={orgIdOrSlug} />;
+  useEffect(() => {
+    if (!isError) return;
+    sheet.remove(`user-preview-${idOrSlug}`);
+  }, [isError]);
+
+  return isLoading ? (
+    <div className="block">
+      <Spinner className="h-10 w-10" />
+    </div>
+  ) : user ? (
+    <UserProfilePage sheet user={user} orgIdOrSlug={orgIdOrSlug} />
+  ) : null;
 };
 
 export default UserSheet;
