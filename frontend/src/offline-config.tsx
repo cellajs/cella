@@ -1,8 +1,8 @@
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import type { UserMenuItem } from '~/types/common';
 
-// Set query client provider queries
-export const userMenuPrefetchConfig = {
+// Set query client provider queries based on entities
+export const prefetchEntities = {
   organization: {
     prefetchMembers: true,
     prefetchAttachments: true,
