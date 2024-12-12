@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
-import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
+import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { baseEntityRoutes } from '~/nav-config';
@@ -18,7 +18,7 @@ import { AppRoute } from './general';
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
 const OrgMembersTable = lazy(() => import('~/modules/organizations/members-table/organization-members-table'));
-const AttachmentsTable = lazy(() => import('~/modules/organizations/attachments-table'));
+const AttachmentsTable = lazy(() => import('~/modules/attachments/attachments-table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 // Search query schema

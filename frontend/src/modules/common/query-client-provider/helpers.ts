@@ -3,7 +3,7 @@ import type { QueryKey, UseInfiniteQueryOptions, UseQueryOptions } from '@tansta
 import { config } from 'config';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import type { InferType } from '~/modules/common/query-client-provider/types';
-import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
+import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import type { ContextEntity } from '~/types/common';
 

@@ -7,7 +7,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { UploadType } from '~/types/common';
 
-const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));
+const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/upload-uppy'));
 
 interface UploadAvatarProps extends AvatarWrapProps {
   setUrl: (url: string | null) => void;

@@ -1,5 +1,5 @@
 import type { Control } from 'react-hook-form';
-import { UploadAvatar } from '~/modules/common/upload/upload-avatar';
+import { UploadAvatar } from '~/modules/attachments/upload/upload-avatar';
 import { FormControl, FormField, FormItem, FormLabel } from '~/modules/ui/form';
 
 interface Props {
