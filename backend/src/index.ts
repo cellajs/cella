@@ -1,10 +1,8 @@
 import { serve } from '@hono/node-server';
-import cron from 'node-cron';
 
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
-import { resetDb } from '#/cron/manage-db';
 import { db } from '#/db/db';
 import ascii from '#/utils/ascii';
 import { env } from '../env';
@@ -23,9 +21,6 @@ const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
 docs(app);
 
 const main = async () => {
-  // Reset db every Sunday at midnight
-  cron.schedule('0 0 * * 0', resetDb, { scheduled: true, timezone: 'UTC' }).start();
-
   // Migrate db
   const migrateConfig = {
     migrationsFolder: 'drizzle',
