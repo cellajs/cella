@@ -3,6 +3,7 @@ import { config } from 'config';
 import { useEffect } from 'react';
 import { queryClient } from '~/lib/router';
 
+import { onlineManager } from '@tanstack/react-query';
 import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
 import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
 import { useGeneralStore } from '~/store/general';
@@ -37,7 +38,7 @@ const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
 
 const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
   url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
-  where: `organization_id="${organizationId}"`,
+  where: `id="${organizationId}"`,
   backoffOptions: {
     initialDelay: 500,
     maxDelay: 32000,
@@ -55,7 +56,7 @@ export const useSync = (organizationId: string) => {
 
   // Subscribe to attachments updates
   useEffect(() => {
-    if (networkMode !== 'online' || !config.has.sync || (!env.VITE_HAS_SYNC && config.mode === 'development')) return;
+    if (!onlineManager.isOnline() || !config.has.sync || (!env.VITE_HAS_SYNC && config.mode === 'development')) return;
 
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organizationId));
     const queryKey = attachmentsQueryOptions({ orgIdOrSlug: organizationId }).queryKey;
