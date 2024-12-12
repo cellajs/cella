@@ -133,6 +133,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}
         openInviteDialog={openInviteDialog}
+        isSheet={isSheet}
       />
       <Suspense>
         <BaseMembersTable

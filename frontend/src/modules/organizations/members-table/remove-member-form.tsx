@@ -1,7 +1,5 @@
-import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { membersKeys } from '~/modules/common/query-client-provider/keys';
 import { useMembersDeleteMutation } from '~/modules/common/query-client-provider/mutations/members';
 import type { ContextEntity, Member } from '~/types/common';
 
@@ -26,9 +24,7 @@ const RemoveMembersForm = ({ members, entityIdOrSlug, entityType = 'organization
         ids: members.map((member) => member.id),
       },
       {
-        onSuccess: (data, variables, context) => {
-          queryClient.getMutationDefaults(membersKeys.delete()).onSuccess?.(data, variables, context);
-
+        onSuccess: () => {
           callback?.(members);
           if (isDialog) dialog.remove();
         },
