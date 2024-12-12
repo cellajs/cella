@@ -1,7 +1,7 @@
-import { AudioPreview } from '~/modules/common/attachments/audio-preview';
-import PreviewPDF from '~/modules/common/attachments/pdf-preview';
-import { VideoPreview } from '~/modules/common/attachments/video-preview';
-import ReactPanZoom from '~/modules/common/image-viewer';
+import { AudioPreview } from '~/modules/attachments/audio-preview';
+import PreviewPDF from '~/modules/attachments/pdf-preview';
+import { VideoPreview } from '~/modules/attachments/video-preview';
+import ReactPanZoom from '~/modules/attachments/image-viewer';
 
 interface AttachmentItemProps {
   type: string;

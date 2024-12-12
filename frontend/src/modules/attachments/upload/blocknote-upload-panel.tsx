@@ -3,7 +3,7 @@ import { type FilePanelProps, useBlockNoteEditor } from '@blocknote/react';
 import { DialogDescription } from '@radix-ui/react-dialog';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import UploadUppy from '~/modules/common/upload/upload-uppy';
+import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { UploadType, type UploadedUppyFile } from '~/types/common';
 

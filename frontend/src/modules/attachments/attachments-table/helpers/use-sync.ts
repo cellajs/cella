@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { queryClient } from '~/lib/router';
 
 import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
-import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
+import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import { useGeneralStore } from '~/store/general';
 import type { Attachment } from '~/types/common';
 import { objectKeys } from '~/utils/object';

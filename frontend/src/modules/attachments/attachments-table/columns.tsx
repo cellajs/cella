@@ -1,6 +1,5 @@
 import type { Attachment } from '~/types/common';
 
-import { Link } from '@tanstack/react-router';
 import { config } from 'config';
 import type { TFunction } from 'i18next';
 import { CopyCheckIcon, CopyIcon } from 'lucide-react';
@@ -8,8 +7,8 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import AttachmentPreviewIcon from '~/modules/organizations/attachments-table/attachment-preview';
-import { formatBytes } from '~/modules/organizations/attachments-table/helpers';
+import AttachmentPreviewIcon from '~/modules/attachments/attachments-table/attachment-preview';
+import { formatBytes } from '~/modules/attachments/attachments-table/helpers';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
@@ -40,19 +39,7 @@ export const useColumns = (
       visible: true,
       sortable: false,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => (
-        <Link
-          className="flex space-x-2 items-center outline-0 ring-0 group"
-          tabIndex={tabIndex}
-          to="/$orgIdOrSlug/attachment/$attachmentId"
-          params={{
-            orgIdOrSlug: row.organizationId,
-            attachmentId: row.id,
-          }}
-        >
-          <span className="group-hover:underline underline-offset-4 truncate font-medium">{row.name || '-'}</span>
-        </Link>
-      ),
+      renderCell: ({ row }) => <strong>{row.name || '-'}</strong>,
       ...(isAdmin && {
         renderEditCell: ({ row, onRowChange }) => (
           <Input value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
@@ -66,14 +53,14 @@ export const useColumns = (
       sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
-        <span tabIndex={tabIndex} className="group-hover:underline underline-offset-4 truncate font-medium">
+        <span tabIndex={tabIndex} className="group-hover:underline underline-offset-4 truncate font-light">
           {row.filename || '-'}
         </span>
       ),
     },
     {
-      key: 'edit',
-      name: '',
+      key: 'URL',
+      name: 'URL',
       visible: true,
       sortable: false,
       width: 32,

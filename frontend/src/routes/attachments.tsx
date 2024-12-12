@@ -7,9 +7,6 @@ import ErrorNotice from '~/modules/common/error-notice';
 import type { ErrorType } from '#/lib/errors';
 import { AppRoute } from './general';
 
-//Lazy-loaded components
-const AttachmentPage = lazy(() => import('~/modules/organizations/attachment-page'));
-
 export const AttachmentRoute = createRoute({
   path: '/$orgIdOrSlug/attachment/$attachmentId',
   staticData: { pageTitle: 'Attachment', isAuth: true },

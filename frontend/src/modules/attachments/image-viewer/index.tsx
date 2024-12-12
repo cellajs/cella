@@ -2,7 +2,7 @@ import { Grab, Hand, Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react
 import * as React from 'react';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { Button } from '~/modules/ui/button';
-import { TooltipButton } from '../tooltip-button';
+import { TooltipButton } from '../../common/tooltip-button';
 import PanViewer from './image-viewer-setup';
 
 type ReactPanZoomProps = {
