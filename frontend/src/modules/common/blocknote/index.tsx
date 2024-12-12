@@ -33,7 +33,7 @@ import router from '~/lib/router';
 import { compareIsContentSame, focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
 
-import { type Slides, openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
+import { type Attachments, attachmentDialog } from '~/modules/attachments/attachment-dialog';
 
 import '@blocknote/shadcn/style.css';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -206,7 +206,7 @@ export const BlockNote = ({
     updateData(text);
   }, [text, wasInitial]);
 
-  const openCarouselPreview: MouseEventHandler = (event) => {
+  const openAttachment: MouseEventHandler = (event) => {
     if (!altClickOpensPreview || !event.altKey) return;
     const allowedTypes: readonly string[] = allowedFileBlockTypes;
     event.preventDefault();
@@ -216,19 +216,19 @@ export const BlockNote = ({
 
     const url = getUrlFromProps(props);
     if (!allowedTypes.includes(type) || !url || url.length === 0) return;
-    const newSlides: Slides[] = [];
+    const newAttachments: Attachments[] = [];
 
-    // Collect slides based on valid file types
+    // Collect attachments based on valid file types
     editor.forEachBlock(({ type, props }) => {
       const blockUrl = getUrlFromProps(props);
       if (allowedTypes.includes(type) && blockUrl && blockUrl.length > 0) {
-        newSlides.push({ src: blockUrl, fileType: type });
+        newAttachments.push({ src: blockUrl, fileType: type });
       }
       return true;
     });
 
-    const slideNum = newSlides.findIndex(({ src }) => src === url);
-    openCarouselDialog(slideNum, newSlides);
+    const attachmentNum = newAttachments.findIndex(({ src }) => src === url);
+    attachmentDialog(attachmentNum, newAttachments);
   };
 
   useEffect(() => {
@@ -246,7 +246,7 @@ export const BlockNote = ({
       shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip, Select, Label, Input, Card, Badge, Toggle, Tabs }}
       onChange={onBlockNoteChange}
       onFocus={onFocus}
-      onClick={openCarouselPreview}
+      onClick={openAttachment}
       onBlur={() => triggerDataUpdate()}
       onKeyDown={handleKeyDown}
       sideMenu={false}

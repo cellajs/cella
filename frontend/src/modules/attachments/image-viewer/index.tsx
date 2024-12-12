@@ -30,8 +30,8 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
     const calculateInitialZoom = () => {
       const imageElement = imgRef.current;
       if (imageElement) {
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
+        const windowWidth = window.innerWidth - 40;
+        const windowHeight = window.innerHeight - 100;
 
         const renderedWidth = imageElement.offsetWidth;
         const renderedHeight = imageElement.offsetHeight;
@@ -83,21 +83,24 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
     return (
       <>
         {showButtons && (
-          <div className="absolute z-20 flex items-center justify-center left-[calc(50vw-5rem)] bottom-3 gap-0 rounded-md text-sm shadow-sm bg-transparent ring-offset-background">
+          <div className="absolute z-20 flex items-center justify-center left-[calc(50vw-6.5rem)] bottom-3 gap-0 rounded-md text-sm shadow-sm bg-transparent ring-offset-background">
             <TooltipButton toolTipContent="Zoom in">
-              <Button onClick={zoomIn} className="bg-background border border-input rounded-r-none hover:bg-accent text-accent-foreground">
+              <Button onClick={zoomIn} className="bg-background border border-input rounded-r-none border-r-0 hover:bg-accent text-accent-foreground">
                 <Plus size={14} />
               </Button>
             </TooltipButton>
 
             <TooltipButton toolTipContent="Zoom out">
-              <Button onClick={zoomOut} className="bg-background border border-input rounded-none hover:bg-accent text-accent-foreground">
+              <Button onClick={zoomOut} className="bg-background border border-input rounded-none border-r-0 hover:bg-accent text-accent-foreground">
                 <Minus size={14} />
               </Button>
             </TooltipButton>
 
             <TooltipButton toolTipContent="Rotate right">
-              <Button onClick={rotateRight} className="bg-background border border-input rounded-none hover:bg-accent text-accent-foreground">
+              <Button
+                onClick={rotateRight}
+                className="bg-background border border-input rounded-none border-r-0 hover:bg-accent text-accent-foreground"
+              >
                 <RotateCwSquare size={14} />
               </Button>
             </TooltipButton>
@@ -109,7 +112,7 @@ const ReactPanZoom = React.forwardRef<HTMLImageElement, ReactPanZoomProps>(
                     setPanState(!panState);
                     dispatchCustomEvent('toggleCarouselDrag', panState);
                   }}
-                  className="bg-background border border-input rounded-none hover:bg-accent text-accent-foreground"
+                  className="bg-background border border-input rounded-none border-r-0 hover:bg-accent text-accent-foreground"
                 >
                   {panState ? <Grab size={14} /> : <Hand size={14} />}
                 </Button>

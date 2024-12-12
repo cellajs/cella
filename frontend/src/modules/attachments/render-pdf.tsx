@@ -7,7 +7,7 @@ const options = { cMapUrl: '/cmaps/' };
 
 type PDFFile = string | File | null;
 
-export default function PreviewPDF({ file, className }: { file: PDFFile; className?: string }) {
+export default function RenderPDF({ file, className }: { file: PDFFile; className?: string }) {
   // const [numPages, setNumPages] = useState<number>();
 
   return (

@@ -1,9 +1,9 @@
-import { AudioPreview } from '~/modules/attachments/audio-preview';
-import PreviewPDF from '~/modules/attachments/pdf-preview';
-import { VideoPreview } from '~/modules/attachments/video-preview';
 import ReactPanZoom from '~/modules/attachments/image-viewer';
+import { RenderAudio } from '~/modules/attachments/render-audio';
+import RenderPDF from '~/modules/attachments/render-pdf';
+import { RenderVideo } from '~/modules/attachments/render-video';
 
-interface AttachmentItemProps {
+interface AttachmentRenderProps {
   type: string;
   source: string;
   altName?: string;
@@ -14,7 +14,7 @@ interface AttachmentItemProps {
   togglePanState?: boolean;
 }
 
-export const AttachmentItem = ({
+export const AttachmentRender = ({
   source,
   type,
   altName,
@@ -23,7 +23,7 @@ export const AttachmentItem = ({
   itemClassName,
   containerClassName,
   togglePanState,
-}: AttachmentItemProps) => {
+}: AttachmentRenderProps) => {
   return (
     <div className={containerClassName}>
       {type.includes('image') &&
@@ -32,9 +32,9 @@ export const AttachmentItem = ({
         ) : (
           <img src={source} alt={altName} className={`${itemClassName} w-full h-full`} />
         ))}
-      {type.includes('audio') && <AudioPreview src={source} />}
-      {type.includes('video') && <VideoPreview src={source} />}
-      {type.includes('pdf') && <PreviewPDF file={source} />}
+      {type.includes('audio') && <RenderAudio src={source} />}
+      {type.includes('video') && <RenderVideo src={source} />}
+      {type.includes('pdf') && <RenderPDF file={source} />}
     </div>
   );
 };

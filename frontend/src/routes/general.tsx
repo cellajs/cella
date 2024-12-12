@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import type { QueryClient } from '@tanstack/react-query';
+import { type QueryClient, onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
 
 import { Root } from '~/modules/common/root';
@@ -16,6 +16,7 @@ import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
 import UnsubscribePage from '~/modules/common/unsubscribe-page';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import { useUserStore } from '~/store/user';
 import type { ErrorType } from '#/lib/errors';
 import { AuthRoute } from './auth';
 
@@ -87,7 +88,12 @@ export const AppRoute = createRoute({
         onError(error);
       }
 
+      // If root domain, treat as new user and go to about
       if (location.pathname === '/') throw redirect({ to: '/about', replace: true });
+
+      // If is offline and has stored user, continue
+      const storedUser = useUserStore.getState().user;
+      if (!onlineManager.isOnline() && storedUser) return console.info('Continuing as offline user with session');
 
       console.info('Not authenticated -> redirect to sign in');
       throw redirect({ to: '/auth/sign-in', replace: true, search: { fromRoot: true, redirect: location.pathname } });

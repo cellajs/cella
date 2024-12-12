@@ -6,7 +6,7 @@ import { queryClient } from '~/lib/router';
 import { onlineManager } from '@tanstack/react-query';
 import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
-import { useGeneralStore } from '~/store/general';
+
 import type { Attachment } from '~/types/common';
 import { objectKeys } from '~/utils/object';
 import { attachmentsTableColumns } from '#/db/schema/attachments';
@@ -52,8 +52,6 @@ const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
 });
 
 export const useSync = (organizationId: string) => {
-  const { networkMode } = useGeneralStore();
-
   // Subscribe to attachments updates
   useEffect(() => {
     if (!onlineManager.isOnline() || !config.has.sync || (!env.VITE_HAS_SYNC && config.mode === 'development')) return;
@@ -135,5 +133,5 @@ export const useSync = (organizationId: string) => {
     return () => {
       unsubscribe();
     };
-  }, [networkMode]);
+  }, [onlineManager.isOnline()]);
 };

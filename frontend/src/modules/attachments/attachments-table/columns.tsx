@@ -4,11 +4,11 @@ import { config } from 'config';
 import type { TFunction } from 'i18next';
 import { CopyCheckIcon, CopyIcon } from 'lucide-react';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import AttachmentThumb from '~/modules/attachments/attachment-thumb';
+import { formatBytes } from '~/modules/attachments/attachments-table/helpers';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import AttachmentPreviewIcon from '~/modules/attachments/attachments-table/attachment-preview';
-import { formatBytes } from '~/modules/attachments/attachments-table/helpers';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';
@@ -18,7 +18,7 @@ export const useColumns = (
   isMobile: boolean,
   isAdmin: boolean,
   isSheet: boolean,
-  openCarouselDialog: (slide: number) => void,
+  openDialog: (slide: number) => void,
 ) => {
   const columns: ColumnOrColumnGroup<Attachment>[] = [
     ...(isAdmin ? [CheckboxColumn] : []),
@@ -29,7 +29,7 @@ export const useColumns = (
       sortable: false,
       width: 32,
       renderCell: ({ row: { url, filename, contentType }, rowIdx }) => (
-        <AttachmentPreviewIcon url={url} name={filename} openCarouselDialog={() => openCarouselDialog(rowIdx)} contentType={contentType} />
+        <AttachmentThumb url={url} name={filename} openDialog={() => openDialog(rowIdx)} contentType={contentType} />
       ),
     },
     {
