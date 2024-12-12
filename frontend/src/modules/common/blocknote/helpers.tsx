@@ -1,7 +1,7 @@
 import type { Block, PropSchema, Props } from '@blocknote/core';
 import type { DefaultReactSuggestionItem } from '@blocknote/react';
+import { type Attachments, attachmentDialog } from '~/modules/attachments/attachment-dialog';
 import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema, MenusItemsTitle } from '~/modules/common/blocknote/types';
-import { type Slides, openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
 import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowedType } from './blocknote-config';
 
 export const getSortedSlashMenuItems = (items: DefaultReactSuggestionItem[], allowedBlockTypes: (CellaCustomBlockTypes | BasicBlockTypes)[]) => {
@@ -97,7 +97,7 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
   const elementsWithDataUrl = parentElement.querySelectorAll('[data-url]');
   // Exit early if no matching elements are found
   if (elementsWithDataUrl.length === 0) return;
-  const urls: Slides[] = [];
+  const urls: Attachments[] = [];
 
   const onElClick = (e: MouseEvent) => {
     if (!e.target || !openPreviewDialog) return;
@@ -106,7 +106,7 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
     // Find the slide based on the currentSrc of the target
     const slideNum = urls.findIndex(({ src }) => src === target.currentSrc);
 
-    openCarouselDialog(slideNum, urls);
+    attachmentDialog(slideNum, urls);
   };
 
   for (const element of elementsWithDataUrl) {

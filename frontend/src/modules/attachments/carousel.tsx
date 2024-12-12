@@ -1,8 +1,8 @@
 import Autoplay from 'embla-carousel-autoplay';
 import { useState } from 'react';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { AttachmentItem } from '~/modules/attachments/attachment-item';
-import { openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
+import { attachmentDialog } from '~/modules/attachments/attachment-dialog';
+import { AttachmentRender } from '~/modules/attachments/attachment-render';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 
 interface CarouselProps {
@@ -37,8 +37,8 @@ const Carousel = ({ slides = [], isDialog = false, slide = 0 }: CarouselProps) =
       <CarouselContent className="h-full">
         {slides?.map(({ src, fileType = 'image' }, idx) => {
           return (
-            <CarouselItem key={src} onClick={() => openCarouselDialog(idx, slides)}>
-              <AttachmentItem
+            <CarouselItem key={src} onClick={() => attachmentDialog(idx, slides)}>
+              <AttachmentRender
                 containerClassName="overflow-hidden h-full relative rounded-t-[.5rem] flex items-center justify-center"
                 itemClassName={itemClass}
                 type={fileType}

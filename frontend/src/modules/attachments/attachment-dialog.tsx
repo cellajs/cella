@@ -1,13 +1,13 @@
 import { t } from 'i18next';
-import Carousel from '~/modules/common/carousel';
+import Carousel from '~/modules/attachments/carousel';
 import { dialog } from '~/modules/common/dialoger/state';
 
-export type Slides = { src: string; fileType?: string };
+export type Attachments = { src: string; fileType?: string };
 
-export const openCarouselDialog = (slide: number, slides: Slides[], title?: string | React.ReactNode) => {
+export const attachmentDialog = (attachment: number, attachments: Attachments[], title?: string | React.ReactNode) => {
   dialog(
     <div className="flex flex-wrap relative -z-[1] h-screen justify-center p-2 grow">
-      <Carousel slides={slides} isDialog slide={slide} />
+      <Carousel slides={attachments} isDialog slide={attachment} />
     </div>,
     {
       id: 'file-preview',

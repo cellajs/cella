@@ -1,16 +1,16 @@
 import { File, FileAudio, FileText, FileVideo } from 'lucide-react';
 import type React from 'react';
 
-interface AttachmentPreviewProps {
+interface AttachmentThumbProps {
   url: string;
   contentType: string;
   name: string;
-  openCarouselDialog: () => void;
+  openDialog: () => void;
 }
 
-const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ url, contentType, name, openCarouselDialog }) => {
+const AttachmentThumb: React.FC<AttachmentThumbProps> = ({ url, contentType, name, openDialog }) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') openCarouselDialog();
+    if (e.key === 'Enter') openDialog();
   };
 
   const renderIcon = (iconSize = 24) => {
@@ -34,10 +34,10 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ url, contentType,
   };
 
   return (
-    <div className="cursor-pointer w-full flex justify-center" onClick={openCarouselDialog} onKeyDown={handleKeyDown} aria-label={`Preview ${name}`}>
+    <div className="cursor-pointer w-full flex justify-center" onClick={openDialog} onKeyDown={handleKeyDown} aria-label={`Preview ${name}`}>
       {renderIcon()}
     </div>
   );
 };
 
-export default AttachmentPreview;
+export default AttachmentThumb;

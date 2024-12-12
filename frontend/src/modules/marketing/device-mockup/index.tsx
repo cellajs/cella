@@ -1,6 +1,6 @@
 import { useInView } from 'react-intersection-observer';
 
-import Carousel from '~/modules/common/carousel';
+import Carousel from '~/modules/attachments/carousel';
 import { useThemeStore } from '~/store/theme';
 import { cn } from '~/utils/cn';
 

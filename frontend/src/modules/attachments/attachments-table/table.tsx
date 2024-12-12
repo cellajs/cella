@@ -5,15 +5,15 @@ import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
-import { openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
-import ContentPlaceholder from '~/modules/common/content-placeholder';
-import { DataTable } from '~/modules/common/data-table';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
-import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
+import { attachmentDialog } from '~/modules/attachments/attachment-dialog';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/attachments-table';
 import { useColumns } from '~/modules/attachments/attachments-table/columns';
 import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import { useSync } from '~/modules/attachments/attachments-table/helpers/use-sync';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { DataTable } from '~/modules/common/data-table';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
 import { useUserStore } from '~/store/user';
 import type { Attachment, BaseTableMethods, BaseTableProps, BaseTableQueryVariables } from '~/types/common';
 
@@ -39,9 +39,9 @@ const BaseAttachmentsTable = memo(
       const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
         useDataFromSuspenseInfiniteQuery(attachmentsQueryOptions({ orgIdOrSlug: organization.id, q, sort, order, limit }));
 
-      const openPreviewDialog = useCallback(
+      const openDialog = useCallback(
         (slideNum: number) =>
-          openCarouselDialog(
+          attachmentDialog(
             slideNum,
             rows.map((el) => ({ src: el.url, fileType: el.contentType })),
           ),
@@ -66,7 +66,7 @@ const BaseAttachmentsTable = memo(
         setRows(changedRows);
       };
 
-      useEffect(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openPreviewDialog)), [isAdmin, openPreviewDialog]);
+      useEffect(() => setColumns(useColumns(t, isMobile, isAdmin, isSheet, openDialog)), [isAdmin, openDialog]);
 
       useEffect(() => {
         updateCounts(
