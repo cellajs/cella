@@ -3,9 +3,9 @@ import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
 import { persister, queryClient } from '~/lib/router';
-import { mapQuery, userMenuPrefetchConfig } from '~/menu-prefetch-config';
 import { prefetchAttachments, prefetchMembers, prefetchQuery, waitFor } from '~/modules/common/query-client-provider/helpers';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import { mapQuery, prefetchEntities } from '~/offline-config';
 import { useGeneralStore } from '~/store/general';
 
 const mutationFiles = import.meta.glob('./mutations/*');
@@ -43,7 +43,9 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
 
       for (const section of Object.values(menu)) {
         for (const item of section) {
-          const config = userMenuPrefetchConfig[item.entity];
+          if (item.membership.archived) continue;
+
+          const config = prefetchEntities[item.entity];
           const organizationId = item.organizationId || item.id;
           const options = mapQuery(item);
           prefetchQuery(options);
@@ -52,7 +54,9 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
           await waitFor(1000); // wait for a second to avoid server overload
 
           for (const subItem of item.submenu ?? []) {
-            const config = userMenuPrefetchConfig[subItem.entity];
+            if (subItem.membership.archived) continue;
+
+            const config = prefetchEntities[subItem.entity];
             const options = mapQuery(subItem);
 
             const organizationId = subItem.organizationId || item.organizationId || item.id;
