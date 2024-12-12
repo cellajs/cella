@@ -6,6 +6,7 @@ import { queryClient } from '~/lib/router';
 import { onlineManager } from '@tanstack/react-query';
 import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
+
 import type { Attachment } from '~/types/common';
 import { objectKeys } from '~/utils/object';
 import { attachmentsTableColumns } from '#/db/schema/attachments';
