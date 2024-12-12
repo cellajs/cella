@@ -11,12 +11,12 @@ import { showToast } from '~/lib/toasts';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
-import { AttachmentsTableHeader } from '~/modules/organizations/attachments-table/table-header';
+import { AttachmentsTableHeader } from '~/modules/attachments/attachments-table/table-header';
 import type { Attachment, BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 import RemoveAttachmentsForm from './remove-attachments-form';
 
-const BaseAttachmentsTable = lazy(() => import('~/modules/organizations/attachments-table/table'));
+const BaseAttachmentsTable = lazy(() => import('~/modules/attachments/attachments-table/table'));
 const LIMIT = config.requestLimits.attachments;
 
 export type AttachmentSearch = z.infer<typeof attachmentsQuerySchema>;
@@ -75,7 +75,7 @@ const AttachmentsTable = ({ organization, canUploadAttachments = true, isSheet =
       />,
       {
         className: 'max-w-xl',
-        title: t('common:remove_resource', { resource: t('attachment').toLowerCase() }),
+        title: t('common:remove_resource', { resource: t('common:attachment').toLowerCase() }),
         description: t('common:confirm.delete_resources', { resources: t('common:attachments').toLowerCase() }),
       },
     );

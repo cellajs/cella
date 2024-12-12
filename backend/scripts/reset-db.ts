@@ -1,4 +1,4 @@
-import { resetDb } from '#/cron/manage-db';
+import { resetDb } from './manage-db';
 
 resetDb()
   .catch((error) => {

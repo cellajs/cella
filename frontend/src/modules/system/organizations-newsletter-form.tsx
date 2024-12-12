@@ -12,7 +12,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { BlockNote } from '~/modules/common/blocknote';
 import { sheet } from '~/modules/common/sheeter/state';
-import UppyFilePanel from '~/modules/common/upload/blocknote-upload-panel';
+import UppyFilePanel from '~/modules/attachments/upload/blocknote-upload-panel';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';

@@ -10,10 +10,10 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
-import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/organizations/attachments-table';
-import { useColumns } from '~/modules/organizations/attachments-table/columns';
-import { attachmentsQueryOptions } from '~/modules/organizations/attachments-table/helpers/query-options';
-import { useSync } from '~/modules/organizations/attachments-table/helpers/use-sync';
+import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/attachments-table';
+import { useColumns } from '~/modules/attachments/attachments-table/columns';
+import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
+import { useSync } from '~/modules/attachments/attachments-table/helpers/use-sync';
 import { useUserStore } from '~/store/user';
 import type { Attachment, BaseTableMethods, BaseTableProps, BaseTableQueryVariables } from '~/types/common';
 

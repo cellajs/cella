@@ -10,7 +10,7 @@ import { UploadType } from '~/types/common';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 // Lazy load the upload component
-const UploadUppy = lazyWithPreload(() => import('~/modules/common/upload/upload-uppy'));
+const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/upload-uppy'));
 
 export interface PageCoverProps {
   id: string;

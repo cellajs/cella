@@ -43,7 +43,6 @@ This document describes the high-level architecture of Cella.
 │   ├── drizzle               DB migrations
 │   ├── seed                  Seed scripts
 │   ├── src                   
-│   │   ├── cron              
 │   │   ├── db                Connect, table schemas
 │   │   ├── lib               Init library code & important helpers
 │   │   ├── middlewares       Hono middlewares

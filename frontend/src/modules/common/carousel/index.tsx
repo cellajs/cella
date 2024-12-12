@@ -1,7 +1,7 @@
 import Autoplay from 'embla-carousel-autoplay';
 import { useState } from 'react';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { AttachmentItem } from '~/modules/common/attachments';
+import { AttachmentItem } from '~/modules/attachments/attachment-item';
 import { openCarouselDialog } from '~/modules/common/carousel/carousel-dialog';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 
