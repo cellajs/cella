@@ -15,7 +15,16 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({ url, contentType,
 
   const renderIcon = (iconSize = 24) => {
     if (contentType.includes('image'))
-      return <img src={url} alt={name} className="h-8 w-8 rounded-md object-cover" loading="lazy" decoding="async" />;
+      return (
+        <img
+          src={`${url}?width=100&format=avif`}
+          draggable="false"
+          alt={name}
+          className="h-8 w-8 bg-muted rounded-md object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+      );
 
     if (contentType.includes('video')) return <FileVideo size={iconSize} />;
     if (contentType.includes('pdf')) return <FileText size={iconSize} />;
