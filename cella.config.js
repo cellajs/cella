@@ -48,6 +48,7 @@ export const config = {
     'frontend/public/static/screenshots/*',
     'frontend/src/nav-config.tsx',
     'frontend/src/alert-config.tsx',
+    'frontend/src/offline-config.tsx',
     'frontend/src/gradients.css',
     'frontend/src/routes/index.tsx',
     'frontend/src/routes/marketing.tsx',
