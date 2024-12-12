@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { queryClient } from '~/lib/router';
 
 import { onlineManager } from '@tanstack/react-query';
-import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
 import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
+import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
 import { useGeneralStore } from '~/store/general';
 import type { Attachment } from '~/types/common';
 import { objectKeys } from '~/utils/object';
@@ -38,6 +38,7 @@ const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
 
 const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
   url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
+  params: { where: `organization_id = '${organizationId}'` },
   backoffOptions: {
     initialDelay: 500,
     maxDelay: 32000,
