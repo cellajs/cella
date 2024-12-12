@@ -37,7 +37,7 @@ const parseRawAttachment = (rawAttachment: RawAttachment): Attachment => {
 
 const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
   url: new URL(`/${organizationId}/attachments/shape-proxy`, config.backendUrl).href,
-  where: `organization_id="${organizationId}"`,
+  params: { where: `organization_id="${organizationId}"` },
   backoffOptions: {
     initialDelay: 500,
     maxDelay: 32000,
