@@ -230,9 +230,9 @@ const generalRoutes = app
     try {
       if (signature && rawRequestBody) {
         const eventData = paddle.webhooks.unmarshal(rawRequestBody, env.PADDLE_WEBHOOK_KEY || '', signature);
-        switch (eventData?.eventType) {
+        switch ((await eventData)?.eventType) {
           case EventName.SubscriptionCreated:
-            logEvent(`Subscription ${eventData.data.id} was created`, {
+            logEvent(`Subscription ${(await eventData)?.data.id} was created`, {
               ecent: JSON.stringify(eventData),
             });
             break;

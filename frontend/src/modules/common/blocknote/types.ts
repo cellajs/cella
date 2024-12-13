@@ -1,3 +1,4 @@
+import type React from 'react';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
 
 export type CustomBlockNoteSchema = typeof customSchema.BlockNoteEditor;
@@ -28,7 +29,7 @@ interface IconBaseProps extends React.SVGAttributes<SVGElement> {
   title?: string;
 }
 
-export type IconType = (props: IconBaseProps) => JSX.Element;
+export type IconType = (props: IconBaseProps) => React.ReactElement;
 
 export type BaseCustomBlockTypes = 'notify';
 

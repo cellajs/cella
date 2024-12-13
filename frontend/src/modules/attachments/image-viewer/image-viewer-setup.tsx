@@ -129,12 +129,14 @@ export default class ReactPanZoom extends React.PureComponent<IReactPanZoomProps
           userSelect: 'none',
           width: this.props.width,
         }}
-        // biome-ignore lint/suspicious/noAssignInExpressions: by author
-        ref={(ref) => (this.panWrapper = ref)}
+        ref={(ref: HTMLDivElement | null): void => {
+          this.panWrapper = ref;
+        }}
       >
         <div
-          // biome-ignore lint/suspicious/noAssignInExpressions: by author
-          ref={(ref) => (this.panContainer = ref)}
+          ref={(ref: HTMLDivElement | null): void => {
+            this.panContainer = ref;
+          }}
           style={{
             transform: `matrix(${this.state.matrixData.join(',')})`,
           }}

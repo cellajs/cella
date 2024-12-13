@@ -2,7 +2,7 @@ import * as React from 'react';
 import { StepperContext } from '~/modules/common/stepper/context';
 
 function usePrevious<T>(value: T): T | undefined {
-  const ref = React.useRef<T>();
+  const ref = React.useRef<T | undefined>(undefined);
 
   React.useEffect(() => {
     ref.current = value;
