@@ -6,7 +6,7 @@ import type { membersQuerySchema } from '#/modules/general/schema';
 import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
-import useSearchParams from '~/hooks/use-search-params';
+import useSearchParams, { type SearchKeys, type SearchParams } from '~/hooks/use-search-params';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/organizations/members-table/columns';
@@ -28,7 +28,9 @@ export interface MembersTableProps {
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams('/app-layout/$idOrSlug/members');
+  const { search, setSearch } = useSearchParams('/app-layout/$idOrSlug/members', { q: undefined, role: undefined, sort: 'createdAt', order: 'desc' });
+
+  const typedSearch = search as SearchParams<SearchKeys>;
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // TODO Table state (remove typescript hacks)
@@ -103,8 +105,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   // TODO: Figure out a way to open sheet using url state
   useEffect(() => {
-    if (!search.userIdPreview) return;
-    setTimeout(() => openUserPreviewSheet(search.userIdPreview as string, organizationId), 0);
+    if (!typedSearch.userIdPreview) return;
+    setTimeout(() => openUserPreviewSheet(typedSearch.userIdPreview as string, organizationId), 0);
   }, []);
 
   return (
@@ -115,8 +117,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         selected={selected}
         q={q ?? ''}
         role={role}
-        setQuery={(newQ) => setSearch({ q: newQ })}
-        setRole={(newRole) => setSearch({ role: newRole })}
+        setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
         fetchExport={fetchExport}
@@ -126,7 +127,14 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         isSheet={isSheet}
       />
       <Suspense>
-        <BaseDataTable entity={entity} ref={dataTableRef} columns={columns} queryVars={{ q, role, sort, order, limit }} updateCounts={updateCounts} />
+        <BaseDataTable
+          entity={entity}
+          ref={dataTableRef}
+          columns={columns}
+          queryVars={{ q, role, sort, order, limit }}
+          updateCounts={updateCounts}
+          setSearch={setSearch}
+        />
       </Suspense>
     </div>
   );

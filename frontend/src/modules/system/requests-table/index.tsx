@@ -16,7 +16,7 @@ const LIMIT = config.requestLimits.requests;
 export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
 const RequestsTable = () => {
-  const { search, setSearch } = useSearchParams(RequestsTableRoute.id);
+  const { search, setSearch } = useSearchParams(RequestsTableRoute.id, { q: undefined, sort: 'createdAt', order: 'desc' });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
@@ -58,14 +58,14 @@ const RequestsTable = () => {
         columns={columns}
         setColumns={setColumns}
         q={q ?? ''}
-        setQuery={(newQ) => setSearch({ q: newQ })}
+        setSearch={setSearch}
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}
         openInviteDialog={openInviteDialog}
         fetchExport={fetchExport}
       />
       <Suspense>
-        <BaseDataTable columns={columns} queryVars={{ q, sort, order, limit }} updateCounts={updateCounts} />
+        <BaseDataTable columns={columns} queryVars={{ q, sort, order, limit }} updateCounts={updateCounts} setSearch={setSearch} />
       </Suspense>
     </div>
   );

@@ -1,10 +1,10 @@
 import { onlineManager } from '@tanstack/react-query';
 import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
 
-import type { RowsChangeData } from 'react-data-grid';
-import type { SortColumn } from 'react-data-grid';
+import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
+import type { SearchKeys, SearchParams } from '~/hooks/use-search-params';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
@@ -18,10 +18,11 @@ import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Member 
 type BaseMembersTableProps = MembersTableProps &
   BaseTableProps<Member> & {
     queryVars: BaseTableQueryVariables<MemberSearch> & { role: MemberSearch['role'] };
+    setSearch: (newValues: SearchParams<SearchKeys>, saveSearch?: boolean) => void;
   };
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseMembersTableProps>(({ entity, columns, queryVars, updateCounts }, ref) => {
+  forwardRef<BaseTableMethods, BaseMembersTableProps>(({ entity, columns, queryVars, updateCounts, setSearch }, ref) => {
     const { t } = useTranslation();
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
@@ -47,6 +48,15 @@ const BaseDataTable = memo(
       );
 
     const updateMemberMembership = useMembersUpdateMutation();
+
+    // Update sort
+    const updateSort = (newColumnsSort: SortColumn[]) => {
+      setSortColumns(newColumnsSort);
+
+      const [sortColumn] = newColumnsSort;
+      const { columnKey, direction } = sortColumn;
+      setSearch({ sort: columnKey as MemberSearch['sort'], order: direction.toLowerCase() as MemberSearch['order'] });
+    };
 
     // Update rows
     const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
@@ -104,7 +114,7 @@ const BaseDataTable = memo(
           selectedRows,
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
-          onSortColumnsChange: setSortColumns,
+          onSortColumnsChange: updateSort,
         }}
       />
     );

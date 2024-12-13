@@ -18,7 +18,6 @@ type MembersTableHeaderProps = MembersTableProps &
   BaseTableMethods &
   BaseTableHeaderProps<Member> & {
     role: MemberSearch['role'];
-    setRole: (role: MemberSearch['role']) => void;
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Member[]>;
@@ -29,9 +28,8 @@ export const MembersTableHeader = ({
   total,
   selected,
   q,
-  setQuery,
+  setSearch,
   role,
-  setRole,
   columns,
   setColumns,
   isSheet = false,
@@ -50,18 +48,17 @@ export const MembersTableHeader = ({
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
-    setQuery(searchString);
+    setSearch({ q: searchString });
   };
   // Drop selected Rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setRole(role === 'all' ? undefined : (role as MemberSearch['role']));
+    setSearch({ role: role === 'all' ? undefined : (role as MemberSearch['role']) });
   };
 
   const onResetFilters = () => {
-    setQuery('');
+    setSearch({ q: '', role: undefined });
     clearSelection();
-    setRole(undefined);
   };
 
   return (

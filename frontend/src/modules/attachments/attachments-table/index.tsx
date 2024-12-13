@@ -82,6 +82,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
         total={total}
         selected={selected}
         q={q ?? ''}
+        setSearch={() => {}}
         setQuery={setQuery}
         columns={columns}
         setColumns={setColumns}

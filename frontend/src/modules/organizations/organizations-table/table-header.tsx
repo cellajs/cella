@@ -24,7 +24,7 @@ export const OrganizationsTableHeader = ({
   total,
   selected,
   q,
-  setQuery,
+  setSearch,
   columns,
   setColumns,
   openRemoveDialog,
@@ -38,11 +38,11 @@ export const OrganizationsTableHeader = ({
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
-    setQuery(searchString);
+    setSearch({ q: searchString });
   };
 
   const onResetFilters = () => {
-    setQuery('');
+    setSearch({ q: '' });
     clearSelection();
   };
 

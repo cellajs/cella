@@ -7,7 +7,7 @@ import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import type { usersQuerySchema } from '#/modules/users/schema';
 
 import { useTranslation } from 'react-i18next';
-import useSearchParams from '~/hooks/use-search-params';
+import useSearchParams, { type SearchKeys, type SearchParams } from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import DeleteUsers from '~/modules/users/delete-users';
@@ -25,8 +25,10 @@ export type UsersSearch = z.infer<typeof usersQuerySchema>;
 
 const UsersTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams(UsersTableRoute.id);
+  const { search, setSearch } = useSearchParams(UsersTableRoute.id, { q: undefined, role: undefined, sort: 'createdAt', order: 'desc' });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
+
+  const typedSearch = search as SearchParams<SearchKeys>;
 
   // Table state
   const q = search.q;
@@ -91,8 +93,8 @@ const UsersTable = () => {
 
   // TODO: Figure out a way to open sheet using url state
   useEffect(() => {
-    if (!search.userIdPreview) return;
-    setTimeout(() => openUserPreviewSheet(search.userIdPreview as string), 0);
+    if (!typedSearch.userIdPreview) return;
+    setTimeout(() => openUserPreviewSheet(typedSearch.userIdPreview as string), 0);
   }, []);
 
   return (
@@ -102,8 +104,7 @@ const UsersTable = () => {
         selected={selected}
         q={q ?? ''}
         role={role}
-        setQuery={(newQ) => setSearch({ q: newQ })}
-        setRole={(newRole) => setSearch({ role: newRole })}
+        setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}
@@ -115,6 +116,7 @@ const UsersTable = () => {
           updateCounts={updateCounts}
           ref={dataTableRef}
           columns={columns}
+          setSearch={setSearch}
           queryVars={{
             q,
             role,

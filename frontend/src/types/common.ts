@@ -9,6 +9,7 @@ import type { InferResponseType } from 'hono/client';
 import type { Dispatch, SetStateAction } from 'react';
 import type { z } from 'zod';
 import type { client } from '~/api/me';
+import type { SearchKeys, SearchParams } from '~/hooks/use-search-params';
 import type { UppyBody, UppyMeta } from '~/lib/imado';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { attachmentSchema } from '#/modules/attachments/schema';
@@ -92,7 +93,7 @@ export type BaseTableHeaderProps<T> = {
   total: number | undefined;
   selected: T[];
   q: string;
-  setQuery: (q: string) => void;
+  setSearch: (newValues: SearchParams<SearchKeys>, saveSearch?: boolean) => void;
   columns: ColumnOrColumnGroup<T>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<T>[]>>;
 };

@@ -23,7 +23,7 @@ export const RequestsTableHeaderBar = ({
   total,
   selected,
   q,
-  setQuery,
+  setSearch,
   columns,
   setColumns,
   clearSelection,
@@ -37,11 +37,11 @@ export const RequestsTableHeaderBar = ({
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
-    setQuery(searchString);
+    setSearch({ q: searchString });
   };
 
   const onResetFilters = () => {
-    setQuery('');
+    setSearch({ q: '' });
     clearSelection();
   };
 

@@ -27,7 +27,8 @@ export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
 const OrganizationsTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams(OrganizationsTableRoute.id);
+  const { search, setSearch } = useSearchParams(OrganizationsTableRoute.id, { q: undefined, sort: 'createdAt', order: 'desc' });
+
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   const mutateQuery = useMutateQueryData(['organizations', 'list']);
@@ -109,7 +110,7 @@ const OrganizationsTable = () => {
         selected={selected}
         columns={columns}
         q={q ?? ''}
-        setQuery={(newQ) => setSearch({ q: newQ })}
+        setSearch={setSearch}
         setColumns={setColumns}
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}
@@ -120,6 +121,7 @@ const OrganizationsTable = () => {
         <BaseDataTable
           ref={dataTableRef}
           columns={columns}
+          setSearch={setSearch}
           queryVars={{
             q,
             sort,

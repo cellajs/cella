@@ -16,6 +16,7 @@ type AttachmentsTableHeaderProps = AttachmentsTableProps &
   BaseTableMethods &
   BaseTableHeaderProps<Attachment> & {
     openRemoveDialog: () => void;
+    setQuery: (q: string) => void;
   };
 
 export const AttachmentsTableHeader = ({

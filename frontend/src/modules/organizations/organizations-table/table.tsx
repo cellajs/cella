@@ -11,6 +11,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { SortColumn } from 'react-data-grid';
+import type { SearchKeys, SearchParams } from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { OrganizationsSearch } from '~/modules/organizations/organizations-table';
@@ -20,10 +21,11 @@ import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Organiz
 
 type BaseDataTableProps = BaseTableProps<Organization> & {
   queryVars: BaseTableQueryVariables<OrganizationsSearch>;
+  setSearch: (newValues: SearchParams<SearchKeys>, saveSearch?: boolean) => void;
 };
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts, setSearch }, ref) => {
     const { t } = useTranslation();
     const { user } = useUserStore();
 
@@ -32,6 +34,14 @@ const BaseDataTable = memo(
 
     const [sortColumns, setSortColumns] = useState<SortColumn[]>(getSortColumns(order, sort));
 
+    // Update sort
+    const updateSort = (newColumnsSort: SortColumn[]) => {
+      setSortColumns(newColumnsSort);
+
+      const [sortColumn] = newColumnsSort;
+      const { columnKey, direction } = sortColumn;
+      setSearch({ sort: columnKey as OrganizationsSearch['sort'], order: direction.toLowerCase() as OrganizationsSearch['order'] });
+    };
     // Query organizations
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
       useDataFromSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
@@ -91,7 +101,7 @@ const BaseDataTable = memo(
           fetchMore: fetchNextPage,
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
-          onSortColumnsChange: setSortColumns,
+          onSortColumnsChange: updateSort,
           NoRowsComponent: (
             <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
           ),

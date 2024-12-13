@@ -5,10 +5,10 @@ import { objectKeys } from '~/utils/object';
 
 // Get the relevant keys from the FullSearchSchema
 type SearchSchema = FullSearchSchema<RegisteredRouter['routeTree']>;
-type SearchKeys = keyof SearchSchema;
+export type SearchKeys = keyof SearchSchema;
 
 // Define the SearchParams type as a subset of the FullSearchSchema
-type SearchParams<T extends SearchKeys> = Pick<SearchSchema, T>;
+export type SearchParams<T extends SearchKeys> = Pick<SearchSchema, T>;
 
 type RoutesById = keyof typeof router.routesById;
 
