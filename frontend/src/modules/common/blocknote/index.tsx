@@ -62,7 +62,7 @@ type BlockNoteProps = {
 } & (
   | {
       // filePanel and allowedFileBlockTypes req to add together
-      filePanel: (props: FilePanelProps) => JSX.Element;
+      filePanel: (props: FilePanelProps) => React.ReactElement;
       allowedFileBlockTypes: BasicFileBlockTypes[];
     }
   | {
@@ -238,6 +238,7 @@ export const BlockNote = ({
   }, [onBeforeLoadHandle]);
 
   return (
+    // @ts-ignore
     <BlockNoteView
       id={id}
       data-color-scheme={mode}
