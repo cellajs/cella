@@ -32,7 +32,7 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
 
     // Update items in each page and adjust the total
     const pages = data.pages.map((page) => ({
-      items: updateArrayItems(items, page.items, action),
+      items: updateArrayItems(page.items, items, action),
       total: page.total + totalAdjustment,
     }));
 
@@ -96,25 +96,37 @@ export const changeArbitraryQueryData = (
 const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action: QueryDataActions) => {
   // Determine how to handle dataItems in the items array based on action type
   switch (action) {
-    case 'create':
-      // concatenate to add new entries
-      return [...items, ...dataItems];
+    case 'create': {
+      // Filter out already existing items based on their IDs
+      const existingIds = items.map(({ id }) => id);
+      const newItems = dataItems.filter((i) => !existingIds.includes(i.id));
+      // Concatenate to add only new entries
+      return [...items, ...newItems];
+    }
 
     case 'update':
       // update existing items in dataItems
-      return dataItems.map((item) => items.find((i) => i.id === item.id) ?? item);
+      return items.map((item) => dataItems.find((i) => i.id === item.id) ?? item);
 
-    case 'delete':
-      // filter out items in dataItems that match an id
-      return dataItems.filter((item) => !items.some((deletedItem) => deletedItem.id === item.id));
+    case 'delete': {
+      // Exclude items matching IDs in dataItems
+      const deleteIds = dataItems.map(({ id }) => id);
+      return items.filter((item) => !deleteIds.includes(item.id));
+    }
 
     case 'updateMembership': {
-      // update the membership field in dataItems
-      return dataItems.map((item) => {
-        const updatedItem = items.find((i) => item.membership && i.id === item.membership.id);
-        return updatedItem ? { ...item, membership: { ...item.membership, ...updatedItem } } : item;
+      // Update the membership field if it exists
+      return items.map((item) => {
+        if (item.membership) {
+          const updatedMembership = dataItems.find((i) => i.id === item.membership?.id);
+          return updatedMembership ? { ...item, membership: { ...item.membership, ...updatedMembership } } : item;
+        }
+        return item; // Return unchanged if no membership exists
       });
     }
+    default:
+      // Return items unchanged if action is unrecognized
+      return items;
   }
 };
 
