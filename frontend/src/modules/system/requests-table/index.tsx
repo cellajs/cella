@@ -1,11 +1,8 @@
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { Suspense, lazy, useMemo, useRef, useState } from 'react';
-import type { SortColumn } from 'react-data-grid';
+import { Suspense, lazy, useRef, useState } from 'react';
 import type { z } from 'zod';
 import { getRequests } from '~/api/requests';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
+import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/system/requests-table/columns';
 import { RequestsTableHeaderBar } from '~/modules/system/requests-table/table-header';
 import { RequestsTableRoute } from '~/routes/system';
@@ -13,37 +10,30 @@ import type { BaseTableMethods, Request } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 import type { getRequestsQuerySchema } from '#/modules/requests/schema';
 
-const BaseRequestsTable = lazy(() => import('~/modules/system/requests-table/table'));
+const BaseDataTable = lazy(() => import('~/modules/system/requests-table/table'));
 const LIMIT = config.requestLimits.requests;
 
 export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
 
 const RequestsTable = () => {
-  const search = useSearch({ from: RequestsTableRoute.id });
+  const { search, setSearch } = useSearchParams(RequestsTableRoute.id);
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const [q, setQuery] = useState<RequestsSearch['q']>(search.q);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const q = search.q;
+  const sort = search.sort as RequestsSearch['sort'];
+  const order = search.order as RequestsSearch['order'];
+  const limit = LIMIT;
 
   // State for selected and total counts
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Request[]>([]);
 
   // Update total and selected counts
-  const updateCounts = (newSelected: Request[], newTotal: number) => {
+  const updateCounts = (newSelected: Request[], newTotal: number | undefined) => {
     if (newTotal !== total) setTotal(newTotal);
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
-
-  // Search query options
-  const sort = sortColumns[0]?.columnKey as RequestsSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as RequestsSearch['order'];
-  const limit = LIMIT;
-
-  // Save filters in search params
-  const filters = useMemo(() => ({ q, sort, order }), [q, sortColumns]);
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Build columns
   const [columns, setColumns] = useColumns();
@@ -68,25 +58,14 @@ const RequestsTable = () => {
         columns={columns}
         setColumns={setColumns}
         q={q ?? ''}
-        setQuery={setQuery}
+        setQuery={(newQ) => setSearch({ q: newQ })}
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}
         openInviteDialog={openInviteDialog}
         fetchExport={fetchExport}
       />
       <Suspense>
-        <BaseRequestsTable
-          columns={columns}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
-          queryVars={{
-            q,
-            sort,
-            order,
-            limit,
-          }}
-          updateCounts={updateCounts}
-        />
+        <BaseDataTable columns={columns} queryVars={{ q, sort, order, limit }} updateCounts={updateCounts} />
       </Suspense>
     </div>
   );

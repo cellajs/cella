@@ -1,16 +1,13 @@
-import { Suspense, lazy, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 import type { z } from 'zod';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import type { getOrganizationsQuerySchema } from '#/modules/organizations/schema';
 
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { getOrganizations } from '~/api/organizations';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
+import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -23,39 +20,32 @@ import { OrganizationsTableRoute } from '~/routes/system';
 import type { BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
-const BaseOrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table/table'));
+const BaseDataTable = lazy(() => import('~/modules/organizations/organizations-table/table'));
 const LIMIT = config.requestLimits.organizations;
 
 export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
 
 const OrganizationsTable = () => {
   const { t } = useTranslation();
-  const search = useSearch({ from: OrganizationsTableRoute.id });
+  const { search, setSearch } = useSearchParams(OrganizationsTableRoute.id);
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   const mutateQuery = useMutateQueryData(['organizations', 'list']);
   // Table state
-  const [q, setQuery] = useState<OrganizationsSearch['q']>(search.q);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const q = search.q;
+  const sort = search.sort as OrganizationsSearch['sort'];
+  const order = search.order as OrganizationsSearch['order'];
+  const limit = LIMIT;
 
   // State for selected and total counts
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Organization[]>([]);
 
   // Update total and selected counts
-  const updateCounts = (newSelected: Organization[], newTotal: number) => {
+  const updateCounts = (newSelected: Organization[], newTotal: number | undefined) => {
     if (newTotal !== total) setTotal(newTotal);
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
-
-  // Search query options
-  const sort = sortColumns[0]?.columnKey as OrganizationsSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as OrganizationsSearch['order'];
-  const limit = LIMIT;
-
-  // Save filters in search params
-  const filters = useMemo(() => ({ q, sort, order }), [q, sortColumns]);
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);
@@ -119,7 +109,7 @@ const OrganizationsTable = () => {
         selected={selected}
         columns={columns}
         q={q ?? ''}
-        setQuery={setQuery}
+        setQuery={(newQ) => setSearch({ q: newQ })}
         setColumns={setColumns}
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}
@@ -127,11 +117,9 @@ const OrganizationsTable = () => {
         fetchExport={fetchExport}
       />
       <Suspense>
-        <BaseOrganizationsTable
+        <BaseDataTable
           ref={dataTableRef}
           columns={columns}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
           queryVars={{
             q,
             sort,
