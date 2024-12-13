@@ -133,7 +133,7 @@
     "@types/lodash.clonedeep": "^4.5.9",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.1",
-    "@types/react-dom": "^18.3.5",
+    "@types/react-dom": "^19.0.2",
     "@types/zxcvbn": "^4.4.5",
     "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-react": "^4.3.4",
@@ -151,11 +151,7 @@
     "vite-plugin-pwa": "^0.21.1",
     "vite-plugin-static-copy": "^2.2.0"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not op_mini all"
-  ],
+  "browserslist": [">0.2%", "not dead", "not op_mini all"],
   "postcss": {
     "plugins": {
       "postcss-import": {},
