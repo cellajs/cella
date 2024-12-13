@@ -47,8 +47,8 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
     setArchivedVisible(!isArchivedVisible);
   };
 
-  useUpdateTabIndex(sectionRef, isSectionVisible);
-  useUpdateTabIndex(archivedRef, isArchivedVisible);
+  useUpdateTabIndex(sectionRef as React.RefObject<HTMLDivElement>, isSectionVisible);
+  useUpdateTabIndex(archivedRef as React.RefObject<HTMLDivElement>, isArchivedVisible);
 
   return (
     <div className="group/menuSection" data-visible={isSectionVisible}>

@@ -154,7 +154,7 @@ const HorizontalContent = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       {React.Children.map(childArr[activeStep], (node) => {
-        if (!React.isValidElement(node)) {
+        if (!React.isValidElement<{ children?: React.ReactNode }>(node)) {
           return null;
         }
         return React.Children.map(node.props.children, (childNode) => childNode);

@@ -31,7 +31,7 @@ const PageHeader = ({ title, id, isAdmin, thumbnailUrl, bannerUrl, type, panel, 
   const scrollToRef = useRef<HTMLDivElement>(null);
 
   // Scroll to page header on load
-  if (!disableScroll) useScrollTo(scrollToRef);
+  if (!disableScroll) useScrollTo(scrollToRef as React.RefObject<HTMLElement>);
 
   useEffect(() => {
     if (!parent) return;

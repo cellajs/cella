@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 // Custom hook for set or remove 'tabindex' attribute
-const useUpdateTabIndex = (ref: React.RefObject<HTMLElement>, isVisible: boolean) => {
+const useUpdateTabIndex = (ref: React.RefObject<HTMLDivElement | null>, isVisible: boolean) => {
   useEffect(() => {
     if (!ref.current) return;
 
