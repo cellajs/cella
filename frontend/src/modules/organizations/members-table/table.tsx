@@ -1,12 +1,14 @@
 import { onlineManager } from '@tanstack/react-query';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
 
 import type { RowsChangeData } from 'react-data-grid';
+import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
+import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 import { membersKeys } from '~/modules/common/query-client-provider/keys';
 import { useMembersUpdateMutation } from '~/modules/common/query-client-provider/mutations/members';
 import type { MemberSearch, MembersTableProps } from '~/modules/organizations/members-table';
@@ -18,13 +20,16 @@ type BaseMembersTableProps = MembersTableProps &
     queryVars: BaseTableQueryVariables<MemberSearch> & { role: MemberSearch['role'] };
   };
 
-const BaseMembersTable = memo(
-  forwardRef<BaseTableMethods, BaseMembersTableProps>(({ entity, columns, sortColumns, setSortColumns, queryVars, updateCounts }, ref) => {
+const BaseDataTable = memo(
+  forwardRef<BaseTableMethods, BaseMembersTableProps>(({ entity, columns, queryVars, updateCounts }, ref) => {
     const { t } = useTranslation();
-
-    const { q, role, sort, order, limit } = queryVars;
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
+
+    // Extract query variables and set defaults
+    const { q, role, sort = 'createdAt', order = 'desc', limit } = queryVars;
+
+    const [sortColumns, setSortColumns] = useState<SortColumn[]>(getSortColumns(order, sort));
 
     // Query members
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
@@ -106,4 +111,4 @@ const BaseMembersTable = memo(
   }),
 );
 
-export default BaseMembersTable;
+export default BaseDataTable;

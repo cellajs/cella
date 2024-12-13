@@ -1,14 +1,12 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
-import type { SortColumn } from 'react-data-grid';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+
 import type { z } from 'zod';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { membersQuerySchema } from '#/modules/general/schema';
 
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
+import useSearchParams from '~/hooks/use-search-params';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/organizations/members-table/columns';
@@ -18,7 +16,8 @@ import InviteUsers from '~/modules/users/invite-users';
 import type { BaseTableMethods, EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
-const BaseMembersTable = lazy(() => import('~/modules/organizations/members-table/table'));
+const BaseDataTable = lazy(() => import('~/modules/organizations/members-table/table'));
+
 const LIMIT = config.requestLimits.members;
 
 export type MemberSearch = z.infer<typeof membersQuerySchema>;
@@ -29,16 +28,18 @@ export interface MembersTableProps {
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
-  const search = useSearch({ strict: false });
+  const { search, setSearch } = useSearchParams('/app-layout/$idOrSlug/members');
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
-  // Table state
-  const [q, setQuery] = useState<MemberSearch['q']>(search.q);
-  const [role, setRole] = useState<MemberSearch['role']>(search.role as MemberSearch['role']);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  // TODO Table state (remove typescript hacks)
+  const q = search.q;
+  const role = search.role as MemberSearch['role'];
+  const sort = search.sort as MemberSearch['sort'];
+  const order = search.order as MemberSearch['order'];
+  const limit = LIMIT;
 
   // State for selected and total counts
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<Member[]>([]);
 
   // Update total and selected counts
@@ -46,17 +47,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     if (newTotal !== total) setTotal(newTotal);
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
-
-  // Search query options
-  const sort = sortColumns[0]?.columnKey as MemberSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as MemberSearch['order'];
-  const limit = LIMIT;
-
-  // Save filters in search params
-  if (!isSheet) {
-    const filters = useMemo(() => ({ q, role, sort, order }), [q, role, sortColumns]);
-    useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
-  }
 
   const organizationId = entity.organizationId || entity.id;
   const isAdmin = entity.membership?.role === 'admin';
@@ -124,9 +114,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         total={total}
         selected={selected}
         q={q ?? ''}
-        setQuery={setQuery}
         role={role}
-        setRole={setRole}
+        setQuery={(newQ) => setSearch({ q: newQ })}
+        setRole={(newRole) => setSearch({ role: newRole })}
         columns={columns}
         setColumns={setColumns}
         fetchExport={fetchExport}
@@ -136,21 +126,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         isSheet={isSheet}
       />
       <Suspense>
-        <BaseMembersTable
-          entity={entity}
-          ref={dataTableRef}
-          columns={columns}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
-          queryVars={{
-            q,
-            role,
-            sort,
-            order,
-            limit,
-          }}
-          updateCounts={updateCounts}
-        />
+        <BaseDataTable entity={entity} ref={dataTableRef} columns={columns} queryVars={{ q, role, sort, order, limit }} updateCounts={updateCounts} />
       </Suspense>
     </div>
   );

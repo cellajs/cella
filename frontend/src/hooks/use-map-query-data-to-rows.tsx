@@ -4,7 +4,7 @@ interface QueryResult<T> {
   data?: {
     pages?: {
       items: T[];
-      total: number;
+      total: number | undefined;
     }[];
   };
 }
@@ -14,7 +14,7 @@ interface UseQueryResultEffectProps<T> {
   selectedRows?: Set<string>;
   setSelectedRows?: (selectedRows: Set<string>) => void;
   setRows: Dispatch<SetStateAction<T[]>>;
-  setTotalCount: Dispatch<SetStateAction<number>>;
+  setTotalCount: Dispatch<SetStateAction<number | undefined>>;
 }
 
 // Custom hook to map query result data to rows
@@ -31,7 +31,7 @@ const useMapQueryDataToRows = <T extends { id: string } & object>({
     if (!data) return;
 
     // Update total count
-    setTotalCount(queryResult.data?.pages?.[queryResult.data.pages.length - 1]?.total ?? 0);
+    setTotalCount(queryResult.data?.pages?.[queryResult.data.pages.length - 1]?.total ?? undefined);
 
     // Update selected rows if a function and selected rows are provided
     if (setSelectedRows && selectedRows) {

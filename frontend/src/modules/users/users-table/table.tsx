@@ -1,27 +1,32 @@
 import { onlineManager } from '@tanstack/react-query';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
 import { updateUser } from '~/api/users';
 
 import type { RowsChangeData } from 'react-data-grid';
+import type { SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
+import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { UsersSearch } from '~/modules/users/users-table';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
 import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, User } from '~/types/common';
 
-type BaseUsersTableProps = BaseTableProps<User> & {
+type BaseDataTableProps = BaseTableProps<User> & {
   queryVars: BaseTableQueryVariables<UsersSearch> & { role: UsersSearch['role'] };
 };
 
-const BaseUsersTable = memo(
-  forwardRef<BaseTableMethods, BaseUsersTableProps>(({ columns, sortColumns, setSortColumns, queryVars, updateCounts }, ref) => {
+const BaseDataTable = memo(
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts }, ref) => {
     const { t } = useTranslation();
 
-    const { q, role, sort, order, limit } = queryVars;
+    // Extract query variables and set defaults
+    const { q, role, sort = 'createdAt', order = 'desc', limit } = queryVars;
+
+    const [sortColumns, setSortColumns] = useState<SortColumn[]>(getSortColumns(order, sort));
 
     // Query users
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
@@ -83,4 +88,4 @@ const BaseUsersTable = memo(
     );
   }),
 );
-export default BaseUsersTable;
+export default BaseDataTable;

@@ -1,16 +1,13 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
-import type { SortColumn } from 'react-data-grid';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import type { z } from 'zod';
-import useSaveInSearchParams from '~/hooks/use-save-in-search-params';
-import { getInitialSortColumns } from '~/modules/common/data-table/sort-columns';
 
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import type { usersQuerySchema } from '#/modules/users/schema';
 
 import { useTranslation } from 'react-i18next';
+import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import DeleteUsers from '~/modules/users/delete-users';
@@ -21,23 +18,25 @@ import { UsersTableRoute } from '~/routes/system';
 import type { BaseTableMethods, User } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
-const BaseUsersTable = lazy(() => import('~/modules/users/users-table/table'));
+const BaseDataTable = lazy(() => import('~/modules/users/users-table/table'));
 const LIMIT = config.requestLimits.users;
 
 export type UsersSearch = z.infer<typeof usersQuerySchema>;
 
 const UsersTable = () => {
   const { t } = useTranslation();
-  const search = useSearch({ from: UsersTableRoute.id });
+  const { search, setSearch } = useSearchParams(UsersTableRoute.id);
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const [q, setQuery] = useState<UsersSearch['q']>(search.q);
-  const [role, setRole] = useState<UsersSearch['role']>(search.role);
-  const [sortColumns, setSortColumns] = useState<SortColumn[]>(getInitialSortColumns(search));
+  const q = search.q;
+  const sort = search.sort as UsersSearch['sort'];
+  const order = search.order as UsersSearch['order'];
+  const role = search.role as UsersSearch['role'];
+  const limit = LIMIT;
 
   // State for selected and total counts
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState<number | undefined>(undefined);
   const [selected, setSelected] = useState<User[]>([]);
 
   // Update total and selected counts
@@ -45,15 +44,6 @@ const UsersTable = () => {
     if (newTotal !== total) setTotal(newTotal);
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
-
-  // Search query options
-  const sort = sortColumns[0]?.columnKey as UsersSearch['sort'];
-  const order = sortColumns[0]?.direction.toLowerCase() as UsersSearch['order'];
-  const limit = LIMIT;
-
-  // Save filters in search params
-  const filters = useMemo(() => ({ q, sort, order, role }), [q, role, order, sort]);
-  useSaveInSearchParams(filters, { sort: 'createdAt', order: 'desc' });
 
   const mutateQuery = useMutateQueryData(['users', 'list'], (item) => ['user', item.id], ['update']);
 
@@ -111,9 +101,9 @@ const UsersTable = () => {
         total={total}
         selected={selected}
         q={q ?? ''}
-        setQuery={setQuery}
         role={role}
-        setRole={setRole}
+        setQuery={(newQ) => setSearch({ q: newQ })}
+        setRole={(newRole) => setSearch({ role: newRole })}
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}
@@ -121,12 +111,10 @@ const UsersTable = () => {
         openInviteDialog={openInviteDialog}
       />
       <Suspense>
-        <BaseUsersTable
+        <BaseDataTable
           updateCounts={updateCounts}
           ref={dataTableRef}
           columns={columns}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
           queryVars={{
             q,
             role,

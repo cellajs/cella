@@ -1,13 +1,13 @@
 import { motion } from 'framer-motion';
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { AttachmentsTableProps } from '~/modules/attachments/attachments-table';
+import { openUploadDialog } from '~/modules/attachments/attachments-table/helpers';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
-import type { AttachmentsTableProps } from '~/modules/attachments/attachments-table';
-import { openUploadDialog } from '~/modules/attachments/attachments-table/helpers';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { Attachment, BaseTableHeaderProps, BaseTableMethods } from '~/types/common';
@@ -29,14 +29,14 @@ export const AttachmentsTableHeader = ({
   clearSelection,
   openRemoveDialog,
   isSheet = false,
-  canUploadAttachments = true,
+  canUpload = true,
 }: AttachmentsTableHeaderProps) => {
   const { t } = useTranslation();
 
   const isFiltered = !!q;
   const isAdmin = organization.membership?.role === 'admin';
 
-  // Drop selected Rows on search
+  // Drop selected rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
     setQuery(searchString);
@@ -81,7 +81,7 @@ export const AttachmentsTableHeader = ({
               </Button>
             </>
           ) : (
-            canUploadAttachments &&
+            canUpload &&
             !isFiltered &&
             isAdmin && (
               <Button asChild onClick={() => openUploadDialog(organization.id)}>

@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
 
 import { Bird } from 'lucide-react';
 import type { RowsChangeData } from 'react-data-grid';
@@ -10,21 +10,27 @@ import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 
+import type { SortColumn } from 'react-data-grid';
 import { showToast } from '~/lib/toasts';
+import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { OrganizationsSearch } from '~/modules/organizations/organizations-table';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import { useUserStore } from '~/store/user';
 import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Organization } from '~/types/common';
 
-type BaseOrganizationsTableProps = BaseTableProps<Organization> & {
+type BaseDataTableProps = BaseTableProps<Organization> & {
   queryVars: BaseTableQueryVariables<OrganizationsSearch>;
 };
 
-const BaseOrganizationsTable = memo(
-  forwardRef<BaseTableMethods, BaseOrganizationsTableProps>(({ columns, sortColumns, setSortColumns, queryVars, updateCounts }, ref) => {
+const BaseDataTable = memo(
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts }, ref) => {
     const { t } = useTranslation();
     const { user } = useUserStore();
-    const { q, sort, order, limit } = queryVars;
+
+    // Extract query variables and set defaults
+    const { q, sort = 'createdAt', order = 'desc', limit } = queryVars;
+
+    const [sortColumns, setSortColumns] = useState<SortColumn[]>(getSortColumns(order, sort));
 
     // Query organizations
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
@@ -94,4 +100,4 @@ const BaseOrganizationsTable = memo(
     );
   }),
 );
-export default BaseOrganizationsTable;
+export default BaseDataTable;

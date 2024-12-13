@@ -53,6 +53,7 @@ const useSearchParams = <K extends SearchKeys>(from?: RoutesById, defaultValues?
       navigate({
         replace: true,
         params,
+        resetScroll: false,
         to: '.',
         search: (prev) => ({
           ...prev,
