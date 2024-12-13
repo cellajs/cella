@@ -89,7 +89,7 @@ const BaseDataTable = memo(
       <DataTable<Member>
         {...{
           columns: columns.filter((column) => column.visible),
-          rowHeight: 42,
+          rowHeight: 50,
           enableVirtualization: false,
           onRowsChange,
           rows,

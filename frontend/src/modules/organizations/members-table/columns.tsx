@@ -67,7 +67,9 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, organizationId: s
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
-          <div className="inline-flex items-center gap-1 relative group h-full w-full">{row.membership ? t(row.membership.role) : '-'}</div>
+          <div className="inline-flex items-center gap-1 relative group h-full w-full">
+            {row.membership ? t(`common:${row.membership.role}`) : '-'}
+          </div>
         ),
         width: 100,
         ...(isAdmin && {

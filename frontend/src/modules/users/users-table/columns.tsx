@@ -84,7 +84,7 @@ export const useColumns = (callback: (users: User[]) => void) => {
         sortable: true,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative group h-full w-full">{t(row.role)}</div>,
+        renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative group h-full w-full">{t(`common:${row.role}`)}</div>,
         width: 100,
         renderEditCell: ({ row, onRowChange }) =>
           renderSelect({

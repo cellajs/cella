@@ -49,7 +49,7 @@ export const useColumns = (
     {
       key: 'filename',
       name: t('common:filename'),
-      visible: true,
+      visible: !isMobile,
       sortable: false,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (

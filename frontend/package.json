@@ -23,7 +23,6 @@
     "@blocknote/shadcn": "^0.21.0",
     "@electric-sql/client": "1.0.0-beta.1",
     "@emotion/react": "^11.14.0",
-    "@floating-ui/react": "^0.27.0",
     "@github/mini-throttle": "^2.1.1",
     "@hookform/resolvers": "^3.9.1",
     "@oslojs/encoding": "^1.1.0",
@@ -151,11 +150,7 @@
     "vite-plugin-pwa": "^0.21.1",
     "vite-plugin-static-copy": "^2.2.0"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not op_mini all"
-  ],
+  "browserslist": [">0.2%", "not dead", "not op_mini all"],
   "postcss": {
     "plugins": {
       "postcss-import": {},

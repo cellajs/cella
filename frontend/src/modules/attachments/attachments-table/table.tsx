@@ -87,7 +87,7 @@ const BaseDataTable = memo(
       <DataTable<Attachment>
         {...{
           columns: columns.filter((column) => column.visible),
-          rowHeight: 42,
+          rowHeight: 50,
           enableVirtualization: false,
           onRowsChange,
           rows,

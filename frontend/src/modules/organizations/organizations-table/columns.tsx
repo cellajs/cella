@@ -53,7 +53,7 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         sortable: false,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role) : '-'),
+        renderCell: ({ row }) => (row.membership?.role ? t(`common:${row.membership.role}`) : '-'),
         width: 120,
       },
       {

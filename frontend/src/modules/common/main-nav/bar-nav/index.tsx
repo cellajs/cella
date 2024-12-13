@@ -40,7 +40,7 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
       data-started={hasStarted}
       className="fixed z-[100] sm:z-[110] w-full max-sm:bottom-0 transition-transform ease-out shadow-sm sm:left-0 sm:top-0 sm:h-screen sm:w-16 group-[.focus-view]/body:hidden bg-primary data-[theme=none]:bg-secondary data-[started=false]:max-sm:translate-y-full data-[started=false]:sm:-translate-x-full"
     >
-      <ul className="flex flex-row justify-between p-1 sm:flex-col sm:space-y-1">
+      <ul className="flex flex-row justify-between p-1 sm:flex-col sm:gap-1 max-sm:px-2">
         {items.map((navItem: NavItem, index: number) => {
           const isSecondItem = index === 1;
           const isActive = navSheetOpen === navItem.id;
@@ -49,7 +49,10 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
 
           return (
             <Fragment key={navItem.id}>
-              <div data-second-item={isSecondItem} className="hidden data-[second-item=true]:xs:flex data-[second-item=true]:xs:grow" />
+              <div
+                data-second-item={isSecondItem}
+                className="hidden data-[second-item=true]:xs:flex data-[second-item=true]:sm:hidden data-[second-item=true]:xs:grow"
+              />
               <li
                 data-second-item={isSecondItem}
                 className="flex peer transform sm:grow-0

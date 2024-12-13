@@ -12,7 +12,7 @@
   --rdg-checkbox-focus-color: hsl(var(--ring));
   --rdg-checkbox-disabled-border-color: hsl(var(--muted-foreground));
   --rdg-checkbox-disabled-background-color: hsl(var(--muted));
-
+  --rdg-font-size: 0.888rem;
   --rdg-selection-color: hsl(var(--ring));
 
   grid-template-rows: none !important;
