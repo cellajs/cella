@@ -67,7 +67,7 @@ function generateDynamicFields() {
       fields[fieldName] = varchar().references(() => fieldTable.id, { onDelete: 'cascade' });
       return fields;
     },
-    {} as Record<ContextEntityIdFields, PgVarcharBuilderInitial<'', [string, ...string[]], undefined>>,
+    {} as Record<ContextEntityIdFields, PgVarcharBuilderInitial<'', [string, ...string[]]>>,
   );
 }
 type MembershipDynamicColumn = PgColumn<{

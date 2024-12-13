@@ -7,10 +7,10 @@ import { onlineManager } from '@tanstack/react-query';
 import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
 
+import { env } from '~/../env';
 import type { Attachment } from '~/types/common';
 import { objectKeys } from '~/utils/object';
 import { attachmentsTableColumns } from '#/db/schema/attachments';
-import { env } from '../../../../../env';
 
 type RawAttachment = {
   id: string;
@@ -59,79 +59,79 @@ export const useSync = (organizationId: string) => {
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organizationId));
     const queryKey = attachmentsQueryOptions({ orgIdOrSlug: organizationId }).queryKey;
 
+    const handleInsert = (newAttachment: Attachment) => {
+      queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
+        if (!data) return;
+
+        // Avoid adding an already existing attachment
+        const alreadyExistingIds = data.pages.flatMap((a) => a.items.map(({ id }) => id));
+        if (alreadyExistingIds.includes(newAttachment.id)) return data;
+
+        // Update items in each page and adjust the total
+        const pages = data.pages.map(({ items, total }) => ({
+          items: [...items, newAttachment],
+          total: total + 1,
+        }));
+
+        return { pages, pageParams: data.pageParams };
+      });
+    };
+
+    const handleUpdate = (updatedAttachment: Attachment) => {
+      queryClient.setQueryData(queryKey, (data) => {
+        if (!data) return;
+        const { id } = updatedAttachment;
+
+        // Update items in each page and adjust the total
+        const pages = data.pages.map(({ items, total }) => ({
+          items: items.map((attachment) => (attachment.id === id ? { ...attachment, updatedAttachment } : attachment)),
+          total,
+        }));
+
+        return { pages, pageParams: data.pageParams };
+      });
+    };
+
+    const handleDelete = (attachmentId: string) => {
+      queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
+        if (!data) return;
+        // Update items in each page and adjust the total
+        const pages = data.pages.map(({ items, total }) => ({
+          items: items.filter((item) => item.id !== attachmentId),
+          total: total - 1,
+        }));
+
+        return { pages, pageParams: data.pageParams };
+      });
+    };
+
     const unsubscribe = shapeStream.subscribe((messages) => {
-      const createMessage = messages.find((m) => m.headers.operation === 'insert') as ChangeMessage<RawAttachment> | undefined;
+      // avoid initial load
+      if (shapeStream.isLoading()) return;
 
-      if (createMessage) {
-        const value = createMessage.value;
-        queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
-          if (!data) return;
+      const operationMessages = messages.filter((m) => m.headers.operation);
 
-          // Avoid adding an already existing attachment
-          const alreadyExists = data.pages[0].items.some((attachment) => attachment.id === value.id);
-          if (alreadyExists) return data;
+      for (const message of operationMessages) {
+        // to avoid trigger on messages without values
+        if (!('value' in message) || !message.value) continue;
 
-          const createdAttachment = parseRawAttachment(value);
+        const { value } = message as ChangeMessage<RawAttachment>;
+        const parsedAttachment = parseRawAttachment(value);
 
-          return {
-            ...data,
-            pages: [
-              {
-                ...data.pages[0],
-                items: [createdAttachment, ...data.pages[0].items],
-              },
-              ...data.pages.slice(1),
-            ],
-          };
-        });
-      }
-
-      const updateMessage = messages.find((m) => m.headers.operation === 'update') as ChangeMessage<RawAttachment> | undefined;
-      if (updateMessage) {
-        const value = updateMessage.value;
-        queryClient.setQueryData(queryKey, (data) => {
-          if (!data) return;
-          return {
-            ...data,
-            pages: data.pages.map((page) => {
-              return {
-                ...page,
-                items: page.items.map((attachment) => {
-                  if (attachment.id === value.id) {
-                    const updatedAttachment = {
-                      ...attachment,
-                      ...parseRawAttachment(value),
-                    };
-                    return updatedAttachment;
-                  }
-                  return attachment;
-                }),
-              };
-            }),
-          };
-        });
-      }
-
-      const deleteMessage = messages.find((m) => m.headers.operation === 'delete') as ChangeMessage<RawAttachment> | undefined;
-      if (deleteMessage) {
-        queryClient.setQueryData<AttachmentInfiniteQueryData>(queryKey, (data) => {
-          if (!data) return;
-          return {
-            ...data,
-            pages: [
-              {
-                ...data.pages[0],
-                items: data.pages[0].items.filter((item) => item.id !== deleteMessage.value.id),
-              },
-              ...data.pages.slice(1),
-            ],
-          };
-        });
+        switch (message.headers.operation) {
+          case 'insert':
+            handleInsert(parsedAttachment);
+            break;
+          case 'update':
+            handleUpdate(parsedAttachment);
+            break;
+          case 'delete':
+            handleDelete(parsedAttachment.id);
+            break;
+        }
       }
     });
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [onlineManager.isOnline()]);
 };
