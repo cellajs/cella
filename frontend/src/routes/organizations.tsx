@@ -4,8 +4,8 @@ import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
-import ErrorNotice from '~/modules/common/error-notice';
 import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
+import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { baseEntityRoutes } from '~/nav-config';
@@ -50,7 +50,7 @@ export const OrganizationMembersRoute = createRoute({
   path: '/members',
   validateSearch: z.object({
     ...membersSearchSchema.shape,
-    userIdPreview: z.string().optional(),
+    sheetId: z.string().optional(),
   }),
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
