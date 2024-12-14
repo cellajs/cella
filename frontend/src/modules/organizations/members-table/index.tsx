@@ -1,14 +1,15 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 
 import type { z } from 'zod';
 import type { membersQuerySchema } from '#/modules/general/schema';
 
+import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
 import useSearchParams from '~/hooks/use-search-params';
+import { useUserSheet } from '~/hooks/use-user-sheet';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/organizations/members-table/columns';
 import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
@@ -29,8 +30,14 @@ export interface MembersTableProps {
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
+
+  // TODO make id optional through a prop in MembersTableProps
   const { search, setSearch } = useSearchParams('/app-layout/$idOrSlug/members');
+  const { sheetId } = useSearch({ from: '/app-layout/$idOrSlug/members' });
+
   const dataTableRef = useRef<BaseTableMethods | null>(null);
+  const organizationId = entity.organizationId || entity.id;
+  const isAdmin = entity.membership?.role === 'admin';
 
   // TODO Table state (remove typescript hacks)
   const q = search.q;
@@ -49,16 +56,16 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
-  const organizationId = entity.organizationId || entity.id;
-  const isAdmin = entity.membership?.role === 'admin';
-
   // Build columns
-  const [columns, setColumns] = useColumns(isAdmin, isSheet, organizationId);
+  const [columns, setColumns] = useColumns(isAdmin, isSheet);
   const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
+
+  // Render user sheet if sheetId is present
+  useUserSheet({ sheetId, organizationId });
 
   const openInviteDialog = (container?: HTMLElement | null) => {
     dialog(<InviteUsers entity={entity} mode={null} dialog />, {
@@ -102,12 +109,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     });
     return items;
   };
-
-  // TODO: Figure out a way to open sheet using url state
-  useEffect(() => {
-    if (!search.userIdPreview) return;
-    setTimeout(() => openUserPreviewSheet(search.userIdPreview as string, organizationId), 0);
-  }, []);
 
   return (
     <div className="flex flex-col gap-4 h-full">

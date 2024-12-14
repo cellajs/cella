@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { User } from '~/types/common';
 
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { UserRoundCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -11,7 +11,6 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import UpdateRow from '~/modules/users/users-table/update-row';
 import { dateShort } from '~/utils/date-short';
 import ImpersonateRow from './impersonate-row';
@@ -19,6 +18,7 @@ import ImpersonateRow from './impersonate-row';
 export const useColumns = (callback: (users: User[]) => void) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
+  const navigate = useNavigate();
 
   const columns = useMemo(() => {
     const cols: ColumnOrColumnGroup<User>[] = [
@@ -39,7 +39,12 @@ export const useColumns = (callback: (users: User[]) => void) => {
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
-              openUserPreviewSheet(row.id);
+              navigate({
+                to: '.',
+                replace: true,
+                resetScroll: false,
+                search: (prev) => ({ ...prev, sheetId: row.id }),
+              });
             }}
           >
             <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />

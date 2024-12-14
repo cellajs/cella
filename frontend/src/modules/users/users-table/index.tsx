@@ -1,12 +1,13 @@
+import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import useSearchParams from '~/hooks/use-search-params';
+import { useUserSheet } from '~/hooks/use-user-sheet';
 import { showToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
@@ -24,7 +25,10 @@ export type UsersSearch = z.infer<typeof usersQuerySchema>;
 
 const UsersTable = () => {
   const { t } = useTranslation();
+
   const { search, setSearch } = useSearchParams(UsersTableRoute.id);
+  const { sheetId } = useSearch({ from: UsersTableRoute.id });
+
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
@@ -53,6 +57,9 @@ const UsersTable = () => {
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
+
+  // Render user sheet if sheetId is present
+  useUserSheet({ sheetId });
 
   const openInviteDialog = (container: HTMLElement | null) => {
     dialog(<InviteUsers mode={'email'} dialog />, {
@@ -88,12 +95,6 @@ const UsersTable = () => {
       },
     );
   };
-
-  // TODO: Figure out a way to open sheet using url state
-  useEffect(() => {
-    if (!search.userIdPreview) return;
-    setTimeout(() => openUserPreviewSheet(search.userIdPreview as string), 0);
-  }, []);
 
   return (
     <div className="flex flex-col gap-4 h-full">
