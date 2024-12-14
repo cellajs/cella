@@ -69,7 +69,7 @@ export const ComplexOptionElement = ({
   }, [item]);
 
   return (
-    <div data-submenu={!!item.submenu} className="group/menuOptions relative my-1">
+    <li data-submenu={!!item.submenu} className="group/menuOptions relative my-1">
       <div ref={dragRef}>
         <MenuItemOptions item={item} />
         {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
@@ -89,6 +89,6 @@ export const ComplexOptionElement = ({
         )}
       </div>
       {closestEdge && <DropIndicator className="h-0.5 w-full" edge={closestEdge} gap={0.35} />}
-    </div>
+    </li>
   );
 };
