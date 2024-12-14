@@ -1,14 +1,12 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import type { z } from 'zod';
-
 import { config } from 'config';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
-import type { usersQuerySchema } from '#/modules/users/schema';
-
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { z } from 'zod';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
+import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
@@ -17,6 +15,7 @@ import { UsersTableHeader } from '~/modules/users/users-table/table-header';
 import { UsersTableRoute } from '~/routes/system';
 import type { BaseTableMethods, User } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
+import type { usersQuerySchema } from '#/modules/users/schema';
 
 const BaseDataTable = lazy(() => import('~/modules/users/users-table/table'));
 const LIMIT = config.requestLimits.users;
@@ -49,6 +48,7 @@ const UsersTable = () => {
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
@@ -115,13 +115,9 @@ const UsersTable = () => {
           updateCounts={updateCounts}
           ref={dataTableRef}
           columns={columns}
-          queryVars={{
-            q,
-            role,
-            sort,
-            order,
-            limit,
-          }}
+          queryVars={{ q, role, sort, order, limit }}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
         />
       </Suspense>
     </div>

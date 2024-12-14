@@ -7,6 +7,7 @@ import type { limitedUserSchema, userSchema } from 'backend/modules/users/schema
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
 import type { Dispatch, SetStateAction } from 'react';
+import type { SortColumn } from 'react-data-grid';
 import type { z } from 'zod';
 import type { client } from '~/api/me';
 import type { UppyBody, UppyMeta } from '~/lib/imado';
@@ -74,6 +75,8 @@ export type DraggableItemData<T> = {
 
 export type BaseTableProps<T> = {
   columns: ColumnOrColumnGroup<T>[];
+  sortColumns: SortColumn[];
+  setSortColumns: (sortColumns: SortColumn[]) => void;
   updateCounts: (selected: T[], total: number) => void;
 };
 

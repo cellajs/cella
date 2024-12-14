@@ -13,7 +13,6 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-vi
 import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import { Checkbox } from '~/modules/ui/checkbox';
-
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   rows: TData[];
@@ -81,7 +80,7 @@ export const DataTable = <TData,>({
   onSelectedRowsChange,
   sortColumns,
   onSortColumnsChange,
-  rowHeight = 40,
+  rowHeight = 50,
   enableVirtualization,
   onRowsChange,
   fetchMore,
@@ -133,7 +132,7 @@ export const DataTable = <TData,>({
                 style={{ blockSize: '100%', marginRight: columns.length % 2 === 0 ? '0' : '.07rem' }}
                 selectedRows={selectedRows}
                 onSelectedRowsChange={onSelectedRowsChange}
-                sortColumns={sortColumns}
+                sortColumns={sortColumns as SortColumn[]}
                 onSortColumnsChange={onSortColumnsChange}
                 renderers={{
                   renderRow,

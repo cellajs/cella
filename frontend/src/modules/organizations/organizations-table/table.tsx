@@ -1,18 +1,14 @@
 import { onlineManager } from '@tanstack/react-query';
-import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
-
 import { Bird } from 'lucide-react';
+import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { inviteMembers } from '~/api/memberships';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
+import { showToast } from '~/lib/toasts';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-
-import type { SortColumn } from 'react-data-grid';
-import { showToast } from '~/lib/toasts';
-import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { OrganizationsSearch } from '~/modules/organizations/organizations-table';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import { useUserStore } from '~/store/user';
@@ -23,14 +19,12 @@ type BaseDataTableProps = BaseTableProps<Organization> & {
 };
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
     const { t } = useTranslation();
     const { user } = useUserStore();
 
     // Extract query variables and set defaults
-    const { q, sort = 'createdAt', order = 'desc', limit } = queryVars;
-
-    const [sortColumns, setSortColumns] = useState<SortColumn[]>(getSortColumns(order, sort));
+    const { q, sort, order, limit } = queryVars;
 
     // Query organizations
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
@@ -78,7 +72,7 @@ const BaseDataTable = memo(
           columns: columns.filter((column) => column.visible),
           rows,
           totalCount,
-          rowHeight: 42,
+          rowHeight: 50,
           rowKeyGetter: (row) => row.id,
           error,
           isLoading,

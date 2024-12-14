@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { getOrganizations } from '~/api/organizations';
 import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
+import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SheetNav } from '~/modules/common/sheet-nav';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -49,6 +50,7 @@ const OrganizationsTable = () => {
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
@@ -120,13 +122,10 @@ const OrganizationsTable = () => {
         <BaseDataTable
           ref={dataTableRef}
           columns={columns}
-          queryVars={{
-            q,
-            sort,
-            order,
-            limit,
-          }}
+          queryVars={{ q, sort, order, limit }}
           updateCounts={updateCounts}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
         />
       </Suspense>
     </div>

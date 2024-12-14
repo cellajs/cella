@@ -3,6 +3,7 @@ import { Suspense, lazy, useRef, useState } from 'react';
 import type { z } from 'zod';
 import { getRequests } from '~/api/requests';
 import useSearchParams from '~/hooks/use-search-params';
+import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useColumns } from '~/modules/system/requests-table/columns';
 import { RequestsTableHeaderBar } from '~/modules/system/requests-table/table-header';
 import { RequestsTableRoute } from '~/routes/system';
@@ -37,10 +38,12 @@ const RequestsTable = () => {
 
   // Build columns
   const [columns, setColumns] = useColumns();
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
+
   //TODO implement accept and remove of request
   const openRemoveDialog = () => console.log('removed');
   const openInviteDialog = () => console.log('invited');
@@ -65,7 +68,13 @@ const RequestsTable = () => {
         fetchExport={fetchExport}
       />
       <Suspense>
-        <BaseDataTable columns={columns} queryVars={{ q, sort, order, limit }} updateCounts={updateCounts} />
+        <BaseDataTable
+          columns={columns}
+          queryVars={{ q, sort, order, limit }}
+          updateCounts={updateCounts}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
+        />
       </Suspense>
     </div>
   );

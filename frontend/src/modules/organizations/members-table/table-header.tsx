@@ -13,6 +13,7 @@ import type { MemberSearch, MembersTableProps } from '~/modules/organizations/me
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { BaseTableHeaderProps, BaseTableMethods, Member } from '~/types/common';
+import { nanoid } from '#/utils/nanoid';
 
 type MembersTableHeaderProps = MembersTableProps &
   BaseTableMethods &
@@ -103,8 +104,8 @@ export const MembersTableHeader = ({
               isAdmin && (
                 //TODO mb rework sheet to find a way use dialog with ref in sheet
                 <Button asChild onClick={() => openInviteDialog(isSheet ? null : containerRef.current)}>
-                  <motion.button transition={{ duration: 0.1 }} layoutId="members-filter-bar-button">
-                    <motion.span layoutId="members-filter-bar-icon">
+                  <motion.button transition={{ duration: 0.1 }} layoutId={nanoid()} initial={false}>
+                    <motion.span>
                       <Mail size={16} />
                     </motion.span>
                     <span className="ml-1">{t('common:invite')}</span>

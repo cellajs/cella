@@ -321,7 +321,7 @@ export function MultiEmail(props: MultiEmailProps) {
               <button
                 type="button"
                 className={cn(
-                  'py-1 m-[-.25rem] ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2',
+                  'py-1 m-[-.25rem] ml-1 rounded-full outline-none sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 )}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {

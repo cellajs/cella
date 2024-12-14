@@ -7,6 +7,7 @@ import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
 import useSearchParams from '~/hooks/use-search-params';
+import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/organizations/members-table/columns';
@@ -53,6 +54,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet, organizationId);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
@@ -126,7 +128,15 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         isSheet={isSheet}
       />
       <Suspense>
-        <BaseDataTable entity={entity} ref={dataTableRef} columns={columns} queryVars={{ q, role, sort, order, limit }} updateCounts={updateCounts} />
+        <BaseDataTable
+          entity={entity}
+          ref={dataTableRef}
+          columns={columns}
+          queryVars={{ q, role, sort, order, limit }}
+          updateCounts={updateCounts}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
+        />
       </Suspense>
     </div>
   );
