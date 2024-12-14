@@ -8,6 +8,7 @@ import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { AttachmentsTableHeader } from '~/modules/attachments/attachments-table/table-header';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import { OrganizationAttachmentsRoute } from '~/routes/organizations';
 import type { Attachment, BaseTableMethods, Organization } from '~/types/common';
@@ -52,6 +53,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
 
   // Build columns
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
@@ -96,15 +98,12 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
           ref={dataTableRef}
           columns={columns}
           setColumns={setColumns}
-          queryVars={{
-            q,
-            sort,
-            order,
-            limit,
-          }}
+          queryVars={{ q, sort, order, limit }}
           updateCounts={updateCounts}
           isSheet={isSheet}
           canUpload={canUpload}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
         />
       </Suspense>
     </div>

@@ -1,30 +1,23 @@
-import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
+import { Bird } from 'lucide-react';
+import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
-import { DataTable } from '~/modules/common/data-table';
-
-import { Bird } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Request } from '~/types/common';
-
+import { DataTable } from '~/modules/common/data-table';
 import type { RequestsSearch } from '~/modules/system/requests-table';
 import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-option';
-
-import type { SortColumn } from 'react-data-grid';
-import { getSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Request } from '~/types/common';
 
 type BaseRequestsTableProps = BaseTableProps<Request> & {
   queryVars: BaseTableQueryVariables<RequestsSearch>;
 };
 
 const BaseRequestsTable = memo(
-  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryVars, updateCounts }, ref) => {
+  forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
     const { t } = useTranslation();
 
     // Extract query variables and set defaults
-    const { q, sort = 'createdAt', order = 'desc', limit } = queryVars;
-
-    const [sortColumns, setSortColumns] = useState<SortColumn[]>(getSortColumns(order, sort));
+    const { q, sort, order, limit } = queryVars;
 
     // Query requests
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
