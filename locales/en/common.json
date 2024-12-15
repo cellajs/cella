@@ -145,6 +145,7 @@
   "error.route_not_found.text": "The server could not find the requested route.",
   "error.server_error": "Server error",
   "error.server_error.text": "A server error has been reported.",
+  "error.duplicate_creation": "Item already exist",
   "error.show_details": "Show error details",
   "error.slug_exists": "Slug already exists",
   "error.token_invalid_request_new": "Token is invalid or expired. Please request a new one.",

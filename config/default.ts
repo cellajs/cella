@@ -152,7 +152,7 @@ export const config = {
     attachments: 40,
   },
 
-  // Roles on system and entity level. TODO: split roles by entity type
+  // Roles on system and entity level.
   rolesByType: { systemRoles: ['user', 'admin'] as const, entityRoles: ['member', 'admin'] as const, allRoles: ['user', 'member', 'admin'] as const },
 
   // Company details
