@@ -12,7 +12,7 @@ import { type RefObject, useEffect } from 'react';
  */
 
 interface UseDoubleClickOptions {
-  ref: RefObject<HTMLButtonElement | HTMLElement>;
+  ref: RefObject<HTMLButtonElement | HTMLElement | null>;
   allowedTargets?: string[];
   excludeIds?: string[];
   latency?: number;

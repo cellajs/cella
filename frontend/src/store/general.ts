@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-type NetworkMode = 'online' | 'offline';
+export type NetworkMode = 'online' | 'offline';
 
 interface GeneralState {
   networkMode: NetworkMode;
