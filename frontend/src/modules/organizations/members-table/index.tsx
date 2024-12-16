@@ -2,7 +2,6 @@ import { Suspense, lazy, useRef, useState } from 'react';
 
 import type { z } from 'zod';
 
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
@@ -31,14 +30,13 @@ export interface MembersTableProps {
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
 
-  const { search, setSearch } = useSearchParams<MemberSearch>({});
-  const { sheetId } = useSearch({ strict: false });
+  const { search, setSearch } = useSearchParams<MemberSearch>({ saveDataInSearch: !isSheet });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
   const organizationId = entity.organizationId || entity.id;
   const isAdmin = entity.membership?.role === 'admin';
 
-  const { q, role, sort, order } = search;
+  const { q, role, sort, order, sheetId } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -51,12 +49,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
-  // to avoid set/update params when table opened in Sheet
-  const setSearchParams = (newValues: Partial<MemberSearch>) => setSearch(newValues, !isSheet);
-
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet);
-  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearchParams);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
@@ -116,7 +111,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         selected={selected}
         q={q ?? ''}
         role={role}
-        setSearch={setSearchParams}
+        setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
         fetchExport={fetchExport}
