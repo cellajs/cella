@@ -102,9 +102,7 @@
     "typescript": "^5.7.2"
   },
   "imports": {
-    "#/*": [
-      "./dist/src/*"
-    ]
+    "#/*": ["./dist/src/*"]
   },
   "exports": {
     "./*": "./src/*.ts"

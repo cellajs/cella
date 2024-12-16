@@ -1,8 +1,9 @@
 import { onlineManager } from '@tanstack/react-query';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
+import { updateUser } from '~/api/users';
+
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { updateUser } from '~/api/users';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
@@ -10,10 +11,10 @@ import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import type { UsersSearch } from '~/modules/users/users-table';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
-import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, User } from '~/types/common';
+import type { BaseTableMethods, BaseTableProps, User } from '~/types/common';
 
-type BaseDataTableProps = BaseTableProps<User> & {
-  queryVars: BaseTableQueryVariables<UsersSearch> & { role: UsersSearch['role'] };
+type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
+  queryVars: { role: UsersSearch['role'] };
 };
 
 const BaseDataTable = memo(

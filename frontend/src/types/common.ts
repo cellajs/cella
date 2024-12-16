@@ -73,7 +73,8 @@ export type DraggableItemData<T> = {
   order: number;
 };
 
-export type BaseTableProps<T> = {
+export type BaseTableProps<T, K extends { q?: unknown; sort?: unknown; order?: unknown }> = {
+  queryVars: BaseTableQueryVariables<K>;
   columns: ColumnOrColumnGroup<T>[];
   sortColumns: SortColumn[];
   setSortColumns: (sortColumns: SortColumn[]) => void;
@@ -91,11 +92,11 @@ export type BaseTableQueryVariables<T extends { q?: unknown; sort?: unknown; ord
   limit: number | undefined;
 };
 
-export type BaseTableHeaderProps<T> = {
+export type BaseTableHeaderProps<T, K> = {
   total: number | undefined;
   selected: T[];
   q: string;
-  setQuery: (q: string) => void;
+  setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
   columns: ColumnOrColumnGroup<T>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<T>[]>>;
 };

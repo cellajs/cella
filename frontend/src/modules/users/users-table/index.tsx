@@ -1,4 +1,3 @@
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense, lazy, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,29 +12,24 @@ import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { useColumns } from '~/modules/users/users-table/columns';
 import { UsersTableHeader } from '~/modules/users/users-table/table-header';
-import { UsersTableRoute } from '~/routes/system';
+import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, User } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
-import type { usersQuerySchema } from '#/modules/users/schema';
 
 const BaseDataTable = lazy(() => import('~/modules/users/users-table/table'));
 const LIMIT = config.requestLimits.users;
 
-export type UsersSearch = z.infer<typeof usersQuerySchema>;
+export type UsersSearch = z.infer<typeof usersSearchSchema>;
 
 const UsersTable = () => {
   const { t } = useTranslation();
 
-  const { search, setSearch } = useSearchParams(UsersTableRoute.id);
-  const { sheetId } = useSearch({ from: UsersTableRoute.id });
+  const { search, setSearch } = useSearchParams<UsersSearch>({ from: UsersTableRoute.id });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const q = search.q;
-  const sort = search.sort as UsersSearch['sort'];
-  const order = search.order as UsersSearch['order'];
-  const role = search.role as UsersSearch['role'];
+  const { q, role, sort, order, sheetId } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -103,8 +97,7 @@ const UsersTable = () => {
         selected={selected}
         q={q ?? ''}
         role={role}
-        setQuery={(newQ) => setSearch({ q: newQ })}
-        setRole={(newRole) => setSearch({ role: newRole })}
+        setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}

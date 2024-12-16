@@ -14,9 +14,8 @@ import type { UsersSearch } from '~/modules/users/users-table';
 import type { BaseTableHeaderProps, BaseTableMethods, User } from '~/types/common';
 
 type UsersTableHeaderProps = BaseTableMethods &
-  BaseTableHeaderProps<User> & {
+  BaseTableHeaderProps<User, UsersSearch> & {
     role: UsersSearch['role'];
-    setRole: (role: UsersSearch['role']) => void;
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
   };
@@ -25,9 +24,8 @@ export const UsersTableHeader = ({
   total,
   selected,
   q,
-  setQuery,
   role,
-  setRole,
+  setSearch,
   columns,
   setColumns,
   clearSelection,
@@ -42,18 +40,17 @@ export const UsersTableHeader = ({
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
-    setQuery(searchString);
+    setSearch({ q: searchString });
   };
   // Drop selected Rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setRole(role === 'all' ? undefined : (role as UsersSearch['role']));
+    setSearch({ role: role === 'all' ? undefined : (role as UsersSearch['role']) });
   };
 
   const onResetFilters = () => {
-    setQuery('');
+    setSearch({ q: '', role: undefined });
     clearSelection();
-    setRole(undefined);
   };
 
   return (

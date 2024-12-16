@@ -12,11 +12,9 @@ import { DataTable } from '~/modules/common/data-table';
 import type { OrganizationsSearch } from '~/modules/organizations/organizations-table';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import { useUserStore } from '~/store/user';
-import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Organization } from '~/types/common';
+import type { BaseTableMethods, BaseTableProps, Organization } from '~/types/common';
 
-type BaseDataTableProps = BaseTableProps<Organization> & {
-  queryVars: BaseTableQueryVariables<OrganizationsSearch>;
-};
+type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {

@@ -1,9 +1,7 @@
 import { Suspense, lazy, useRef, useState } from 'react';
 
 import type { z } from 'zod';
-import type { membersQuerySchema } from '#/modules/general/schema';
 
-import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
@@ -15,6 +13,7 @@ import { useColumns } from '~/modules/organizations/members-table/columns';
 import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
 import { MembersTableHeader } from '~/modules/organizations/members-table/table-header';
 import InviteUsers from '~/modules/users/invite-users';
+import type { membersSearchSchema } from '~/routes/organizations';
 import type { BaseTableMethods, EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
@@ -22,7 +21,7 @@ const BaseDataTable = lazy(() => import('~/modules/organizations/members-table/t
 
 const LIMIT = config.requestLimits.members;
 
-export type MemberSearch = z.infer<typeof membersQuerySchema>;
+export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {
   entity: EntityPage & { membership: MinimumMembershipInfo | null };
   isSheet?: boolean;
@@ -31,19 +30,13 @@ export interface MembersTableProps {
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
 
-  // TODO make id optional through a prop in MembersTableProps
-  const { search, setSearch } = useSearchParams('/app-layout/$idOrSlug/members');
-  const { sheetId } = useSearch({ from: '/app-layout/$idOrSlug/members' });
+  const { search, setSearch } = useSearchParams<MemberSearch>({});
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
   const organizationId = entity.organizationId || entity.id;
   const isAdmin = entity.membership?.role === 'admin';
 
-  // TODO Table state (remove typescript hacks)
-  const q = search.q;
-  const role = search.role as MemberSearch['role'];
-  const sort = search.sort as MemberSearch['sort'];
-  const order = search.order as MemberSearch['order'];
+  const { q, role, sort, order, sheetId } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -56,9 +49,12 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
+  // to avoid set/update params when table opened in Sheet
+  const setSearchParams = (newValues: Partial<MemberSearch>) => setSearch(newValues, !isSheet);
+
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet);
-  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearchParams);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
@@ -118,8 +114,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         selected={selected}
         q={q ?? ''}
         role={role}
-        setQuery={(newQ) => setSearch({ q: newQ })}
-        setRole={(newRole) => setSearch({ role: newRole })}
+        setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
         fetchExport={fetchExport}

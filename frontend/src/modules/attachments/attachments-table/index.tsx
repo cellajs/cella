@@ -1,24 +1,23 @@
 import { config } from 'config';
 import { Suspense, lazy, useRef, useState } from 'react';
 import type { z } from 'zod';
-import type { attachmentsQuerySchema } from '#/modules/attachments/schema';
 
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
+import RemoveAttachmentsForm from '~/modules/attachments/attachments-table/remove-attachments-form';
 import { AttachmentsTableHeader } from '~/modules/attachments/attachments-table/table-header';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
-import { OrganizationAttachmentsRoute } from '~/routes/organizations';
+import { OrganizationAttachmentsRoute, type attachmentsSearchSchema } from '~/routes/organizations';
 import type { Attachment, BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
-import RemoveAttachmentsForm from './remove-attachments-form';
 
 const BaseDataTable = lazy(() => import('~/modules/attachments/attachments-table/table'));
 const LIMIT = config.requestLimits.attachments;
 
-export type AttachmentSearch = z.infer<typeof attachmentsQuerySchema>;
+export type AttachmentSearch = z.infer<typeof attachmentsSearchSchema>;
 export interface AttachmentsTableProps {
   organization: Organization;
   isSheet?: boolean;
@@ -27,14 +26,12 @@ export interface AttachmentsTableProps {
 
 const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams(OrganizationAttachmentsRoute.id);
+  const { search, setSearch } = useSearchParams<AttachmentSearch>({ from: OrganizationAttachmentsRoute.id });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const q = search.q;
-  const sort = search.sort as AttachmentSearch['sort'];
-  const order = search.order as AttachmentSearch['order'];
+  const { q, sort, order } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -47,13 +44,12 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
-  const setQuery = (q: string) => {
-    setSearch({ q });
-  };
+  // to avoid set/update params when table opened in Sheet
+  const setSearchParams = (newValues: Partial<AttachmentSearch>) => setSearch(newValues, !isSheet);
 
   // Build columns
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
-  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearchParams);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
@@ -84,7 +80,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
         total={total}
         selected={selected}
         q={q ?? ''}
-        setQuery={setQuery}
+        setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}

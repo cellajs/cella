@@ -6,11 +6,9 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { RequestsSearch } from '~/modules/system/requests-table';
 import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-option';
-import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Request } from '~/types/common';
+import type { BaseTableMethods, BaseTableProps, Request } from '~/types/common';
 
-type BaseRequestsTableProps = BaseTableProps<Request> & {
-  queryVars: BaseTableQueryVariables<RequestsSearch>;
-};
+type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch>;
 
 const BaseRequestsTable = memo(
   forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
