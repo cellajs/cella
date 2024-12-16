@@ -16,7 +16,7 @@ const LIMIT = config.requestLimits.requests;
 export type RequestsSearch = z.infer<typeof requestSearchSchema>;
 
 const RequestsTable = () => {
-  const { search, setSearch } = useSearchParams<RequestsSearch>({ from: RequestsTableRoute.id });
+  const { search, setSearch } = useSearchParams<RequestsSearch>({ from: RequestsTableRoute.id, defaultValues: { sort: 'createdAt', order: 'desc' } });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state

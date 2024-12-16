@@ -30,7 +30,7 @@ export interface MembersTableProps {
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
 
-  const { search, setSearch } = useSearchParams<MemberSearch>({});
+  const { search, setSearch } = useSearchParams<MemberSearch>({ defaultValues: { sort: 'createdAt', order: 'desc' }, saveDataInSearch: !isSheet });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
   const organizationId = entity.organizationId || entity.id;
@@ -49,12 +49,9 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
-  // to avoid set/update params when table opened in Sheet
-  const setSearchParams = (newValues: Partial<MemberSearch>) => setSearch(newValues, !isSheet);
-
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet);
-  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearchParams);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();

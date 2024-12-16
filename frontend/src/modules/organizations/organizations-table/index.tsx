@@ -27,7 +27,10 @@ export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
 
 const OrganizationsTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<OrganizationsSearch>({ from: OrganizationsTableRoute.id });
+  const { search, setSearch } = useSearchParams<OrganizationsSearch>({
+    from: OrganizationsTableRoute.id,
+    defaultValues: { sort: 'createdAt', order: 'desc' },
+  });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 

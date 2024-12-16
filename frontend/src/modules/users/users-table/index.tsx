@@ -24,7 +24,7 @@ export type UsersSearch = z.infer<typeof usersSearchSchema>;
 const UsersTable = () => {
   const { t } = useTranslation();
 
-  const { search, setSearch } = useSearchParams<UsersSearch>({ from: UsersTableRoute.id });
+  const { search, setSearch } = useSearchParams<UsersSearch>({ from: UsersTableRoute.id, defaultValues: { sort: 'createdAt', order: 'desc' } });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
