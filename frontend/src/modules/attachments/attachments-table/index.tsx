@@ -26,7 +26,7 @@ export interface AttachmentsTableProps {
 
 const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<AttachmentSearch>({ from: OrganizationAttachmentsRoute.id });
+  const { search, setSearch } = useSearchParams<AttachmentSearch>({ from: OrganizationAttachmentsRoute.id, saveDataInSearch: !isSheet });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
@@ -44,12 +44,9 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
-  // to avoid set/update params when table opened in Sheet
-  const setSearchParams = (newValues: Partial<AttachmentSearch>) => setSearch(newValues, !isSheet);
-
   // Build columns
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
-  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearchParams);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
@@ -80,7 +77,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
         total={total}
         selected={selected}
         q={q ?? ''}
-        setSearch={setSearchParams}
+        setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}
