@@ -49,9 +49,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
-  const setSearchParams = (newValues: Partial<MemberSearch>) => {
-    setSearch(newValues, !isSheet);
-  };
+  // to avoid set/update params when table opened in Sheet
+  const setSearchParams = (newValues: Partial<MemberSearch>) => setSearch(newValues, !isSheet);
 
   // Build columns
   const [columns, setColumns] = useColumns(isAdmin, isSheet);

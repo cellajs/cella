@@ -44,9 +44,12 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
+  // to avoid set/update params when table opened in Sheet
+  const setSearchParams = (newValues: Partial<AttachmentSearch>) => setSearch(newValues, !isSheet);
+
   // Build columns
   const [columns, setColumns] = useState<ColumnOrColumnGroup<Attachment>[]>([]);
-  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearchParams);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
