@@ -1,3 +1,4 @@
+import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense, lazy, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,11 +26,12 @@ const UsersTable = () => {
   const { t } = useTranslation();
 
   const { search, setSearch } = useSearchParams<UsersSearch>({ from: UsersTableRoute.id });
+  const { sheetId } = useSearch({ from: UsersTableRoute.id });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const { q, role, sort, order, sheetId } = search;
+  const { q, role, sort, order } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
