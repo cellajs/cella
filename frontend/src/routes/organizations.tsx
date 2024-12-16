@@ -4,8 +4,8 @@ import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
-import ErrorNotice from '~/modules/common/error-notice';
 import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
+import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { baseEntityRoutes } from '~/nav-config';
@@ -22,7 +22,9 @@ const AttachmentsTable = lazy(() => import('~/modules/attachments/attachments-ta
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 // Search query schema
-export const membersSearchSchema = membersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
+export const membersSearchSchema = membersQuerySchema
+  .pick({ q: true, sort: true, order: true, role: true })
+  .extend({ userIdPreview: z.string().optional() });
 
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true });
 
@@ -48,10 +50,7 @@ export const OrganizationRoute = createRoute({
 
 export const OrganizationMembersRoute = createRoute({
   path: '/members',
-  validateSearch: z.object({
-    ...membersSearchSchema.shape,
-    userIdPreview: z.string().optional(),
-  }),
+  validateSearch: membersSearchSchema,
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),

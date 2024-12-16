@@ -21,13 +21,13 @@ const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
 const RequestsPerMinute = lazy(() => import('~/modules/system/metrics-charts/requests-per-minute'));
 
 // Search query schemas
-const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
+export const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });
 const baseUsersSearchSchema = usersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
-const usersSearchSchema = z.object({
+export const usersSearchSchema = z.object({
   ...baseUsersSearchSchema.shape,
   userIdPreview: z.string().optional(),
 });
-const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
+export const requestSearchSchema = getRequestsQuerySchema.pick({ q: true, sort: true, order: true });
 
 export const SystemRoute = createRoute({
   path: '/system',

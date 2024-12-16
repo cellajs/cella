@@ -4,37 +4,31 @@ import type { z } from 'zod';
 import { config } from 'config';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
-import type { usersQuerySchema } from '#/modules/users/schema';
 
 import { useTranslation } from 'react-i18next';
-import useSearchParams, { type SearchKeys, type SearchParams } from '~/hooks/use-search-params';
+import useSearchParams from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { useColumns } from '~/modules/users/users-table/columns';
 import { UsersTableHeader } from '~/modules/users/users-table/table-header';
-import { UsersTableRoute } from '~/routes/system';
+import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, User } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/users/users-table/table'));
 const LIMIT = config.requestLimits.users;
 
-export type UsersSearch = z.infer<typeof usersQuerySchema>;
+export type UsersSearch = z.infer<typeof usersSearchSchema>;
 
 const UsersTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams(UsersTableRoute.id, { q: undefined, role: undefined, sort: 'createdAt', order: 'desc' });
+  const { search, setSearch } = useSearchParams<UsersSearch>({ from: UsersTableRoute.id });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
-  const typedSearch = search as SearchParams<SearchKeys>;
-
   // Table state
-  const q = search.q;
-  const sort = search.sort as UsersSearch['sort'];
-  const order = search.order as UsersSearch['order'];
-  const role = search.role as UsersSearch['role'];
+  const { q, role, sort, order, userIdPreview } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -93,8 +87,8 @@ const UsersTable = () => {
 
   // TODO: Figure out a way to open sheet using url state
   useEffect(() => {
-    if (!typedSearch.userIdPreview) return;
-    setTimeout(() => openUserPreviewSheet(typedSearch.userIdPreview as string), 0);
+    if (!userIdPreview) return;
+    setTimeout(() => openUserPreviewSheet(userIdPreview), 0);
   }, []);
 
   return (
@@ -117,13 +111,7 @@ const UsersTable = () => {
           ref={dataTableRef}
           columns={columns}
           setSearch={setSearch}
-          queryVars={{
-            q,
-            role,
-            sort,
-            order,
-            limit,
-          }}
+          queryVars={{ q, role, sort, order, limit }}
         />
       </Suspense>
     </div>

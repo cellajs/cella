@@ -7,17 +7,15 @@ import { useTranslation } from 'react-i18next';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import type { SearchKeys, SearchParams } from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { UsersSearch } from '~/modules/users/users-table';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
-import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, User } from '~/types/common';
+import type { BaseTableMethods, BaseTableProps, User } from '~/types/common';
 
-type BaseDataTableProps = BaseTableProps<User> & {
-  queryVars: BaseTableQueryVariables<UsersSearch> & { role: UsersSearch['role'] };
-  setSearch: (newValues: SearchParams<SearchKeys>, saveSearch?: boolean) => void;
+type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
+  queryVars: { role: UsersSearch['role'] };
 };
 
 const BaseDataTable = memo(

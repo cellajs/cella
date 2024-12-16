@@ -9,7 +9,6 @@ import type { InferResponseType } from 'hono/client';
 import type { Dispatch, SetStateAction } from 'react';
 import type { z } from 'zod';
 import type { client } from '~/api/me';
-import type { SearchKeys, SearchParams } from '~/hooks/use-search-params';
 import type { UppyBody, UppyMeta } from '~/lib/imado';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { attachmentSchema } from '#/modules/attachments/schema';
@@ -73,9 +72,11 @@ export type DraggableItemData<T> = {
   order: number;
 };
 
-export type BaseTableProps<T> = {
+export type BaseTableProps<T, K extends { q?: unknown; sort?: unknown; order?: unknown }> = {
+  queryVars: BaseTableQueryVariables<K>;
   columns: ColumnOrColumnGroup<T>[];
   updateCounts: (selected: T[], total: number) => void;
+  setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
 };
 
 export type BaseTableMethods = {
@@ -89,11 +90,11 @@ export type BaseTableQueryVariables<T extends { q?: unknown; sort?: unknown; ord
   limit: number | undefined;
 };
 
-export type BaseTableHeaderProps<T> = {
+export type BaseTableHeaderProps<T, K> = {
   total: number | undefined;
   selected: T[];
   q: string;
-  setSearch: (newValues: SearchParams<SearchKeys>, saveSearch?: boolean) => void;
+  setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
   columns: ColumnOrColumnGroup<T>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<T>[]>>;
 };

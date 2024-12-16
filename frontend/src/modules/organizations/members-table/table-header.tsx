@@ -16,7 +16,7 @@ import type { BaseTableHeaderProps, BaseTableMethods, Member } from '~/types/com
 
 type MembersTableHeaderProps = MembersTableProps &
   BaseTableMethods &
-  BaseTableHeaderProps<Member> & {
+  BaseTableHeaderProps<Member, MemberSearch> & {
     role: MemberSearch['role'];
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;

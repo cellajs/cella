@@ -1,54 +1,64 @@
-import { type FullSearchSchema, type RegisteredRouter, useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import type router from '~/lib/router';
 import { objectKeys } from '~/utils/object';
 
-// Get the relevant keys from the FullSearchSchema
-type SearchSchema = FullSearchSchema<RegisteredRouter['routeTree']>;
-export type SearchKeys = keyof SearchSchema;
-
-// Define the SearchParams type as a subset of the FullSearchSchema
-export type SearchParams<T extends SearchKeys> = Pick<SearchSchema, T>;
-
 type RoutesById = keyof typeof router.routesById;
 
-const useSearchParams = <K extends SearchKeys>(from?: RoutesById, defaultValues?: SearchParams<K>) => {
+/**
+ * Hook to manage and synchronize search parameters (query string) with the URL.
+ *
+ * @template T - The type of search parameters (query string).
+ * @param from - The route identifier (optional). If provided, the hook is scoped to that route.
+ * @param defaultValues - Default values for search parameters (optional).
+ *
+ * @returns An object with:
+ *   - `search`: The current search parameters (query string).
+ *   - `setSearch`: A function to update the search parameters and sync with the URL.
+ */
+const useSearchParams = <T extends Record<string, string | string[] | undefined>>({
+  from,
+  defaultValues,
+}: { from?: RoutesById; defaultValues?: Partial<T> }) => {
   const navigate = useNavigate();
 
-  // Get params and search
   const params = useParams(from ? { from, strict: true } : { strict: false });
   const search = useSearch(from ? { from, strict: true } : { strict: false });
 
-  const valuesRef = useRef<SearchParams<K>>(search as SearchParams<K>);
+  // Ref to store current search parameters (avoiding re-renders on changes)
+  const valuesRef = useRef(search as T);
 
-  const setSearch = (newValues: SearchParams<K>, saveSearch = true) => {
-    const searchParams: SearchParams<K> = { ...valuesRef.current, ...newValues };
+  /**
+   * update the search parameters and synchronize with the URL.
+   *
+   * @param newValues - New search parameters to set.
+   * @param saveSearch - Flag indicating whether to save the search to the URL.
+   */
+  const setSearch = (newValues: Partial<T>, saveSearch = true) => {
+    // Merge new values with the current search parameters
+    const searchParams: T = { ...valuesRef.current, ...newValues };
 
-    // Process search parameters using for...of loop
+    // Process each search parameter
     for (const key of objectKeys(searchParams)) {
       const currentValue = searchParams[key];
 
-      // Handle empty or undefined values
+      // Handle empty or undefined values by setting to default
       if (currentValue === '' || currentValue === undefined) {
-        searchParams[key] = defaultValues?.[key] ?? undefined;
+        searchParams[key] = defaultValues?.[key] ?? (undefined as T[keyof T]);
       }
 
-      // Handle array values
+      // joining array values into a string
       if (Array.isArray(searchParams[key])) {
-        searchParams[key] = searchParams[key].length
-          ? searchParams[key].length === 1
-            ? searchParams[key][0]
-            : searchParams[key].join('_')
-          : undefined;
+        searchParams[key] = (
+          searchParams[key].length ? (searchParams[key].length === 1 ? searchParams[key][0] : searchParams[key].join('_')) : undefined
+        ) as T[keyof T];
       }
     }
 
-    // Check if the search parameters have changed
-    const needToUpdate = Object.keys(searchParams).some(
-      (key) => searchParams[key as keyof SearchParams<K>] !== valuesRef.current[key as keyof SearchParams<K>],
-    );
+    // Check if any search parameters have changed
+    const needToUpdate = Object.keys(searchParams).some((key) => searchParams[key] !== valuesRef.current[key]);
 
-    // Navigate if there are changes
+    // If parameters have changed and we need to save the new search state, navigate to the updated URL
     if (needToUpdate && saveSearch) {
       navigate({
         replace: true,
@@ -65,8 +75,7 @@ const useSearchParams = <K extends SearchKeys>(from?: RoutesById, defaultValues?
     valuesRef.current = searchParams;
   };
 
-  // Set initial search values when the hook mounts
-  useEffect(() => setSearch({ ...defaultValues, ...search } as SearchParams<K>), []);
+  useEffect(() => setSearch({ ...defaultValues, ...search } as Partial<T>), []);
 
   return { search: valuesRef.current, setSearch } as const;
 };

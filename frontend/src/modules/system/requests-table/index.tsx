@@ -5,24 +5,21 @@ import { getRequests } from '~/api/requests';
 import useSearchParams from '~/hooks/use-search-params';
 import { useColumns } from '~/modules/system/requests-table/columns';
 import { RequestsTableHeaderBar } from '~/modules/system/requests-table/table-header';
-import { RequestsTableRoute } from '~/routes/system';
+import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Request } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
-import type { getRequestsQuerySchema } from '#/modules/requests/schema';
 
 const BaseDataTable = lazy(() => import('~/modules/system/requests-table/table'));
 const LIMIT = config.requestLimits.requests;
 
-export type RequestsSearch = z.infer<typeof getRequestsQuerySchema>;
+export type RequestsSearch = z.infer<typeof requestSearchSchema>;
 
 const RequestsTable = () => {
-  const { search, setSearch } = useSearchParams(RequestsTableRoute.id, { q: undefined, sort: 'createdAt', order: 'desc' });
+  const { search, setSearch } = useSearchParams<RequestsSearch>({ from: RequestsTableRoute.id });
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const q = search.q;
-  const sort = search.sort as RequestsSearch['sort'];
-  const order = search.order as RequestsSearch['order'];
+  const { q, sort, order } = search;
   const limit = LIMIT;
 
   // State for selected and total counts

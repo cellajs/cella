@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { AttachmentsTableProps } from '~/modules/attachments/attachments-table';
+import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/attachments-table';
 import { openUploadDialog } from '~/modules/attachments/attachments-table/helpers';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -14,9 +14,8 @@ import type { Attachment, BaseTableHeaderProps, BaseTableMethods } from '~/types
 
 type AttachmentsTableHeaderProps = AttachmentsTableProps &
   BaseTableMethods &
-  BaseTableHeaderProps<Attachment> & {
+  BaseTableHeaderProps<Attachment, AttachmentSearch> & {
     openRemoveDialog: () => void;
-    setQuery: (q: string) => void;
   };
 
 export const AttachmentsTableHeader = ({
@@ -24,7 +23,7 @@ export const AttachmentsTableHeader = ({
   total,
   selected,
   q,
-  setQuery,
+  setSearch,
   columns,
   setColumns,
   clearSelection,
@@ -40,11 +39,11 @@ export const AttachmentsTableHeader = ({
   // Drop selected rows on search
   const onSearch = (searchString: string) => {
     clearSelection();
-    setQuery(searchString);
+    setSearch({ q: searchString });
   };
 
   const onResetFilters = () => {
-    setQuery('');
+    setSearch({ q: '' });
     clearSelection();
   };
 

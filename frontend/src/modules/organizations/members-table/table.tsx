@@ -4,7 +4,6 @@ import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'reac
 import type { RowsChangeData, SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
-import type { SearchKeys, SearchParams } from '~/hooks/use-search-params';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
@@ -13,16 +12,15 @@ import { membersKeys } from '~/modules/common/query-client-provider/keys';
 import { useMembersUpdateMutation } from '~/modules/common/query-client-provider/mutations/members';
 import type { MemberSearch, MembersTableProps } from '~/modules/organizations/members-table';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
-import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Member } from '~/types/common';
+import type { BaseTableMethods, BaseTableProps, Member } from '~/types/common';
 
 type BaseMembersTableProps = MembersTableProps &
-  BaseTableProps<Member> & {
-    queryVars: BaseTableQueryVariables<MemberSearch> & { role: MemberSearch['role'] };
-    setSearch: (newValues: SearchParams<SearchKeys>, saveSearch?: boolean) => void;
+  BaseTableProps<Member, MemberSearch> & {
+    queryVars: { role: MemberSearch['role'] };
   };
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseMembersTableProps>(({ entity, columns, queryVars, updateCounts, setSearch }, ref) => {
+  forwardRef<BaseTableMethods, BaseMembersTableProps>(({ entity, columns, queryVars, updateCounts, setSearch, isSheet = false }, ref) => {
     const { t } = useTranslation();
     const entityType = entity.entity;
     const organizationId = entity.organizationId || entity.id;
@@ -55,7 +53,7 @@ const BaseDataTable = memo(
 
       const [sortColumn] = newColumnsSort;
       const { columnKey, direction } = sortColumn;
-      setSearch({ sort: columnKey as MemberSearch['sort'], order: direction.toLowerCase() as MemberSearch['order'] });
+      setSearch({ sort: columnKey as MemberSearch['sort'], order: direction.toLowerCase() as MemberSearch['order'] }, !isSheet);
     };
 
     // Update rows

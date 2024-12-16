@@ -14,7 +14,7 @@ import type { UsersSearch } from '~/modules/users/users-table';
 import type { BaseTableHeaderProps, BaseTableMethods, User } from '~/types/common';
 
 type UsersTableHeaderProps = BaseTableMethods &
-  BaseTableHeaderProps<User> & {
+  BaseTableHeaderProps<User, UsersSearch> & {
     role: UsersSearch['role'];
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;

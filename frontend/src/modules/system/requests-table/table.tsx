@@ -5,19 +5,15 @@ import { DataTable } from '~/modules/common/data-table';
 
 import { Bird } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Request } from '~/types/common';
+import type { BaseTableMethods, BaseTableProps, Request } from '~/types/common';
 
 import type { RequestsSearch } from '~/modules/system/requests-table';
 import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-option';
 
 import type { SortColumn } from 'react-data-grid';
-import type { SearchKeys, SearchParams } from '~/hooks/use-search-params';
 import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 
-type BaseRequestsTableProps = BaseTableProps<Request> & {
-  queryVars: BaseTableQueryVariables<RequestsSearch>;
-  setSearch: (newValues: SearchParams<SearchKeys>, saveSearch?: boolean) => void;
-};
+type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch>;
 
 const BaseRequestsTable = memo(
   forwardRef<BaseTableMethods, BaseRequestsTableProps>(({ columns, queryVars, updateCounts, setSearch }, ref) => {

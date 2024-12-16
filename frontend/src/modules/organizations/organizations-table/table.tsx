@@ -11,18 +11,14 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 
 import type { SortColumn } from 'react-data-grid';
-import type { SearchKeys, SearchParams } from '~/hooks/use-search-params';
 import { showToast } from '~/lib/toasts';
 import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { OrganizationsSearch } from '~/modules/organizations/organizations-table';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import { useUserStore } from '~/store/user';
-import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Organization } from '~/types/common';
+import type { BaseTableMethods, BaseTableProps, Organization } from '~/types/common';
 
-type BaseDataTableProps = BaseTableProps<Organization> & {
-  queryVars: BaseTableQueryVariables<OrganizationsSearch>;
-  setSearch: (newValues: SearchParams<SearchKeys>, saveSearch?: boolean) => void;
-};
+type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts, setSearch }, ref) => {

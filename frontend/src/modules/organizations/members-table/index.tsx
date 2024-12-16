@@ -1,18 +1,18 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 
 import type { z } from 'zod';
-import type { membersQuerySchema } from '#/modules/general/schema';
 
 import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
-import useSearchParams, { type SearchKeys, type SearchParams } from '~/hooks/use-search-params';
+import useSearchParams from '~/hooks/use-search-params';
 import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/organizations/members-table/columns';
 import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
 import { MembersTableHeader } from '~/modules/organizations/members-table/table-header';
 import InviteUsers from '~/modules/users/invite-users';
+import type { membersSearchSchema } from '~/routes/organizations';
 import type { BaseTableMethods, EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
@@ -20,7 +20,7 @@ const BaseDataTable = lazy(() => import('~/modules/organizations/members-table/t
 
 const LIMIT = config.requestLimits.members;
 
-export type MemberSearch = z.infer<typeof membersQuerySchema>;
+export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {
   entity: EntityPage & { membership: MinimumMembershipInfo | null };
   isSheet?: boolean;
@@ -28,16 +28,11 @@ export interface MembersTableProps {
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams('/app-layout/$idOrSlug/members', { q: undefined, role: undefined, sort: 'createdAt', order: 'desc' });
+  const { search, setSearch } = useSearchParams<MemberSearch>({});
 
-  const typedSearch = search as SearchParams<SearchKeys>;
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
-  // TODO Table state (remove typescript hacks)
-  const q = search.q;
-  const role = search.role as MemberSearch['role'];
-  const sort = search.sort as MemberSearch['sort'];
-  const order = search.order as MemberSearch['order'];
+  const { q, role, sort, order, userIdPreview } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -105,8 +100,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
 
   // TODO: Figure out a way to open sheet using url state
   useEffect(() => {
-    if (!typedSearch.userIdPreview) return;
-    setTimeout(() => openUserPreviewSheet(typedSearch.userIdPreview as string, organizationId), 0);
+    if (!userIdPreview) return;
+    setTimeout(() => openUserPreviewSheet(userIdPreview as string, organizationId), 0);
   }, []);
 
   return (
@@ -129,6 +124,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
       <Suspense>
         <BaseDataTable
           entity={entity}
+          isSheet={isSheet}
           ref={dataTableRef}
           columns={columns}
           queryVars={{ q, role, sort, order, limit }}

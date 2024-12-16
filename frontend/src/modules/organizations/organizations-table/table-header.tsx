@@ -9,12 +9,13 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import type { OrganizationsSearch } from '~/modules/organizations/organizations-table';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { BaseTableHeaderProps, BaseTableMethods, Organization } from '~/types/common';
 
 type OrganizationsTableHeaderProps = BaseTableMethods &
-  BaseTableHeaderProps<Organization> & {
+  BaseTableHeaderProps<Organization, OrganizationsSearch> & {
     openRemoveDialog: () => void;
     openNewsletterSheet: () => void;
     fetchExport: (limit: number) => Promise<Organization[]>;
