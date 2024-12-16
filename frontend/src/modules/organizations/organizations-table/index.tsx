@@ -1,7 +1,6 @@
 import { Suspense, lazy, useRef, useState } from 'react';
 import type { z } from 'zod';
 import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
-import type { getOrganizationsQuerySchema } from '#/modules/organizations/schema';
 
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
@@ -17,25 +16,24 @@ import { useColumns } from '~/modules/organizations/organizations-table/columns'
 import { OrganizationsTableHeader } from '~/modules/organizations/organizations-table/table-header';
 import NewsletterDraft from '~/modules/system/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
-import { OrganizationsTableRoute } from '~/routes/system';
+import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/organizations/organizations-table/table'));
 const LIMIT = config.requestLimits.organizations;
 
-export type OrganizationsSearch = z.infer<typeof getOrganizationsQuerySchema>;
+export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;
 
 const OrganizationsTable = () => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams(OrganizationsTableRoute.id);
+  const { search, setSearch } = useSearchParams<OrganizationsSearch>({ from: OrganizationsTableRoute.id });
+
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   const mutateQuery = useMutateQueryData(['organizations', 'list']);
   // Table state
-  const q = search.q;
-  const sort = search.sort as OrganizationsSearch['sort'];
-  const order = search.order as OrganizationsSearch['order'];
+  const { q, sort, order } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -100,7 +98,7 @@ const OrganizationsTable = () => {
   };
 
   const fetchExport = async (limit: number) => {
-    const { items } = await getOrganizations({ limit, q, sort: search.sort, order: search.order });
+    const { items } = await getOrganizations({ limit, q, sort, order });
     return items;
   };
 
@@ -111,7 +109,7 @@ const OrganizationsTable = () => {
         selected={selected}
         columns={columns}
         q={q ?? ''}
-        setQuery={(newQ) => setSearch({ q: newQ })}
+        setSearch={setSearch}
         setColumns={setColumns}
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}

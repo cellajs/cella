@@ -10,11 +10,11 @@ import { membersKeys } from '~/modules/common/query-client-provider/keys';
 import { useMembersUpdateMutation } from '~/modules/common/query-client-provider/mutations/members';
 import type { MemberSearch, MembersTableProps } from '~/modules/organizations/members-table';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
-import type { BaseTableMethods, BaseTableProps, BaseTableQueryVariables, Member } from '~/types/common';
+import type { BaseTableMethods, BaseTableProps, Member } from '~/types/common';
 
 type BaseDataTableProps = MembersTableProps &
-  BaseTableProps<Member> & {
-    queryVars: BaseTableQueryVariables<MemberSearch> & { role: MemberSearch['role'] };
+  BaseTableProps<Member, MemberSearch> & {
+    queryVars: { role: MemberSearch['role'] };
   };
 
 const BaseDataTable = memo(

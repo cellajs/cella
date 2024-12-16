@@ -15,12 +15,11 @@ import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
 import { useUserStore } from '~/store/user';
-import type { Attachment, BaseTableMethods, BaseTableProps, BaseTableQueryVariables } from '~/types/common';
+import type { Attachment, BaseTableMethods, BaseTableProps } from '~/types/common';
 
 type BaseDataTableProps = AttachmentsTableProps &
-  BaseTableProps<Attachment> & {
+  BaseTableProps<Attachment, AttachmentSearch> & {
     setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Attachment>[]>>;
-    queryVars: BaseTableQueryVariables<AttachmentSearch>;
   };
 
 const BaseDataTable = memo(
