@@ -7,6 +7,7 @@ import { env } from '#/../env';
 import { db } from '#/db/db';
 import { getContextUser } from '#/lib/context';
 import type { Env } from '#/types/app';
+import { getIp } from '#/utils/get-ip';
 
 type RateLimiterMode = 'success' | 'fail' | 'limit';
 
@@ -26,16 +27,16 @@ type RateLimiterMode = 'success' | 'fail' | 'limit';
 const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
 
 function rateLimiterMiddleware(this: RateLimiterPostgres | RateLimiterMemory, mode: RateLimiterMode = 'fail'): MiddlewareHandler<Env> {
-  if (mode === 'success' || mode === 'fail') {
-    this.points = this.points - 1;
-  }
+  // Decrease points on success or fail
+  if (mode === 'success' || mode === 'fail') this.points = this.points - 1;
 
   return async (ctx, next) => {
-    const ipAddr = ctx.req.header('x-forwarded-for');
+    const ipAddr = getIp(ctx);
     const body = ctx.req.header('content-type') === 'application/json' ? await ctx.req.raw.clone().json() : undefined;
     const user = getContextUser();
     const username = body?.email || user?.id;
 
+    // TODO this is not very useful, we need to be able to specify the key we will use for counting the rate limit
     if (!ipAddr && !username) {
       return next();
     }
@@ -43,15 +44,19 @@ function rateLimiterMiddleware(this: RateLimiterPostgres | RateLimiterMemory, mo
     const usernameIPkey = getUsernameIPkey(username, ipAddr);
 
     const res = await this.get(usernameIPkey);
+
     let retrySecs = 0;
+
     // Check if IP or Username + IP is already blocked
     if (res !== null && res.consumedPoints > this.points) {
       retrySecs = Math.round(res.msBeforeNext / 1000) || 1;
     }
+
     if (retrySecs > 0) {
       ctx.header('Retry-After', String(retrySecs));
       return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { usernameIPkey });
     }
+
     if (mode === 'limit') {
       try {
         await this.consume(usernameIPkey);
@@ -63,7 +68,9 @@ function rateLimiterMiddleware(this: RateLimiterPostgres | RateLimiterMemory, mo
         throw rlRejected;
       }
     }
+
     await next();
+
     if (ctx.res.status === 200) {
       if (mode === 'success') {
         try {
@@ -87,6 +94,8 @@ const defaultOptions = {
   duration: 60 * 60, // within 1 hour
   blockDuration: 60 * 10, // Block for 10 minutes
 };
+
+// Get instance of rate limiter with correct store
 export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'> = defaultOptions) =>
   env.PGLITE
     ? new RateLimiterMemory(options)
@@ -94,7 +103,15 @@ export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions
         ...options,
         storeClient: db.$client,
       });
+
+// Create a rate limiter
+// TODO always set tableName to 'rate_limits' to use the same table for all rate limiters
+// TODO or use one table for failed requests and one for successful requests
 export const rateLimiter = (options: Omit<IRateLimiterPostgresOptions, 'storeClient'> = defaultOptions, mode: RateLimiterMode = 'fail') =>
   rateLimiterMiddleware.call(getRateLimiterInstance(options), mode);
 
+// TODO: this is not very useful, we need to be able to specify the key we will use for counting the rate limit
 export const authRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'auth_fail' }, 'fail');
+
+// Prevent brute force attacks by randomly guessing tokens
+export const tokenRateLimiter = rateLimiter({ points: 5, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'token_fail' }, 'fail');

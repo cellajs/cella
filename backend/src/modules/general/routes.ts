@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
-import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
+import { rateLimiter, tokenRateLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
@@ -92,7 +92,7 @@ class GeneralRoutesConfig {
   public checkToken = createRouteConfig({
     method: 'post',
     path: '/check-token',
-    middleware: [authRateLimiter],
+    middleware: [tokenRateLimiter],
     guard: isPublicAccess,
     tags: ['general'],
     summary: 'Token validation check',
@@ -124,6 +124,7 @@ class GeneralRoutesConfig {
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, systemGuard],
+    // Rate limit for 10 requests per hour to prevent users sending too many invites
     middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
     tags: ['general'],
     summary: 'Invite to system',
@@ -154,7 +155,7 @@ class GeneralRoutesConfig {
     method: 'post',
     path: '/invite/{token}',
     guard: isPublicAccess,
-    middleware: [authRateLimiter],
+    middleware: [tokenRateLimiter],
     tags: ['general'],
     summary: 'Accept invitation',
     description: 'Accept invitation token',
