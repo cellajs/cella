@@ -9,7 +9,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={mode}
-      className="toaster z-[500] group"
+      className="toaster z-[500] pointer-events-auto group"
       toastOptions={{
         classNames: {
           toast:
