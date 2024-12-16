@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { type UpdateMembershipProp, updateMembership as baseUpdateMembership } from '~/api/memberships';
 import { useMutation } from '~/hooks/use-mutations';
-import { dispatchCustomEvent } from '~/lib/custom-events';
 import { showToast } from '~/lib/toasts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { updateMenuItem } from '~/modules/common/nav-sheet/helpers/menu-operations';
@@ -36,7 +35,6 @@ export const MenuItemOptions = ({ item }: MenuItemOptionsProps) => {
         toastMessage = t(`common:success.${updatedMembership.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${item.entity}`) });
       }
       updateMenuItem(updatedEntity);
-      dispatchCustomEvent('menuEntityChange', { entity: item.entity, membership: updatedMembership });
 
       if (toastMessage) showToast(toastMessage, 'success');
     },

@@ -1,10 +1,9 @@
 import type { AppCustomEventMap } from '~/types/app';
-import type { ContextEntity, Entity, Membership } from '~/types/common';
+import type { Entity } from '~/types/common';
 
 export type CombinedCustomEventMap = AppCustomEventMap & {
   toggleCarouselDrag: CustomEvent<boolean>;
   updateEntityCover: CustomEvent<{ bannerUrl: string; entity: Entity }>;
-  menuEntityChange: CustomEvent<{ membership: Membership; entity: ContextEntity }>;
 };
 
 export type CustomEventsWithData = {
