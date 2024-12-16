@@ -74,8 +74,9 @@ export const slashMenu = (
         <div key={item.title}>
           {!isMobile && index === indexedItemCount && items.length === originalItemCount && <hr className="slash-menu-separator" />}
           <div
-            // biome-ignore lint/suspicious/noAssignInExpressions: to enable scroll into selected item
-            ref={(el) => (itemRefs.current[index] = el)}
+            ref={(el) => {
+              itemRefs.current[index] = el;
+            }}
             className="slash-menu-item"
             aria-selected={selectedIndex === index}
             onMouseDown={(e) => triggerItemClick(item, e)}

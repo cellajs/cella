@@ -3,7 +3,7 @@ export type DeviceType = 'mobile' | 'tablet' | 'pc';
 interface DeviceFrameProps {
   type: DeviceType;
   inView: boolean;
-  renderCarousel: (isDialog: boolean) => JSX.Element;
+  renderCarousel: (isDialog: boolean) => React.ReactElement;
 }
 
 const DeviceFrame = ({ type, inView, renderCarousel }: DeviceFrameProps) => {

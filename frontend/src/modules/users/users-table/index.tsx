@@ -1,13 +1,12 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import type { z } from 'zod';
-
 import { config } from 'config';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
-
+import { Suspense, lazy, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { z } from 'zod';
+import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import useSearchParams from '~/hooks/use-search-params';
+import { useUserSheet } from '~/hooks/use-user-sheet';
 import { showToast } from '~/lib/toasts';
+import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
@@ -24,11 +23,13 @@ export type UsersSearch = z.infer<typeof usersSearchSchema>;
 
 const UsersTable = () => {
   const { t } = useTranslation();
+
   const { search, setSearch } = useSearchParams<UsersSearch>({ from: UsersTableRoute.id });
+
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const { q, role, sort, order, userIdPreview } = search;
+  const { q, role, sort, order, sheetId } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -45,10 +46,14 @@ const UsersTable = () => {
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearch);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
+
+  // Render user sheet if sheetId is present
+  useUserSheet({ sheetId });
 
   const openInviteDialog = (container: HTMLElement | null) => {
     dialog(<InviteUsers mode={'email'} dialog />, {
@@ -85,12 +90,6 @@ const UsersTable = () => {
     );
   };
 
-  // TODO: Figure out a way to open sheet using url state
-  useEffect(() => {
-    if (!userIdPreview) return;
-    setTimeout(() => openUserPreviewSheet(userIdPreview), 0);
-  }, []);
-
   return (
     <div className="flex flex-col gap-4 h-full">
       <UsersTableHeader
@@ -110,8 +109,9 @@ const UsersTable = () => {
           updateCounts={updateCounts}
           ref={dataTableRef}
           columns={columns}
-          setSearch={setSearch}
           queryVars={{ q, role, sort, order, limit }}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
         />
       </Suspense>
     </div>

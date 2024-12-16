@@ -1,7 +1,7 @@
-import { type Dispatch, type SetStateAction, forwardRef, memo, useCallback, useEffect, useImperativeHandle, useState } from 'react';
+import { type Dispatch, type SetStateAction, forwardRef, memo, useCallback, useEffect, useImperativeHandle } from 'react';
 
 import { Paperclip } from 'lucide-react';
-import type { RowsChangeData, SortColumn } from 'react-data-grid';
+import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
@@ -13,7 +13,6 @@ import { useSync } from '~/modules/attachments/attachments-table/helpers/use-syn
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
-import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
 import { useUserStore } from '~/store/user';
 import type { Attachment, BaseTableMethods, BaseTableProps } from '~/types/common';
@@ -25,26 +24,16 @@ type BaseDataTableProps = AttachmentsTableProps &
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(
-    ({ organization, columns, queryVars, setColumns, setSearch, updateCounts, isSheet = false }, ref) => {
+    ({ organization, columns, setColumns, queryVars, updateCounts, sortColumns, setSortColumns, isSheet = false }, ref) => {
       const { t } = useTranslation();
       const user = useUserStore((state) => state.user);
 
-      const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
-      const isMobile = useBreakpoints('max', 'sm');
-
       useSync(organization.id);
 
-      const { q, sort = 'createdAt', order = 'desc', limit } = queryVars;
-      const [sortColumns, setSortColumns] = useState<SortColumn[]>(getSortColumns(order, sort));
+      const { q, sort, order, limit } = queryVars;
 
-      // Update sort
-      const updateSort = (newColumnsSort: SortColumn[]) => {
-        setSortColumns(newColumnsSort);
-
-        const [sortColumn] = newColumnsSort;
-        const { columnKey, direction } = sortColumn;
-        setSearch({ sort: columnKey as AttachmentSearch['sort'], order: direction.toLowerCase() as AttachmentSearch['order'] });
-      };
+      const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
+      const isMobile = useBreakpoints('max', 'sm');
 
       // Query attachments
       const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
@@ -95,7 +84,7 @@ const BaseDataTable = memo(
         <DataTable<Attachment>
           {...{
             columns: columns.filter((column) => column.visible),
-            rowHeight: 42,
+            rowHeight: 50,
             enableVirtualization: false,
             onRowsChange,
             rows,
@@ -110,7 +99,7 @@ const BaseDataTable = memo(
             selectedRows,
             onSelectedRowsChange: setSelectedRows,
             sortColumns,
-            onSortColumnsChange: updateSort,
+            onSortColumnsChange: setSortColumns,
             NoRowsComponent: (
               <ContentPlaceholder Icon={Paperclip} title={t('common:no_resource_yet', { resource: t('common:attachments').toLowerCase() })} />
             ),

@@ -1,6 +1,6 @@
 import { renderSelect } from '~/modules/common/data-table/select-column';
 
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -9,13 +9,13 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
 import type { Member } from '~/types/common';
 import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (isAdmin: boolean, isSheet: boolean, organizationId: string) => {
+export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
+  const navigate = useNavigate();
 
   const columns = () => {
     const cols: ColumnOrColumnGroup<Member>[] = [
@@ -37,7 +37,12 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, organizationId: s
             onClick={(e) => {
               if (e.metaKey || e.ctrlKey) return;
               e.preventDefault();
-              openUserPreviewSheet(row.id, organizationId);
+              navigate({
+                to: '.',
+                replace: true,
+                resetScroll: false,
+                search: (prev) => ({ ...prev, sheetId: row.id }),
+              });
             }}
           >
             <AvatarWrap type="user" className="h-8 w-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
@@ -64,10 +69,12 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, organizationId: s
         key: 'role',
         name: t('common:role'),
         sortable: true,
-        visible: !isMobile,
+        visible: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
-          <div className="inline-flex items-center gap-1 relative group h-full w-full">{row.membership ? t(row.membership.role) : '-'}</div>
+          <div className="inline-flex items-center gap-1 relative group h-full w-full">
+            {row.membership ? t(`common:${row.membership.role}`) : '-'}
+          </div>
         ),
         width: 100,
         ...(isAdmin && {

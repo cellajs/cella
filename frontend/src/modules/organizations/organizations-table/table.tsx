@@ -1,18 +1,14 @@
 import { onlineManager } from '@tanstack/react-query';
-import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
-
 import { Bird } from 'lucide-react';
+import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { inviteMembers } from '~/api/memberships';
 import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
+import { showToast } from '~/lib/toasts';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-
-import type { SortColumn } from 'react-data-grid';
-import { showToast } from '~/lib/toasts';
-import { getSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { OrganizationsSearch } from '~/modules/organizations/organizations-table';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import { useUserStore } from '~/store/user';
@@ -21,23 +17,13 @@ import type { BaseTableMethods, BaseTableProps, Organization } from '~/types/com
 type BaseDataTableProps = BaseTableProps<Organization, OrganizationsSearch>;
 
 const BaseDataTable = memo(
-  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts, setSearch }, ref) => {
+  forwardRef<BaseTableMethods, BaseDataTableProps>(({ columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
     const { t } = useTranslation();
     const { user } = useUserStore();
 
     // Extract query variables and set defaults
-    const { q, sort = 'createdAt', order = 'desc', limit } = queryVars;
+    const { q, sort, order, limit } = queryVars;
 
-    const [sortColumns, setSortColumns] = useState<SortColumn[]>(getSortColumns(order, sort));
-
-    // Update sort
-    const updateSort = (newColumnsSort: SortColumn[]) => {
-      setSortColumns(newColumnsSort);
-
-      const [sortColumn] = newColumnsSort;
-      const { columnKey, direction } = sortColumn;
-      setSearch({ sort: columnKey as OrganizationsSearch['sort'], order: direction.toLowerCase() as OrganizationsSearch['order'] });
-    };
     // Query organizations
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
       useDataFromSuspenseInfiniteQuery(organizationsQueryOptions({ q, sort, order, limit }));
@@ -84,7 +70,7 @@ const BaseDataTable = memo(
           columns: columns.filter((column) => column.visible),
           rows,
           totalCount,
-          rowHeight: 42,
+          rowHeight: 50,
           rowKeyGetter: (row) => row.id,
           error,
           isLoading,
@@ -97,7 +83,7 @@ const BaseDataTable = memo(
           fetchMore: fetchNextPage,
           onSelectedRowsChange: setSelectedRows,
           sortColumns,
-          onSortColumnsChange: updateSort,
+          onSortColumnsChange: setSortColumns,
           NoRowsComponent: (
             <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
           ),

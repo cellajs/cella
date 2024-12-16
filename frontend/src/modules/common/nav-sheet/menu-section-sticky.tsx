@@ -34,7 +34,7 @@ export const MenuSectionSticky = ({
       <div className="flex items-center gap-2 z-10 py-3 pb-2 bg-background justify-between px-1 -mx-1">
         <LayoutGroup>
           <Button onClick={() => toggleSection(sectionType)} className="w-full justify-between" variant="secondary" asChild>
-            <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.15 }}>
+            <motion.button layout={'size'} transition={{ bounce: 0, duration: 0.2 }}>
               <div className="flex items-center">
                 <motion.span layout={'size'} className="flex items-center">
                   {t(sectionLabel)}

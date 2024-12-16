@@ -5,7 +5,6 @@ import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
-import { nanoid } from '~/utils/nanoid';
 
 export type PageNavTab = {
   id: string;
@@ -53,7 +52,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
           <Link
             key={id}
             resetScroll={false}
-            className="relative p-2 lg:px-4 rounded-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="relative p-2 lg:px-4 rounded-sm outline-none sm:ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             to={path}
             params={true}
             activeOptions={{ exact: true, includeSearch: false }}
@@ -63,8 +62,9 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
               <>
                 {t(label)}
                 {isActive && (
-                  <motion.div
-                    key={nanoid()}
+                  <motion.span
+                    initial={false}
+                    layoutId="page-nav-active"
                     transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
                     className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
                   />

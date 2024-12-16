@@ -1,9 +1,5 @@
-import { useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
-
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { getUser } from '~/api/users';
-import { sheet } from '~/modules/common/sheeter/state';
 import Spinner from '~/modules/common/spinner';
 import UserProfilePage from '~/modules/users/profile-page';
 
@@ -14,41 +10,13 @@ export const userQueryOptions = (idOrSlug: string) =>
   });
 
 const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: string }) => {
-  const navigate = useNavigate();
-
   // Query members
   const { data: user, isError, isLoading } = useQuery(userQueryOptions(idOrSlug));
 
-  useEffect(() => {
-    // Add search parameter on mount
-    navigate({
-      to: '.',
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({
-        ...prev,
-        userIdPreview: idOrSlug,
-      }),
-    });
-
-    // Cleanup function to remove search parameter on unmount
-    return () => {
-      navigate({
-        to: '.',
-        replace: true,
-        resetScroll: false,
-        search: (prev) => {
-          const { userIdPreview, ...rest } = prev;
-          return rest;
-        },
-      });
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isError) return;
-    sheet.remove(`user-preview-${idOrSlug}`);
-  }, [isError]);
+  // TODO show error message
+  if (isError) {
+    return null;
+  }
 
   return isLoading ? (
     <div className="block">

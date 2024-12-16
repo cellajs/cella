@@ -30,7 +30,7 @@ export const SheetNav = ({ tabs }: Props) => {
               </Button>
 
               <motion.div
-                key={nanoid()}
+                layoutId={nanoid()}
                 transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
                 className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2 peer-data-[current=false]:hidden"
               />

@@ -1,6 +1,6 @@
-import { type ReactNode, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import useUpdateTabIndex from '~/hooks/use-update-tab-index';
 import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
@@ -27,9 +27,6 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
 
   const isSectionVisible = activeSections?.[sectionType] !== undefined ? activeSections[sectionType] : true;
 
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const archivedRef = useRef<HTMLDivElement>(null);
-
   const createDialog = () => {
     dialog(createForm, {
       className: 'md:max-w-2xl',
@@ -47,9 +44,6 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
     setArchivedVisible(!isArchivedVisible);
   };
 
-  useUpdateTabIndex(sectionRef, isSectionVisible);
-  useUpdateTabIndex(archivedRef, isArchivedVisible);
-
   return (
     <div className="group/menuSection" data-visible={isSectionVisible}>
       <MenuSectionSticky
@@ -61,40 +55,52 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
         toggleOptionsView={toggleOptionsView}
         createDialog={createDialog}
       />
-      <div
-        ref={sectionRef}
-        className="grid transition-[grid-template-rows] grid-rows-[0fr] group-data-[visible=true]/menuSection:grid-rows-[1fr] ease-in-out duration-300"
-      >
-        <ul className="overflow-hidden">
-          {optionsView ? (
-            <SheetMenuItemsOptions data={data} shownOption="unarchive" />
-          ) : (
-            <SheetMenuItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
-          )}
-          {!!data.length && (
-            <div
-              className="group/archived"
-              data-have-inactive={!!data.filter((i) => i.membership.archived).length}
-              data-submenu={false}
-              data-archived-visible={isArchivedVisible}
-            >
-              <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.filter((i) => i.membership.archived).length} />
+      <AnimatePresence initial={false}>
+        {isSectionVisible && (
+          <motion.ul
+            key={sectionType}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            style={{ overflow: 'hidden' }}
+          >
+            {optionsView ? (
+              <SheetMenuItemsOptions data={data} shownOption="unarchive" />
+            ) : (
+              <SheetMenuItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
+            )}
+            {!!data.length && (
               <div
-                ref={archivedRef}
-                className="grid transition-[grid-template-rows] grid-rows-[0fr] group-data-[archived-visible=true]/archived:grid-rows-[1fr] ease-in-out duration-300"
+                className="group/archived"
+                data-have-inactive={!!data.filter((i) => i.membership.archived).length}
+                data-submenu={false}
+                data-archived-visible={isArchivedVisible}
               >
-                <ul className="overflow-hidden">
-                  {optionsView ? (
-                    <SheetMenuItemsOptions data={data} shownOption="archived" />
-                  ) : (
-                    <SheetMenuItems type={entityType} data={data} createDialog={createDialog} shownOption="archived" />
+                <MenuArchiveToggle archiveToggleClick={archiveToggleClick} inactiveCount={data.filter((i) => i.membership.archived).length} />
+                <AnimatePresence initial={false}>
+                  {isArchivedVisible && (
+                    <motion.ul
+                      key={`${sectionType}-archived`}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeInOut' }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      {optionsView ? (
+                        <SheetMenuItemsOptions data={data} shownOption="archived" />
+                      ) : (
+                        <SheetMenuItems type={entityType} data={data} createDialog={createDialog} shownOption="archived" />
+                      )}
+                    </motion.ul>
                   )}
-                </ul>
+                </AnimatePresence>
               </div>
-            </div>
-          )}
-        </ul>
-      </div>
+            )}
+          </motion.ul>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface MeasureResult<T extends Element> {
-  ref: React.RefObject<T>;
+  ref: React.RefObject<T | null>;
   bounds: DOMRectReadOnly;
 }
 

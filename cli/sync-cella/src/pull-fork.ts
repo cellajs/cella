@@ -22,9 +22,6 @@ export interface PullForkOptions {
   fork: Fork;
 }
 
-// @TODO: Check if in fork a specific config is used
-// @TODO: Check if we can exclude some files from the fork (do we need to config this in Cella or in Fork?)
-// @TODO: Add in utils/config-file.js for extractFromTs a function to extract config forks 
 export async function pullFork({
   prBranchName,
   fork,

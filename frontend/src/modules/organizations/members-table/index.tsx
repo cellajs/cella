@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 
 import type { z } from 'zod';
 
@@ -6,7 +6,8 @@ import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
 import useSearchParams from '~/hooks/use-search-params';
-import { openUserPreviewSheet } from '~/modules/common/data-table/util';
+import { useUserSheet } from '~/hooks/use-user-sheet';
+import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/organizations/members-table/columns';
 import RemoveMembersForm from '~/modules/organizations/members-table/remove-member-form';
@@ -28,11 +29,14 @@ export interface MembersTableProps {
 
 const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
+
   const { search, setSearch } = useSearchParams<MemberSearch>({});
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
+  const organizationId = entity.organizationId || entity.id;
+  const isAdmin = entity.membership?.role === 'admin';
 
-  const { q, role, sort, order, userIdPreview } = search;
+  const { q, role, sort, order, sheetId } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -45,15 +49,20 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
-  const organizationId = entity.organizationId || entity.id;
-  const isAdmin = entity.membership?.role === 'admin';
+  const setSearchParams = (newValues: Partial<MemberSearch>) => {
+    setSearch(newValues, !isSheet);
+  };
 
   // Build columns
-  const [columns, setColumns] = useColumns(isAdmin, isSheet, organizationId);
+  const [columns, setColumns] = useColumns(isAdmin, isSheet);
+  const { sortColumns, setSortColumns } = useSortColumns(sort, order, setSearchParams);
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
+
+  // Render user sheet if sheetId is present
+  useUserSheet({ sheetId, organizationId });
 
   const openInviteDialog = (container?: HTMLElement | null) => {
     dialog(<InviteUsers entity={entity} mode={null} dialog />, {
@@ -98,12 +107,6 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
     return items;
   };
 
-  // TODO: Figure out a way to open sheet using url state
-  useEffect(() => {
-    if (!userIdPreview) return;
-    setTimeout(() => openUserPreviewSheet(userIdPreview as string, organizationId), 0);
-  }, []);
-
   return (
     <div className="flex flex-col gap-4 h-full">
       <MembersTableHeader
@@ -124,12 +127,12 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
       <Suspense>
         <BaseDataTable
           entity={entity}
-          isSheet={isSheet}
           ref={dataTableRef}
           columns={columns}
           queryVars={{ q, role, sort, order, limit }}
           updateCounts={updateCounts}
-          setSearch={setSearch}
+          sortColumns={sortColumns}
+          setSortColumns={setSortColumns}
         />
       </Suspense>
     </div>

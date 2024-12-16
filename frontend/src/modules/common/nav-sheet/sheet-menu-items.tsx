@@ -30,7 +30,7 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
       data-active={isActive}
       resetScroll={false}
       className={cn(
-        'group/menuItem h-14 w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus:ring-foreground hover:bg-accent/50 hover:text-accent-foreground data-[subitem=true]:h-12 data-[active=true]:ring-transparent data-[active=true]:bg-accent',
+        'group/menuItem h-14 w-full flex my-1 cursor-pointer items-start justify-start space-x-1 rounded p-0 focus:outline-none ring-2 ring-inset ring-transparent focus-visible:ring-foreground hover:bg-accent/50 hover:text-accent-foreground data-[subitem=true]:h-12 data-[active=true]:ring-transparent data-[active=true]:bg-accent',
         className,
       )}
       aria-label={item.name}
@@ -107,12 +107,12 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
     return (
       <>
         {filteredItems.map((item) => (
-          <div className={item.submenu?.length && !hideSubmenu ? 'relative submenu-section' : ''} key={item.id}>
+          <li className={item.submenu?.length && !hideSubmenu ? 'relative submenu-section' : ''} key={item.id}>
             <SheetMenuItem item={item} className={className} />
             {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
               <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
             )}
-          </div>
+          </li>
         ))}
       </>
     );
