@@ -2,6 +2,7 @@ import { Suspense, lazy, useRef, useState } from 'react';
 
 import type { z } from 'zod';
 
+import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
@@ -31,12 +32,13 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
 
   const { search, setSearch } = useSearchParams<MemberSearch>({});
+  const { sheetId } = useSearch({ strict: false });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
   const organizationId = entity.organizationId || entity.id;
   const isAdmin = entity.membership?.role === 'admin';
 
-  const { q, role, sort, order, sheetId } = search;
+  const { q, role, sort, order } = search;
   const limit = LIMIT;
 
   // State for selected and total counts
@@ -114,7 +116,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         selected={selected}
         q={q ?? ''}
         role={role}
-        setSearch={setSearch}
+        setSearch={setSearchParams}
         columns={columns}
         setColumns={setColumns}
         fetchExport={fetchExport}
