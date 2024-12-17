@@ -12,6 +12,7 @@ import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { updateMembership } from '~/api/memberships';
+import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { getRelativeItemOrder } from '~/modules/common/nav-sheet/helpers';
 import { updateMenuItem } from '~/modules/common/nav-sheet/helpers/menu-operations';
@@ -108,6 +109,9 @@ export const SheetMenu = memo(() => {
 
           const updatedEntity: UserMenuItem = { ...sourceItem, membership: { ...sourceItem.membership, ...updatedMembership } };
           updateMenuItem(updatedEntity);
+
+          // To be able to update, add a listener to manipulate data that has been changed in the menu (reordered entities on your page)
+          dispatchCustomEvent('menuEntityChange', { entity: sourceItem.entity, membership: updatedMembership });
         },
       }),
     );
