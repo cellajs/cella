@@ -1,6 +1,7 @@
-import { type InfiniteData, type QueryKey, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { type InfiniteData, type QueryKey, useInfiniteQuery, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import type { QueryData } from '~/modules/common/query-client-provider/types';
+import { queryClient } from '~/lib/router';
+import type { InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
 
 type Options<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
   typeof useSuspenseInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, number>
@@ -14,7 +15,11 @@ export const useDataFromSuspenseInfiniteQuery = <T extends { id: string } = { id
   const [selectedRows, setSelectedRows] = useState(new Set<string>());
   const [totalCount, setTotalCount] = useState(0);
 
-  const queryResult = useSuspenseInfiniteQuery(options);
+  const cachedData = queryClient.getQueryData<InfiniteQueryData<T>>(options.queryKey);
+
+  const queryResult = cachedData
+    ? useInfiniteQuery({ ...options, enabled: false, initialData: cachedData }) // Don't refetch if data is cached
+    : useSuspenseInfiniteQuery(options); // Use Suspense query if no cached data
 
   useEffect(() => {
     // Flatten the array of pages to get all items

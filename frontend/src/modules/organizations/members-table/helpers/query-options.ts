@@ -21,7 +21,7 @@ export const membersQueryOptions = ({
   const order = initialOrder || 'desc';
 
   const queryKey = membersKeys.list({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role });
-  const offset = getPaginatedOffset(membersKeys.list({ idOrSlug, entityType, orgIdOrSlug, q, sort, order, role }));
+  const offset = getPaginatedOffset(queryKey);
 
   return infiniteQueryOptions({
     queryKey,
