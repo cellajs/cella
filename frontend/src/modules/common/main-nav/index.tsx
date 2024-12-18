@@ -41,7 +41,7 @@ const MainNav = () => {
   const showFloatNav = renderedItems.length > 0 && renderedItems.length <= 2;
 
   const navButtonClick = (navItem: NavItem) => {
-    // If its a have dialog, open it
+    // If it has a dialog, open it
     if (navItem.dialog) {
       return dialog(navItem.dialog, {
         id: navItem.id,

@@ -39,7 +39,7 @@ export const SheetMenuSearch = ({ menu, searchTerm, setSearchTerm, searchResults
   }, [searchTerm, menu]);
 
   return (
-    <div className="relative">
+    <div className="relative z-20">
       <Search
         size={16}
         className="absolute left-3 -z-10 top-1/2 -translate-y-1/2 opacity-50

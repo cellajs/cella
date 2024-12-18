@@ -73,7 +73,7 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
             {!!data.length && (
               <div
                 className="group/archived"
-                data-have-inactive={!!data.filter((i) => i.membership.archived).length}
+                data-has-inactive={!!data.filter((i) => i.membership.archived).length}
                 data-submenu={false}
                 data-archived-visible={isArchivedVisible}
               >
