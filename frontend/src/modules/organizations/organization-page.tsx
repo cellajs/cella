@@ -7,13 +7,14 @@ import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
 
+import { Suspense, lazy } from 'react';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { queryClient } from '~/lib/router';
 import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
 import { useUserStore } from '~/store/user';
 
-// const JoinLeaveButton = lazy(() => import('~/modules/organizations/join-leave-button'));
+const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
@@ -63,12 +64,11 @@ const OrganizationPage = () => {
         thumbnailUrl={organization.thumbnailUrl}
         bannerUrl={organization.bannerUrl}
         panel={
-          <div className="flex items-center p-2">
-            {/* return after join endpoint implementation */}
-            {/* <Suspense>
-              <JoinLeaveButton organization={organization} />
-            </Suspense> */}
-          </div>
+          organization.membership && (
+            <Suspense>
+              <LeaveButton organization={organization} />
+            </Suspense>
+          )
         }
       />
       <PageNav title={organization.name} avatar={organization} tabs={tabs} />

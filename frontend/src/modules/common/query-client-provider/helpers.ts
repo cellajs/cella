@@ -13,12 +13,10 @@ export async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryO
   // If cache exists, return cached data immediately
   if (cachedData) return cachedData;
 
-  // If offline, return undefined or cache (if you want to handle it differently)
   if (!onlineManager.isOnline()) return undefined;
 
-  // If no cache, only fetch if online (avoid fetch when offline or during hydration)
+  // fetch if online (avoid fetch when offline or during hydration)
   if ('getNextPageParam' in options) return queryClient.fetchInfiniteQuery(options); // Infinite query fetch
-
   return queryClient.fetchQuery(options); // Regular query fetch
 }
 
