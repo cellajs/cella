@@ -31,12 +31,14 @@ export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, so
 export const OrganizationRoute = createRoute({
   path: baseEntityRoutes.organization,
   staticData: { pageTitle: 'Organization', isAuth: true },
-  beforeLoad: ({ location, params }) => noDirectAccess(location.pathname, params.idOrSlug, '/members'),
-  getParentRoute: () => AppRoute,
-  loader: ({ params: { idOrSlug } }) => {
+  beforeLoad: async ({ location, params: { idOrSlug } }) => {
+    noDirectAccess(location.pathname, idOrSlug, '/members');
+    // to be able to use it in child routes as context
     const queryOptions = organizationQueryOptions(idOrSlug);
-    return offlineFetch(queryOptions);
+    const organization = (await offlineFetch(queryOptions)) as OrganizationType | undefined;
+    return { organization };
   },
+  getParentRoute: () => AppRoute,
   errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationRoute.id });
@@ -54,10 +56,9 @@ export const OrganizationMembersRoute = createRoute({
   staticData: { pageTitle: 'members', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order, role } }) => ({ q, sort, order, role }),
-  loader: ({ params: { idOrSlug }, deps: { q, sort, order, role } }) => {
+  loader: ({ params: { idOrSlug }, deps: { q, sort, order, role }, context }) => {
     const entityType = 'organization';
-    const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
-    const orgIdOrSlug = organization?.id || idOrSlug;
+    const orgIdOrSlug = context.organization?.id || idOrSlug;
     const queryOptions = membersQueryOptions({ idOrSlug, orgIdOrSlug, entityType, q, sort, order, role });
     return offlineFetchInfinite(queryOptions);
   },
@@ -74,15 +75,15 @@ export const OrganizationAttachmentsRoute = createRoute({
   staticData: { pageTitle: 'attachments', isAuth: true },
   getParentRoute: () => OrganizationRoute,
   loaderDeps: ({ search: { q, sort, order } }) => ({ q, sort, order }),
-  loader: ({ params: { idOrSlug }, deps: { q, sort, order } }) => {
-    const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
-    const orgIdOrSlug = organization?.id || idOrSlug;
+  loader: ({ params: { idOrSlug }, deps: { q, sort, order }, context }) => {
+    const orgIdOrSlug = context.organization?.id || idOrSlug;
     const queryOptions = attachmentsQueryOptions({ orgIdOrSlug, q, sort, order });
     return offlineFetchInfinite(queryOptions);
   },
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationAttachmentsRoute.id });
-    const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
+    const orgQueryOptions = organizationQueryOptions(idOrSlug);
+    const organization: OrganizationType | undefined = queryClient.getQueryData(orgQueryOptions.queryKey);
 
     if (!organization) return;
     return (
@@ -99,7 +100,9 @@ export const OrganizationSettingsRoute = createRoute({
   getParentRoute: () => OrganizationRoute,
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationSettingsRoute.id });
-    const organization: OrganizationType | undefined = queryClient.getQueryData(['organization', idOrSlug]);
+    const orgQueryOptions = organizationQueryOptions(idOrSlug);
+    const organization: OrganizationType | undefined = queryClient.getQueryData(orgQueryOptions.queryKey);
+
     if (!organization) return;
     return (
       <Suspense>

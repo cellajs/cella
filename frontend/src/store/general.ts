@@ -3,29 +3,27 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-export type NetworkMode = 'online' | 'offline';
-
 interface GeneralState {
-  networkMode: NetworkMode;
-  setNetworkMode: (mode: NetworkMode) => void;
+  offlineAccess: boolean;
+  toggleOfflineAccess: () => void;
 }
 
 export const useGeneralStore = create<GeneralState>()(
   devtools(
     persist(
       immer((set) => ({
-        networkMode: 'online',
-        setNetworkMode: (mode) => {
+        offlineAccess: false,
+        toggleOfflineAccess: () => {
           set((state) => {
-            state.networkMode = mode;
+            state.offlineAccess = !state.offlineAccess;
           });
         },
       })),
       {
-        version: 2,
+        version: 3,
         name: `${config.slug}-general`,
         partialize: (state) => ({
-          networkMode: state.networkMode,
+          offlineAccess: state.offlineAccess,
         }),
         storage: createJSONStorage(() => localStorage),
       },

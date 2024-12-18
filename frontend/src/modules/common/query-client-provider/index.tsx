@@ -1,12 +1,12 @@
-import type { UseQueryOptions } from '@tanstack/react-query';
 import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
 import { persister, queryClient } from '~/lib/router';
-import { prefetchAttachments, prefetchMembers, prefetchQuery, waitFor } from '~/modules/common/query-client-provider/helpers';
-import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
-import { mapQuery, prefetchEntities } from '~/offline-config';
+import { prefetchQuery, waitFor } from '~/modules/common/query-client-provider/helpers';
+import { meQueryOptions, menuQueryOptions } from '~/modules/users/helpers/query-options';
+import { queriesToMap } from '~/offline-config';
 import { useGeneralStore } from '~/store/general';
+import type { UserMenuItem } from '~/types/common';
 
 const mutationFiles = import.meta.glob('./mutations/*');
 
@@ -18,58 +18,43 @@ const mutationFiles = import.meta.glob('./mutations/*');
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
-  const { networkMode } = useGeneralStore();
+  const { offlineAccess } = useGeneralStore();
 
   useEffect(() => {
-    if (networkMode === 'online') return;
+    if (!offlineAccess) return;
 
     (async () => {
       await waitFor(1000); // wait for a second to avoid server overload
 
-      // Invalidate and prefetch me and menu
-      const meQueryOptions: UseQueryOptions = {
-        queryKey: ['me'],
-        queryFn: getAndSetMe,
-        gcTime: GC_TIME,
-      };
-      prefetchQuery(meQueryOptions);
+      // Prefetch the user and menu data
+      const userQueryOptions = meQueryOptions();
+      prefetchQuery({ ...userQueryOptions, ...{ gcTime: GC_TIME } });
 
-      const menuQueryOptions = {
-        queryKey: ['menu'],
-        queryFn: getAndSetMenu,
-        gcTime: GC_TIME,
-      } satisfies UseQueryOptions;
-      const menu = await prefetchQuery(menuQueryOptions);
+      const userMenuQueryOptions = menuQueryOptions();
+      const menu = await prefetchQuery({ ...userMenuQueryOptions, ...{ gcTime: GC_TIME } });
 
-      for (const section of Object.values(menu)) {
-        for (const item of section) {
+      const prefetchMenuItems = async (items: UserMenuItem[]) => {
+        for (const item of items) {
           if (item.membership.archived) continue;
 
-          const config = prefetchEntities[item.entity];
-          const organizationId = item.organizationId || item.id;
-          const options = mapQuery(item);
-          prefetchQuery(options);
-          if (config.prefetchMembers) prefetchMembers(item, organizationId);
-          if (config.prefetchAttachments) prefetchAttachments(organizationId);
-          await waitFor(1000); // wait for a second to avoid server overload
-
-          for (const subItem of item.submenu ?? []) {
-            if (subItem.membership.archived) continue;
-
-            const config = prefetchEntities[subItem.entity];
-            const options = mapQuery(subItem);
-
-            const organizationId = subItem.organizationId || item.organizationId || item.id;
-            prefetchQuery(options);
-            if (config.prefetchMembers) prefetchMembers(subItem, organizationId);
-            if (config.prefetchAttachments) prefetchAttachments(organizationId);
+          // Prefetch queries for the item
+          const queries = queriesToMap(item);
+          for (const query of queries) {
+            prefetchQuery(query);
+            await waitFor(500);
           }
+
+          if (item.submenu) await prefetchMenuItems(item.submenu);
         }
+      };
+
+      for (const section of Object.values(menu)) {
+        await prefetchMenuItems(section);
       }
     })();
-  }, [networkMode]);
+  }, [offlineAccess]);
 
-  if (networkMode === 'online') return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
+  if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
 
   return (
     <PersistQueryClientProvider

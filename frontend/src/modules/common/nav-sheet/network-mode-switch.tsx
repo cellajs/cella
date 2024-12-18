@@ -8,7 +8,7 @@ import { useNavigationStore } from '~/store/navigation';
 
 export const NetworkModeSwitch = () => {
   const { t } = useTranslation();
-  const { networkMode, setNetworkMode } = useGeneralStore();
+  const { offlineAccess, toggleOfflineAccess } = useGeneralStore();
   const { setNavSheetOpen } = useNavigationStore();
 
   const onCheckedChange = (isOffline: boolean) => {
@@ -17,7 +17,7 @@ export const NetworkModeSwitch = () => {
       showToast(t(`common:offline_mode_${isOffline ? 'on' : 'off'}.text`, { appName: config.name }), 'info');
     }, 0);
 
-    setNetworkMode(isOffline ? 'offline' : 'online');
+    toggleOfflineAccess();
 
     // Close the navigation sheet & set it state to null
     sheet.remove('nav-sheet');
@@ -26,13 +26,7 @@ export const NetworkModeSwitch = () => {
 
   return (
     <div className="flex items-center gap-4 ml-1">
-      <Switch
-        size="xs"
-        id="offlineMode"
-        checked={networkMode === 'offline'}
-        onCheckedChange={onCheckedChange}
-        aria-label={t('common:keep_menu_open')}
-      />
+      <Switch size="xs" id="offlineMode" checked={offlineAccess} onCheckedChange={onCheckedChange} aria-label={t('common:keep_menu_open')} />
       <label htmlFor="offlineMode" className="cursor-pointer select-none text-sm font-medium leading-none">
         {t('common:offline_mode')}
       </label>

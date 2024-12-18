@@ -1,9 +1,12 @@
+import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { LucideProps } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import router from '~/lib/router';
+import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import BarNav from '~/modules/common/main-nav/bar-nav';
 import FloatNav from '~/modules/common/main-nav/float-nav';
@@ -22,6 +25,7 @@ export type NavItem = {
 };
 
 const MainNav = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useBreakpoints('max', 'sm');
 
@@ -43,6 +47,7 @@ const MainNav = () => {
   const navButtonClick = (navItem: NavItem) => {
     // If its a have dialog, open it
     if (navItem.dialog) {
+      if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
       return dialog(navItem.dialog, {
         id: navItem.id,
         className: navItem.id === 'search' ? 'sm:max-w-2xl p-0 border-0 mb-4' : '',
