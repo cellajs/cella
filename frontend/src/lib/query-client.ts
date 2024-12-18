@@ -68,15 +68,33 @@ const onSuccess = () => {
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any>) => {
   const cachedData = queryClient.getQueryData(options.queryKey);
-  // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
-  return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchQuery(options) : undefined);
+
+  // If offline, return cached data or undefined if no cache exists
+  if (!onlineManager.isOnline()) return cachedData ?? undefined;
+
+  try {
+    // If online, fetch data (background revalidation)
+    return queryClient.fetchQuery(options);
+  } catch (error) {
+    // Fallback to cached data if available
+    return cachedData ?? undefined;
+  }
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>) => {
   const cachedData = queryClient.getQueryData(options.queryKey);
-  // do not load if we are offline or hydrating because it returns a promise that is pending until we go online again
-  return cachedData ?? (onlineManager.isOnline() ? queryClient.fetchInfiniteQuery(options) : undefined);
+
+  // If offline, return cached data or undefined if no cache exists
+  if (!onlineManager.isOnline()) return cachedData ?? undefined;
+
+  try {
+    // If online, fetch data (background revalidation)
+    return queryClient.fetchInfiniteQuery(options);
+  } catch (error) {
+    // Fallback to cached data if available
+    return cachedData ?? undefined;
+  }
 };
 
 export const queryClientConfig = { onError, onSuccess };

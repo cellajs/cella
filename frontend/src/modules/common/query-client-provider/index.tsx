@@ -18,10 +18,10 @@ const mutationFiles = import.meta.glob('./mutations/*');
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
-  const { networkMode } = useGeneralStore();
+  const { offlineAccess } = useGeneralStore();
 
   useEffect(() => {
-    if (networkMode === 'online') return;
+    if (!offlineAccess) return;
 
     (async () => {
       await waitFor(1000); // wait for a second to avoid server overload
@@ -52,9 +52,9 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
         await prefetchMenuItems(section);
       }
     })();
-  }, [networkMode]);
+  }, [offlineAccess]);
 
-  if (networkMode === 'online') return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
+  if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
 
   return (
     <PersistQueryClientProvider

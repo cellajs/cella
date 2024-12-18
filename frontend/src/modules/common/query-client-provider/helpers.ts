@@ -1,6 +1,6 @@
-import type { QueryKey, UseInfiniteQueryOptions, UseQueryOptions } from '@tanstack/react-query';
+import { type QueryKey, type UseInfiniteQueryOptions, type UseQueryOptions, onlineManager } from '@tanstack/react-query';
 
-import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
+import { queryClient } from '~/lib/router';
 import type { InferType } from '~/modules/common/query-client-provider/types';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
@@ -8,9 +8,18 @@ export async function prefetchQuery<T extends UseQueryOptions<any, any, any, any
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
 export async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryOptions) {
-  if ('getNextPageParam' in options) return offlineFetchInfinite(options);
+  const cachedData = queryClient.getQueryData(options.queryKey);
 
-  return offlineFetch(options);
+  // If cache exists, return cached data immediately
+  if (cachedData) return cachedData;
+
+  // If offline, return undefined or cache (if you want to handle it differently)
+  if (!onlineManager.isOnline()) return undefined;
+
+  // If no cache, only fetch if online (avoid fetch when offline or during hydration)
+  if ('getNextPageParam' in options) return queryClient.fetchInfiniteQuery(options); // Infinite query fetch
+
+  return queryClient.fetchQuery(options); // Regular query fetch
 }
 
 export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
