@@ -5,13 +5,15 @@ import { getOrganization } from '~/api/organizations';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
-import JoinLeaveButton from '~/modules/organizations/join-leave-button';
 import { OrganizationRoute } from '~/routes/organizations';
 
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
+import { queryClient } from '~/lib/router';
 import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
 import { useUserStore } from '~/store/user';
+
+// const JoinLeaveButton = lazy(() => import('~/modules/organizations/join-leave-button'));
 
 const organizationTabs: PageNavTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
@@ -29,8 +31,10 @@ const OrganizationPage = () => {
   const { t } = useTranslation();
   const { idOrSlug } = useParams({ from: OrganizationRoute.id });
   const user = useUserStore((state) => state.user);
-  const organizationQuery = useSuspenseQuery(organizationQueryOptions(idOrSlug));
-  const organization = organizationQuery.data;
+
+  const orgQueryOptions = organizationQueryOptions(idOrSlug);
+  const cachedData = queryClient.getQueryData(orgQueryOptions.queryKey);
+  const organization = cachedData ?? useSuspenseQuery(orgQueryOptions).data;
 
   const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
   const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 1);
@@ -60,7 +64,10 @@ const OrganizationPage = () => {
         bannerUrl={organization.bannerUrl}
         panel={
           <div className="flex items-center p-2">
-            <JoinLeaveButton organization={organization} />
+            {/* return after join endpoint implementation */}
+            {/* <Suspense>
+              <JoinLeaveButton organization={organization} />
+            </Suspense> */}
           </div>
         }
       />

@@ -43,7 +43,7 @@ const BaseDataTable = memo(
           emails: [user.email],
           role: organization.membership?.role,
           entityType: 'organization',
-          organizationId: organization.id,
+          orgIdOrSlug: organization.id,
         })
           .then(() => toast.success(t('common:success.role_updated')))
           .catch(() => toast.error(t('common:error.error')));

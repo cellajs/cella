@@ -1,13 +1,11 @@
-import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
+import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Check, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { inviteMembers as baseInvite, removeMembers } from '~/api/memberships';
-import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
-import { organizationQueryOptions } from '~/modules/organizations/organization-page';
+import { useMembersDeleteMutation } from '~/modules/common/query-client-provider/mutations/members';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -23,38 +21,40 @@ const JoinLeaveButton = ({ organization }: Props) => {
   const { user } = useUserStore();
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState(false);
-  const organizationQuery = useSuspenseQuery(organizationQueryOptions(organization.slug));
 
-  const { mutate: inviteMembers } = useMutation({
-    mutationFn: baseInvite,
-    onSuccess: () => {
-      organizationQuery.refetch();
-      showToast(t('common:success.you_joined_organization'), 'success');
-    },
-  });
-
-  const { mutate: leave } = useMutation({
-    mutationFn: removeMembers,
-    onSuccess: () => {
-      showToast(t('common:success.you_left_organization'), 'success');
-      if (organizationQuery.data.counts.memberships.total === 1) return navigate({ to: config.defaultRedirectPath, replace: true });
-      organizationQuery.refetch();
-    },
-  });
+  const { mutate: leave } = useMembersDeleteMutation();
+  // TODO implement join endpoint
+  // const { mutate: join } = useMembersJoinMutation();
 
   const onJoin = () => {
-    inviteMembers({
-      emails: [user.email],
-      role: 'member',
-      idOrSlug: organization.slug,
-      entityType: 'organization',
-      organizationId: organization.id,
-    });
+    // join({
+    //   user,
+    //   emails: [user.email],
+    //   role: 'member',
+    //   idOrSlug: organization.slug,
+    //   entityType: 'organization',
+    //   orgIdOrSlug: organization.id,
+    // });
   };
 
   const onLeave = () => {
     if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
+    leave(
+      {
+        orgIdOrSlug: organization.id,
+        idOrSlug: organization.slug,
+        entityType: 'organization',
+        ids: [user.id],
+      },
+      {
+        onSuccess: () => {
+          showToast(t('common:success.you_left_organization'), 'success');
+          //TODO add check and navigate only if there no more users in org
+          return navigate({ to: config.defaultRedirectPath, replace: true });
+        },
+      },
+    );
     leave({
       orgIdOrSlug: organization.id,
       idOrSlug: organization.id,
