@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { verifyEmail as baseVerifyEmail } from '~/api/auth';
@@ -15,6 +15,8 @@ const VerifyEmail = () => {
   const { token }: { token: string } = useParams({ strict: false });
   const navigate = useNavigate();
 
+  const [isOnline, setIsOnline] = useState(onlineManager.isOnline());
+
   const { mutate: verifyEmail, error } = useMutation({
     mutationFn: baseVerifyEmail,
     onSuccess: () => {
@@ -25,14 +27,18 @@ const VerifyEmail = () => {
 
   const resendEmail = () => {
     if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
     verifyEmail({ token, resend: true });
   };
 
-  // TODO: Offline mode
   useEffect(() => {
     if (!token) return;
     verifyEmail({ token });
+  }, []);
+
+  // Subscribe to online status changes
+  useEffect(() => {
+    const unsubscribe = onlineManager.subscribe(() => setIsOnline(onlineManager.isOnline()));
+    return () => unsubscribe();
   }, []);
 
   if (token) {
@@ -57,7 +63,7 @@ const VerifyEmail = () => {
     <AuthPage>
       <div className="text-center">
         <h1 className="text-2xl">{t('common:almost_there')}</h1>
-        <p className="font-light mt-4">{t('common:verify_email_notice.text')}</p>
+        <p className="font-light mt-4">{t(`common:${isOnline ? 'verify_email_notice.text' : 'offline.text'}`)}</p>
       </div>
     </AuthPage>
   );
