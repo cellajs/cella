@@ -69,7 +69,7 @@ const AcceptInvite = () => {
         </div>
       ) : (
         <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
-          {/* TODO: we need a render error message component ? */}
+          {/* TODO: we should move this to a reusable auth error message component ? */}
           {error && (
             <>
               <span className="text-muted-foreground text-sm">{t(`common:error.${error.type}`)}</span>
