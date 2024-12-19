@@ -16,6 +16,7 @@ export const userQueryOptions = (idOrSlug: string) =>
 const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: string }) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
+
   // Query members
   const { data: user, isError, isLoading } = useQuery(userQueryOptions(idOrSlug));
 

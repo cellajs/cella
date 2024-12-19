@@ -64,7 +64,7 @@ export const AppRoute = createRoute({
   staticData: { pageTitle: '', isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => (
-    <Suspense fallback={<Spinner />}>
+    <Suspense fallback={<Spinner className="h-10 w-10" />}>
       <App />
     </Suspense>
   ),
