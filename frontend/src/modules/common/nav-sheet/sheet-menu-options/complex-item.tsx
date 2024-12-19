@@ -77,17 +77,23 @@ export const ComplexOptionElement = ({
         <MenuItemOptions item={item} />
         {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
           <div
-            data-have-inactive={!!item.submenu.filter((i) => i.membership.archived).length}
+            data-has-inactive={!!item.submenu.filter((i) => i.membership.archived).length}
             data-submenu={true}
             data-archived-visible={isSubmenuArchivedVisible}
             className="group/archived"
           >
-            <SheetMenuItemsOptions data={item.submenu} shownOption={shownOption} />
+            <ul>
+              <SheetMenuItemsOptions data={item.submenu} shownOption={shownOption} />
+            </ul>
             <MenuArchiveToggle
               archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
               inactiveCount={item.submenu.filter((i) => i.membership.archived).length}
             />
-            {isSubmenuArchivedVisible && <SheetMenuItemsOptions data={item.submenu} shownOption="archived" />}
+            {isSubmenuArchivedVisible && (
+              <ul>
+                <SheetMenuItemsOptions data={item.submenu} shownOption="archived" />
+              </ul>
+            )}
           </div>
         )}
       </div>

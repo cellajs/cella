@@ -132,7 +132,7 @@ export const SheetMenu = memo(() => {
 
         {!searchTerm && (
           <>
-            <div className="mt-2">{renderedSections}</div>
+            {renderedSections}
             <div className="grow mt-4 border-b border-dashed" />
             <div className="flex flex-col mt-6 mb-1 mx-2 gap-4">
               <div className="max-xl:hidden flex items-center gap-4 ml-1">

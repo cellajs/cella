@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { showToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
@@ -9,6 +10,7 @@ import { SheetMenuItems } from '~/modules/common/nav-sheet/sheet-menu-items';
 import { SheetMenuItemsOptions } from '~/modules/common/nav-sheet/sheet-menu-options';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenu, UserMenuItem } from '~/types/common';
+import { sheet } from '../sheeter/state';
 
 interface MenuSectionProps {
   data: UserMenuItem[];
@@ -21,6 +23,7 @@ interface MenuSectionProps {
 export const MenuSection = ({ data, sectionType, sectionLabel, entityType, createForm }: MenuSectionProps) => {
   const { t } = useTranslation();
   const activeSections = useNavigationStore((state) => state.activeSections);
+  const isMobile = useBreakpoints('max', 'sm');
 
   const [optionsView, setOptionsView] = useState(false);
   const [isArchivedVisible, setArchivedVisible] = useState(false);
@@ -28,6 +31,8 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
   const isSectionVisible = activeSections?.[sectionType] !== undefined ? activeSections[sectionType] : true;
 
   const createDialog = () => {
+    if (isMobile) sheet.remove('nav-sheet');
+
     dialog(createForm, {
       className: 'md:max-w-2xl',
       id: `create-${entityType}`,
@@ -73,7 +78,7 @@ export const MenuSection = ({ data, sectionType, sectionLabel, entityType, creat
             {!!data.length && (
               <div
                 className="group/archived"
-                data-have-inactive={!!data.filter((i) => i.membership.archived).length}
+                data-has-inactive={!!data.filter((i) => i.membership.archived).length}
                 data-submenu={false}
                 data-archived-visible={isArchivedVisible}
               >
