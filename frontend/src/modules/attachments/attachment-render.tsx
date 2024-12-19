@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { Suspense, lazy } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import Spinner from '../common/spinner';
@@ -30,19 +31,26 @@ export const AttachmentRender = ({
   togglePanState,
 }: AttachmentRenderProps) => {
   const isMobile = useBreakpoints('max', 'sm');
+  const sanitizedSource = DOMPurify.sanitize(source);
 
   return (
     <div className={containerClassName}>
       <Suspense fallback={<Spinner />}>
         {type.includes('image') &&
           (imagePanZoom && !isMobile ? (
-            <ReactPanZoom image={source} alt={altName} togglePanState={togglePanState} imageClass={itemClassName} showButtons={showButtons} />
+            <ReactPanZoom
+              image={sanitizedSource}
+              alt={altName}
+              togglePanState={togglePanState}
+              imageClass={itemClassName}
+              showButtons={showButtons}
+            />
           ) : (
-            <img src={source} alt={altName} className={`${itemClassName} w-full h-full`} />
+            <img src={sanitizedSource} alt={altName} className={`${itemClassName} w-full h-full`} />
           ))}
-        {type.includes('audio') && <RenderAudio src={source} />}
-        {type.includes('video') && <RenderVideo src={source} />}
-        {type.includes('pdf') && <RenderPDF file={source} />}
+        {type.includes('audio') && <RenderAudio src={sanitizedSource} />}
+        {type.includes('video') && <RenderVideo src={sanitizedSource} />}
+        {type.includes('pdf') && <RenderPDF file={sanitizedSource} />}
       </Suspense>
     </div>
   );
