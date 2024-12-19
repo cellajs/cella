@@ -1,37 +1,24 @@
-import type { QueryKey, UseInfiniteQueryOptions, UseQueryOptions } from '@tanstack/react-query';
+import { type QueryKey, type UseInfiniteQueryOptions, type UseQueryOptions, onlineManager } from '@tanstack/react-query';
 
-import { config } from 'config';
-import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
+import { queryClient } from '~/lib/router';
 import type { InferType } from '~/modules/common/query-client-provider/types';
-import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
-import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
-import type { ContextEntity } from '~/types/common';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export async function prefetchQuery<T extends UseQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
 export async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryOptions) {
-  if ('getNextPageParam' in options) return offlineFetchInfinite(options);
+  const cachedData = queryClient.getQueryData(options.queryKey);
 
-  return offlineFetch(options);
+  // If cache exists, return cached data immediately
+  if (cachedData) return cachedData;
+
+  if (!onlineManager.isOnline()) return undefined;
+
+  // fetch if online (avoid fetch when offline or during hydration)
+  if ('getNextPageParam' in options) return queryClient.fetchInfiniteQuery(options); // Infinite query fetch
+  return queryClient.fetchQuery(options); // Regular query fetch
 }
-
-export const prefetchMembers = async (
-  item: {
-    slug: string;
-    entity: ContextEntity;
-  },
-  orgIdOrSlug: string,
-) => {
-  const membersOptions = membersQueryOptions({ idOrSlug: item.slug, orgIdOrSlug, entityType: item.entity, limit: config.requestLimits.members });
-  prefetchQuery(membersOptions);
-};
-
-export const prefetchAttachments = async (orgIdOrSlug: string) => {
-  const attachmentsOptions = attachmentsQueryOptions({ orgIdOrSlug, limit: config.requestLimits.attachments });
-  prefetchQuery(attachmentsOptions);
-};
 
 export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -44,7 +31,7 @@ export const compareQueryKeys = (queryKey1: QueryKey, queryKey2: QueryKey): bool
   return true; // All elements match
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+// biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the compare values
 const deepEqual = (value1: any, value2: any): boolean => {
   // Check if both values are the same reference
   if (value1 === value2) return true;

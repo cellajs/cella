@@ -15,10 +15,10 @@ import { offlineFetch, onError } from '~/lib/query-client';
 import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
 import UnsubscribePage from '~/modules/common/unsubscribe-page';
-import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import { meQueryOptions, menuQueryOptions } from '~/modules/users/helpers/query-options';
+import { AuthRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { ErrorType } from '#/lib/errors';
-import { AuthRoute } from './auth';
 
 // Lazy load main App component, which is behind authentication
 const App = lazy(() => import('~/modules/common/main-app'));
@@ -40,11 +40,13 @@ export const PublicRoute = createRoute({
     try {
       console.debug('Fetch me & menu in while entering public page ', location.pathname);
       const getSelf = async () => {
-        return queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe, retry: 0 });
+        const queryOptions = meQueryOptions();
+        return offlineFetch({ ...queryOptions, ...{ retry: 0 } });
       };
 
       const getMenu = async () => {
-        return queryClient.fetchQuery({ queryKey: ['menu'], queryFn: getAndSetMenu, retry: 0 });
+        const queryOptions = menuQueryOptions();
+        return offlineFetch({ ...queryOptions, ...{ retry: 0 } });
       };
 
       await Promise.all([getSelf(), getMenu()]);
@@ -71,15 +73,8 @@ export const AppRoute = createRoute({
 
     try {
       console.debug('Fetch me & menu while entering app ', location.pathname);
-      const getSelf = async () => {
-        const queryKey = ['me'];
-        return offlineFetch({ queryKey, queryFn: getAndSetMe });
-      };
-
-      const getMenu = async () => {
-        const queryKey = ['menu'];
-        return offlineFetch({ queryKey, queryFn: getAndSetMenu });
-      };
+      const getSelf = async () => offlineFetch(meQueryOptions());
+      const getMenu = async () => offlineFetch(menuQueryOptions());
 
       await Promise.all([getSelf(), getMenu()]);
     } catch (error) {
@@ -117,7 +112,8 @@ export const acceptInviteRoute = createRoute({
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ params }) => {
     try {
-      await queryClient.fetchQuery({ queryKey: ['me'], queryFn: getAndSetMe });
+      const queryOptions = meQueryOptions();
+      await queryClient.fetchQuery(queryOptions);
     } catch {
       console.info('Not authenticated (silent check) -> redirect to sign in');
       throw redirect({

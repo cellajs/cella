@@ -12,7 +12,7 @@ import { useGeneralStore } from '~/store/general';
 export const DownAlert = () => {
   const { t } = useTranslation();
   const { downAlert, setDownAlert } = useAlertStore();
-  const { networkMode } = useGeneralStore();
+  const { offlineAccess } = useGeneralStore();
   const { isOnline } = useOnlineManager();
   const [isNetworkAlertClosed, setIsNetworkAlertClosed] = useState(false);
 
@@ -24,7 +24,7 @@ export const DownAlert = () => {
       }
       if (!isOnline && !downAlert && !isNetworkAlertClosed) {
         setDownAlert('offline');
-        if (networkMode === 'online') {
+        if (!offlineAccess) {
           const isBackendOnline = await healthCheck(`${config.backendUrl}/ping`);
           if (isBackendOnline) {
             setDownAlert(null);
@@ -32,25 +32,24 @@ export const DownAlert = () => {
         }
       }
     })();
-  }, [downAlert, isOnline, networkMode, isNetworkAlertClosed]);
+  }, [downAlert, isOnline, offlineAccess, isNetworkAlertClosed]);
 
   const cancelAlert = () => {
     setDownAlert(null);
     setIsNetworkAlertClosed(true);
   };
 
-  const offlineText =
-    networkMode === 'offline' ? (
-      <Trans
-        i18nKey="common:offline_mode.text"
-        t={t}
-        components={{
-          site_anchor: <button type="button" className="underline" onClick={cancelAlert} />,
-        }}
-      />
-    ) : (
-      t('common:offline.text')
-    );
+  const offlineText = offlineAccess ? (
+    <Trans
+      i18nKey="common:offline_mode.text"
+      t={t}
+      components={{
+        site_anchor: <button type="button" className="underline" onClick={cancelAlert} />,
+      }}
+    />
+  ) : (
+    t('common:offline.text')
+  );
 
   if (!downAlert) return <></>;
 
