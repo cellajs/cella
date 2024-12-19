@@ -1,5 +1,9 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
+import { FlameKindling, WifiOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getUser } from '~/api/users';
+import { useOnlineManager } from '~/hooks/use-online-manager';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
 import UserProfilePage from '~/modules/users/profile-page';
 
@@ -10,13 +14,13 @@ export const userQueryOptions = (idOrSlug: string) =>
   });
 
 const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: string }) => {
+  const { t } = useTranslation();
+  const { isOnline } = useOnlineManager();
   // Query members
   const { data: user, isError, isLoading } = useQuery(userQueryOptions(idOrSlug));
 
   // TODO show error message
-  if (isError) {
-    return null;
-  }
+  if (isError) return null;
 
   return isLoading ? (
     <div className="block">
@@ -24,7 +28,9 @@ const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: 
     </div>
   ) : user ? (
     <UserProfilePage sheet user={user} orgIdOrSlug={orgIdOrSlug} />
-  ) : null;
+  ) : (
+    <ContentPlaceholder Icon={isOnline ? FlameKindling : WifiOff} title={t(`common:${isOnline ? 'error.no_user_found' : 'offline.text'}`)} />
+  );
 };
 
 export default UserSheet;
