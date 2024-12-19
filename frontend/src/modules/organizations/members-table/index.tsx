@@ -2,11 +2,13 @@ import { Suspense, lazy, useRef, useState } from 'react';
 
 import type { z } from 'zod';
 
+import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { Trans, useTranslation } from 'react-i18next';
 import { getMembers } from '~/api/memberships';
 import useSearchParams from '~/hooks/use-search-params';
 import { useUserSheet } from '~/hooks/use-user-sheet';
+import { showToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/organizations/members-table/columns';
@@ -61,6 +63,8 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   useUserSheet({ sheetId, organizationId });
 
   const openInviteDialog = (container?: HTMLElement | null) => {
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+
     dialog(<InviteUsers entity={entity} mode={null} dialog />, {
       id: `user-invite-${entity.id}`,
       drawerOnMobile: false,

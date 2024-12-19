@@ -116,7 +116,8 @@ export default defineConfig(() => {
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,svg,ico}'],
-        globIgnores: ['static/flags/**/*'],
+        // Exclude Sentry files from caching & directories if applicable
+        globIgnores: ['**/sentry.*', '**/sentry/**', 'static/flags/**/*'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
