@@ -52,12 +52,12 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
           {item.name}
         </div>
         <div
-          className="max-sm:hidden text-muted-foreground text-sm font-light
+          className="text-muted-foreground text-sm font-light
           group-data-[subitem=true]/menuItem:sm:text-xs
           "
         >
           {searchResults && (
-            <span className="absolute transition-opacity duration-200 delay-200 ease-in-out group-hover/menuItem:sm:opacity-0">
+            <span className="absolute transition-opacity duration-200 delay-200 ease-in-out sm:group-hover/menuItem:opacity-0">
               {t(`app:${item.entity}`)}
             </span>
           )}
@@ -112,9 +112,7 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
           <li className={item.submenu?.length && !hideSubmenu ? 'relative submenu-section' : ''} key={item.id}>
             <SheetMenuItem item={item} className={className} />
             {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
-              <ul>
-                <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
-              </ul>
+              <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
             )}
           </li>
         ))}
