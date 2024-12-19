@@ -6,13 +6,9 @@ export const useOnlineManager = () => {
 
   useEffect(() => {
     // Subscribe to network mode changes
-    const unsubscribe = onlineManager.subscribe((isOnline) => {
-      setIsOnline(isOnline);
-    });
+    const unsubscribe = onlineManager.subscribe((isOnline) => setIsOnline(isOnline));
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   return {

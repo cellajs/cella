@@ -1,10 +1,10 @@
-import { onlineManager } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { verifyEmail as baseVerifyEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import { showToast } from '~/lib/toasts';
 import AuthPage from '~/modules/auth/auth-page';
 import { Button } from '~/modules/ui/button';
@@ -14,8 +14,7 @@ const VerifyEmail = () => {
   //Strict false is needed because the component is used in two places, one of which does not include parameters
   const { token }: { token: string } = useParams({ strict: false });
   const navigate = useNavigate();
-
-  const [isOnline, setIsOnline] = useState(onlineManager.isOnline());
+  const { isOnline } = useOnlineManager();
 
   const { mutate: verifyEmail, error } = useMutation({
     mutationFn: baseVerifyEmail,
@@ -26,19 +25,13 @@ const VerifyEmail = () => {
   });
 
   const resendEmail = () => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+    if (!isOnline) return showToast(t('common:action.offline.text'), 'warning');
     verifyEmail({ token, resend: true });
   };
 
   useEffect(() => {
     if (!token) return;
     verifyEmail({ token });
-  }, []);
-
-  // Subscribe to online status changes
-  useEffect(() => {
-    const unsubscribe = onlineManager.subscribe(() => setIsOnline(onlineManager.isOnline()));
-    return () => unsubscribe();
   }, []);
 
   if (token) {

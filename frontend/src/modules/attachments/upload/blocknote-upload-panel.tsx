@@ -2,7 +2,9 @@ import type { PartialBlock } from '@blocknote/core';
 import { type FilePanelProps, useBlockNoteEditor } from '@blocknote/react';
 import { DialogDescription } from '@radix-ui/react-dialog';
 import type React from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { UploadType, type UploadedUppyFile } from '~/types/common';
@@ -33,12 +35,18 @@ interface UppyFilePanelProps {
 const UppyFilePanel: React.FC<UppyFilePanelProps & FilePanelProps> = ({ onCreateCallback, ...props }) => {
   const { t } = useTranslation();
   const { block } = props;
+  const { isOnline } = useOnlineManager();
 
   const editor = useBlockNoteEditor();
   const type = (block.type as keyof typeof basicBlockTypes) || 'file';
 
+  useEffect(() => {
+    if (isOnline) return;
+    editor.filePanel?.closeMenu();
+  }, [isOnline]);
+
   return (
-    <Dialog defaultOpen onOpenChange={() => editor.filePanel?.closeMenu()}>
+    <Dialog defaultOpen={isOnline} onOpenChange={() => editor.filePanel?.closeMenu()}>
       <DialogContent className="md:max-w-xl">
         <DialogHeader>
           <DialogTitle className="h-6">{t('common:upload_item', { item: t(`common:${type}`).toLowerCase() })}</DialogTitle>

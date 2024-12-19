@@ -57,9 +57,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
       <RemoveAttachmentsForm
         organizationId={organization.id}
         dialog
-        callback={() => {
-          showToast(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success');
-        }}
+        callback={() => showToast(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success')}
         attachments={selected}
       />,
       {

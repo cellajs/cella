@@ -1,4 +1,4 @@
-import { onlineManager, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import type { Entity } from 'backend/types/common';
 import { config } from 'config';
 import { Undo } from 'lucide-react';
@@ -8,6 +8,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { checkSlugAvailable } from '~/api/general';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import InputFormField from '~/modules/common/form-fields/input';
 import { Button } from '~/modules/ui/button';
 
@@ -28,6 +29,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const { t } = useTranslation();
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
+  const { isOnline } = useOnlineManager();
 
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });
@@ -62,7 +64,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   useEffect(() => {
     if (slug.length < 2 || (isValidSlug(slug) && previousSlug && previousSlug === slug)) return setSlugAvailable('blank');
     if (isValidSlug(slug)) {
-      if (!onlineManager.isOnline()) return;
+      if (!isOnline) return;
 
       return checkAvailability({ slug, type });
     }

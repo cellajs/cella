@@ -2,6 +2,7 @@ import { Search, XCircle } from 'lucide-react';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
 import { Input } from '~/modules/ui/input';
 
@@ -12,6 +13,7 @@ interface TableSearchProps {
 
 const TableSearch = ({ value = '', setQuery }: TableSearchProps) => {
   const { t } = useTranslation();
+  const { isOnline } = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -39,6 +41,7 @@ const TableSearch = ({ value = '', setQuery }: TableSearchProps) => {
     <div className="relative flex w-full sm:min-w-44 md:min-w-56 lg:min-w-64 items-center" onClick={handleClick} onKeyDown={handleClick}>
       <Search size={16} className="absolute left-3 top-3" style={{ opacity: inputValue ? 1 : 0.5 }} />
       <Input
+        disabled={!isOnline}
         placeholder={t('common:placeholder.search')}
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
