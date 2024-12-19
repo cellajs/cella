@@ -1,5 +1,5 @@
-import { onlineManager } from '@tanstack/react-query';
 import type React from 'react';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import { cn } from '~/utils/cn';
 
 interface ImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -11,10 +11,11 @@ interface ImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 export const CountryFlag = ({ countryCode, className, imgType = 'svg', width = 16, height = 12, ...props }: ImgProps) => {
   if (typeof countryCode !== 'string') return null;
   if (countryCode.toLowerCase() === 'en') countryCode = 'gb';
+  const { isOnline } = useOnlineManager();
 
   const flagUrl = imgType === 'svg' ? `/static/flags/${countryCode.toLowerCase()}.svg` : `/static/flags/png/${countryCode.toLowerCase()}.png`;
 
-  if (!onlineManager.isOnline()) return null;
+  if (!isOnline) return null;
   return (
     <img
       className={cn('inline overflow-hidden shadow-sm', className)}

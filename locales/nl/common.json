@@ -135,6 +135,7 @@
   "error.server_error.text": "Er is een serverfout gerapporteerd.",
   "error.show_details": "Toon foutdetails",
   "error.slug_exists": "Slug bestaat al",
+  "error.no_selected_rows": "Export cannot proceed as no rows are selected.",
   "error.token_invalid_request_new": "Token is ongeldig of verlopen. Vraag een nieuwe aan.",
   "error.too_many_requests": "Te veel verzoeken",
   "error.try_again_later": "Er is een fout gerapporteerd. Probeer het later opnieuw of neem contact op met de ondersteuning.",

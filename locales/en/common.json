@@ -122,6 +122,7 @@
   "error.no_email_found": "No email found",
   "error.no_email_found.text": "No email address could be found on the resource.",
   "error.no_password_found": "No password found",
+  "error.no_selected_rows": "Export cannot proceed as no rows are selected.",
   "error.no_session": "You have no session",
   "error.no_session.text": "Please reload and sign in again to continue.",
   "error.not_found": "Not found",

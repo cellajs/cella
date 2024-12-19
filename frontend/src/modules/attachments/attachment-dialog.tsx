@@ -1,10 +1,13 @@
+import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
+import { showToast } from '~/lib/toasts';
 import Carousel from '~/modules/attachments/carousel';
 import { dialog } from '~/modules/common/dialoger/state';
 
 export type Attachments = { src: string; fileType?: string };
 
 export const attachmentDialog = (attachment: number, attachments: Attachments[], title?: string | React.ReactNode) => {
+  if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
   dialog(
     <div className="flex flex-wrap relative -z-[1] h-screen justify-center p-2 grow">
       <Carousel slides={attachments} isDialog slide={attachment} />
