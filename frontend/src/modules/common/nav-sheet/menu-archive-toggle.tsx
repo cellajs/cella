@@ -36,7 +36,7 @@ export const MenuArchiveToggle = ({ archiveToggleClick, inactiveCount }: MenuArc
           <ChevronDown
             size={16}
             className="transition-transform opacity-50 
-              group-data-[have-inactive=false]/archived:hidden
+              group-data-[has-inactive=false]/archived:hidden
               group-data-[archived-visible=true]/archived:rotate-180"
           />
         </div>

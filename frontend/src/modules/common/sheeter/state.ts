@@ -37,7 +37,7 @@ class SheetsStateObserver {
 
   get = (id: string) => this.sheets.find((sheet) => sheet.id === id); // Retrieve a sheet by its ID
 
-  haveOpenSheets = () => this.sheets.filter((s) => s.open);
+  hasOpenSheets = () => this.sheets.filter((s) => s.open);
 
   // Add or update a sheet and notify subscribers
   set = (sheet: SheetT) => {
@@ -83,5 +83,5 @@ export const sheet = {
   remove: SheetObserver.remove.bind(SheetObserver),
   update: SheetObserver.update.bind(SheetObserver),
   get: SheetObserver.get.bind(SheetObserver),
-  haveOpenSheets: SheetObserver.haveOpenSheets.bind(SheetObserver),
+  hasOpenSheets: SheetObserver.hasOpenSheets.bind(SheetObserver),
 };

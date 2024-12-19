@@ -19,12 +19,12 @@ const StepperFooter = ({
   const { t } = useTranslation();
   const { menu } = useNavigationStore();
   const { setFinishedOnboarding } = useNavigationStore();
-  const haveOrganizations = menu.organizations.length > 0;
+  const hasOrganizations = menu.organizations.length > 0;
 
   // Ask to confirm
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (onDefaultBoardingSteps[activeStep].id === 'organization' && !haveOrganizations) {
+    if (onDefaultBoardingSteps[activeStep].id === 'organization' && !hasOrganizations) {
       dialog(<SkipOrganizationCreation />, {
         className: 'md:max-w-xl',
         title: `${t('common:skip')} ${t('common:create_resource', { resource: t('common:organization') }).toLowerCase()}`,

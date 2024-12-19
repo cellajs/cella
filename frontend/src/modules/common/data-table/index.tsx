@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { config } from 'config';
 import { useRef } from 'react';
 import { useInView } from 'react-intersection-observer';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import '~/modules/common/data-table/style.css';
@@ -88,7 +89,7 @@ export const DataTable = <TData,>({
   onCellClick,
 }: DataTableProps<TData>) => {
   const { t } = useTranslation();
-
+  const { isOnline } = useOnlineManager();
   const [initialDone, setInitialDone] = useState(false);
   const { ref: measureRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
@@ -171,6 +172,11 @@ export const DataTable = <TData,>({
                   maxHeight: `${rowHeight * limit}px`,
                 }}
               />
+
+              {/* Can load more, but offline */}
+              {!isOnline && !!totalCount && totalCount > rows.length && (
+                <div className="w-full mt-4 italic text-muted text-sm text-center">{t('common:offline.load_more')}</div>
+              )}
 
               {/* Loading */}
               {isFetching && totalCount && totalCount > rows.length && !error && (

@@ -1,5 +1,8 @@
+import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
-import DeviceMockup from '~/modules/marketing/device-mockup';
+import Spinner from '~/modules/common/spinner';
+
+const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
 
 const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 
@@ -45,7 +48,9 @@ const Why = () => {
         </div>
       </div>
       <div className="w-full lg:w-7/12">
-        <DeviceMockup className="lg:absolute -top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightSlides={lightSlides} darkSlides={darkSlides} />
+        <Suspense fallback={<Spinner className="h-10 w-10" />}>
+          <DeviceMockup className="lg:absolute -top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightSlides={lightSlides} darkSlides={darkSlides} />
+        </Suspense>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { t } from 'i18next';
 import { Info } from 'lucide-react';
 import type { MainAlert } from '~/modules/common/main-alert';
 
+// Here you can set app-specific global alerts
 export const alertsConfig: MainAlert[] = [
   {
     id: 'prerelease',

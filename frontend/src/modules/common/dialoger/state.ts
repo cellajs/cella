@@ -80,7 +80,7 @@ class Observer {
 
   get = (id: number | string) => this.dialogs.find((dialog) => dialog.id === id);
 
-  haveOpenDialogs = () => this.dialogs.some((d) => isDialog(d) && d.open);
+  hasOpenDialogs = () => this.dialogs.some((d) => isDialog(d) && d.open);
 
   remove = (refocus = true, id?: number | string) => {
     if (id) {
@@ -141,5 +141,5 @@ export const dialog = Object.assign(dialogFunction, {
   update: DialogState.update,
   get: DialogState.get,
   reset: DialogState.reset,
-  haveOpenDialogs: DialogState.haveOpenDialogs,
+  hasOpenDialogs: DialogState.hasOpenDialogs,
 });

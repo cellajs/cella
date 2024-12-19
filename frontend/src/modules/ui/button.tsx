@@ -102,7 +102,7 @@ const SubmitButton = React.forwardRef<HTMLButtonElement, Omit<ButtonProps, 'type
     </Button>
   );
 
-  return <>{isOnline ? buttonContent : <TooltipButton toolTipContent={t('common:offline.text')}>{buttonContent}</TooltipButton>}</>;
+  return <>{isOnline ? buttonContent : <TooltipButton toolTipContent={t('common:offline.text_with_info')}>{buttonContent}</TooltipButton>}</>;
 });
 
 export { Button, SubmitButton, buttonVariants };
