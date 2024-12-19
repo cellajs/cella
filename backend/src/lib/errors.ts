@@ -1,8 +1,8 @@
-import { logEvent, logtail } from '#/middlewares/logger/log-event';
-import type { Entity } from '#/types/common';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
+import { logEvent, logtail } from '#/middlewares/logger/log-event';
+import type { Entity } from '#/types/common';
 import type { errorSchema } from '../utils/schema/common-schemas';
 import { getContextUser, getOrganization } from './context';
 import { i18n } from './i18n';
@@ -73,6 +73,6 @@ export const errorResponse = (
 ) => {
   const error: ErrorType = createError(ctx, status, type, severity, entityType, eventData, err);
 
-  // TODO: Review this assignment (as 400)
+  // TODO: Review this type assertion (as 400)
   return ctx.json({ success: false, error }, status as 400);
 };
