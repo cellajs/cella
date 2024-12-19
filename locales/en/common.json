@@ -351,6 +351,7 @@
   "short_name": "Short name",
   "show_all": "Show all",
   "show_less": "Show less",
+  "show_archived.offline.text": "Offline access allows browsing only unarchived content during offline mode.",
   "sign_in": "Sign in",
   "sign_in_as": "Sign in as",
   "sign_in_or_up": "Sign in or sign up",
