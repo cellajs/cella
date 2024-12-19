@@ -2,14 +2,18 @@ import { config } from 'config';
 import { t } from 'i18next';
 
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
+import { onlineManager } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { authThroughPasskey, getChallenge, setPasskey } from '~/api/auth';
 import { deletePasskey as baseRemovePasskey, getSelf, getUserMenu } from '~/api/me';
+import { showToast } from '~/lib/toasts';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 
 // Register a new passkey
 export const registerPasskey = async () => {
+  if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+
   const user = useUserStore.getState().user;
 
   try {
@@ -105,6 +109,8 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
 
 // Delete an existing passkey
 export const deletePasskey = async () => {
+  if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+
   try {
     const result = await baseRemovePasskey();
     if (result) {

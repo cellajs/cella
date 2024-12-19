@@ -58,12 +58,18 @@ const UserSettingsPage = () => {
 
   // Request a password reset email
   const sendResetPasswordClick = () => {
-    sendResetPasswordEmail(user.email);
-    setDisabledResetPassword(true);
-    setTimeout(() => {
-      setDisabledResetPassword(false);
-    }, 60000);
-    toast.success(t('common:success.reset_password_email', { email: user.email }));
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+
+    try {
+      setDisabledResetPassword(true);
+      sendResetPasswordEmail(user.email);
+      toast.success(t('common:success.reset_password_email', { email: user.email }));
+    } catch {
+    } finally {
+      setTimeout(() => {
+        setDisabledResetPassword(false);
+      }, 60000);
+    }
   };
 
   // Delete account
@@ -164,12 +170,12 @@ const UserSettingsPage = () => {
                 </div>
               )}
               <div className="flex max-sm:flex-col gap-2 mb-6">
-                <Button key="setPasskey" type="button" variant="plain" onClick={() => registerPasskey()}>
+                <Button key="setPasskey" type="button" variant="plain" onClick={registerPasskey}>
                   <KeyRound className="w-4 h-4 mr-2" />
                   {user.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>
                 {user.passkey && (
-                  <Button key="deletePasskey" type="button" variant="ghost" onClick={() => deletePasskey()}>
+                  <Button key="deletePasskey" type="button" variant="ghost" onClick={deletePasskey}>
                     <Trash2 className="w-4 h-4 mr-2" />
                     <span>{t('common:remove')}</span>
                   </Button>
@@ -203,6 +209,7 @@ const UserSettingsPage = () => {
                       type="button"
                       variant="outline"
                       onClick={() => {
+                        if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
                         window.location.href = `${provider.url}?redirect=${window.location.href}`;
                       }}
                     >

@@ -124,6 +124,7 @@
   "error.resource_forbidden": "Verboden",
   "error.resource_forbidden.text": "Je hebt niet voldoende rechten voor deze {{resource}}.",
   "error.resource_not_found": "{{resource}} niet gevonden",
+  "error.reset_password_email": "The reset email could not be sent. Please try again.",
   "error.request_email_is_user": "This email is already linked to an account. Please use a different one!",
   "error.request_exists": "You've already requested {{action}}. Thank you for your patience! We`ll be in touch with you soon.",
   "error.waitlist_request_error": "You can`t use the same email for both the newsletter and the waitlist. Please use a different email to join the waitlist.",
