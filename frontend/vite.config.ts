@@ -23,8 +23,18 @@ export default defineConfig(() => {
       port: Number(frontendUrl.port),
     },
     build: {
-      rollupOptions: {},
+      rollupOptions: {
+        output: {
+          experimentalMinChunkSize: 10 * 1024, // Minimum chunk size in Kb
+          manualChunks(id) {
+            if (id.includes('shiki')) {
+              return 'shiki'; // Ensures all shiki-related modules go into one chunk
+            }
+          },
+        },
+      },
       sourcemap: true,
+      manifest: true,
     },
     optimizeDeps: {
       exclude: [],
@@ -117,10 +127,10 @@ export default defineConfig(() => {
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,svg,ico}'],
         // Exclude Sentry files from caching & directories if applicable
-        globIgnores: ['**/sentry.*', '**/sentry/**', 'static/flags/**/*'],
+        globIgnores: ['**/shiki.*', '**/shiki/**', 'static/flags/**/*'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
       },
     }),
   );
