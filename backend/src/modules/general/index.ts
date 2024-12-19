@@ -262,7 +262,7 @@ const generalRoutes = app
 
     // Retrieve organizationIds
     const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
-    if (!organizationIds.length) return errorResponse(ctx, 403, 'forbidden', 'warn', undefined);
+    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0 } }, 200);
 
     // Determine the entity types to query, default to all types if not specified
     const entityTypes = type ? [type] : config.pageEntityTypes;
