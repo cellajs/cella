@@ -1,10 +1,13 @@
+import { onlineManager } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { showToast } from '~/lib/toasts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { Button } from '~/modules/ui/button';
 import { getEntityRoute } from '~/nav-config';
+import { useGeneralStore } from '~/store/general';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenuItem } from '~/types/common';
 import { cn } from '~/utils/cn';
@@ -24,8 +27,17 @@ export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemP
   // Build route path for the entity
   const { params, path } = useMemo(() => getEntityRoute(item), [item]);
 
+  const isOnline = onlineManager.isOnline();
+  const offlineAccess = useGeneralStore((state) => state.offlineAccess);
+
+  const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
+
   return (
     <Link
+      disabled={!canAccess}
+      onClick={() => {
+        if (!canAccess) showToast(t('common:show_archived.offline.text'), 'warning');
+      }}
       data-subitem={!searchResults && !item.submenu}
       data-active={isActive}
       resetScroll={false}

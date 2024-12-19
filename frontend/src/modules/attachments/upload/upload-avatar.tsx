@@ -1,7 +1,9 @@
+import { onlineManager } from '@tanstack/react-query';
 import { Trash, Upload } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
+import { showToast } from '~/lib/toasts';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
@@ -20,6 +22,8 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
 
   // Open the upload dialog
   const openUploadDialog = () => {
+    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+
     dialog(
       <Suspense>
         <UploadUppy

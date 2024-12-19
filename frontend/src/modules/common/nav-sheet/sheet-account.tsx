@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 
 import { useEffect, useRef } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useOnlineManager } from '~/hooks/use-online-manager';
+import { showToast } from '~/lib/toasts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { MainFooter } from '~/modules/common/main-footer';
 import { buttonVariants } from '~/modules/ui/button';
@@ -18,28 +20,38 @@ type AccountButtonProps = {
   label: string;
   id: string;
   action: string;
-};
+} & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never });
 
 // Create a button for each account action
-const AccountButton: React.FC<AccountButtonProps> = ({ lucide: Icon, label, id, action }) => (
-  <Link
-    data-sign-out={id === 'btn-signout'}
-    id={id}
-    to={action}
-    className={cn(
-      buttonVariants({ variant: 'ghost', size: 'lg' }),
-      'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-    )}
-  >
-    <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
-    {label}
-  </Link>
-);
+const AccountButton: React.FC<AccountButtonProps> = ({ offlineAccess, isOnline, lucide: Icon, label, id, action }) => {
+  const { t } = useTranslation();
+
+  const isDisabled = offlineAccess ? false : !isOnline;
+  return (
+    <Link
+      disabled={isDisabled}
+      onClick={() => {
+        if (isDisabled) showToast(t('common:action.offline.text'), 'warning');
+      }}
+      data-sign-out={id === 'btn-signout'}
+      id={id}
+      to={action}
+      className={cn(
+        buttonVariants({ variant: 'ghost', size: 'lg' }),
+        'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      )}
+    >
+      <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
+      {label}
+    </Link>
+  );
+};
 
 export const SheetAccount = () => {
   const { t } = useTranslation();
   const { user } = useUserStore();
   const isMobile = useBreakpoints('max', 'sm');
+  const { isOnline } = useOnlineManager();
 
   const isSystemAdmin = user.role === 'admin';
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
@@ -70,14 +82,25 @@ export const SheetAccount = () => {
 
         <div className="flex flex-col gap-1 max-sm:mt-4">
           <AccountButton
+            offlineAccess={false}
+            isOnline={isOnline}
             lucide={CircleUserRound}
             id="btn-profile"
             label={t('common:view_item', { item: t('common:profile').toLowerCase() })}
             action={`/user/${user.slug}`}
           />
-          <AccountButton lucide={UserCog} id="btn-account" label={t('common:settings')} action="/user/settings" />
-          {isSystemAdmin && <AccountButton lucide={Wrench} id="btn-system" label={t('common:system_panel')} action="/system/users" />}
-          <AccountButton lucide={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
+          <AccountButton offlineAccess={true} lucide={UserCog} id="btn-account" label={t('common:settings')} action="/user/settings" />
+          {isSystemAdmin && (
+            <AccountButton
+              offlineAccess={false}
+              isOnline={isOnline}
+              lucide={Wrench}
+              id="btn-system"
+              label={t('common:system_panel')}
+              action="/system/users"
+            />
+          )}
+          <AccountButton offlineAccess={false} isOnline={isOnline} lucide={LogOut} id="btn-signout" label={t('common:sign_out')} action="/sign-out" />
         </div>
 
         <div className="grow border-b border-dashed" />

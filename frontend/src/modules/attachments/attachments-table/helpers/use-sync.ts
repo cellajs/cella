@@ -3,11 +3,11 @@ import { config } from 'config';
 import { useEffect } from 'react';
 import { queryClient } from '~/lib/router';
 
-import { onlineManager } from '@tanstack/react-query';
 import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
 
 import { env } from '~/../env';
+import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { Attachment } from '~/types/common';
 import { objectKeys } from '~/utils/object';
 import { attachmentsTableColumns } from '#/db/schema/attachments';
@@ -52,9 +52,10 @@ const attachmentShape = (organizationId: string): ShapeStreamOptions => ({
 });
 
 export const useSync = (organizationId: string) => {
-  // Subscribe to attachments updates
+  const { isOnline } = useOnlineManager();
+
   useEffect(() => {
-    if (!onlineManager.isOnline() || !config.has.sync || (!env.VITE_HAS_SYNC && config.mode === 'development')) return;
+    if (!isOnline || !config.has.sync || (!env.VITE_HAS_SYNC && config.mode === 'development')) return;
 
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organizationId));
     const queryKey = attachmentsQueryOptions({ orgIdOrSlug: organizationId }).queryKey;
@@ -133,5 +134,5 @@ export const useSync = (organizationId: string) => {
     });
 
     return () => unsubscribe();
-  }, [onlineManager.isOnline()]);
+  }, [isOnline]);
 };

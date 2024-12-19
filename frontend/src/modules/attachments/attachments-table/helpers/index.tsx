@@ -1,8 +1,10 @@
+import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { Suspense } from 'react';
+import { showToast } from '~/lib/toasts';
+import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useAttachmentCreateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
-import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { UploadType, type UploadedUppyFile } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 
@@ -22,6 +24,8 @@ export const formatBytes = (bytes: string): string => {
 
 // Open the upload dialog
 export const openUploadDialog = (organizationId: string) => {
+  if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+
   const maxAttachmentsUpload = 20;
 
   const UploadDialog = () => {
