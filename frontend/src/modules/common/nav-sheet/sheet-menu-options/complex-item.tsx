@@ -1,7 +1,7 @@
 import { type Edge, attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { MenuArchiveToggle } from '~/modules/common/nav-sheet/menu-archive-toggle';
 import { isPageData } from '~/modules/common/nav-sheet/sheet-menu';
@@ -29,14 +29,17 @@ export const ComplexOptionElement = ({
   const dragRef = useRef(null);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const handleCanDrop = (sourceData: Record<string | symbol, unknown>) => {
-    return (
-      isPageData(sourceData) &&
-      sourceData.item.id !== item.id &&
-      sourceData.itemType === item.entity &&
-      unarchiveItems.some((i) => i.id === sourceData.item.id)
-    );
-  };
+  const handleCanDrop = useCallback(
+    (sourceData: Record<string | symbol, unknown>) => {
+      return (
+        isPageData(sourceData) &&
+        sourceData.item.id !== item.id &&
+        sourceData.itemType === item.entity &&
+        unarchiveItems.some((i) => i.id === sourceData.item.id)
+      );
+    },
+    [unarchiveItems],
+  );
 
   // create draggable & dropTarget elements and auto scroll
   useEffect(() => {
@@ -66,7 +69,7 @@ export const ComplexOptionElement = ({
         onDragLeave: () => setClosestEdge(null),
       }),
     );
-  }, [item]);
+  }, [item, unarchiveItems]);
 
   return (
     <li data-submenu={!!item.submenu} className="group/menuOptions relative my-1">
