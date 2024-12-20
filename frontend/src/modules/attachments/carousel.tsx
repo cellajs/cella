@@ -1,4 +1,4 @@
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
 import { useEffect, useState } from 'react';
 import { useEventListener } from '~/hooks/use-event-listener';
@@ -23,7 +23,9 @@ type CarouselProps =
 
 const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInSearchParams = false }: CarouselProps) => {
   const navigate = useNavigate();
-  const { attachmentPreview } = useSearch({ strict: false });
+  const {
+    search: { attachmentPreview },
+  } = useLocation();
 
   const [current, setCurrent] = useState(slides.findIndex((slide) => slide.src === attachmentPreview) ?? 0);
   const [watchDrag, setWatchDrag] = useState(slides.length > 1);
@@ -39,30 +41,23 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
   useEffect(() => {
     if (!saveInSearchParams || slides.length === 0) return;
 
-    // Ensure current is within bounds and the slide exists
     const currentSlide = slides[current] ? slides[current].src : undefined;
+
+    // Only navigate if the current slide is different from the attachmentPreview
+    if (currentSlide === attachmentPreview) return;
+
+    // Decide whether to replace the history entry based on whether the attachmentPreview is already set
+    const useReplace = attachmentPreview !== undefined;
 
     navigate({
       to: '.',
-      replace: true,
+      replace: useReplace,
       resetScroll: false,
       search: (prev) => ({
         ...prev,
         attachmentPreview: currentSlide,
       }),
     });
-
-    return () => {
-      navigate({
-        to: '.',
-        replace: true,
-        resetScroll: false,
-        search: (prev) => ({
-          ...prev,
-          attachmentPreview: undefined,
-        }),
-      });
-    };
   }, [current]);
 
   // Reopen dialog after reload if the attachmentPreview parameter exists
