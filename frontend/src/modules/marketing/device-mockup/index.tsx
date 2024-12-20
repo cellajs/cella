@@ -1,6 +1,6 @@
 import { useInView } from 'react-intersection-observer';
 
-import Carousel from '~/modules/attachments/carousel';
+import AttachmentsCarousel from '~/modules/attachments/carousel';
 import { useThemeStore } from '~/store/theme';
 import { cn } from '~/utils/cn';
 
@@ -28,7 +28,17 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
 
   return (
     <div className={cn(mockupClass, className)} ref={ref}>
-      <DeviceFrame type={type} inView={inView} renderCarousel={(isDialog) => <Carousel slides={slides} isDialog={isDialog} />} />
+      <DeviceFrame
+        type={type}
+        inView={inView}
+        renderCarousel={(isDialog) => {
+          return isDialog ? (
+            <AttachmentsCarousel slides={slides} isDialog={true} saveInSearchParams={false} />
+          ) : (
+            <AttachmentsCarousel slides={slides} isDialog={false} />
+          );
+        }}
+      />
     </div>
   );
 };

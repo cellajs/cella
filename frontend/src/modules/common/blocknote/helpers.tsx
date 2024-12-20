@@ -1,6 +1,6 @@
 import type { Block, PropSchema, Props } from '@blocknote/core';
 import type { DefaultReactSuggestionItem } from '@blocknote/react';
-import { type Attachments, attachmentDialog } from '~/modules/attachments/attachment-dialog';
+import { type Attachments, openAttachmentDialog } from '~/modules/attachments/helpers';
 import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema, MenusItemsTitle } from '~/modules/common/blocknote/types';
 import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowedType } from './blocknote-config';
 
@@ -106,7 +106,7 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
     // Find the slide based on the currentSrc of the target
     const slideNum = urls.findIndex(({ src }) => src === target.currentSrc);
 
-    attachmentDialog(slideNum, urls);
+    openAttachmentDialog(slideNum, urls);
   };
 
   for (const element of elementsWithDataUrl) {

@@ -1,27 +1,71 @@
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { attachmentDialog } from '~/modules/attachments/attachment-dialog';
 import { AttachmentRender } from '~/modules/attachments/attachment-render';
+import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 
-interface CarouselProps {
+interface CarouselPropsBase {
   slide?: number;
   slides?: { src: string; fileType?: string }[];
-  isDialog?: boolean;
 }
 
-const Carousel = ({ slides = [], isDialog = false, slide = 0 }: CarouselProps) => {
-  const [current, setCurrent] = useState(0);
+type CarouselProps =
+  | (CarouselPropsBase & {
+      isDialog: true;
+      saveInSearchParams: boolean; // Required when isDialog is true
+    })
+  | (CarouselPropsBase & {
+      isDialog?: false;
+      saveInSearchParams?: never; // Disallowed when isDialog is false
+    });
+
+const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInSearchParams = false }: CarouselProps) => {
+  const navigate = useNavigate();
+  const { attachmentPreview } = useSearch({ strict: false });
+
+  const [current, setCurrent] = useState(slides.findIndex((slide) => slide.src === attachmentPreview) ?? 0);
+  const [watchDrag, setWatchDrag] = useState(slides.length > 1);
+
   const itemClass = isDialog ? 'object-contain' : '';
   const autoplay = Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true });
-  const [watchDrag, setWatchDrag] = useState(slides.length > 1);
 
   useEventListener('toggleCarouselDrag', (e) => {
     const shouldWatchDrag = e.detail && slides.length > 1;
     setWatchDrag(shouldWatchDrag);
   });
 
+  useEffect(() => {
+    if (!saveInSearchParams || slides.length === 0) return;
+
+    // Ensure current is within bounds and the slide exists
+    const currentSlide = slides[current] ? slides[current].src : undefined;
+
+    navigate({
+      to: '.',
+      replace: true,
+      resetScroll: false,
+      search: (prev) => ({
+        ...prev,
+        attachmentPreview: currentSlide,
+      }),
+    });
+
+    return () => {
+      navigate({
+        to: '.',
+        replace: true,
+        resetScroll: false,
+        search: (prev) => ({
+          ...prev,
+          attachmentPreview: undefined,
+        }),
+      });
+    };
+  }, [current]);
+
+  // Reopen dialog after reload if the attachmentPreview parameter exists
   return (
     <BaseCarousel
       isDialog={isDialog}
@@ -37,7 +81,7 @@ const Carousel = ({ slides = [], isDialog = false, slide = 0 }: CarouselProps) =
       <CarouselContent className="h-full">
         {slides?.map(({ src, fileType = 'image' }, idx) => {
           return (
-            <CarouselItem key={src} onClick={() => attachmentDialog(idx, slides)}>
+            <CarouselItem key={src} onClick={() => openAttachmentDialog(idx, slides)}>
               <AttachmentRender
                 containerClassName="overflow-hidden h-full relative rounded-t-[.5rem] flex items-center justify-center"
                 itemClassName={itemClass}
@@ -63,4 +107,4 @@ const Carousel = ({ slides = [], isDialog = false, slide = 0 }: CarouselProps) =
   );
 };
 
-export default Carousel;
+export default AttachmentsCarousel;
