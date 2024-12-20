@@ -26,7 +26,9 @@ export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ sheetId: z.string().optional() });
 
-export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true });
+export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
+  attachmentPreview: z.string().optional(),
+});
 
 export const OrganizationRoute = createRoute({
   path: baseEntityRoutes.organization,

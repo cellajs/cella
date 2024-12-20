@@ -10,7 +10,7 @@ import { AttachmentsTableHeader } from '~/modules/attachments/attachments-table/
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
-import { OrganizationAttachmentsRoute, type attachmentsSearchSchema } from '~/routes/organizations';
+import type { attachmentsSearchSchema } from '~/routes/organizations';
 import type { Attachment, BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
@@ -26,7 +26,7 @@ export interface AttachmentsTableProps {
 
 const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: AttachmentsTableProps) => {
   const { t } = useTranslation();
-  const { search, setSearch } = useSearchParams<AttachmentSearch>({ from: OrganizationAttachmentsRoute.id, saveDataInSearch: !isSheet });
+  const { search, setSearch } = useSearchParams<AttachmentSearch>({ saveDataInSearch: !isSheet });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
