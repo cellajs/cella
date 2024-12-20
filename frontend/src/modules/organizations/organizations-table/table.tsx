@@ -31,7 +31,7 @@ const BaseDataTable = memo(
     const onRowsChange = async (changedRows: Organization[], { column, indexes }: RowsChangeData<Organization>) => {
       if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
 
-      if (column.key !== 'userRole') return setRows(changedRows);
+      if (column.key !== 'role') return setRows(changedRows);
 
       // If user role is changed, invite user to organization
       for (const index of indexes) {
