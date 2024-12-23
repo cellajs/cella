@@ -26,11 +26,7 @@ export const sessionsTable = pgTable(
     expiresAt: timestamp({ withTimezone: true, mode: 'date' }).notNull(),
     adminUserId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
   },
-  (table) => {
-    return {
-      adminUserIdIndex: index('idx_admin_id').on(table.adminUserId),
-    };
-  },
+  (table) => [index('idx_admin_id').on(table.adminUserId)],
 );
 
 export type SessionModel = typeof sessionsTable.$inferSelect;

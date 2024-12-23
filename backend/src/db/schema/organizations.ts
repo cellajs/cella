@@ -36,12 +36,7 @@ export const organizationsTable = pgTable(
     modifiedAt: timestamp(),
     modifiedBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   },
-  (table) => {
-    return {
-      nameIndex: index('organizations_name_index').on(table.name.desc()),
-      createdAtIndex: index('organizations_created_at_index').on(table.createdAt.desc()),
-    };
-  },
+  (table) => [index('organizations_name_index').on(table.name.desc()), index('organizations_created_at_index').on(table.createdAt.desc())],
 );
 
 export type OrganizationModel = typeof organizationsTable.$inferSelect;
