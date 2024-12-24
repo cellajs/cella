@@ -19,9 +19,10 @@ import { organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
-import { entityIdFields, entityTables } from '#/entity-config';
+import { entityIdFields, entityTables, menuSections } from '#/entity-config';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
+import { sendSSEToUsers } from '#/lib/sse';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
@@ -178,47 +179,49 @@ const generalRoutes = app
       return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
     }
     const user = await getUserBy('email', token.email);
-    if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
-    }
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
 
     // If it is a system invitation, update user role
     if (token.type === 'system_invitation') return ctx.json({ success: true }, 200);
 
-    if (token.type === 'membership_invitation') {
-      if (!token.organizationId) return errorResponse(ctx, 400, 'invalid_token', 'warn');
+    if (!token.organizationId) return errorResponse(ctx, 400, 'invalid_token', 'warn');
 
-      const [organization] = await db
-        .select()
-        .from(organizationsTable)
-        .where(and(eq(organizationsTable.id, token.organizationId)));
+    const [organization] = await db
+      .select()
+      .from(organizationsTable)
+      .where(and(eq(organizationsTable.id, token.organizationId)));
 
-      if (!organization) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
+
+    const [existingMembership] = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+
+    if (existingMembership) {
+      if (existingMembership.role !== token.role) {
+        await db
+          .update(membershipsTable)
+          .set({ role: token.role as MembershipModel['role'] })
+          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
       }
 
-      const [existingMembership] = await db
-        .select()
-        .from(membershipsTable)
-        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
-
-      if (existingMembership) {
-        if (existingMembership.role !== token.role) {
-          await db
-            .update(membershipsTable)
-            .set({ role: token.role as MembershipModel['role'] })
-            .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
-        }
-
-        return ctx.json({ success: true }, 200);
-      }
-
-      // Insert membership
-      const role = token.role as MembershipModel['role'];
-      await insertMembership({ user, role, entity: organization });
+      return ctx.json({ success: true }, 200);
     }
 
-    return ctx.json({ success: true }, 200);
+    // Insert membership
+    const role = token.role as MembershipModel['role'];
+    const membership = await insertMembership({ user, role, entity: organization });
+
+    const newMenuItem = {
+      newItem: { ...organization, membership },
+      sectionName: menuSections.find((el) => el.entityType === membership.type)?.name,
+    };
+
+    // SSE with entity data, to update user's menu
+    sendSSEToUsers([user.id], 'add_entity', newMenuItem);
+
+    return ctx.json({ success: true, data: newMenuItem }, 200);
   })
   /*
    * Paddle webhook

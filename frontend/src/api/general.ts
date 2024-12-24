@@ -84,5 +84,5 @@ export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps
   });
 
   const json = await handleResponse(response);
-  return json.success;
+  return json.data;
 };
