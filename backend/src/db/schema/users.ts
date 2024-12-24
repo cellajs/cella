@@ -36,18 +36,16 @@ export const usersTable = pgTable(
     modifiedBy: varchar(),
     role: varchar({ enum: roleEnum }).notNull().default('user'),
   },
-  (table) => {
-    return {
-      nameIndex: index('users_name_index').on(table.name.desc()),
-      unsubscribeTokenIndex: index('users_token_index').on(table.unsubscribeToken),
-      emailIndex: index('users_email_index').on(table.email.desc()),
-      createdAtIndex: index('users_created_at_index').on(table.createdAt.desc()),
-      modifiedByReference: foreignKey({
-        columns: [table.modifiedBy],
-        foreignColumns: [table.id],
-      }),
-    };
-  },
+  (table) => [
+    index('users_name_index').on(table.name.desc()),
+    index('users_token_index').on(table.unsubscribeToken),
+    index('users_email_index').on(table.email.desc()),
+    index('users_created_at_index').on(table.createdAt.desc()),
+    foreignKey({
+      columns: [table.modifiedBy],
+      foreignColumns: [table.id],
+    }),
+  ],
 );
 
 export const safeUserSelect = omitKeys(usersTable, config.sensitiveFields);

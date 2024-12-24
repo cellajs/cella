@@ -13,12 +13,7 @@ export const requestsTable = pgTable(
     type: varchar({ enum: requestTypeEnum }).notNull(),
     createdAt: timestamp().defaultNow().notNull(),
   },
-  (table) => {
-    return {
-      emailIndex: index('requests_emails').on(table.email.desc()),
-      createdAtIndex: index('requests_created_at').on(table.createdAt.desc()),
-    };
-  },
+  (table) => [index('requests_emails').on(table.email.desc()), index('requests_created_at').on(table.createdAt.desc())],
 );
 
 export type RequestsModel = typeof requestsTable.$inferSelect;

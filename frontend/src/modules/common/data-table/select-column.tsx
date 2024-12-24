@@ -3,9 +3,9 @@ import type { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectValue } from '~/modules/ui/select';
 
-import type { Member, User } from '~/types/common';
+import type { Member, Organization, User } from '~/types/common';
 
-export const renderSelect = <TRow extends User | Member>({
+export const renderSelect = <TRow extends User | Member | Organization>({
   row,
   options,
   onRowChange,
@@ -15,12 +15,16 @@ export const renderSelect = <TRow extends User | Member>({
   options: typeof config.rolesByType.entityRoles | typeof config.rolesByType.systemRoles;
 }) => {
   const { t } = useTranslation();
-  const onChooseValue = (value: string) => {
-    if ('membership' in row) return onRowChange({ ...row, membership: { ...row.membership, role: value } }, true);
 
-    onRowChange({ ...row, role: value }, true);
+  const onChooseValue = (value: string) => {
+    // Member | Organization type
+    if ('membership' in row) return onRowChange({ ...row, membership: { ...row.membership, role: value } }, true);
+    // User type
+    if ('role' in row) onRowChange({ ...row, role: value } as TRow, true);
   };
-  const role = 'membership' in row && row.membership ? row.membership.role : row.role;
+
+  // Determine role based on type
+  const role = 'membership' in row && row.membership ? row.membership.role : 'role' in row ? row.role : undefined;
   return (
     <Select open={true} value={role} onValueChange={onChooseValue}>
       <SelectTrigger className="h-8 border-none p-2 text-xs tracking-wider">

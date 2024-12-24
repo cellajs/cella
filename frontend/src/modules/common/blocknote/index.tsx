@@ -33,7 +33,7 @@ import router from '~/lib/router';
 import { compareIsContentSame, focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
 
-import { type Attachments, attachmentDialog } from '~/modules/attachments/attachment-dialog';
+import { type Attachments, openAttachmentDialog } from '~/modules/attachments/helpers';
 
 import '@blocknote/shadcn/style.css';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -228,7 +228,7 @@ export const BlockNote = ({
     });
 
     const attachmentNum = newAttachments.findIndex(({ src }) => src === url);
-    attachmentDialog(attachmentNum, newAttachments);
+    openAttachmentDialog(attachmentNum, newAttachments);
   };
 
   useEffect(() => {

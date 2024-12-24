@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Organization } from '~/types/common';
 
 import { Link } from '@tanstack/react-router';
+import { config } from 'config';
 import { Shield, UserRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -9,6 +10,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import { renderSelect } from '~/modules/common/data-table/select-column';
 import UpdateRow from '~/modules/organizations/organizations-table/update-row';
 import { dateShort } from '~/utils/date-short';
 
@@ -53,8 +55,14 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         sortable: false,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.membership?.role ? t(`common:${row.membership.role}`) : '-'),
+        renderCell: ({ row }) => (row.membership?.role ? t(`common:${row.membership.role}`) : 'Not a member'),
         width: 120,
+        renderEditCell: ({ row, onRowChange }) =>
+          renderSelect({
+            row,
+            onRowChange,
+            options: config.rolesByType.entityRoles,
+          }),
       },
       {
         key: 'subscription',

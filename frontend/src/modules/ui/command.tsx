@@ -54,7 +54,7 @@ const CommandInput = React.forwardRef<HTMLInputElement, CommandInputProps & Zero
         value={value}
         ref={ref}
         className={cn(
-          'flex h-10 w-full border-0 rounded-md bg-transparent pr-1 py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-10 w-full border-0 rounded-md bg-transparent pr-5 py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         {...props}

@@ -15,11 +15,9 @@ export const oauthAccountsTable = pgTable(
       .references(() => usersTable.id, { onDelete: 'cascade' }),
     createdAt: timestamp().defaultNow().notNull(),
   },
-  (table) => {
-    return {
-      pk: primaryKey({
-        columns: [table.providerId, table.providerUserId],
-      }),
-    };
-  },
+  (table) => [
+    primaryKey({
+      columns: [table.providerId, table.providerUserId],
+    }),
+  ],
 );
