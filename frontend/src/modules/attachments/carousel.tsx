@@ -76,7 +76,13 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
       <CarouselContent className="h-full">
         {slides?.map(({ src, fileType = 'image' }, idx) => {
           return (
-            <CarouselItem key={src} onClick={() => openAttachmentDialog(idx, slides)}>
+            <CarouselItem
+              key={src}
+              onClick={() => {
+                if (isDialog) return;
+                openAttachmentDialog(idx, slides);
+              }}
+            >
               <AttachmentRender
                 containerClassName="overflow-hidden h-full relative rounded-t-[.5rem] flex items-center justify-center"
                 itemClassName={itemClass}
