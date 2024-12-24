@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { config } from 'config';
 import { type MenuSectionName, menuSections } from '#/entity-config';
-import { idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
+import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
@@ -63,3 +63,8 @@ export const userMenuSchema = z.object(
 );
 
 export type UserMenu = z.infer<typeof userMenuSchema>;
+
+export const leaveEntityQuerySchema = z.object({
+  idOrSlug: idOrSlugSchema,
+  entityType: contextEntityTypeSchema,
+});
