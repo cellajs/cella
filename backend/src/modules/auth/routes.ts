@@ -356,8 +356,11 @@ class AuthRoutesConfig {
     security: [],
     request: {
       query: z.object({
-        code: z.string(),
+        code: z.string().optional(),
         state: z.string(),
+        error: z.string().optional(),
+        error_description: z.string().optional(),
+        error_uri: z.string().optional(),
       }),
     },
     responses: {

@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
+import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page-aside';
@@ -25,7 +26,6 @@ import { deletePasskey, registerPasskey } from '~/modules/users/helpers';
 import { SessionTile } from '~/modules/users/session-title';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
-import { mapOauthProviders } from '../auth/oauth-options';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

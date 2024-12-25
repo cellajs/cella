@@ -452,18 +452,18 @@ const authRoutes = app
    * Github authentication callback
    */
   .openapi(authRoutesConfig.githubSignInCallback, async (ctx) => {
-    const { code, state } = ctx.req.valid('query');
+    const { code, state, error } = ctx.req.valid('query');
+    // redirect if there is no code or error in callback
+    if (error || !code) return ctx.redirect(config.frontendUrl + config.defaultRedirectPath, 302);
+
     const strategy = 'github' as EnabledOauthProviderOptions;
 
-    if (!isOAuthEnabled(strategy)) {
-      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
-    }
+    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
 
     const stateCookie = getCookie(ctx, 'oauth_state');
 
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
-      // t('common:error.invalid_state.text')
       return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy });
     }
 
@@ -532,11 +532,7 @@ const authRoutes = app
       }[] = await githubUserEmailsResponse.json();
 
       const primaryEmail = githubUserEmails.find((email) => email.primary);
-
-      if (!primaryEmail) {
-        // t('common:error.no_email_found.text')
-        return errorResponse(ctx, 400, 'no_email_found', 'warn');
-      }
+      if (!primaryEmail) return errorResponse(ctx, 400, 'no_email_found', 'warn');
 
       const slug = slugify(githubUser.login, { lower: true, strict: true });
       const { firstName, lastName } = splitFullName(githubUser.name || slug);
