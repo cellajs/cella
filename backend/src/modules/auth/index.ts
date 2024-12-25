@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
@@ -23,7 +23,7 @@ import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/util';
+import { getUserBy, getUsersByConditions } from '#/db/util';
 import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
@@ -418,6 +418,12 @@ const authRoutes = app
     const url = await githubAuth.createAuthorizationURL(state, githubScopes);
 
     createSession(ctx, 'github', state, '', redirect);
+
+    // Get the userId cookie that been set in (frontend/src/modules/users/settings-page)
+    const userId = getCookie(ctx, 'link_to_userId');
+    deleteCookie(ctx, 'link_to_userId');
+    if (userId) setCookie(ctx, 'oauth_link_userId', userId);
+
     return ctx.redirect(url.toString(), 302);
   })
   /*
@@ -453,6 +459,7 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.githubSignInCallback, async (ctx) => {
     const { code, state, error } = ctx.req.valid('query');
+
     // redirect if there is no code or error in callback
     if (error || !code) return ctx.redirect(config.frontendUrl + config.defaultRedirectPath, 302);
 
@@ -512,9 +519,15 @@ const authRoutes = app
         twitter_username?: string | null;
       } = await githubUserResponse.json();
 
+      // Check if it's account link
+      const userId = getCookie(ctx, 'oauth_link_userId');
+
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
       if (existingOauthAccount) {
+        // TODO: maybe create and /error route in FE so we can show the errors from here
+        // redirect home if git hub already assigned to some user
+        if (userId && existingOauthAccount.userId !== userId) return ctx.redirect(`${config.frontendUrl}/user/settings`, 302);
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -540,8 +553,6 @@ const authRoutes = app
       // Check if user has an invite token
       const inviteToken = getCookie(ctx, 'oauth_invite_token');
 
-      deleteCookie(ctx, 'oauth_invite_token');
-
       const githubUserEmail = primaryEmail.email.toLowerCase();
       let userEmail = githubUserEmail;
 
@@ -560,7 +571,9 @@ const authRoutes = app
       }
 
       // Check if user already exists
-      const existingUser = await getUserBy('email', userEmail);
+      const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const [existingUser] = await getUsersByConditions(conditions);
+
       if (existingUser) {
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
@@ -576,13 +589,13 @@ const authRoutes = app
         });
       }
 
-      const userId = nanoid();
+      const newUserId = nanoid();
       const redirectNewUserUrl = getRedirectUrl(ctx, true);
       // Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
-          id: userId,
+          id: newUserId,
           slug: slugify(githubUser.login, { lower: true, strict: true }),
           email: primaryEmail.email.toLowerCase(),
           name: githubUser.name || githubUser.login,
@@ -615,6 +628,9 @@ const authRoutes = app
       }
 
       throw error;
+    } finally {
+      deleteCookie(ctx, 'oauth_link_userId');
+      deleteCookie(ctx, 'oauth_invite_token');
     }
   })
   /*

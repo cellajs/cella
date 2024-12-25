@@ -210,7 +210,11 @@ const UserSettingsPage = () => {
                       variant="outline"
                       onClick={() => {
                         if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-                        window.location.href = `${provider.url}?redirect=${window.location.href}`;
+                        // Set cookies before redirecting same(as in backend/src/modules/auth/index)
+                        document.cookie = `link_to_userId=${user.id}; path=/; secure; SameSite=Strict`;
+
+                        // Redirect to the provider's URL
+                        window.location.href = `${provider.url}?redirect=${encodeURIComponent(window.location.href)}`;
                       }}
                     >
                       <img
