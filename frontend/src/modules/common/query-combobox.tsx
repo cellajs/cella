@@ -9,11 +9,11 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import Spinner from '~/modules/common/spinner';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import Spinner from './spinner';
 
 export function QueryCombobox({ onChange, value }: { value: string[]; onChange: (items: string[]) => void }) {
   const { t } = useTranslation();
@@ -105,24 +105,24 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
             placeholder={t('common:placeholder.type_name')}
           />
           {isLoading && (
-            <CommandLoading className="mt-2">
-              <Spinner inline />
+            <CommandLoading className="flex flex-col items-center w-full text-center p-8 h-full justify-center relative">
+              <Spinner className="h-8 w-8" inline />
             </CommandLoading>
           )}
           <CommandList className="px-1 h-full">
-            {!data || data.items.length === 0 ? (
-              <>
-                {debouncedSearchQuery.length ? (
-                  <CommandEmpty className="h-full">
-                    <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
-                  </CommandEmpty>
-                ) : (
-                  <CommandEmpty className="h-full">
-                    <ContentPlaceholder title={t('common:invite_members_search.text', { appName: config.name })} />
-                  </CommandEmpty>
-                )}
-              </>
-            ) : (
+            {!isLoading &&
+              !data?.items.length &&
+              (debouncedSearchQuery.length ? (
+                <CommandEmpty className="h-full">
+                  <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
+                </CommandEmpty>
+              ) : (
+                <CommandEmpty className="h-full">
+                  <ContentPlaceholder title={t('common:invite_members_search.text', { appName: config.name })} />
+                </CommandEmpty>
+              ))}
+
+            {data && data.items?.length > 0 && (
               <ScrollArea className="max-h-[30vh] overflow-y-auto">
                 <CommandGroup>
                   {data.items.map((user) => (
