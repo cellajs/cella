@@ -15,7 +15,7 @@ import { getContextUser, getMemberships } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
+import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
@@ -178,43 +178,39 @@ const generalRoutes = app
       return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
     }
     const user = await getUserBy('email', token.email);
-    if (!user) {
-      return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
-    }
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
 
     // If it is a system invitation, update user role
     if (token.type === 'system_invitation') return ctx.json({ success: true }, 200);
 
     if (token.type === 'membership_invitation') {
       if (!token.organizationId) return errorResponse(ctx, 400, 'invalid_token', 'warn');
+      const role = token.role as MembershipModel['role'];
 
-      const [organization] = await db
+      const [organization]: (OrganizationModel | undefined)[] = await db
         .select()
         .from(organizationsTable)
-        .where(and(eq(organizationsTable.id, token.organizationId)));
+        .where(and(eq(organizationsTable.id, token.organizationId)))
+        .limit(1);
 
-      if (!organization) {
-        return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
-      }
+      if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
 
-      const [existingMembership] = await db
+      const [existingMembership]: (MembershipModel | undefined)[] = await db
         .select()
         .from(membershipsTable)
-        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)))
+        .limit(1);
 
-      if (existingMembership) {
-        if (existingMembership.role !== token.role) {
-          await db
-            .update(membershipsTable)
-            .set({ role: token.role as MembershipModel['role'] })
-            .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
-        }
+      if (existingMembership && existingMembership.role !== role) {
+        await db
+          .update(membershipsTable)
+          .set({ role, modifiedAt: new Date() })
+          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
 
         return ctx.json({ success: true }, 200);
       }
 
       // Insert membership
-      const role = token.role as MembershipModel['role'];
       await insertMembership({ user, role, entity: organization });
     }
 

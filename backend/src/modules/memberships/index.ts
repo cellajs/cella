@@ -39,10 +39,9 @@ const membershipsRoutes = app
 
     // Allowed to invite members to an entity when user has update permission on the entity
     const { entity, isAllowed } = await getValidEntity(entityType, 'update', idOrSlug);
-    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
-    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
+    if (!entity || !isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
 
-    const { emails, role } = ctx.req.valid('json');
+    const { emails, role, parentEntity } = ctx.req.valid('json');
 
     const organization = getOrganization();
     const user = getContextUser();
@@ -77,6 +76,7 @@ const membershipsRoutes = app
         $where.push(
           and(
             eq(membershipsTable.type, 'organization'),
+            eq(membershipsTable.organizationId, organization.id),
             inArray(
               membershipsTable.userId,
               existingUsers.map((u) => u.id),
@@ -117,32 +117,55 @@ const membershipsRoutes = app
 
           // Check if the role needs to be updated (downgrade or upgrade)
           if (role && existingMembership.role !== role) {
-            await db.update(membershipsTable).set({ role }).where(eq(membershipsTable.id, existingMembership.id));
+            await db
+              .update(membershipsTable)
+              .set({ role, modifiedAt: new Date(), modifiedBy: user.id })
+              .where(eq(membershipsTable.id, existingMembership.id));
 
             logEvent('User role updated', { user: existingUser.id, id: entity.id, type: existingMembership.type, role });
           }
         } else {
           // Check if membership creation is allowed and if invitation is needed
-          const canCreateMembership = entity.entity !== 'organization' || existingUser.id === user.id;
-          const needsInvitation =
-            (entity.entity !== 'organization' && !organizationMembership) || (entity.entity === 'organization' && existingUser.id !== user.id);
+          const instantCreateMembership =
+            (entity.entity !== 'organization' && organizationMembership) || (entity.entity === 'organization' && existingUser.id === user.id);
 
-          if (canCreateMembership) {
-            // Insert membership
-            const createdMembership = await insertMembership({ user: existingUser, role, entity: entity });
+          if (instantCreateMembership) {
+            const parentEntityInto = parentEntity ? await resolveEntity(parentEntity.entity, parentEntity.idOrSlug) : undefined;
+
+            const [createdParentMembership, createdMembership] = await Promise.all([
+              parentEntityInto
+                ? insertMembership({
+                    user: existingUser,
+                    role,
+                    entity: parentEntityInto,
+                  })
+                : Promise.resolve(null), // No-op if parentEntity is undefined
+              insertMembership({
+                user: existingUser,
+                role,
+                entity: entity,
+                parentEntity: parentEntityInto,
+              }),
+            ]);
+
+            if (createdParentMembership) {
+              // Send a Server-Sent Event (SSE) to the newly added user
+              sendSSEToUsers([existingUser.id], 'add_entity', {
+                newItem: { ...entity, membership: createdParentMembership },
+                sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
+              });
+            }
 
             // Send a Server-Sent Event (SSE) to the newly added user
             sendSSEToUsers([existingUser.id], 'add_entity', {
               newItem: { ...entity, membership: createdMembership },
               sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
-              // parentSlug : ''   // if it a submenu add parentSlug
+              ...(parentEntityInto && { parentSlug: parentEntityInto.slug }),
             });
           }
 
-          if (needsInvitation) {
-            // Add email to the invitation list for sending an organization invite to another user
-            emailsToSendInvitation.push(existingUser.email);
-          }
+          // Add email to the invitation list for sending an organization invite to another user
+          else emailsToSendInvitation.push(existingUser.email);
         }
       }),
     );
