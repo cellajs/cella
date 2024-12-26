@@ -420,8 +420,7 @@ const authRoutes = app
     createSession(ctx, 'github', state, '', redirect);
 
     // Get the userId cookie that been set in (frontend/src/modules/users/settings-page)
-    const userId = getCookie(ctx, 'link_to_userId');
-    deleteCookie(ctx, 'link_to_userId');
+    const userId = deleteCookie(ctx, 'link_to_userId');
     if (userId) setCookie(ctx, 'oauth_link_userId', userId);
 
     return ctx.redirect(url.toString(), 302);
