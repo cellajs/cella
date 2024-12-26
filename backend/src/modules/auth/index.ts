@@ -68,7 +68,7 @@ const authRoutes = app
   .openapi(authRoutesConfig.checkEmail, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
-    const user = await getUserBy('email', email.toLowerCase());
+    const user = await getUserBy('email', email);
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
@@ -133,7 +133,7 @@ const authRoutes = app
     const { email } = ctx.req.valid('json');
 
     // Check if user exists
-    const user = await getUserBy('email', email.toLowerCase());
+    const user = await getUserBy('email', email);
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // Creating email verification token
@@ -224,7 +224,7 @@ const authRoutes = app
   .openapi(authRoutesConfig.resetPassword, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
-    const user = await getUserBy('email', email.toLowerCase());
+    const user = await getUserBy('email', email);
     if (!user) return errorResponse(ctx, 400, 'invalid_email', 'warn');
 
     // creating password reset token
@@ -321,7 +321,7 @@ const authRoutes = app
       tokenData = data?.data;
     }
 
-    const user = await getUserBy('email', email.toLowerCase(), 'unsafe');
+    const user = await getUserBy('email', email, 'unsafe');
 
     // If the user is not found or signed up with oauth
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
@@ -783,9 +783,7 @@ const authRoutes = app
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
-      if (!user.email) {
-        return errorResponse(ctx, 400, 'no_email_found', 'warn', undefined);
-      }
+      if (!user.email) return errorResponse(ctx, 400, 'no_email_found', 'warn', undefined);
 
       // Check if user already exists
       const existingUser = await getUserBy('email', user.email.toLowerCase());
@@ -878,7 +876,7 @@ const authRoutes = app
     const { clientDataJSON, authenticatorData, signature, userEmail } = ctx.req.valid('json');
 
     // Retrieve user and challenge record
-    const user = await getUserBy('email', userEmail.toLowerCase());
+    const user = await getUserBy('email', userEmail);
     if (!user) return errorResponse(ctx, 404, 'User not found', 'warn');
 
     const challengeFromCookie = getCookie(ctx, 'challenge');

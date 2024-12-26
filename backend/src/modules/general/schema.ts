@@ -25,7 +25,10 @@ export const checkTokenSchema = z.object({
 });
 
 export const inviteBodySchema = z.object({
-  emails: userSchema.shape.email.array().min(1),
+  emails: userSchema.shape.email
+    .array()
+    .min(1)
+    .transform((emails) => emails.map((email) => email.toLowerCase())),
   role: z.enum(['user']),
 });
 
