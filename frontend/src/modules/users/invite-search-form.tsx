@@ -25,7 +25,7 @@ interface Props {
   dialog?: boolean;
 }
 
-// Invite members by seaching for users which are already in the system
+// Invite members by searching for users which are already in the system
 const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   if (!entity) return null;
@@ -74,6 +74,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
     invite(values);
   };
 
+  if (form.loading) return null;
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

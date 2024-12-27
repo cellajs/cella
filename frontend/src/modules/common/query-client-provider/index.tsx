@@ -49,8 +49,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       };
 
       for (const section of Object.values(menu)) {
-        // TODO: Fix the type issue
-        await prefetchMenuItems(section as unknown as UserMenuItem[]);
+        await prefetchMenuItems(section);
       }
     })();
   }, [offlineAccess]);
