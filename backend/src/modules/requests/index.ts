@@ -77,6 +77,20 @@ const requestsRoutes = app
     const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
+  })
+  /*
+   *  Delete requests
+   */
+  .openapi(requestsRoutesConfig.deleteRequests, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
+
+    // Convert the ids to an array
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+
+    // Delete the requests
+    await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
+
+    return ctx.json({ success: true }, 200);
   });
 
 export default requestsRoutes;

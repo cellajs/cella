@@ -52,3 +52,13 @@ export const getRequests = async (
   const json = await handleResponse(response);
   return json.data;
 };
+
+// delete requests
+export const deleteRequests = async (ids: string[]) => {
+  const response = await client.index.$delete({
+    query: { ids },
+  });
+
+  const json = await handleResponse(response);
+  return json.success;
+};

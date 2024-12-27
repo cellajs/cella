@@ -2,7 +2,8 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { authRateLimiter } from '#/middlewares/rate-limiter';
-import { errorResponses, successWithDataSchema, successWithPaginationSchema } from '#/utils/schema/common-responses';
+import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
+import { idsQuerySchema } from '#/utils/schema/common-schemas';
 import { createRequestSchema, getRequestsQuerySchema, requestSchema } from './schema';
 
 class RequestsRoutesConfig {
@@ -52,6 +53,29 @@ class RequestsRoutesConfig {
         content: {
           'application/json': {
             schema: successWithPaginationSchema(requestSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public deleteRequests = createRouteConfig({
+    method: 'delete',
+    path: '/',
+    guard: [isAuthenticated, systemGuard],
+    tags: ['requests'],
+    summary: 'Delete requests',
+    description: 'Delete requests by ids.',
+    request: {
+      query: idsQuerySchema,
+    },
+    responses: {
+      200: {
+        description: 'Requests',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
           },
         },
       },
