@@ -1,12 +1,9 @@
-// import { useQuery } from '@tanstack/react-query';
-// import { getUser } from '~/api/users';
-
 import { Squirrel } from 'lucide-react';
-import ContentPlaceholder from '../common/content-placeholder';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 
 const ProfilePageContent = ({ sheet, userId, orgIdOrSlug }: { userId: string; orgIdOrSlug?: string; sheet?: boolean }) => {
   // const { data: user } = useQuery({
-  //   queryKey: ['user', userId],
+  //   queryKey: usersKeys.single(userId),
   //   queryFn: () => getUser(userId),
   //   // Disable the query when `organizationId` is available
   //   enabled: !organizationId,

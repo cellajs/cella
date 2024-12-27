@@ -8,6 +8,7 @@ import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
+import { usersKeys } from '~/utils/quey-key-factories';
 
 interface Props {
   users: User[];
@@ -23,7 +24,7 @@ const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
     onSuccess: () => {
       for (const user of users) {
         queryClient.invalidateQueries({
-          queryKey: ['user', user.id],
+          queryKey: usersKeys.single(user.id),
         });
       }
 

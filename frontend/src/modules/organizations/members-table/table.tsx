@@ -6,11 +6,11 @@ import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
-import { membersKeys } from '~/modules/common/query-client-provider/keys';
 import { useMembersUpdateMutation } from '~/modules/common/query-client-provider/mutations/members';
 import type { MemberSearch, MembersTableProps } from '~/modules/organizations/members-table';
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 import type { BaseTableMethods, BaseTableProps, Member } from '~/types/common';
+import { membersKeys } from '~/utils/quey-key-factories';
 
 type BaseDataTableProps = MembersTableProps &
   BaseTableProps<Member, MemberSearch> & {

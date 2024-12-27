@@ -9,6 +9,7 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { useAlertStore } from '~/store/alert';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
+import { usersKeys } from '~/utils/quey-key-factories';
 
 interface Props {
   callback?: (user: User) => void;
@@ -25,7 +26,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
     mutationFn: baseDeleteSelf,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['user', user.id],
+        queryKey: usersKeys.single(user.id),
       });
 
       // Clear all user data

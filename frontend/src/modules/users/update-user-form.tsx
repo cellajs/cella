@@ -29,6 +29,7 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
+import { meKeys, usersKeys } from '~/utils/quey-key-factories';
 
 interface UpdateUserFormProps {
   user: User;
@@ -47,10 +48,10 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
   const isSelf = currentUser.id === idOrSlug;
 
   return useMutation<User, DefaultError, UpdateUserParams>({
-    mutationKey: ['me', 'update', idOrSlug],
+    mutationKey: meKeys.update(),
     mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
     onSuccess: (updatedUser) => {
-      queryClient.setQueryData(['user', updatedUser.slug], updatedUser);
+      queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
     },
     gcTime: 1000 * 10,
   });

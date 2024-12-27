@@ -12,11 +12,12 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dialog } from '~/modules/common/dialoger/state';
 import StickyBox from '~/modules/common/sticky-box';
+import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import { Button } from '../ui/button';
+import { searchKeys } from '~/utils/quey-key-factories';
 
 export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 
@@ -66,7 +67,7 @@ export const MainSearch = () => {
 
   const { data: suggestions, isFetching } = useQuery({
     initialData: { items: [], total: 0 },
-    queryKey: ['search', searchValue],
+    queryKey: searchKeys.byValue(searchValue),
     queryFn: () => getSuggestions(searchValue),
     staleTime: 0,
     enabled: searchValue.length > 0,

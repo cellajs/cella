@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetAttachmentsParams, getAttachments } from '~/api/attachments';
-import { attachmentKeys } from '~/modules/common/query-client-provider/keys';
+import { attachmentKeys } from '~/utils/quey-key-factories';
 
 const LIMIT = config.requestLimits.attachments;
 
@@ -10,7 +10,7 @@ export const attachmentsQueryOptions = ({ orgIdOrSlug, q = '', sort: initialSort
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = attachmentKeys.list({ orgIdOrSlug, q, sort, order });
+  const queryKey = attachmentKeys.table({ orgIdOrSlug, q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,

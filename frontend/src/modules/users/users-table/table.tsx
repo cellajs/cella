@@ -12,6 +12,7 @@ import { DataTable } from '~/modules/common/data-table';
 import type { UsersSearch } from '~/modules/users/users-table';
 import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
 import type { BaseTableMethods, BaseTableProps, User } from '~/types/common';
+import { usersKeys } from '~/utils/quey-key-factories';
 
 type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
   queryVars: { role: UsersSearch['role'] };
@@ -28,7 +29,7 @@ const BaseDataTable = memo(
     const { rows, selectedRows, setRows, setSelectedRows, totalCount, isLoading, isFetching, error, fetchNextPage } =
       useDataFromSuspenseInfiniteQuery(usersQueryOptions({ q, sort, order, role, limit }));
 
-    const mutateQuery = useMutateQueryData(['users', 'list'], (item) => ['user', item.id], ['update']);
+    const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
 
     // Update user role
     const { mutate: updateUserRole } = useMutation({
