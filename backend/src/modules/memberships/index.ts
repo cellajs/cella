@@ -225,20 +225,20 @@ const membershipsRoutes = app
 
     const errors: ErrorType[] = [];
 
-    const filters = and(eq(membershipsTable.type, entityType), or(eq(membershipsTable[entityIdField], entity.id)));
+    const filters = [eq(membershipsTable.type, entityType), eq(membershipsTable[entityIdField], entity.id)];
 
     // Get user membership
     const [currentUserMembership]: (MembershipModel | undefined)[] = await db
       .select()
       .from(membershipsTable)
-      .where(and(filters, eq(membershipsTable.userId, user.id)))
+      .where(and(...filters, eq(membershipsTable.userId, user.id)))
       .limit(1);
 
     // Get target memberships
     const targets = await db
       .select()
       .from(membershipsTable)
-      .where(and(inArray(membershipsTable.userId, memberToDeleteIds), filters));
+      .where(and(inArray(membershipsTable.userId, memberToDeleteIds), ...filters));
 
     // Check if membership exist
     for (const id of memberToDeleteIds) {

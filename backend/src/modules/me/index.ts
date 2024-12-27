@@ -17,6 +17,8 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/entity-config';
 import { getContextUser, getMemberships } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
+import { sendSSEToUsers } from '#/lib/sse';
 import { getPreparedSessions } from './helpers/get-sessions';
 import type { MenuItem, UserMenu } from './schema';
 
@@ -242,7 +244,30 @@ const meRoutes = app
 
     return ctx.json({ success: true }, 200);
   })
+  /*
+   * Delete current user (self) entity membership
+   */
+  .openapi(meRoutesConfig.leaveEntity, async (ctx) => {
+    const user = getContextUser();
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
+    const { entityType, idOrSlug } = ctx.req.valid('query');
+
+    const entity = await resolveEntity(entityType, idOrSlug);
+    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
+
+    const entityIdField = entityIdFields[entityType];
+
+    // Delete the memberships
+    await db
+      .delete(membershipsTable)
+      .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, entityType), eq(membershipsTable[entityIdField], entity.id)));
+
+    sendSSEToUsers([user.id], 'remove_entity', { id: entity.id, entity: entity.entity });
+    logEvent('User leave entity', { user: user.id });
+
+    return ctx.json({ success: true }, 200);
+  })
   /*
    * Delete passkey of self
    */

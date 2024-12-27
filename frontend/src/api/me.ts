@@ -1,5 +1,6 @@
 import { config } from 'config';
 import type { UpdateUserParams } from '~/api/users';
+import type { ContextEntity } from '~/types/common';
 import { meHc } from '#/modules/me/hc';
 import { clientConfig, handleResponse } from '.';
 
@@ -50,6 +51,15 @@ export const deleteMySessions = async (sessionIds: string[]) => {
 // Remove passkey
 export const deletePasskey = async () => {
   const response = await client.passkey.$delete();
+
+  const json = await handleResponse(response);
+  return json.success;
+};
+// Leave entity
+export const leaveEntity = async (query: { idOrSlug: string; entityType: ContextEntity }) => {
+  const response = await client.leave.$delete({
+    query,
+  });
 
   const json = await handleResponse(response);
   return json.success;
