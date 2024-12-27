@@ -121,7 +121,7 @@ const generalRoutes = app
     const user = getContextUser();
 
     for (const email of emails) {
-      const targetUser = await getUserBy('email', email.toLowerCase());
+      const targetUser = await getUserBy('email', email);
 
       const token = generateId(40);
       await db.insert(tokensTable).values({
