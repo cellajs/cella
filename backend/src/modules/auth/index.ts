@@ -565,6 +565,8 @@ const authRoutes = app
 
       if (inviteToken) {
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
+        // Delete token
+        await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
@@ -573,7 +575,6 @@ const authRoutes = app
             type: 'invitation',
           });
         }
-
         userEmail = token.email;
       }
 
@@ -699,6 +700,8 @@ const authRoutes = app
 
       if (inviteToken) {
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
+        // Delete token
+        await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
@@ -707,7 +710,6 @@ const authRoutes = app
             type: 'invitation',
           });
         }
-
         userEmail = token.email;
       }
 
@@ -828,6 +830,8 @@ const authRoutes = app
 
       if (inviteToken) {
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
+        // Delete token
+        await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
@@ -836,7 +840,6 @@ const authRoutes = app
             type: 'invitation',
           });
         }
-
         userEmail = token.email;
       }
 
