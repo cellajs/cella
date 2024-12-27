@@ -1,5 +1,5 @@
 import { config } from 'config';
-import { Handshake, Trash, XSquare } from 'lucide-react';
+import { Handshake, Mailbox, Trash, XSquare } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
@@ -17,6 +17,7 @@ type RequestsTableHeaderBarProps = BaseTableMethods &
   BaseTableHeaderProps<Request, RequestsSearch> & {
     openInviteDialog: () => void;
     openRemoveDialog: () => void;
+    openNewsletterSheet: () => void;
     fetchExport: (limit: number) => Promise<Request[]>;
   };
 
@@ -30,11 +31,13 @@ export const RequestsTableHeaderBar = ({
   clearSelection,
   openInviteDialog,
   openRemoveDialog,
+  openNewsletterSheet,
   fetchExport,
 }: RequestsTableHeaderBarProps) => {
   const { t } = useTranslation();
 
   const selectedToWaitList = useMemo(() => selected.filter((r) => r.type === 'waitlist'), [selected]);
+  const selectedContact = useMemo(() => selected.filter((r) => r.type !== 'waitlist'), [selected]);
 
   const isFiltered = !!q;
   // Drop selected Rows on search
@@ -55,6 +58,13 @@ export const RequestsTableHeaderBar = ({
         <FilterBarActions>
           {selected.length > 0 && (
             <>
+              {selectedContact.length > 0 && (
+                <Button onClick={openNewsletterSheet} className="relative">
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedContact.length}</Badge>
+                  <Mailbox size={16} />
+                  <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
+                </Button>
+              )}
               {selectedToWaitList.length > 0 && (
                 <Button variant="darkSuccess" className="relative" onClick={openInviteDialog}>
                   <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedToWaitList.length}</Badge>

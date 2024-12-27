@@ -9,15 +9,15 @@ import { i18n } from '#/lib/i18n';
 
 const link = 'text-[#0366d6] text-xs leading-[1.13rem] cursor-pointer';
 
-const NewsletterDraft = () => {
+const OrganizationsNewsletterDraft = () => {
   const {
     user: { language: lng },
   } = useUserStore();
 
-  const form = useFormWithDraft('send-newsletter');
+  const form = useFormWithDraft('send-org-newsletter');
 
   useEffect(() => {
-    updateSourcesFromDataUrl('newsletter-draft-content');
+    updateSourcesFromDataUrl('org-newsletter-draft-content');
   }, [form.getValues('content'), form.getValues('subject')]);
 
   return (
@@ -26,7 +26,7 @@ const NewsletterDraft = () => {
       <section className="rounded-lg my-6 border p-6 w-full">
         <p className="text-muted-foreground font-light">{form.getValues('subject')}</p>
         <div
-          id="newsletter-draft-content"
+          id="org-newsletter-draft-content"
           className="text-muted-foreground font-light"
           // biome-ignore lint/security/noDangerouslySetInnerHtml: blackNote html
           dangerouslySetInnerHTML={{ __html: form.getValues('content') }}
@@ -45,4 +45,4 @@ const NewsletterDraft = () => {
     </div>
   );
 };
-export default NewsletterDraft;
+export default OrganizationsNewsletterDraft;

@@ -11,6 +11,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/system/requests-table/columns';
 import DeleteRequests from '~/modules/system/requests-table/delete-requests';
+import { openFeedbackLetterSheet } from '~/modules/system/requests-table/helpers';
 import { RequestsTableHeaderBar } from '~/modules/system/requests-table/table-header';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Request } from '~/types/common';
@@ -49,6 +50,12 @@ const RequestsTable = () => {
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
+  };
+
+  const openNewsletterSheet = () => {
+    const requests = selected.filter((request) => request.type !== 'waitlist');
+    const emails = requests.map((request) => request.email);
+    openFeedbackLetterSheet(emails, clearSelection);
   };
 
   const openRemoveDialog = () => {
@@ -105,6 +112,7 @@ const RequestsTable = () => {
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}
         openInviteDialog={openInviteDialog}
+        openNewsletterSheet={openNewsletterSheet}
         fetchExport={fetchExport}
       />
       <Suspense>

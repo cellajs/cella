@@ -62,3 +62,15 @@ export const deleteRequests = async (ids: string[]) => {
   const json = await handleResponse(response);
   return json.success;
 };
+
+export type SendResponseParams = Parameters<(typeof client)['send-feedback']['$post']>['0']['json'];
+
+// send email feedback to requests
+export const sendResponse = async (body: SendResponseParams) => {
+  const response = await client['send-feedback'].$post({
+    json: body,
+  });
+
+  const json = await handleResponse(response);
+  return json.success;
+};

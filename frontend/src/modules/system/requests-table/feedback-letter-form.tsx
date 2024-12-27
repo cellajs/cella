@@ -3,15 +3,12 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
+import { feedbackLetterBodySchema } from 'backend/modules/requests/schema';
 import { Send } from 'lucide-react';
-import { Suspense } from 'react';
 import { toast } from 'sonner';
-import { sendNewsletter as baseSendNewsletter } from '~/api/organizations';
+import { sendResponse as baseSendResponse } from '~/api/requests';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
-import UppyFilePanel from '~/modules/attachments/upload/blocknote-upload-panel';
-import { BlockNote } from '~/modules/common/blocknote';
 import { sheet } from '~/modules/common/sheeter/state';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
@@ -20,42 +17,43 @@ import { Input } from '~/modules/ui/input';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
+import BlockNoteContent from '~/modules/common/form-fields/blocknote-newsletter-content';
 
 interface NewsletterFormProps {
-  organizationIds: string[];
-  dropSelectedOrganization?: () => void;
+  emails: string[];
+  dropSelected?: () => void;
   sheet?: boolean;
 }
 
-const formSchema = sendNewsletterBodySchema;
+const formSchema = feedbackLetterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet: isSheet, dropSelectedOrganization }) => {
+const FeedbackLetterForm: React.FC<NewsletterFormProps> = ({ emails, sheet: isSheet, dropSelected }) => {
   const { t } = useTranslation();
 
-  const form = useFormWithDraft<FormValues>('send-newsletter', {
+  const form = useFormWithDraft<FormValues>('send-feedback-letter', {
     resolver: zodResolver(formSchema),
     defaultValues: {
-      organizationIds: organizationIds,
+      emails,
       subject: '',
       content: '',
     },
   });
 
   const { mutate: sendNewsletter, isPending } = useMutation({
-    mutationFn: baseSendNewsletter,
+    mutationFn: baseSendResponse,
     onSuccess: () => {
       form.reset();
-      toast.success(t('common:success.create_newsletter'));
-      dropSelectedOrganization?.();
-      if (isSheet) sheet.remove('newsletter-form');
+      toast.success(t('common:success.request_feedback'));
+      dropSelected?.();
+      if (isSheet) sheet.remove('feedback-letter-form');
     },
   });
 
   const onSubmit = (values: FormValues) => {
     sendNewsletter({
-      organizationIds: values.organizationIds,
+      emails: values.emails,
       subject: values.subject,
       content: values.content,
     });
@@ -86,7 +84,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="editor-container" className="space-y-6 pb-8 h-max">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="feedback-editor-container" className="space-y-6 pb-8 h-max">
         <FormField
           control={form.control}
           name="subject"
@@ -101,30 +99,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="content"
-          render={({ field: { onChange, value } }) => (
-            <FormItem>
-              <FormLabel>{t('common:message')}</FormLabel>
-              <FormControl>
-                <Suspense>
-                  <BlockNote
-                    id={'blocknote-org-letter'}
-                    defaultValue={value}
-                    onChange={onChange}
-                    updateData={onChange}
-                    className="min-h-20 pl-10 pr-6 p-3 border rounded-md"
-                    allowedFileBlockTypes={['image', 'file']}
-                    allowedBlockTypes={['emoji', 'heading', 'paragraph', 'codeBlock']}
-                    filePanel={(props) => <UppyFilePanel {...props} />}
-                  />
-                </Suspense>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-feedback-letter" />
 
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton disabled={!isDirty()} loading={isPending}>
@@ -140,4 +115,4 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
   );
 };
 
-export default OrganizationsNewsletterForm;
+export default FeedbackLetterForm;
