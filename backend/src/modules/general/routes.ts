@@ -5,7 +5,7 @@ import { authRateLimiter, rateLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
-import { acceptInviteBodySchema, checkTokenSchema, inviteBodySchema, suggestionsSchema } from './schema';
+import { acceptInviteBodySchema, acceptInviteResponseSchema, checkTokenSchema, inviteBodySchema, suggestionsSchema } from './schema';
 
 class GeneralRoutesConfig {
   public unsubscribeUser = createRouteConfig({
@@ -173,13 +173,9 @@ class GeneralRoutesConfig {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: successWithoutDataSchema,
+            schema: successWithDataSchema(acceptInviteResponseSchema),
           },
         },
-      },
-      302: {
-        description: 'Redirect to github',
-        headers: z.object({ Location: z.string() }),
       },
       ...errorResponses,
     },

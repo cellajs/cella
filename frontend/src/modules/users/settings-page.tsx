@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
+import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page-aside';
@@ -25,7 +26,6 @@ import { deletePasskey, registerPasskey } from '~/modules/users/helpers';
 import { SessionTile } from '~/modules/users/session-title';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
-import { mapOauthProviders } from '../auth/oauth-options';
 
 const tabs = [
   { id: 'general', label: 'common:general' },
@@ -186,7 +186,7 @@ const UserSettingsPage = () => {
                 <p className="font-semibold">{t('common:oauth')}</p>
               </HelpText>
 
-              <div className="flex max-sm:flex-col gap-2 mb-6">
+              <div className="flex flex-col sm:items-start gap-2 mb-6">
                 {config.enabledOauthProviders.map((id) => {
                   const provider = mapOauthProviders.find((provider) => provider.id === id);
                   if (!provider) return;
@@ -210,7 +210,11 @@ const UserSettingsPage = () => {
                       variant="outline"
                       onClick={() => {
                         if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-                        window.location.href = `${provider.url}?redirect=${window.location.href}`;
+                        // Set cookies before redirecting same(as in backend/src/modules/auth/index)
+                        document.cookie = `link_to_userId=${user.id}; path=/; secure; SameSite=Strict`;
+
+                        // Redirect to the provider's URL
+                        window.location.href = `${provider.url}?redirect=${encodeURIComponent(window.location.href)}`;
                       }}
                     >
                       <img

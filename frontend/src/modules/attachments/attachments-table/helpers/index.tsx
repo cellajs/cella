@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { showToast } from '~/lib/toasts';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useAttachmentCreateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
+import { useAttachmentCreateMutation } from '~/query/mutations/attachments';
 import { UploadType, type UploadedUppyFile } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 

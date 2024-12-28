@@ -13,6 +13,7 @@ import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { useColumns } from '~/modules/users/users-table/columns';
 import { UsersTableHeader } from '~/modules/users/users-table/table-header';
+import { usersKeys } from '~/query/query-key-factories';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, User } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
@@ -44,7 +45,7 @@ const UsersTable = () => {
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
-  const mutateQuery = useMutateQueryData(['users', 'list'], (item) => ['user', item.id], ['update']);
+  const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);

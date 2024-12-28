@@ -6,6 +6,7 @@ import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { deleteMenuItem } from '~/modules/common/nav-sheet/helpers/menu-operations';
+import { organizationsKeys } from '~/query/query-key-factories';
 
 interface Props {
   organizations: Organization[];
@@ -19,7 +20,7 @@ const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Prop
     onSuccess: () => {
       for (const organization of organizations) {
         queryClient.invalidateQueries({
-          queryKey: ['organization', organization.id],
+          queryKey: organizationsKeys.single(organization.id),
         });
         deleteMenuItem(organization.id);
       }

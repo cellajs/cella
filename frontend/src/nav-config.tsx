@@ -11,7 +11,7 @@ import { MainSearch, type SuggestionSection, type SuggestionType } from '~/modul
 import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
 import type { UserMenuItem } from './types/common';
 
-// Set entities paths
+// Set entity paths so we can dynamically use them in the app
 export const baseEntityRoutes = {
   user: '/user/$idOrSlug',
   organization: '/$idOrSlug',
@@ -30,7 +30,7 @@ export const navItems: NavItem[] = [
   { id: 'account', icon: User, sheet: <SheetAccount />, mirrorOnMobile: true },
 ];
 
-// Here you declare the menu sections
+// Here you declare menu sections
 export const menuSections: SectionItem[] = [
   {
     name: 'organizations',
@@ -53,7 +53,7 @@ export const suggestionSections: SuggestionSection[] = [
   { id: 'organizations', label: 'common:organizations', type: 'organization' },
 ];
 
-// App specific entity path resolver
+// App-specific entity path resolver
 export const getEntityRoute = (item: UserMenuItem | SuggestionType) => {
   const {
     entity,

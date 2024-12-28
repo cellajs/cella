@@ -1,6 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
+import { organizationsKeys } from '~/query/query-key-factories';
 
 const LIMIT = config.requestLimits.organizations;
 
@@ -8,7 +9,7 @@ export const organizationsQueryOptions = ({ q = '', sort: initialSort, order: in
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = ['organizations', 'list', q, sort, order];
+  const queryKey = organizationsKeys.table({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,

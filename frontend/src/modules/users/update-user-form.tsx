@@ -27,6 +27,7 @@ import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { meKeys, usersKeys } from '~/query/query-key-factories';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
 
@@ -47,10 +48,10 @@ export const useUpdateUserMutation = (idOrSlug: string) => {
   const isSelf = currentUser.id === idOrSlug;
 
   return useMutation<User, DefaultError, UpdateUserParams>({
-    mutationKey: ['me', 'update', idOrSlug],
+    mutationKey: meKeys.update(),
     mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
     onSuccess: (updatedUser) => {
-      queryClient.setQueryData(['user', updatedUser.slug], updatedUser);
+      queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
     },
     gcTime: 1000 * 10,
   });
@@ -100,7 +101,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         if (isSelf) {
           updateUser(updatedUser);
           showToast(t('common:success.profile_updated'), 'success');
-        } else showToast(t('common:success.update_item', t('common:user')), 'success');
+        } else showToast(t('common:success.update_item', { item: t('common:user') }), 'success');
         form.reset(updatedUser);
         if (isSheet) sheet.remove('update-user');
         nextStep?.();

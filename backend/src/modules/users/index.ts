@@ -218,9 +218,9 @@ const usersRoutes = app
     logEvent('User updated', { user: updatedUser.id });
 
     // Get the user's membership count
-    const memberships = await getUserMembershipsCount(targetUser.id);
+    const memberships = await getUserMembershipsCount(updatedUser.id);
 
-    return ctx.json({ success: true, data: transformDatabaseUserWithCount(targetUser, memberships) }, 200);
+    return ctx.json({ success: true, data: transformDatabaseUserWithCount(updatedUser, memberships) }, 200);
   });
 
 export default usersRoutes;

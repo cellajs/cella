@@ -3,7 +3,7 @@ import { isAuthenticated } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { idsQuerySchema } from '#/utils/schema/common-schemas';
 import { updateUserBodySchema, userSchema } from '../users/schema';
-import { meUserSchema, signUpInfo, userMenuSchema } from './schema';
+import { leaveEntityQuerySchema, meUserSchema, signUpInfo, userMenuSchema } from './schema';
 
 class MeRoutesConfig {
   public getSelf = createRouteConfig({
@@ -120,6 +120,31 @@ class MeRoutesConfig {
       ...errorResponses,
     },
   });
+
+  public leaveEntity = createRouteConfig({
+    method: 'delete',
+    path: '/leave',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Leave entity',
+    description: 'Leave any entity on your own.',
+    security: [],
+    request: {
+      query: leaveEntityQuerySchema,
+    },
+    responses: {
+      200: {
+        description: 'Passkey removed',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
   public deletePasskey = createRouteConfig({
     method: 'delete',
     path: '/passkey',

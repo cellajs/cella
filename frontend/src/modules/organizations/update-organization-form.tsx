@@ -24,6 +24,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import { organizationsKeys } from '~/query/query-key-factories';
 import { cleanUrl } from '~/utils/clean-url';
 
 interface Props {
@@ -38,12 +39,12 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const useUpdateOrganizationMutation = (idOrSlug: string) => {
   return useMutation<Organization, DefaultError, UpdateOrganizationParams>({
-    mutationKey: ['organization', 'update', idOrSlug],
+    mutationKey: organizationsKeys.updateSingle(idOrSlug),
     mutationFn: (params) => updateOrganization(idOrSlug, params),
     onSuccess: (updatedOrganization) => {
-      queryClient.setQueryData(['organization', idOrSlug], updatedOrganization);
+      queryClient.setQueryData(organizationsKeys.single(idOrSlug), updatedOrganization);
       queryClient.invalidateQueries({
-        queryKey: ['organization'],
+        queryKey: organizationsKeys.one,
       });
     },
     gcTime: 1000 * 10,

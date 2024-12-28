@@ -50,6 +50,8 @@ export type MinimumEntityItem = {
 
 export type EntityPage = MinimumEntityItem & {
   organizationId?: string | null;
+  membership: MinimumMembershipInfo | null;
+  parentEntity?: { idOrSlug: string; entity: ContextEntity };
 };
 
 // Uppy and Imado upload types

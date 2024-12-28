@@ -2,9 +2,9 @@ import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
 import { persister, queryClient } from '~/lib/router';
-import { prefetchQuery, waitFor } from '~/modules/common/query-client-provider/helpers';
 import { meQueryOptions, menuQueryOptions } from '~/modules/users/helpers/query-options';
 import { queriesToMap } from '~/offline-config';
+import { prefetchQuery, waitFor } from '~/query/helpers';
 import { useGeneralStore } from '~/store/general';
 import type { UserMenuItem } from '~/types/common';
 
@@ -49,8 +49,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       };
 
       for (const section of Object.values(menu)) {
-        // TODO: Fix the type issue
-        await prefetchMenuItems(section as unknown as UserMenuItem[]);
+        await prefetchMenuItems(section);
       }
     })();
   }, [offlineAccess]);

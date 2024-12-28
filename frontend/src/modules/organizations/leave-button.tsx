@@ -4,39 +4,34 @@ import { config } from 'config';
 import { Check, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { leaveEntity } from '~/api/me';
+import { useMutation } from '~/hooks/use-mutations';
 import { showToast } from '~/lib/toasts';
-import { useMembersDeleteMutation } from '~/modules/common/query-client-provider/mutations/members';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { useUserStore } from '~/store/user';
 import type { Organization } from '~/types/common';
 
 const LeaveButton = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();
-  const { user } = useUserStore();
   const navigate = useNavigate();
   const [openPopover, setOpenPopover] = useState(false);
 
-  const { mutate: leave } = useMembersDeleteMutation();
+  const { mutate: leave } = useMutation({
+    mutationFn: () =>
+      leaveEntity({
+        idOrSlug: organization.slug,
+        entityType: 'organization',
+      }),
+    onSuccess: () => {
+      showToast(t('common:success.you_left_organization'), 'success');
+      navigate({ to: config.defaultRedirectPath, replace: true });
+    },
+  });
 
   const onLeave = () => {
     if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
-
-    leave(
-      {
-        orgIdOrSlug: organization.id,
-        idOrSlug: organization.slug,
-        entityType: 'organization',
-        ids: [user.id],
-      },
-      {
-        onSuccess: () => {
-          showToast(t('common:success.you_left_organization'), 'success');
-          navigate({ to: config.defaultRedirectPath, replace: true });
-        },
-      },
-    );
+    leave();
   };
 
   return (

@@ -194,7 +194,7 @@
   "invite": "Invite",
   "invite_by_email": "Invite with email addresses",
   "invite_by_name": "Invite by searching for users",
-  "invite_create_account": " Sign up to accept invitation",
+  "invite_create_account": "Sign up to accept invitation",
   "invite_members.text": "Invited members will receive an email to accept the invitation.",
   "invite_members_search.text": "Search for users to invite within {{appName}}.",
   "invite_only.text": "{{appName}} is currently invite-only. Can't wait? Contact us for an invite.",

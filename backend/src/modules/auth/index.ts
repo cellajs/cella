@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
@@ -23,7 +23,7 @@ import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/util';
+import { getUserBy, getUsersByConditions } from '#/db/util';
 import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
@@ -418,6 +418,11 @@ const authRoutes = app
     const url = await githubAuth.createAuthorizationURL(state, githubScopes);
 
     createSession(ctx, 'github', state, '', redirect);
+
+    // Get the userId cookie that been set in (frontend/src/modules/users/settings-page)
+    const userId = deleteCookie(ctx, 'link_to_userId');
+    if (userId) setCookie(ctx, 'oauth_link_userId', userId);
+
     return ctx.redirect(url.toString(), 302);
   })
   /*
@@ -431,6 +436,10 @@ const authRoutes = app
     const url = await googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
 
     createSession(ctx, 'google', state, codeVerifier, redirect);
+
+    // Get the userId cookie that been set in (frontend/src/modules/users/settings-page)
+    const userId = deleteCookie(ctx, 'link_to_userId');
+    if (userId) setCookie(ctx, 'oauth_link_userId', userId);
 
     return ctx.redirect(url.toString(), 302);
   })
@@ -446,24 +455,29 @@ const authRoutes = app
 
     createSession(ctx, 'microsoft', state, codeVerifier, redirect);
 
+    // Get the userId cookie that been set in (frontend/src/modules/users/settings-page)
+    const userId = deleteCookie(ctx, 'link_to_userId');
+    if (userId) setCookie(ctx, 'oauth_link_userId', userId);
+
     return ctx.redirect(url.toString(), 302);
   })
   /*
    * Github authentication callback
    */
   .openapi(authRoutesConfig.githubSignInCallback, async (ctx) => {
-    const { code, state } = ctx.req.valid('query');
+    const { code, state, error } = ctx.req.valid('query');
+
+    // redirect if there is no code or error in callback
+    if (error || !code) return ctx.redirect(config.frontendUrl + config.defaultRedirectPath, 302);
+
     const strategy = 'github' as EnabledOauthProviderOptions;
 
-    if (!isOAuthEnabled(strategy)) {
-      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
-    }
+    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
 
     const stateCookie = getCookie(ctx, 'oauth_state');
 
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
-      // t('common:error.invalid_state.text')
       return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy });
     }
 
@@ -512,9 +526,15 @@ const authRoutes = app
         twitter_username?: string | null;
       } = await githubUserResponse.json();
 
+      // Check if it's account link
+      const userId = getCookie(ctx, 'oauth_link_userId');
+
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
       if (existingOauthAccount) {
+        // TODO: maybe create and /error route in FE so we can show the errors from here
+        // redirect home if github already assigned to some user
+        if (userId && existingOauthAccount.userId !== userId) return ctx.redirect(`${config.frontendUrl}/user/settings`, 302);
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -532,11 +552,7 @@ const authRoutes = app
       }[] = await githubUserEmailsResponse.json();
 
       const primaryEmail = githubUserEmails.find((email) => email.primary);
-
-      if (!primaryEmail) {
-        // t('common:error.no_email_found.text')
-        return errorResponse(ctx, 400, 'no_email_found', 'warn');
-      }
+      if (!primaryEmail) return errorResponse(ctx, 400, 'no_email_found', 'warn');
 
       const slug = slugify(githubUser.login, { lower: true, strict: true });
       const { firstName, lastName } = splitFullName(githubUser.name || slug);
@@ -544,13 +560,13 @@ const authRoutes = app
       // Check if user has an invite token
       const inviteToken = getCookie(ctx, 'oauth_invite_token');
 
-      deleteCookie(ctx, 'oauth_invite_token');
-
       const githubUserEmail = primaryEmail.email.toLowerCase();
       let userEmail = githubUserEmail;
 
       if (inviteToken) {
         const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
+        // Delete token
+        await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
@@ -559,17 +575,18 @@ const authRoutes = app
             type: 'invitation',
           });
         }
-
         userEmail = token.email;
       }
 
       // Check if user already exists
-      const existingUser = await getUserBy('email', userEmail);
+      const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const [existingUser] = await getUsersByConditions(conditions);
+
       if (existingUser) {
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: String(githubUser.id),
-            email: githubUserEmail,
+            email: userEmail,
             bio: githubUser.bio,
             thumbnailUrl: githubUser.avatar_url,
             firstName,
@@ -580,15 +597,15 @@ const authRoutes = app
         });
       }
 
-      const userId = nanoid();
+      const newUserId = nanoid();
       const redirectNewUserUrl = getRedirectUrl(ctx, true);
       // Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
-          id: userId,
+          id: newUserId,
           slug: slugify(githubUser.login, { lower: true, strict: true }),
-          email: primaryEmail.email.toLowerCase(),
+          email: userEmail,
           name: githubUser.name || githubUser.login,
           thumbnailUrl: githubUser.avatar_url,
           bio: githubUser.bio,
@@ -619,6 +636,9 @@ const authRoutes = app
       }
 
       throw error;
+    } finally {
+      deleteCookie(ctx, 'oauth_link_userId');
+      deleteCookie(ctx, 'oauth_invite_token');
     }
   })
   /*
@@ -661,41 +681,65 @@ const authRoutes = app
         locale: string;
       } = await response.json();
 
+      // Check if it's account link
+      const userId = getCookie(ctx, 'oauth_link_userId');
+
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
+        // redirect home if google already assigned to some user
+        if (userId && existingOauthAccount.userId !== userId) return ctx.redirect(`${config.frontendUrl}/user/settings`, 302);
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
-
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
+      // Check if user has an invite token
+      const inviteToken = getCookie(ctx, 'oauth_invite_token');
+
+      let userEmail = user.email.toLowerCase();
+
+      if (inviteToken) {
+        const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
+        // Delete token
+        await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
+
+        // If token is invalid or expired
+        if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
+          return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
+            strategy,
+            type: 'invitation',
+          });
+        }
+        userEmail = token.email;
+      }
+
       // Check if user already exists
-      const existingUser = await getUserBy('email', user.email.toLowerCase());
+      const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: user.sub,
-            email: user.email,
+            email: userEmail,
             thumbnailUrl: user.picture,
             firstName: user.given_name,
             lastName: user.family_name,
           },
           redirectUrl: redirectExistingUserUrl,
-          // TODO: invite token
-          isEmailVerified: existingUser.emailVerified || user.email_verified,
+          isEmailVerified: existingUser.emailVerified || !!inviteToken || user.email_verified,
         });
       }
 
-      const userId = nanoid();
+      const newUserId = nanoid();
       const redirectNewUserUrl = getRedirectUrl(ctx, true);
       // Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
-          id: userId,
-          slug: slugFromEmail(user.email),
-          email: user.email.toLowerCase(),
+          id: newUserId,
+          slug: slugFromEmail(userEmail),
+          email: userEmail,
           name: user.given_name,
           emailVerified: user.email_verified,
           language: config.defaultLanguage,
@@ -708,6 +752,7 @@ const authRoutes = app
             id: strategy,
             userId: user.sub,
           },
+          isInvite: !!inviteToken,
           redirectUrl: redirectNewUserUrl,
         },
       );
@@ -723,6 +768,9 @@ const authRoutes = app
       }
 
       throw error;
+    } finally {
+      deleteCookie(ctx, 'oauth_link_userId');
+      deleteCookie(ctx, 'oauth_invite_token');
     }
   })
   /*
@@ -763,45 +811,67 @@ const authRoutes = app
         email: string | undefined;
       } = await response.json();
 
+      // Check if it's account link
+      const userId = getCookie(ctx, 'oauth_link_userId');
+
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
+        // redirect home if google already assigned to some user
+        if (userId && existingOauthAccount.userId !== userId) return ctx.redirect(`${config.frontendUrl}/user/settings`, 302);
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
-
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
-      if (!user.email) {
-        return errorResponse(ctx, 400, 'no_email_found', 'warn', undefined);
+      // Check if user has an invite token
+      const inviteToken = getCookie(ctx, 'oauth_invite_token');
+
+      let userEmail = user.email ? user.email.toLowerCase() : null;
+
+      if (inviteToken) {
+        const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
+        // Delete token
+        await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
+
+        // If token is invalid or expired
+        if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
+          return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
+            strategy,
+            type: 'invitation',
+          });
+        }
+        userEmail = token.email;
       }
 
+      if (!userEmail) return errorResponse(ctx, 400, 'no_email_found', 'warn', undefined);
       // Check if user already exists
-      const existingUser = await getUserBy('email', user.email.toLowerCase());
+      const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
+      const [existingUser] = await getUsersByConditions(conditions);
+
       if (existingUser) {
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: user.sub,
-            email: user.email,
+            email: userEmail,
             thumbnailUrl: user.picture,
             firstName: user.given_name,
             lastName: user.family_name,
           },
           redirectUrl: redirectExistingUserUrl,
-          // TODO: invite token and email verification
-          isEmailVerified: existingUser.emailVerified,
+          isEmailVerified: existingUser.emailVerified || !!inviteToken,
         });
       }
 
-      const userId = nanoid();
+      const newUserId = nanoid();
       const redirectNewUserUrl = getRedirectUrl(ctx, true);
       // Create new user and oauth account
       return await handleCreateUser(
         ctx,
         {
-          id: userId,
-          slug: slugFromEmail(user.email),
+          id: newUserId,
+          slug: slugFromEmail(userEmail),
           language: config.defaultLanguage,
-          email: user.email.toLowerCase(),
+          email: userEmail,
           emailVerified: false,
           name: user.given_name,
           thumbnailUrl: user.picture,
@@ -813,6 +883,7 @@ const authRoutes = app
             id: strategy,
             userId: user.sub,
           },
+          isInvite: !!inviteToken,
           redirectUrl: redirectNewUserUrl,
         },
       );
@@ -828,6 +899,9 @@ const authRoutes = app
       }
 
       throw error;
+    } finally {
+      deleteCookie(ctx, 'oauth_link_userId');
+      deleteCookie(ctx, 'oauth_invite_token');
     }
   })
   /*

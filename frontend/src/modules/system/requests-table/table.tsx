@@ -5,7 +5,7 @@ import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { RequestsSearch } from '~/modules/system/requests-table';
-import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-option';
+import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-options';
 import type { BaseTableMethods, BaseTableProps, Request } from '~/types/common';
 
 type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch>;

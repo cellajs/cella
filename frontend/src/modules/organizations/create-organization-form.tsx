@@ -22,6 +22,7 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
+import { organizationsKeys } from '~/query/query-key-factories';
 import type { Organization } from '~/types/common';
 
 interface CreateOrganizationFormProps {
@@ -62,7 +63,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
 
   // Watch to update slug field
   const name = useWatch({ control: form.control, name: 'name' });
-  const mutateQuery = useMutateQueryData(['organizations', 'list']);
+  const mutateQuery = useMutateQueryData(organizationsKeys.list());
 
   const { mutate: create, isPending } = useMutation({
     mutationFn: createOrganization,
