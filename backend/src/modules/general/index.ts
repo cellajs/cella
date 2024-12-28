@@ -14,8 +14,9 @@ import { db } from '#/db/db';
 import { getContextUser, getMemberships } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { setCookie } from 'hono/cookie';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
-import { organizationsTable } from '#/db/schema/organizations';
+import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
@@ -121,7 +122,7 @@ const generalRoutes = app
     const user = getContextUser();
 
     for (const email of emails) {
-      const targetUser = await getUserBy('email', email);
+      const targetUser = await getUserBy('email', email.toLowerCase());
 
       const token = generateId(40);
       await db.insert(tokensTable).values({
@@ -165,6 +166,7 @@ const generalRoutes = app
    */
   .openapi(generalRouteConfig.acceptInvite, async (ctx) => {
     const verificationToken = ctx.req.valid('param').token;
+    const { oauth } = ctx.req.valid('json');
 
     const [token]: (TokenModel | undefined)[] = await db
       .select()
@@ -172,45 +174,51 @@ const generalRoutes = app
       .where(and(eq(tokensTable.id, verificationToken)))
       .limit(1);
 
-    // Delete token
-    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
-
     if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
       return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
     }
-    const user = await getUserBy('email', token.email);
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
 
     // If it is a system invitation, update user role
-    if (token.type === 'system_invitation') return ctx.json({ success: true }, 200);
+    if (token.type === 'system_invitation') {
+      // Delete token
+      await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
+
+      if (oauth) setCookie(ctx, 'oauth_invite_token', token.id);
+
+      return ctx.json({ success: true }, 200);
+    }
 
     if (!token.organizationId) return errorResponse(ctx, 400, 'invalid_token', 'warn');
 
-    const [organization] = await db
+    // check if user exists
+    const user = await getUserBy('email', token.email);
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
+
+    const role = token.role as MembershipModel['role'];
+
+    const [organization]: (OrganizationModel | undefined)[] = await db
       .select()
       .from(organizationsTable)
-      .where(and(eq(organizationsTable.id, token.organizationId)));
+      .where(and(eq(organizationsTable.id, token.organizationId)))
+      .limit(1);
 
     if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
 
-    const [existingMembership] = await db
+    const [existingMembership]: (MembershipModel | undefined)[] = await db
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
 
-    if (existingMembership) {
-      if (existingMembership.role !== token.role) {
-        await db
-          .update(membershipsTable)
-          .set({ role: token.role as MembershipModel['role'] })
-          .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
-      }
+    if (existingMembership && existingMembership.role !== role) {
+      await db
+        .update(membershipsTable)
+        .set({ role: role })
+        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
 
       return ctx.json({ success: true }, 200);
     }
 
     // Insert membership
-    const role = token.role as MembershipModel['role'];
     const membership = await insertMembership({ user, role, entity: organization });
 
     const newMenuItem = {

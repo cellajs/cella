@@ -1,18 +1,16 @@
 import { config } from 'config';
-import type { ContextEntity, Membership } from '~/types/common';
+import type { ContextEntity } from '~/types/common';
 import { membershipsHc } from '#/modules/memberships/hc';
 import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
 export const client = membershipsHc(config.backendUrl, clientConfig);
 
-export interface InviteMemberProps {
-  emails: string[];
-  role: Membership['role'];
-  idOrSlug: string;
-  orgIdOrSlug: string;
-  entityType: ContextEntity;
-}
+export type InviteMemberProps = Parameters<(typeof client.index)['$post']>['0']['json'] &
+  Parameters<(typeof client.index)['$post']>['0']['param'] & {
+    idOrSlug: string;
+    entityType: ContextEntity;
+  };
 
 // Invite users
 export const inviteMembers = async ({ idOrSlug, entityType, orgIdOrSlug, ...rest }: InviteMemberProps) => {
@@ -25,8 +23,7 @@ export const inviteMembers = async ({ idOrSlug, entityType, orgIdOrSlug, ...rest
   await handleResponse(response);
 };
 
-export type RemoveMembersProps = {
-  orgIdOrSlug: string;
+export type RemoveMembersProps = Parameters<(typeof client.index)['$delete']>['0']['param'] & {
   idOrSlug: string;
   entityType: ContextEntity;
   ids: string[];
@@ -44,9 +41,8 @@ export const removeMembers = async ({ idOrSlug, entityType, ids, orgIdOrSlug }: 
 export type UpdateMembershipProp = {
   idOrSlug: string;
   entityType: ContextEntity;
-  orgIdOrSlug: string;
-  id: string;
-} & Parameters<(typeof client)[':id']['$put']>['0']['json'];
+} & Parameters<(typeof client)[':id']['$put']>['0']['json'] &
+  Parameters<(typeof client)[':id']['$put']>['0']['param'];
 
 // Update membership in entity
 export const updateMembership = async (values: UpdateMembershipProp) => {

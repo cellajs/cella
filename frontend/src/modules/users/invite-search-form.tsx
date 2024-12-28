@@ -59,6 +59,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
         ...values,
         idOrSlug: entity.id,
         entityType: entity.entity || 'organization',
+        parentEntity: entity.parentEntity,
         orgIdOrSlug: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },
