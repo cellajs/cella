@@ -16,6 +16,7 @@ import { UsersTableHeader } from '~/modules/users/users-table/table-header';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, User } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
+import { usersKeys } from '~/utils/quey-key-factories';
 
 const BaseDataTable = lazy(() => import('~/modules/users/users-table/table'));
 const LIMIT = config.requestLimits.users;
@@ -44,7 +45,7 @@ const UsersTable = () => {
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
 
-  const mutateQuery = useMutateQueryData(['users', 'list'], (item) => ['user', item.id], ['update']);
+  const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
 
   // Build columns
   const [columns, setColumns] = useColumns(mutateQuery.update);

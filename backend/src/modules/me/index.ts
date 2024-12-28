@@ -203,7 +203,7 @@ const meRoutes = app
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, updatedUser.email));
 
     const oauthAccounts = await db
       .select({

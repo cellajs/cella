@@ -5,11 +5,11 @@ import { toast } from 'sonner';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/api/attachments';
 import { queryClient } from '~/lib/router';
 import { compareQueryKeys } from '~/modules/common/query-client-provider/helpers';
-import { attachmentKeys } from '~/modules/common/query-client-provider/keys';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
 import type { Attachment } from '~/types/common';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
+import { attachmentKeys } from '~/utils/quey-key-factories';
 
 type AttachmentQueryData = QueryData<Attachment>;
 export type AttachmentInfiniteQueryData = InfiniteQueryData<Attachment>;
@@ -84,7 +84,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
       optimisticIds.push(optimisticId);
     }
 
-    const exactKey = attachmentKeys.list({ orgIdOrSlug: organizationId });
+    const exactKey = attachmentKeys.table({ orgIdOrSlug: organizationId });
     const similarKey = attachmentKeys.similar({ orgIdOrSlug: organizationId });
 
     const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
@@ -107,7 +107,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
   },
 
   onSuccess: (createdAttachments, { organizationId }, context) => {
-    const exactKey = attachmentKeys.list({ orgIdOrSlug: organizationId });
+    const exactKey = attachmentKeys.table({ orgIdOrSlug: organizationId });
     const similarKey = attachmentKeys.similar({ orgIdOrSlug: organizationId });
 
     const queries = getQueries<Attachment>(exactKey, similarKey);
@@ -144,7 +144,7 @@ queryClient.setMutationDefaults(attachmentKeys.update(), {
 
     const optimisticIds: string[] = [];
 
-    const exactKey = attachmentKeys.list({ orgIdOrSlug });
+    const exactKey = attachmentKeys.table({ orgIdOrSlug });
     const similarKey = attachmentKeys.similar({ orgIdOrSlug });
 
     const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
@@ -179,7 +179,7 @@ queryClient.setMutationDefaults(attachmentKeys.delete(), {
     const { ids, orgIdOrSlug } = variables;
 
     const context: AttachmentContextProp[] = [];
-    const exactKey = attachmentKeys.list({ orgIdOrSlug });
+    const exactKey = attachmentKeys.table({ orgIdOrSlug });
     const similarKey = attachmentKeys.similar({ orgIdOrSlug });
 
     const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);

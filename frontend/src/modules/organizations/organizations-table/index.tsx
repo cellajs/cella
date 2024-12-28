@@ -19,6 +19,7 @@ import OrganizationsNewsletterForm from '~/modules/system/organizations-newslett
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
+import { organizationsKeys } from '~/utils/quey-key-factories';
 
 const BaseDataTable = lazy(() => import('~/modules/organizations/organizations-table/table'));
 const LIMIT = config.requestLimits.organizations;
@@ -31,7 +32,7 @@ const OrganizationsTable = () => {
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
-  const mutateQuery = useMutateQueryData(['organizations', 'list']);
+  const mutateQuery = useMutateQueryData(organizationsKeys.list());
   // Table state
   const { q, sort, order } = search;
   const limit = LIMIT;
