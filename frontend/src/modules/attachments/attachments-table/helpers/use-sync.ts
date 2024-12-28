@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { queryClient } from '~/lib/router';
 
 import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
-import type { AttachmentInfiniteQueryData } from '~/modules/common/query-client-provider/mutations/attachments';
+import type { AttachmentInfiniteQueryData } from '~/query/mutations/attachments';
 
 import { env } from '~/../env';
 import { useOnlineManager } from '~/hooks/use-online-manager';

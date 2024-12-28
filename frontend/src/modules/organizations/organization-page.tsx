@@ -12,8 +12,8 @@ import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { queryClient } from '~/lib/router';
 import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
+import { organizationsKeys } from '~/query/query-key-factories';
 import { useUserStore } from '~/store/user';
-import { organizationsKeys } from '~/utils/quey-key-factories';
 
 const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
 

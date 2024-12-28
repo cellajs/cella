@@ -5,10 +5,10 @@ import { config } from 'config';
 import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
-import type { ContextProp, InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
+import { membersKeys } from '~/query/query-key-factories';
+import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import type { Member, Membership } from '~/types/common';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/utils/mutate-query';
-import { membersKeys } from '~/utils/quey-key-factories';
 
 type MemberQueryData = QueryData<Member>;
 type InfiniteMemberQueryData = InfiniteQueryData<Member>;

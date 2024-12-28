@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetRequestsParams, getRequests } from '~/api/requests';
-import { requestsKeys } from '~/utils/quey-key-factories';
+import { requestsKeys } from '~/query/query-key-factories';
 
 const LIMIT = config.requestLimits.requests;
 

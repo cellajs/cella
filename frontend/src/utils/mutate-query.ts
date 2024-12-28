@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { queryClient } from '~/lib/router';
-import type { InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
+import type { InfiniteQueryData, QueryData } from '~/query/types';
 
 /**
  * Extracts the items from a query, handling both paginated (infinite) and non-paginated query data.

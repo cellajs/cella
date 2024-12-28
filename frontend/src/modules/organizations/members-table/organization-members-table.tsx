@@ -1,9 +1,9 @@
 import { useParams } from '@tanstack/react-router';
 import { queryClient } from '~/lib/router';
 import MembersTable from '~/modules/organizations/members-table/';
+import { organizationsKeys } from '~/query/query-key-factories';
 import { OrganizationMembersRoute } from '~/routes/organizations';
 import type { Organization } from '~/types/common';
-import { organizationsKeys } from '~/utils/quey-key-factories';
 
 const OrgMembersTable = () => {
   const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });

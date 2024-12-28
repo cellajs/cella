@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
-import { meKeys, menuKeys } from '~/utils/quey-key-factories';
+import { meKeys, menuKeys } from '~/query/query-key-factories';
 
 export const meQueryOptions = () => {
   return queryOptions({

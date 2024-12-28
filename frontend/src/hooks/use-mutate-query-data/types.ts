@@ -1,4 +1,4 @@
-import type { InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
+import type { InfiniteQueryData, QueryData } from '~/query/types';
 import type { ContextEntity, Entity, MinimumEntityItem, MinimumMembershipInfo } from '~/types/common';
 import type { ProductEntity } from '#/types/common';
 

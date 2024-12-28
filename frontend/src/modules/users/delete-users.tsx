@@ -8,7 +8,7 @@ import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { usersKeys } from '~/utils/quey-key-factories';
+import { usersKeys } from '~/query/query-key-factories';
 
 interface Props {
   users: User[];

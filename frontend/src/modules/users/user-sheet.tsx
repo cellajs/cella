@@ -6,7 +6,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
 import UserProfilePage from '~/modules/users/profile-page';
-import { usersKeys } from '~/utils/quey-key-factories';
+import { usersKeys } from '~/query/query-key-factories';
 
 export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({

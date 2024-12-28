@@ -16,10 +16,10 @@ import { useColumns } from '~/modules/organizations/organizations-table/columns'
 import { OrganizationsTableHeader } from '~/modules/organizations/organizations-table/table-header';
 import NewsletterDraft from '~/modules/system/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
+import { organizationsKeys } from '~/query/query-key-factories';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
-import { organizationsKeys } from '~/utils/quey-key-factories';
 
 const BaseDataTable = lazy(() => import('~/modules/organizations/organizations-table/table'));
 const LIMIT = config.requestLimits.organizations;

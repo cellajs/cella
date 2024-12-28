@@ -22,8 +22,8 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
+import { organizationsKeys } from '~/query/query-key-factories';
 import type { Organization } from '~/types/common';
-import { organizationsKeys } from '~/utils/quey-key-factories';
 
 interface CreateOrganizationFormProps {
   callback?: (org: Organization) => void;

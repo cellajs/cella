@@ -14,7 +14,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { searchKeys } from '~/utils/quey-key-factories';
+import { searchKeys } from '~/query/query-key-factories';
 
 export function QueryCombobox({ onChange, value }: { value: string[]; onChange: (items: string[]) => void }) {
   const { t } = useTranslation();

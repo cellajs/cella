@@ -1,12 +1,14 @@
 import { type QueryKey, type UseInfiniteQueryOptions, type UseQueryOptions, onlineManager } from '@tanstack/react-query';
 
 import { queryClient } from '~/lib/router';
-import type { InferType } from '~/modules/common/query-client-provider/types';
+import type { InferType } from '~/query/types';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export async function prefetchQuery<T extends UseQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
+
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
+
 export async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryOptions) {
   const cachedData = queryClient.getQueryData(options.queryKey);
 

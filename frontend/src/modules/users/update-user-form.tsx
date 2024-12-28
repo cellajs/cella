@@ -27,9 +27,9 @@ import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { meKeys, usersKeys } from '~/query/query-key-factories';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
-import { meKeys, usersKeys } from '~/utils/quey-key-factories';
 
 interface UpdateUserFormProps {
   user: User;

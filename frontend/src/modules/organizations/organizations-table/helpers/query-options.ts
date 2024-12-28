@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetOrganizationsParams, getOrganizations } from '~/api/organizations';
-import { organizationsKeys } from '~/utils/quey-key-factories';
+import { organizationsKeys } from '~/query/query-key-factories';
 
 const LIMIT = config.requestLimits.organizations;
 

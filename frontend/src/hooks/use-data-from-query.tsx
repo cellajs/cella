@@ -1,6 +1,6 @@
 import { type InfiniteData, type QueryKey, useSuspenseInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import type { QueryData } from '~/modules/common/query-client-provider/types';
+import type { QueryData } from '~/query/types';
 
 type Options<T, TQueryKey extends QueryKey = QueryKey> = Parameters<
   typeof useSuspenseInfiniteQuery<T, Error, InfiniteData<T, unknown>, TQueryKey, number>

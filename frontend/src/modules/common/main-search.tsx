@@ -16,8 +16,8 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute, suggestionSections } from '~/nav-config';
+import { searchKeys } from '~/query/query-key-factories';
 import { useNavigationStore } from '~/store/navigation';
-import { searchKeys } from '~/utils/quey-key-factories';
 
 export type SuggestionType = z.infer<typeof entitySuggestionSchema>;
 

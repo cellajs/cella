@@ -4,14 +4,14 @@ import type { GetOrganizationsParams } from '~/api/organizations';
 import type { GetRequestsParams } from '~/api/requests';
 import type { GetUsersParams } from '~/api/users';
 
-export const attachmentKeys = {
+export const attachmentsKeys = {
   all: ['attachments'] as const,
-  list: () => [...attachmentKeys.all, 'list'] as const,
-  table: (filters?: GetAttachmentsParams) => [...attachmentKeys.list(), filters] as const,
-  similar: (filters?: Pick<GetAttachmentsParams, 'orgIdOrSlug'>) => [...attachmentKeys.list(), filters] as const,
-  create: () => [...attachmentKeys.all, 'create'] as const,
-  update: () => [...attachmentKeys.all, 'update'] as const,
-  delete: () => [...attachmentKeys.all, 'delete'] as const,
+  list: () => [...attachmentsKeys.all, 'list'] as const,
+  table: (filters?: GetAttachmentsParams) => [...attachmentsKeys.list(), filters] as const,
+  similar: (filters?: Pick<GetAttachmentsParams, 'orgIdOrSlug'>) => [...attachmentsKeys.list(), filters] as const,
+  create: () => [...attachmentsKeys.all, 'create'] as const,
+  update: () => [...attachmentsKeys.all, 'update'] as const,
+  delete: () => [...attachmentsKeys.all, 'delete'] as const,
 };
 
 export const membersKeys = {

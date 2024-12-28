@@ -13,10 +13,10 @@ import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { useColumns } from '~/modules/users/users-table/columns';
 import { UsersTableHeader } from '~/modules/users/users-table/table-header';
+import { usersKeys } from '~/query/query-key-factories';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, User } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
-import { usersKeys } from '~/utils/quey-key-factories';
 
 const BaseDataTable = lazy(() => import('~/modules/users/users-table/table'));
 const LIMIT = config.requestLimits.users;

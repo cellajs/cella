@@ -1,7 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetMembersParams, getMembers } from '~/api/memberships';
-import { membersKeys } from '~/utils/quey-key-factories';
+import { membersKeys } from '~/query/query-key-factories';
 
 const LIMIT = config.requestLimits.members;
 
