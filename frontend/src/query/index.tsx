@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { persister, queryClient } from '~/lib/router';
 import { queriesToMap } from '~/offline-config';
 import { prefetchQuery, waitFor } from '~/query/helpers';
-import { meQueryOptions, menuQueryOptions } from '~/query/options/query-options';
+import { meQueryOptions, menuQueryOptions } from '~/query/query-options';
 import { useGeneralStore } from '~/store/general';
 import type { UserMenuItem } from '~/types/common';
 

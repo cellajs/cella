@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from '~/api/auth';
 import { queryClient } from '~/lib/router';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { useDraftStore } from '~/store/draft';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
@@ -27,7 +27,7 @@ const SignOut = () => {
   useEffect(() => {
     signOutUser().then(() => {
       flushStoresAndCache();
-      showToast(t('common:success.signed_out'), 'success');
+      createToast(t('common:success.signed_out'), 'success');
       navigate({ to: '/about', replace: true });
     });
   }, []);

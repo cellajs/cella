@@ -6,7 +6,7 @@ import { type QueryKey, onlineManager } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { authThroughPasskey, getChallenge, setPasskey } from '~/api/auth';
 import { deletePasskey as baseRemovePasskey, getSelf, getUserMenu } from '~/api/me';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { getQueryItems } from '~/query/helpers/mutate-query';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 import { useNavigationStore } from '~/store/navigation';
@@ -15,7 +15,7 @@ import type { LimitedUser } from '~/types/common';
 
 // Register a new passkey
 export const registerPasskey = async () => {
-  if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
   const user = useUserStore.getState().user;
 
@@ -112,7 +112,7 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
 
 // Delete an existing passkey
 export const deletePasskey = async () => {
-  if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
   try {
     const result = await baseRemovePasskey();

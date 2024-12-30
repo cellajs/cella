@@ -1,5 +1,5 @@
 import { t } from 'i18next';
-import { SheetNav } from '~/modules/common/sheet-nav';
+import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheet } from '~/modules/common/sheeter/state';
 import { FeedbackLetterDraft } from '~/modules/system/requests-table/feedback-letter-draft';
 import FeedbackLetterForm from '~/modules/system/requests-table/feedback-letter-form';
@@ -18,7 +18,7 @@ export const openFeedbackLetterSheet = (emails: string[], callback: () => void) 
       element: <FeedbackLetterDraft />,
     },
   ];
-  sheet.create(<SheetNav tabs={feedbackLetterTabs} />, {
+  sheet.create(<SheetTabs tabs={feedbackLetterTabs} />, {
     className: 'max-w-full lg:max-w-4xl',
     title: t('common:feedback_letter'),
     description: t('common:feedback_letter.text'),

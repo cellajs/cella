@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useStepper } from '~/modules/common/stepper';
 import { onDefaultBoardingSteps } from '~/modules/home/onboarding/onboarding-config';
-import { SkipOrganizationCreation } from '~/modules/home/onboarding/skip-organization-creation';
+import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { Organization } from '~/types/common';
@@ -25,7 +25,7 @@ const StepperFooter = ({
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (onDefaultBoardingSteps[activeStep].id === 'organization' && !hasOrganizations) {
-      dialog(<SkipOrganizationCreation />, {
+      dialog(<SkipOrganization />, {
         className: 'md:max-w-xl',
         title: `${t('common:skip')} ${t('common:create_resource', { resource: t('common:organization') }).toLowerCase()}`,
         description: t('common:skip_org_creation.text'),

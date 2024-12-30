@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import { invite } from '~/api/general';
 import { deleteRequests, getRequests } from '~/api/requests';
-
 import useSearchParams from '~/hooks/use-search-params';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useColumns } from '~/modules/system/requests-table/columns';
@@ -65,7 +64,7 @@ const RequestsTable = () => {
       <DeleteRequests
         requests={selected}
         callback={(requests) => {
-          showToast(t('common:success.delete_resources', { resources: t('common:requests') }), 'success');
+          createToast(t('common:success.delete_resources', { resources: t('common:requests') }), 'success');
           mutateQuery.remove(requests);
         }}
         dialog
@@ -87,13 +86,13 @@ const RequestsTable = () => {
     try {
       // Send invite to users
       await invite({ emails, role: 'user' });
-      showToast(t('common:success.user_invited'), 'success');
+      createToast(t('common:success.user_invited'), 'success');
 
       // TODO: decide delete requests or change status to 'processed'
       await deleteRequests(requestIds);
       mutateQuery.remove(waitlistRequests);
     } catch (error) {
-      showToast(t('common:error.bad_request_action'), 'error');
+      createToast(t('common:error.bad_request_action'), 'error');
     }
   };
 

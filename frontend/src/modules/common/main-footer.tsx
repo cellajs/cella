@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import Logo from '~/modules/common/logo';
-import UserLanguage from '~/modules/common/user-language';
-import UserTheme from '~/modules/common/user-theme';
 import { Button } from '~/modules/ui/button';
+import UserLanguage from '~/modules/users/user-language';
+import UserTheme from '~/modules/users/user-theme';
 import { defaultFooterLinks } from '~/nav-config';
 import { cn } from '~/utils/cn';
 

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { leaveEntity } from '~/api/me';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -24,13 +24,13 @@ const LeaveButton = ({ organization }: { organization: Organization }) => {
         entityType: 'organization',
       }),
     onSuccess: () => {
-      showToast(t('common:success.you_left_organization'), 'success');
+      createToast(t('common:success.you_left_organization'), 'success');
       navigate({ to: config.defaultRedirectPath, replace: true });
     },
   });
 
   const onLeave = () => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
     leave();
   };
 

@@ -4,7 +4,7 @@ import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
 import { baseEntityRoutes } from '~/nav-config';
-import { userQueryOptions } from '~/query/options/query-options';
+import { userQueryOptions } from '~/query/query-options';
 import { AppRoute } from '~/routes/general';
 import type { ErrorType } from '#/lib/errors';
 

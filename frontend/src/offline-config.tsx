@@ -1,5 +1,5 @@
-import { attachmentsQueryOptions, membersQueryOptions } from '~/query/options/infinite-query-options';
-import { organizationQueryOptions } from '~/query/options/query-options';
+import { attachmentsQueryOptions, membersQueryOptions } from '~/query/infinite-query-options';
+import { organizationQueryOptions } from '~/query/query-options';
 import type { UserMenuItem } from '~/types/common';
 
 // This function returns queries that need to be prefetched based on the entity of the item.

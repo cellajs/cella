@@ -12,10 +12,10 @@ import { acceptInvite as baseAcceptInvite, checkToken as baseCheckToken } from '
 import { useMutation } from '~/hooks/use-mutations';
 import AuthPage from '~/modules/auth/auth-page';
 import Spinner from '~/modules/common/spinner';
+import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { acceptInviteRoute } from '~/routes/general';
 import { cn } from '~/utils/cn';
-import { addMenuItem } from './nav-sheet/helpers/menu-operations';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 

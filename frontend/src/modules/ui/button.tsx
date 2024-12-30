@@ -3,7 +3,7 @@ import { type VariantProps, cva } from 'class-variance-authority';
 import { t } from 'i18next';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import * as React from 'react';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -90,7 +90,7 @@ const SubmitButton = React.forwardRef<HTMLButtonElement, Omit<ButtonProps, 'type
   const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     if (!isOnline) {
       e.preventDefault();
-      return showToast(t('common:action.offline.text'), 'warning');
+      return createToast(t('common:action.offline.text'), 'warning');
     }
     onClick?.(e);
   };

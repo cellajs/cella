@@ -4,7 +4,7 @@ import type { z } from 'zod';
 
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import RemoveAttachmentsForm from '~/modules/attachments/attachments-table/remove-attachments-form';
 import { AttachmentsTableHeader } from '~/modules/attachments/attachments-table/table-header';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
@@ -57,7 +57,7 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
       <RemoveAttachmentsForm
         organizationId={organization.id}
         dialog
-        callback={() => showToast(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success')}
+        callback={() => createToast(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success')}
         attachments={selected}
       />,
       {

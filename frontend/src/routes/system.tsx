@@ -8,7 +8,7 @@ import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
 import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-options';
 import SystemPage from '~/modules/system/system-page';
-import { organizationsQueryOptions, usersQueryOptions } from '~/query/options/infinite-query-options';
+import { organizationsQueryOptions, usersQueryOptions } from '~/query/infinite-query-options';
 import { AppRoute } from '~/routes/general';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import type { ErrorType } from '#/lib/errors';

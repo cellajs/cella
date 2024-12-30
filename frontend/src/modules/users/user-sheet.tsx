@@ -7,8 +7,8 @@ import Spinner from '~/modules/common/spinner';
 import { findUserFromQueries } from '~/modules/users/helpers';
 import UserProfilePage from '~/modules/users/profile-page';
 import { getSimilarQueries } from '~/query/helpers/mutate-query';
-import { userQueryOptions } from '~/query/options/query-options';
 import { membersKeys } from '~/query/query-key-factories';
+import { userQueryOptions } from '~/query/query-options';
 import type { Member } from '~/types/common';
 
 const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: string }) => {

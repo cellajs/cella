@@ -14,8 +14,8 @@ import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { attachmentsQueryOptions } from '~/query/infinite-query-options';
 import { useAttachmentUpdateMutation } from '~/query/mutations/attachments';
-import { attachmentsQueryOptions } from '~/query/options/infinite-query-options';
 import { useUserStore } from '~/store/user';
 import type { Attachment, BaseTableMethods, BaseTableProps } from '~/types/common';
 

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useUserSheet } from '~/hooks/use-user-sheet';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import DeleteUsers from '~/modules/users/delete-users';
@@ -78,7 +78,7 @@ const UsersTable = () => {
         users={selected}
         callback={(users) => {
           mutateQuery.remove(users);
-          showToast(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
+          createToast(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
         }}
       />,
       {

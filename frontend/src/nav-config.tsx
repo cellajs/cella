@@ -1,14 +1,14 @@
 import { Home, Menu, Search, User } from 'lucide-react';
 
-import { SheetAccount } from '~/modules/common/nav-sheet/sheet-account';
-import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
+import { AccountSheet } from '~/modules/navigation/account-sheet';
+import { MenuSheet } from '~/modules/navigation/menu-sheet';
 
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
 
 import type { FooterLinkProps } from '~/modules/common/main-footer';
-import type { NavItem } from '~/modules/common/main-nav';
-import { MainSearch, type SuggestionSection, type SuggestionType } from '~/modules/common/main-search';
-import type { SectionItem } from '~/modules/common/nav-sheet/sheet-menu';
+import type { NavItem } from '~/modules/navigation';
+import type { SectionItem } from '~/modules/navigation/menu-sheet';
+import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
 import type { UserMenuItem } from './types/common';
 
 // Set entity paths so we can dynamically use them in the app
@@ -24,10 +24,10 @@ export const baseNavItems: NavItemId[] = ['menu', 'home', 'search', 'account'];
 
 // Here you declare all of your main navigation items
 export const navItems: NavItem[] = [
-  { id: 'menu', icon: Menu, sheet: <SheetMenu /> },
+  { id: 'menu', icon: Menu, sheet: <MenuSheet /> },
   { id: 'home', icon: Home, href: '/home' },
-  { id: 'search', icon: Search, dialog: <MainSearch /> },
-  { id: 'account', icon: User, sheet: <SheetAccount />, mirrorOnMobile: true },
+  { id: 'search', icon: Search, dialog: <AppSearch /> },
+  { id: 'account', icon: User, sheet: <AccountSheet />, mirrorOnMobile: true },
 ];
 
 // Here you declare menu sections

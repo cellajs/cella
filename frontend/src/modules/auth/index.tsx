@@ -11,14 +11,14 @@ import type { ApiError } from '~/api';
 import { checkToken } from '~/api/general';
 import AuthPage from '~/modules/auth/auth-page';
 import OauthOptions from '~/modules/auth/oauth-options';
-import { WaitListForm } from '~/modules/common/wait-list-form';
+import { WaitlistForm } from '~/modules/auth/waitlist-form';
 import { buttonVariants } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import { shouldShowDivider } from '~/utils';
 import { cn } from '~/utils/cn';
 
-export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitList';
+export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitlist';
 
 export type TokenData = Awaited<ReturnType<typeof checkToken>> & {
   token: string;
@@ -78,7 +78,7 @@ const SignIn = () => {
           {step === 'check' && emailEnabled && <CheckEmailForm tokenData={tokenData} setStep={handleCheckEmail} />}
           {step === 'signIn' && emailEnabled && <SignInForm tokenData={tokenData} email={email} resetToInitialStep={resetToInitialStep} />}
           {step === 'signUp' && emailEnabled && <SignUpForm tokenData={tokenData} email={email} resetToInitialStep={resetToInitialStep} />}
-          {step === 'waitList' && <WaitListForm buttonContent={t('common:request_access')} email={email} changeEmail={resetToInitialStep} />}
+          {step === 'waitlist' && <WaitlistForm buttonContent={t('common:request_access')} email={email} changeEmail={resetToInitialStep} />}
           {step === 'inviteOnly' && (
             <>
               <h1 className="text-2xl text-center pb-2 mt-4">{t('common:hi')}</h1>
@@ -86,7 +86,7 @@ const SignIn = () => {
             </>
           )}
 
-          {step !== 'inviteOnly' && step !== 'waitList' && (
+          {step !== 'inviteOnly' && step !== 'waitlist' && (
             <>
               {shouldShowDivider(hasPasskey, step) && (
                 <div className="relative flex justify-center text-xs uppercase">

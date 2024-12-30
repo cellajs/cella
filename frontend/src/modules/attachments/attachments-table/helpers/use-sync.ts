@@ -7,7 +7,7 @@ import type { AttachmentInfiniteQueryData } from '~/query/mutations/attachments'
 
 import { env } from '~/../env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { attachmentsQueryOptions } from '~/query/options/infinite-query-options';
+import { attachmentsQueryOptions } from '~/query/infinite-query-options';
 import type { Attachment } from '~/types/common';
 import { objectKeys } from '~/utils/object';
 import { attachmentsTableColumns } from '#/db/schema/attachments';

@@ -2,9 +2,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
 import { Check, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { WaitlistForm } from '~/modules/auth/waitlist-form';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { WaitListForm } from '~/modules/common/wait-list-form';
 import { pricingPlans } from '~/modules/marketing/about/about-config';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -28,7 +28,7 @@ const Pricing = () => {
       navigate({ to: '/auth/sign-in', replace: true });
     }
     if (action === 'waitlist_request') {
-      dialog(<WaitListForm email="" dialog emailField />, {
+      dialog(<WaitlistForm email="" dialog emailField />, {
         id: 'waitlist-form',
         drawerOnMobile: true,
         className: 'sm:max-w-2xl',

@@ -11,7 +11,7 @@ import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import InputFormField from '~/modules/common/form-fields/input';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -47,12 +47,12 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const { mutate: createRequest } = useMutation({
     mutationFn: baseCreateRequest,
     onSuccess: () => {
-      showToast(t('common:message_sent.text'), 'success');
+      createToast(t('common:message_sent.text'), 'success');
       if (isDialog) dialog.remove();
       form.reset();
     },
     onError: () => {
-      showToast(t('common:error.reported_try_later'), 'error');
+      createToast(t('common:error.reported_try_later'), 'error');
     },
   });
 

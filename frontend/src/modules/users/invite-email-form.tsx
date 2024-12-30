@@ -11,7 +11,7 @@ import { Send } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import SelectRole from '~/modules/common/form-fields/select-role-radio';
 import { MultiEmail } from '~/modules/common/multi-email';
@@ -72,7 +72,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
       form.reset(undefined, { keepDirtyValues: true });
       nextStep?.();
       if (isDialog) dialog.remove();
-      showToast(t('common:success.user_invited'), 'success');
+      createToast(t('common:success.user_invited'), 'success');
       callback?.();
     },
   });

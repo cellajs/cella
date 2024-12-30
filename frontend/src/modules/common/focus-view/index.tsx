@@ -1,7 +1,7 @@
 import { Expand, Shrink } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
@@ -21,7 +21,7 @@ export const FocusView = ({ className = '', iconOnly }: FocusViewProps) => {
   const { focusView, setFocusView, setNavSheetOpen } = useNavigationStore();
 
   const toggleFocus = () => {
-    showToast(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');
+    createToast(focusView ? t('common:left_focus.text') : t('common:entered_focus.text'), 'success');
     setFocusView(!focusView);
     sheet.remove('nav-sheet');
     setNavSheetOpen(null);
