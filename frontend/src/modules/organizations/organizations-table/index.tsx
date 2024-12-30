@@ -1,6 +1,6 @@
 import { Suspense, lazy, useRef, useState } from 'react';
 import type { z } from 'zod';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';

@@ -5,12 +5,12 @@ import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { inviteMembers } from '~/api/memberships';
-import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { showToast } from '~/lib/toasts';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { OrganizationsSearch } from '~/modules/organizations/organizations-table';
 import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
+import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useUserStore } from '~/store/user';
 import type { BaseTableMethods, BaseTableProps, Organization } from '~/types/common';
 
