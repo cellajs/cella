@@ -6,22 +6,14 @@ import type { LimitedUser } from '~/types/common';
 import { UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import type { z } from 'zod';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page-header';
 import { useUpdateUserMutation } from '~/modules/users/update-user-form';
 import { useUserStore } from '~/store/user';
-import type { entitySuggestionSchema } from '#/modules/general/schema';
-
-type OrganizationSuggestions = z.infer<typeof entitySuggestionSchema>;
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 
-const UserProfilePage = ({
-  user,
-  sheet,
-  orgIdOrSlug,
-}: { user: LimitedUser & { organizations?: OrganizationSuggestions[] }; sheet?: boolean; orgIdOrSlug?: string }) => {
+const UserProfilePage = ({ user, sheet, orgIdOrSlug }: { user: LimitedUser; sheet?: boolean; orgIdOrSlug?: string }) => {
   const { t } = useTranslation();
 
   const { user: currentUser, setUser } = useUserStore();
