@@ -1,13 +1,19 @@
 import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 
+import { config } from 'config';
+import { render } from 'jsx-email';
 import { db } from '#/db/db';
 import { requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
+import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
+import { emailSender } from '#/lib/mailer';
 import { sendSlackNotification } from '#/lib/notification';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import feedbackLetter from '../../../emails/requests-feedback';
+import { env } from '../../../env';
 import requestsRoutesConfig from './routes';
 
 const app = new CustomHono();
@@ -77,6 +83,45 @@ const requestsRoutes = app
     const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
     return ctx.json({ success: true, data: { items, total } }, 200);
+  })
+  /*
+   *  Delete requests
+   */
+  .openapi(requestsRoutesConfig.deleteRequests, async (ctx) => {
+    const { ids } = ctx.req.valid('query');
+
+    // Convert the ids to an array
+    const toDeleteIds = Array.isArray(ids) ? ids : [ids];
+
+    // Delete the requests
+    await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
+
+    return ctx.json({ success: true }, 200);
+  })
+  /*
+   *  Send feedback letter to requests
+   */
+  .openapi(requestsRoutesConfig.sendFeedbackLetters, async (ctx) => {
+    const user = getContextUser();
+    const { emails, subject, content } = ctx.req.valid('json');
+
+    // Generate email HTML
+    const emailHtml = await render(
+      feedbackLetter({
+        userLanguage: user.language,
+        subject,
+        content,
+        appName: config.name,
+      }),
+    );
+    // For test purposes
+    if (env.NODE_ENV === 'development') {
+      emailSender.send(env.SEND_ALL_TO_EMAIL ?? user.email, subject, emailHtml);
+    } else {
+      for (const email of emails) emailSender.send(email, subject, emailHtml);
+    }
+
+    return ctx.json({ success: true }, 200);
   });
 
 export default requestsRoutes;

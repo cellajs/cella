@@ -1,6 +1,6 @@
 import { config } from 'config';
-import { motion } from 'framer-motion';
-import { Handshake, Trash, XSquare } from 'lucide-react';
+import { Handshake, Mailbox, Trash, XSquare } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
@@ -17,6 +17,7 @@ type RequestsTableHeaderBarProps = BaseTableMethods &
   BaseTableHeaderProps<Request, RequestsSearch> & {
     openInviteDialog: () => void;
     openRemoveDialog: () => void;
+    openNewsletterSheet: () => void;
     fetchExport: (limit: number) => Promise<Request[]>;
   };
 
@@ -30,9 +31,13 @@ export const RequestsTableHeaderBar = ({
   clearSelection,
   openInviteDialog,
   openRemoveDialog,
+  openNewsletterSheet,
   fetchExport,
 }: RequestsTableHeaderBarProps) => {
   const { t } = useTranslation();
+
+  const selectedToWaitList = useMemo(() => selected.filter((r) => r.type === 'waitlist'), [selected]);
+  const selectedContact = useMemo(() => selected.filter((r) => r.type !== 'waitlist'), [selected]);
 
   const isFiltered = !!q;
   // Drop selected Rows on search
@@ -53,39 +58,28 @@ export const RequestsTableHeaderBar = ({
         <FilterBarActions>
           {selected.length > 0 && (
             <>
-              <div className="relative inline-flex items-center gap-2">
-                <Badge className="px-1 py-0 min-w-5 flex justify-center  animate-in zoom-in">{selected.length}</Badge>
-                <Button asChild variant="success" onClick={openInviteDialog}>
-                  <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="req-filter-bar-button-invite">
-                    <motion.span layoutId="req-filter-bar-icon-successes">
-                      <Handshake size={16} />
-                    </motion.span>
-                    <span className="ml-1 max-xs:hidden">{t('common:accept')}</span>
-                  </motion.button>
+              {selectedContact.length > 0 && (
+                <Button onClick={openNewsletterSheet} className="relative">
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedContact.length}</Badge>
+                  <Mailbox size={16} />
+                  <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
                 </Button>
-
-                <Button asChild variant="destructive" onClick={openRemoveDialog}>
-                  <motion.button layout="size" layoutRoot transition={{ duration: 0.1 }} layoutId="req-filter-bar-button-delete">
-                    <motion.span layoutId="req-filter-bar-icon-delete">
-                      <Trash size={16} />
-                    </motion.span>
-                    <span className="ml-1 max-xs:hidden">{t('common:delete')}</span>
-                  </motion.button>
+              )}
+              {selectedToWaitList.length > 0 && (
+                <Button variant="darkSuccess" className="relative" onClick={openInviteDialog}>
+                  <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedToWaitList.length}</Badge>
+                  <Handshake size={16} />
+                  <span className="ml-1 max-xs:hidden">{t('common:invite')}</span>
                 </Button>
-              </div>
-              <Button asChild variant="ghost" onClick={clearSelection}>
-                <motion.button
-                  transition={{
-                    bounce: 0,
-                    duration: 0.2,
-                  }}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -20, opacity: 0 }}
-                >
-                  <XSquare size={16} />
-                  <span className="ml-1">{t('common:clear')}</span>{' '}
-                </motion.button>
+              )}
+              <Button variant="destructive" className="relative" onClick={openRemoveDialog}>
+                <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selected.length}</Badge>
+                <Trash size={16} />
+                <span className="ml-1 max-lg:hidden">{t('common:remove')}</span>
+              </Button>
+              <Button variant="ghost" onClick={clearSelection}>
+                <XSquare size={16} />
+                <span className="ml-1">{t('common:clear')}</span>
               </Button>
             </>
           )}

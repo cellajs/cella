@@ -18,6 +18,7 @@
   "email.invite_to_organization_title": "You have been invited to join <strong>{{orgName}}</strong>",
   "email.inviter_email": "Message the inviter",
   "email.author_email": "Message the author",
+  "email.feedback_letter_title": "You've received a feedback from {{appName}}",
   "email.newsletter_title": "You've received a note as a member of {{orgName}}",
   "email.please_verify_email": "Please verify your email for {{appName}}",
   "email.reset_password_preview_text": "Reset your <strong>{{appName}}</strong> password",

@@ -20,3 +20,9 @@ export const getRequestsQuerySchema = paginationQuerySchema.merge(
     sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt').optional(),
   }),
 );
+
+export const feedbackLetterBodySchema = z.object({
+  emails: z.array(z.string().min(1).email()),
+  subject: z.string(),
+  content: z.string(),
+});
