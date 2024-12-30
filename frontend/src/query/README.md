@@ -1,26 +1,38 @@
 # Key Concepts in Application Design with TanStack Query
 
+## Why TanStack Query?
+
+TanStack Query simplifies server data management by automatically caching responses and refetching data in the background to keep it up-to-date. It also offers easy tools for synchronizing the UI with the server data, ensuring the user interface reflects the latest changes.
+
+Offline mode, TanStack Query stores data locally and queues any mutations, such as updates or deletions. When the device is back online, it automatically syncs these changes with the backend. This ensures data consistency even when the device switches between online and offline states.
+
+Sync mode, ensures easy synchronization across multiple devices. This feature helps maintain consistency across a user's devices, ensuring that they always have the latest version of the data.
+
 ## 1. Key Factories
 
-**Definition**: It's just a simple object with entries and functions that will produce query keys.
+Key factories are an effective way to standardize and manage query keys, especially when you want easy support or the ability to change query keys across your application.
 
-**Purpose**: These keys are used to cache, invalidate, refetching, and synchronization across components.
+**Purpose**: You can centralize the logic for query keys, which simplifies both fetching and mutating queries.
 
 **Example**: It would look something like this:
 
 ```ts
-const todoKeys = {
-  all: ["todos"] as const,
-  lists: () => [...todoKeys.all, "list"] as const,
-  list: (filters: string) => [...todoKeys.lists(), { filters }] as const,
-  details: () => [...todoKeys.all, "detail"] as const,
-  detail: (id: number) => [...todoKeys.details(), id] as const
+export const attachmentsKeys = {
+  all: ["attachments"] as const,
+  list: () => [...attachmentsKeys.all, "list"] as const,
+  table: (filters?: GetAttachmentsParams) => [...attachmentsKeys.list(), filters] as const,
+  similar: (filters?: Pick<GetAttachmentsParams, "orgIdOrSlug">) => [...attachmentsKeys.list(), filters] as const,
+  create: () => [...attachmentsKeys.all, "create"] as const,
+  update: () => [...attachmentsKeys.all, "update"] as const,
+  delete: () => [...attachmentsKeys.all, "delete"] as const
 };
 ```
 
 ## 2. Query Options
 
-**Definition**: Query options refer to parameters and configuration options that define how data is fetched, cached, and updated. These options control things like caching, refetching, pagination, etc.
+Creating a query options function alongside your query key factories is a great way to ensure your data fetching configuration is consistent and easy to manage.
+
+**Purpose**: This function would allow you to standardize settings for things like caching, refetching, pagination, and more, making it easier to maintain and adjust the behavior of your queries across the app.
 
 ### Required Query Options
 
@@ -69,7 +81,9 @@ export const attachmentsQueryOptions = ({ orgIdOrSlug, q = "", sort: initialSort
 
 ## 3. Optimistic Updates
 
-**Definition**: Optimistic updates are a technique that immediately updates the UI, assuming a change will succeed before the server response is received. This approach enhances the user experience by making the app feel more responsive, particularly in situations with high network latency or when operating in offline mode.
+Optimistic updates are a technique that immediately updates the UI, assuming a change will succeed before the server response is received. This approach enhances the user experience by making the app feel more responsive.
+
+**Purpose**: Enable offline operation by immediately updating the UI. When connectivity is restored, the app syncs changes with the backend, ensuring consistency or rolling back on errors.
 
 **Example**: In a to-do list app, when a user marks an item as completed, the UI is updated instantly (crossing off the item), even before the server confirms the action.
 
@@ -91,4 +105,4 @@ const { mutate } = useMutation(markTodoCompleted, {
 
 ### Why Some Queries Use Optimistic Updates
 
-Some queries use optimistic updates because they involve changes that can occur in offline mode. This allows users to continue interacting with the app even without an internet connection, as the UI is updated immediately, assuming the changes will be successfully applied once the connection is restored.
+Some queries use optimistic updates because they involve changes that can occur in offline mode. This ensures that users can continue interacting with the app without noticeable delays, and any discrepancies between the local changes and server state can be resolved automatically or with minimal user intervention.
