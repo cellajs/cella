@@ -6,13 +6,13 @@
     "node": ">=20.14.0"
   },
   "scripts": {
-    "start": "NODE_ENV=production pnpm run preview",
+    "start": "cross-env NODE_ENV=production pnpm run preview",
     "check:types": "tsc",
-    "dev": "NODE_ENV=development vite --mode development && node --trace-warnings",
+    "dev": "cross-env NODE_ENV=development vite --mode development && node --trace-warnings",
     "build": "tsc && vite build",
-    "build:dev": "NODE_ENV=development vite build --mode development",
+    "build:dev": "cross-env NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
-    "preview:dev": "NODE_ENV=development vite preview --port 3003"
+    "preview:dev": "cross-env NODE_ENV=development vite preview --port 3003"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.4.0",
@@ -137,6 +137,7 @@
     "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "cross-env": "^7.0.3",
     "postcss": "^8.4.49",
     "postcss-import": "^16.1.0",
     "postcss-preset-env": "^10.1.3",

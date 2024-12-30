@@ -35,7 +35,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^2.1.8
-        version: 2.1.8(@types/node@22.10.2)(jsdom@25.0.1(canvas@2.11.2))(terser@5.37.0)
+        version: 2.1.8(@types/node@22.10.2)(jsdom@25.0.1)(terser@5.37.0)
 
   backend:
     dependencies:
@@ -669,6 +669,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.4.49)
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       postcss:
         specifier: ^8.4.49
         version: 8.4.49
@@ -744,6 +747,9 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.7
         version: 9.0.7
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       tsup:
         specifier: ^8.2.4
         version: 8.3.0(@swc/core@1.7.26)(jiti@2.4.0)(postcss@8.4.49)(tsx@4.19.1)(typescript@5.6.2)(yaml@2.6.1)
@@ -23789,7 +23795,7 @@ snapshots:
       tsx: 4.19.2
       yaml: 2.6.1
 
-  vitest@2.1.8(@types/node@22.10.2)(jsdom@25.0.1(canvas@2.11.2))(terser@5.37.0):
+  vitest@2.1.8(@types/node@22.10.2)(jsdom@25.0.1)(terser@5.37.0):
     dependencies:
       '@vitest/expect': 2.1.8
       '@vitest/mocker': 2.1.8(vite@5.4.11(@types/node@22.10.2)(terser@5.37.0))
