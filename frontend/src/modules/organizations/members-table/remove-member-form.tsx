@@ -1,6 +1,6 @@
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useMembersDeleteMutation } from '~/modules/common/query-client-provider/mutations/members';
+import { useMembersDeleteMutation } from '~/query/mutations/members';
 import type { ContextEntity, Member } from '~/types/common';
 
 interface Props {

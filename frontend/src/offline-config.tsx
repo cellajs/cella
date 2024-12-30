@@ -5,7 +5,7 @@ import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table
 import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
 
 // This function returns queries that need to be prefetched based on the entity of the item.
-// It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled, allowing the app to fetch necessary data while offline.
+// It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled, allowing the app to have necessary data while offline.
 export const queriesToMap = (item: UserMenuItem) => {
   const orgIdOrSlug = item.organizationId ?? item.id;
 
@@ -27,9 +27,9 @@ export const queriesToMap = (item: UserMenuItem) => {
         attachmentsQueryOptions({ orgIdOrSlug }),
       ];
 
-    // Extend the switch case for other entity types as ypu needed for your app
+    // Extend switch case for app-specific entity types
 
-    // In case we don't have a matching entity, return an empty array or add default set of queries
+    // When no matching entity, return empty array or add default set of queries
     default:
       return [];
   }

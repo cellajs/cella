@@ -16,7 +16,7 @@ import RemoveMembersForm from '~/modules/organizations/members-table/remove-memb
 import { MembersTableHeader } from '~/modules/organizations/members-table/table-header';
 import InviteUsers from '~/modules/users/invite-users';
 import type { membersSearchSchema } from '~/routes/organizations';
-import type { BaseTableMethods, EntityPage, Member, MinimumMembershipInfo } from '~/types/common';
+import type { BaseTableMethods, EntityPage, Member } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/organizations/members-table/table'));
@@ -25,7 +25,7 @@ const LIMIT = config.requestLimits.members;
 
 export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {
-  entity: EntityPage & { membership: MinimumMembershipInfo | null };
+  entity: EntityPage;
   isSheet?: boolean;
 }
 

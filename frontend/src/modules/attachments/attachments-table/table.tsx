@@ -15,7 +15,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useAttachmentUpdateMutation } from '~/modules/common/query-client-provider/mutations/attachments';
+import { useAttachmentUpdateMutation } from '~/query/mutations/attachments';
 import { useUserStore } from '~/store/user';
 import type { Attachment, BaseTableMethods, BaseTableProps } from '~/types/common';
 

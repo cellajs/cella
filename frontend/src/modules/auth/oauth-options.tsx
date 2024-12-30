@@ -53,6 +53,8 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
     navigate({ to: redirectPath, replace: true });
   };
 
+  const navigateToUrl = (path: string) => window.location.assign(path); // for better history handling
+
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {showPasskey && (
@@ -67,6 +69,7 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
           const providerData = mapOauthProviders.find((p) => p.id === provider);
           if (!providerData) return;
 
+          const relocatePath = `${providerData.url}?redirect=${redirectPath}`;
           return (
             <Button
               loading={loading}
@@ -77,12 +80,8 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
               onClick={() => {
                 setLoading(true);
                 if (token) {
-                  acceptInvite({ token, oauth: provider }).then(() => {
-                    window.location.href = redirectPath;
-                  });
-                } else {
-                  window.location.href = `${providerData.url}?redirect=${redirectPath}`;
-                }
+                  acceptInvite({ token, oauth: provider }).then(() => navigateToUrl(relocatePath));
+                } else navigateToUrl(relocatePath);
               }}
             >
               <img

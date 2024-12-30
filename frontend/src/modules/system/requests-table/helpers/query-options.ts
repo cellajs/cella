@@ -1,6 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetRequestsParams, getRequests } from '~/api/requests';
+import { requestsKeys } from '~/query/query-key-factories';
 
 const LIMIT = config.requestLimits.requests;
 
@@ -8,7 +9,7 @@ export const requestsQueryOptions = ({ q = '', sort: initialSort, order: initial
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = ['requests', 'list', q, sort, order];
+  const queryKey = requestsKeys.table({ q, sort, order });
 
   return infiniteQueryOptions({
     queryKey,

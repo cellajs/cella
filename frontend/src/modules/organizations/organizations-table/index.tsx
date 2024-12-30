@@ -16,6 +16,7 @@ import { useColumns } from '~/modules/organizations/organizations-table/columns'
 import OrganizationsNewsletterDraft from '~/modules/organizations/organizations-table/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/organizations/organizations-table/newsletter-form';
 import { OrganizationsTableHeader } from '~/modules/organizations/organizations-table/table-header';
+import { organizationsKeys } from '~/query/query-key-factories';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
@@ -31,7 +32,7 @@ const OrganizationsTable = () => {
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
-  const mutateQuery = useMutateQueryData(['organizations', 'list']);
+  const mutateQuery = useMutateQueryData(organizationsKeys.list());
   // Table state
   const { q, sort, order } = search;
   const limit = LIMIT;

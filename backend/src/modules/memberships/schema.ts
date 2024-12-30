@@ -17,6 +17,7 @@ export const membershipSchema = membershipTableSchema.extend({
 export const createMembershipBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1),
   role: membershipSchema.shape.role,
+  parentEntity: z.object({ idOrSlug: idOrSlugSchema, entity: contextEntityTypeSchema }).optional(),
 });
 
 export const updateMembershipBodySchema = z.object({

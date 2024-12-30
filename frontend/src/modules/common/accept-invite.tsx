@@ -15,6 +15,7 @@ import Spinner from '~/modules/common/spinner';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { acceptInviteRoute } from '~/routes/general';
 import { cn } from '~/utils/cn';
+import { addMenuItem } from './nav-sheet/helpers/menu-operations';
 
 type TokenData = z.infer<typeof checkTokenSchema>;
 
@@ -34,7 +35,8 @@ const AcceptInvite = () => {
 
   const { mutate: acceptInvite, isPending } = useMutation({
     mutationFn: baseAcceptInvite,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data) addMenuItem(data.newItem, data.sectionName);
       toast.success(t('common:invitation_accepted'));
       navigate({
         to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath,

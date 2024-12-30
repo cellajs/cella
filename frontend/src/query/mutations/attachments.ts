@@ -4,9 +4,9 @@ import { t } from 'i18next';
 import { toast } from 'sonner';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/api/attachments';
 import { queryClient } from '~/lib/router';
-import { compareQueryKeys } from '~/modules/common/query-client-provider/helpers';
-import { attachmentKeys } from '~/modules/common/query-client-provider/keys';
-import type { ContextProp, InfiniteQueryData, QueryData } from '~/modules/common/query-client-provider/types';
+import { compareQueryKeys } from '~/query/helpers';
+import { attachmentsKeys } from '~/query/query-key-factories';
+import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import type { Attachment } from '~/types/common';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/utils/mutate-query';
 import { nanoid } from '~/utils/nanoid';
@@ -21,7 +21,7 @@ export type AttachmentsCreateMutationQueryFnVariables = Parameters<typeof create
 
 export const useAttachmentCreateMutation = () => {
   return useMutation<Attachment[], Error, AttachmentsCreateMutationQueryFnVariables>({
-    mutationKey: attachmentKeys.create(),
+    mutationKey: attachmentsKeys.create(),
     mutationFn: createAttachment,
   });
 };
@@ -30,7 +30,7 @@ export type AttachmentsUpdateMutationQueryFnVariables = Parameters<typeof update
 
 export const useAttachmentUpdateMutation = () => {
   return useMutation<boolean, Error, AttachmentsUpdateMutationQueryFnVariables>({
-    mutationKey: attachmentKeys.update(),
+    mutationKey: attachmentsKeys.update(),
     mutationFn: updateAttachment,
   });
 };
@@ -39,7 +39,7 @@ export type AttachmentsDeleteMutationQueryFnVariables = Parameters<typeof delete
 
 export const useAttachmentDeleteMutation = () => {
   return useMutation<boolean, Error, AttachmentsDeleteMutationQueryFnVariables>({
-    mutationKey: attachmentKeys.delete(),
+    mutationKey: attachmentsKeys.delete(),
     mutationFn: deleteAttachments,
   });
 };
@@ -57,7 +57,7 @@ const onError = (
   toast.error(t('common:error.create_resource', { resource: t('common:attachment') }));
 };
 
-queryClient.setMutationDefaults(attachmentKeys.create(), {
+queryClient.setMutationDefaults(attachmentsKeys.create(), {
   mutationFn: createAttachment,
   onMutate: async (variables) => {
     const { attachments, organizationId } = variables;
@@ -84,8 +84,8 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
       optimisticIds.push(optimisticId);
     }
 
-    const exactKey = attachmentKeys.list({ orgIdOrSlug: organizationId });
-    const similarKey = attachmentKeys.similar({ orgIdOrSlug: organizationId });
+    const exactKey = attachmentsKeys.table({ orgIdOrSlug: organizationId });
+    const similarKey = attachmentsKeys.similar({ orgIdOrSlug: organizationId });
 
     const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
 
@@ -107,8 +107,8 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
   },
 
   onSuccess: (createdAttachments, { organizationId }, context) => {
-    const exactKey = attachmentKeys.list({ orgIdOrSlug: organizationId });
-    const similarKey = attachmentKeys.similar({ orgIdOrSlug: organizationId });
+    const exactKey = attachmentsKeys.table({ orgIdOrSlug: organizationId });
+    const similarKey = attachmentsKeys.similar({ orgIdOrSlug: organizationId });
 
     const queries = getQueries<Attachment>(exactKey, similarKey);
 
@@ -135,7 +135,7 @@ queryClient.setMutationDefaults(attachmentKeys.create(), {
   onError,
 });
 
-queryClient.setMutationDefaults(attachmentKeys.update(), {
+queryClient.setMutationDefaults(attachmentsKeys.update(), {
   mutationFn: updateAttachment,
   onMutate: async (variables: AttachmentsUpdateMutationQueryFnVariables) => {
     const { orgIdOrSlug } = variables;
@@ -144,8 +144,8 @@ queryClient.setMutationDefaults(attachmentKeys.update(), {
 
     const optimisticIds: string[] = [];
 
-    const exactKey = attachmentKeys.list({ orgIdOrSlug });
-    const similarKey = attachmentKeys.similar({ orgIdOrSlug });
+    const exactKey = attachmentsKeys.table({ orgIdOrSlug });
+    const similarKey = attachmentsKeys.similar({ orgIdOrSlug });
 
     const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
 
@@ -173,14 +173,14 @@ queryClient.setMutationDefaults(attachmentKeys.update(), {
   onError,
 });
 
-queryClient.setMutationDefaults(attachmentKeys.delete(), {
+queryClient.setMutationDefaults(attachmentsKeys.delete(), {
   mutationFn: deleteAttachments,
   onMutate: async (variables) => {
     const { ids, orgIdOrSlug } = variables;
 
     const context: AttachmentContextProp[] = [];
-    const exactKey = attachmentKeys.list({ orgIdOrSlug });
-    const similarKey = attachmentKeys.similar({ orgIdOrSlug });
+    const exactKey = attachmentsKeys.table({ orgIdOrSlug });
+    const similarKey = attachmentsKeys.similar({ orgIdOrSlug });
 
     const queries = await getCancelingRefetchQueries<Attachment>(exactKey, similarKey);
 

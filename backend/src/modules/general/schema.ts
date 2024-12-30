@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { tokensTable } from '#/db/schema/tokens';
+import { type MenuSectionName, menuSections } from '#/entity-config';
 import {
   contextEntityTypeSchema,
   idOrSlugSchema,
@@ -14,6 +15,7 @@ import {
   passwordSchema,
   slugSchema,
 } from '#/utils/schema/common-schemas';
+import { menuItemSchema } from '../me/schema';
 import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
@@ -25,10 +27,7 @@ export const checkTokenSchema = z.object({
 });
 
 export const inviteBodySchema = z.object({
-  emails: userSchema.shape.email
-    .array()
-    .min(1)
-    .transform((emails) => emails.map((email) => email.toLowerCase())),
+  emails: userSchema.shape.email.array().min(1),
   role: z.enum(['user']),
 });
 
@@ -36,6 +35,15 @@ export const acceptInviteBodySchema = z.object({
   password: passwordSchema.optional(),
   oauth: z.enum(config.enabledOauthProviders).optional(),
 });
+
+const sectionNames = menuSections.map((section) => section.name) as [MenuSectionName];
+
+export const acceptInviteResponseSchema = z
+  .object({
+    newItem: menuItemSchema,
+    sectionName: z.enum(sectionNames),
+  })
+  .optional();
 
 export const entitySuggestionSchema = z.object({
   slug: slugSchema,

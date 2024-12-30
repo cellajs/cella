@@ -186,7 +186,7 @@ const UserSettingsPage = () => {
                 <p className="font-semibold">{t('common:oauth')}</p>
               </HelpText>
 
-              <div className="flex max-sm:flex-col gap-2 mb-6">
+              <div className="flex flex-col sm:items-start gap-2 mb-6">
                 {config.enabledOauthProviders.map((id) => {
                   const provider = mapOauthProviders.find((provider) => provider.id === id);
                   if (!provider) return;

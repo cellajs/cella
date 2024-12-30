@@ -2,7 +2,6 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import useFocusById from '~/hooks/use-focus-by-id';
 import { dialog } from '~/modules/common/dialoger/state';
 import { MainAlert } from '~/modules/common/main-alert';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
@@ -23,7 +22,6 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
   const { t } = useTranslation();
 
   const [inviteMode, setInviteMode] = useState(mode);
-  if (!mode) useFocusById('create-project-option');
 
   const updateMode = (mode: string[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);

@@ -1,6 +1,7 @@
 import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetUsersParams, getUsers } from '~/api/users';
+import { usersKeys } from '~/query/query-key-factories';
 
 const LIMIT = config.requestLimits.users;
 
@@ -8,7 +9,7 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
 
-  const queryKey = ['users', 'list', q, sort, order, role];
+  const queryKey = usersKeys.table({ q, sort, order, role });
 
   return infiniteQueryOptions({
     queryKey,

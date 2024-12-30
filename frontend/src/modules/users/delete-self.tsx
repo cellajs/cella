@@ -6,6 +6,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
+import { usersKeys } from '~/query/query-key-factories';
 import { useAlertStore } from '~/store/alert';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
@@ -25,7 +26,7 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
     mutationFn: baseDeleteSelf,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['user', user.id],
+        queryKey: usersKeys.single(user.id),
       });
 
       // Clear all user data
