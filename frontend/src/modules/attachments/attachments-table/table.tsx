@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/attachments-table';
 import { useColumns } from '~/modules/attachments/attachments-table/columns';
-import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import { useSync } from '~/modules/attachments/attachments-table/helpers/use-sync';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -16,6 +15,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-vi
 import { dialog } from '~/modules/common/dialoger/state';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useAttachmentUpdateMutation } from '~/query/mutations/attachments';
+import { attachmentsQueryOptions } from '~/query/options/infinite-query-options';
 import { useUserStore } from '~/store/user';
 import type { Attachment, BaseTableMethods, BaseTableProps } from '~/types/common';
 

@@ -15,7 +15,7 @@ import { offlineFetch, onError } from '~/lib/query-client';
 import { Public } from '~/modules/common/public';
 import Spinner from '~/modules/common/spinner';
 import UnsubscribePage from '~/modules/common/unsubscribe-page';
-import { meQueryOptions, menuQueryOptions } from '~/modules/users/helpers/query-options';
+import { meQueryOptions, menuQueryOptions } from '~/query/options/query-options';
 import { AuthRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { ErrorType } from '#/lib/errors';
