@@ -1,4 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
+import { queryClient } from '~/lib/router';
 import type {
   ArbitraryEntityQueryData,
   ContextEntityData,
@@ -7,8 +8,7 @@ import type {
   InfiniteEntityQueryData,
   ItemData,
   QueryDataActions,
-} from '~/hooks/use-mutate-query-data/types';
-import { queryClient } from '~/lib/router';
+} from '~/query/hooks/use-mutate-query-data/types';
 import type { Entity } from '~/types/common';
 
 // determine if the data is ArbitraryEntityQueryData

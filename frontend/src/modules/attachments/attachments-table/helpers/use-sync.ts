@@ -3,11 +3,11 @@ import { config } from 'config';
 import { useEffect } from 'react';
 import { queryClient } from '~/lib/router';
 
-import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import type { AttachmentInfiniteQueryData } from '~/query/mutations/attachments';
 
 import { env } from '~/../env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
+import { attachmentsQueryOptions } from '~/query/options/infinite-query-options';
 import type { Attachment } from '~/types/common';
 import { objectKeys } from '~/utils/object';
 import { attachmentsTableColumns } from '#/db/schema/attachments';

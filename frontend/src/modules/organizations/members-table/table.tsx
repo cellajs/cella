@@ -2,13 +2,13 @@ import { onlineManager } from '@tanstack/react-query';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
 import { queryClient } from '~/lib/router';
 import { showToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import type { MemberSearch, MembersTableProps } from '~/modules/organizations/members-table';
-import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
+import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMembersUpdateMutation } from '~/query/mutations/members';
+import { membersQueryOptions } from '~/query/options/infinite-query-options';
 import { membersKeys } from '~/query/query-key-factories';
 import type { BaseTableMethods, BaseTableProps, Member } from '~/types/common';
 
