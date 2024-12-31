@@ -9,9 +9,9 @@ import type { InferResponseType } from 'hono/client';
 import type { Dispatch, SetStateAction } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import type { z } from 'zod';
-import type { client } from '~/api/me';
 import type { UppyBody, UppyMeta } from '~/lib/imado';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import type { meClient } from '~/modules/users/api';
 import type { attachmentSchema } from '#/modules/attachments/schema';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 
@@ -22,9 +22,9 @@ export type ContextEntity = (typeof config.contextEntityTypes)[number];
 export type User = z.infer<typeof userSchema>;
 export type LimitedUser = z.infer<typeof limitedUserSchema>;
 
-export type Session = Extract<InferResponseType<(typeof client.index)['$get']>, { data: unknown }>['data']['sessions'][number];
+export type Session = Extract<InferResponseType<(typeof meClient.index)['$get']>, { data: unknown }>['data']['sessions'][number];
 export type MeUser = User & { sessions: Session[]; passkey: boolean; oauth: EnabledOauthProviderOptions[] };
-export type UserMenu = Extract<InferResponseType<(typeof client.menu)['$get']>, { data: unknown }>['data'];
+export type UserMenu = Extract<InferResponseType<(typeof meClient.menu)['$get']>, { data: unknown }>['data'];
 export type UserMenuItem = UserMenu[keyof UserMenu][number];
 
 export type Organization = z.infer<typeof organizationSchema>;

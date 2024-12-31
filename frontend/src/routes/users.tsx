@@ -3,8 +3,8 @@ import { createRoute, useParams } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
+import { userQueryOptions } from '~/modules/users/query';
 import { baseEntityRoutes } from '~/nav-config';
-import { userQueryOptions } from '~/query/query-options';
 import { AppRoute } from '~/routes/general';
 import type { ErrorType } from '#/lib/errors';
 

@@ -6,10 +6,9 @@ import { queryClient } from '~/lib/router';
 import { createToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table';
+import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
+import { useMembersUpdateMutation } from '~/modules/memberships/query-mutations';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
-import { membersQueryOptions } from '~/query/infinite-query-options';
-import { useMembersUpdateMutation } from '~/query/mutations/members';
-import { membersKeys } from '~/query/query-key-factories';
 import type { BaseTableMethods, BaseTableProps, Member } from '~/types/common';
 
 type BaseDataTableProps = MembersTableProps &

@@ -10,8 +10,8 @@ import { Suspense, lazy } from 'react';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { queryClient } from '~/lib/router';
+import { organizationQueryOptions } from '~/modules/organizations/query';
 import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
-import { organizationQueryOptions } from '~/query/query-options';
 import { useUserStore } from '~/store/user';
 
 const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));

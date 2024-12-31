@@ -1,4 +1,4 @@
-import { deleteUsers as baseDeleteUsers } from '~/api/users';
+import { deleteUsers as baseDeleteUsers } from '~/modules/users/api';
 import type { User } from '~/types/common';
 
 import { onlineManager } from '@tanstack/react-query';
@@ -8,7 +8,7 @@ import { queryClient } from '~/lib/router';
 import { createToast } from '~/lib/toasts';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { usersKeys } from '~/query/query-key-factories';
+import { usersKeys } from '~/modules/users/query';
 
 interface Props {
   users: User[];

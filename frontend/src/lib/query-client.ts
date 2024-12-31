@@ -1,6 +1,6 @@
 import { type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
 import i18next from 'i18next';
-import { ApiError } from '~/api';
+import { ApiError } from '~/lib/api';
 import { i18n } from '~/lib/i18n';
 import router, { queryClient } from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
