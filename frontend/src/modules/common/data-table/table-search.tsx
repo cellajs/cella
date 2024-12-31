@@ -23,13 +23,14 @@ const TableSearch = ({ value = '', setQuery }: TableSearchProps) => {
 
   const handleClick = () => inputRef.current?.focus();
 
+  // Update parent query only when debouncedQuery changes
   useEffect(() => {
-    setQuery(debouncedQuery);
+    if (debouncedQuery !== value) setQuery(debouncedQuery);
   }, [debouncedQuery]);
 
   // Reset input value when the external value changes
   useEffect(() => {
-    if (value !== inputValue) setInputValue('');
+    if (!inputRef.current || document.activeElement !== inputRef.current) setInputValue(value);
   }, [value]);
 
   // Focus input when filter button is active (for mobile)
@@ -55,7 +56,10 @@ const TableSearch = ({ value = '', setQuery }: TableSearchProps) => {
         <XCircle
           size={16}
           className="absolute right-3 top-1/2 opacity-70 hover:opacity-100 -translate-y-1/2 cursor-pointer"
-          onClick={() => setQuery('')}
+          onClick={() => {
+            setInputValue('');
+            setQuery('');
+          }}
         />
       )}
     </div>
