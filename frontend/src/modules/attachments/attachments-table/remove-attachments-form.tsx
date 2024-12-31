@@ -1,6 +1,6 @@
+import { useAttachmentDeleteMutation } from '~/modules/attachments/query-mutations';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useAttachmentDeleteMutation } from '~/query/mutations/attachments';
 import type { Attachment } from '~/types/common';
 
 interface Props {

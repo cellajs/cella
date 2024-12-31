@@ -3,7 +3,7 @@ import { config } from 'config';
 import { useEffect } from 'react';
 import { queryClient } from '~/lib/router';
 
-import type { AttachmentInfiniteQueryData } from '~/query/mutations/attachments';
+import type { AttachmentInfiniteQueryData } from '~/modules/attachments/query-mutations';
 
 import { env } from '~/../env';
 import { useOnlineManager } from '~/hooks/use-online-manager';

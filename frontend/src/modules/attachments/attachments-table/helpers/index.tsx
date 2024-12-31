@@ -2,9 +2,9 @@ import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { Suspense } from 'react';
 import { createToast } from '~/lib/toasts';
+import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
-import { useAttachmentCreateMutation } from '~/query/mutations/attachments';
 import { UploadType, type UploadedUppyFile } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 

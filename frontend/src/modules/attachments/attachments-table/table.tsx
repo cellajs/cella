@@ -10,12 +10,12 @@ import { useColumns } from '~/modules/attachments/attachments-table/columns';
 import { useSync } from '~/modules/attachments/attachments-table/helpers/use-sync';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
+import { useAttachmentUpdateMutation } from '~/modules/attachments/query-mutations';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
-import { useAttachmentUpdateMutation } from '~/query/mutations/attachments';
 import { useUserStore } from '~/store/user';
 import type { Attachment, BaseTableMethods, BaseTableProps } from '~/types/common';
 
