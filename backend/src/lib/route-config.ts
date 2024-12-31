@@ -1,9 +1,11 @@
 import { createRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
+import type { Env } from '#/types/app';
 import type { NonEmptyArray } from '#/types/common';
 
 export type RouteOptions = Parameters<typeof createRoute>[0] & {
   guard: MiddlewareHandler | NonEmptyArray<MiddlewareHandler>;
+  middleware?: MiddlewareHandler<Env> | NonEmptyArray<MiddlewareHandler<Env>>;
 };
 
 export type RouteConfig = {
@@ -11,20 +13,10 @@ export type RouteConfig = {
   guard: RouteOptions['guard'];
 };
 
-export type Route<
-  P extends string,
-  R extends Omit<RouteOptions, 'path'> & {
-    path: P;
-  },
-> = ReturnType<typeof createRoute<P, Omit<R, 'guard'>>>;
+export type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<typeof createRoute<P, Omit<R, 'guard'>>>;
 
 // Custom wrapper around hono createRoute to extend it with setting guard and other middleware.
-export const createRouteConfig = <
-  P extends string,
-  R extends Omit<RouteOptions, 'path'> & {
-    path: P;
-  },
->({
+export const createRouteConfig = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>({
   guard,
   ...routeConfig
 }: R): Route<P, R> => {
