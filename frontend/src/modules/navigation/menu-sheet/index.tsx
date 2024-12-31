@@ -11,9 +11,9 @@ import { config } from 'config';
 import { type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { updateMembership } from '~/api/memberships';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
+import { updateMembership } from '~/modules/memberships/api';
 import { getRelativeItemOrder } from '~/modules/navigation/menu-sheet/helpers';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';

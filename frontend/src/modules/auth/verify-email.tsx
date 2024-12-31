@@ -2,10 +2,10 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { verifyEmail as baseVerifyEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { createToast } from '~/lib/toasts';
+import { verifyEmail as baseVerifyEmail } from '~/modules/auth/api';
 import AuthPage from '~/modules/auth/auth-page';
 import { Button } from '~/modules/ui/button';
 

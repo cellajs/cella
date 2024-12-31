@@ -4,8 +4,8 @@ import { useRef } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useMutation } from '~/hooks/use-mutations';
+import { createRequest as baseCreateRequest } from '~/modules/requests/api';
 import { SubmitButton } from '~/modules/ui/button';
 
 const NewsletterForm = () => {

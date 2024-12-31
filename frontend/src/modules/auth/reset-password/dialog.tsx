@@ -6,8 +6,8 @@ import { Input } from '~/modules/ui/input';
 import { Send } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail as baseSendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
+import { sendResetPasswordEmail as baseSendResetPasswordEmail } from '~/modules/auth/api';
 import { dialog } from '~/modules/common/dialoger/state';
 
 const ResetPasswordDialog = ({ email }: { email: string }) => {

@@ -2,17 +2,17 @@ import { QueryClientProvider as BaseQueryClientProvider } from '@tanstack/react-
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useEffect } from 'react';
 import { persister, queryClient } from '~/lib/router';
+import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
 import { queriesToMap } from '~/offline-config';
 import { prefetchQuery, waitFor } from '~/query/helpers';
-import { meQueryOptions, menuQueryOptions } from '~/query/query-options';
 import { useGeneralStore } from '~/store/general';
 import type { UserMenuItem } from '~/types/common';
 
-const mutationFiles = import.meta.glob('./mutations/*');
+const queryMutationFileImports = import.meta.glob('~/modules/**/query-mutations.ts');
 
-// Dynamically import each file sequentially
+// Dynamically import each query mutation file sequentially
 (async () => {
-  for (const importFunc of Object.values(mutationFiles)) await importFunc();
+  for (const importQueryMutation of Object.values(queryMutationFileImports)) await importQueryMutation();
 })();
 
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours

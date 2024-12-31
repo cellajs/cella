@@ -1,4 +1,4 @@
-import { deleteSelf as baseDeleteSelf } from '~/api/me';
+import { deleteSelf as baseDeleteSelf } from '~/modules/users/api';
 import type { User } from '~/types/common';
 
 import { useNavigate } from '@tanstack/react-router';
@@ -6,7 +6,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { usersKeys } from '~/query/query-key-factories';
+import { usersKeys } from '~/modules/users/query';
 import { useAlertStore } from '~/store/alert';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
