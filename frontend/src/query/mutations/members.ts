@@ -1,12 +1,12 @@
 import { useMutation } from '@tanstack/react-query';
-import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/api/memberships';
+import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, updateMembership } from '~/modules/memberships/api';
 
 import { config } from 'config';
 import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
 import { createToast } from '~/lib/toasts';
+import { membersKeys } from '~/modules/memberships/query';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
-import { membersKeys } from '~/query/query-key-factories';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import type { Member, Membership } from '~/types/common';
 

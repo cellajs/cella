@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
-import { getMetrics } from '~/api/metrics';
+import { getMetrics } from '~/modules/metrics/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { type ChartConfig, ChartContainer } from '~/modules/ui/chart';
 

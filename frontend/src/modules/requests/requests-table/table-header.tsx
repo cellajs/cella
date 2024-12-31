@@ -8,7 +8,7 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
-import type { RequestsSearch } from '~/modules/system/requests-table';
+import type { RequestsSearch } from '~/modules/requests/requests-table';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { BaseTableHeaderProps, BaseTableMethods, Request } from '~/types/common';

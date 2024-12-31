@@ -7,13 +7,13 @@ import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state
 
 import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createRequest as baseCreateRequest } from '~/api/requests';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { createToast } from '~/lib/toasts';
 import InputFormField from '~/modules/common/form-fields/input';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { createRequest as baseCreateRequest } from '~/modules/requests/api';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';

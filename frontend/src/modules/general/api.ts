@@ -1,8 +1,8 @@
 import { config } from 'config';
+import { clientConfig, handleResponse } from '~/lib/api';
 import { type Entity, type UploadParams, UploadType } from '~/types/common';
 import { generalHc } from '#/modules/general/hc';
 import type { EnabledOauthProviderOptions } from '#/types/common';
-import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
 export const client = generalHc(config.backendUrl, clientConfig);

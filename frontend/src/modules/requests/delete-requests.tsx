@@ -1,4 +1,4 @@
-import { deleteRequests as baseDeleteRequests } from '~/api/requests';
+import { deleteRequests as baseDeleteRequests } from '~/modules/requests/api';
 import type { Request } from '~/types/common';
 
 import { useMutation } from '~/hooks/use-mutations';

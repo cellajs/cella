@@ -1,6 +1,6 @@
 import { config } from 'config';
+import { clientConfig, handleResponse } from '~/lib/api';
 import { organizationsHc } from '#/modules/organizations/hc';
-import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
 export const client = organizationsHc(config.backendUrl, clientConfig);

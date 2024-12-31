@@ -1,8 +1,8 @@
 import { t } from 'i18next';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheet } from '~/modules/common/sheeter/state';
-import { FeedbackLetterDraft } from '~/modules/system/requests-table/feedback-letter-draft';
-import FeedbackLetterForm from '~/modules/system/requests-table/feedback-letter-form';
+import { FeedbackLetterDraft } from '~/modules/requests/feedback-letter-draft';
+import FeedbackLetterForm from '~/modules/requests/feedback-letter-form';
 
 export const openFeedbackLetterSheet = (emails: string[], callback: () => void) => {
   const feedbackLetterTabs = [

@@ -4,10 +4,12 @@ import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
+import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
+import { membersQueryOptions } from '~/modules/memberships/query';
+import { organizationQueryOptions } from '~/modules/organizations/query';
 import { baseEntityRoutes } from '~/nav-config';
-import { attachmentsQueryOptions, membersQueryOptions } from '~/query/infinite-query-options';
-import { organizationQueryOptions } from '~/query/query-options';
+
 import { AppRoute } from '~/routes/general';
 import type { Organization as OrganizationType } from '~/types/common';
 import { noDirectAccess } from '~/utils/no-direct-access';

@@ -6,18 +6,20 @@ import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
-import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-options';
+import { organizationsQueryOptions } from '~/modules/organizations/query';
+import { requestsQueryOptions } from '~/modules/requests/query';
 import SystemPage from '~/modules/system/system-page';
-import { organizationsQueryOptions, usersQueryOptions } from '~/query/infinite-query-options';
+import { usersQueryOptions } from '~/modules/users/query';
+import type { ErrorType } from '#/lib/errors';
+
 import { AppRoute } from '~/routes/general';
 import { noDirectAccess } from '~/utils/no-direct-access';
-import type { ErrorType } from '#/lib/errors';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));
 const UsersTable = lazy(() => import('~/modules/users/users-table'));
-const RequestsTable = lazy(() => import('~/modules/system/requests-table'));
-const RequestsPerMinute = lazy(() => import('~/modules/system/metrics-charts/requests-per-minute'));
+const RequestsTable = lazy(() => import('~/modules/requests/requests-table'));
+const RequestsPerMinute = lazy(() => import('~/modules/metrics/requests-per-minute'));
 
 // Search query schemas
 export const organizationsSearchSchema = getOrganizationsQuerySchema.pick({ q: true, sort: true, order: true });

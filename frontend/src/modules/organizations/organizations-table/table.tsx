@@ -4,13 +4,13 @@ import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { inviteMembers } from '~/api/memberships';
 import { createToast } from '~/lib/toasts';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
+import { inviteMembers } from '~/modules/memberships/api';
 import type { OrganizationsSearch } from '~/modules/organizations/organizations-table';
+import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
-import { organizationsQueryOptions } from '~/query/infinite-query-options';
 import { useUserStore } from '~/store/user';
 import type { BaseTableMethods, BaseTableProps, Organization } from '~/types/common';
 

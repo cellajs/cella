@@ -1,6 +1,6 @@
 import { config } from 'config';
+import { clientConfig, handleResponse } from '~/lib/api';
 import { metricsHc } from '#/modules/metrics/hc';
-import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
 export const client = metricsHc(config.backendUrl, clientConfig);

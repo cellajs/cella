@@ -1,7 +1,7 @@
 import { config } from 'config';
+import { clientConfig, handleResponse } from '~/lib/api';
 import type { ContextEntity } from '~/types/common';
 import { membershipsHc } from '#/modules/memberships/hc';
-import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
 export const client = membershipsHc(config.backendUrl, clientConfig);

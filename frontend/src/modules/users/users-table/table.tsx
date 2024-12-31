@@ -1,17 +1,16 @@
 import { onlineManager } from '@tanstack/react-query';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
-import { updateUser } from '~/api/users';
+import { updateUser } from '~/modules/users/api';
 
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '~/hooks/use-mutations';
 import { createToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
+import { usersKeys, usersQueryOptions } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/users-table';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import { usersQueryOptions } from '~/query/infinite-query-options';
-import { usersKeys } from '~/query/query-key-factories';
 import type { BaseTableMethods, BaseTableProps, User } from '~/types/common';
 
 type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {

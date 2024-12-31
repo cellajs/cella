@@ -7,9 +7,9 @@ import type { Control } from 'react-hook-form';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
-import { checkSlugAvailable } from '~/api/general';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import InputFormField from '~/modules/common/form-fields/input';
+import { checkSlugAvailable } from '~/modules/general/api';
 import { Button } from '~/modules/ui/button';
 
 interface SlugFieldProps {

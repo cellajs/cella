@@ -2,8 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { type SystemInviteProps, invite as inviteSystem } from '~/api/general';
-import { type InviteMemberProps, inviteMembers } from '~/api/memberships';
+import { type SystemInviteProps, invite as inviteSystem } from '~/modules/general/api';
+import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 
 import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';

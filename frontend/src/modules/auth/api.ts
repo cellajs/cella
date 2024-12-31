@@ -1,6 +1,6 @@
 import { config } from 'config';
+import { clientConfig, handleResponse } from '~/lib/api';
 import { authHc } from '#/modules/auth/hc';
-import { clientConfig, handleResponse } from '.';
 
 // Create Hono clients to make requests to the backend
 export const client = authHc(config.backendUrl, clientConfig);
