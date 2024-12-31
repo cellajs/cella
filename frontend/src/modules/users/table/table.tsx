@@ -8,7 +8,7 @@ import { useMutation } from '~/hooks/use-mutations';
 import { createToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import { usersKeys, usersQueryOptions } from '~/modules/users/query';
-import type { UsersSearch } from '~/modules/users/users-table';
+import type { UsersSearch } from '~/modules/users/table';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import type { BaseTableMethods, BaseTableProps, User } from '~/types/common';

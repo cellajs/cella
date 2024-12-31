@@ -11,7 +11,7 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
-import UpdateRow from '~/modules/organizations/organizations-table/update-row';
+import UpdateRow from '~/modules/organizations/table/update-row';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = (callback: (organizations: Organization[]) => void) => {

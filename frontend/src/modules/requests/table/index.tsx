@@ -12,13 +12,13 @@ import { useColumns } from '~/modules/requests/columns';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { openFeedbackLetterSheet } from '~/modules/requests/helpers';
 import { requestsKeys } from '~/modules/requests/query';
-import { RequestsTableHeaderBar } from '~/modules/requests/requests-table/table-header';
+import { RequestsTableHeaderBar } from '~/modules/requests/table/table-header';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Request } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
-const BaseDataTable = lazy(() => import('~/modules/requests/requests-table/table'));
+const BaseDataTable = lazy(() => import('~/modules/requests/table/table'));
 const LIMIT = config.requestLimits.requests;
 
 export type RequestsSearch = z.infer<typeof requestSearchSchema>;

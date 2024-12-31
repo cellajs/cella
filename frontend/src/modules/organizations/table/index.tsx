@@ -14,14 +14,14 @@ import { getOrganizations } from '~/modules/organizations/api';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import OrganizationsNewsletterDraft from '~/modules/organizations/newsletter-draft';
 import OrganizationsNewsletterForm from '~/modules/organizations/newsletter-form';
-import { useColumns } from '~/modules/organizations/organizations-table/columns';
-import { OrganizationsTableHeader } from '~/modules/organizations/organizations-table/table-header';
 import { organizationsKeys } from '~/modules/organizations/query';
+import { useColumns } from '~/modules/organizations/table/columns';
+import { OrganizationsTableHeader } from '~/modules/organizations/table/table-header';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
-const BaseDataTable = lazy(() => import('~/modules/organizations/organizations-table/table'));
+const BaseDataTable = lazy(() => import('~/modules/organizations/table/table'));
 const LIMIT = config.requestLimits.organizations;
 
 export type OrganizationsSearch = z.infer<typeof organizationsSearchSchema>;

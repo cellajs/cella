@@ -10,7 +10,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { UsersSearch } from '~/modules/users/users-table';
+import type { UsersSearch } from '~/modules/users/table';
 import type { BaseTableHeaderProps, BaseTableMethods, User } from '~/types/common';
 
 type UsersTableHeaderProps = BaseTableMethods &

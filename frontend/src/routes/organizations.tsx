@@ -19,7 +19,7 @@ import { attachmentsQuerySchema } from '#/modules/attachments/schema';
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
 const OrgMembersTable = lazy(() => import('~/modules/organizations/organization-members-table'));
-const AttachmentsTable = lazy(() => import('~/modules/attachments/attachments-table'));
+const AttachmentsTable = lazy(() => import('~/modules/attachments/table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
 // Search query schema

@@ -5,8 +5,8 @@ import type { z } from 'zod';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { createToast } from '~/lib/toasts';
-import RemoveAttachmentsForm from '~/modules/attachments/attachments-table/remove-attachments-form';
-import { AttachmentsTableHeader } from '~/modules/attachments/attachments-table/table-header';
+import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
+import { AttachmentsTableHeader } from '~/modules/attachments/table/table-header';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -14,7 +14,7 @@ import type { attachmentsSearchSchema } from '~/routes/organizations';
 import type { Attachment, BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
-const BaseDataTable = lazy(() => import('~/modules/attachments/attachments-table/table'));
+const BaseDataTable = lazy(() => import('~/modules/attachments/table/table'));
 const LIMIT = config.requestLimits.attachments;
 
 export type AttachmentSearch = z.infer<typeof attachmentsSearchSchema>;

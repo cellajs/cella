@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
 import { requestsQueryOptions } from '~/modules/requests/query';
-import type { RequestsSearch } from '~/modules/requests/requests-table';
+import type { RequestsSearch } from '~/modules/requests/table';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import type { BaseTableMethods, BaseTableProps, Request } from '~/types/common';
 

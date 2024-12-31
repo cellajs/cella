@@ -5,7 +5,7 @@ import type { TFunction } from 'i18next';
 import { CopyCheckIcon, CopyIcon } from 'lucide-react';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentThumb from '~/modules/attachments/attachment-thumb';
-import { formatBytes } from '~/modules/attachments/attachments-table/helpers';
+import { formatBytes } from '~/modules/attachments/table/helpers';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';

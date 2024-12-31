@@ -11,7 +11,7 @@ import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
 import { renderSelect } from '~/modules/common/data-table/select-column';
-import UpdateRow from '~/modules/users/users-table/update-row';
+import UpdateRow from '~/modules/users/table/update-row';
 import { dateShort } from '~/utils/date-short';
 import ImpersonateRow from './impersonate-row';
 

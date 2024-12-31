@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { Trash, Upload, XSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/attachments-table';
-import { openUploadDialog } from '~/modules/attachments/attachments-table/helpers';
+import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
+import { openUploadDialog } from '~/modules/attachments/table/helpers';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
