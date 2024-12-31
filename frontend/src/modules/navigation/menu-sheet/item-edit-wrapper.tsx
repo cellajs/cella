@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import { isPageData } from '~/modules/navigation/menu-sheet';
 import { MenuItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
-import { SheetMenuItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
+import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import type { UserMenuItem } from '~/types/common';
 import { getDraggableItemData } from '~/utils/drag-drop';
@@ -83,7 +83,7 @@ export const MenuItemEditWrapper = ({
             className="group/archived"
           >
             <ul>
-              <SheetMenuItemsEdit data={item.submenu} shownOption={shownOption} />
+              <MenuSheetItemsEdit data={item.submenu} shownOption={shownOption} />
             </ul>
             <SectionArchiveButton
               archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
@@ -91,7 +91,7 @@ export const MenuItemEditWrapper = ({
             />
             {isSubmenuArchivedVisible && (
               <ul>
-                <SheetMenuItemsEdit data={item.submenu} shownOption="archived" />
+                <MenuSheetItemsEdit data={item.submenu} shownOption="archived" />
               </ul>
             )}
           </div>

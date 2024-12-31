@@ -16,7 +16,7 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { getRelativeItemOrder } from '~/modules/navigation/menu-sheet/helpers';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { SheetMenuItem } from '~/modules/navigation/menu-sheet/item';
+import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
 import { MenuSheetSearchInput } from '~/modules/navigation/menu-sheet/search-input';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
@@ -55,7 +55,7 @@ export const MenuSheet = memo(() => {
   const pwaEnabled = config.has.pwa;
 
   const searchResultsListItems = useCallback(() => {
-    return searchResults.length > 0 ? searchResults.map((item: UserMenuItem) => <SheetMenuItem key={item.id} searchResults item={item} />) : [];
+    return searchResults.length > 0 ? searchResults.map((item: UserMenuItem) => <MenuSheetItem key={item.id} searchResults item={item} />) : [];
   }, [searchResults]);
 
   const renderedSections = useMemo(() => {

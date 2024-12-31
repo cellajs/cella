@@ -5,8 +5,8 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { createToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import { sheet } from '~/modules/common/sheeter/state';
-import { SheetMenuItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
-import { SheetMenuItems } from '~/modules/navigation/menu-sheet/items-list';
+import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
+import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import { MenuSectionButton } from '~/modules/navigation/menu-sheet/section-button';
 import { useNavigationStore } from '~/store/navigation';
@@ -71,9 +71,9 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
             style={{ overflow: 'hidden' }}
           >
             {isEditing ? (
-              <SheetMenuItemsEdit data={data} shownOption="unarchive" />
+              <MenuSheetItemsEdit data={data} shownOption="unarchive" />
             ) : (
-              <SheetMenuItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
+              <MenuSheetItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
             )}
             {!!data.length && (
               <div
@@ -94,9 +94,9 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
                       style={{ overflow: 'hidden' }}
                     >
                       {isEditing ? (
-                        <SheetMenuItemsEdit data={data} shownOption="archived" />
+                        <MenuSheetItemsEdit data={data} shownOption="archived" />
                       ) : (
-                        <SheetMenuItems type={entityType} data={data} createDialog={createDialog} shownOption="archived" />
+                        <MenuSheetItems type={entityType} data={data} createDialog={createDialog} shownOption="archived" />
                       )}
                     </motion.ul>
                   )}

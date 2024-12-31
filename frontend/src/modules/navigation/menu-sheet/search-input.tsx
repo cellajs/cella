@@ -7,14 +7,14 @@ import { Input } from '~/modules/ui/input';
 import { menuSections } from '~/nav-config';
 import type { UserMenu, UserMenuItem } from '~/types/common';
 
-interface SheetMenuSearchProps {
+interface MenuSheetSearchProps {
   menu: UserMenu;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   searchResultsChange: (results: UserMenuItem[]) => void;
 }
 
-export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchResultsChange }: SheetMenuSearchProps) => {
+export const MenuSheetSearchInput = ({ menu, searchTerm, setSearchTerm, searchResultsChange }: MenuSheetSearchProps) => {
   const { t } = useTranslation();
   const { hasStarted } = useMounted();
   const isMobile = useBreakpoints('max', 'sm');

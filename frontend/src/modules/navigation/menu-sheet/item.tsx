@@ -9,13 +9,13 @@ import { useGeneralStore } from '~/store/general';
 import type { UserMenuItem } from '~/types/common';
 import { cn } from '~/utils/cn';
 
-interface SheetMenuItemProps {
+interface MenuSheetItemProps {
   item: UserMenuItem;
   className?: string;
   searchResults?: boolean;
 }
 
-export const SheetMenuItem = ({ item, className, searchResults }: SheetMenuItemProps) => {
+export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemProps) => {
   const { t } = useTranslation();
 
   //Strict false is needed because sheet menu can be open at any route

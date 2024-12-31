@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
 import type { ContextEntity, UserMenuItem } from '~/types/common';
-import { SheetMenuItem } from './item';
+import { MenuSheetItem } from './item';
 
-interface SheetMenuItemsProps {
+interface MenuSheetItemsProps {
   data: UserMenuItem[];
   shownOption: 'archived' | 'unarchive';
   createDialog?: () => void;
@@ -13,7 +13,7 @@ interface SheetMenuItemsProps {
   type: ContextEntity;
 }
 
-export const SheetMenuItems = ({ data, type, shownOption, createDialog, className }: SheetMenuItemsProps) => {
+export const MenuSheetItems = ({ data, type, shownOption, createDialog, className }: MenuSheetItemsProps) => {
   const { t } = useTranslation();
   const { hideSubmenu } = useNavigationStore();
 
@@ -41,11 +41,11 @@ export const SheetMenuItems = ({ data, type, shownOption, createDialog, classNam
       <>
         {filteredItems.map((item) => (
           <li className={item.submenu?.length && !hideSubmenu ? 'relative submenu-section' : ''} key={item.id}>
-            <SheetMenuItem item={item} className={className} />
+            <MenuSheetItem item={item} className={className} />
             {/* Submenu below */}
             {!item.membership.archived && !!item.submenu?.length && !hideSubmenu && (
               <ul>
-                <SheetMenuItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
+                <MenuSheetItems type={item.submenu[0].entity} data={item.submenu} shownOption="unarchive" />
               </ul>
             )}
           </li>

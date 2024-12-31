@@ -4,7 +4,7 @@ import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-w
 import { useNavigationStore } from '~/store/navigation';
 import type { UserMenuItem } from '~/types/common';
 
-export const SheetMenuItemsEdit = ({ data, shownOption }: { data: UserMenuItem[]; shownOption: 'archived' | 'unarchive' }) => {
+export const MenuSheetItemsEdit = ({ data, shownOption }: { data: UserMenuItem[]; shownOption: 'archived' | 'unarchive' }) => {
   const { t } = useTranslation();
   const { hideSubmenu } = useNavigationStore();
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
