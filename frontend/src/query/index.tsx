@@ -8,7 +8,12 @@ import { prefetchQuery, waitFor } from '~/query/helpers';
 import { useGeneralStore } from '~/store/general';
 import type { UserMenuItem } from '~/types/common';
 
-import.meta.glob('~/modules/**/query-mutations.ts', { eager: true });
+const queryMutationFileImports = import.meta.glob('~/modules/**/query-mutations.ts');
+
+// Dynamically import each query mutation file sequentially
+(async () => {
+  for (const importQueryMutation of Object.values(queryMutationFileImports)) await importQueryMutation();
+})();
 
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
