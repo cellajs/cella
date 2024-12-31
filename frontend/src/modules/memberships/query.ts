@@ -3,6 +3,7 @@ import { config } from 'config';
 
 import { type GetMembersParams, getMembers } from '~/modules/memberships/api';
 
+// Keys formembers queries
 export const membersKeys = {
   all: ['members'] as const,
   list: () => [...membersKeys.all, 'list'] as const,
@@ -12,6 +13,7 @@ export const membersKeys = {
   delete: () => [...membersKeys.all, 'delete'] as const,
 };
 
+// Infinite Query Options to get a paginated list of members
 export const membersQueryOptions = ({
   idOrSlug,
   orgIdOrSlug,

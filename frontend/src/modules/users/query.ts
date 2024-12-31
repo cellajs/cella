@@ -4,6 +4,7 @@ import { config } from 'config';
 import { type GetUsersParams, getUser, getUsers } from '~/modules/users/api';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 
+// Keys for users queries
 export const usersKeys = {
   one: ['user'] as const,
   single: (idOrSlug: string) => [...usersKeys.one, idOrSlug] as const,
@@ -12,33 +13,39 @@ export const usersKeys = {
   table: (filters?: GetUsersParams) => [...usersKeys.list(), filters] as const,
 };
 
+// Keys for meUser(self) query
 export const meKeys = {
   all: ['me'] as const,
   update: () => [...meKeys.all, 'update'] as const,
 };
 
+// Keys for user(self) menu query
 export const menuKeys = {
   all: ['menu'] as const,
 };
 
+// Query Options to get a user by id or slug
 export const userQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: usersKeys.single(idOrSlug),
     queryFn: () => getUser(idOrSlug),
   });
 
+// Query Options to get current user(self)
 export const meQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.all,
     queryFn: getAndSetMe,
   });
 
+// Query Options to get current user's(self) menu
 export const menuQueryOptions = () =>
   queryOptions({
     queryKey: menuKeys.all,
     queryFn: getAndSetMenu,
   });
 
+// Infinite Query Options to get a paginated list of users
 export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrder, role, limit = config.requestLimits.users }: GetUsersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';

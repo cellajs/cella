@@ -2,12 +2,14 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { config } from 'config';
 import { type GetRequestsParams, getRequests } from '~/modules/requests/api';
 
+// Keys for requests queries
 export const requestsKeys = {
   all: ['requests'] as const,
   list: () => [...requestsKeys.all, 'list'] as const,
   table: (filters?: GetRequestsParams) => [...requestsKeys.list(), filters] as const,
 };
 
+// Infinite Query Options to get a paginated list of requests
 export const requestsQueryOptions = ({
   q = '',
   sort: initialSort,

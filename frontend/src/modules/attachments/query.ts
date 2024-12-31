@@ -3,6 +3,7 @@ import { config } from 'config';
 
 import { type GetAttachmentsParams, getAttachments } from '~/modules/attachments/api';
 
+// Keys for attachments queries
 export const attachmentsKeys = {
   all: ['attachments'] as const,
   list: () => [...attachmentsKeys.all, 'list'] as const,
@@ -13,6 +14,7 @@ export const attachmentsKeys = {
   delete: () => [...attachmentsKeys.all, 'delete'] as const,
 };
 
+// Infinite Query Options to get a paginated list of attachments
 export const attachmentsQueryOptions = ({
   orgIdOrSlug,
   q = '',
