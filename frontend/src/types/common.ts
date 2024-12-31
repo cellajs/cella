@@ -18,6 +18,7 @@ import type { EnabledOauthProviderOptions } from '#/types/common';
 // Core types
 export type Entity = (typeof config.entityTypes)[number];
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
+export type PageEntity = (typeof config.pageEntityTypes)[number];
 
 export type User = z.infer<typeof userSchema>;
 export type LimitedUser = z.infer<typeof limitedUserSchema>;

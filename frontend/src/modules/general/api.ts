@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import { type Entity, type UploadParams, UploadType } from '~/types/common';
+import { type PageEntity, type UploadParams, UploadType } from '~/types/common';
 import { generalHc } from '#/modules/general/hc';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 
@@ -61,7 +61,7 @@ export const checkToken = async (token: string) => {
 };
 
 // Get suggestions
-export const getSuggestions = async (query: string, type?: Entity | undefined) => {
+export const getSuggestions = async (query: string, type?: PageEntity | undefined) => {
   const response = await client.suggestions.$get({
     query: { q: query, type },
   });
