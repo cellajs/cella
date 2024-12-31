@@ -1,7 +1,6 @@
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { getOrganization } from '~/api/organizations';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
 import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
@@ -12,7 +11,7 @@ import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { queryClient } from '~/lib/router';
 import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
-import { organizationsKeys } from '~/query/query-key-factories';
+import { organizationQueryOptions } from '~/query/query-options';
 import { useUserStore } from '~/store/user';
 
 const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
@@ -22,12 +21,6 @@ const organizationTabs: PageNavTab[] = [
   { id: 'attachments', label: 'common:attachments', path: '/$idOrSlug/attachments' },
   { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },
 ];
-
-export const organizationQueryOptions = (idOrSlug: string) =>
-  queryOptions({
-    queryKey: organizationsKeys.single(idOrSlug),
-    queryFn: () => getOrganization(idOrSlug),
-  });
 
 const OrganizationPage = () => {
   const { t } = useTranslation();

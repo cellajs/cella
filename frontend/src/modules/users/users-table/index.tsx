@@ -3,16 +3,16 @@ import { config } from 'config';
 import { Suspense, lazy, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import useSearchParams from '~/hooks/use-search-params';
 import { useUserSheet } from '~/hooks/use-user-sheet';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import DeleteUsers from '~/modules/users/delete-users';
 import InviteUsers from '~/modules/users/invite-users';
 import { useColumns } from '~/modules/users/users-table/columns';
 import { UsersTableHeader } from '~/modules/users/users-table/table-header';
+import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { usersKeys } from '~/query/query-key-factories';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, User } from '~/types/common';
@@ -78,7 +78,7 @@ const UsersTable = () => {
         users={selected}
         callback={(users) => {
           mutateQuery.remove(users);
-          showToast(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
+          createToast(t('common:success.delete_resources', { resources: t('common:users') }), 'success');
         }}
       />,
       {

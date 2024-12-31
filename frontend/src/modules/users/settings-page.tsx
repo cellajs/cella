@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { sendResetPasswordEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
@@ -23,7 +23,7 @@ import { PageAside } from '~/modules/common/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import DeleteSelf from '~/modules/users/delete-self';
 import { deletePasskey, registerPasskey } from '~/modules/users/helpers';
-import { SessionTile } from '~/modules/users/session-title';
+import { SessionTile } from '~/modules/users/session-tile';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
 
@@ -49,7 +49,7 @@ const UserSettingsPage = () => {
       useUserStore.setState((state) => {
         state.user.sessions = state.user.sessions.filter((session) => !variables.includes(session.id));
       });
-      showToast(
+      createToast(
         variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'),
         'success',
       );
@@ -58,7 +58,7 @@ const UserSettingsPage = () => {
 
   // Request a password reset email
   const sendResetPasswordClick = () => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
     try {
       setDisabledResetPassword(true);
@@ -93,7 +93,7 @@ const UserSettingsPage = () => {
   const invertClass = mode === 'dark' ? 'invert' : '';
 
   const onDeleteSession = (ids: string[]) => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
     deleteMySessions(ids);
   };
@@ -209,7 +209,7 @@ const UserSettingsPage = () => {
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+                        if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
                         // Set cookies before redirecting same(as in backend/src/modules/auth/index)
                         document.cookie = `link_to_userId=${user.id}; path=/; secure; SameSite=Strict`;
 

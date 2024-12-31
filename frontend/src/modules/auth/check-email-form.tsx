@@ -36,7 +36,7 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
       setStep('signIn', form.getValues('email'), hasPasskey);
     },
     onError: (error) => {
-      const nextStep = config.has.registrationEnabled || tokenData ? 'signUp' : config.has.waitList ? 'waitList' : 'inviteOnly';
+      const nextStep = config.has.registrationEnabled || tokenData ? 'signUp' : config.has.waitlist ? 'waitlist' : 'inviteOnly';
       if (error.status === 404) return setStep(nextStep, form.getValues('email'), false);
     },
   });

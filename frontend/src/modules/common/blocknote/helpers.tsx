@@ -7,6 +7,7 @@ import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowe
 export const getSortedSlashMenuItems = (items: DefaultReactSuggestionItem[], allowedBlockTypes: (CellaCustomBlockTypes | BasicBlockTypes)[]) => {
   const indexedItems: readonly string[] = customSlashIndexedItems;
   const notIndexedItems: readonly string[] = customSlashNotIndexedItems;
+
   // Apply the filter to customSlashIndexedItems and customSlashNotIndexedItems
   const slashMenuIndexed = indexedItems.filter((i) => isAllowedSlashMenu(i, allowedBlockTypes));
   const slashMenuNotIndexed = notIndexedItems.filter((i) => isAllowedSlashMenu(i, allowedBlockTypes));

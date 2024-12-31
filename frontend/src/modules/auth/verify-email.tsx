@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { verifyEmail as baseVerifyEmail } from '~/api/auth';
 import { useMutation } from '~/hooks/use-mutations';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import AuthPage from '~/modules/auth/auth-page';
 import { Button } from '~/modules/ui/button';
 
@@ -25,7 +25,7 @@ const VerifyEmail = () => {
   });
 
   const resendEmail = () => {
-    if (!isOnline) return showToast(t('common:action.offline.text'), 'warning');
+    if (!isOnline) return createToast(t('common:action.offline.text'), 'warning');
     verifyEmail({ token, resend: true });
   };
 

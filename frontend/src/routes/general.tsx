@@ -1,27 +1,23 @@
 import * as Sentry from '@sentry/react';
 import { type QueryClient, onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
-
-import { Root } from '~/modules/common/root';
-
-import ErrorNotice from '~/modules/common/error-notice';
-
-import { queryClient } from '~/lib/router';
-import AcceptInvite from '~/modules/common/accept-invite';
-
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
 import { offlineFetch, onError } from '~/lib/query-client';
-import { Public } from '~/modules/common/public';
+import { queryClient } from '~/lib/router';
+import AcceptInvite from '~/modules/common/accept-invite';
+import ErrorNotice from '~/modules/common/error-notice';
+import { PublicLayout } from '~/modules/common/public-layout';
+import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
-import UnsubscribePage from '~/modules/common/unsubscribe-page';
-import { meQueryOptions, menuQueryOptions } from '~/modules/users/helpers/query-options';
+import UnsubscribePage from '~/modules/users/unsubscribe-page';
+import { meQueryOptions, menuQueryOptions } from '~/query/query-options';
 import { AuthRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { ErrorType } from '#/lib/errors';
 
 // Lazy load main App component, which is behind authentication
-const App = lazy(() => import('~/modules/common/main-app'));
+const AppLayout = lazy(() => import('~/modules/common/app-layout'));
 
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
@@ -33,7 +29,7 @@ export const PublicRoute = createRoute({
   id: 'public-layout',
   staticData: { pageTitle: '', isAuth: false },
   getParentRoute: () => rootRoute,
-  component: () => <Public />,
+  component: () => <PublicLayout />,
   beforeLoad: async ({ location, cause }) => {
     if (cause !== 'enter') return;
 
@@ -65,7 +61,7 @@ export const AppRoute = createRoute({
   getParentRoute: () => rootRoute,
   component: () => (
     <Suspense fallback={<Spinner className="h-10 w-10" />}>
-      <App />
+      <AppLayout />
     </Suspense>
   ),
   loader: async ({ location, cause }) => {

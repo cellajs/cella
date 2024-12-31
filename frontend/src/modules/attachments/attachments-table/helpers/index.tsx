@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { Suspense } from 'react';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useAttachmentCreateMutation } from '~/query/mutations/attachments';
@@ -24,7 +24,7 @@ export const formatBytes = (bytes: string): string => {
 
 // Open the upload dialog
 export const openUploadDialog = (organizationId: string) => {
-  if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
   const maxAttachmentsUpload = 20;
 

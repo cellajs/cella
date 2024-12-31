@@ -1,21 +1,21 @@
 import { Suspense, lazy, useRef, useState } from 'react';
 import type { z } from 'zod';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
+import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { getOrganizations } from '~/api/organizations';
 import useSearchParams from '~/hooks/use-search-params';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
-import { SheetNav } from '~/modules/common/sheet-nav';
+import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheet } from '~/modules/common/sheeter/state';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
+import OrganizationsNewsletterDraft from '~/modules/organizations/newsletter-draft';
+import OrganizationsNewsletterForm from '~/modules/organizations/newsletter-form';
 import { useColumns } from '~/modules/organizations/organizations-table/columns';
 import { OrganizationsTableHeader } from '~/modules/organizations/organizations-table/table-header';
-import NewsletterDraft from '~/modules/system/newsletter-draft';
-import OrganizationsNewsletterForm from '~/modules/system/organizations-newsletter-form';
 import { organizationsKeys } from '~/query/query-key-factories';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Organization } from '~/types/common';
@@ -60,7 +60,7 @@ const OrganizationsTable = () => {
       <DeleteOrganizations
         organizations={selected}
         callback={(organizations) => {
-          showToast(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
+          createToast(t('common:success.delete_resources', { resources: t('common:organizations') }), 'success');
           mutateQuery.remove(organizations);
         }}
         dialog
@@ -85,14 +85,14 @@ const OrganizationsTable = () => {
       {
         id: 'draft',
         label: 'common:draft',
-        element: <NewsletterDraft />,
+        element: <OrganizationsNewsletterDraft />,
       },
     ];
-    sheet.create(<SheetNav tabs={newsletterTabs} />, {
+    sheet.create(<SheetTabs tabs={newsletterTabs} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:newsletter'),
       description: t('common:newsletter.text'),
-      id: 'newsletter-form',
+      id: 'org-newsletter-form',
       scrollableOverlay: true,
       side: 'right',
     });

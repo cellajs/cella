@@ -5,7 +5,7 @@ import { Suspense, memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
 import { dispatchCustomEvent } from '~/lib/custom-events';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { dialog } from '~/modules/common/dialoger/state';
 import { Button } from '~/modules/ui/button';
 import { UploadType } from '~/types/common';
@@ -33,7 +33,7 @@ const PageCover = memo(({ type, id, canUpdate, url }: PageCoverProps) => {
 
   // Open the upload dialog
   const openUploadDialog = () => {
-    if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
     dialog(
       <Suspense>

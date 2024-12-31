@@ -3,9 +3,9 @@ import { Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ConfettiExplosion from '~/modules/common/confetti-explosion';
-import { SheetMenu } from '~/modules/common/nav-sheet/sheet-menu';
 import { sheet } from '~/modules/common/sheeter/state';
 import { onBoardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
+import { MenuSheet } from '~/modules/navigation/menu-sheet';
 import { useNavigationStore } from '~/store/navigation';
 
 export const OnboardingCompleted = () => {
@@ -27,7 +27,7 @@ export const OnboardingCompleted = () => {
     setSectionsDefault();
     setTimeout(
       () => {
-        sheet.create(<SheetMenu />, {
+        sheet.create(<MenuSheet />, {
           id: 'menu-nav',
           side: 'left',
           modal: false,

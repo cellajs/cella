@@ -5,7 +5,7 @@ import { i18n } from '~/lib/i18n';
 import router, { queryClient } from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
 import { useAlertStore } from '~/store/alert';
-import { showToast } from './toasts';
+import { createToast } from './toasts';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -38,8 +38,8 @@ export const onError = (error: Error) => {
           : fallback[statusCode as keyof typeof fallback];
 
     // Show toast
-    if (error.severity === 'info') showToast(errorMessage || error.message, 'info');
-    else showToast(errorMessage || error.message, 'error');
+    if (error.severity === 'info') createToast(errorMessage || error.message, 'info');
+    else createToast(errorMessage || error.message, 'error');
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {

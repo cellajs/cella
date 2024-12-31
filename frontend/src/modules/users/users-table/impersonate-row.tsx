@@ -7,7 +7,7 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { impersonationStart } from '~/api/auth';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { Button } from '~/modules/ui/button';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import { useUserStore } from '~/store/user';
@@ -30,7 +30,7 @@ const ImpersonateRow = ({ user, tabIndex }: Props) => {
       toast.success(t('common:success.impersonated'));
       navigate({ to: config.defaultRedirectPath, replace: true });
     } catch (error) {
-      showToast(t('common:error.impersonation_failed'), 'error');
+      createToast(t('common:error.impersonation_failed'), 'error');
       console.error(error);
     }
   };

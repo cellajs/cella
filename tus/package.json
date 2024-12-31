@@ -4,10 +4,10 @@
   "description": "TUS server to handle file uploading with imado",
   "type": "module",
   "scripts": {
-    "build": "NODE_ENV=production tsup",
-    "build:dev": "NODE_ENV=development tsup",
-    "start": "NODE_ENV=production tsx dist/index.js",
-    "dev": "NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.js\""
+    "build": "cross-env NODE_ENV=production tsup",
+    "build:dev": "cross-env NODE_ENV=development tsup",
+    "start": "cross-env NODE_ENV=production tsx dist/index.js",
+    "dev": "cross-env NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.js\""
   },
   "keywords": ["tus", "imado"],
   "author": "CellaJS <info@cellajs.com>",
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.7",
+    "cross-env": "^7.0.3",
     "tsup": "^8.2.4",
     "typescript": "^5.5.4"
   }

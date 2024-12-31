@@ -4,11 +4,11 @@ import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, upda
 import { config } from 'config';
 import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
+import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
 import { membersKeys } from '~/query/query-key-factories';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
 import type { Member, Membership } from '~/types/common';
-import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/utils/mutate-query';
 
 type MemberQueryData = QueryData<Member>;
 type InfiniteMemberQueryData = InfiniteQueryData<Member>;
@@ -41,7 +41,7 @@ const onError = (_: Error, __: UpdateMembershipProp & RemoveMembersProps, contex
 queryClient.setMutationDefaults(membersKeys.update(), {
   mutationFn: updateMembership,
   onSuccess: async (updatedMembership, { idOrSlug, entityType, orgIdOrSlug }) => {
-    const exactKey = membersKeys.list({ idOrSlug, entityType, orgIdOrSlug });
+    const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
     const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
 
     const queries = getQueries<Member>(exactKey, similarKey);
@@ -71,7 +71,7 @@ queryClient.setMutationDefaults(membersKeys.delete(), {
     const { ids, idOrSlug, entityType, orgIdOrSlug } = variables;
 
     const context: MemberContextProp[] = [];
-    const exactKey = membersKeys.list({ idOrSlug, entityType, orgIdOrSlug });
+    const exactKey = membersKeys.table({ idOrSlug, entityType, orgIdOrSlug });
     const similarKey = membersKeys.similar({ idOrSlug, entityType, orgIdOrSlug });
 
     const queries = await getCancelingRefetchQueries<Member>(exactKey, similarKey);
@@ -91,7 +91,7 @@ queryClient.setMutationDefaults(membersKeys.delete(), {
 
     return context;
   },
-  onSuccess: () => showToast(t('common:success.delete_members'), 'success'),
+  onSuccess: () => createToast(t('common:success.delete_members'), 'success'),
   onError,
 });
 

@@ -6,13 +6,12 @@ import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { queryClient } from '~/lib/router';
 import ErrorNotice from '~/modules/common/error-notice';
-import { organizationsQueryOptions } from '~/modules/organizations/organizations-table/helpers/query-options';
 import { requestsQueryOptions } from '~/modules/system/requests-table/helpers/query-options';
 import SystemPage from '~/modules/system/system-page';
-import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
+import { organizationsQueryOptions, usersQueryOptions } from '~/query/infinite-query-options';
+import { AppRoute } from '~/routes/general';
 import { noDirectAccess } from '~/utils/no-direct-access';
 import type { ErrorType } from '#/lib/errors';
-import { AppRoute } from './general';
 
 // Lazy-loaded route components
 const OrganizationsTable = lazy(() => import('~/modules/organizations/organizations-table'));

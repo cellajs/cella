@@ -20,7 +20,7 @@ import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
 import { queryClient } from '~/lib/router';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/language-selector';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
@@ -100,8 +100,8 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
       onSuccess: (updatedUser) => {
         if (isSelf) {
           updateUser(updatedUser);
-          showToast(t('common:success.profile_updated'), 'success');
-        } else showToast(t('common:success.update_item', { item: t('common:user') }), 'success');
+          createToast(t('common:success.profile_updated'), 'success');
+        } else createToast(t('common:success.update_item', { item: t('common:user') }), 'success');
         form.reset(updatedUser);
         if (isSheet) sheet.remove('update-user');
         nextStep?.();

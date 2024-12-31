@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import AttachmentsCarousel from '~/modules/attachments/carousel';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
 
@@ -12,7 +12,7 @@ export const openAttachmentDialog = (
   saveInSearchParams = false,
   dialogOptions?: Omit<DialogT, 'id'>,
 ) => {
-  if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+  if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
   const { title, removeCallback } = dialogOptions || {};
   dialog(

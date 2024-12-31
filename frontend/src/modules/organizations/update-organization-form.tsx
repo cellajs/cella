@@ -12,7 +12,7 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { queryClient } from '~/lib/router';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import DomainsFormField from '~/modules/common/form-fields/domains';
 import InputFormField from '~/modules/common/form-fields/input';
@@ -82,7 +82,7 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
       onSuccess: (updatedOrganization) => {
         if (isSheet) sheet.remove('update-organization');
         form.reset(updatedOrganization);
-        showToast(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
+        createToast(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
         callback?.(updatedOrganization);
       },
     });

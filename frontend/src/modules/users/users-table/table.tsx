@@ -4,13 +4,13 @@ import { updateUser } from '~/api/users';
 
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { useDataFromSuspenseInfiniteQuery } from '~/hooks/use-data-from-query';
-import { useMutateQueryData } from '~/hooks/use-mutate-query-data';
 import { useMutation } from '~/hooks/use-mutations';
-import { showToast } from '~/lib/toasts';
+import { createToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import type { UsersSearch } from '~/modules/users/users-table';
-import { usersQueryOptions } from '~/modules/users/users-table/helpers/query-options';
+import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
+import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
+import { usersQueryOptions } from '~/query/infinite-query-options';
 import { usersKeys } from '~/query/query-key-factories';
 import type { BaseTableMethods, BaseTableProps, User } from '~/types/common';
 
@@ -36,14 +36,14 @@ const BaseDataTable = memo(
       mutationFn: async (user: User) => await updateUser(user.id, { role: user.role }),
       onSuccess: (updatedUser) => {
         mutateQuery.update([updatedUser]);
-        showToast(t('common:success.update_item', { item: t('common:role') }), 'success');
+        createToast(t('common:success.update_item', { item: t('common:role') }), 'success');
       },
-      onError: () => showToast('Error updating role', 'error'),
+      onError: () => createToast('Error updating role', 'error'),
     });
 
     // Update user role
     const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
-      if (!onlineManager.isOnline()) return showToast(t('common:action.offline.text'), 'warning');
+      if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
       for (const index of indexes) if (column.key === 'role') updateUserRole(changedRows[index]);
       setRows(changedRows);
     };

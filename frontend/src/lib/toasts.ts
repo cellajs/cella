@@ -2,7 +2,7 @@ import { toast } from 'sonner';
 
 const toastMap = new Map<string, string | number>();
 
-export const showToast = (
+export const createToast = (
   text: string,
   type: 'success' | 'error' | 'info' | 'warning' | 'default' = 'default',
   options: { id?: number | string } = {},

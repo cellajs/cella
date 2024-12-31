@@ -4,11 +4,10 @@ import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
-import { attachmentsQueryOptions } from '~/modules/attachments/attachments-table/helpers/query-options';
 import ErrorNotice from '~/modules/common/error-notice';
-import { membersQueryOptions } from '~/modules/organizations/members-table/helpers/query-options';
-import { organizationQueryOptions } from '~/modules/organizations/organization-page';
 import { baseEntityRoutes } from '~/nav-config';
+import { attachmentsQueryOptions, membersQueryOptions } from '~/query/infinite-query-options';
+import { organizationQueryOptions } from '~/query/query-options';
 import { AppRoute } from '~/routes/general';
 import type { Organization as OrganizationType } from '~/types/common';
 import { noDirectAccess } from '~/utils/no-direct-access';
@@ -17,7 +16,7 @@ import { attachmentsQuerySchema } from '#/modules/attachments/schema';
 
 //Lazy-loaded components
 const OrganizationPage = lazy(() => import('~/modules/organizations/organization-page'));
-const OrgMembersTable = lazy(() => import('~/modules/organizations/members-table/organization-members-table'));
+const OrgMembersTable = lazy(() => import('~/modules/organizations/organization-members-table'));
 const AttachmentsTable = lazy(() => import('~/modules/attachments/attachments-table'));
 const OrganizationSettings = lazy(() => import('~/modules/organizations/organization-settings'));
 
