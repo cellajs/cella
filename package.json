@@ -17,7 +17,7 @@
   },
   "scripts": {
     "prepare": "node prepare.js",
-    "quick": "pnpm --filter backend run quick & turbo dev --filter frontend --filter tus",
+    "quick": "concurrently \"pnpm --filter backend run quick\"  \"turbo dev --filter frontend --filter tus\"",
     "docker": "pnpm --filter backend run docker:up --detach",
     "generate": "pnpm --filter backend run generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
@@ -42,7 +42,8 @@
     "tsx": "^4.19.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "concurrently": "^9.1.2"
   },
   "packageManager": "pnpm@9.1.2",
   "dependencies": {
