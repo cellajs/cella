@@ -22,13 +22,15 @@ interface MenuSheetSectionProps {
 
 export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, createForm }: MenuSheetSectionProps) => {
   const { t } = useTranslation();
-  const activeSections = useNavigationStore((state) => state.activeSections);
   const isMobile = useBreakpoints('max', 'sm');
+  const toggleSection = useNavigationStore((state) => state.toggleSection);
+  const activeSections = useNavigationStore((state) => state.activeSections);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [isArchivedVisible, setArchivedVisible] = useState(false);
 
-  const isSectionVisible = activeSections?.[sectionType] !== undefined ? activeSections[sectionType] : true;
+  const archivedSectionType = `${sectionType}-archived`;
+  const isArchivedVisible = activeSections?.[archivedSectionType] ?? true;
+  const isSectionVisible = activeSections?.[sectionType] ?? true;
 
   const createDialog = () => {
     if (isMobile) sheet.remove('nav-sheet');
@@ -45,9 +47,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
     setIsEditing(!isEditing);
   };
 
-  const archiveToggleClick = () => {
-    setArchivedVisible(!isArchivedVisible);
-  };
+  const archiveToggleClick = () => toggleSection(archivedSectionType);
 
   return (
     <div className="group/menuSection" data-visible={isSectionVisible}>
