@@ -61,17 +61,13 @@ export const MenuSheetItem = ({ item, className, searchResults }: MenuSheetItemP
         >
           {item.name}
         </div>
-        <div
-          className="text-muted-foreground text-sm font-light
-          group-data-[subitem=true]/menuItem:sm:text-xs
-          "
-        >
+        <div className="text-muted-foreground text-sm font-light group-data-[subitem=true]/menuItem:sm:text-xs">
           {searchResults && (
             <span className="absolute transition-opacity duration-200 delay-200 ease-in-out sm:group-hover/menuItem:opacity-0">
               {t(`app:${item.entity}`)}
             </span>
           )}
-          <span className="opacity-0 transition-opacity duration-200 ease-in-out group-hover/menuItem:delay-300 group-hover/menuItem:sm:opacity-100">
+          <span className="absolute opacity-0 transition-opacity duration-200 ease-in-out group-hover/menuItem:delay-300 group-hover/menuItem:sm:opacity-100">
             {item.submenu?.length
               ? `${item.submenu?.length} ${t(`app:${item.submenu?.length > 1 ? `${item.submenu[0].entity}s` : item.submenu[0].entity}`).toLowerCase()}`
               : item.membership.role

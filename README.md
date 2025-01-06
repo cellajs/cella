@@ -18,7 +18,7 @@
 <p>
 	<h1><b>Cella</b></h1>
 <p>
-    <b>Single stack TypeScript template to build SaaS with sync & offline capabilities.</b>
+    <b>Single stack TypeScript template to build powerful web apps using sync & offline capabilities.</b>
     <br />
     <br />
     <a href="https://cellajs.com">Website</a>
@@ -48,7 +48,7 @@
 <br>
 
 ## Create your own app
-Want to use cella to build your next web app? We made it simple using a short create CLI:
+Want to use cella to build your new web app? We made it simple using a short create CLI:
 
 ```bash
 pnpm create @cellajs/cella@latest
@@ -64,7 +64,7 @@ You now have an implementation-ready web app. 🤯! But ... without any unique f
 
 
 ## Installation
-For those that want to participate in development:
+For those that (also) want to participate in development:
 
 ```bash
 git clone git@github.com:cellajs/cella.git && cd cella
@@ -77,7 +77,7 @@ pnpm install && pnpm quick
 ```
 
 ### B. Full setup
-For a full setup - with Postgres instead of pglite - you need Docker. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
+For a full setup with sync capabilityies, you need Docker. It will allow you to run Postgres instead of pglite and it will also run electric-sync. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
 pnpm install

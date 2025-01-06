@@ -4,7 +4,7 @@
   "private": false,
   "license": "MIT",
   "repository": "https://github.com/cellajs/cella",
-  "description": "Intuivive TypeScript template to build local-first web apps. Implementation-ready. MIT license.",
+  "description": "Cella is a TypeScript template to create web apps with sync and offline capabilities.",
   "keywords": ["template", "monorepo", "fullstack", "typescript", "hono", "drizzle", "shadcn", "postgres", "react", "vite", "pwa"],
   "author": "CellaJS <info@cellajs.com>",
   "homepage": "https://cellajs.com",
@@ -17,7 +17,7 @@
   },
   "scripts": {
     "prepare": "node prepare.js",
-    "quick": "concurrently \"pnpm --filter backend run quick\"  \"turbo dev --filter frontend --filter tus\"",
+    "quick": "concurrently -r \"pnpm --filter backend run quick\"  \"turbo dev --filter frontend --filter tus\"",
     "docker": "pnpm --filter backend run docker:up --detach",
     "generate": "pnpm --filter backend run generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",

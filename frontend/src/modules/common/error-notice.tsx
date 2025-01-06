@@ -19,7 +19,10 @@ interface ErrorNoticeProps {
 const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, isRootLevel }) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
+  const { error: errorFromQuery, errorDescription, severity: severityFromQuery } = location.search;
+
   const dateNow = new Date().toUTCString();
+  const severity = error?.severity || severityFromQuery;
 
   const [showError, setShowError] = useState(false);
 
@@ -45,28 +48,41 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
     }
     window.Gleap.openConversations();
   };
+
+  const getErrorTitle = () => {
+    // Check if the error has an entityType
+    if (error?.entityType) return t(`common:error.resource_${error.type}`, { resource: t(error.entityType) });
+    // If no entityType, check if the error has a type
+    if (error?.type) return t(`common:error.${error.type}`);
+
+    if (error?.message) return error.message;
+    if (errorFromQuery) return errorFromQuery;
+    // Default error message if none of the above conditions are met
+    return t('common:error.error');
+  };
+
+  const getErrorDescription = () => {
+    // Check if the error has an entityType
+    if (error?.entityType) return t(`common:error.resource_${error.type}.text`, { resource: error.entityType });
+    // If no entityType, check if error has a type
+    if (error?.type) return t(`common:error.${error.type}.text`);
+
+    if (error?.message) return error?.message;
+    if (errorDescription) return errorDescription;
+    // Fallback to a generic message if none of the above match
+    return t('common:error.reported_try_or_contact');
+  };
+
   return (
     <div className="container flex flex-col min-h-[calc(100vh-20rem)] items-center">
       <div className="mt-auto mb-auto">
         <Card className="max-w-[36rem] m-4">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl mb-2">
-              {error?.entityType
-                ? t(`common:error.resource_${error.type}`, { resource: t(error.entityType) })
-                : error?.type
-                  ? t(`common:error.${error.type}`)
-                  : error?.message || t('common:error.error')}
-            </CardTitle>
+            <CardTitle className="text-2xl mb-2">{getErrorTitle()}</CardTitle>
             <CardDescription>
-              <span>
-                {error?.entityType
-                  ? t(`common:error.resource_${error.type}.text`, { resource: error.entityType })
-                  : error?.type
-                    ? t(`common:error.${error.type}.text`)
-                    : error?.message || t('common:error.reported_try_or_contact')}
-              </span>
-              <span className="ml-1">{error?.severity && error.severity === 'warn' && t('common:error.contact_mistake')}</span>
-              <span className="ml-1">{error?.severity && error.severity === 'error' && t('common:error.try_again_later')}</span>
+              <span>{getErrorDescription()}</span>
+              <span className="ml-1">{severity === 'warn' && t('common:error.contact_mistake')}</span>
+              <span className="ml-1">{severity === 'error' && t('common:error.try_again_later')}</span>
             </CardDescription>
           </CardHeader>
           {error && (
@@ -112,7 +128,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
                 {t('common:reload')}
               </Button>
             )}
-            {error?.severity && ['warn', 'error'].includes(error.severity) && (
+            {severity && ['warn', 'error'].includes(severity) && (
               <Button variant="plain" onClick={handleAskForHelp}>
                 <MessageCircleQuestion size={16} className="mr-1" />
                 {t('common:ask_for_help')}

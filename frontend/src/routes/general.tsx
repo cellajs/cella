@@ -3,6 +3,7 @@ import { type QueryClient, onlineManager } from '@tanstack/react-query';
 import { createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { Suspense, lazy } from 'react';
+import { z } from 'zod';
 import { offlineFetch, onError } from '~/lib/query-client';
 import { queryClient } from '~/lib/router';
 import AcceptInvite from '~/modules/common/accept-invite';
@@ -18,6 +19,12 @@ import type { ErrorType } from '#/lib/errors';
 
 // Lazy load main App component, which is behind authentication
 const AppLayout = lazy(() => import('~/modules/common/app-layout'));
+
+const errorSearchSchema = z.object({
+  error: z.string().optional(),
+  errorDescription: z.string().optional(),
+  severity: z.enum(['warn', 'error']).optional(),
+});
 
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
@@ -97,6 +104,7 @@ export const AppRoute = createRoute({
 
 export const ErrorNoticeRoute = createRoute({
   path: '/error',
+  validateSearch: errorSearchSchema,
   staticData: { pageTitle: 'Error', isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <ErrorNotice />,
