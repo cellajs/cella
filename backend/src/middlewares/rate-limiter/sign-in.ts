@@ -48,7 +48,7 @@ export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next)
   }
   await limiterSlowBruteByIP.consume(ipAddr);
   await next();
-  if (ctx.res.status === 401) {
+  if ([401, 403, 404].includes(ctx.res.status)) {
     try {
       await limiterConsecutiveFailsByUsernameAndIP.consume(usernameIPkey);
     } catch (error) {
