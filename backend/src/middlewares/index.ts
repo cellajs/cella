@@ -8,7 +8,7 @@ import { observatoryMiddleware } from '#/middlewares/observatory/';
 import { CustomHono } from '#/types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
-import { rateLimiter } from './rate-limiter';
+import { commonLimiter } from './rate-limiter';
 
 const app = new CustomHono();
 
@@ -43,7 +43,7 @@ app.use('*', cors(corsOptions));
 app.use('*', csrf({ origin: config.frontendUrl }));
 
 // Rate limiter
-app.use('*', rateLimiter({ points: 50, duration: 60 * 60, blockDuration: 60 * 30, keyPrefix: 'common_fail' }, 'fail'));
+app.use('*', commonLimiter);
 
 // Compress with gzip
 // Apply gzip compression only to GET requests

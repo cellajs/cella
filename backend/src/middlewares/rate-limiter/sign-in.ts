@@ -1,9 +1,8 @@
 import type { MiddlewareHandler } from 'hono';
 import { errorResponse } from '#/lib/errors';
+import { getRateLimiterInstance, getUsernameIPkey } from '#/middlewares/rate-limiter/helpers';
 import type { Env } from '#/types/app';
 import { getIp } from '#/utils/get-ip';
-import { getRateLimiterInstance } from '.';
-const getUsernameIPkey = (username?: string, ip?: string) => `${username}_${ip}`;
 
 // Sign in rate limiter
 const maxWrongAttemptsByIPperDay = 100;

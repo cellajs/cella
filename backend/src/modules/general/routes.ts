@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
-import { rateLimiter, tokenRateLimiter } from '#/middlewares/rate-limiter';
+import { inviteLimiter, tokenRateLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
@@ -124,8 +124,7 @@ class GeneralRoutesConfig {
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, systemGuard],
-    // Rate limit for 10 requests per hour to prevent users sending too many invites
-    middleware: [rateLimiter({ points: 10, duration: 60 * 60, blockDuration: 60 * 10, keyPrefix: 'invite_success' }, 'success')],
+    middleware: [inviteLimiter],
     tags: ['general'],
     summary: 'Invite to system',
     description: 'Invite one or more users to system by email address.',
