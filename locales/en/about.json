@@ -66,7 +66,7 @@
   "hero.subtitle": "Offline, instant feedback & realtime data.",
   "hero.text": "Build your new web app with sync engine as part of a single stack community. Cella is fully open source. ",
   "text_2": "Not another framework. A TypeScript template that puts great libraries first.",
-  "text_3": "Best-in-class OS libraries that fit well together. Each with proper documentation.",
+  "text_3": "Best-in-class OS libraries that work well together.",
   "text_4": "Powerful - yet optional - integrations so you can focus on customer needs.",
   "text_5": "Cella is open source and wants to work together with other OS projects & teams.",
   "text_6": "How to build a dedicated & sustainable community around CellaJS? Membership perhaps.",
@@ -78,11 +78,11 @@
   "title_6": "Pricing (conceptual)",
   "title_7": "FAQs",
   "why": "Read why we built Cella",
-  "why.text_1": "Single stack makes it easier to collaborate across teams on challenging and costly requirements in your stack.",
+  "why.text_1": "A strictly defined stack makes it easier to collaborate across teams on challenging and time-consuming requirements.",
   "why.text_2": "Generic OpenAPI for authentication, organizations and users. A configurable authorization manager is included.",
-  "why.text_3": "A bounty program and fund will help an experienced, small community of builders and Cella itself.",
+  "why.text_3": "Rely on a proven CRUD API which can - where its required - be upgraded using sync streams and offline caching.",
   "why.title_1": "Single stack",
   "why.title_2": "Prebuilt endpoints",
-  "why.title_3": "Dedicated community",
+  "why.title_3": "Hybrid approach",
   "prerelease": "Prerelease"
 }
