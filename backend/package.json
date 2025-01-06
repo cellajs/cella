@@ -8,7 +8,7 @@
   "scripts": {
     "quick": "cross-env PGLITE=true tsx scripts/quick.ts && cross-env PGLITE=true pnpm dev",
     "start": "tsx dist/index.js",
-    "dev": "concurrently \"pnpm run studio\" \"tsup --watch --onSuccess \\\"tsx dist/index.js\\\"\"",
+    "dev": "concurrently -r \"pnpm run studio\" \"tsup --watch --onSuccess 'tsx dist/index.js'\"",
     "check:types": "tsc",
     "build": "cross-env NODE_ENV=production tsup",
     "build:dev": "tsup",
