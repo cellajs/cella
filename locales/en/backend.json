@@ -39,5 +39,7 @@
   "invalid.name": "Name may only contain letters, numbers, spaces and these characters: ,.'-",
   "invalid.slug": "Slug may only contain alphanumeric characters or up to three hyphens, and cannot begin or end with a hyphen.",
   "invalid.url": "URL must start with https://",
-  "required": "This field is required."
+  "required": "This field is required.",
+  "error.link_account": "Not allowed.",
+  "error.link_account.text": "This {{service}} account is already linked to a different user. Please use another {{service}} account or unlink it from the previous user."
 }

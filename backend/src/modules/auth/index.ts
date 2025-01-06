@@ -18,6 +18,7 @@ import { createSession, findOauthAccount, getRedirectUrl, slugFromEmail, splitFu
 
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
+import { t } from 'i18next';
 import type { z } from 'zod';
 import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
@@ -465,11 +466,10 @@ const authRoutes = app
    * Github authentication callback
    */
   .openapi(authRoutesConfig.githubSignInCallback, async (ctx) => {
-    const { code, state, error } = ctx.req.valid('query');
+    const { code, state, error, error_description } = ctx.req.valid('query');
 
     // redirect if there is no code or error in callback
-    if (error || !code) return ctx.redirect(config.frontendUrl + config.defaultRedirectPath, 302);
-
+    if (error || !code) return ctx.redirect(`${config.frontendUrl}/error?error=${error}&errorDescription=${error_description}&severity=error`, 302);
     const strategy = 'github' as EnabledOauthProviderOptions;
 
     if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
@@ -532,9 +532,11 @@ const authRoutes = app
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
       if (existingOauthAccount) {
-        // TODO: maybe create and /error route in FE so we can show the errors from here
-        // redirect home if github already assigned to some user
-        if (userId && existingOauthAccount.userId !== userId) return ctx.redirect(`${config.frontendUrl}/user/settings`, 302);
+        if (userId && existingOauthAccount.userId !== userId)
+          return ctx.redirect(
+            `${config.frontendUrl}/error?error=${t('backend:error.link_account')}&errorDescription=${t('backend:error.link_account.text', { service: 'Github' })}&severity=warn`,
+            302,
+          );
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -688,7 +690,11 @@ const authRoutes = app
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
         // redirect home if google already assigned to some user
-        if (userId && existingOauthAccount.userId !== userId) return ctx.redirect(`${config.frontendUrl}/user/settings`, 302);
+        if (userId && existingOauthAccount.userId !== userId)
+          return ctx.redirect(
+            `${config.frontendUrl}/error?error=${t('backend:error.link_account')}&errorDescription=${t('backend:error.link_account.text', { service: 'Google' })}&severity=warn`,
+            302,
+          );
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -818,7 +824,11 @@ const authRoutes = app
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
         // redirect home if google already assigned to some user
-        if (userId && existingOauthAccount.userId !== userId) return ctx.redirect(`${config.frontendUrl}/user/settings`, 302);
+        if (userId && existingOauthAccount.userId !== userId)
+          return ctx.redirect(
+            `${config.frontendUrl}/error?error=${t('backend:error.link_account')}&errorDescription=${t('backend:error.link_account.text', { service: 'Microsoft' })}&severity=warn`,
+            302,
+          );
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
