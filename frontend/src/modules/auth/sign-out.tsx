@@ -1,9 +1,9 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { signOut } from '~/api/auth';
 import { queryClient } from '~/lib/router';
 import { createToast } from '~/lib/toasts';
+import { signOut } from '~/modules/auth/api';
 import { useDraftStore } from '~/store/draft';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';

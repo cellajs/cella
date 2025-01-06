@@ -3,7 +3,7 @@ import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type UpdateOrganizationParams, updateOrganization } from '~/api/organizations';
+import { type UpdateOrganizationParams, updateOrganization } from '~/modules/organizations/api';
 import type { Organization } from '~/types/common';
 
 import { config } from 'config';
@@ -22,9 +22,9 @@ import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
+import { organizationsKeys } from '~/modules/organizations/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import { organizationsKeys } from '~/query/query-key-factories';
 import { cleanUrl } from '~/utils/clean-url';
 
 interface Props {

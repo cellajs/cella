@@ -1,7 +1,7 @@
 import { useParams } from '@tanstack/react-router';
 import { queryClient } from '~/lib/router';
 import MembersTable from '~/modules/memberships/members-table/';
-import { organizationsKeys } from '~/query/query-key-factories';
+import { organizationsKeys } from '~/modules/organizations/query';
 import { OrganizationMembersRoute } from '~/routes/organizations';
 import type { Organization } from '~/types/common';
 

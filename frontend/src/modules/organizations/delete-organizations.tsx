@@ -1,4 +1,4 @@
-import { deleteOrganizations as baseDeleteOrganizations } from '~/api/organizations';
+import { deleteOrganizations as baseDeleteOrganizations } from '~/modules/organizations/api';
 import type { Organization } from '~/types/common';
 
 import { useMutation } from '~/hooks/use-mutations';
@@ -6,7 +6,7 @@ import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { organizationsKeys } from '~/query/query-key-factories';
+import { organizationsKeys } from '~/modules/organizations/query';
 
 interface Props {
   organizations: Organization[];

@@ -4,17 +4,17 @@ import { useQuery } from '@tanstack/react-query';
 import { config } from 'config';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getSuggestions } from '~/api/general';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
+import { getSuggestions } from '~/modules/general/api';
+import { searchKeys } from '~/modules/general/query';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { searchKeys } from '~/query/query-key-factories';
 
 export function QueryCombobox({ onChange, value }: { value: string[]; onChange: (items: string[]) => void }) {
   const { t } = useTranslation();

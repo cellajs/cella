@@ -7,16 +7,16 @@ import { History, Search, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { getSuggestions } from '~/api/general';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dialog } from '~/modules/common/dialoger/state';
 import StickyBox from '~/modules/common/sticky-box';
+import { getSuggestions } from '~/modules/general/api';
+import { searchKeys } from '~/modules/general/query';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute, suggestionSections } from '~/nav-config';
-import { searchKeys } from '~/query/query-key-factories';
 import { useNavigationStore } from '~/store/navigation';
 
 export type SuggestionType = z.infer<typeof entitySuggestionSchema>;

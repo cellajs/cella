@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { type InviteMemberProps, inviteMembers } from '~/api/memberships';
+import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 
 import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';

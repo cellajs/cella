@@ -7,8 +7,7 @@ import type { z } from 'zod';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import type { User } from '~/types/common';
 
-import { updateSelf } from '~/api/me';
-import { type UpdateUserParams, updateUser } from '~/api/users';
+import { type UpdateUserParams, updateSelf, updateUser } from '~/modules/users/api';
 
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -27,7 +26,7 @@ import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { meKeys, usersKeys } from '~/query/query-key-factories';
+import { meKeys, usersKeys } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
 
