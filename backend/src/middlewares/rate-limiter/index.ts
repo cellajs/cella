@@ -84,8 +84,8 @@ export const inviteLimiter = rateLimiterMiddleware.call(
 
 // Basic Rate limiter for add BE routes
 export const commonLimiter = rateLimiterMiddleware.call(
-  getRateLimiterInstance({ ...defaultOptions, points: 5, blockDuration: 60 * 30, keyPrefix: 'common_fail' }),
-  'success',
+  getRateLimiterInstance({ ...defaultOptions, points: 50, blockDuration: 60 * 30, keyPrefix: 'common_fail' }),
+  'fail',
 );
 
 // TODO: this is not very useful, we need to be able to specify the key we will use for counting the rate limit
