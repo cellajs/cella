@@ -2,7 +2,6 @@ import type { Context, Next } from 'hono';
 import { getContextUser, getMemberships } from '#/lib/context';
 export { isAuthenticated } from './is-authenticated';
 
-import { getConnInfo } from '@hono/node-server/conninfo';
 import { every } from 'hono/combine';
 import { ipRestriction } from 'hono/ip-restriction';
 import { errorResponse } from '#/lib/errors';
@@ -10,6 +9,7 @@ import { errorResponse } from '#/lib/errors';
 import { eq, or } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { organizationsTable } from '#/db/schema/organizations';
+import { getIp } from '#/utils/get-ip';
 import { env } from './../../../env';
 
 const allowList = env.REMOTE_SYSTEM_ACCESS_IP.split(',') || [];
@@ -27,7 +27,7 @@ export async function isSystemAdmin(ctx: Context, next: Next): Promise<Response 
 // Combine system admin check with IP restriction.
 export const systemGuard = every(
   isSystemAdmin,
-  ipRestriction(getConnInfo, { allowList }, async (_, c) => {
+  ipRestriction(getIp, { allowList }, async (_, c) => {
     return errorResponse(c, 422, 'forbidden', 'warn', undefined);
   }),
 );
