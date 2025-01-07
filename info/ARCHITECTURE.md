@@ -30,7 +30,7 @@ This document describes the high-level architecture of Cella.
 
 ### Build tools
 - [Vite](https://vitejs.dev) + [Vite-PWA](https://github.com/antfu/vite-plugin-pwa)
-- [Turborepo](https://turborepo.dev) + [pnpm](https://pnpm.io)
+- [pnpm](https://pnpm.io)
 - [Biome](https://biomejs.dev)
 - [Lefthook](https://github.com/evilmartians/lefthook)
 
