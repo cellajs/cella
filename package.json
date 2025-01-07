@@ -17,11 +17,11 @@
   },
   "scripts": {
     "prepare": "node prepare.js",
-    "quick": "FORCE_COLOR=1 pnpm --filter backend quick & pnpm --filter frontend --filter tus dev",
+    "quick": "cross-env FORCE_COLOR=1 pnpm -r --parallel --stream  quick",
     "docker": "pnpm --filter backend docker:up --detach",
     "generate": "pnpm --filter backend generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
-    "dev": "pnpm clean && FORCE_COLOR=1 pnpm -r --parallel --stream dev",
+    "dev": "pnpm clean && cross-env FORCE_COLOR=1 pnpm -r --parallel --stream dev",
     "seed": "pnpm --filter backend seed",
     "check": "pnpm dlx @biomejs/biome check .",
     "check:types": "pnpm -r --parallel check:types",
@@ -41,8 +41,7 @@
     "rimraf": "^6.0.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
-    "concurrently": "^9.1.2"
+    "vitest": "^2.1.8"
   },
   "packageManager": "pnpm@9.1.2",
   "dependencies": {
