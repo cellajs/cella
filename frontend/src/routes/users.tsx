@@ -29,7 +29,7 @@ export const UserProfileRoute = createRoute({
 });
 
 export const UserSettingsRoute = createRoute({
-  path: '/user/settings',
+  path: '/settings',
   staticData: { pageTitle: 'Settings', isAuth: true },
   getParentRoute: () => AppRoute,
   component: () => (

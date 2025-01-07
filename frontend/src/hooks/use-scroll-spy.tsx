@@ -1,131 +1,93 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const useScrollSpy = ({ sectionIds = [], autoUpdateHash }: { sectionIds: string[]; autoUpdateHash?: boolean }) => {
+type IntersectionEntry = {
+  id: string;
+  ratio: number;
+};
+
+export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
   const observer = useRef<IntersectionObserver | null>(null);
 
-  // Maintain a list of intersecting section ids
-  const intersectingIdsRef = useRef<string[]>([]);
+  // Maintain entries in a ref to avoid triggering re-renders
+  const entriesRef = useRef<IntersectionEntry[]>(sectionIds.map((id) => ({ id, ratio: 0 }))); // Map to store id -> intersectionRatio
 
-  // Maintain scroll direction
-  const scrollDirectionRef = useRef<'down' | 'up'>('down');
-
-  const [activeHash, setActiveHash] = useState<string>(sectionIds[0]);
+  // Current section is state since it's used for rendering
+  const [currentSection, setCurrentSection] = useState<string>(sectionIds[0] || '');
 
   useEffect(() => {
-    // Initial mounting: scroll to the hash location
-    const locationHash = location.hash.replace('#', '');
+    if (!sectionIds.length) return;
 
-    if (sectionIds.includes(locationHash) && locationHash !== sectionIds[0]) {
-      const element = document.getElementById(locationHash);
-      if (!element) return;
-      element.scrollIntoView();
+    // Handle hash scroll on mount
+    const hash = location.hash.replace('#', '');
+    if (hash && sectionIds.includes(hash)) {
+      const element = document.getElementById(hash);
+      if (element) element.scrollIntoView();
     }
-    document.documentElement.classList.add('scroll-smooth');
 
+    document.documentElement.classList.add('scroll-smooth');
     return () => document.documentElement.classList.remove('scroll-smooth');
   }, []);
 
   useEffect(() => {
     const options: IntersectionObserverInit = {
       root: null,
-      rootMargin: '-10% 0% -10% 0%',
-      threshold: [0.1, 1],
+      rootMargin: '0% 0% 0% 0%',
+      threshold: [0, 1],
     };
 
-    if (!autoUpdateHash) return;
-
-    // Ensure observer is created only once
-    if (!observer.current) {
-      observer.current = new IntersectionObserver((entries) => {
-        for (let i = 0; i < entries.length; i++) {
-          const entry = entries[i];
-
-          const id = entry.target.id;
-          const currentIntersectingIds: string[] = intersectingIdsRef.current;
-          const index = currentIntersectingIds.indexOf(id);
-
-          if (entry.isIntersecting) {
-            if (entry.target.id === sectionIds[sectionIds.length - 1] && entry.intersectionRatio === 1)
-              return setActiveHash(sectionIds[sectionIds.length - 1]);
-            // Is intersecting and not yet in array
-            if (index === -1) {
-              // console.log('entering', entry.target.id, index, intersectingIdsRef.current);
-              // Use boundingClientRect to determine scroll direction
-              scrollDirectionRef.current = entry.boundingClientRect.top < 0 ? 'up' : 'down';
-
-              // Add to array
-              intersectingIdsRef.current = [...currentIntersectingIds, id];
-            }
-          } else {
-            // No longer intersecting and still in array
-            if (index !== -1) {
-              // console.log('leaving', entry.target.id, index, intersectingIdsRef.current.length);
-              // Use boundingClientRect to determine scroll direction
-              scrollDirectionRef.current = entry.boundingClientRect.top < 0 ? 'down' : 'up';
-
-              // Remove from array
-              intersectingIdsRef.current = currentIntersectingIds.filter((currentId) => currentId !== id);
-            }
-          }
-        }
-
-        // console.log(entries);
-
-        // Get the current hash and index
-        // const currentHash = location.hash.replace('#', '');
-        // const currentHashIndex = currentHash ? sectionIds.indexOf(currentHash) : 0;
-
-        // Sorted array of intersecting sections
-        const intersecting = intersectingIdsRef.current.sort((a, b) => sectionIds.indexOf(a) - sectionIds.indexOf(b));
-
-        let mainSection = intersecting[0];
-
-        // If two intersecting, we should limit our scope to the one on top of our scroll direction
-        if (intersecting.length === 2 && scrollDirectionRef.current === 'down') mainSection = intersecting[intersecting.length - 1];
-
-        const fullyIntersecting = intersecting.slice(1, -1);
-
-        // If three or more intersecting, we should limit our scope to fully intersecting sections
-        if (intersecting.length > 2) {
-          mainSection = scrollDirectionRef.current === 'down' ? fullyIntersecting[fullyIntersecting.length - 1] : fullyIntersecting[0];
-        }
-
-        // const mainSectionIndex = sectionIds.indexOf(mainSection);
-        // console.log(
-        //   fullyIntersecting,
-        //   fullyIntersecting.length,
-        //   Math.floor(fullyIntersecting.length / 2),
-        //   scrollDirectionRef.current,
-        //   intersectingIdsRef.current,
-        //   currentHashIndex,
-        //   mainSection,
-        //   mainSectionIndex,
-        // );
-
-        // Update the active hash
-        // console.log('MAINS', mainSection, activeHash)
-        setActiveHash(mainSection);
-
-        // if (
-        //   // User scrolls down and the main intersecting section is above the hash location section
-        //   (scrollDirectionRef.current === 'down' && mainSectionIndex > currentHashIndex) ||
-        //   // User scrolls up and the main intersecting section is below the hash location section AND current section is NOT the top section
-        //   (scrollDirectionRef.current === 'up' && mainSectionIndex < currentHashIndex)
-        // ) {
-        //   return navigate({ search: {section: mainSection}, replace: true });
-      }, options);
+    if (observer.current) {
+      observer.current.disconnect(); // Reset observer
     }
 
-    for (let i = 0; i < sectionIds.length; i++) {
-      const id = sectionIds[i];
-      const section = document.getElementById(id);
-      if (section) observer.current?.observe(section);
-    }
+    observer.current = new IntersectionObserver((observedEntries) => {
+      // Update entries in the ref
+      // biome-ignore lint/complexity/noForEach: <explanation>
+      observedEntries.forEach((entry) => {
+        const id = entry.target.id.replace('-anchor-wrap', '');
+        if (id) {
+          entriesRef.current.map((e) => {
+            if (e.id === id) e.ratio = entry.intersectionRatio;
+            return e;
+          });
+        }
+      });
+
+      // Determine the new current section
+      const entriesArray = entriesRef.current;
+      const fullyIntersecting = entriesArray.filter(({ ratio }) => ratio === 1);
+
+      let newSection = entriesArray.find(({ id }) => id === currentSection);
+
+      // If exactly one fully intersects, use that one
+      if (fullyIntersecting.length === 1) {
+        newSection = fullyIntersecting[0];
+
+        // If more than one fully intersects
+      } else if (fullyIntersecting.length > 1) {
+        newSection = fullyIntersecting[0]; // First one if scrolling up
+
+        // If none fully intersect, use highest ratio
+      } else if (entriesArray.find(({ ratio }) => ratio > 0)) {
+        const mostProminent = entriesArray.reduce((prev, curr) => (curr.ratio > prev.ratio ? curr : prev));
+        newSection = mostProminent;
+      }
+
+      // Update state only if section changes
+      if (newSection && newSection.id !== currentSection) {
+        setCurrentSection(newSection.id);
+      }
+    }, options);
+
+    // biome-ignore lint/complexity/noForEach: <explanation>
+    sectionIds.forEach((id) => {
+      const element = document.getElementById(`${id}-anchor-wrap`);
+      if (element) observer.current?.observe(element);
+    });
 
     return () => {
       observer.current?.disconnect();
     };
   }, [sectionIds]);
 
-  return { activeHash };
+  return { currentSection };
 };

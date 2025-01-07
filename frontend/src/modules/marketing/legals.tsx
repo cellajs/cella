@@ -13,7 +13,7 @@ export type LegalTypes = 'privacy' | 'terms';
 
 const Legal = ({ type }: { type: LegalTypes }) => {
   return (
-    <section className="py-16 bg-background">
+    <section className="bg-background">
       <div className="mx-auto max-w-[48rem] font-light px-4 md:px-8 min-h-screen">
         <LegalText textFor={type} />
       </div>
@@ -40,7 +40,7 @@ export const LegalsMenu = () => {
         <div className="md:w-[70%] flex flex-col gap-8">
           {tabs.map((tab) => {
             return (
-              <AsideAnchor key={tab.id} id={tab.id}>
+              <AsideAnchor key={tab.id} id={tab.id} className="mb-40">
                 <Legal type={tab.id} />
               </AsideAnchor>
             );

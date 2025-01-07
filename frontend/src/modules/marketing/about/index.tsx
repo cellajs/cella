@@ -48,7 +48,7 @@ const About = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  useScrollSpy({ sectionIds, autoUpdateHash: true });
+  useScrollSpy({ sectionIds });
 
   // If the hash already matches but the user is not at the section, clear and re-set the hash
   const handleMismatch = (target: string) => {

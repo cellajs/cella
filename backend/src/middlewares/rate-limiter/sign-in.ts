@@ -25,7 +25,6 @@ const limiterConsecutiveFailsByUsernameAndIP = getRateLimiterInstance({
 export const signInRateLimiter = (): MiddlewareHandler<Env> => async (ctx, next) => {
   const ipAddr = getIp(ctx);
   const body = await ctx.req.raw.clone().json();
-  console.log('signInRateLimiter', body, ipAddr);
 
   if (!body.email) return next();
 

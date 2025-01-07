@@ -1,16 +1,16 @@
 import { cn } from '~/utils/cn';
 
 interface AsideAnchorProps {
-  className?: string;
   id: string;
+  className?: string;
   children?: React.ReactNode;
+  extraOffset?: boolean;
 }
 
-export const AsideAnchor = ({ id, className, children }: AsideAnchorProps) => {
+export const AsideAnchor = ({ id, className, children, extraOffset }: AsideAnchorProps) => {
   return (
-    // aside-anchor class is used to correct the offset of the anchor
-    <div id={id} className={cn('', className)}>
-      <div id={`${id}-anchor`} className="absolute w-[.07rem] -mt-20 h-20 sm:-mt-16 sm:h-16" />
+    <div id={`${id}-anchor-wrap`} className={cn('last:mb-[70vh]', className)}>
+      <div id={id} className={cn('absolute w-[.07rem]', extraOffset ? '-mt-16 h-16' : '-mt-8 h-8')} />
       {children}
     </div>
   );

@@ -10,7 +10,8 @@ import type { Organization } from '~/types/common';
 const Subscription = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();
 
-  console.log('org billing', organization);
+  // WIP: Continue here later
+  console.info('org billing', organization);
 
   // Create a local state to store Paddle instance
   const [paddle, setPaddle] = useState<Paddle>();

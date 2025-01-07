@@ -19,7 +19,7 @@ export const config = {
 
   description: 'Intuitive TypeScript template to build web apps with a sync engine. MIT licensed.',
   keywords:
-    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant feedback, realtime data, sync engine',
+    'starter kit, fullstack, monorepo, typescript, hono, honojs, drizzle, shadcn, react, postgres, pwa, offline, instant updates, realtime data, sync engine',
 
   supportEmail: 'support@cellajs.com',
   notificationsEmail: 'notifications@cellajs.com',

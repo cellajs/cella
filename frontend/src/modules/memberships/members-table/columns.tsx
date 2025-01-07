@@ -30,7 +30,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         renderCell: ({ row, tabIndex }) => (
           <Link
             id={`user-cell-${row.id}`}
-            to="/user/$idOrSlug"
+            to="/users/$idOrSlug"
             tabIndex={tabIndex}
             params={{ idOrSlug: row.slug }}
             className="flex space-x-2 items-center outline-0 ring-0 group"

@@ -55,7 +55,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
       </div>
 
       <div className="md:w-[70%] flex flex-col gap-8">
-        <AsideAnchor id="general">
+        <AsideAnchor id="general" extraOffset>
           <Card>
             <CardHeader>
               <CardTitle>{t('common:general')}</CardTitle>
@@ -77,7 +77,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
           </Card>
         </AsideAnchor>
 
-        <AsideAnchor id="subscription">
+        <AsideAnchor id="subscription" extraOffset>
           <Card>
             <CardHeader>
               <CardTitle>{t('common:subscription')}</CardTitle>
@@ -88,7 +88,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
           </Card>
         </AsideAnchor>
 
-        <AsideAnchor id="delete-organization">
+        <AsideAnchor id="delete-organization" extraOffset>
           <Card>
             <CardHeader>
               <CardTitle>{t('common:delete_resource', { resource: t('common:organization').toLowerCase() })}</CardTitle>
