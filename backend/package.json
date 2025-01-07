@@ -8,7 +8,7 @@
   "scripts": {
     "quick": "cross-env PGLITE=true tsx scripts/quick.ts && cross-env PGLITE=true pnpm dev",
     "start": "tsx dist/index.js",
-    "dev": "pnpm studio & tsx watch src/index.ts",
+    "dev": "concurrently -r \"pnpm studio\" \"cross-env NODE_ENV=development tsx --watch src/index.ts \"",
     "check:types": "tsc",
     "build": "cross-env NODE_ENV=production tsup",
     "build:dev": "tsup",
@@ -93,6 +93,7 @@
     "@types/ua-parser-js": "^0.7.39",
     "chalk": "^5.4.1",
     "commander": "^12.1.0",
+    "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.30.1",
     "hanji": "^0.0.5",
