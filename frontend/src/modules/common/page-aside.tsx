@@ -20,18 +20,7 @@ interface PageAsideProps<T> {
 export const PageAside = <T extends Tab>({ tabs, className }: PageAsideProps<T>) => {
   const { t } = useTranslation();
   const sectionIds = tabs.map((tab) => tab.id);
-  const { activeHash } = useScrollSpy({ sectionIds, autoUpdateHash: true });
-
-  // console.log(activeHash, 'TEST')
-  // TODO: perhaps move this somehow to useScrollSpy and add a stop when section is already in view
-  // TODO2: add option to silently update the hash without scrolling on initial mount with sectionIds[0] (if no hash is present)
-  // If the hash already matches but the user is not at the section, clear and re-set the hash
-  const handleMismatch = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, target: string) => {
-    e.preventDefault();
-    const element = document.getElementById(`${target}-anchor`);
-    if (!element) return;
-    element.scrollIntoView();
-  };
+  const { currentSection } = useScrollSpy({ sectionIds });
 
   return (
     <div className={cn('w-full flex flex-col gap-1', className)}>
@@ -42,12 +31,9 @@ export const PageAside = <T extends Tab>({ tabs, className }: PageAsideProps<T>)
           <Link
             key={id}
             to="."
-            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass, activeHash === id && 'bg-secondary')}
+            className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), btnClass, currentSection === id && 'bg-secondary')}
             hash={id}
             replace
-            onClick={(e) => handleMismatch(e, id)}
-            activeOptions={{ exact: true, includeHash: true }}
-            activeProps={{ className: 'bg-secondary' }}
           >
             {Icon && <Icon className="mr-2 w-5 h-5" />} {t(label, { resource: t(resource || '').toLowerCase() })}
           </Link>

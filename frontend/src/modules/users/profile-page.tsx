@@ -51,7 +51,7 @@ const UserProfilePage = ({ user, sheet, orgIdOrSlug }: { user: LimitedUser; shee
           isSelf && (
             <div className="max-xs:hidden flex items-center p-2">
               <Link
-                to="/user/settings"
+                to="/settings"
                 tabIndex={0}
                 className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/80"
               >

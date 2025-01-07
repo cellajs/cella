@@ -65,7 +65,7 @@ export const AccountSheet = () => {
   return (
     <ScrollArea className="h-full" id="nav-sheet">
       <div ref={buttonWrapper} className="p-3 flex flex-col gap-4 min-h-[calc(100vh-0.5rem)]">
-        <Link id="account" to="/user/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
+        <Link id="account" to="/users/$idOrSlug" params={{ idOrSlug: user.slug }} className="w-full relative">
           <div
             className={`${user.bannerUrl ? `bg-[url(${user.bannerUrl})]` : numberToColorClass(user.id)}  relative transition-all duration-300 hover:bg-opacity-50 hover:-mx-8 -mx-4 -mt-4 bg-cover bg-center h-24 bg-opacity-80`}
           >
@@ -86,9 +86,9 @@ export const AccountSheet = () => {
             lucide={CircleUserRound}
             id="btn-profile"
             label={t('common:view_item', { item: t('common:profile').toLowerCase() })}
-            action={`/user/${user.slug}`}
+            action={`/users/${user.slug}`}
           />
-          <AccountButton offlineAccess={true} lucide={UserCog} id="btn-account" label={t('common:settings')} action="/user/settings" />
+          <AccountButton offlineAccess={true} lucide={UserCog} id="btn-account" label={t('common:settings')} action="/settings" />
           {isSystemAdmin && (
             <AccountButton
               offlineAccess={false}

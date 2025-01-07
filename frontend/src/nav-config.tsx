@@ -13,7 +13,7 @@ import type { UserMenuItem } from './types/common';
 
 // Set entity paths so we can dynamically use them in the app
 export const baseEntityRoutes = {
-  user: '/user/$idOrSlug',
+  user: '/users/$idOrSlug',
   organization: '/$idOrSlug',
 } as const;
 

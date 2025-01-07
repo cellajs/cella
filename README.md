@@ -18,7 +18,7 @@
 <p>
 	<h1><b>Cella</b></h1>
 <p>
-    <b>Single stack TypeScript template to build powerful web apps using sync & offline capabilities.</b>
+    <b>Single stack TypeScript template to build powerful web apps with sync & offline capabilities.</b>
     <br />
     <br />
     <a href="https://cellajs.com">Website</a>
