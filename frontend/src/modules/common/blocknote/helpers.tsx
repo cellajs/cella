@@ -1,5 +1,6 @@
 import type { Block, PropSchema, Props } from '@blocknote/core';
 import type { DefaultReactSuggestionItem } from '@blocknote/react';
+import DOMPurify from 'dompurify';
 import { type Attachments, openAttachmentDialog } from '~/modules/attachments/helpers';
 import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema, MenusItemsTitle } from '~/modules/common/blocknote/types';
 import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowedType } from './blocknote-config';
@@ -111,10 +112,13 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
   };
 
   for (const element of elementsWithDataUrl) {
-    const url = element.getAttribute('data-url');
+    let url = element.getAttribute('data-url');
+
     const contentType = element.getAttribute('data-content-type') || 'file';
 
     if (!url) continue;
+
+    url = DOMPurify.sanitize(url);
 
     urls.push({ src: url, fileType: contentType });
 
