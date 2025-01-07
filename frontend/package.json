@@ -6,6 +6,7 @@
     "node": ">=20.14.0"
   },
   "scripts": {
+    "quick": "pnpm dev",
     "start": "cross-env NODE_ENV=production pnpm run preview",
     "check:types": "tsc",
     "dev": "cross-env NODE_ENV=development vite --mode development && node --trace-warnings",
