@@ -17,22 +17,22 @@
   },
   "scripts": {
     "prepare": "node prepare.js",
-    "quick": "concurrently -r \"pnpm --filter backend run quick\"  \"turbo dev --filter frontend --filter tus\"",
-    "docker": "pnpm --filter backend run docker:up --detach",
-    "generate": "pnpm --filter backend run generate",
+    "quick": "FORCE_COLOR=1 pnpm --filter backend quick & pnpm --filter frontend --filter tus dev",
+    "docker": "pnpm --filter backend docker:up --detach",
+    "generate": "pnpm --filter backend generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
-    "dev": "pnpm run clean && turbo dev  --filter backend --filter frontend --filter tus",
+    "dev": "pnpm clean && FORCE_COLOR=1 pnpm -r --parallel --stream dev",
     "seed": "pnpm --filter backend seed",
     "check": "pnpm dlx @biomejs/biome check .",
-    "check:types": "turbo check:types --force",
+    "check:types": "pnpm -r --parallel check:types",
     "check:fix": "pnpm dlx @biomejs/biome check --write .",
-    "build": "pnpm run clean && turbo build --filter backend --filter frontend --filter tus",
-    "build:dev": "turbo build:dev --filter backend --filter frontend --filter tus",
-    "start": "turbo start --filter backend --filter frontend --filter tus",
+    "build": "pnpm -r --parallel clean && pnpm -r --parallel build",
+    "build:dev": "pnpm -r _-parallel build:dev",
+    "start": "pnpm -r --parallel start",
     "upstream:pull": "tsx ./cli/sync-cella/index.ts pull-upstream --config-file cella.config.js",
     "fork:pull": "tsx ./cli/sync-cella/index.ts pull-fork --config-file cella.config.js",
     "diverged": "tsx ./cli/sync-cella/index.ts diverged --config-file cella.config.js",
-    "test": "pnpm --filter backend test"
+    "test": "pnpm -r --parallel test"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -40,7 +40,6 @@
     "cross-env": "^7.0.3",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.2",
-    "turbo": "^2.3.3",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
     "concurrently": "^9.1.2"
@@ -48,5 +47,8 @@
   "packageManager": "pnpm@9.1.2",
   "dependencies": {
     "dotenv": "^16.4.7"
+  },
+  "volta": {
+    "node": "22.12.0"
   }
 }
