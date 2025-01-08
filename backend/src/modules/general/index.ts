@@ -175,7 +175,7 @@ const generalRoutes = app
       .limit(1);
 
     if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
-      return errorResponse(ctx, 400, 'invalid_token_or_expired', 'warn');
+      return errorResponse(ctx, 401, 'invalid_token_or_expired', 'warn');
     }
 
     // If it is a system invitation, update user role
@@ -188,7 +188,7 @@ const generalRoutes = app
       return ctx.json({ success: true }, 200);
     }
 
-    if (!token.organizationId) return errorResponse(ctx, 400, 'invalid_token', 'warn');
+    if (!token.organizationId) return errorResponse(ctx, 401, 'invalid_token', 'warn');
 
     // check if user exists
     const user = await getUserBy('email', token.email);
@@ -340,15 +340,13 @@ const generalRoutes = app
   .openapi(generalRouteConfig.unsubscribeUser, async (ctx) => {
     const { token } = ctx.req.valid('query');
 
-    if (!token) return errorResponse(ctx, 400, 'No token provided', 'warn', 'user');
-
     // Check if token exists
     const user = await getUserBy('unsubscribeToken', token);
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
     // Verify token
     const isValid = verifyUnsubscribeToken(user.email, token);
-    if (!isValid) return errorResponse(ctx, 400, 'Token verification failed', 'warn', 'user');
+    if (!isValid) return errorResponse(ctx, 401, 'Token verification failed', 'warn', 'user');
 
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));

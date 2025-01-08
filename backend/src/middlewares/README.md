@@ -10,10 +10,10 @@ Guard is where you protect and secure endpoints with middleware. There are curre
 * systemGuard: additional security checks (isSystemAdmin & ipRestriction) to safeguard system level activity.
 
 ### Rate limiter
-
+Built using [node-rate-limiter-flexible](https://github.com/animir/node-rate-limiter-flexible#readme). See more info on the rate limit in the index file.
 
 ### Logger
-Slightly modified version of [hono logger middleware](https://hono.dev/docs/middleware/builtin/logger).
+Slightly modified version of hono [logger](https://hono.dev/docs/middleware/builtin/logger).
 
 
 

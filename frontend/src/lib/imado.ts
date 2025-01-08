@@ -7,6 +7,7 @@ import type { UploadParams, UploadType, UploadedUppyFile } from '~/types/common'
 import '@uppy/core/dist/style.min.css';
 
 export type UppyMeta = { public?: boolean; contentType?: string };
+
 // biome-ignore lint/complexity/noBannedTypes: no other way to define this type
 export type UppyBody = {};
 

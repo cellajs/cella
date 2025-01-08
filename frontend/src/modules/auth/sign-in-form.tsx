@@ -34,6 +34,14 @@ export const SignInForm = ({
 
   const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: email,
+      password: '',
+    },
+  });
+
   const { mutate: signIn, isPending } = useMutation({
     mutationFn: baseSignIn,
     onSuccess: ({ emailVerified }) => {
@@ -44,13 +52,10 @@ export const SignInForm = ({
 
       navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
     },
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: email,
-      password: '',
+    onError: (error) => {
+      if (error.type !== 'invalid_password') return;
+      document.getElementById('password-field')?.focus();
+      form.reset(form.getValues());
     },
   });
 
@@ -101,14 +106,21 @@ export const SignInForm = ({
                 // Custom css due to html injection by browser extensions
                 <FormItem className="gap-0">
                   <FormControl>
-                    <Input type="password" autoFocus {...field} autoComplete="current-password" placeholder={t('common:password')} />
+                    <Input
+                      type="password"
+                      id="password-field"
+                      autoFocus
+                      {...field}
+                      autoComplete="current-password"
+                      placeholder={t('common:password')}
+                    />
                   </FormControl>
                   <FormMessage className="mt-2" />
                 </FormItem>
               )}
             />
 
-            <SubmitButton loading={isPending} className="w-full">
+            <SubmitButton loading={isPending} disabled={!form.formState.isDirty} className="w-full">
               {t('common:sign_in')}
               <ArrowRight size={16} className="ml-2" />
             </SubmitButton>

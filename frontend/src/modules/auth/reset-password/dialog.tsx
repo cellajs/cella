@@ -20,12 +20,16 @@ const ResetPasswordDialog = ({ email }: { email: string }) => {
       toast.success(t('common:success.reset_link_sent'));
       dialog.remove();
     },
+    onError: () => {
+      document.getElementById('reset-email-field')?.focus();
+    },
   });
 
   return (
     <div>
       <Input
         type="email"
+        id="reset-email-field"
         autoFocus
         className="mb-4"
         placeholder={t('common:email')}
