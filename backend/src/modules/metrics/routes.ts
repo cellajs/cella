@@ -1,5 +1,5 @@
 import { createRouteConfig } from '#/lib/route-config';
-import { isPublicAccess } from '#/middlewares/guard';
+import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema } from '#/utils/schema/common-responses';
 import { metricsSchema, publicCountsSchema } from './schema';
 
@@ -7,7 +7,7 @@ class MetricsRoutesConfig {
   public getMetrics = createRouteConfig({
     method: 'get',
     path: '/',
-    guard: isPublicAccess,
+    guard: [isAuthenticated, systemGuard],
     tags: ['metrics'],
     summary: 'Get metrics',
     description: 'EXPERIMENTAL. Receive node observability metrics.',

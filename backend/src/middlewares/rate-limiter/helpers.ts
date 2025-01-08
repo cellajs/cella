@@ -20,9 +20,4 @@ export const getRateLimiterInstance = (options: Omit<IRateLimiterPostgresOptions
       });
 };
 
-export const getUsernameIPkey = (ip: string, username?: string) => {
-  if (!username) return ip;
-  return `${ip}_${username}`;
-};
-
 export const getRetryAfter = (ms: number) => Math.round(ms / 1000).toString() || '1';

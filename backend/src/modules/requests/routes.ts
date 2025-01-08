@@ -1,7 +1,7 @@
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { authRateLimiter } from '#/middlewares/rate-limiter';
+import { spamLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { idsQuerySchema } from '#/utils/schema/common-schemas';
 import { createRequestSchema, feedbackLetterBodySchema, getRequestsQuerySchema, requestSchema } from './schema';
@@ -11,7 +11,7 @@ class RequestsRoutesConfig {
     method: 'post',
     path: '/',
     guard: isPublicAccess,
-    middleware: [isNoBot, authRateLimiter],
+    middleware: [isNoBot, spamLimiter],
     tags: ['requests'],
     summary: 'Create request',
     description: 'Create a request on system level. Request supports waitlist, contact form and newsletter.',

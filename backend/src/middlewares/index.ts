@@ -4,11 +4,10 @@ import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
-import { observatoryMiddleware } from '#/middlewares/observatory/';
+import { observabilityMiddleware } from '#/middlewares/observability/';
 import { CustomHono } from '#/types/common';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
-import { commonLimiter } from './rate-limiter';
 
 const app = new CustomHono();
 
@@ -16,7 +15,7 @@ const app = new CustomHono();
 app.use('*', secureHeaders());
 
 // Get metrics and trace
-app.use('*', observatoryMiddleware);
+app.use('*', observabilityMiddleware);
 
 // Sentry
 app.use('*', sentry({ dsn: config.sentryDsn }));
@@ -41,9 +40,6 @@ app.use('*', cors(corsOptions));
 
 // CSRF protection
 app.use('*', csrf({ origin: config.frontendUrl }));
-
-// Rate limiter
-app.use('*', commonLimiter);
 
 // Compress with gzip
 // Apply gzip compression only to GET requests
