@@ -26,6 +26,7 @@ const commonModulesList = [
 // Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
 const docs = (app: CustomHono) => {
   const registry = app.openAPIRegistry;
+  const tags = commonModulesList.concat(appModulesList);
 
   registry.registerComponent('securitySchemes', 'cookieAuth', {
     type: 'apiKey',
@@ -34,8 +35,6 @@ const docs = (app: CustomHono) => {
     description:
       "Authentication cookie. Copy the cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first.",
   });
-
-  const tags = commonModulesList.concat(appModulesList);
 
   app.doc31('/openapi.json', {
     servers: [{ url: config.backendUrl }],

@@ -329,7 +329,6 @@ const authRoutes = app
     if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
 
     const validPassword = await verifyPasswordWithArgon(user.hashedPassword, password);
-
     if (!validPassword) return errorResponse(ctx, 403, 'invalid_password', 'warn');
 
     const emailVerified = user.emailVerified || tokenData?.email === user.email;
@@ -347,10 +346,12 @@ const authRoutes = app
     const user = getContextUser();
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+
     if (!sessionId) {
       removeSessionCookie(ctx);
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
+
     const { targetUserId } = ctx.req.valid('query');
     await setSessionCookie(ctx, targetUserId, null, 'impersonation', user.id);
 

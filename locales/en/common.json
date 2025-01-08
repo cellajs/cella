@@ -117,6 +117,7 @@
   "error.invalid_token_or_expired": "Invalid token or expired",
   "error.load_more_failed": "Could not load more data. Try reloading or come back later.",
   "error.name_required": "Name is required",
+  "error.network_error": "Network error. Please check your network connection or try again later.",
   "error.newsletter_request_error": "You can`t use the same email for both the newsletter and the waitlist. Please use a different email to get info about our app",
   "error.newsletter_sign_up": "Unable to submit your email address. Please try again later.",
   "error.no_email_found": "No email found",

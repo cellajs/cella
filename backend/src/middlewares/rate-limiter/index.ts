@@ -35,10 +35,9 @@ const rateLimitError = (ctx: Context, limitState: RateLimiterRes, rateLimitKey: 
 };
 
 /*
- * This file contains the implementation of a rate limiter middleware.
- * It uses the `rate-limiter-flexible` library to limit the number of requests per user or IP address.
+ * This file contains the implementation of a rate limiter middleware, which supports multiple modes.
+ * It uses the `rate-limiter-flexible` library to limit the number of requests.
  * https://github.com/animir/node-rate-limiter-flexible#readme
- * The rate limiter is implemented has a few modes.
  *
  * The 'limit' mode consumes points for each failed/successful request.
  * The 'success' mode decreases the available points on successful requests only.

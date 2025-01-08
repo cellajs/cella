@@ -17,6 +17,11 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 });
 
 export const onError = (error: Error) => {
+  if (error instanceof Error && error.message === 'Failed to fetch') {
+    // Handle network error (e.g., connection refused)
+    createToast(i18n.t('common:error.network_error'), 'error');
+  }
+
   if (error instanceof ApiError) {
     const statusCode = Number(error.status);
 

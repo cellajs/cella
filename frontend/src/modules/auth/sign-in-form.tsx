@@ -52,7 +52,8 @@ export const SignInForm = ({
 
       navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
     },
-    onError: () => {
+    onError: (error) => {
+      if (error.type !== 'invalid_password') return;
       document.getElementById('password-field')?.focus();
       form.reset(form.getValues());
     },
