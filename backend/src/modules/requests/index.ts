@@ -8,13 +8,15 @@ import { usersTable } from '#/db/schema/users';
 import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
-import { sendSlackNotification } from '#/lib/notification';
+import { sendSlackMessage } from '#/lib/notification';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import feedbackLetter from '../../../emails/requests-feedback';
 import { env } from '../../../env';
 import requestsRoutesConfig from './routes';
+
+const conflictingTypes = ['waitlist', 'newsletter'];
 
 const app = new CustomHono();
 
@@ -27,10 +29,9 @@ const requestsRoutes = app
     const { email, type, message } = ctx.req.valid('json');
     if (type === 'waitlist') {
       const [existingRequest] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
-      if (existingRequest) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
+      if (existingRequest) return errorResponse(ctx, 401, 'request_email_is_user', 'info');
     }
 
-    const conflictingTypes = ['waitlist', 'newsletter'];
     if (conflictingTypes.includes(type)) {
       const [existingRequest] = await db
         .select()
@@ -50,9 +51,9 @@ const requestsRoutes = app
       .returning();
 
     // slack notifications
-    if (type === 'waitlist') await sendSlackNotification('to join the waitlist.', email);
-    if (type === 'newsletter') await sendSlackNotification('to become a donate or build member.', email);
-    if (type === 'contact') await sendSlackNotification(`for contact from ${message}.`, email);
+    if (type === 'waitlist') await sendSlackMessage('Join waitlist.', email);
+    if (type === 'newsletter') await sendSlackMessage('Newsletter', email);
+    if (type === 'contact') await sendSlackMessage(`for contact from ${message}.`, email);
 
     return ctx.json({ success: true, data: createdAccessRequest }, 200);
   })

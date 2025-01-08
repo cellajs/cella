@@ -1,4 +1,4 @@
-import type { MetricOptions } from '#/middlewares/observatory/types';
+import type { MetricOptions } from '#/middlewares/observability/types';
 
 // Define the metrics configuration
 export const metricsConfig = {

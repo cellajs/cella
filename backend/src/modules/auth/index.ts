@@ -190,7 +190,7 @@ const authRoutes = app
       }
 
       // t('common:error.invalid_token')
-      return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
+      return errorResponse(ctx, 403, 'invalid_token', 'warn', undefined, {
         user: token?.userId || 'na',
         type: 'verification',
       });
@@ -209,7 +209,7 @@ const authRoutes = app
         return ctx.json({ success: true }, 200);
       }
 
-      return errorResponse(ctx, 400, 'invalid_token', 'warn');
+      return errorResponse(ctx, 401, 'invalid_token', 'warn');
     }
 
     await db.update(usersTable).set({ emailVerified: true }).where(eq(usersTable.id, user.id));
@@ -226,7 +226,7 @@ const authRoutes = app
     const { email } = ctx.req.valid('json');
 
     const user = await getUserBy('email', email.toLowerCase());
-    if (!user) return errorResponse(ctx, 400, 'invalid_email', 'warn');
+    if (!user) return errorResponse(ctx, 401, 'invalid_email', 'warn');
 
     // creating password reset token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
@@ -279,7 +279,7 @@ const authRoutes = app
 
     // If the token is not found or expired
     if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
-      return errorResponse(ctx, 400, 'invalid_token', 'warn');
+      return errorResponse(ctx, 401, 'invalid_token', 'warn');
     }
     const user = await getUserBy('id', token.userId);
     // If the user is not found or the email is different from the token email
@@ -329,8 +329,7 @@ const authRoutes = app
     if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
 
     const validPassword = await verifyPasswordWithArgon(user.hashedPassword, password);
-
-    if (!validPassword) return errorResponse(ctx, 400, 'invalid_password', 'warn');
+    if (!validPassword) return errorResponse(ctx, 403, 'invalid_password', 'warn');
 
     const emailVerified = user.emailVerified || tokenData?.email === user.email;
 
@@ -347,10 +346,12 @@ const authRoutes = app
     const user = getContextUser();
     const cookieHeader = ctx.req.raw.headers.get('Cookie');
     const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+
     if (!sessionId) {
       removeSessionCookie(ctx);
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
+
     const { targetUserId } = ctx.req.valid('query');
     await setSessionCookie(ctx, targetUserId, null, 'impersonation', user.id);
 
@@ -478,7 +479,7 @@ const authRoutes = app
 
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -554,7 +555,7 @@ const authRoutes = app
       }[] = await githubUserEmailsResponse.json();
 
       const primaryEmail = githubUserEmails.find((email) => email.primary);
-      if (!primaryEmail) return errorResponse(ctx, 400, 'no_email_found', 'warn');
+      if (!primaryEmail) return errorResponse(ctx, 401, 'no_email_found', 'warn');
 
       const slug = slugify(githubUser.login, { lower: true, strict: true });
       const { firstName, lastName } = splitFullName(githubUser.name || slug);
@@ -572,7 +573,7 @@ const authRoutes = app
 
         // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-          return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
+          return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, {
             strategy,
             type: 'invitation',
           });
@@ -629,7 +630,7 @@ const authRoutes = app
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
         // t('common:error.invalid_credentials.text')
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy });
+        return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
       }
 
       if (error instanceof Error) {
@@ -659,7 +660,7 @@ const authRoutes = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -711,7 +712,7 @@ const authRoutes = app
 
         // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-          return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
+          return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, {
             strategy,
             type: 'invitation',
           });
@@ -765,7 +766,7 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy });
+        return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
       }
 
       if (error instanceof Error) {
@@ -795,7 +796,7 @@ const authRoutes = app
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
-      return errorResponse(ctx, 400, 'invalid_state', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
     const redirectExistingUserUrl = getRedirectUrl(ctx);
@@ -845,7 +846,7 @@ const authRoutes = app
 
         // If token is invalid or expired
         if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
-          return errorResponse(ctx, 400, 'invalid_token', 'warn', undefined, {
+          return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, {
             strategy,
             type: 'invitation',
           });
@@ -853,7 +854,7 @@ const authRoutes = app
         userEmail = token.email;
       }
 
-      if (!userEmail) return errorResponse(ctx, 400, 'no_email_found', 'warn', undefined);
+      if (!userEmail) return errorResponse(ctx, 401, 'no_email_found', 'warn', undefined);
       // Check if user already exists
       const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
       const [existingUser] = await getUsersByConditions(conditions);
@@ -900,7 +901,7 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        return errorResponse(ctx, 400, 'invalid_credentials', 'warn', undefined, { strategy });
+        return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
       }
 
       if (error instanceof Error) {
@@ -960,7 +961,7 @@ const authRoutes = app
 
     try {
       const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credential.publicKey, challengeFromCookie);
-      if (!isValid) return errorResponse(ctx, 400, 'Invalid signature', 'warn', undefined);
+      if (!isValid) return errorResponse(ctx, 401, 'Invalid signature', 'warn', undefined);
     } catch (error) {
       if (error instanceof Error) {
         const errorMessage = error.message;

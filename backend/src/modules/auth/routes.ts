@@ -2,8 +2,7 @@ import { z } from '@hono/zod-openapi';
 
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
-import { authRateLimiter } from '#/middlewares/rate-limiter';
-import { signInRateLimiter } from '#/middlewares/rate-limiter/sign-in';
+import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { cookieSchema, passwordSchema } from '#/utils/schema/common-schemas';
 import {
@@ -64,7 +63,7 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/check-email',
     guard: isPublicAccess,
-    middleware: [authRateLimiter],
+    middleware: [emailEnumLimiter],
     tags: ['auth'],
     summary: 'Check if email exists',
     description: 'Check if user with email address exists and whether user has a passkey.',
@@ -95,10 +94,10 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/sign-up',
     guard: isPublicAccess,
+    middleware: [spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Sign up with password',
     description: 'Sign up with email and password. User will receive a verification email.',
-    middleware: [authRateLimiter],
     security: [],
     request: {
       body: {
@@ -133,7 +132,7 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/send-verification-email',
     guard: isPublicAccess,
-    middleware: [authRateLimiter],
+    middleware: [spamLimiter],
     tags: ['auth'],
     summary: 'Resend verification email',
     description: 'Resend verification email to user based on email address.',
@@ -164,7 +163,7 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/verify-email',
     guard: isPublicAccess,
-    middleware: [authRateLimiter],
+    middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Verify email by token',
     description: 'Verify email address by token from the verification email. Receive a user session when successful.',
@@ -200,7 +199,7 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/reset-password',
     guard: isPublicAccess,
-    middleware: [authRateLimiter],
+    middleware: [spamLimiter, emailEnumLimiter],
     tags: ['auth'],
     summary: 'Request reset password',
     description: 'An email will be sent with a link to reset password.',
@@ -231,7 +230,7 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/reset-password/{token}',
     guard: isPublicAccess,
-    middleware: [authRateLimiter],
+    middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Submit password by token',
     description: 'Submit new password and directly receive a user session.',
@@ -263,6 +262,7 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/passkey-verification',
     guard: [isPublicAccess],
+    middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Verify passkey',
     description: 'Verify passkey by checking the validity of signature with public key.',
@@ -295,7 +295,7 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/sign-in',
     guard: [isPublicAccess],
-    middleware: [signInRateLimiter()],
+    middleware: [passwordLimiter],
     tags: ['auth'],
     summary: 'Sign in with password',
     description: 'Sign in with email and password.',
@@ -349,7 +349,7 @@ class AuthRoutesConfig {
     method: 'get',
     path: '/github/callback',
     guard: [isPublicAccess],
-    middleware: [authRateLimiter],
+    middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Callback for GitHub',
     description: 'Callback to receive authorization and basic user data from Github.',
@@ -397,6 +397,7 @@ class AuthRoutesConfig {
     method: 'post',
     path: '/passkey-registration',
     guard: [isPublicAccess],
+    middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Register passkey',
     description:
@@ -449,7 +450,7 @@ class AuthRoutesConfig {
     method: 'get',
     path: '/google/callback',
     guard: [isPublicAccess],
-    middleware: [authRateLimiter],
+    middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Callback for Google',
     description: 'Callback to receive authorization and basic user data from Google.',
@@ -495,7 +496,7 @@ class AuthRoutesConfig {
     method: 'get',
     path: '/microsoft/callback',
     guard: [isPublicAccess],
-    middleware: [authRateLimiter],
+    middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Callback for Microsoft',
     description: 'Callback to receive authorization and basic user data from Microsoft.',

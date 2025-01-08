@@ -6,6 +6,7 @@ import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import { db } from '#/db/db';
 import ascii from '#/utils/ascii';
 import { env } from '../env';
+import { startDrizzleStudio } from '../scripts/drizzle-studio';
 import docs from './lib/docs';
 import app from './routes';
 
@@ -31,6 +32,9 @@ const main = async () => {
   } else {
     await pgMigrate(db, migrateConfig);
   }
+
+  // Start Drizzle Studio in development mode
+  if (config.mode === 'development') startDrizzleStudio();
 
   // Start server
   serve(

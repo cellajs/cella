@@ -10,7 +10,7 @@ import enCommon from '../../../locales/en/common.json';
 import nlBackend from '../../../locales/nl/backend.json';
 import nlCommon from '../../../locales/nl/common.json';
 
-// Set up i18n
+// Set up i18n. In backend, all translations are loaded at once during server start.
 const initOptions: InitOptions = {
   resources: {
     en: { backend: enBackend, common: enCommon },

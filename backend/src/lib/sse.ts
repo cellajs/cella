@@ -1,5 +1,6 @@
 import { streams } from '#/modules/general';
 
+// SSE is used to send real-time updates to the client. Useful for simple updates such as an updated entity or a notification.
 const sendSSE = (userId: string, eventName: string, data: Record<string, unknown>): void => {
   const stream = streams.get(userId);
   if (!stream) return;

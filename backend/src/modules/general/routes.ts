@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
-import { inviteLimiter, tokenRateLimiter } from '#/middlewares/rate-limiter';
+import { tokenLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
@@ -12,6 +12,7 @@ class GeneralRoutesConfig {
     method: 'get',
     path: '/unsubscribe',
     guard: isPublicAccess,
+    middleware: [tokenLimiter],
     tags: ['users'],
     summary: 'Unsubscribe',
     description: 'Unsubscribe using a personal unsubscribe token.',
@@ -92,7 +93,7 @@ class GeneralRoutesConfig {
   public checkToken = createRouteConfig({
     method: 'post',
     path: '/check-token',
-    middleware: [tokenRateLimiter],
+    middleware: [tokenLimiter],
     guard: isPublicAccess,
     tags: ['general'],
     summary: 'Token validation check',
@@ -124,7 +125,6 @@ class GeneralRoutesConfig {
     method: 'post',
     path: '/invite',
     guard: [isAuthenticated, systemGuard],
-    middleware: [inviteLimiter],
     tags: ['general'],
     summary: 'Invite to system',
     description: 'Invite one or more users to system by email address.',
@@ -154,7 +154,7 @@ class GeneralRoutesConfig {
     method: 'post',
     path: '/invite/{token}',
     guard: isPublicAccess,
-    middleware: [tokenRateLimiter],
+    middleware: [tokenLimiter],
     tags: ['general'],
     summary: 'Accept invitation',
     description: 'Accept invitation token',
@@ -185,6 +185,7 @@ class GeneralRoutesConfig {
     method: 'post',
     path: '/paddle-webhook',
     guard: isPublicAccess,
+    middleware: [tokenLimiter],
     tags: ['general'],
     summary: 'Paddle webhook',
     description: 'Paddle webhook for subscription events',

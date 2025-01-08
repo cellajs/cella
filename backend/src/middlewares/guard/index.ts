@@ -40,7 +40,7 @@ export async function isPublicAccess(_: Context, next: Next): Promise<void> {
 // Organization access is a hard check for accessing organization-scoped routes.
 export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response | undefined> {
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
-  if (!orgIdOrSlug) return errorResponse(ctx, 400, 'invalid_request', 'warn');
+  if (!orgIdOrSlug) return errorResponse(ctx, 401, 'invalid_request', 'warn');
 
   const memberships = getMemberships();
   const user = getContextUser();
