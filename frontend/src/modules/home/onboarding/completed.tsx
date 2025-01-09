@@ -2,11 +2,11 @@ import { config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ConfettiExplosion from '~/modules/common/confetti-explosion';
 import { sheet } from '~/modules/common/sheeter/state';
 import { onBoardingFinishCallback } from '~/modules/home/onboarding/onboarding-config';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 import { useNavigationStore } from '~/store/navigation';
+import { Confetti } from './confetti';
 
 export const OnboardingCompleted = () => {
   const { t } = useTranslation();
@@ -42,7 +42,7 @@ export const OnboardingCompleted = () => {
 
   return (
     <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-[1] max-w-3xl">
-      {isExploding && <ConfettiExplosion zIndex={0} duration={5000} force={1.2} particleCount={250} height={'100vh'} width={2500} />}
+      {isExploding && <Confetti fire />}
 
       {finishedOnboarding && (
         <Undo size={400} strokeWidth={0.1} className="max-lg:hidden scale-y-75 xl:-translate-x-24 -mt-40 -mb-12  text-primary rotate-[30deg]" />
