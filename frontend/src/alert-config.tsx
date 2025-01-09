@@ -1,14 +1,15 @@
 import { config } from 'config';
 import { t } from 'i18next';
 import { Info } from 'lucide-react';
-import type { MainAlert } from '~/modules/common/main-alert';
+import type { MainAlert } from '~/modules/common/alerter';
 
-const alerts = [];
+const alerts: MainAlert[] = [];
 
 // Explain how to sign in using test account
 if (config.mode === 'development') {
   alerts.push({
     id: 'test-credentials',
+    modes: ['public'],
     Icon: Info,
     className: 'rounded-none border-0 border-t z-10 fixed bottom-0 left-0 right-0',
     children: (
@@ -26,6 +27,7 @@ if (config.mode === 'development') {
 if (config.mode === 'production') {
   alerts.push({
     id: 'prerelease',
+    modes: ['app'],
     Icon: Info,
     className: 'rounded-none border-0 border-b',
     children: (
@@ -38,4 +40,4 @@ if (config.mode === 'production') {
 }
 
 // Here you can set app-specific global alerts
-export const alertsConfig: MainAlert[] = alerts;
+export const alertsConfig = alerts;

@@ -13,7 +13,7 @@ import type { MemberSearch, MembersTableProps } from '~/modules/memberships/memb
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { BaseTableHeaderProps, BaseTableMethods, Member } from '~/types/common';
-import { nanoid } from '#/utils/nanoid';
+import { nanoid } from '~/utils/nanoid';
 
 type MembersTableHeaderProps = MembersTableProps &
   BaseTableMethods &

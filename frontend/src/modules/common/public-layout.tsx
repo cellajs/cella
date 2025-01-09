@@ -2,13 +2,13 @@ import { Outlet } from '@tanstack/react-router';
 import { Dialoger } from '~/modules/common/dialoger';
 import { DropDowner } from '~/modules/common/dropdowner';
 import { Sheeter } from '~/modules/common/sheeter';
-import AlertRenderer from './main-alert/alert-render';
+import Alerter from './alerter/alerter';
 
 // Also in public routes, some components need to be initialized.
 function PublicLayout() {
   return (
     <>
-      <AlertRenderer />
+      <Alerter mode="public" />
       <Dialoger />
       <Sheeter />
       <DropDowner />

@@ -8,9 +8,12 @@ import { Button } from '~/modules/ui/button';
 import { useAlertStore } from '~/store/alert';
 import { cn } from '~/utils/cn';
 
+export type AlertContextMode = 'public' | 'app';
+
 export type MainAlert = {
   className?: string;
   id: string;
+  modes?: AlertContextMode[];
   Icon?: React.ElementType<LucideProps>;
   children: React.ReactNode;
   title?: string;
