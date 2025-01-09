@@ -23,8 +23,8 @@ pnpm seed
 ## Customize
 1. Customize your config in `/config/default.ts`
 2. Update package.json with your own data
-3. Look at you .env file to understand what is required and update accordingly 
-4. There are many config files, which end with '-config.ts'. Here you can set for example your entity structure or your navigation structure.
+3. Look at your .env file to understand what is required, for example to send emails you will need an API key.
+4. There are many config files with filenames like `-config.ts`. For example for entities or navigation structure.
 
 
 ## Cella CLI

@@ -8,8 +8,10 @@ This document describes the high-level architecture of Cella.
  5. Open standards. Our long term vision is that each Cella - as in each cell - can speak fluently with other cells. 
 
 ### Backend
-- [Hono](https://hono.dev) + [NodeJS](https://nodejs.org)
-- [Postgres](https://www.postgresql.org) / [PGLite](https://pglite.dev/) + [Drizzle ORM](https://orm.drizzle.team/)
+- [NodeJS](https://nodejs.org)
+- [Hono](https://hono.dev)
+- [Postgres](https://www.postgresql.org)
+- [Drizzle ORM](https://orm.drizzle.team/)
 - [Zod](https://github.com/colinhacks/zod)
 - [OpenAPI](https://www.openapis.org)
 - [Lucia Auth](https://lucia-auth.com/)
@@ -29,10 +31,13 @@ This document describes the high-level architecture of Cella.
 - [Lucide icons](https://lucide.dev)
 
 ### Build tools
-- [Vite](https://vitejs.dev) + [Vite-PWA](https://github.com/antfu/vite-plugin-pwa)
 - [pnpm](https://pnpm.io)
+- [Vite](https://vitejs.dev)
+- [Vite-PWA](https://github.com/antfu/vite-plugin-pwa)
 - [Biome](https://biomejs.dev)
 - [Lefthook](https://github.com/evilmartians/lefthook)
+- [PGLite](https://pglite.dev/)
+
 
 ## File structure
 ```

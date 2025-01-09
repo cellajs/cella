@@ -1,21 +1,19 @@
 import { spawn } from 'node:child_process';
+import chalk from 'chalk';
 
-// Function to start Drizzle Studio
-export const startDrizzleStudio = () => {
+const startDrizzleStudioInBackground = () => {
   const studioProcess = spawn('npx', ['drizzle-kit', 'studio'], {
-    stdio: 'inherit',
-    shell: true,
+    detached: true, // Detach the process
+    stdio: 'ignore', // Ignore its output to let the parent process exit cleanly
+    shell: true, // Use shell for compatibility
   });
 
-  studioProcess.on('close', (code) => {
-    if (code === 0) {
-      console.log('Drizzle Studio exited successfully.');
-    } else {
-      console.error(`Drizzle Studio exited with code ${code}.`);
-    }
-  });
+  // Detach the child process from the parent
+  studioProcess.unref();
 
-  studioProcess.on('error', (err) => {
-    console.error('Failed to start Drizzle Studio:', err);
-  });
+  console.log(' ');
+  console.log(`${chalk.greenBright.bold('✔')} Drizzle Studio started in the background`);
+  console.log(' ');
 };
+
+startDrizzleStudioInBackground();

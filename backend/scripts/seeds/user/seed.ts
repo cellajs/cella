@@ -36,5 +36,9 @@ export const userSeed = async () => {
     })
     .onConflictDoNothing();
 
-  console.info(`${chalk.greenBright.bold('✔')} Created admin user with verified email ${adminUser.email} and password ${adminUser.password}.`);
+  console.info(' ');
+  console.info(
+    `${chalk.greenBright.bold('✔')} Created admin user with verified email ${chalk.greenBright.bold(adminUser.email)} and password ${chalk.greenBright.bold(adminUser.password)}.`,
+  );
+  console.info(' ');
 };

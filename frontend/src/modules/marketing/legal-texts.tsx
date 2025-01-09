@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { config } from 'config';
-import type { LegalTypes } from './legals';
+import type { LegalTypes } from './legal';
 
-const LegalText = ({ textFor }: { textFor: LegalTypes }) => {
+const LegalTexts = ({ textFor }: { textFor: LegalTypes }) => {
   const appName = config.name;
   const companyFull = config.company.name;
   const companyShort = config.company.shortName;
@@ -566,4 +566,4 @@ const LegalText = ({ textFor }: { textFor: LegalTypes }) => {
   );
 };
 
-export default LegalText;
+export default LegalTexts;
