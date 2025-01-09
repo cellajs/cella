@@ -2,10 +2,10 @@ import { config } from 'config';
 
 import { useEffect } from 'react';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
+import { i18n } from '~/lib/i18n';
 import { updateSourcesFromDataUrl } from '~/modules/common/blocknote/helpers';
 import Logo from '~/modules/common/logo';
 import { useUserStore } from '~/store/user';
-import { i18n } from '#/lib/i18n';
 
 const link = 'text-[#0366d6] text-xs leading-[1.13rem] cursor-pointer';
 
