@@ -6,12 +6,12 @@ import slugify from 'slugify';
 import { db } from '#/db/db';
 import { nanoid } from '#/utils/nanoid';
 
+import chalk from 'chalk';
 import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { hashPasswordWithArgon } from '#/modules/auth/helpers/argon2id';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import type { Status } from '../progress';
 import { adminUser } from '../user/seed';
 
 const ORGANIZATIONS_COUNT = 100;
@@ -19,7 +19,7 @@ const MEMBERS_COUNT = 100;
 const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 
 // Seed organizations with data
-export const organizationsSeed = async (progressCallback?: (stage: string, count: number, status: Status) => void) => {
+export const organizationsSeed = async () => {
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
   if (organizationsInTable.length > 0) {
@@ -66,7 +66,6 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
   // Create 100 users for each organization
   for (const organization of organizations) {
     organizationsCount++;
-    if (progressCallback) progressCallback('organizations', organizationsCount, 'inserting');
 
     const insertUsers: InsertUserModel[] = Array.from({ length: MEMBERS_COUNT }).map(() => {
       const firstName = faker.person.firstName();
@@ -97,7 +96,6 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
     });
 
     usersCount += insertUsers.length;
-    if (progressCallback) progressCallback('users', usersCount, 'inserting');
 
     const users = await db.insert(usersTable).values(insertUsers).returning().onConflictDoNothing();
 
@@ -133,14 +131,9 @@ export const organizationsSeed = async (progressCallback?: (stage: string, count
     }
 
     membershipsCount += memberships.length;
-    if (progressCallback) progressCallback('memberships', membershipsCount, 'inserting');
 
     await db.insert(membershipsTable).values(memberships).onConflictDoNothing();
   }
 
-  if (progressCallback) {
-    progressCallback('memberships', membershipsCount, 'done');
-    progressCallback('users', usersCount, 'done');
-    progressCallback('organizations', organizationsCount, 'done');
-  }
+  console.info(`${chalk.greenBright.bold('✔')} Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members.`);
 };

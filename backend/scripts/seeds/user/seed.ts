@@ -2,6 +2,7 @@ import { config } from 'config';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 
+import chalk from 'chalk';
 import { hashPasswordWithArgon } from '#/modules/auth/helpers/argon2id';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 
@@ -35,5 +36,5 @@ export const userSeed = async () => {
     })
     .onConflictDoNothing();
 
-  console.info(`Created admin user with verified email ${adminUser.email} and password ${adminUser.password}.`);
+  console.info(`${chalk.greenBright.bold('✔')} Created admin user with verified email ${adminUser.email} and password ${adminUser.password}.`);
 };
