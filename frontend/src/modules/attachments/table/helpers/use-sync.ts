@@ -55,7 +55,7 @@ export const useSync = (organizationId: string) => {
   const { isOnline } = useOnlineManager();
 
   useEffect(() => {
-    if (!isOnline || !config.has.sync || (!env.VITE_HAS_SYNC && config.mode === 'development')) return;
+    if (!isOnline || !config.has.sync || env.VITE_QUICK) return;
 
     const shapeStream = new ShapeStream<RawAttachment>(attachmentShape(organizationId));
     const queryKey = attachmentsQueryOptions({ orgIdOrSlug: organizationId }).queryKey;

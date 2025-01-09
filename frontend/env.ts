@@ -11,9 +11,9 @@ export const env = createEnv({
       .string()
       .default('false')
       .transform((v) => v === 'true'),
-    VITE_HAS_SYNC: z
+    VITE_QUICK: z
       .string()
-      .default('true')
+      .default('false')
       .transform((v) => v === 'true'),
     VITE_DEBUG_I18N: z
       .string()
