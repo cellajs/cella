@@ -17,7 +17,7 @@
   },
   "scripts": {
     "prepare": "node prepare.js",
-    "quick": "cross-env FORCE_COLOR=1 pnpm -r --parallel --stream  quick",
+    "quick": "cross-env FORCE_COLOR=1 pnpm -r --parallel quick",
     "docker": "pnpm --filter backend docker:up --detach",
     "generate": "pnpm --filter backend generate",
     "clean": "rimraf backend/dist frontend/dist frontend/stats",
