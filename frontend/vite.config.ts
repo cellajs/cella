@@ -46,8 +46,8 @@ export default defineConfig(() => {
       config.sentSentrySourceMaps
         ? sentryVitePlugin({
             disable: config.mode === 'development',
-            org: 'cella',
-            project: 'cella',
+            org: config.slug,
+            project: config.slug,
             authToken: process.env.SENTRY_AUTH_TOKEN,
           })
         : undefined,
@@ -128,7 +128,6 @@ export default defineConfig(() => {
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,svg,ico}'],
-        // Exclude Sentry files from caching & directories if applicable
         globIgnores: ['**/shiki.*', '**/shiki/**', 'static/flags/**/*'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
