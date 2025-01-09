@@ -17,7 +17,7 @@ import { Input } from '~/modules/ui/input';
 import type { TokenData } from '.';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
-const LegalText = lazy(() => import('~/modules/marketing/legals-text'));
+const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
 const formSchema = authBodySchema;
 

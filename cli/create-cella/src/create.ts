@@ -168,7 +168,6 @@ export async function create({
 
   if (needsCd) {
     // Calculate the relative path between the original working directory and the target folder
-
     console.info('now go to your project using:');
     console.info(colors.cyan(`  cd ${relativePath}`)); // Adding './' to make it clear it's a relative path
     console.info();
@@ -184,6 +183,10 @@ export async function create({
   console.info(colors.cyan(`  ${packageManager} seed`));
   console.info();
 
+  console.info(`You can directly sign in using:`);
+  console.info(`email: ${colors.greenBright('admin-test@cellajs.com')}`);
+  console.info(`password: ${colors.greenBright('12345678')}`);
+  console.info();
   console.info(`For more info, check out: ${relativePath}/README.md`);
   console.info(`Enjoy building ${projectName} using cella! 🎉`);
   console.info();

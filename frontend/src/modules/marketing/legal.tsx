@@ -7,7 +7,7 @@ import { SimpleHeader } from '~/modules/common/simple-header';
 import StickyBox from '~/modules/common/sticky-box';
 import PublicPage from '~/modules/marketing/page';
 
-const LegalText = lazy(() => import('~/modules/marketing/legals-text'));
+const LegalTexts = lazy(() => import('~/modules/marketing/legal-texts'));
 
 export type LegalTypes = 'privacy' | 'terms';
 
@@ -15,7 +15,7 @@ const Legal = ({ type }: { type: LegalTypes }) => {
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-[48rem] font-light px-4 md:px-8 min-h-screen">
-        <LegalText textFor={type} />
+        <LegalTexts textFor={type} />
       </div>
     </section>
   );
@@ -26,7 +26,7 @@ const tabs = [
   { id: 'privacy', label: 'common:privacy_policy' },
 ] as const;
 
-export const LegalsMenu = () => {
+export const LegalMenu = () => {
   const { t } = useTranslation();
   return (
     <PublicPage title={t('common:legal')}>

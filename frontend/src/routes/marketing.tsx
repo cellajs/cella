@@ -2,7 +2,7 @@ import { createRoute } from '@tanstack/react-router';
 import About from '~/modules/marketing/about';
 import Accessibility from '~/modules/marketing/accessibility';
 import Contact from '~/modules/marketing/contact';
-import { LegalsMenu } from '~/modules/marketing/legals';
+import { LegalMenu } from '~/modules/marketing/legal';
 import { PublicRoute, rootRoute } from './general';
 
 export const AboutRoute = createRoute({
@@ -23,7 +23,7 @@ export const LegalRoute = createRoute({
   path: '/legal',
   staticData: { pageTitle: 'Legal', isAuth: false },
   getParentRoute: () => rootRoute,
-  component: () => <LegalsMenu />,
+  component: () => <LegalMenu />,
 });
 
 export const AccessibilityRoute = createRoute({

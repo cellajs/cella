@@ -7,9 +7,9 @@
   },
   "scripts": {
     "quick": "cross-env VITE_QUICK=true pnpm dev",
+    "dev": "cross-env NODE_ENV=development vite --mode development && node --trace-warnings",
     "start": "cross-env NODE_ENV=production pnpm preview",
     "check:types": "tsc",
-    "dev": "cross-env NODE_ENV=development vite --mode development && node --trace-warnings",
     "build": "tsc && vite build",
     "build:dev": "cross-env NODE_ENV=development vite build --mode development",
     "preview": "vite preview --port 3000",
@@ -141,6 +141,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
+    "kill-port": "^2.0.1",
     "postcss": "^8.4.49",
     "postcss-import": "^16.1.0",
     "postcss-preset-env": "^10.1.3",

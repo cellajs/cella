@@ -6,7 +6,6 @@ import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
 import { db } from '#/db/db';
 import ascii from '#/utils/ascii';
 import { env } from '../env';
-import { startDrizzleStudio } from '../scripts/drizzle-studio';
 import docs from './lib/docs';
 import app from './routes';
 
@@ -33,9 +32,6 @@ const main = async () => {
     await pgMigrate(db, migrateConfig);
   }
 
-  // Start Drizzle Studio in development mode
-  if (config.mode === 'development') startDrizzleStudio();
-
   // Start server
   serve(
     {
@@ -45,10 +41,11 @@ const main = async () => {
     },
     () => {
       ascii();
+      console.info(' ');
       console.info(
-        `Open ${chalk.greenBright.bold(config.name)} on ${chalk.cyanBright(config.frontendUrl)}. Backend on ${chalk.cyanBright(config.backendUrl)}`,
+        `${chalk.greenBright.bold(config.name)} (Frontend) runs on ${chalk.cyanBright.bold(config.frontendUrl)}. Backend: ${chalk.cyanBright.bold(config.backendUrl)}. Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}`,
       );
-      console.info(`Read API docs on ${chalk.cyanBright(`${config.backendUrl}/docs`)}`);
+      console.info(' ');
     },
   );
 };
