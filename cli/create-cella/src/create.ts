@@ -164,20 +164,26 @@ export async function create({
 
   // Check if the working directory needs to be changed
   const needsCd = originalCwd !== targetFolder;
+  const relativePath = relative(originalCwd, targetFolder);
+
   if (needsCd) {
     // Calculate the relative path between the original working directory and the target folder
-    const relativePath = relative(originalCwd, targetFolder);
 
     console.info('now go to your project using:');
     console.info(colors.cyan(`  cd ${relativePath}`)); // Adding './' to make it clear it's a relative path
     console.info();
   }
 
-  console.info(`${needsCd ? 'then ' : ''}quick start with:`);
+  console.info(`${needsCd ? 'then ' : ''}quick start using pglite with:`);
   console.info(colors.cyan(`  ${packageManager} quick`));
   console.info();
 
-  console.info('Check out the readme to get started: /README.md');
+  console.info('Already have docker installed? Then you can have a full setup with:');
+  console.info(colors.cyan(`  ${packageManager} docker`));
+  console.info(colors.cyan(`  ${packageManager} dev`));
+  console.info(colors.cyan(`  ${packageManager} seed`));
+
+  console.info(`For more info, check out: ${relativePath}/README.md`);
   console.info(`Enjoy building ${projectName} using cella! 🎉`);
   console.info();
 }
