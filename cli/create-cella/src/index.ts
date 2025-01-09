@@ -2,6 +2,7 @@
 
 import { basename, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
+import colors from 'picocolors';
 
 import { input, confirm, select } from '@inquirer/prompts';
 
@@ -9,7 +10,7 @@ import { cli } from './cli';
 import { validateProjectName } from './utils/validate-project-name.ts';
 import { isEmptyDirectory } from './utils/is-empty-directory.ts';
 import { create } from './create.ts';
-import { CELLA_TITLE, VERSION, WEBSITE, AUTHOR } from './constants.ts';
+import { LOGO, VERSION, WEBSITE, AUTHOR, GITHUB, DESCRIPTION } from './constants.ts';
 
 interface CreateOptions {
   projectName: string;
@@ -23,13 +24,15 @@ interface CreateOptions {
 }
 
 async function main(): Promise<void> {
-  console.info(CELLA_TITLE);
+  console.info(LOGO);
 
   // Display CLI version and created by information
   console.info();
-  console.info(`Cella CLI: ${VERSION}`);
-  console.info(`Created by: ${AUTHOR}`);
-  console.info(`Website: ${WEBSITE}`);
+  console.info(DESCRIPTION);
+  console.info();
+  console.info(`Version ${colors.green(VERSION)}`);
+  console.info(`Created by ${AUTHOR}`);
+  console.info(`${GITHUB} | ${WEBSITE}`);
   console.info();
 
   // Skip creating a new branch if --skipNewBranch flag is provided or git is skipped
