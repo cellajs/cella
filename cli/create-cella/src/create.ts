@@ -178,10 +178,11 @@ export async function create({
   console.info(colors.cyan(`  ${packageManager} quick`));
   console.info();
 
-  console.info('Already have docker installed? Then you can have a full setup with:');
+  console.info('Already have docker installed? Then you can run a full setup:');
   console.info(colors.cyan(`  ${packageManager} docker`));
   console.info(colors.cyan(`  ${packageManager} dev`));
   console.info(colors.cyan(`  ${packageManager} seed`));
+  console.info();
 
   console.info(`For more info, check out: ${relativePath}/README.md`);
   console.info(`Enjoy building ${projectName} using cella! 🎉`);

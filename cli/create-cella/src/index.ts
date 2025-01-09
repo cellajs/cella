@@ -29,6 +29,7 @@ async function main(): Promise<void> {
   // Display CLI version and created by information
   console.info();
   console.info(DESCRIPTION);
+  console.info();
   console.info(`Version ${colors.green(VERSION)}`);
   console.info(`Created by ${AUTHOR}`);
   console.info(`${GITHUB} | ${WEBSITE}`);
