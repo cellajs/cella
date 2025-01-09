@@ -6,6 +6,7 @@ import Onboarding from '~/modules/home/onboarding';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import { Dialog, DialogContent, DialogHiddenTitle } from '~/modules/ui/dialog';
 import { useNavigationStore } from '~/store/navigation';
+import { isElementInteractive } from '~/utils/is-el-interactive';
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -16,6 +17,15 @@ const Welcome = () => {
     navigate({ to: config.defaultRedirectPath, replace: true });
   };
 
+  // Close onboarding on escape key if not focused on form
+  const onEscapeKeyDown = (e: KeyboardEvent) => {
+    e.preventDefault();
+
+    const activeElement = document.activeElement;
+    if (isElementInteractive(activeElement)) return;
+    setOnboarding('completed');
+  };
+
   useEffect(() => {
     if (finishedOnboarding) setOnboarding('completed');
   }, [finishedOnboarding]);
@@ -24,7 +34,7 @@ const Welcome = () => {
     <>
       <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
         <DialogContent
-          onEscapeKeyDown={(e) => e.preventDefault()}
+          onEscapeKeyDown={onEscapeKeyDown}
           aria-describedby={undefined}
           className="min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0 bg-background/75 overflow-y-auto"
         >
