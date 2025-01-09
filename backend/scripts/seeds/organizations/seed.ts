@@ -20,6 +20,8 @@ const SYSTEM_ADMIN_MEMBERSHIP_COUNT = 10;
 
 // Seed organizations with data
 export const organizationsSeed = async () => {
+  console.info('Seeding organizations...');
+
   const organizationsInTable = await db.select().from(organizationsTable).limit(1);
 
   if (organizationsInTable.length > 0) {
@@ -51,6 +53,7 @@ export const organizationsSeed = async () => {
   });
 
   await db.insert(organizationsTable).values(organizations).onConflictDoNothing();
+  console.info('Seeding members and memberships, this can take a while...');
 
   const hashedPassword = await hashPasswordWithArgon('12345678');
 
@@ -135,5 +138,5 @@ export const organizationsSeed = async () => {
     await db.insert(membershipsTable).values(memberships).onConflictDoNothing();
   }
 
-  console.info(`${chalk.greenBright.bold('✔')} Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members.`);
+  console.info(`${chalk.greenBright.bold('✔')} Created ${ORGANIZATIONS_COUNT} organizations with ${MEMBERS_COUNT} members each.`);
 };
