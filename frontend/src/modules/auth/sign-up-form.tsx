@@ -11,6 +11,7 @@ import { Suspense, lazy, useEffect } from 'react';
 import { useMutation } from '~/hooks/use-mutations';
 import { signUp as baseSignUp } from '~/modules/auth/api';
 import { dialog } from '~/modules/common/dialoger/state';
+import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -123,12 +124,14 @@ export const LegalNotice = () => {
   const { t } = useTranslation();
 
   const openDialog = (mode: 'terms' | 'privacy') => () => {
-    const dialogComponent = <LegalText textFor={mode} />;
-    const dialogTitle = mode;
+    const dialogComponent = (
+      <Suspense fallback={<Spinner />}>
+        <LegalText textFor={mode} />
+      </Suspense>
+    );
 
     dialog(dialogComponent, {
-      className: 'md:max-w-xl',
-      title: dialogTitle,
+      className: 'md:max-w-3xl mb-10 px-6',
     });
   };
 

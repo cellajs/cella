@@ -214,11 +214,6 @@ const attachmentsRoutes = app
 
     const redirectUrl = `${config.frontendUrl}/${attachment.organizationId}/attachment/${id}`;
 
-    // <title>${task.summary}</title>
-    // <meta name="twitter:title" content="${task.summary}"/>
-    // <meta property="og:title" content="${task.summary}"/>
-    // <meta property="og:image" content="${config.backendUrl}/${task.organizationId}/tasks/${id}/cover"/>
-    // <meta name="twitter:image" content="${config.backendUrl}/${task.organizationId}/tasks/${id}/cover"/>
     return ctx.html(html`
       <!doctype html>
       <html lang="en">
@@ -226,10 +221,6 @@ const attachmentsRoutes = app
           <meta charset="utf-8" />
           <title>${attachment.filename}</title>
           <meta property="og:image" content="${config.frontendUrl}/static/images/thumbnail.png" />
-          <meta name="twitter:image" content="${config.frontendUrl}/static/images/thumbnail.png" />
-          <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:site" content="@Cella" />
-          <meta name="twitter:creator" content="@Cella" />
           <meta property="og:url" content="${redirectUrl}" />
           <meta property="og:type" content="website" />
           <meta property="og:site_name" content="Cella" />

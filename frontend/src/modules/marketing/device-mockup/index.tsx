@@ -31,11 +31,11 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
       <DeviceFrame
         type={type}
         inView={inView}
-        renderCarousel={(isDialog) => {
+        renderCarousel={(isDialog, className) => {
           return isDialog ? (
             <AttachmentsCarousel slides={slides} isDialog={true} saveInSearchParams={false} />
           ) : (
-            <AttachmentsCarousel slides={slides} isDialog={false} />
+            <AttachmentsCarousel slides={slides} isDialog={false} classNameContainer={className} />
           );
         }}
       />

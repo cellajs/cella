@@ -37,7 +37,7 @@ const main = async () => {
     {
       fetch: app.fetch,
       hostname: '0.0.0.0',
-      port: Number(env.PORT ?? '4004'),
+      port: Number(env.PORT ?? '4000'),
     },
     () => {
       ascii();

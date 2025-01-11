@@ -187,7 +187,7 @@ const CarouselPrevious = React.forwardRef<HTMLButtonElement, React.ComponentProp
         variant={variant}
         size={size}
         className={cn(
-          'absolute  h-8 w-8 rounded-full',
+          'absolute h-8 w-8 border-none lg:h-12 lg:w-12 rounded-full',
           orientation === 'horizontal' ? '-left-12 top-1/2 -translate-y-1/2' : '-top-12 left-1/2 -translate-x-1/2 rotate-90',
           className,
         )}
@@ -216,7 +216,7 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
         variant={variant}
         size={size}
         className={cn(
-          'absolute h-8 w-8 rounded-full',
+          'absolute h-8 w-8 border-none lg:h-12 lg:w-12 rounded-full',
           orientation === 'horizontal' ? '-right-12 top-1/2 -translate-y-1/2' : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
           className,
         )}
@@ -238,14 +238,14 @@ CarouselNext.displayName = 'CarouselNext';
 const dotsVariants = cva('rounded-full transition-all duration-300', {
   variants: {
     size: {
-      default: 'h-2.5 w-2.5',
-      sm: 'h-2 w-2',
-      lg: 'h-3.5 w-3.5',
+      default: 'h-5 w-5 text-xs',
+      sm: 'h-6 w-6 text-sm',
+      lg: 'h-7 w-7 text-md',
     },
     gap: {
-      default: 'mx-0.5',
+      default: 'mx-1',
       sm: 'mx-1',
-      lg: 'mx-2',
+      lg: 'mx-1',
     },
   },
   defaultVariants: {
@@ -284,12 +284,10 @@ const CarouselDots = React.forwardRef<HTMLDivElement, CarouselDotsProps>(({ clas
           aria-selected={current === index ? 'true' : 'false'}
           aria-label={`Slide ${index + 1}`}
           onClick={() => api?.scrollTo(index)}
-          className={cn(
-            dotsVariants({ size, gap, className }),
-            'cursor-pointer',
-            current === index ? 'bg-muted-foreground' : 'bg-muted-foreground/40',
-          )}
-        />
+          className={cn(dotsVariants({ size, gap, className }), 'cursor-pointer leading-3', current === index ? 'text-foreground' : 'text-muted')}
+        >
+          ●
+        </button>
       ))}
     </div>
   );

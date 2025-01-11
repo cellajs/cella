@@ -22,7 +22,7 @@ const SystemPage = () => {
         ]}
       />
 
-      <FocusViewContainer className="container mt-4">
+      <FocusViewContainer className="container">
         <Outlet />
       </FocusViewContainer>
     </>

@@ -29,9 +29,10 @@ export const Confetti: React.FC<ConfettiProps> = ({ fire, options }) => {
     if (fire && confettiInstance.current) {
       confettiInstance.current({
         ...options,
-        spread: 100,
-        origin: { y: 0.7 },
+        spread: 200,
+        origin: { y: 0.45 },
         particleCount: 200,
+        startVelocity: 25,
       });
     }
   }, [fire, options]);

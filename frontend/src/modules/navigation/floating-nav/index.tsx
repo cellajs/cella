@@ -21,6 +21,7 @@ const FloatingNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: nu
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  // TODO: can be improved?
   useEffect(() => {
     const appLayout = document.getElementById('app-layout');
 
@@ -35,7 +36,6 @@ const FloatingNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: nu
       {showButtons &&
         items.map((navItem: NavItem, idx: number) => {
           const firstButton = items.length > 1 && idx === 0;
-          if (navItem.element) return navItem.element;
           return (
             <FloatingNavButton
               id={navItem.id}

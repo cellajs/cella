@@ -18,9 +18,10 @@ interface MenuSheetSectionProps {
   sectionLabel: string;
   entityType: ContextEntity;
   createForm: ReactNode;
+  description?: string;
 }
 
-export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, createForm }: MenuSheetSectionProps) => {
+export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, createForm, description }: MenuSheetSectionProps) => {
   const { t } = useTranslation();
   const isMobile = useBreakpoints('max', 'sm');
   const toggleSection = useNavigationStore((state) => state.toggleSection);
@@ -39,6 +40,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
       className: 'md:max-w-2xl',
       id: `create-${entityType}`,
       title: t('common:create_resource', { resource: t(`common:${entityType}`).toLowerCase() }),
+      description: description ? t(description) : '',
     });
   };
 

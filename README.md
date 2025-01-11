@@ -48,20 +48,15 @@
 <br>
 
 ## Create your own app
-Want to use cella to build your new web app? We made it simple using a short create CLI:
+Want to use cella to build your new web app? We made it simple using a short create CLI. Simply follow the steps to get started:
 
 ```bash
 pnpm create @cellajs/cella@latest
 ```
 
-Follow the steps in create CLI and then run your app:
-
-```bash
-pnpm quick
-```
-
 You now have an implementation-ready web app. 🤯! But ... without any unique functionality 🤓. Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
 
+<p>&nbsp;</p>
 
 ## Installation
 For those that (also) want to participate in development:
@@ -77,7 +72,7 @@ pnpm install && pnpm quick
 ```
 
 ### B. Full setup
-For a full setup with sync capabilityies, you need Docker. It will allow you to run Postgres instead of pglite and it will also run electric-sync. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
+For a full setup with sync capabilities, you need Docker. It will allow you to run Postgres instead of pglite and it will also run electric-sync. Install [Orbstack](https://orbstack.dev/) or [Docker](https://docs.docker.com/get-docker/).
 
 ```bash
 pnpm install
@@ -96,7 +91,7 @@ Lastly, [seed](/backend/scripts/README.md) your db (with `dev` running) to sign 
 pnpm seed
 ```
 
-Check it out at [localhost:3003](http://localhost:3003)! Generated API docs can be found at [localhost:4004/docs](http://localhost:4004/docs). Manage your local db with [local.drizzle.studio](http:local.drizzle.studio).
+Check it out at [localhost:3000](http://localhost:3000)! Generated API docs can be found at [localhost:4000/docs](http://localhost:4000/docs). Manage your local db with [local.drizzle.studio](http:local.drizzle.studio).
 
 
 <br />

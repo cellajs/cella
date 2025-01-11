@@ -1,4 +1,4 @@
-import en from './en/twitter-time.json';
-import nl from './nl/twitter-time.json';
+import en from './en/mini-time.json';
+import nl from './nl/mini-time.json';
 
 export default { en, nl };

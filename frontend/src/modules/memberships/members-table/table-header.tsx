@@ -64,7 +64,7 @@ export const MembersTableHeader = ({
 
   return (
     <>
-      <div className="flex items-center max-sm:justify-between md:gap-2">
+      <div className="flex items-center max-sm:justify-between md:gap-2 mt-4">
         {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>

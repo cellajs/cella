@@ -16,23 +16,13 @@ const AppNavLoader = () => {
     <>
       <Logo
         iconOnly
-        data-waited={hasWaited}
-        data-loading={isLoading}
         className={`w-8 saturate-[.9] group-hover:scale-110 absolute transition-all group-hover:opacity-0 -z-0
-          ${config.navLogoAnimation}
-          data-[waited=true]:data-[loading=false]:ease-in-out  
-          data-[waited=true]:data-[loading=false]:opacity-0
-          data-[waited=true]:data-[loading=false]:scale-0`}
+                    ${config.navLogoAnimation} ${!isLoading && hasWaited && 'ease-in-out opacity-0 scale-0'}`}
       />
       <Home
-        data-waited={hasWaited}
-        data-loading={isLoading}
         strokeWidth={config.theme.strokeWidth}
-        className="transition-all ease-in-out group-hover:scale-110 group-hover:opacity-100 
-        data-[waited=false]:scale-0
-        data-[loading=true]:scale-0
-        data-[waited=false]:opacity-0
-        data-[loading=true]:opacity-0"
+        className={`transition-all ease-in-out group-hover:scale-110 group-hover:opacity-100 
+                    ${!hasWaited && 'scale-0 opacity-0'} ${isLoading && 'scale-0 opacity-0'}`}
       />
     </>
   );

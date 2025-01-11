@@ -69,7 +69,7 @@ export const config = {
   googleMapsKey: 'AIzaSyDMjCpQusdoPWLeD7jxkqAxVgJ8s5xJ3Co',
 
   // File handling with imado
-  tusPort: 1080,
+  tusPort: 4100,
   s3UploadBucket: 'cella-uploads',
   s3UploadRegion: 'eu-west-1',
   privateCDNUrl: 'https://cdn-priv.cellajs.com',
@@ -167,8 +167,8 @@ export const config = {
     country: 'TypeScript Rock',
     googleMapsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
-    twitterUrl: 'https://twitter.com/flipvanhaaren',
-    twitterHandle: '@flipvanhaaren',
+    blueskyUrl: 'https://bsky.app/profile/flipvh.bsky.social',
+    blueskyHandle: '@flipvh.bsky.social',
     githubUrl: 'https://github.com/cellajs/cella',
     mapZoom: 4,
     coordinates: {

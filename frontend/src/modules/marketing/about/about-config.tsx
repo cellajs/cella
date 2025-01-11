@@ -1,8 +1,8 @@
 import { config } from 'config';
-import { Building2, Github, Twitter, Users } from 'lucide-react';
+import { Building2, Cloud, Github, Users } from 'lucide-react';
 
 export const socials = [
-  { title: 'Twitter', href: config.company.twitterUrl, icon: Twitter },
+  { title: 'BlueSky', href: config.company.blueskyUrl, icon: Cloud },
   { title: 'GitHub', href: config.company.githubUrl, icon: Github },
 ];
 

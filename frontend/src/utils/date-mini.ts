@@ -9,7 +9,7 @@ const day = 864e5;
 // const month = 2592e6;
 const year = 31536e6;
 
-// convert date in into a minimal 'Twitter format'
+// convert date in into a minimal format'
 export const dateMini = (startDate: string, passedLoc: keyof typeof locale, addStr?: string) => {
   const start = dayjs(startDate);
   const end = dayjs();
