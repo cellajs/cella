@@ -9,9 +9,9 @@ const commonModulesList = [
   {
     name: 'memberships',
     description:
-      'Organization-scope only. Memberships are one-on-one relations between a user and a contextual entity, such as an organization or project. It contains a role and archived, muted status.',
+      'Memberships are one-on-one relations between a `user` and a contextual `entity`, such as an `organization`. It contains a role and archived, muted status.',
   },
-  { name: 'organizations', description: 'Organizations - `organization` - are obviously a central `entity`.' },
+  { name: 'organizations', description: 'Organizations - `organization` - are a core `entity`.' },
   { name: 'requests', description: 'Receive public requests such as contact form, newsletter and waitlist requests.' },
   { name: 'general', description: 'Endpoints that are system-wide, system related or span multiple entities.' },
   {

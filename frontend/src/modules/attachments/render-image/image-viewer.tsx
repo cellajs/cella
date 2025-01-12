@@ -1,21 +1,21 @@
 import * as React from 'react';
 
-export interface IDragData {
+export interface ImageDragData {
   x: number;
   y: number;
   dx: number;
   dy: number;
 }
 
-export interface IReactPanZoomStateType {
+export interface ImageViewerStateType {
   dragging: boolean;
   mouseDown: boolean;
   comesFromDragging: boolean;
-  dragData: IDragData;
+  dragData: ImageDragData;
   matrixData: number[];
 }
 
-export interface IReactPanZoomProps {
+export interface ImageViewerProps {
   height?: string;
   width?: string;
   className?: string;
@@ -33,11 +33,11 @@ export interface IReactPanZoomProps {
   children?: React.ReactNode;
 }
 
-export default class ReactPanZoom extends React.PureComponent<IReactPanZoomProps, IReactPanZoomStateType> {
+export default class ImageViewer extends React.PureComponent<ImageViewerProps, ImageViewerStateType> {
   private panWrapper: HTMLElement | null = null;
   private panContainer: HTMLElement | null = null;
 
-  public static defaultProps: Partial<IReactPanZoomProps> = {
+  public static defaultProps: Partial<ImageViewerProps> = {
     enablePan: true,
     onPan: () => undefined,
     onReset: () => undefined,
@@ -47,10 +47,10 @@ export default class ReactPanZoom extends React.PureComponent<IReactPanZoomProps
     rotation: 0,
   };
 
-  private getInitialState = (): IReactPanZoomStateType => {
+  private getInitialState = (): ImageViewerStateType => {
     const { pandx, pandy, zoom } = this.props;
 
-    const defaultDragData: IDragData = {
+    const defaultDragData: ImageDragData = {
       dx: pandx || 0,
       dy: pandy || 0,
       x: 0,
@@ -68,7 +68,7 @@ export default class ReactPanZoom extends React.PureComponent<IReactPanZoomProps
 
   public state = this.getInitialState();
 
-  public componentDidUpdate(prevProps: IReactPanZoomProps) {
+  public componentDidUpdate(prevProps: ImageViewerProps) {
     const { zoom } = this.props;
     if (prevProps.zoom !== zoom) {
       const newMatrixData = [...this.state.matrixData];
@@ -159,7 +159,7 @@ export default class ReactPanZoom extends React.PureComponent<IReactPanZoomProps
     const { matrixData } = this.state;
     const offsetX = matrixData[4];
     const offsetY = matrixData[5];
-    const newDragData: IDragData = {
+    const newDragData: ImageDragData = {
       dx: offsetX,
       dy: offsetY,
       x: pageX,
