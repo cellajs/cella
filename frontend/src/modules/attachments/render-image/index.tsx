@@ -5,9 +5,9 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { TooltipButton } from '../../common/tooltip-button';
-import PanViewer from './image-viewer-setup';
+import ImageViewer from './image-viewer';
 
-type ReactPanZoomProps = {
+type RenderImageProps = {
   image: string;
   alt?: string;
   ref?: React.Ref<HTMLImageElement>;
@@ -33,7 +33,7 @@ const ControlButton = ({ tooltipContent, onClick, icon, className }: ControlButt
   </TooltipButton>
 );
 
-const ReactPanZoom = forwardRef<HTMLImageElement, ReactPanZoomProps>(
+const RenderImage = forwardRef<HTMLImageElement, RenderImageProps>(
   ({ image, alt, resetImageState, showButtons, imageClass, togglePanState = false }, forwardedRef) => {
     const [dx, setDx] = useState(0);
     const [dy, setDy] = useState(0);
@@ -116,7 +116,7 @@ const ReactPanZoom = forwardRef<HTMLImageElement, ReactPanZoomProps>(
           </div>
         )}
 
-        <PanViewer
+        <ImageViewer
           className="w-full h-full flex justify-center items-center z-10"
           zoom={zoom}
           setZoom={setZoom}
@@ -129,10 +129,10 @@ const ReactPanZoom = forwardRef<HTMLImageElement, ReactPanZoomProps>(
         >
           {/* Image */}
           <img ref={imgRef} style={{ transform: `rotate(${rotation * 90}deg)`, width: '100%' }} className={imageClass} src={image} alt={alt} />
-        </PanViewer>
+        </ImageViewer>
       </>
     );
   },
 );
 
-export default ReactPanZoom;
+export default RenderImage;

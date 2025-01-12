@@ -24,7 +24,7 @@ const HamburgerButton = ({ isOpen, toggle, className }: HamburgerButtonProps) =>
 
   return (
     <button
-      className={cn('group flex h-12 w-12 flex-col items-center hover:opacity-50 justify-center', className)}
+      className={cn('group flex h-10 w-10 flex-col items-center hover:opacity-50 justify-center', className)}
       type="button"
       onClick={() => toggle(!isOpen)}
       aria-expanded={isOpen}

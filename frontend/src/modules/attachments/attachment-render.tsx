@@ -4,7 +4,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import Spinner from '../common/spinner';
 
 // Lazy-loaded components
-const ReactPanZoom = lazy(() => import('~/modules/attachments/image-viewer'));
+const ReactPanZoom = lazy(() => import('~/modules/attachments/render-image'));
 const RenderAudio = lazy(() => import('~/modules/attachments/render-audio'));
 const RenderPDF = lazy(() => import('~/modules/attachments/render-pdf'));
 const RenderVideo = lazy(() => import('~/modules/attachments/render-video'));

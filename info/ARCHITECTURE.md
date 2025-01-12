@@ -58,10 +58,9 @@ This document describes the high-level architecture of Cella.
 ├── frontend                  Frontend SPA
 │   ├── public                
 │   ├── src                   
-│   │   ├── api               API functions with RPC
 │   │   ├── hooks             
 │   │   ├── json              
-│   │   ├── lib               Library code and helper functions
+│   │   ├── lib               Library code and core helper functions
 │   │   ├── modules           Modular distribution of components
 │   │   ├── routes            Code-based routes
 │   │   ├── store             Zustand data stores
@@ -74,10 +73,10 @@ This document describes the high-level architecture of Cella.
 
 ## Data modeling
 Entities can be split in four types:
-* All entities (user, organization)
-* PageEntity: Entity that can be searched for (user, organization)
-* ContextEntity: Has memberships (organization)
-* ProductEntity: Content related entities without membership
+* All entities (`user`, `organization`, `attachments`)
+* `PageEntity`: Entity that can be searched for (`user`, `organization`)
+* `ContextEntity`: Has memberships (`organization`)
+* `ProductEntity`: Content related entities without membership (`attachment`)
 
 The default cella setup has one example product entity - `attachments` - and one context: `organizations`. 
 
@@ -85,16 +84,14 @@ The default cella setup has one example product entity - `attachments` - and one
 An OpenAPI is built with [zod-openapi](https://github.com/honojs/middleware/tree/main/packages/zod-openapi). Please read the readme in this middleware before you get started.
 
 ## Modularity
-Both frontend and backend already have modules, such as `authentication`, `users` and `organizations`. The backend modules are split mostly by functionality. The frontend modules are split by the user interface: `home`, `organizations`, `marketing`. The benefit of modularity is twofold: better code (readability, portability etc) and to make receiving cella updates possible.
+Both frontend and backend already have many modules in common, such as `authentication`, `users` and `organizations`. There are more frontend modules however, also for `home`, `marketing`, `navigation`. The benefit of modularity is twofold: better code (readability, portability etc) and to make receiving cella updates possible.
 
 Zooming in on some of the frontend modules:
-* `common`: a cella-predefined set of reusable react components 
+* `common`: a cella-predefined set of reusable react components and services 
 * `ui`: Full with shadcn UI components. They have some small tweaks however and it is to be expected you will customize them yourself further.
-* `attachments`: product entity module that has support for offline, optimistic updates and realtime sync.
+* `attachments`: product entity module that has support for **offline, optimistic updates and realtime sync**.
 
 A similar situation can be found in the `types` folders of both frontend and backend. you have app-specific types in `app.ts` and predefined cella types in `common.ts`.
-
-In the frontend we decided - for now - to keep `routes`, `stores`, `hooks` and `api` together and not nest them in each respective module. This has pros and cons but the idea here is that having them together gives you a quick look into what the complete app has to offer, and to make it easier to strive for consistency. This benefit wil reduce when cella gets more stable, so its likely this will change in the future.
 
 
 ## Security
