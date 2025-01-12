@@ -10,7 +10,7 @@ const SystemPage = () => {
 
   return (
     <>
-      <SimpleHeader heading={t('common:system_panel')} text={t('common:system_panel.text')} className="container pt-4 md:pt-6" />
+      <SimpleHeader heading={t('common:system_panel')} text={t('common:system_panel.text')} className="container pt-4 md:pt-6 md:px-6" />
 
       <PageNav
         className="mt-4"

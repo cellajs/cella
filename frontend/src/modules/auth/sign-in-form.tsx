@@ -120,7 +120,7 @@ export const SignInForm = ({
               )}
             />
 
-            <SubmitButton loading={isPending} disabled={!form.formState.isDirty} className="w-full">
+            <SubmitButton loading={isPending} className="w-full">
               {t('common:sign_in')}
               <ArrowRight size={16} className="ml-2" />
             </SubmitButton>

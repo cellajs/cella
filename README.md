@@ -48,13 +48,13 @@
 <br>
 
 ## Create your own app
-Want to use cella to build your new web app? We made it simple using a short create CLI. Simply follow the steps to get started:
+Want to try cella to build your new web app? We made it simple using a short create CLI. Simply follow the steps to get started:
 
 ```bash
 pnpm create @cellajs/cella@latest
 ```
 
-You now have an implementation-ready web app. 🤯! But ... without any unique functionality 🤓. Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
+You now have an implementation-ready web app 🤯. But ... without any unique functionality 🤓. Read the [Quickstart](/info/QUICKSTART.md) so you can build something unique quickly.
 
 <p>&nbsp;</p>
 

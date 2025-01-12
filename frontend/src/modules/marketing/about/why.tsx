@@ -8,16 +8,14 @@ const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, 
 
 // Slides for light and dark themes
 const lightSlides = [
-  { src: '/static/screenshots/signin-with-cella.jpg' },
-  { src: '/static/screenshots/onboarding.jpg' },
-  { src: '/static/screenshots/org-page.jpg' },
-  { src: '/static/screenshots/user-sheet-cella.jpg' },
+  { src: '/static/screenshots/system-page.png' },
+  { src: '/static/screenshots/org-page.png' },
+  { src: '/static/screenshots/settings.png' },
 ];
 const darkSlides = [
-  { src: '/static/screenshots/dark/signin-with-cella.jpg' },
-  { src: '/static/screenshots/dark/onboarding.jpg' },
-  { src: '/static/screenshots/dark/org-page.jpg' },
-  { src: '/static/screenshots/dark/user-sheet-cella.jpg' },
+  { src: '/static/screenshots/system-page-dark.png' },
+  { src: '/static/screenshots/org-page-dark.png' },
+  { src: '/static/screenshots/settings-dark.png' },
 ];
 
 const Why = () => {
