@@ -19,7 +19,7 @@ export type NavItem = {
   icon: React.ElementType<LucideProps>;
   sheet?: React.ReactNode;
   dialog?: React.ReactNode;
-  element?: React.ReactNode;
+  event?: string;
   href?: string;
   mirrorOnMobile?: boolean;
 };
@@ -48,6 +48,7 @@ const AppNav = () => {
     // If it has a dialog, open it
     if (navItem.dialog) {
       if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+
       return dialog(navItem.dialog, {
         id: navItem.id,
         className: navItem.id === 'search' ? 'sm:max-w-2xl p-0 border-0 mb-4' : '',
@@ -66,6 +67,12 @@ const AppNav = () => {
       }
       return navigate({ to: navItem.href });
     }
+
+    // If it has an event, emit it
+    if (navItem.event) {
+      return dispatchEvent(new Event(navItem.event));
+    }
+
     // Set nav sheet
     const sheetSide = isMobile ? (navItem.mirrorOnMobile ? 'right' : 'left') : 'left';
 

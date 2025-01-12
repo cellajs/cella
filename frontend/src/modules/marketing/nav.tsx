@@ -89,9 +89,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
             {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-4 md:flex">{renderNavItems()}</nav>}
           </div>
 
-          <div
-            className={`gap-2 px-2 flex items-center transition-all duration-300 ease-in-out ${showSheet ? 'translate-x-2 opacity-0' : 'delay-700'}`}
-          >
+          <div className={`gap-2 px-2 flex items-center transition-opacity duration-300 ease-in-out ${showSheet ? 'opacity-0' : 'max-sm:delay-700'}`}>
             <UserLanguage />
 
             <UserTheme className="max-xs:hidden mr-2" />

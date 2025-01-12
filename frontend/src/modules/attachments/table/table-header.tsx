@@ -48,7 +48,7 @@ export const AttachmentsTableHeader = ({
   };
 
   return (
-    <div className={'flex items-center max-sm:justify-between md:gap-2'}>
+    <div className={'flex items-center max-sm:justify-between md:gap-2 mt-4'}>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>

@@ -7,11 +7,12 @@ import { useThemeStore } from '~/store/theme';
 interface HeroProps {
   title: string;
   subtitle: string;
-  text?: string;
   children: React.ReactNode;
+  text?: string;
+  badgeText?: string;
 }
 
-export const Hero = ({ title, subtitle, text, children }: HeroProps) => {
+export const Hero = ({ title, subtitle, text, children, badgeText }: HeroProps) => {
   const { t } = useTranslation();
   const { theme } = useThemeStore();
   const { ref, inView } = useInView({
@@ -20,7 +21,7 @@ export const Hero = ({ title, subtitle, text, children }: HeroProps) => {
   });
 
   const gradientClass =
-    theme === 'none' ? 'from-slate-600 via-neutral-300 to-stone-600 text-primary/50' : 'from-rose-800 via-rose-600 to-pink-800 text-transparent';
+    theme === 'none' ? 'from-slate-600 via-neutral-400 to-stone-700 text-primary/50' : 'from-rose-800 via-rose-600 to-pink-800 text-transparent';
   const sectionClass = 'rich-gradient relative flex min-h-[90vh] items-center justify-center space-y-6 py-24 px-4 lg:py-32';
   const headerClass = `transition-all will-change-transform duration-500 ease-out ${inView ? 'opacity-1' : 'opacity-0 scale-95 translate-y-4'}`;
 
@@ -29,7 +30,7 @@ export const Hero = ({ title, subtitle, text, children }: HeroProps) => {
       <section id="hero" className={sectionClass}>
         <header ref={ref} className={headerClass}>
           <div className="container flex max-w-5xl flex-col items-center gap-4 text-center">
-            <Badge className="hidden sm:block">{t('about:prerelease')}</Badge>
+            {badgeText && <Badge className="hidden sm:block">{t(badgeText)}</Badge>}
             <h1 className="font-heading test-primary mt-6 mb-6 text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
               {title && <span>{t(title)}</span>}
               {title && subtitle && <br />}

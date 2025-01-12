@@ -2,27 +2,30 @@ import { Link, useNavigate } from '@tanstack/react-router';
 
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
-import { buttonVariants } from '~/modules/ui/button';
+import { Button, buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-import { config } from 'config';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, Check, Copy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 // import Counters from '~/modules/marketing/about/counters';
 // import FAQ from '~/modules/marketing/about/faq';
 import Features from '~/modules/marketing/about/features';
 import { Hero } from '~/modules/marketing/about/hero';
 import Integrations from '~/modules/marketing/about/integrations';
+import Showcase from '~/modules/marketing/about/showcase';
 // import Pricing from '~/modules/marketing/about/pricing';
 import Why from '~/modules/marketing/about/why';
 
 import '~/modules/marketing/about/glow-button.css';
+import { Input } from '~/modules/ui/input';
+import CallToAction from './call-to-action';
 
 interface AboutSectionProps {
-  title: string;
-  text: string;
   section: string;
+  title?: string;
+  text?: string;
   children?: React.ReactNode;
   alternate?: boolean; // Optional prop for background styling
 }
@@ -34,19 +37,21 @@ const AboutSection = ({ title, text, section, children, alternate = false }: Abo
   return (
     <section id={section} className={`container overflow-hidden max-w-none py-8 md:py-12 lg:py-24 ${backgroundClass}`}>
       <div className="mx-auto mb-12 flex max-w-[48rem] flex-col justify-center gap-4">
-        <h2 className="font-heading text-3xl font-semibold leading-[1.1] sm:text-center md:text-4xl">{t(title)}</h2>
-        <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">{t(text)}</p>
+        {title && <h2 className="font-heading text-3xl font-semibold leading-[1.1] sm:text-center md:text-4xl">{t(title)}</h2>}
+        {text && <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">{t(text)}</p>}
       </div>
       {children}
     </section>
   );
 };
 
-const sectionIds = ['hero', 'why', 'features', 'integrations'];
+const sectionIds = ['hero', 'why', 'features', 'integrations', 'showcase', 'call-to-action'];
 
 const About = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const { copyToClipboard, copied } = useCopyToClipboard();
 
   useScrollSpy({ sectionIds });
 
@@ -65,18 +70,25 @@ const About = () => {
 
       <div className="container max-w-none px-0">
         {/* Hero landing */}
-        <Hero key={'hero'} title="" subtitle="about:hero.subtitle" text="about:hero.text">
-          <div className="max-sm:hidden mb-8">
-            <a
-              href={config.company.githubUrl}
-              className={cn(
-                'glow-button bg-background/95 !rounded-full relative hover:!bg-background active:bg-background',
-                buttonVariants({ variant: 'ghost', size: 'xl' }),
-              )}
-              aria-label="Get started"
+        <Hero key={'hero'} title="" badgeText="about:prerelease" subtitle="about:hero.subtitle" text="about:hero.text">
+          <div className="glow-button mb-8 relative max-xs:hidden">
+            <Input
+              readOnly
+              value="pnpm create @cellajs/cella"
+              className="block w-96 py-6 h-14 px-8 font-light text-sm font-mono rounded-full border border-transparent bg-background ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-none focus-visible:ring-primary/20"
+            />
+            {copied && (
+              <div className="absolute font-mono top-2.5 text-sm left-8 text-left bg-background right-2 py-2 rounded-full">copied! bon voyage 🚀</div>
+            )}
+
+            <Button
+              onClick={() => copyToClipboard('pnpm create @cellajs/cella')}
+              size="icon"
+              variant="ghost"
+              className="rounded-full absolute right-2 top-2"
             >
-              {t('about:start_github.text')}
-            </a>
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+            </Button>
           </div>
           <Link
             to="/about"
@@ -105,6 +117,16 @@ const About = () => {
           {/* Integrations */}
           <AboutSection key={'integrations'} section="integrations" title="about:title_4" text="about:text_4">
             <Integrations />
+          </AboutSection>
+
+          {/* Showcase */}
+          <AboutSection key={'showcase'} section="showcase" title="about:showcase" text="about:showcase.text">
+            <Showcase />
+          </AboutSection>
+
+          {/* Call to Action */}
+          <AboutSection key={'call-to-action'} section="call-to-action" alternate={true}>
+            <CallToAction />
           </AboutSection>
 
           {/* Public counters */}

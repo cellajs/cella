@@ -69,7 +69,6 @@ export default defineConfig(() => {
             author: config.company.name,
             color: config.themeColor,
             url: config.frontendUrl,
-            twitter: config.company.twitterHandle,
           },
         },
       }),

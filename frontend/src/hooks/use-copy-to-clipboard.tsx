@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 // This hook is used to copy text to the clipboard
-export const useCopyToClipboard = (timeoutDuration = 1000) => {
+export const useCopyToClipboard = (timeoutDuration = 3000) => {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 

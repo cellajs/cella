@@ -63,8 +63,8 @@ export const MembersTableHeader = ({
   };
 
   return (
-    <>
-      <div className="flex items-center max-sm:justify-between md:gap-2">
+    <div>
+      <div className="flex items-center max-sm:justify-between md:gap-2 mt-4">
         {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
@@ -133,6 +133,6 @@ export const MembersTableHeader = ({
 
       {/* Container ref to embed dialog */}
       <div ref={containerRef} />
-    </>
+    </div>
   );
 };

@@ -30,14 +30,14 @@ pnpm seed
 ## Cella CLI
 Cella CLI is currently limited to: creating a cella project, listing diverged files and pulling upstream changes. Config can be found in `cella.config.js`.
 
-### 1. List diverged
+### List diverged
 Receive a list of files that have diverged from cella itself. The files you have ignored in cella.config.js will not be listed.
 
 ```bash
 pnpm diverged
 ```
 
-### 2. Pull upstream
+### Pull upstream
 Pull upstream changes from cella. Changes in files that are in the cella ignore list will automatically be undone to reduce conflicts.
 
 ```bash

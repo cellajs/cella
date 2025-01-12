@@ -14,7 +14,7 @@
   "author": "CellaJS <info@cellajs.com>",
   "license": "UNLICENSED",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.723.0",
+    "@aws-sdk/client-s3": "^3.726.0",
     "@t3-oss/env-core": "^0.11.1",
     "@tus/file-store": "^1.5.1",
     "@tus/s3-store": "^1.6.2",
@@ -23,7 +23,7 @@
     "dotenv": "^16.4.7",
     "jsonwebtoken": "^9.0.2",
     "tsx": "^4.19.2",
-    "zod": "^3.24.1"
+    "zod": "3.23.8"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.7",

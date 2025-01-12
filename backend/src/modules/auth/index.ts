@@ -524,7 +524,6 @@ const authRoutes = app
         type: string;
         updated_at: string;
         url: string;
-        twitter_username?: string | null;
       } = await githubUserResponse.json();
 
       // Check if it's account link

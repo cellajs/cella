@@ -40,14 +40,11 @@
     "cross-env": "^7.0.3",
     "rimraf": "^6.0.1",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
+    "typescript": "^5.7.3",
     "vitest": "^2.1.8"
   },
   "packageManager": "pnpm@9.1.2",
   "dependencies": {
     "dotenv": "^16.4.7"
-  },
-  "volta": {
-    "node": "22.12.0"
   }
 }

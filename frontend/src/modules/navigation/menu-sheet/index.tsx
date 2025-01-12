@@ -37,6 +37,7 @@ export type SectionItem = {
   createForm?: React.ReactNode;
   submenu?: SectionItem;
   icon?: React.ElementType<LucideProps>;
+  description?: string;
 };
 
 export const MenuSheet = memo(() => {
@@ -70,6 +71,7 @@ export const MenuSheet = memo(() => {
           sectionType={section.name}
           createForm={section.createForm}
           data={menuSection}
+          description={section.description}
         />
       );
     });

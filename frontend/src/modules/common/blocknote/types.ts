@@ -41,13 +41,13 @@ export type BaseMenusItemsTitle =
   | 'Numbered List'
   | 'Check List'
   | 'Notify'
+  | 'Code Block'
   | 'Emoji'
   | 'Table'
   | 'Audio'
   | 'Heading 1'
   | 'Heading 2'
   | 'Heading 3'
-  | 'Code Block'
   | 'Paragraph';
 
 // Combine ExtendableTypes with your base types

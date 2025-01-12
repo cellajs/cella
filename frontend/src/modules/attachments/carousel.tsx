@@ -5,10 +5,12 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { AttachmentRender } from '~/modules/attachments/attachment-render';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
+import { cn } from '~/utils/cn';
 
 interface CarouselPropsBase {
   slide?: number;
   slides?: { src: string; fileType?: string }[];
+  classNameContainer?: string;
 }
 
 type CarouselProps =
@@ -21,7 +23,7 @@ type CarouselProps =
       saveInSearchParams?: never; // Disallowed when isDialog is false
     });
 
-const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInSearchParams = false }: CarouselProps) => {
+const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) => {
   const navigate = useNavigate();
   const {
     search: { attachmentPreview },
@@ -84,7 +86,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
               }}
             >
               <AttachmentRender
-                containerClassName="overflow-hidden h-full relative rounded-t-[.5rem] flex items-center justify-center"
+                containerClassName={cn('overflow-hidden h-full relative flex items-center justify-center, ', classNameContainer)}
                 itemClassName={itemClass}
                 type={fileType}
                 imagePanZoom={isDialog}

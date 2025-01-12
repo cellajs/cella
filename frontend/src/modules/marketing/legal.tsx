@@ -14,7 +14,7 @@ export type LegalTypes = 'privacy' | 'terms';
 const Legal = ({ type }: { type: LegalTypes }) => {
   return (
     <section className="bg-background">
-      <div className="mx-auto max-w-[48rem] font-light px-4 md:px-8 min-h-screen">
+      <div className="mx-auto max-w-[48rem] pt-8 font-light px-4 md:px-8 min-h-screen">
         <LegalTexts textFor={type} />
       </div>
     </section>

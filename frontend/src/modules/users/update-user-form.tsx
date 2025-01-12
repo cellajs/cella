@@ -116,9 +116,9 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
       if (!targetSheet || !isValidElement(targetSheet.title)) return;
       // Check if the title's type is a function (React component) and not a string
-      const { type: tittleType } = targetSheet.title;
+      const { type: titleType } = targetSheet.title;
 
-      if (typeof tittleType !== 'function' || tittleType.name === 'UnsavedBadge') return;
+      if (typeof titleType !== 'function' || titleType.name === 'UnsavedBadge') return;
       sheet.update('update-user', {
         title: <UnsavedBadge title={targetSheet.title} />,
       });
@@ -200,7 +200,10 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
 
         <div className="flex flex-col sm:flex-row gap-2">
           {children}
-          <SubmitButton disabled={!form.formState.isDirty || Object.keys(form.formState.errors).length > 0} loading={isPending}>
+          <SubmitButton
+            disabled={!hiddenFields?.length && (!form.formState.isDirty || Object.keys(form.formState.errors).length > 0)}
+            loading={isPending}
+          >
             {t(`common:${hiddenFields?.length ? 'continue' : 'save_changes'}`)}
           </SubmitButton>
           {!children && (

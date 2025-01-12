@@ -45,8 +45,6 @@ const BarNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number)
           const isSecondItem = index === 1;
           const isActive = navSheetOpen === navItem.id;
 
-          if (navItem.element) return navItem.element;
-
           return (
             <Fragment key={navItem.id}>
               <div
