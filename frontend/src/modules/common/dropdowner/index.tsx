@@ -10,18 +10,20 @@ export function DropDowner() {
 
   useEffect(() => {
     return dropdownerState.subscribe((dropdowner) => {
-      if ('remove' in dropdowner) setDropdown(null);
-      else setDropdown(dropdowner);
+      if ('remove' in dropdowner) {
+        setDropdown(null);
+        dropdownContainerRef.current = null;
+      } else {
+        setDropdown(dropdowner);
+
+        if (!dropdownContainerRef.current) dropdownContainerRef.current = document.createElement('div');
+        // Dynamically update alignment classes
+        dropdownContainerRef.current.className = `absolute bottom-0 ${dropdowner.align === 'start' ? 'left-0' : 'right-0'}`;
+      }
     });
   }, []);
 
-  if (!dropdown?.trigger) return null;
-
-  // Only create the container once, using the ref to keep it persistent
-  if (!dropdownContainerRef.current) {
-    dropdownContainerRef.current = document.createElement('div');
-    dropdownContainerRef.current.classList.add('absolute', 'bottom-0', dropdown.align === 'start' ? 'left-0' : 'right-0');
-  }
+  if (!dropdown?.trigger || !dropdownContainerRef.current) return null;
 
   dropdown.trigger.appendChild(dropdownContainerRef.current);
   return ReactDOM.createPortal(
