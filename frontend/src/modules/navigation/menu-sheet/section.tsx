@@ -32,6 +32,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
   const archivedSectionType = `${sectionType}-archived`;
   const isArchivedVisible = activeSections?.[archivedSectionType] ?? true;
   const isSectionVisible = activeSections?.[sectionType] ?? true;
+  const inactiveCount = data.filter((i) => i.membership.archived).length;
 
   const createDialog = () => {
     if (isMobile) sheet.remove('nav-sheet');
@@ -78,13 +79,8 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
               <MenuSheetItems type={entityType} data={data} shownOption="unarchive" createDialog={createDialog} />
             )}
             {!!data.length && (
-              <div
-                className="group/archived"
-                data-has-inactive={!!data.filter((i) => i.membership.archived).length}
-                data-submenu={false}
-                data-archived-visible={isArchivedVisible}
-              >
-                <SectionArchiveButton archiveToggleClick={archiveToggleClick} inactiveCount={data.filter((i) => i.membership.archived).length} />
+              <div className="group/archived" data-has-inactive={!!inactiveCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
+                {!!inactiveCount || (isEditing && <SectionArchiveButton archiveToggleClick={archiveToggleClick} inactiveCount={inactiveCount} />)}
                 <AnimatePresence initial={false}>
                   {isArchivedVisible && (
                     <motion.ul

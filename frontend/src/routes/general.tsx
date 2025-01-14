@@ -94,7 +94,7 @@ export const AppRoute = createRoute({
       if (!onlineManager.isOnline() && storedUser) return console.info('Continuing as offline user with session');
 
       console.info('Not authenticated -> redirect to sign in');
-      throw redirect({ to: '/auth/sign-in', replace: true, search: { fromRoot: true, redirect: location.pathname } });
+      throw redirect({ to: '/auth/sign-in', replace: true, search: { redirect: location.pathname } });
     }
 
     // If location is root and has user, redirect to home
@@ -123,7 +123,7 @@ export const acceptInviteRoute = createRoute({
       throw redirect({
         to: '/auth/sign-in',
         replace: true,
-        search: { fromRoot: true, token: params.token },
+        search: { token: params.token },
       });
     }
   },

@@ -35,14 +35,15 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
     onSuccess: (hasPasskey) => {
       setStep('signIn', form.getValues('email'), hasPasskey);
     },
+    //TODO: this is unclear what it does
     onError: (error) => {
       const nextStep = config.has.registrationEnabled || tokenData ? 'signUp' : config.has.waitlist ? 'waitlist' : 'inviteOnly';
       if (error.status === 404) return setStep(nextStep, form.getValues('email'), false);
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    checkEmail(values.email);
+  const onSubmit = () => {
+    checkEmail(form.getValues('email'));
   };
 
   const title = config.has.registrationEnabled
@@ -53,11 +54,12 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
       ? t('common:invite_sign_in')
       : t('common:sign_in');
 
+  // Directly forward to next step if email is in token
   useEffect(() => {
-    if (tokenData?.email) {
-      form.setValue('email', tokenData.email);
-      form.handleSubmit(onSubmit)();
-    }
+    if (!tokenData?.email) return;
+
+    const nextStep = config.has.registrationEnabled || tokenData ? 'signUp' : config.has.waitlist ? 'waitlist' : 'inviteOnly';
+    setStep(nextStep, tokenData.email, false);
   }, [tokenData]);
 
   return (

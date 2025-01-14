@@ -78,7 +78,7 @@ export const SignUpForm = ({
         )}
       </h1>
 
-      <LegalNotice />
+      <LegalNotice email={email} />
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
@@ -120,7 +120,7 @@ export const SignUpForm = ({
   );
 };
 
-export const LegalNotice = () => {
+export const LegalNotice = ({ email }: { email: string }) => {
   const { t } = useTranslation();
 
   const openDialog = (mode: 'terms' | 'privacy') => () => {
@@ -137,7 +137,7 @@ export const LegalNotice = () => {
 
   return (
     <p className="font-light text-sm text-center space-x-1">
-      <span>{t('common:legal_notice.text')}</span>
+      <span>{t('common:legal_notice.text', { email })}</span>
       <Button type="button" variant="link" className="p-0 h-auto" onClick={openDialog('terms')}>
         {t('common:terms').toLocaleLowerCase()}
       </Button>

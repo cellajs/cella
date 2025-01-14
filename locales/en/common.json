@@ -218,7 +218,7 @@
   "leave_message.text": "Leave a message",
   "left_focus.text": "Normal view restored",
   "legal": "Legal",
-  "legal_notice.text": "By signing up with a new account, you agree to the",
+  "legal_notice.text": "By signing up with {{ email }}, you agree to the",
   "legal_notice_access_request.text": "By requesting access, you agree to the",
   "legal_text": "Overview of all legal documents. To understand your rights and responsibilities when using {{appName}}.",
   "less": "Less",
@@ -451,5 +451,7 @@
   "without_color": "Without color",
   "write": "Write",
   "year": "year",
-  "your_role": "Your role"
+  "your_role": "Your role",
+  "decline": "Decline",
+  "with": "With"
 }

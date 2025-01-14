@@ -84,7 +84,7 @@ export const WaitlistForm = ({
               <ChevronDown size={16} className="ml-2" />
             </Button>
           </div>
-          <LegalNotice />
+          <LegalNotice email={email} />
         </>
       )}
       <form onSubmit={form.handleSubmit(onSubmit)} className="max-xs:min-w-full flex flex-col gap-4 sm:flex-row">

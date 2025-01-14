@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { checkTokenSchema } from 'backend/modules/general/schema';
 import { config } from 'config';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Ban, Check, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { z } from 'zod';
@@ -65,9 +65,13 @@ const AcceptInvite = () => {
       {tokenData?.email && !error ? (
         <div className="space-y-4">
           <SubmitButton loading={isPending} className="w-full" onClick={onSubmit}>
+            <Check size={16} className="mr-2" />
             {t('common:accept')}
-            <ArrowRight size={16} className="ml-2" />
           </SubmitButton>
+          <Link to={config.defaultRedirectPath} preload={false} className={cn('w-full', buttonVariants({ variant: 'secondary' }))}>
+            <Ban size={16} className="mr-2" />
+            {t('common:decline')}
+          </Link>
         </div>
       ) : (
         <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
@@ -75,7 +79,7 @@ const AcceptInvite = () => {
           {error && (
             <>
               <span className="text-muted-foreground text-sm">{t(`common:error.${error.type}`)}</span>
-              <Link to="/auth/sign-in" className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
+              <Link to="/auth/sign-in" preload={false} className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
                 {t('common:sign_in')}
                 <ArrowRight size={16} className="ml-2" />
               </Link>

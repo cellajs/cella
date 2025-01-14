@@ -34,7 +34,7 @@ const AuthPage = ({ children }: AuthPageProps) => {
         <div className="mx-auto mb-40 mt-8 flex flex-col justify-center gap-4 w-72 sm:w-96 transition-all will-change-transform duration-500 ease-out opacity-0 group-data-[started=false]:scale-95 translate-y-4 group-data-[started=true]:opacity-100">
           {children}
 
-          <Link to="/about" className="hover:opacity-90 p-4 active:scale-95">
+          <Link to="/about" className="hover:opacity-90 p-4 active:scale-95 mx-auto ">
             <Logo height={34} />
           </Link>
 

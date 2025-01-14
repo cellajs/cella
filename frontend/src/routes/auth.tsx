@@ -17,12 +17,12 @@ export const AuthRoute = createRoute({
 
 export const SignInRoute = createRoute({
   path: '/auth/sign-in',
-  validateSearch: z.object({ redirect: z.string().optional(), fromRoot: z.boolean().optional(), token: z.string().optional() }),
+  validateSearch: z.object({ redirect: z.string().optional(), token: z.string().optional() }),
   staticData: { pageTitle: 'Sign in', isAuth: false },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ cause, search }) => {
     // Only check auth if entering
-    if (cause !== 'enter' || search.fromRoot) return;
+    if (cause !== 'enter' || search.redirect) return;
 
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
