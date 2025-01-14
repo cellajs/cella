@@ -1,15 +1,15 @@
 import { config } from 'config';
 import { Column, Row, Section, Text } from 'jsx-email';
-import { i18n } from '../../backend/src/lib/i18n';
+import { i18n } from '../src/lib/i18n';
 
 import { AppLogo } from './components/app-logo';
 import { ArrowRight } from './components/arrow-right';
-import Avatar from './components/avatar';
+import { Avatar } from './components/avatar';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import UserName from './components/user-name';
+import { UserName } from './components/user-name';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
@@ -80,4 +80,5 @@ export const InviteMemberEmail = ({ userName, userLanguage: lng, inviteBy, organ
   );
 };
 
-export default InviteMemberEmail;
+// Template export
+export const Template = InviteMemberEmail;

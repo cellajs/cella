@@ -27,3 +27,6 @@ export const Footer = ({ style }: { style?: React.CSSProperties }) => (
     </Link>
   </Text>
 );
+
+// Template export
+export const Template = Footer;

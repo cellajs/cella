@@ -5,7 +5,6 @@ import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import { updateBlocknoteHTML } from './helpers';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
@@ -15,7 +14,7 @@ interface Props extends BasicTemplateType {
   unsubscribeLink: string;
 }
 
-export const organizationsNewsletter = ({ userLanguage: lng, content, subject, unsubscribeLink, orgName }: Props) => {
+export const OrganizationsNewsletter = ({ userLanguage: lng, content, subject, unsubscribeLink, orgName }: Props) => {
   return (
     <EmailContainer
       previewText={subject}
@@ -48,7 +47,7 @@ export const organizationsNewsletter = ({ userLanguage: lng, content, subject, u
       >
         <Text>{subject}</Text>
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: we need send it cos blackNote return an html*/}
-        <div dangerouslySetInnerHTML={{ __html: updateBlocknoteHTML(content) }} />
+        <div dangerouslySetInnerHTML={{ __html: content }} />
         <Link
           style={{
             fontSize: '.75rem',
@@ -66,4 +65,5 @@ export const organizationsNewsletter = ({ userLanguage: lng, content, subject, u
   );
 };
 
-export default organizationsNewsletter;
+// Template export
+export const Template = OrganizationsNewsletter;

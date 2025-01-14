@@ -12,7 +12,7 @@ import { sendSlackMessage } from '#/lib/notification';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import feedbackLetter from '../../../emails/requests-feedback';
+import { RequestsFeedback } from '../../../emails/requests-feedback';
 import { env } from '../../../env';
 import requestsRoutesConfig from './routes';
 
@@ -108,7 +108,7 @@ const requestsRoutes = app
 
     // Generate email HTML
     const emailHtml = await render(
-      feedbackLetter({
+      RequestsFeedback({
         userLanguage: user.language,
         subject,
         content,

@@ -14,11 +14,12 @@ import { getValidEntity } from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
+import { updateBlocknoteHTML } from '#/utils/blocknote';
 import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import organizationsNewsletter from '../../../emails/organization-newsletter';
+import { OrganizationsNewsletter } from '../../../emails/organization-newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
@@ -245,10 +246,10 @@ const organizationsRoutes = app
 
       // Generate email HTML
       const emailHtml = await render(
-        organizationsNewsletter({
+        OrganizationsNewsletter({
           userLanguage: user.language,
           subject,
-          content: user.newsletter ? content : 'You`ve unsubscribed from news letters',
+          content: user.newsletter ? updateBlocknoteHTML(content) : 'You`ve unsubscribed from news letters',
           unsubscribeLink,
           orgName: 'SOME NAME',
         }),
@@ -288,10 +289,10 @@ const organizationsRoutes = app
 
         // generating email html
         const emailHtml = await render(
-          organizationsNewsletter({
+          OrganizationsNewsletter({
             userLanguage: member.language,
             subject,
-            content,
+            content: updateBlocknoteHTML(content),
             unsubscribeLink,
             orgName: organization?.name ?? 'Organization',
           }),

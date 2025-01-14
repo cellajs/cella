@@ -7,7 +7,7 @@ import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { Footer } from './components/footer';
-import UserName from './components/user-name';
+import { UserName } from './components/user-name';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
@@ -69,4 +69,5 @@ export const ResetPasswordEmail = ({ userName, userLanguage: lng, resetPasswordL
   );
 };
 
-export default ResetPasswordEmail;
+// Template export
+export const Template = ResetPasswordEmail;

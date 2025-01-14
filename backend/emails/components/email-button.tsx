@@ -22,3 +22,6 @@ export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: st
     </Button>
   </Section>
 );
+
+// Template export
+export const Template = EmailButton;

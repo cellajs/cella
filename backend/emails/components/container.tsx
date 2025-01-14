@@ -18,3 +18,6 @@ export const EmailContainer = ({ previewText, bodyStyle, containerStyle, childre
     </Tailwind>
   </Html>
 );
+
+// Template export
+export const Template = EmailContainer;

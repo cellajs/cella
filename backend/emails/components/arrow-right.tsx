@@ -10,3 +10,6 @@ export const ArrowRight = () => (
     ➔
   </div>
 );
+
+// Template export
+export const Template = ArrowRight;

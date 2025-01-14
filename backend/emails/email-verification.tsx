@@ -1,7 +1,7 @@
 import { Section, Text } from 'jsx-email';
 
 import { config } from 'config';
-import { i18n } from '../../backend/src/lib/i18n';
+import { i18n } from '../src/lib/i18n';
 
 import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
@@ -51,4 +51,5 @@ export const VerificationEmail = ({ userLanguage: lng, verificationLink = baseUr
   );
 };
 
-export default VerificationEmail;
+// Template export
+export const Template = VerificationEmail;

@@ -5,12 +5,12 @@ import { i18n } from '../../backend/src/lib/i18n';
 
 import { AppLogo } from './components/app-logo';
 import { ArrowRight } from './components/arrow-right';
-import Avatar from './components/avatar';
+import { Avatar } from './components/avatar';
 import { EmailContainer } from './components/container';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import UserName from './components/user-name';
+import { UserName } from './components/user-name';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
@@ -77,4 +77,5 @@ export const InviteSystemEmail = ({ userName, userLanguage: lng, inviteBy, token
   );
 };
 
-export default InviteSystemEmail;
+// Template export
+export const Template = InviteSystemEmail;

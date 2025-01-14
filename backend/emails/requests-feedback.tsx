@@ -5,7 +5,6 @@ import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import { updateBlocknoteHTML } from './helpers';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
@@ -14,7 +13,7 @@ interface Props extends BasicTemplateType {
   appName: string;
 }
 
-export const requestsFeedback = ({ userLanguage: lng, appName, content, subject }: Props) => {
+export const RequestsFeedback = ({ userLanguage: lng, appName, content, subject }: Props) => {
   return (
     <EmailContainer
       previewText={subject}
@@ -47,7 +46,7 @@ export const requestsFeedback = ({ userLanguage: lng, appName, content, subject 
       >
         <Text>{subject}</Text>
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: we need send it cos blackNote return an html*/}
-        <div dangerouslySetInnerHTML={{ __html: updateBlocknoteHTML(content) }} />
+        <div dangerouslySetInnerHTML={{ __html: content }} />
       </Section>
 
       <AppLogo />
@@ -56,4 +55,5 @@ export const requestsFeedback = ({ userLanguage: lng, appName, content, subject 
   );
 };
 
-export default requestsFeedback;
+// Template export
+export const Template = RequestsFeedback;

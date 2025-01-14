@@ -20,4 +20,5 @@ export const UserName = ({ beforeText, userName }: { beforeText?: string; userNa
   );
 };
 
-export default UserName;
+// Template export
+export const Template = UserName;
