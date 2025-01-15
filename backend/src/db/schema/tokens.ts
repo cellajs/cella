@@ -14,6 +14,7 @@ export const tokensTable = pgTable('tokens', {
   userId: varchar().references(() => usersTable.id, { onDelete: 'cascade' }),
   organizationId: varchar().references(() => organizationsTable.id, { onDelete: 'cascade' }),
   createdAt: timestamp().defaultNow().notNull(),
+  createdBy: varchar().references(() => usersTable.id, { onDelete: 'set null' }),
   expiresAt: timestamp({ withTimezone: true, mode: 'date' }).notNull(),
 });
 

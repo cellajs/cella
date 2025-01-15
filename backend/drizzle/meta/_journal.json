@@ -8,6 +8,13 @@
       "when": 1730984671518,
       "tag": "0000_lowly_husk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1736945246283,
+      "tag": "0001_gray_the_executioner",
+      "breakpoints": true
     }
   ]
 }

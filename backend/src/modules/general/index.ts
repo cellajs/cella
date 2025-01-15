@@ -131,6 +131,7 @@ const generalRoutes = app
         userId: targetUser?.id,
         email: email.toLowerCase(),
         role,
+        createdBy: user.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 

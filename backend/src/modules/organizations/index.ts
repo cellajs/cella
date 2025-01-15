@@ -5,6 +5,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 
 import { config } from 'config';
 import { render } from 'jsx-email';
+import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { getContextUser, getMemberships } from '#/lib/context';
@@ -185,13 +186,16 @@ const organizationsRoutes = app
     if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
+    const [{ count: pendingMemberCounts }] = await db
+      .select({ count: count().as('count') })
+      .from(tokensTable)
+      .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')));
 
-    const counts = { memberships: memberCounts };
+    const counts = { memberships: memberCounts, invited: pendingMemberCounts };
     const data = { ...organization, membership, counts };
 
     return ctx.json({ success: true, data }, 200);
   })
-
   /*
    * Delete organizations by ids
    */

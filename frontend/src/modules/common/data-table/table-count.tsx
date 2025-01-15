@@ -13,7 +13,7 @@ const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps
   const { t } = useTranslation();
 
   return (
-    <div className="max-sm:hidden text-muted-foreground text-sm pr-4 flex items-center gap-2">
+    <div className="max-sm:hidden text-muted-foreground text-sm  flex items-center gap-2.5">
       {count !== undefined && (
         <>
           {isFiltered && (
@@ -22,10 +22,9 @@ const TableCount = ({ count, type, isFiltered, onResetFilters }: TableCountProps
               {t('common:clear')}
             </Button>
           )}
-          <div className="w-max ml-2">
-            {new Intl.NumberFormat('de-DE').format(count)} {count === 1 ? t(`common:${type}`).toLowerCase() : t(`common:${type}s`).toLowerCase()}
-            {isFiltered && ' '}
-            {isFiltered && t('common:found')}
+          <div className="w-max">
+            {new Intl.NumberFormat('de-DE').format(count)}{' '}
+            {isFiltered ? t('common:found') : <>{count === 1 ? t(`common:${type}`).toLowerCase() : t(`common:${type}s`).toLowerCase()}</>}
           </div>
         </>
       )}

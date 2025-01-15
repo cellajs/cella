@@ -10,6 +10,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/';
+import InvitedUsers from '~/modules/memberships/members-table/invited-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { BaseTableHeaderProps, BaseTableMethods, Member } from '~/types/common';
@@ -19,6 +20,7 @@ type MembersTableHeaderProps = MembersTableProps &
   BaseTableMethods &
   BaseTableHeaderProps<Member, MemberSearch> & {
     role: MemberSearch['role'];
+    invitedUsersCount?: number;
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Member[]>;
@@ -34,6 +36,7 @@ export const MembersTableHeader = ({
   columns,
   setColumns,
   isSheet = false,
+  invitedUsersCount = 10,
   fetchExport,
   clearSelection,
   openInviteDialog,
@@ -111,6 +114,7 @@ export const MembersTableHeader = ({
               )
             )}
             {selected.length === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
+            {invitedUsersCount > 0 && <InvitedUsers count={invitedUsersCount} />}
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">

@@ -180,12 +180,16 @@ const membershipsRoutes = app
       emailsToSendInvitation.map(async (email) => {
         const targetUser = existingUsersByEmail.get(email);
 
+        // Skip if there's no targetUser
+        if (!targetUser) return;
+
         const token = generateId(40);
         await db.insert(tokensTable).values({
           id: token,
           type: 'membership_invitation',
-          userId: targetUser?.id,
+          userId: targetUser.id,
           email: email,
+          createdBy: user.id,
           role,
           organizationId: organization.id,
           expiresAt: createDate(new TimeSpan(7, 'd')),
@@ -194,9 +198,9 @@ const membershipsRoutes = app
         // Render email template
         const emailHtml = await render(
           InviteMemberEmail({
-            userName: targetUser?.name,
-            userLanguage: targetUser?.language || user.language,
-            userThumbnailUrl: targetUser?.thumbnailUrl,
+            userName: targetUser.name,
+            userLanguage: targetUser.language || user.language,
+            userThumbnailUrl: targetUser.thumbnailUrl,
             inviteBy: user.name,
             organizationName: organization.name,
             organizationThumbnailUrl: organization.logoUrl || organization.thumbnailUrl,
