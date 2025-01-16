@@ -186,23 +186,7 @@ const organizationsRoutes = app
     if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
-
-    const counts = { memberships: memberCounts };
-    const data = { ...organization, membership, counts };
-
-    return ctx.json({ success: true, data }, 200);
-  })
-  /*
-   * Get invited members info by id or slug
-   */
-  .openapi(organizationRoutesConfig.getOrgInvitedMembersInfo, async (ctx) => {
-    const { idOrSlug } = ctx.req.valid('param');
-
-    const { entity: organization, isAllowed } = await getValidEntity('organization', 'read', idOrSlug);
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
-    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
-
-    const info = await db
+    const invitesInfo = await db
       .select({
         id: tokensTable.id,
         userId: tokensTable.userId,
@@ -213,7 +197,10 @@ const organizationsRoutes = app
       .from(tokensTable)
       .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')));
 
-    return ctx.json({ success: true, data: info }, 200);
+    const counts = { memberships: memberCounts };
+    const data = { ...organization, membership, counts, invitesInfo };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Delete organizations by ids

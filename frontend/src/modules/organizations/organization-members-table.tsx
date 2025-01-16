@@ -10,7 +10,7 @@ const OrgMembersTable = () => {
   const organization: Organization | undefined = queryClient.getQueryData(organizationsKeys.single(idOrSlug));
 
   if (!organization) return;
-  return <MembersTable entity={organization} />;
+  return <MembersTable entity={organization} invitesInfo={organization.invitesInfo} />;
 };
 
 export default OrgMembersTable;

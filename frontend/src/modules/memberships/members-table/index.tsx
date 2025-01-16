@@ -16,7 +16,7 @@ import { MembersTableHeader } from '~/modules/memberships/members-table/table-he
 import RemoveMembersForm from '~/modules/memberships/remove-member-form';
 import InviteUsers from '~/modules/users/invite-users';
 import type { membersSearchSchema } from '~/routes/organizations';
-import type { BaseTableMethods, EntityPage, Member } from '~/types/common';
+import type { BaseTableMethods, EntityPage, Member, OrganizationInvitesInfo } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/memberships/members-table/table'));
@@ -27,9 +27,10 @@ export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {
   entity: EntityPage;
   isSheet?: boolean;
+  invitesInfo?: OrganizationInvitesInfo;
 }
 
-const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
+const MembersTable = ({ entity, invitesInfo, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
 
   const { search, setSearch } = useSearchParams<MemberSearch>({ saveDataInSearch: !isSheet });
@@ -113,6 +114,7 @@ const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
         entity={entity}
         total={total}
         selected={selected}
+        invitesInfo={invitesInfo}
         q={q ?? ''}
         role={role}
         setSearch={setSearch}

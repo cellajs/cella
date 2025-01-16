@@ -14,17 +14,6 @@ import {
 } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
-export const organizationSchema = z.object({
-  ...createSelectSchema(organizationsTable).shape,
-  createdAt: z.string(),
-  modifiedAt: z.string().nullable(),
-  languages: z.array(languageSchema),
-  emailDomains: z.array(z.string()),
-  authStrategies: z.array(z.string()),
-  membership: membershipInfoSchema.nullable(),
-  counts: membershipsCountSchema,
-});
-
 export const invitesInfoSchema = z.array(
   z.object({
     id: z.string(),
@@ -34,6 +23,21 @@ export const invitesInfoSchema = z.array(
     createdBy: z.string().nullable(),
   }),
 );
+
+export const organizationSchema = z.object({
+  ...createSelectSchema(organizationsTable).shape,
+  createdAt: z.string(),
+  modifiedAt: z.string().nullable(),
+  languages: z.array(languageSchema),
+  emailDomains: z.array(z.string()),
+  authStrategies: z.array(z.string()),
+  membership: membershipInfoSchema.nullable(),
+  invitesInfo: invitesInfoSchema.optional(),
+  counts: membershipsCountSchema,
+});
+
+export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipInfoSchema });
+export const organizationWithInvitesInfoSchema = organizationSchema.extend({ invitesInfo: invitesInfoSchema });
 
 export const createOrganizationBodySchema = z.object({
   name: nameSchema,

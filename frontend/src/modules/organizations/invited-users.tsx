@@ -1,27 +1,23 @@
-import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { sheet } from '~/modules/common/sheeter/state';
-import { organizationInvitesInfoQueryOptions } from '~/modules/organizations/query';
 import type { OrganizationInvitesInfo } from '~/types/common';
 
 interface Props {
-  orgIdOrSlug: string;
+  invitesInfo: OrganizationInvitesInfo;
 }
 
-export const InvitedUsers = ({ orgIdOrSlug }: Props) => {
+export const InvitedUsers = ({ invitesInfo }: Props) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const { data: info, isError } = useQuery(organizationInvitesInfoQueryOptions(orgIdOrSlug));
-
   // TODO show message or add to offline access
-  if (isError || !isOnline) return null;
-  const count = useMemo(() => info?.length ?? 0, [info]);
+  if (!isOnline) return null;
+  const count = useMemo(() => invitesInfo.length, [invitesInfo.length]);
 
   const openInfoSheet = () => {
-    sheet.create(<InvitesInfo info={info ?? []} />, {
+    sheet.create(<InvitesInfo info={invitesInfo} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:invited_users'),
       description: t('common:invited_users.text'),

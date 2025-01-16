@@ -8,12 +8,12 @@ import {
   successWithoutDataSchema,
 } from '#/utils/schema/common-responses';
 import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
-import { membershipInfoSchema } from '../memberships/schema';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
-  invitesInfoSchema,
   organizationSchema,
+  organizationWithInvitesInfoSchema,
+  organizationWithMembershipSchema,
   sendNewsletterBodySchema,
   updateOrganizationBodySchema,
 } from './schema';
@@ -41,7 +41,7 @@ class OrganizationRoutesConfig {
         description: 'Organization was createRouteConfigd',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationSchema.extend({ membership: membershipInfoSchema })),
+            schema: successWithDataSchema(organizationWithMembershipSchema),
           },
         },
       },
@@ -94,7 +94,7 @@ class OrganizationRoutesConfig {
         description: 'Organization was updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationSchema.extend({ membership: membershipInfoSchema })),
+            schema: successWithDataSchema(organizationWithMembershipSchema),
           },
         },
       },
@@ -117,30 +117,7 @@ class OrganizationRoutesConfig {
         description: 'Organization',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public getOrgInvitedMembersInfo = createRouteConfig({
-    method: 'get',
-    path: '/invites/{idOrSlug}',
-    guard: [isAuthenticated],
-    tags: ['organizations'],
-    summary: 'Get organization invites info',
-    description: 'Get an info about invites in organization by id or slug.',
-    request: {
-      params: entityParamSchema,
-    },
-    responses: {
-      200: {
-        description: 'Invites info',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(invitesInfoSchema),
+            schema: successWithDataSchema(organizationWithInvitesInfoSchema),
           },
         },
       },
