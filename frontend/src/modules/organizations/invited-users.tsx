@@ -16,8 +16,8 @@ export const InvitedUsers = ({ invitesInfo }: Props) => {
   const openInfoSheet = () => {
     sheet.create(<InvitesInfo info={invitesInfo} />, {
       className: 'max-w-full lg:max-w-4xl',
-      title: t('common:invited_users'),
-      description: t('common:invited_users.text'),
+      title: t('common:invited_members'),
+      description: t('common:invited_members.text', { entity: t('common:organization').toLowerCase() }),
       id: 'invited-users-info',
       scrollableOverlay: true,
       side: 'right',

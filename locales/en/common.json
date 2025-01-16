@@ -199,6 +199,8 @@
   "invite_by_email": "Invite with email addresses",
   "invite_by_name": "Invite by searching for users",
   "invite_create_account": "Sign up to accept invitation",
+  "invited_members": "Pending Invitations",
+  "invited_members.text": "View all users invited to join {{entity}}.",
   "invite_members.text": "Invited members will receive an email to accept the invitation.",
   "invite_members_search.text": "Search for users to invite within {{appName}} who share a membership with you or are part of the same entity.",
   "invite_only.text": "{{appName}} is currently invite-only. Can't wait? Contact us for an invite.",
