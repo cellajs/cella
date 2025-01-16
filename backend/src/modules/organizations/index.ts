@@ -186,15 +186,34 @@ const organizationsRoutes = app
     if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
-    const [{ count: pendingMemberCounts }] = await db
-      .select({ count: count().as('count') })
-      .from(tokensTable)
-      .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')));
 
-    const counts = { memberships: memberCounts, invited: pendingMemberCounts };
+    const counts = { memberships: memberCounts };
     const data = { ...organization, membership, counts };
 
     return ctx.json({ success: true, data }, 200);
+  })
+  /*
+   * Get invited members info by id or slug
+   */
+  .openapi(organizationRoutesConfig.getOrgInvitedMembersInfo, async (ctx) => {
+    const { idOrSlug } = ctx.req.valid('param');
+
+    const { entity: organization, isAllowed } = await getValidEntity('organization', 'read', idOrSlug);
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
+    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+
+    const info = await db
+      .select({
+        id: tokensTable.id,
+        userId: tokensTable.userId,
+        expiredAt: tokensTable.expiresAt,
+        createdAt: tokensTable.createdAt,
+        createdBy: tokensTable.createdBy,
+      })
+      .from(tokensTable)
+      .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')));
+
+    return ctx.json({ success: true, data: info }, 200);
   })
   /*
    * Delete organizations by ids

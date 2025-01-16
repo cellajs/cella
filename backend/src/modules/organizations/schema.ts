@@ -25,6 +25,16 @@ export const organizationSchema = z.object({
   counts: membershipsCountSchema,
 });
 
+export const invitesInfoSchema = z.array(
+  z.object({
+    id: z.string(),
+    userId: z.string().nullable(),
+    expiredAt: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string().nullable(),
+  }),
+);
+
 export const createOrganizationBodySchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,

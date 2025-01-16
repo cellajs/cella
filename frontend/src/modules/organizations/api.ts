@@ -27,6 +27,16 @@ export const getOrganization = async (idOrSlug: string) => {
   return json.data;
 };
 
+// Get an info about invites in organization by slug or ID
+export const getOrgInvitesInfo = async (idOrSlug: string) => {
+  const response = await client.invites[':idOrSlug'].$get({
+    param: { idOrSlug },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
 export type GetOrganizationsParams = Omit<Parameters<(typeof client.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
   limit?: number;
   offset?: number;

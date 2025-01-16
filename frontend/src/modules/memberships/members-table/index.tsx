@@ -27,10 +27,9 @@ export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {
   entity: EntityPage;
   isSheet?: boolean;
-  invitedUsersCount?: number;
 }
 
-const MembersTable = ({ entity, isSheet = false, invitedUsersCount = 0 }: MembersTableProps) => {
+const MembersTable = ({ entity, isSheet = false }: MembersTableProps) => {
   const { t } = useTranslation();
 
   const { search, setSearch } = useSearchParams<MemberSearch>({ saveDataInSearch: !isSheet });
@@ -116,7 +115,6 @@ const MembersTable = ({ entity, isSheet = false, invitedUsersCount = 0 }: Member
         selected={selected}
         q={q ?? ''}
         role={role}
-        invitedUsersCount={invitedUsersCount}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}

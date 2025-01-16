@@ -24,10 +24,10 @@ const TableCount = ({ count = 0, type, isFiltered, children, onResetFilters }: T
         </Button>
       )}
       <div className="flex flex-col gap-1 w-max md:flex-row md:gap-3">
-        <>
+        <div className="pointer-events-none">
           {new Intl.NumberFormat('de-DE').format(count)} {t(`common:${type}${count === 1 ? '' : 's'}`).toLowerCase()}
           {isFiltered && ` ${t('common:found')}`}
-        </>
+        </div>
         {children}
       </div>
     </div>

@@ -12,6 +12,7 @@ import { membershipInfoSchema } from '../memberships/schema';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
+  invitesInfoSchema,
   organizationSchema,
   sendNewsletterBodySchema,
   updateOrganizationBodySchema,
@@ -117,6 +118,29 @@ class OrganizationRoutesConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(organizationSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getOrgInvitedMembersInfo = createRouteConfig({
+    method: 'get',
+    path: '/invites/{idOrSlug}',
+    guard: [isAuthenticated],
+    tags: ['organizations'],
+    summary: 'Get organization invites info',
+    description: 'Get an info about invites in organization by id or slug.',
+    request: {
+      params: entityParamSchema,
+    },
+    responses: {
+      200: {
+        description: 'Invites info',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(invitesInfoSchema),
           },
         },
       },

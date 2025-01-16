@@ -7,10 +7,10 @@ import type { Organization } from '~/types/common';
 
 const OrgMembersTable = () => {
   const { idOrSlug } = useParams({ from: OrganizationMembersRoute.id });
-  const organization: (Organization & { counts: { invited: number } }) | undefined = queryClient.getQueryData(organizationsKeys.single(idOrSlug));
+  const organization: Organization | undefined = queryClient.getQueryData(organizationsKeys.single(idOrSlug));
 
   if (!organization) return;
-  return <MembersTable entity={organization} invitedUsersCount={organization.counts.invited} />;
+  return <MembersTable entity={organization} />;
 };
 
 export default OrgMembersTable;

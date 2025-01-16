@@ -11,7 +11,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/';
-import InvitedUsers from '~/modules/memberships/members-table/invited-users';
+import { InvitedUsers } from '~/modules/organizations/invited-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { BaseTableHeaderProps, BaseTableMethods, Member } from '~/types/common';
@@ -37,7 +37,6 @@ export const MembersTableHeader = ({
   columns,
   setColumns,
   isSheet = false,
-  invitedUsersCount = 10,
   fetchExport,
   clearSelection,
   openInviteDialog,
@@ -116,7 +115,7 @@ export const MembersTableHeader = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                <InvitedUsers count={invitedUsersCount} />
+                <InvitedUsers orgIdOrSlug={entity.organizationId ?? entity.id} />
               </TableCount>
             )}
           </FilterBarActions>
