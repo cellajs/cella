@@ -51,6 +51,12 @@ const membershipsRoutes = app
     // Normalize emails for consistent comparison
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
+    // Query existing memberships
+    const allOrgMemberships = await db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
+
     // Fetch existing users from the database
     const existingUsers = await getUsersByConditions([inArray(usersTable.email, normalizedEmails)]);
 
@@ -231,6 +237,15 @@ const membershipsRoutes = app
           });
       }),
     );
+
+    if (emailsToSendInvitation.length > 0) {
+      // SSE to update organizations invite info
+      sendSSEToUsers(
+        allOrgMemberships.map(({ userId }) => userId),
+        'new_member_invite',
+        { id: organization.id, slug: organization.slug },
+      );
+    }
 
     return ctx.json({ success: true }, 200);
   })

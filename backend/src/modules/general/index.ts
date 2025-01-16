@@ -178,12 +178,10 @@ const generalRoutes = app
     if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
       return errorResponse(ctx, 401, 'invalid_token_or_expired', 'warn');
     }
-
+    // Delete token
+    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
     // If it is a system invitation, update user role
     if (token.type === 'system_invitation') {
-      // Delete token
-      await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
-
       if (oauth) setCookie(ctx, 'oauth_invite_token', token.id);
 
       return ctx.json({ success: true }, 200);
@@ -205,10 +203,12 @@ const generalRoutes = app
 
     if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
 
-    const [existingMembership]: (MembershipModel | undefined)[] = await db
+    const memberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
+
+    const existingMembership = memberships.find((member) => member.userId === user.id);
 
     if (existingMembership && existingMembership.role !== role) {
       await db
@@ -229,6 +229,12 @@ const generalRoutes = app
 
     // SSE with entity data, to update user's menu
     sendSSEToUsers([user.id], 'add_entity', newMenuItem);
+    // SSE to to update members queries
+    sendSSEToUsers(
+      memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
+      'member_accept_invite',
+      { id: organization.id, slug: organization.slug },
+    );
 
     return ctx.json({ success: true, data: newMenuItem }, 200);
   })
