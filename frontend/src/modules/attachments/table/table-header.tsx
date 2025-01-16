@@ -6,6 +6,7 @@ import { openUploadDialog } from '~/modules/attachments/table/helpers';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import { TableHeaderContainer } from '~/modules/common/data-table/table-header';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import { Badge } from '~/modules/ui/badge';
@@ -48,7 +49,7 @@ export const AttachmentsTableHeader = ({
   };
 
   return (
-    <div className={'flex items-center max-sm:justify-between md:gap-2 mt-4'}>
+    <TableHeaderContainer>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
@@ -107,6 +108,6 @@ export const AttachmentsTableHeader = ({
 
       {/* Focus view */}
       {!isSheet && <FocusView iconOnly />}
-    </div>
+    </TableHeaderContainer>
   );
 };

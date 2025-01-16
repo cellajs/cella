@@ -6,6 +6,7 @@ import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import { TableHeaderContainer } from '~/modules/common/data-table/table-header';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
@@ -67,7 +68,7 @@ export const MembersTableHeader = ({
 
   return (
     <div>
-      <div className="flex items-center max-sm:justify-between md:gap-2 mt-4">
+      <TableHeaderContainer>
         {/* Table Filter Bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
@@ -133,7 +134,7 @@ export const MembersTableHeader = ({
 
         {/* Focus view */}
         {!isSheet && <FocusView iconOnly />}
-      </div>
+      </TableHeaderContainer>
 
       {/* Container ref to embed dialog */}
       <div ref={containerRef} />
