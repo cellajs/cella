@@ -116,7 +116,7 @@ export const MembersTableHeader = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {invitesInfo && <InvitedUsers invitesInfo={invitesInfo} />}
+                {invitesInfo && isAdmin && <InvitedUsers invitesInfo={invitesInfo} />}
               </TableCount>
             )}
           </FilterBarActions>

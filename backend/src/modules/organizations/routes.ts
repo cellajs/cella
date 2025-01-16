@@ -12,7 +12,6 @@ import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
   organizationSchema,
-  organizationWithInvitesInfoSchema,
   organizationWithMembershipSchema,
   sendNewsletterBodySchema,
   updateOrganizationBodySchema,
@@ -117,7 +116,7 @@ class OrganizationRoutesConfig {
         description: 'Organization',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationWithInvitesInfoSchema),
+            schema: successWithDataSchema(organizationSchema),
           },
         },
       },

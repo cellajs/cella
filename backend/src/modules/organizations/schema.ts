@@ -37,7 +37,6 @@ export const organizationSchema = z.object({
 });
 
 export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipInfoSchema });
-export const organizationWithInvitesInfoSchema = organizationSchema.extend({ invitesInfo: invitesInfoSchema });
 
 export const createOrganizationBodySchema = z.object({
   name: nameSchema,

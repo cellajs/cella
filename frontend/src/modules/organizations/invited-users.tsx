@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOnlineManager } from '~/hooks/use-online-manager';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { OrganizationInvitesInfo } from '~/types/common';
 
@@ -10,10 +9,8 @@ interface Props {
 
 export const InvitedUsers = ({ invitesInfo }: Props) => {
   const { t } = useTranslation();
-  const { isOnline } = useOnlineManager();
 
-  // TODO show message or add to offline access
-  if (!isOnline) return null;
+  if (!invitesInfo.length) return null;
   const count = useMemo(() => invitesInfo.length, [invitesInfo.length]);
 
   const openInfoSheet = () => {

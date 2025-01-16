@@ -186,20 +186,23 @@ const organizationsRoutes = app
     if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const memberCounts = await memberCountsQuery('organization', 'organizationId', organization.id);
-    const invitesInfo = await db
-      .select({
-        id: tokensTable.id,
-        userId: tokensTable.userId,
-        expiredAt: tokensTable.expiresAt,
-        createdAt: tokensTable.createdAt,
-        createdBy: tokensTable.createdBy,
-      })
-      .from(tokensTable)
-      .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')));
 
     const counts = { memberships: memberCounts };
-    const data = { ...organization, membership, counts, invitesInfo };
+    const data = { ...organization, membership, counts };
 
+    if (membership && membership.role === 'admin') {
+      const invitesInfo = await db
+        .select({
+          id: tokensTable.id,
+          userId: tokensTable.userId,
+          expiredAt: tokensTable.expiresAt,
+          createdAt: tokensTable.createdAt,
+          createdBy: tokensTable.createdBy,
+        })
+        .from(tokensTable)
+        .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')));
+      return ctx.json({ success: true, data: { ...data, invitesInfo } }, 200);
+    }
     return ctx.json({ success: true, data }, 200);
   })
   /*
