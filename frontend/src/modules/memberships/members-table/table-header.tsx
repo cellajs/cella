@@ -11,7 +11,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/';
-import { InvitedUsers } from '~/modules/organizations/invited-users';
+import { InvitedUsers } from '~/modules/organizations/invites/invited-users';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { BaseTableHeaderProps, BaseTableMethods, Member, OrganizationInvitesInfo } from '~/types/common';
@@ -21,7 +21,7 @@ type MembersTableHeaderProps = MembersTableProps &
   BaseTableMethods &
   BaseTableHeaderProps<Member, MemberSearch> & {
     role: MemberSearch['role'];
-    invitesInfo?: OrganizationInvitesInfo;
+    invitesInfo?: OrganizationInvitesInfo[];
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Member[]>;

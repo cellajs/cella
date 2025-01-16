@@ -2,9 +2,10 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { OrganizationInvitesInfo } from '~/types/common';
+import { InvitesInfoTable } from './table';
 
 interface Props {
-  invitesInfo: OrganizationInvitesInfo;
+  invitesInfo: OrganizationInvitesInfo[];
 }
 
 export const InvitedUsers = ({ invitesInfo }: Props) => {
@@ -14,7 +15,7 @@ export const InvitedUsers = ({ invitesInfo }: Props) => {
   const count = useMemo(() => invitesInfo.length, [invitesInfo.length]);
 
   const openInfoSheet = () => {
-    sheet.create(<InvitesInfo info={invitesInfo} />, {
+    sheet.create(<InvitesInfoTable info={invitesInfo} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:invited_members'),
       description: t('common:invited_members.text', { entity: t('common:organization').toLowerCase() }),
@@ -35,13 +36,3 @@ export const InvitedUsers = ({ invitesInfo }: Props) => {
     </button>
   );
 };
-
-const InvitesInfo = ({ info }: { info: OrganizationInvitesInfo }) => (
-  <>
-    {info.map((el) => (
-      <div key={el.id}>
-        ID: {el.id}, User ID: {el.userId}, Expired At: {el.expiredAt}, Created At: {el.createdAt}, Created By: {el.createdBy}
-      </div>
-    ))}
-  </>
-);

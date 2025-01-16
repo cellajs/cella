@@ -27,7 +27,7 @@ export type MemberSearch = z.infer<typeof membersSearchSchema>;
 export interface MembersTableProps {
   entity: EntityPage;
   isSheet?: boolean;
-  invitesInfo?: OrganizationInvitesInfo;
+  invitesInfo?: OrganizationInvitesInfo[];
 }
 
 const MembersTable = ({ entity, invitesInfo, isSheet = false }: MembersTableProps) => {

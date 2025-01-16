@@ -29,7 +29,7 @@ export type UserMenu = Extract<InferResponseType<(typeof meClient.menu)['$get']>
 export type UserMenuItem = UserMenu[keyof UserMenu][number];
 
 export type Organization = z.infer<typeof organizationSchema>;
-export type OrganizationInvitesInfo = z.infer<typeof invitesInfoSchema>;
+export type OrganizationInvitesInfo = z.infer<typeof invitesInfoSchema>[number];
 
 export type Attachment = z.infer<typeof attachmentSchema>;
 
