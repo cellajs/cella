@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableHeaderContainer } from '~/modules/common/data-table/table-header';
+import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';

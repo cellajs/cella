@@ -6,7 +6,7 @@ import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableHeaderContainer } from '~/modules/common/data-table/table-header';
+import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
@@ -114,8 +114,11 @@ export const MembersTableHeader = ({
                 </Button>
               )
             )}
-            {selected.length === 0 && <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters} />}
-            {invitedUsersCount > 0 && <InvitedUsers count={invitedUsersCount} />}
+            {selected.length === 0 && (
+              <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
+                <InvitedUsers count={invitedUsersCount} />
+              </TableCount>
+            )}
           </FilterBarActions>
           <div className="sm:grow" />
           <FilterBarContent className="max-sm:animate-in max-sm:slide-in-from-left max-sm:fade-in max-sm:duration-300">

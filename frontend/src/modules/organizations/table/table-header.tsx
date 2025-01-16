@@ -5,7 +5,7 @@ import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableHeaderContainer } from '~/modules/common/data-table/table-header';
+import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { dialog } from '~/modules/common/dialoger/state';
 import { FocusView } from '~/modules/common/focus-view';
