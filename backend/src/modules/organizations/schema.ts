@@ -25,6 +25,8 @@ export const organizationSchema = z.object({
   counts: membershipsCountSchema,
 });
 
+export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipInfoSchema });
+
 export const createOrganizationBodySchema = z.object({
   name: nameSchema,
   slug: validSlugSchema,

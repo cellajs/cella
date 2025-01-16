@@ -8,14 +8,13 @@ import type * as z from 'zod';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy, useEffect } from 'react';
-import { useMutation } from '~/hooks/use-mutations';
-import { signUp as baseSignUp } from '~/modules/auth/api';
+import type { TokenData } from '~/modules/auth';
+import { useSignUpMutation } from '~/modules/auth/query-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import type { TokenData } from '.';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
@@ -30,20 +29,7 @@ export const SignUpForm = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { mutate: signUp, isPending } = useMutation({
-    mutationFn: baseSignUp,
-    onSuccess: () => {
-      const to = tokenData ? '/auth/invite/$token' : '/auth/verify-email';
-
-      navigate({
-        to,
-        replace: true,
-        params: {
-          token: tokenData?.token,
-        },
-      });
-    },
-  });
+  const { mutate: signUp, isPending } = useSignUpMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,10 +40,25 @@ export const SignUpForm = ({
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    signUp({
-      ...values,
-      token: tokenData?.token,
-    });
+    signUp(
+      {
+        ...values,
+        token: tokenData?.token,
+      },
+      {
+        onSuccess: () => {
+          const to = tokenData ? '/auth/invite/$token' : '/auth/verify-email';
+
+          navigate({
+            to,
+            replace: true,
+            params: {
+              token: tokenData?.token,
+            },
+          });
+        },
+      },
+    );
   };
 
   useEffect(() => {

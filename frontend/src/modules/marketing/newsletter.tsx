@@ -4,21 +4,14 @@ import { useRef } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useMutation } from '~/hooks/use-mutations';
-import { createRequest as baseCreateRequest } from '~/modules/requests/api';
+import { useCreateRequestsMutation } from '~/modules/requests/query-mutations';
 import { SubmitButton } from '~/modules/ui/button';
 
 const NewsletterForm = () => {
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const { mutate: createRequest, isPending } = useMutation({
-    mutationFn: baseCreateRequest,
-    onSuccess: () => {
-      toast.success(t('common:success.newsletter_sign_up', { appName: config.name }));
-      formRef.current?.reset();
-    },
-  });
+  const { mutate: createRequest, isPending } = useCreateRequestsMutation();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -26,9 +19,16 @@ const NewsletterForm = () => {
     let email = formRef.current?.email.value;
     if (!email) return;
     email = email.trim().toLowerCase();
-    createRequest({ email, type: 'newsletter', message: null });
+    createRequest(
+      { email, type: 'newsletter', message: null },
+      {
+        onSuccess: () => {
+          toast.success(t('common:success.newsletter_sign_up', { appName: config.name }));
+          formRef.current?.reset();
+        },
+      },
+    );
   };
-
   return (
     <form ref={formRef} onSubmit={handleSubmit}>
       <div className="relative mt-6">

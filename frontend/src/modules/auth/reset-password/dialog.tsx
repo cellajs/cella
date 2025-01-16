@@ -5,25 +5,14 @@ import { Input } from '~/modules/ui/input';
 
 import { Send } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { useMutation } from '~/hooks/use-mutations';
-import { sendResetPasswordEmail as baseSendResetPasswordEmail } from '~/modules/auth/api';
+import { useSendResetPasswordMutation } from '~/modules/auth/query-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 
 const ResetPasswordDialog = ({ email }: { email: string }) => {
   const { t } = useTranslation();
   const [emailValue, setEmailValue] = useState(email);
 
-  const { mutate: sendResetPasswordEmail, isPending } = useMutation({
-    mutationFn: baseSendResetPasswordEmail,
-    onSuccess: () => {
-      toast.success(t('common:success.reset_link_sent'));
-      dialog.remove();
-    },
-    onError: () => {
-      document.getElementById('reset-email-field')?.focus();
-    },
-  });
+  const { mutate: sendResetPasswordEmail, isPending } = useSendResetPasswordMutation();
 
   return (
     <div>

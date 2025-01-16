@@ -1,12 +1,11 @@
-import { deleteOrganizations as baseDeleteOrganizations } from '~/modules/organizations/api';
 import type { Organization } from '~/types/common';
 
-import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { organizationsKeys } from '~/modules/organizations/query';
+import { useOrganizationDeleteMutation } from '~/modules/organizations/query-mutations';
 
 interface Props {
   organizations: Organization[];
@@ -15,22 +14,24 @@ interface Props {
 }
 
 const DeleteOrganizations = ({ organizations, callback, dialog: isDialog }: Props) => {
-  const { mutate: deleteOrganizations, isPending } = useMutation({
-    mutationFn: baseDeleteOrganizations,
-    onSuccess: () => {
-      for (const organization of organizations) {
-        queryClient.invalidateQueries({
-          queryKey: organizationsKeys.single(organization.id),
-        });
-        deleteMenuItem(organization.id);
-      }
-      if (isDialog) dialog.remove();
-      callback?.(organizations);
-    },
-  });
+  const { mutate: deleteOrganizations, isPending } = useOrganizationDeleteMutation();
 
   const onDelete = () => {
-    deleteOrganizations(organizations.map((organization) => organization.id));
+    deleteOrganizations(
+      organizations.map((organization) => organization.id),
+      {
+        onSuccess: () => {
+          for (const organization of organizations) {
+            queryClient.invalidateQueries({
+              queryKey: organizationsKeys.single(organization.id),
+            });
+            deleteMenuItem(organization.id);
+          }
+          if (isDialog) dialog.remove();
+          callback?.(organizations);
+        },
+      },
+    );
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;

@@ -7,9 +7,9 @@ import { feedbackLetterBodySchema } from 'backend/modules/requests/schema';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMutation } from '~/hooks/use-mutations';
+import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import { sheet } from '~/modules/common/sheeter/state';
-import { sendResponse as baseSendResponse } from '~/modules/requests/api';
+import { useSendNewsLetterMutation } from '~/modules/requests/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -17,7 +17,6 @@ import { Input } from '~/modules/ui/input';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 
 interface NewsletterFormProps {
   emails: string[];
@@ -41,27 +40,19 @@ const FeedbackLetterForm: React.FC<NewsletterFormProps> = ({ emails, sheet: isSh
     },
   });
 
-  const { mutate: sendNewsletter, isPending } = useMutation({
-    mutationFn: baseSendResponse,
-    onSuccess: () => {
-      form.reset();
-      toast.success(t('common:success.request_feedback'));
-      dropSelected?.();
-      if (isSheet) sheet.remove('feedback-letter-form');
-    },
-  });
-
-  const onSubmit = (values: FormValues) => {
-    sendNewsletter({
-      emails: values.emails,
-      subject: values.subject,
-      content: values.content,
+  const { mutate, isPending } = useSendNewsLetterMutation();
+  const onSubmit = (body: FormValues) => {
+    mutate(body, {
+      onSuccess: () => {
+        form.reset();
+        toast.success(t('common:success.request_feedback'));
+        dropSelected?.();
+        if (isSheet) sheet.remove('feedback-letter-form');
+      },
     });
   };
 
-  const cancel = () => {
-    form.reset();
-  };
+  const cancel = () => form.reset();
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
   const isDirty = () => {

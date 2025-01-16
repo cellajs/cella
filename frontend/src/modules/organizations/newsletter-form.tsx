@@ -7,9 +7,9 @@ import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMutation } from '~/hooks/use-mutations';
+import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import { sheet } from '~/modules/common/sheeter/state';
-import { sendNewsletter as baseSendNewsletter } from '~/modules/organizations/api';
+import { useSendNewsLetterMutation } from '~/modules/organizations/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -17,7 +17,6 @@ import { Input } from '~/modules/ui/input';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 
 interface NewsletterFormProps {
   organizationIds: string[];
@@ -41,21 +40,16 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
     },
   });
 
-  const { mutate: sendNewsletter, isPending } = useMutation({
-    mutationFn: baseSendNewsletter,
-    onSuccess: () => {
-      form.reset();
-      toast.success(t('common:success.create_newsletter'));
-      dropSelectedOrganization?.();
-      if (isSheet) sheet.remove('org-newsletter-form');
-    },
-  });
+  const { mutate: sendNewsletter, isPending } = useSendNewsLetterMutation();
 
-  const onSubmit = (values: FormValues) => {
-    sendNewsletter({
-      organizationIds: values.organizationIds,
-      subject: values.subject,
-      content: values.content,
+  const onSubmit = (body: FormValues) => {
+    sendNewsletter(body, {
+      onSuccess: () => {
+        form.reset();
+        toast.success(t('common:success.create_newsletter'));
+        dropSelectedOrganization?.();
+        if (isSheet) sheet.remove('org-newsletter-form');
+      },
     });
   };
 

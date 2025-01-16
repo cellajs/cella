@@ -1,9 +1,8 @@
-import { deleteRequests as baseDeleteRequests } from '~/modules/requests/api';
 import type { Request } from '~/types/common';
 
-import { useMutation } from '~/hooks/use-mutations';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
+import { useDeleteRequestsMutation } from '~/modules/requests/query-mutations';
 
 interface Props {
   requests: Request[];
@@ -12,16 +11,18 @@ interface Props {
 }
 
 const DeleteRequests = ({ requests, callback, dialog: isDialog }: Props) => {
-  const { mutate: deleteRequests, isPending } = useMutation({
-    mutationFn: baseDeleteRequests,
-    onSuccess: () => {
-      if (isDialog) dialog.remove();
-      callback?.(requests);
-    },
-  });
+  const { mutate: deleteRequests, isPending } = useDeleteRequestsMutation();
 
   const onDelete = () => {
-    deleteRequests(requests.map((req) => req.id));
+    deleteRequests(
+      requests.map((req) => req.id),
+      {
+        onSuccess: () => {
+          if (isDialog) dialog.remove();
+          callback?.(requests);
+        },
+      },
+    );
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;

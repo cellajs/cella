@@ -2,11 +2,10 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useMutation } from '~/hooks/use-mutations';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { createToast } from '~/lib/toasts';
-import { verifyEmail as baseVerifyEmail } from '~/modules/auth/api';
 import AuthPage from '~/modules/auth/auth-page';
+import { useVerifyEmailMutation } from '~/modules/auth/query-mutations';
 import { Button } from '~/modules/ui/button';
 
 const VerifyEmail = () => {
@@ -16,22 +15,21 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
   const { isOnline } = useOnlineManager();
 
-  const { mutate: verifyEmail, error } = useMutation({
-    mutationFn: baseVerifyEmail,
-    onSuccess: () => {
-      toast.success(t('common:success.email_verified'));
-      navigate({ to: '/welcome' });
-    },
-  });
+  const { mutate: verifyEmail, error } = useVerifyEmailMutation();
+
+  const onSuccess = () => {
+    toast.success(t('common:success.email_verified'));
+    navigate({ to: '/welcome' });
+  };
 
   const resendEmail = () => {
     if (!isOnline) return createToast(t('common:action.offline.text'), 'warning');
-    verifyEmail({ token, resend: true });
+    verifyEmail({ token, resend: true }, { onSuccess });
   };
 
   useEffect(() => {
     if (!token) return;
-    verifyEmail({ token });
+    verifyEmail({ token }, { onSuccess });
   }, []);
 
   if (token) {
