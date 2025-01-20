@@ -322,7 +322,7 @@ const generalRoutes = app
 
         // Execute the query using inner join with memberships table
         return db
-          .selectDistinct({
+          .select({
             ...baseSelect,
             membership: membershipSelect,
           })
@@ -332,6 +332,7 @@ const generalRoutes = app
             and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? 'organization' : entityType)),
           )
           .where($where)
+          .groupBy(table.id, membershipsTable.id) // Group by entity ID for distinct results
           .limit(10);
       })
       .filter(Boolean); // Filter out null values if any entity type is invalid
