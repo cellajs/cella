@@ -3,16 +3,16 @@ import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { env } from '~/../env';
 import { useMutation } from '~/hooks/use-mutations';
 import { dispatchCustomEvent } from '~/lib/custom-events';
 import { createToast } from '~/lib/toasts';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import Spinner from '~/modules/common/spinner';
-import { type UpdateMembershipProp, updateMembership as baseUpdateMembership } from '~/modules/memberships/api';
+import { updateMembership as baseUpdateMembership } from '~/modules/memberships/api';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button } from '~/modules/ui/button';
 import type { UserMenuItem } from '~/types/common';
-import { env } from '../../../../env';
 
 interface MenuItemEditProps {
   item: UserMenuItem;
@@ -20,21 +20,26 @@ interface MenuItemEditProps {
 
 export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
   const { t } = useTranslation();
-
+  // Directly create the mutation to avoid lazy loading for MenuItemEdit,
+  // since useMembersUpdateMutation relies on queryClient.
   const { mutate: updateMembership, status } = useMutation({
-    mutationFn: (values: UpdateMembershipProp) => baseUpdateMembership(values),
-    onSuccess: (updatedMembership) => {
-      let toastMessage: string | undefined;
+    mutationFn: baseUpdateMembership,
+    onMutate: ({ archived, muted }) => {
+      const { membership, entity } = item;
 
-      const updatedEntity: UserMenuItem = { ...item, membership: { ...item.membership, ...updatedMembership } };
+      const messages = {
+        archived: t(`common:success.${archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${entity}`) }),
+        muted: t(`common:success.${muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${entity}`) }),
+      };
+      // Determine the appropriate toast message
+      const toastMessage = archived !== membership.archived ? messages.archived : muted !== membership.muted ? messages.muted : null;
 
-      if (updatedMembership.archived !== item.membership.archived) {
-        toastMessage = t(`common:success.${updatedMembership.archived ? 'archived' : 'restore'}_resource`, { resource: t(`common:${item.entity}`) });
-      }
+      return { toastMessage };
+    },
+    onSuccess: (updatedMembership, _, context) => {
+      const { toastMessage } = context;
+      const updatedEntity = { ...item, membership: { ...item.membership, ...updatedMembership } };
 
-      if (updatedMembership.muted !== item.membership.muted) {
-        toastMessage = t(`common:success.${updatedMembership.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`common:${item.entity}`) });
-      }
       updateMenuItem(updatedEntity);
       // To be able to update, add a listener to manipulate data that has been changed in the menu(like mute or archive entities )
       dispatchCustomEvent('menuEntityChange', { entity: item.entity, membership: updatedMembership });
