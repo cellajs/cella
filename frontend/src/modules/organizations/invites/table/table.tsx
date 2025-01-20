@@ -44,8 +44,8 @@ const BaseDataTable = memo(
 
     useEffect(() => {
       setRows(info);
-      updateCounts([], info.length);
-    }, [info]);
+      updateCounts([], filteredAndSortedRows.length);
+    }, [filteredAndSortedRows.length]);
 
     // Expose methods via ref using useImperativeHandle
     useImperativeHandle(ref, () => ({
@@ -57,7 +57,7 @@ const BaseDataTable = memo(
         {...{
           columns: columns.filter((column) => column.visible),
           rows: filteredAndSortedRows,
-          totalCount: filteredAndSortedRows.length,
+          totalCount: info.length,
           rowHeight: 50,
           rowKeyGetter: (row) => row.id,
           // error,
