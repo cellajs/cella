@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sheet } from '~/modules/common/sheeter/state';
 import type { OrganizationInvitesInfo } from '~/types/common';
-import { InvitesInfoTable } from './table';
+
+const InvitesInfoTable = lazy(() => import('~/modules/organizations/invites/table'));
 
 interface Props {
   invitesInfo: OrganizationInvitesInfo[];
@@ -15,14 +16,19 @@ export const InvitedUsers = ({ invitesInfo }: Props) => {
   const count = useMemo(() => invitesInfo.length, [invitesInfo.length]);
 
   const openInfoSheet = () => {
-    sheet.create(<InvitesInfoTable info={invitesInfo} />, {
-      className: 'max-w-full lg:max-w-4xl',
-      title: t('common:invited_members'),
-      description: t('common:invited_members.text', { entity: t('common:organization').toLowerCase() }),
-      id: 'invited-users-info',
-      scrollableOverlay: true,
-      side: 'right',
-    });
+    sheet.create(
+      <Suspense>
+        <InvitesInfoTable info={invitesInfo} />
+      </Suspense>,
+      {
+        className: 'max-w-full lg:max-w-4xl',
+        title: t('common:invited_members'),
+        description: t('common:invited_members.text', { entity: t('common:organization').toLowerCase() }),
+        id: 'invited-users-info',
+        scrollableOverlay: true,
+        side: 'right',
+      },
+    );
   };
 
   return (

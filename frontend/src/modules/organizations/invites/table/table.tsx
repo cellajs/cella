@@ -1,5 +1,5 @@
 import { Bird } from 'lucide-react';
-import { forwardRef, memo, useEffect, useImperativeHandle, useState } from 'react';
+import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
@@ -13,9 +13,33 @@ const BaseDataTable = memo(
     const { t } = useTranslation();
 
     // Extract query variables and set defaults
-    const { q, limit } = queryVars;
+    const { q, sort, order, limit } = queryVars;
 
     const [rows, setRows] = useState<OrganizationInvitesInfo[]>(info);
+
+    // Handle sorting and filtering
+    const filteredAndSortedRows = useMemo(() => {
+      let filteredRows = [...rows];
+
+      // Apply filtering based on query `q`
+      if (q) filteredRows = filteredRows.filter((row) => row.userId?.toLowerCase().includes(q.toLowerCase()));
+
+      // Apply sorting based on `sort` and `order`
+      if (sort) {
+        const sortKey = sort as keyof OrganizationInvitesInfo;
+
+        filteredRows.sort((a, b) => {
+          const aValue = a[sortKey];
+          const bValue = b[sortKey];
+
+          if (aValue == null || bValue == null) return 0;
+          const compare = String(aValue).localeCompare(String(bValue), undefined, { numeric: true });
+          return order === 'asc' ? compare : -compare;
+        });
+      }
+
+      return filteredRows;
+    }, [rows, q, sort, order]);
 
     useEffect(() => {
       setRows(info);
@@ -31,8 +55,8 @@ const BaseDataTable = memo(
       <DataTable<OrganizationInvitesInfo>
         {...{
           columns: columns.filter((column) => column.visible),
-          rows,
-          totalCount: rows.length,
+          rows: filteredAndSortedRows,
+          totalCount: filteredAndSortedRows.length,
           rowHeight: 50,
           rowKeyGetter: (row) => row.id,
           // error,

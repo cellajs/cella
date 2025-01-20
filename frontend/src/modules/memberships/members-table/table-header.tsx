@@ -11,7 +11,7 @@ import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table/';
-import { InvitedUsers } from '~/modules/organizations/invites/invited-users';
+import { InvitedUsers } from '~/modules/organizations/invites/invites-count';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import type { BaseTableHeaderProps, BaseTableMethods, Member, OrganizationInvitesInfo } from '~/types/common';
@@ -116,7 +116,7 @@ export const MembersTableHeader = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {invitesInfo && isAdmin && <InvitedUsers invitesInfo={invitesInfo} />}
+                {invitesInfo && <InvitedUsers invitesInfo={invitesInfo} />}
               </TableCount>
             )}
           </FilterBarActions>
