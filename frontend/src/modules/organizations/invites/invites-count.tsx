@@ -12,7 +12,6 @@ interface Props {
 export const InvitedUsers = ({ invitesInfo }: Props) => {
   const { t } = useTranslation();
 
-  if (!invitesInfo.length) return null;
   const count = useMemo(() => invitesInfo.length, [invitesInfo.length]);
 
   const openInfoSheet = () => {
@@ -30,6 +29,7 @@ export const InvitedUsers = ({ invitesInfo }: Props) => {
       },
     );
   };
+  if (!invitesInfo.length) return null;
 
   return (
     <button
