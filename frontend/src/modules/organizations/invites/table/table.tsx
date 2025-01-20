@@ -26,11 +26,9 @@ const BaseDataTable = memo(
 
       // Apply sorting based on `sort` and `order`
       if (sort) {
-        const sortKey = sort as keyof OrganizationInvitesInfo;
-
         filteredRows.sort((a, b) => {
-          const aValue = a[sortKey];
-          const bValue = b[sortKey];
+          const aValue = a[sort];
+          const bValue = b[sort];
 
           if (aValue == null || bValue == null) return 0;
           const compare = String(aValue).localeCompare(String(bValue), undefined, { numeric: true });
