@@ -9,8 +9,7 @@ import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
-import { getSuggestions } from '~/modules/general/api';
-import { generalKeys } from '~/modules/general/query';
+import { searchQueryOptions } from '~/modules/general/query';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -49,12 +48,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
     setOpen(false);
   };
 
-  const { data, isLoading: isLoadingOrig } = useQuery({
-    queryKey: generalKeys.search(debouncedSearchQuery),
-    queryFn: () => getSuggestions(debouncedSearchQuery, 'user'),
-    staleTime: 0,
-    enabled: !!debouncedSearchQuery,
-  });
+  const { data, isLoading: isLoadingOrig } = useQuery(searchQueryOptions(debouncedSearchQuery, 'user'));
   // To get around this https://github.com/TanStack/query/issues/3584
   const isLoading = !!debouncedSearchQuery && isLoadingOrig;
 
