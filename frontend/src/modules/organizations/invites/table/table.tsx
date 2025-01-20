@@ -22,7 +22,10 @@ const BaseDataTable = memo(
       let filteredRows = [...rows];
 
       // Apply filtering based on query `q`
-      if (q) filteredRows = filteredRows.filter((row) => row.userId?.toLowerCase().includes(q.toLowerCase()));
+      if (q)
+        filteredRows = filteredRows.filter(
+          (row) => row.email.toLowerCase().includes(q.toLowerCase()) || row.name?.toLowerCase().includes(q.toLowerCase()),
+        );
 
       // Apply sorting based on `sort` and `order`
       if (sort) {

@@ -42,7 +42,6 @@ const membershipsRoutes = app
     if (!entity || !isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
 
     const { emails, role, parentEntity: parentEntityInfo } = ctx.req.valid('json');
-    console.log('🚀 ~ .openapi ~ emails:', emails);
 
     const organization = getOrganization();
     const user = getContextUser();
