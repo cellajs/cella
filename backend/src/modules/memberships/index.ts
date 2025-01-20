@@ -10,7 +10,7 @@ import { emailSender } from '#/lib/mailer';
 import { InviteMemberEmail } from '../../../emails/member-invite';
 
 import { tokensTable } from '#/db/schema/tokens';
-import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
+import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
 import { entityIdFields, menuSections } from '#/entity-config';
 import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
@@ -46,34 +46,32 @@ const membershipsRoutes = app
     const organization = getOrganization();
     const user = getContextUser();
 
-    const contextEntityIdField = entityIdFields[entity.entity];
-
     // Normalize emails for consistent comparison
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
-    // Query existing memberships
-    const allOrgMemberships = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
-
-    // Fetch existing users from the database
-    const existingUsers = await getUsersByConditions([inArray(usersTable.email, normalizedEmails)]);
+    // Query existing memberships and users
+    const [allOrgMemberships, existingUsers] = await Promise.all([
+      db
+        .select()
+        .from(membershipsTable)
+        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization'))),
+      getUsersByConditions([inArray(usersTable.email, normalizedEmails)]),
+    ]);
 
     // Maps to store memberships by existing user
     const organizationMembershipsByUser = new Map<string, MembershipModel>();
     const contextMembershipsByUser = new Map<string, MembershipModel>();
+    const contextEntityIdField = entityIdFields[entity.entity];
 
     if (existingUsers.length) {
+      const userIds = existingUsers.map((user) => user.id);
+
       // Prepare conditions for fetching existing memberships
       const $where = [
         and(
           eq(membershipsTable[contextEntityIdField], entity.id),
           eq(membershipsTable.type, entity.entity),
-          inArray(
-            membershipsTable.userId,
-            existingUsers.map((u) => u.id),
-          ),
+          inArray(membershipsTable.userId, userIds),
         ),
       ];
 
@@ -83,10 +81,7 @@ const membershipsRoutes = app
           and(
             eq(membershipsTable.type, 'organization'),
             eq(membershipsTable.organizationId, organization.id),
-            inArray(
-              membershipsTable.userId,
-              existingUsers.map((u) => u.id),
-            ),
+            inArray(membershipsTable.userId, userIds),
           ),
         );
       }
@@ -104,11 +99,9 @@ const membershipsRoutes = app
       }
     }
 
-    // Map to track existing users
-    const existingUsersByEmail = new Map<string, UserModel>();
-
-    // Array of emails to send invitations
-    const emailsToSendInvitation: string[] = [];
+    // Initialize tracking maps
+    const existingUsersByEmail = new Map();
+    const emailsToSendInvitation = [];
 
     // Establish memberships for existing users
     await Promise.all(
@@ -139,19 +132,8 @@ const membershipsRoutes = app
             const parentEntity = parentEntityInfo ? await resolveEntity(parentEntityInfo.entity, parentEntityInfo.idOrSlug) : null;
 
             const [createdParentMembership, createdMembership] = await Promise.all([
-              parentEntity
-                ? insertMembership({
-                    user: existingUser,
-                    role,
-                    entity: parentEntity,
-                  })
-                : Promise.resolve(null), // No-op if parentEntity is undefined
-              insertMembership({
-                user: existingUser,
-                role,
-                entity: entity,
-                parentEntity,
-              }),
+              parentEntity ? insertMembership({ user: existingUser, role, entity: parentEntity }) : Promise.resolve(null),
+              insertMembership({ user: existingUser, role, entity: entity, parentEntity }),
             ]);
 
             if (parentEntity && createdParentMembership) {
@@ -168,10 +150,8 @@ const membershipsRoutes = app
               sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
               ...(parentEntity && { parentSlug: parentEntity.slug }),
             });
-          }
-
-          // Add email to the invitation list for sending an organization invite to another user
-          else emailsToSendInvitation.push(existingUser.email);
+            // Add email to the invitation list for sending an organization invite to another user
+          } else emailsToSendInvitation.push(existingUser.email);
         }
       }),
     );
@@ -183,8 +163,8 @@ const membershipsRoutes = app
     await Promise.all(
       emailsToSendInvitation.map(async (email) => {
         const targetUser = existingUsersByEmail.get(email);
-
         const token = generateId(40);
+
         await db.insert(tokensTable).values({
           id: token,
           type: 'membership_invitation',
@@ -196,10 +176,7 @@ const membershipsRoutes = app
           expiresAt: createDate(new TimeSpan(7, 'd')),
           ...(entity.entity !== 'organization' && {
             membershipInfo: {
-              targetEntity: {
-                idOrSlug: entity.id,
-                entity: entity.entity,
-              },
+              targetEntity: { idOrSlug: entity.id, entity: entity.entity },
               parentEntity: parentEntityInfo,
             },
           }),
@@ -234,10 +211,7 @@ const membershipsRoutes = app
             user.email,
           )
           .catch((error) => {
-            if (error instanceof Error) {
-              const errorMessage = error.message;
-              logEvent('Error sending email', { errorMessage }, 'error');
-            }
+            if (error instanceof Error) logEvent('Error sending email', { errorMessage: error.message }, 'error');
           });
       }),
     );

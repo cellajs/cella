@@ -194,8 +194,11 @@ const generalRoutes = app
     const user = await getUserBy('email', token.email);
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
 
-    const role = token.role as MembershipModel['role'];
-    const membershipInfo = token.membershipInfo;
+    // Extract role and membershipInfo from the token, ensuring proper types
+    const { role, membershipInfo } = token as {
+      role: MembershipModel['role'];
+      membershipInfo?: typeof token.membershipInfo;
+    };
 
     const [organization]: (OrganizationModel | undefined)[] = await db
       .select()
@@ -210,23 +213,23 @@ const generalRoutes = app
       .from(membershipsTable)
       .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
 
-    const existingMembership = memberships.find((member) => member.userId === user.id);
+    const existingMembership = memberships.find(({ userId }) => userId === user.id);
 
-    if (existingMembership && existingMembership.role !== role) {
+    if (existingMembership && existingMembership.role !== role && !membershipInfo) {
       await db
         .update(membershipsTable)
-        .set({ role: role })
+        .set({ role })
         .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
 
       return ctx.json({ success: true }, 200);
     }
 
-    // Insert membership
-    const membership = await insertMembership({ user, role, entity: organization });
+    // Insert organization membership
+    const orgMembership = await insertMembership({ user, role, entity: organization });
 
     const newMenuItem = {
-      newItem: { ...organization, membership },
-      sectionName: menuSections.find((el) => el.entityType === membership.type)?.name,
+      newItem: { ...organization, membership: orgMembership },
+      sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
     };
 
     // SSE with organization data, to update user's menu
@@ -240,26 +243,17 @@ const generalRoutes = app
 
     if (membershipInfo) {
       const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
+      const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
 
-      const targetEntity = await resolveEntity(targetInfo.entity, targetInfo.idOrSlug);
+      const targetEntity = await resolveEntity(targetEntityType, targetIdOrSlug);
+      // Resolve parentEntity if provided
       const parentEntity = parentInfo ? await resolveEntity(parentInfo.entity, parentInfo.idOrSlug) : null;
 
-      if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetInfo.entity, { [targetInfo.entity]: targetInfo.idOrSlug });
+      if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetEntityType, { [targetEntityType]: targetIdOrSlug });
 
       const [createdParentMembership, createdMembership] = await Promise.all([
-        parentEntity
-          ? insertMembership({
-              user,
-              role,
-              entity: parentEntity,
-            })
-          : Promise.resolve(null), // No-op if parentEntity is undefined
-        insertMembership({
-          user,
-          role,
-          entity: targetEntity,
-          parentEntity,
-        }),
+        parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
+        insertMembership({ user, role, entity: targetEntity, parentEntity }),
       ]);
 
       if (createdParentMembership && parentEntity) {
