@@ -438,6 +438,7 @@
   "upload_img_max_10mb.text": "Upload a PNG or JPG under 10MB",
   "upload_item": "Upload {{item}}",
   "user": "User",
+  "user_not_part_of_app": "Not a member of {{appName}}",
   "user_handle.text": "A unique handle for your profile URL",
   "user_preview": "Preview user",
   "users": "Users",

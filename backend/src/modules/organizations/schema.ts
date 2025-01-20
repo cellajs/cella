@@ -17,6 +17,8 @@ import { membershipInfoSchema } from '../memberships/schema';
 export const invitesInfoSchema = z.array(
   z.object({
     id: z.string(),
+    email: z.string(),
+    name: z.string().nullable(),
     userId: z.string().nullable(),
     expiredAt: z.string(),
     createdAt: z.string(),

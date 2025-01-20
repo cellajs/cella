@@ -194,13 +194,16 @@ const organizationsRoutes = app
       const invitesInfo = await db
         .select({
           id: tokensTable.id,
+          name: usersTable.name,
+          email: tokensTable.email,
           userId: tokensTable.userId,
           expiredAt: tokensTable.expiresAt,
           createdAt: tokensTable.createdAt,
           createdBy: tokensTable.createdBy,
         })
         .from(tokensTable)
-        .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')));
+        .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')))
+        .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId));
 
       return ctx.json({ success: true, data: { ...data, invitesInfo } }, 200);
     }
