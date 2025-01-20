@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { createToast } from '~/lib/toasts';
+import type { TokenType } from '~/modules/auth/api';
 import AuthPage from '~/modules/auth/auth-page';
 import { useVerifyEmailMutation } from '~/modules/auth/query-mutations';
 import { Button } from '~/modules/ui/button';
@@ -11,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 const VerifyEmail = () => {
   const { t } = useTranslation();
   //Strict false is needed because the component is used in two places, one of which does not include parameters
-  const { token }: { token: string } = useParams({ strict: false });
+  const { token }: TokenType = useParams({ strict: false });
   const navigate = useNavigate();
   const { isOnline } = useOnlineManager();
 

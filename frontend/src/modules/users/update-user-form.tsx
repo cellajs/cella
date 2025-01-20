@@ -1,13 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateUserBodySchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import type { User } from '~/types/common';
-
-import { type UpdateUserParams, updateSelf, updateUser } from '~/modules/users/api';
 
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -18,7 +15,6 @@ import { isValidElement } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import useHideElementsById from '~/hooks/use-hide-elements-by-id';
-import { queryClient } from '~/lib/router';
 import { createToast } from '~/lib/toasts';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/language-selector';
@@ -26,7 +22,7 @@ import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { meKeys, usersKeys } from '~/modules/users/query';
+import { useUpdateUserMutation } from '~/modules/users/query-mutations';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
 
@@ -41,20 +37,6 @@ interface UpdateUserFormProps {
 const formSchema = updateUserBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
-
-export const useUpdateUserMutation = (idOrSlug: string) => {
-  const { user: currentUser } = useUserStore();
-  const isSelf = currentUser.id === idOrSlug;
-
-  return useMutation<User, DefaultError, UpdateUserParams>({
-    mutationKey: meKeys.update(),
-    mutationFn: (params) => (isSelf ? updateSelf(params) : updateUser(idOrSlug, params)),
-    onSuccess: (updatedUser) => {
-      queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
-    },
-    gcTime: 1000 * 10,
-  });
-};
 
 const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children }: UpdateUserFormProps) => {
   const { t } = useTranslation();

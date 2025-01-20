@@ -12,7 +12,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { dialog } from '~/modules/common/dialoger/state';
 import StickyBox from '~/modules/common/sticky-box';
 import { getSuggestions } from '~/modules/general/api';
-import { searchKeys } from '~/modules/general/query';
+import { generalKeys } from '~/modules/general/query';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '~/modules/ui/command';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -67,7 +67,7 @@ export const AppSearch = () => {
 
   const { data: suggestions, isFetching } = useQuery({
     initialData: { items: [], total: 0 },
-    queryKey: searchKeys.byValue(searchValue),
+    queryKey: generalKeys.search(searchValue),
     queryFn: () => getSuggestions(searchValue),
     staleTime: 0,
     enabled: searchValue.length > 0,

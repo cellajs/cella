@@ -11,8 +11,9 @@ import { Input } from '~/modules/ui/input';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useEffect } from 'react';
-import type { Step, TokenData } from '~/modules/auth';
+import type { Step } from '~/modules/auth';
 import { useCheckEmailMutation } from '~/modules/auth/query-mutations';
+import type { TokenData } from '~/types/common';
 
 const formSchema = emailBodySchema;
 

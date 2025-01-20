@@ -10,10 +10,9 @@ import { passwordSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';
-import { useMutation } from '~/hooks/use-mutations';
 import type { ApiError } from '~/lib/api';
 import { useResetPasswordMutation } from '~/modules/auth/query-mutations';
-import { checkToken as baseCheckToken } from '~/modules/general/api';
+import { useCheckTokenMutation } from '~/modules/general/query-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { ResetPasswordRoute } from '~/routes/auth';
@@ -33,11 +32,7 @@ const ResetPassword = () => {
   const [tokenError, setError] = useState<ApiError | null>(null);
 
   // Check reset password token and get email
-  const { mutate: checkToken } = useMutation({
-    mutationFn: baseCheckToken,
-    onSuccess: (result) => setEmail(result.email),
-    onError: (error) => setError(error),
-  });
+  const { mutate: checkToken } = useCheckTokenMutation();
 
   // Reset password and sign in
   const { mutate: resetPassword, isPending } = useResetPasswordMutation();
@@ -58,7 +53,7 @@ const ResetPassword = () => {
   useEffect(() => {
     if (!token) return;
 
-    checkToken(token);
+    checkToken(token, { onSuccess: (result) => setEmail(result.email), onError: (error) => setError(error) });
   }, [token]);
 
   return (

@@ -10,7 +10,7 @@ export const githubSignInUrl = client.github.$url().href;
 export const googleSignInUrl = client.google.$url().href;
 export const microsoftSignInUrl = client.microsoft.$url().href;
 
-type Token = { token: string };
+export type TokenType = { token: string };
 
 export type SignUpProps = Parameters<(typeof client)['sign-up']['$post']>['0']['json'];
 
@@ -34,7 +34,7 @@ export const checkEmail = async (email: string) => {
   return json.data.hasPasskey;
 };
 
-export type VerifyEmailProps = Token & { resend?: boolean };
+export type VerifyEmailProps = TokenType & { resend?: boolean };
 
 // Verify the user's email with token sent by email
 export const verifyEmail = async ({ token, resend }: VerifyEmailProps) => {
@@ -86,7 +86,7 @@ export const sendResetPasswordEmail = async (email: string) => {
   await handleResponse(response);
 };
 
-export type ResetPasswordProps = Token & { password: string };
+export type ResetPasswordProps = TokenType & { password: string };
 
 // Reset the user's password
 export const resetPassword = async ({ token, password }: ResetPasswordProps) => {

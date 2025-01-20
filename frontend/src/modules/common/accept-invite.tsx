@@ -1,23 +1,19 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
-import type { checkTokenSchema } from 'backend/modules/general/schema';
 import { config } from 'config';
 import { ArrowRight, Ban, Check, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import type { z } from 'zod';
-import { useMutation } from '~/hooks/use-mutations';
 import type { ApiError } from '~/lib/api';
 import AuthPage from '~/modules/auth/auth-page';
 import Spinner from '~/modules/common/spinner';
-import { acceptInvite as baseAcceptInvite, checkToken as baseCheckToken } from '~/modules/general/api';
+import { useAcceptInviteMutation, useCheckTokenMutation } from '~/modules/general/query-mutations';
 import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { acceptInviteRoute } from '~/routes/general';
+import type { TokenData } from '~/types/common';
 import { cn } from '~/utils/cn';
-
-type TokenData = z.infer<typeof checkTokenSchema>;
 
 const AcceptInvite = () => {
   const { t } = useTranslation();
@@ -27,31 +23,28 @@ const AcceptInvite = () => {
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
-  const { mutate: checkToken, isPending: isChecking } = useMutation({
-    mutationFn: baseCheckToken,
-    onSuccess: (result) => setTokenData(result),
-    onError: (error) => setError(error),
-  });
+  const { mutate: checkToken, isPending: isChecking } = useCheckTokenMutation();
 
-  const { mutate: acceptInvite, isPending } = useMutation({
-    mutationFn: baseAcceptInvite,
-    onSuccess: (data) => {
-      if (data) addMenuItem(data.newItem, data.sectionName);
-      toast.success(t('common:invitation_accepted'));
-      navigate({
-        to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath,
-      });
-    },
-    onError: (error) => setError(error),
-  });
+  const { mutate: acceptInvite, isPending } = useAcceptInviteMutation();
 
   const onSubmit = () => {
-    acceptInvite({ token });
+    acceptInvite(
+      { token },
+      {
+        onSuccess: (data) => {
+          if (data) addMenuItem(data.newItem, data.sectionName);
+          toast.success(t('common:invitation_accepted'));
+          navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
+        },
+        onError: (error) => setError(error),
+      },
+    );
   };
 
   useEffect(() => {
     if (!token) return;
-    checkToken(token);
+
+    checkToken(token, { onSuccess: (result) => setTokenData(result), onError: (error) => setError(error) });
   }, [token]);
 
   if (isChecking) return <Spinner />;

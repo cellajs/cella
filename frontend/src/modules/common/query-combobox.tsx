@@ -10,7 +10,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
 import { getSuggestions } from '~/modules/general/api';
-import { searchKeys } from '~/modules/general/query';
+import { generalKeys } from '~/modules/general/query';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
@@ -50,7 +50,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
   };
 
   const { data, isLoading: isLoadingOrig } = useQuery({
-    queryKey: searchKeys.byValue(debouncedSearchQuery),
+    queryKey: generalKeys.search(debouncedSearchQuery),
     queryFn: () => getSuggestions(debouncedSearchQuery, 'user'),
     staleTime: 0,
     enabled: !!debouncedSearchQuery,

@@ -12,11 +12,12 @@ import { Input } from '~/modules/ui/input';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useEffect } from 'react';
-import type { TokenData } from '~/modules/auth';
+import type { TokenType } from '~/modules/auth/api';
 import { useSignInMutation } from '~/modules/auth/query-mutations';
 import { ResetPasswordRequest } from '~/modules/auth/reset-password/dialog';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
+import type { TokenData } from '~/types/common';
 
 const formSchema = authBodySchema;
 
@@ -24,7 +25,7 @@ export const SignInForm = ({
   tokenData,
   email,
   resetToInitialStep,
-}: { tokenData: TokenData | null; email: string; resetToInitialStep: () => void }) => {
+}: { tokenData: (TokenData & TokenType) | null; email: string; resetToInitialStep: () => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { lastUser, clearLastUser } = useUserStore();

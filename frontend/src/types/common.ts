@@ -1,5 +1,5 @@
 import type { UppyFile } from '@uppy/core';
-import type { membersSchema } from 'backend/modules/general/schema';
+import type { checkTokenSchema, membersSchema } from 'backend/modules/general/schema';
 import type { membershipInfoSchema, membershipSchema } from 'backend/modules/memberships/schema';
 import type { organizationSchema, organizationWithMembershipSchema } from 'backend/modules/organizations/schema';
 import type { requestSchema } from 'backend/modules/requests/schema';
@@ -33,6 +33,7 @@ export type OrganizationWithMembership = z.infer<typeof organizationWithMembersh
 
 export type Attachment = z.infer<typeof attachmentSchema>;
 
+export type TokenData = z.infer<typeof checkTokenSchema>;
 export type Language = Organization['languages'][number];
 
 export type Member = z.infer<typeof membersSchema>;
