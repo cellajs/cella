@@ -15,6 +15,13 @@
       "when": 1736945246283,
       "tag": "0001_gray_the_executioner",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1737372431142,
+      "tag": "0002_sticky_cassandra_nova",
+      "breakpoints": true
     }
   ]
 }

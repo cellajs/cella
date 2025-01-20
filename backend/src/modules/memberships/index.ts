@@ -41,7 +41,8 @@ const membershipsRoutes = app
     const { entity, isAllowed } = await getValidEntity(entityType, 'update', idOrSlug);
     if (!entity || !isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
 
-    const { emails, role, parentEntity } = ctx.req.valid('json');
+    const { emails, role, parentEntity: parentEntityInfo } = ctx.req.valid('json');
+    console.log('🚀 ~ .openapi ~ emails:', emails);
 
     const organization = getOrganization();
     const user = getContextUser();
@@ -136,37 +137,37 @@ const membershipsRoutes = app
             (entity.entity !== 'organization' && organizationMembership) || (entity.entity === 'organization' && existingUser.id === user.id);
 
           if (instantCreateMembership) {
-            const parentEntityInto = parentEntity ? await resolveEntity(parentEntity.entity, parentEntity.idOrSlug) : undefined;
+            const parentEntity = parentEntityInfo ? await resolveEntity(parentEntityInfo.entity, parentEntityInfo.idOrSlug) : null;
 
             const [createdParentMembership, createdMembership] = await Promise.all([
-              parentEntityInto
+              parentEntity
                 ? insertMembership({
                     user: existingUser,
                     role,
-                    entity: parentEntityInto,
+                    entity: parentEntity,
                   })
                 : Promise.resolve(null), // No-op if parentEntity is undefined
               insertMembership({
                 user: existingUser,
                 role,
                 entity: entity,
-                parentEntity: parentEntityInto,
+                parentEntity,
               }),
             ]);
 
-            if (createdParentMembership) {
-              // Send a Server-Sent Event (SSE) to the newly added user
+            if (parentEntity && createdParentMembership) {
+              // SSE with parentEntity data, to update user's menu
               sendSSEToUsers([existingUser.id], 'add_entity', {
-                newItem: { ...entity, membership: createdParentMembership },
-                sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
+                newItem: { ...parentEntity, membership: createdParentMembership },
+                sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
               });
             }
 
-            // Send a Server-Sent Event (SSE) to the newly added user
+            // SSE with entity data, to update user's menu
             sendSSEToUsers([existingUser.id], 'add_entity', {
               newItem: { ...entity, membership: createdMembership },
               sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
-              ...(parentEntityInto && { parentSlug: parentEntityInto.slug }),
+              ...(parentEntity && { parentSlug: parentEntity.slug }),
             });
           }
 
@@ -177,36 +178,40 @@ const membershipsRoutes = app
     );
 
     // Identify emails that do not have existing users (will need to send a invitation)
-    for (const email of normalizedEmails) {
-      if (!existingUsersByEmail.has(email)) emailsToSendInvitation.push(email);
-    }
+    for (const email of normalizedEmails) if (!existingUsersByEmail.has(email)) emailsToSendInvitation.push(email);
 
     // Send invitations for organization membership
     await Promise.all(
       emailsToSendInvitation.map(async (email) => {
         const targetUser = existingUsersByEmail.get(email);
 
-        // Skip if there's no targetUser
-        if (!targetUser) return;
-
         const token = generateId(40);
         await db.insert(tokensTable).values({
           id: token,
           type: 'membership_invitation',
-          userId: targetUser.id,
+          userId: targetUser?.id ?? null,
           email: email,
           createdBy: user.id,
           role,
           organizationId: organization.id,
           expiresAt: createDate(new TimeSpan(7, 'd')),
+          ...(entity.entity !== 'organization' && {
+            membershipInfo: {
+              targetEntity: {
+                idOrSlug: entity.id,
+                entity: entity.entity,
+              },
+              parentEntity: parentEntityInfo,
+            },
+          }),
         });
 
         // Render email template
         const emailHtml = await render(
           InviteMemberEmail({
-            userName: targetUser.name,
-            userLanguage: targetUser.language || user.language,
-            userThumbnailUrl: targetUser.thumbnailUrl,
+            userName: targetUser?.name,
+            userLanguage: targetUser?.language || user.language,
+            userThumbnailUrl: targetUser?.thumbnailUrl,
             inviteBy: user.name,
             organizationName: organization.name,
             organizationThumbnailUrl: organization.logoUrl || organization.thumbnailUrl,

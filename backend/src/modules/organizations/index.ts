@@ -201,6 +201,7 @@ const organizationsRoutes = app
         })
         .from(tokensTable)
         .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')));
+
       return ctx.json({ success: true, data: { ...data, invitesInfo } }, 200);
     }
     return ctx.json({ success: true, data }, 200);

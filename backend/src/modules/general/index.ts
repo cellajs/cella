@@ -21,6 +21,7 @@ import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { entityIdFields, entityTables, menuSections } from '#/entity-config';
+import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -194,6 +195,7 @@ const generalRoutes = app
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
 
     const role = token.role as MembershipModel['role'];
+    const membershipInfo = token.membershipInfo;
 
     const [organization]: (OrganizationModel | undefined)[] = await db
       .select()
@@ -227,7 +229,7 @@ const generalRoutes = app
       sectionName: menuSections.find((el) => el.entityType === membership.type)?.name,
     };
 
-    // SSE with entity data, to update user's menu
+    // SSE with organization data, to update user's menu
     sendSSEToUsers([user.id], 'add_entity', newMenuItem);
     // SSE to to update members queries
     sendSSEToUsers(
@@ -235,6 +237,46 @@ const generalRoutes = app
       'member_accept_invite',
       { id: organization.id, slug: organization.slug },
     );
+
+    if (membershipInfo) {
+      const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
+
+      const targetEntity = await resolveEntity(targetInfo.entity, targetInfo.idOrSlug);
+      const parentEntity = parentInfo ? await resolveEntity(parentInfo.entity, parentInfo.idOrSlug) : null;
+
+      if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetInfo.entity, { [targetInfo.entity]: targetInfo.idOrSlug });
+
+      const [createdParentMembership, createdMembership] = await Promise.all([
+        parentEntity
+          ? insertMembership({
+              user,
+              role,
+              entity: parentEntity,
+            })
+          : Promise.resolve(null), // No-op if parentEntity is undefined
+        insertMembership({
+          user,
+          role,
+          entity: targetEntity,
+          parentEntity,
+        }),
+      ]);
+
+      if (createdParentMembership && parentEntity) {
+        // SSE with parentEntity data, to update user's menu
+        sendSSEToUsers([user.id], 'add_entity', {
+          newItem: { ...parentEntity, membership: createdParentMembership },
+          sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
+        });
+      }
+
+      // SSE with entity data, to update user's menu
+      sendSSEToUsers([user.id], 'add_entity', {
+        newItem: { ...targetEntity, membership: createdMembership },
+        sectionName: menuSections.find((el) => el.entityType === targetEntity.entity)?.name,
+        ...(parentEntity && { parentSlug: parentEntity.slug }),
+      });
+    }
 
     return ctx.json({ success: true, data: newMenuItem }, 200);
   })
