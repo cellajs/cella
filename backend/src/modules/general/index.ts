@@ -360,17 +360,19 @@ const generalRoutes = app
    */
   .get('/sse', isAuthenticated, async (ctx) => {
     const user = getContextUser();
-    return streamSSE(ctx, async (stream) => {
-      ctx.header('Content-Encoding', '');
+
+    const stream = streamSSE(ctx, async (stream) => {
       streams.set(user.id, stream);
 
       console.info('User connected to SSE', user.id);
+      // Send initial connection event
       await stream.writeSSE({
         event: 'connected',
         data: 'connected',
         retry: 5000,
       });
 
+      // Handle client disconnect
       stream.onAbort(async () => {
         console.info('User disconnected from SSE', user.id);
         streams.delete(user.id);
@@ -383,9 +385,12 @@ const generalRoutes = app
           data: 'pong',
           retry: 5000,
         });
-        await stream.sleep(30000);
+        await stream.sleep(30000); // 30s
       }
     });
+    // to avoid  HTTP/1 Connection specific headers are forbidden: "transfer-encoding"
+    stream.headers.delete('transfer-encoding');
+    return stream;
   });
 
 export default generalRoutes;
