@@ -119,10 +119,10 @@ export async function copyFile(src: string, dest: string): Promise<void> {
 
 /**
  * Helper function edit a file by applying regex replacements.
- * @param src - The source file path.
- * @param dest - The destination file path.
+ * @param filePath - The path of the file to edit.
+ * @param edits - The list of edits to apply.
  */
-export async function editFile(filePath: string, edits): Promise<void> {
+export async function editFile(filePath: string, edits: Array<{regexMatch: RegExp; replaceWith: string }>): Promise<void> {
   try {
     await fs.access(filePath);
 
