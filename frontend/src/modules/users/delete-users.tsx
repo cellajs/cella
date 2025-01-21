@@ -1,14 +1,13 @@
-import { deleteUsers as baseDeleteUsers } from '~/modules/users/api';
 import type { User } from '~/types/common';
 
 import { onlineManager } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { createToast } from '~/lib/toasts';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { usersKeys } from '~/modules/users/query';
+import { useDeleteUserMutation } from '~/modules/users/query-mutations';
 
 interface Props {
   users: User[];
@@ -19,24 +18,22 @@ interface Props {
 const DeleteUsers = ({ users, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
 
-  const { mutate: deleteUsers, isPending } = useMutation({
-    mutationFn: baseDeleteUsers,
-    onSuccess: () => {
-      for (const user of users) {
-        queryClient.invalidateQueries({
-          queryKey: usersKeys.single(user.id),
-        });
-      }
-
-      if (isDialog) dialog.remove();
-      callback?.(users);
-    },
-  });
+  const { mutate: deleteUsers, isPending } = useDeleteUserMutation();
 
   const onDelete = () => {
     if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
-    deleteUsers(users.map((user) => user.id));
+    const idsToDelete = users.map((user) => user.id);
+    deleteUsers(idsToDelete, {
+      onSuccess: () => {
+        for (const user of users) {
+          queryClient.invalidateQueries({ queryKey: usersKeys.single(user.id) });
+        }
+
+        if (isDialog) dialog.remove();
+        callback?.(users);
+      },
+    });
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;

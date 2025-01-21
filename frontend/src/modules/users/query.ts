@@ -11,6 +11,11 @@ export const usersKeys = {
   many: ['users'] as const,
   list: () => [...usersKeys.many, 'list'] as const,
   table: (filters?: GetUsersParams) => [...usersKeys.list(), filters] as const,
+  leaveEntity: () => [...usersKeys.one, 'leave'] as const,
+  update: () => [...usersKeys.one, 'update'] as const,
+  delete: () => [...usersKeys.one, 'delete'] as const,
+  deleteSelf: () => [...usersKeys.delete(), 'self'] as const,
+  terminateSessions: () => [...usersKeys.one, 'terminate', 'sessions'] as const,
 };
 
 // Keys for meUser(self) query

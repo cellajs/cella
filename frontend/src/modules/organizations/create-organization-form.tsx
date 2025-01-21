@@ -6,13 +6,11 @@ import type { z } from 'zod';
 
 // Change this in the future on current schema
 import { createOrganizationBodySchema } from 'backend/modules/organizations/schema';
-import { createOrganization } from '~/modules/organizations/api';
 
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMutation } from '~/hooks/use-mutations';
 import { isDialog as checkDialog, dialog } from '~/modules/common/dialoger/state';
 import InputFormField from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
@@ -20,6 +18,7 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { organizationsKeys } from '~/modules/organizations/query';
+import { useOrganizationCreateMutation } from '~/modules/organizations/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
@@ -65,31 +64,7 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
   const name = useWatch({ control: form.control, name: 'name' });
   const mutateQuery = useMutateQueryData(organizationsKeys.list());
 
-  const { mutate: create, isPending } = useMutation({
-    mutationFn: createOrganization,
-    onSuccess: (createdOrganization) => {
-      form.reset();
-      toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
-      nextStep?.();
-
-      addMenuItem(createdOrganization, 'organizations');
-
-      if (isDialog) dialog.remove(true, 'create-organization');
-
-      mutateQuery.create([createdOrganization]);
-
-      callback?.(createdOrganization);
-
-      if (replaceToCreatedOrg) {
-        navigate({
-          to: '/$idOrSlug/members',
-          params: {
-            idOrSlug: createdOrganization.slug,
-          },
-        });
-      }
-    },
-  });
+  const { mutate, isPending } = useOrganizationCreateMutation();
 
   // Update dialog title with unsaved changes
   useEffect(() => {
@@ -106,7 +81,30 @@ const CreateOrganizationForm: React.FC<CreateOrganizationFormProps> = ({
   }, [form.unsavedChanges]);
 
   const onSubmit = (values: FormValues) => {
-    create(values);
+    mutate(values, {
+      onSuccess: (createdOrganization) => {
+        form.reset();
+        toast.success(t('common:success.create_resource', { resource: t('common:organization') }));
+        nextStep?.();
+
+        addMenuItem(createdOrganization, 'organizations');
+
+        if (isDialog) dialog.remove(true, 'create-organization');
+
+        mutateQuery.create([createdOrganization]);
+
+        callback?.(createdOrganization);
+
+        if (replaceToCreatedOrg) {
+          navigate({
+            to: '/$idOrSlug/members',
+            params: {
+              idOrSlug: createdOrganization.slug,
+            },
+          });
+        }
+      },
+    });
   };
 
   return (
