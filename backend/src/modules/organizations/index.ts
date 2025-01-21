@@ -5,6 +5,7 @@ import { organizationsTable } from '#/db/schema/organizations';
 
 import { config } from 'config';
 import { render } from 'jsx-email';
+import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { getContextUser, getMemberships } from '#/lib/context';
@@ -189,9 +190,25 @@ const organizationsRoutes = app
     const counts = { memberships: memberCounts };
     const data = { ...organization, membership, counts };
 
+    if (membership && membership.role === 'admin') {
+      const invitesInfo = await db
+        .select({
+          id: tokensTable.id,
+          name: usersTable.name,
+          email: tokensTable.email,
+          userId: tokensTable.userId,
+          expiredAt: tokensTable.expiresAt,
+          createdAt: tokensTable.createdAt,
+          createdBy: tokensTable.createdBy,
+        })
+        .from(tokensTable)
+        .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')))
+        .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId));
+
+      return ctx.json({ success: true, data: { ...data, invitesInfo } }, 200);
+    }
     return ctx.json({ success: true, data }, 200);
   })
-
   /*
    * Delete organizations by ids
    */

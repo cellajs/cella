@@ -15,7 +15,7 @@ import { useResetPasswordMutation } from '~/modules/auth/query-mutations';
 import { useCheckTokenMutation } from '~/modules/general/query-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { ResetPasswordRoute } from '~/routes/auth';
+import { ResetPasswordWithTokenRoute } from '~/routes/auth';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -26,7 +26,7 @@ const formSchema = z.object({
 const ResetPassword = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { token } = useParams({ from: ResetPasswordRoute.id });
+  const { token } = useParams({ from: ResetPasswordWithTokenRoute.id });
 
   const [email, setEmail] = useState('');
   const [tokenError, setError] = useState<ApiError | null>(null);

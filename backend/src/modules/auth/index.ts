@@ -145,6 +145,7 @@ const authRoutes = app
       type: 'email_verification',
       userId: user.id,
       email,
+      createdBy: user.id,
       expiresAt: createDate(new TimeSpan(2, 'h')),
     });
 
@@ -236,6 +237,7 @@ const authRoutes = app
       type: 'password_reset',
       userId: user.id,
       email,
+      createdBy: user.id,
       expiresAt: createDate(new TimeSpan(2, 'h')),
     });
 

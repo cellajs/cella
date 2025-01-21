@@ -23,7 +23,7 @@ pnpm seed
 ## Customize
 1. Customize your config in `/config/default.ts`
 2. Update package.json with your own data
-3. Look at your .env file to understand what is required, for example to send emails you will need an API key.
+3. Look at your `.env` file to understand what is required, for example to send emails you will need an API key.
 4. There are many config files with filenames like `-config.ts`. For example for entities or navigation structure.
 
 

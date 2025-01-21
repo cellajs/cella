@@ -25,7 +25,7 @@
   "email.reset_password_text_1": "A password reset link has been requested for your <strong>{{appName}}</strong> account. If this was you, you can set a new password here:",
   "email.reset_password_text_2": "This link will expire in 3 hours. To get a new password reset link, visit:",
   "email.reset_password_text_3": "Ignore this email if you don't want to change your password or didn't request it.",
-  "email.support_email": "Reach out for support",
+  "email.support_email": "Contact support",
   "email.unsubscribe": "Unsubscribe from newsletters",
   "email.verification_text_1": "Hi, you are almost ready to start on {{appName}}! Click the link below to verify your email address and get started. The link expires in 2 hours.",
   "invalid.color": "Color may only contain letters, numbers & starts with #",

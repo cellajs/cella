@@ -1,8 +1,6 @@
-import { i18n } from '#/lib/i18n';
-
 export const UserName = ({ beforeText, userName }: { beforeText?: string; userName?: string }) => {
-  const username = userName || i18n.t('common:no_name', { lng: 'en' });
-  const contentBeforeText = beforeText ? beforeText : '';
+  const username = userName || '';
+  const contentBeforeText = beforeText || '';
 
   return (
     <div

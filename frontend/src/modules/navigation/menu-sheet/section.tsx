@@ -80,8 +80,7 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
             )}
             {!!data.length && (
               <div className="group/archived" data-has-inactive={!!inactiveCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
-                {!!inactiveCount || (isEditing && <SectionArchiveButton archiveToggleClick={archiveToggleClick} inactiveCount={inactiveCount} />)}
-                <SectionArchiveButton archiveToggleClick={archiveToggleClick} inactiveCount={inactiveCount} />
+                {(!!inactiveCount || isEditing) && <SectionArchiveButton archiveToggleClick={archiveToggleClick} inactiveCount={inactiveCount} />}
                 <AnimatePresence initial={false}>
                   {isArchivedVisible && (
                     <motion.ul

@@ -21,6 +21,7 @@ import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { entityIdFields, entityTables, menuSections } from '#/entity-config';
+import { resolveEntity } from '#/lib/entity';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -131,6 +132,7 @@ const generalRoutes = app
         userId: targetUser?.id,
         email: email.toLowerCase(),
         role,
+        createdBy: user.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 
@@ -177,12 +179,10 @@ const generalRoutes = app
     if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
       return errorResponse(ctx, 401, 'invalid_token_or_expired', 'warn');
     }
-
+    // Delete token
+    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
     // If it is a system invitation, update user role
     if (token.type === 'system_invitation') {
-      // Delete token
-      await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
-
       if (oauth) setCookie(ctx, 'oauth_invite_token', token.id);
 
       return ctx.json({ success: true }, 200);
@@ -194,7 +194,11 @@ const generalRoutes = app
     const user = await getUserBy('email', token.email);
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
 
-    const role = token.role as MembershipModel['role'];
+    // Extract role and membershipInfo from the token, ensuring proper types
+    const { role, membershipInfo } = token as {
+      role: MembershipModel['role'];
+      membershipInfo?: typeof token.membershipInfo;
+    };
 
     const [organization]: (OrganizationModel | undefined)[] = await db
       .select()
@@ -204,30 +208,69 @@ const generalRoutes = app
 
     if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
 
-    const [existingMembership]: (MembershipModel | undefined)[] = await db
+    const memberships = await db
       .select()
       .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
 
-    if (existingMembership && existingMembership.role !== role) {
+    const existingMembership = memberships.find(({ userId }) => userId === user.id);
+
+    if (existingMembership && existingMembership.role !== role && !membershipInfo) {
       await db
         .update(membershipsTable)
-        .set({ role: role })
+        .set({ role })
         .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
 
       return ctx.json({ success: true }, 200);
     }
 
-    // Insert membership
-    const membership = await insertMembership({ user, role, entity: organization });
+    // Insert organization membership
+    const orgMembership = await insertMembership({ user, role, entity: organization });
 
     const newMenuItem = {
-      newItem: { ...organization, membership },
-      sectionName: menuSections.find((el) => el.entityType === membership.type)?.name,
+      newItem: { ...organization, membership: orgMembership },
+      sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
     };
 
-    // SSE with entity data, to update user's menu
+    // SSE with organization data, to update user's menu
     sendSSEToUsers([user.id], 'add_entity', newMenuItem);
+    // SSE to to update members queries
+    sendSSEToUsers(
+      memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
+      'member_accept_invite',
+      { id: organization.id, slug: organization.slug },
+    );
+
+    if (membershipInfo) {
+      const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
+      const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
+
+      const targetEntity = await resolveEntity(targetEntityType, targetIdOrSlug);
+      // Resolve parentEntity if provided
+      const parentEntity = parentInfo ? await resolveEntity(parentInfo.entity, parentInfo.idOrSlug) : null;
+
+      if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetEntityType, { [targetEntityType]: targetIdOrSlug });
+
+      const [createdParentMembership, createdMembership] = await Promise.all([
+        parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
+        insertMembership({ user, role, entity: targetEntity, parentEntity }),
+      ]);
+
+      if (createdParentMembership && parentEntity) {
+        // SSE with parentEntity data, to update user's menu
+        sendSSEToUsers([user.id], 'add_entity', {
+          newItem: { ...parentEntity, membership: createdParentMembership },
+          sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
+        });
+      }
+
+      // SSE with entity data, to update user's menu
+      sendSSEToUsers([user.id], 'add_entity', {
+        newItem: { ...targetEntity, membership: createdMembership },
+        sectionName: menuSections.find((el) => el.entityType === targetEntity.entity)?.name,
+        ...(parentEntity && { parentSlug: parentEntity.slug }),
+      });
+    }
 
     return ctx.json({ success: true, data: newMenuItem }, 200);
   })
@@ -315,7 +358,7 @@ const generalRoutes = app
 
         // Execute the query using inner join with memberships table
         return db
-          .selectDistinct({
+          .select({
             ...baseSelect,
             membership: membershipSelect,
           })
@@ -325,6 +368,7 @@ const generalRoutes = app
             and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? 'organization' : entityType)),
           )
           .where($where)
+          .groupBy(table.id, membershipsTable.id) // Group by entity ID for distinct results
           .limit(10);
       })
       .filter(Boolean); // Filter out null values if any entity type is invalid
