@@ -25,6 +25,7 @@ export const env = createEnv({
       .transform((v) => v === 'true'),
     DATABASE_URL: z.string().url(),
     NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('test')]),
+    DEVELOPMENT_SECURE_HTTP2: z.string().transform((v) => v === 'true'),
     PORT: z.string().optional(),
     UNSUBSCRIBE_TOKEN_SECRET: z.string(),
 

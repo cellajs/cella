@@ -1,16 +1,10 @@
-import { type ExecOptions, exec } from 'node:child_process';
+import { config } from 'config';
+
 import { mkdirSync } from 'node:fs';
 import { access, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { config } from 'config';
 
-export function runCommand(command: string, options: ExecOptions = {}) {
-  return new Promise<{ exitCode: number }>((resolve) => {
-    exec(command, options, (error) => {
-      return resolve({ exitCode: error?.code ?? 0 });
-    });
-  });
-}
+import { installRootCert, runCommand } from '#/utils/certs/helpers';
 
 export const certs = async () => {
   const res = await runCommand('npx mkcert --help');
@@ -52,6 +46,8 @@ export const certs = async () => {
         { cwd: path },
       );
     }
+    await installRootCert(caCertPath);
+
     const [key, cert] = await Promise.all([readFile(keyPath, { encoding: 'utf-8' }), readFile(certPath, { encoding: 'utf-8' })]);
     return key && cert ? { key, cert } : null;
   }

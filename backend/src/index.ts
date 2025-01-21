@@ -1,9 +1,11 @@
 import { createSecureServer } from 'node:http2';
+
 import { serve } from '@hono/node-server';
 
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { migrate as pgliteMigrate } from 'drizzle-orm/pglite/migrator';
+
 import { db } from '#/db/db';
 import ascii from '#/utils/ascii';
 import { env } from '../env';
@@ -33,7 +35,7 @@ const main = async () => {
   } else {
     await pgMigrate(db, migrateConfig);
   }
-  const { key, cert } = (await certs()) || {};
+  const { key, cert } = env.NODE_ENV === 'development' && env.DEVELOPMENT_SECURE_HTTP2 ? (await certs()) || {} : {};
   const port = Number(env.PORT ?? '4000');
   const hostname = '0.0.0.0';
 
@@ -50,11 +52,11 @@ const main = async () => {
       },
     },
     () => {
-      const backendUrl = key ? `https://${hostname}:${port}` : config.backendUrl;
+      config.backendUrl = key ? `https://${hostname}:${port}` : config.backendUrl;
       ascii();
       console.info(' ');
       console.info(
-        `${chalk.greenBright.bold(config.name)} (Frontend) runs on ${chalk.cyanBright.bold(config.frontendUrl)}. Backend: ${chalk.cyanBright.bold(backendUrl)}. Docs: ${chalk.cyanBright(`${backendUrl}/docs`)}`,
+        `${chalk.greenBright.bold(config.name)} (Frontend) runs on ${chalk.cyanBright.bold(config.frontendUrl)}. Backend: ${chalk.cyanBright.bold(config.backendUrl)}. Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}`,
       );
       console.info(' ');
     },
