@@ -13,7 +13,7 @@ const baseApp = new CustomHono<Env>({
 });
 
 baseApp.use(contextStorage());
-baseApp.get('/', (c) => c.text('Hello, world!'));
+
 // Add global middleware
 baseApp.route('/', middlewares);
 

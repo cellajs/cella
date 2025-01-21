@@ -35,15 +35,16 @@ const main = async () => {
   } else {
     await pgMigrate(db, migrateConfig);
   }
-  const { key, cert } = env.NODE_ENV === 'development' && env.DEVELOPMENT_SECURE_HTTP2 ? (await certs()) || {} : {};
+  const { key, cert } = env.NODE_ENV === 'development' ? (await certs()) || {} : {};
   const port = Number(env.PORT ?? '4000');
   const hostname = '0.0.0.0';
 
+  if (!key || !cert) throw new Error('SSL key and/or certificate are missing. Please ensure they are correctly configured.');
   // Start server
   serve(
     {
       fetch: app.fetch,
-      createServer: key ? createSecureServer : undefined,
+      createServer: createSecureServer,
       hostname,
       port,
       serverOptions: {

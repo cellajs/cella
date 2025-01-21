@@ -151,6 +151,7 @@
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
     "vite-plugin-html": "^3.2.2",
+    "vite-plugin-mkcert": "^1.17.6",
     "vite-plugin-pwa": "^0.21.1",
     "vite-plugin-static-copy": "^2.2.0"
   },

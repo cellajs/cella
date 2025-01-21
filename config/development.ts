@@ -8,9 +8,9 @@ export default {
   // senderIsReceiver: true,
 
   domain: '',
-  frontendUrl: 'http://localhost:3000',
-  backendUrl: 'http://localhost:4000',
-  backendAuthUrl: 'http://localhost:4000/auth',
+  frontendUrl: 'https://localhost:3000',
+  backendUrl: 'https://localhost:4000',
+  backendAuthUrl: 'https://localhost:4000/auth',
   tusUrl: 'http://localhost:4100',
   electricUrl: 'http://localhost:4200',
 
