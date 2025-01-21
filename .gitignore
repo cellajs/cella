@@ -43,5 +43,9 @@ frontend/stats.html
 frontend/src/generated
 *.zip
 
+#Cert
+backend/src/utils/certs/**/*
+!backend/src/utils/certs/**/*.ts
+
 ## Cella
 cella.diverged.txt

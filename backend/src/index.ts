@@ -1,3 +1,4 @@
+import { createSecureServer } from 'node:http2';
 import { serve } from '@hono/node-server';
 
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
@@ -13,6 +14,7 @@ import app from './routes';
 import chalk from 'chalk';
 import { config } from 'config';
 import './lib/i18n';
+import { certs } from './utils/certs';
 // import { sdk } from './tracing';
 
 const isPGliteDatabase = (_db: unknown): _db is PgliteDatabase => !!env.PGLITE;
@@ -31,19 +33,28 @@ const main = async () => {
   } else {
     await pgMigrate(db, migrateConfig);
   }
+  const { key, cert } = (await certs()) || {};
+  const port = Number(env.PORT ?? '4000');
+  const hostname = '0.0.0.0';
 
   // Start server
   serve(
     {
       fetch: app.fetch,
-      hostname: '0.0.0.0',
-      port: Number(env.PORT ?? '4000'),
+      createServer: key ? createSecureServer : undefined,
+      hostname,
+      port,
+      serverOptions: {
+        key,
+        cert,
+      },
     },
     () => {
+      const backendUrl = key ? `https://${hostname}:${port}` : config.backendUrl;
       ascii();
       console.info(' ');
       console.info(
-        `${chalk.greenBright.bold(config.name)} (Frontend) runs on ${chalk.cyanBright.bold(config.frontendUrl)}. Backend: ${chalk.cyanBright.bold(config.backendUrl)}. Docs: ${chalk.cyanBright(`${config.backendUrl}/docs`)}`,
+        `${chalk.greenBright.bold(config.name)} (Frontend) runs on ${chalk.cyanBright.bold(config.frontendUrl)}. Backend: ${chalk.cyanBright.bold(backendUrl)}. Docs: ${chalk.cyanBright(`${backendUrl}/docs`)}`,
       );
       console.info(' ');
     },
