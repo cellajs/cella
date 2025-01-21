@@ -1,9 +1,11 @@
 import { sentry } from '@hono/sentry';
 import { config } from 'config';
+import { bodyLimit } from 'hono/body-limit';
 import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
+import { errorResponse } from '#/lib/errors';
 import { observabilityMiddleware } from '#/middlewares/observability/';
 import { CustomHono } from '#/types/common';
 import { logEvent } from './logger/log-event';
@@ -40,6 +42,17 @@ app.use('*', cors(corsOptions));
 
 // CSRF protection
 app.use('*', csrf({ origin: config.frontendUrl }));
+
+// Body limit
+app.use(
+  '*',
+  bodyLimit({
+    maxSize: 1 * 1024 * 1024, // 1mb
+    onError: (ctx) => {
+      return errorResponse(ctx, 413, 'body_too_large', 'warn', undefined, { path: ctx.req.path });
+    },
+  }),
+);
 
 // Compress with gzip
 // Apply gzip compression only to GET requests

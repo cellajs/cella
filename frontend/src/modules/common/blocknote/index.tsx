@@ -244,6 +244,7 @@ export const BlockNote = ({
       data-color-scheme={mode}
       theme={mode}
       editor={editor}
+      // @ts-ignore
       shadCNComponents={{ Button, DropdownMenu, Popover, Tooltip, Select, Label, Input, Card, Badge, Toggle, Tabs }}
       onChange={onBlockNoteChange}
       onFocus={onFocus}

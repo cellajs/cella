@@ -47,20 +47,8 @@ export const useColumns = (
       }),
     },
     {
-      key: 'filename',
-      name: t('common:filename'),
-      visible: !isMobile,
-      sortable: false,
-      renderHeaderCell: HeaderCell,
-      renderCell: ({ row, tabIndex }) => (
-        <span tabIndex={tabIndex} className="group-hover:underline underline-offset-4 truncate font-light">
-          {row.filename || '-'}
-        </span>
-      ),
-    },
-    {
       key: 'URL',
-      name: 'URL',
+      name: '',
       visible: true,
       sortable: false,
       width: 32,
@@ -73,6 +61,18 @@ export const useColumns = (
           </Button>
         );
       },
+    },
+    {
+      key: 'filename',
+      name: t('common:filename'),
+      visible: !isMobile,
+      sortable: false,
+      renderHeaderCell: HeaderCell,
+      renderCell: ({ row, tabIndex }) => (
+        <span tabIndex={tabIndex} className="group-hover:underline underline-offset-4 truncate font-light">
+          {row.filename || '-'}
+        </span>
+      ),
     },
     {
       key: 'contentType',
@@ -95,7 +95,7 @@ export const useColumns = (
       sortable: false,
       visible: !isMobile,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative group h-full w-full">{formatBytes(row.size)}</div>,
+      renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative font-light group h-full w-full">{formatBytes(row.size)}</div>,
       width: 100,
     },
     {
