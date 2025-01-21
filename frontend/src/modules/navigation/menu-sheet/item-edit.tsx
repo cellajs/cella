@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { Archive, ArchiveRestore, Bell, BellOff } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { env } from '~/../env';

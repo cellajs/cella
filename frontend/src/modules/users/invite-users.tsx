@@ -1,5 +1,5 @@
-import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MainAlert } from '~/modules/common/alerter';

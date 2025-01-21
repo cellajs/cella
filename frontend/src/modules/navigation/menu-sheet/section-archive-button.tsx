@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
 import { Archive, ChevronDown } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 

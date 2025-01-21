@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';

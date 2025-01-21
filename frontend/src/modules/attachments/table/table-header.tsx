@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
 import { Trash, Upload, XSquare } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
 import { openUploadDialog } from '~/modules/attachments/table/helpers';
