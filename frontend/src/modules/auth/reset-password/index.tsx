@@ -10,14 +10,12 @@ import { passwordSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { Suspense, lazy, useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { useMutation } from '~/hooks/use-mutations';
 import type { ApiError } from '~/lib/api';
-import { resetPassword as baseResetPassword } from '~/modules/auth/api';
-import { checkToken as baseCheckToken } from '~/modules/general/api';
+import { useResetPasswordMutation } from '~/modules/auth/query-mutations';
+import { useCheckTokenMutation } from '~/modules/general/query-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { ResetPasswordRoute } from '~/routes/auth';
+import { ResetPasswordWithTokenRoute } from '~/routes/auth';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -28,26 +26,16 @@ const formSchema = z.object({
 const ResetPassword = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { token } = useParams({ from: ResetPasswordRoute.id });
+  const { token } = useParams({ from: ResetPasswordWithTokenRoute.id });
 
   const [email, setEmail] = useState('');
   const [tokenError, setError] = useState<ApiError | null>(null);
 
   // Check reset password token and get email
-  const { mutate: checkToken } = useMutation({
-    mutationFn: baseCheckToken,
-    onSuccess: (result) => setEmail(result.email),
-    onError: (error) => setError(error),
-  });
+  const { mutate: checkToken } = useCheckTokenMutation();
 
   // Reset password and sign in
-  const { mutate: resetPassword, isPending } = useMutation({
-    mutationFn: baseResetPassword,
-    onSuccess: () => {
-      toast.success(t('common:success.password_reset'));
-      navigate({ to: config.defaultRedirectPath });
-    },
-  });
+  const { mutate: resetPassword, isPending } = useResetPasswordMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,13 +47,13 @@ const ResetPassword = () => {
   // Submit new password
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const { password } = values;
-    resetPassword({ token, password });
+    resetPassword({ token, password }, { onSuccess: () => navigate({ to: config.defaultRedirectPath }) });
   };
 
   useEffect(() => {
     if (!token) return;
 
-    checkToken(token);
+    checkToken(token, { onSuccess: (result) => setEmail(result.email), onError: (error) => setError(error) });
   }, [token]);
 
   return (

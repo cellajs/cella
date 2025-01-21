@@ -6,10 +6,13 @@ import { type GetOrganizationsParams, getOrganization, getOrganizations } from '
 export const organizationsKeys = {
   one: ['organization'] as const,
   single: (idOrSlug: string) => [...organizationsKeys.one, idOrSlug] as const,
-  updateSingle: (idOrSlug: string) => [...organizationsKeys.one, 'update', idOrSlug] as const,
   many: ['organizations'] as const,
   list: () => [...organizationsKeys.many, 'list'] as const,
   table: (filters?: GetOrganizationsParams) => [...organizationsKeys.list(), filters] as const,
+  create: () => [...organizationsKeys.one, 'create'] as const,
+  update: () => [...organizationsKeys.one, 'update'] as const,
+  delete: () => [...organizationsKeys.one, 'delete'] as const,
+  sendNewsLetter: () => [...organizationsKeys.one, 'sendNewsLetter'] as const,
 };
 
 export const organizationQueryOptions = (idOrSlug: string) =>

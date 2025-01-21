@@ -1,9 +1,10 @@
 import type { Context } from 'hono';
-import uaParser from 'ua-parser-js';
+import { UAParser } from 'ua-parser-js';
 
 // Get device information from user agent
 export const deviceInfo = (ctx: Context) => {
-  const { device, os, browser } = uaParser(ctx.req.header('User-Agent'));
+  const userAgent = ctx.req.header('User-Agent');
+  const { device, os, browser } = UAParser(userAgent);
 
   const getName = () => {
     if (device.model && device.vendor) return `${device.vendor} ${device.model}`;

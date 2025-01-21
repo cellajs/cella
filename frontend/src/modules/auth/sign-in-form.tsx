@@ -12,12 +12,12 @@ import { Input } from '~/modules/ui/input';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { useEffect } from 'react';
-import { useMutation } from '~/hooks/use-mutations';
-import type { TokenData } from '~/modules/auth';
-import { signIn as baseSignIn } from '~/modules/auth/api';
+import type { TokenType } from '~/modules/auth/api';
+import { useSignInMutation } from '~/modules/auth/query-mutations';
 import { ResetPasswordRequest } from '~/modules/auth/reset-password/dialog';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
+import type { TokenData } from '~/types/common';
 
 const formSchema = authBodySchema;
 
@@ -25,7 +25,7 @@ export const SignInForm = ({
   tokenData,
   email,
   resetToInitialStep,
-}: { tokenData: TokenData | null; email: string; resetToInitialStep: () => void }) => {
+}: { tokenData: (TokenData & TokenType) | null; email: string; resetToInitialStep: () => void }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { lastUser, clearLastUser } = useUserStore();
@@ -42,26 +42,28 @@ export const SignInForm = ({
     },
   });
 
-  const { mutate: signIn, isPending } = useMutation({
-    mutationFn: baseSignIn,
-    onSuccess: ({ emailVerified }) => {
-      // Redirect to the invite page if token is present
-      // Otherwise, redirect to a redirect URL or to home
-      const verifiedUserTo = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
-      const params = { token: tokenData?.token };
-
-      navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
-    },
-    onError: (error) => {
-      if (error.type !== 'invalid_password') return;
-      document.getElementById('password-field')?.focus();
-      form.reset(form.getValues());
-    },
-  });
+  const { mutate: signIn, isPending } = useSignInMutation();
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const token = tokenData?.token;
-    signIn({ ...values, token });
+    signIn(
+      { ...values, token },
+      {
+        onSuccess: (emailVerified) => {
+          // Redirect to the invite page if token is present
+          // Otherwise, redirect to a redirect URL or to home
+          const verifiedUserTo = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
+          const params = { token: tokenData?.token };
+
+          navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
+        },
+        onError: (error) => {
+          if (error.type !== 'invalid_password') return;
+          document.getElementById('password-field')?.focus();
+          form.reset(form.getValues());
+        },
+      },
+    );
   };
 
   const cancel = () => {

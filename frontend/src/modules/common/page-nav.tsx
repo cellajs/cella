@@ -1,5 +1,5 @@
 import { Link, type ToPathOption } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';

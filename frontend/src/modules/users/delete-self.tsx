@@ -1,12 +1,11 @@
-import { deleteSelf as baseDeleteSelf } from '~/modules/users/api';
 import type { User } from '~/types/common';
 
 import { useNavigate } from '@tanstack/react-router';
-import { useMutation } from '~/hooks/use-mutations';
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { usersKeys } from '~/modules/users/query';
+import { useDeleteSelfMutation } from '~/modules/users/query-mutations';
 import { useAlertStore } from '~/store/alert';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
@@ -22,26 +21,25 @@ const DeleteSelf = ({ callback, dialog: isDialog }: Props) => {
   const { clearNavigationStore } = useNavigationStore();
   const { clearAlertStore } = useAlertStore();
 
-  const { mutate: deleteSelf, isPending } = useMutation({
-    mutationFn: baseDeleteSelf,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: usersKeys.single(user.id),
-      });
-
-      // Clear all user data
-      clearLastUser();
-      clearNavigationStore();
-      clearAlertStore();
-
-      navigate({ to: '/sign-out', replace: true });
-      if (isDialog) dialog.remove();
-      callback?.(user);
-    },
-  });
+  const { mutate: deleteSelf, isPending } = useDeleteSelfMutation();
 
   const onDelete = () => {
-    deleteSelf();
+    deleteSelf(undefined, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: usersKeys.single(user.id),
+        });
+
+        // Clear all user data
+        clearLastUser();
+        clearNavigationStore();
+        clearAlertStore();
+
+        navigate({ to: '/sign-out', replace: true });
+        if (isDialog) dialog.remove();
+        callback?.(user);
+      },
+    });
   };
 
   return <DeleteForm onDelete={onDelete} onCancel={() => dialog.remove()} pending={isPending} />;

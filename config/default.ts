@@ -109,7 +109,8 @@ export const config = {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
     sync: true, // Realtime updates and sync using Electric Sync
     registrationEnabled: true, // Allow users to sign up. If disabled, the app is by invitation only
-    waitlist: false, // Suggest a waitlist for unknown emails when sign up is disabled
+    waitlist: false, // Suggest a waitlist for unknown emails when sign up is disabled,
+    imado: false, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
   // Languages

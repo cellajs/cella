@@ -1,4 +1,3 @@
-import { useMutation } from '@tanstack/react-query';
 import type { Entity } from 'backend/types/common';
 import { config } from 'config';
 import { Undo } from 'lucide-react';
@@ -9,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import InputFormField from '~/modules/common/form-fields/input';
-import { checkSlugAvailable } from '~/modules/general/api';
+import { useCheckSlugMutation } from '~/modules/general/query-mutations';
 import { Button } from '~/modules/ui/button';
 
 interface SlugFieldProps {
@@ -35,24 +34,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
   const slug = useWatch({ control: form.control, name: 'slug' });
 
   // Check if slug is available
-  const { mutate: checkAvailability } = useMutation({
-    mutationFn: async (params: {
-      slug: string;
-      type: Entity;
-    }) => {
-      return checkSlugAvailable(params);
-    },
-    onSuccess: (isAvailable) => {
-      if (isValidSlug(slug)) form.clearErrors('slug');
-      if (isAvailable && isValidSlug(slug)) return setSlugAvailable('available');
-      // Slug is not available
-      form.setError('slug', {
-        type: 'manual',
-        message: t('common:error.slug_exists'),
-      });
-      setSlugAvailable('notAvailable');
-    },
-  });
+  const { mutate: checkAvailability } = useCheckSlugMutation();
 
   // Only show green ring if slug is valid
   const isValidSlug = (value: string) => {
@@ -66,7 +48,19 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
     if (isValidSlug(slug)) {
       if (!isOnline) return;
 
-      return checkAvailability({ slug, type });
+      const params = { slug, type };
+      return checkAvailability(params, {
+        onSuccess: (isAvailable) => {
+          if (isValidSlug(slug)) form.clearErrors('slug');
+          if (isAvailable && isValidSlug(slug)) return setSlugAvailable('available');
+          // Slug is not available
+          form.setError('slug', {
+            type: 'manual',
+            message: t('common:error.slug_exists'),
+          });
+          setSlugAvailable('notAvailable');
+        },
+      });
     }
     if (!isValidSlug(slug)) return setSlugAvailable('notAvailable');
   }, [slug]);

@@ -1,10 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
 import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
-import { updateUser } from '~/modules/users/api';
 
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { useMutation } from '~/hooks/use-mutations';
 import { createToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
 import { usersKeys, usersQueryOptions } from '~/modules/users/query';
@@ -12,6 +10,7 @@ import type { UsersSearch } from '~/modules/users/table';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import type { BaseTableMethods, BaseTableProps, User } from '~/types/common';
+import { useUpdateUserMutation } from '../query-mutations';
 
 type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
   queryVars: { role: UsersSearch['role'] };
@@ -31,19 +30,23 @@ const BaseDataTable = memo(
     const mutateQuery = useMutateQueryData(usersKeys.list(), (item) => usersKeys.single(item.id), ['update']);
 
     // Update user role
-    const { mutate: updateUserRole } = useMutation({
-      mutationFn: async (user: User) => await updateUser(user.id, { role: user.role }),
-      onSuccess: (updatedUser) => {
-        mutateQuery.update([updatedUser]);
-        createToast(t('common:success.update_item', { item: t('common:role') }), 'success');
-      },
-      onError: () => createToast('Error updating role', 'error'),
-    });
+    const { mutate: updateUserRole } = useUpdateUserMutation();
 
     // Update user role
     const onRowsChange = (changedRows: User[], { indexes, column }: RowsChangeData<User>) => {
       if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
-      for (const index of indexes) if (column.key === 'role') updateUserRole(changedRows[index]);
+      for (const index of indexes)
+        if (column.key === 'role') {
+          const newUser = changedRows[index];
+          const updateInfo = { idOrSlug: newUser.id, role: newUser.role };
+          updateUserRole(updateInfo, {
+            onSuccess: (updatedUser) => {
+              mutateQuery.update([updatedUser]);
+              createToast(t('common:success.update_item', { item: t('common:role') }), 'success');
+            },
+            onError: () => createToast('Error updating role', 'error'),
+          });
+        }
       setRows(changedRows);
     };
 

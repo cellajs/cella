@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import { type PageEntity, type UploadParams, UploadType } from '~/types/common';
+import { type Entity, type PageEntity, type UploadParams, UploadType } from '~/types/common';
 import { generalHc } from '#/modules/general/hc';
 import type { EnabledOauthProviderOptions } from '#/types/common';
 
@@ -41,7 +41,7 @@ export const invite = async (values: SystemInviteProps) => {
 };
 
 // Check if slug is available
-export const checkSlugAvailable = async (params: { slug: string }) => {
+export const checkSlugAvailable = async (params: { slug: string; type: Entity }) => {
   const response = await client['check-slug'].$post({
     json: params,
   });
@@ -70,7 +70,7 @@ export const getSuggestions = async (query: string, type?: PageEntity | undefine
   return json.data;
 };
 
-interface AcceptInviteProps {
+export interface AcceptInviteProps {
   token: string;
   password?: string;
   oauth?: EnabledOauthProviderOptions | undefined;

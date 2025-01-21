@@ -1,5 +1,5 @@
-import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { AtSign, ChevronRight, Info, Search } from 'lucide-react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MainAlert } from '~/modules/common/alerter';
@@ -25,7 +25,7 @@ const InviteUsers = ({ entity, callback, dialog: isDialog, mode, children }: Inv
 
   const updateMode = (mode: string[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
-    dialog.update(`user-invite-${entity?.id ?? 'no-id'}`, {
+    dialog.update(`user-invite-${entity?.id ?? 'system'}`, {
       title: (
         <div className="flex items-center gap-2">
           {mode[0] ? (

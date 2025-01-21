@@ -13,7 +13,7 @@ interface Props<T> {
   parentEntity?: {
     entity: ContextEntity;
     id: string;
-  };
+  } | null;
   createdBy?: UserModel['id'];
 }
 

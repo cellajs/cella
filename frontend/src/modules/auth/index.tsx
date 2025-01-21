@@ -15,12 +15,13 @@ import { checkToken } from '~/modules/general/api';
 import { buttonVariants } from '~/modules/ui/button';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
+import type { TokenData } from '~/types/common';
 import { shouldShowDivider } from '~/utils';
 import { cn } from '~/utils/cn';
 
 export type Step = 'check' | 'signIn' | 'signUp' | 'inviteOnly' | 'error' | 'waitlist';
 
-export type TokenData = Awaited<ReturnType<typeof checkToken>> & {
+type SignInTokenData = TokenData & {
   token: string;
 };
 
@@ -34,7 +35,7 @@ const SignIn = () => {
   const [step, setStep] = useState<Step>('check');
   const [email, setEmail] = useState('');
   const [hasPasskey, setHasPasskey] = useState(false);
-  const [tokenData, setTokenData] = useState<TokenData | null>(null);
+  const [tokenData, setTokenData] = useState<SignInTokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
   const { token } = useSearch({

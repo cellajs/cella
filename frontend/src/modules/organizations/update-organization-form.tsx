@@ -1,9 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type DefaultError, useMutation } from '@tanstack/react-query';
 import { updateOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
-import { type UpdateOrganizationParams, updateOrganization } from '~/modules/organizations/api';
 import type { Organization } from '~/types/common';
 
 import { config } from 'config';
@@ -11,7 +9,6 @@ import { isValidElement, useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { queryClient } from '~/lib/router';
 import { createToast } from '~/lib/toasts';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import DomainsFormField from '~/modules/common/form-fields/domains';
@@ -22,7 +19,7 @@ import SelectTimezone from '~/modules/common/form-fields/select-timezone';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { sheet } from '~/modules/common/sheeter/state';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { organizationsKeys } from '~/modules/organizations/query';
+import { useOrganizationUpdateMutation } from '~/modules/organizations/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { cleanUrl } from '~/utils/clean-url';
@@ -37,23 +34,9 @@ const formSchema = updateOrganizationBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const useUpdateOrganizationMutation = (idOrSlug: string) => {
-  return useMutation<Organization, DefaultError, UpdateOrganizationParams>({
-    mutationKey: organizationsKeys.updateSingle(idOrSlug),
-    mutationFn: (params) => updateOrganization(idOrSlug, params),
-    onSuccess: (updatedOrganization) => {
-      queryClient.setQueryData(organizationsKeys.single(idOrSlug), updatedOrganization);
-      queryClient.invalidateQueries({
-        queryKey: organizationsKeys.one,
-      });
-    },
-    gcTime: 1000 * 10,
-  });
-};
-
 const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Props) => {
   const { t } = useTranslation();
-  const { mutate, isPending } = useUpdateOrganizationMutation(organization.id);
+  const { mutate, isPending } = useOrganizationUpdateMutation();
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: zodResolver(formSchema),
@@ -77,15 +60,18 @@ const UpdateOrganizationForm = ({ organization, callback, sheet: isSheet }: Prop
   // Prevent data loss
   useBeforeUnload(form.formState.isDirty);
 
-  const onSubmit = (values: FormValues) => {
-    mutate(values, {
-      onSuccess: (updatedOrganization) => {
-        if (isSheet) sheet.remove('update-organization');
-        form.reset(updatedOrganization);
-        createToast(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
-        callback?.(updatedOrganization);
+  const onSubmit = (json: FormValues) => {
+    mutate(
+      { idOrSlug: organization.id, json },
+      {
+        onSuccess: (updatedOrganization) => {
+          if (isSheet) sheet.remove('update-organization');
+          form.reset(updatedOrganization);
+          createToast(t('common:success.update_resource', { resource: t('common:organization') }), 'success');
+          callback?.(updatedOrganization);
+        },
       },
-    });
+    );
   };
 
   const languages = useWatch({

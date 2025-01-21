@@ -2,11 +2,13 @@ import { Outlet, createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { z } from 'zod';
 import SignIn from '~/modules/auth';
+import AuthPage from '~/modules/auth/auth-page';
 import ResetPassword from '~/modules/auth/reset-password';
+import { ResetPasswordForm } from '~/modules/auth/reset-password/form';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
+import { PublicRoute } from '~/routes/general';
 import { useUserStore } from '~/store/user';
-import { PublicRoute } from './general';
 
 export const AuthRoute = createRoute({
   id: 'auth-layout',
@@ -33,6 +35,17 @@ export const SignInRoute = createRoute({
 });
 
 export const ResetPasswordRoute = createRoute({
+  path: '/auth/reset-password',
+  staticData: { pageTitle: 'Reset password', isAuth: false },
+  getParentRoute: () => AuthRoute,
+  component: () => (
+    <AuthPage>
+      <ResetPasswordForm />
+    </AuthPage>
+  ),
+});
+
+export const ResetPasswordWithTokenRoute = createRoute({
   path: '/auth/reset-password/$token',
   staticData: { pageTitle: 'Reset password', isAuth: false },
   getParentRoute: () => AuthRoute,

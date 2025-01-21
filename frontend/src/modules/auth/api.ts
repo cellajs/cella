@@ -10,10 +10,14 @@ export const githubSignInUrl = client.github.$url().href;
 export const googleSignInUrl = client.google.$url().href;
 export const microsoftSignInUrl = client.microsoft.$url().href;
 
+export type TokenType = { token: string };
+
+export type SignUpProps = Parameters<(typeof client)['sign-up']['$post']>['0']['json'];
+
 // Sign up a user with the provided email and password
-export const signUp = async ({ email, password, token }: { email: string; password: string; token?: string }) => {
+export const signUp = async (body: SignUpProps) => {
   const response = await client['sign-up'].$post({
-    json: { email, password, token },
+    json: body,
   });
 
   const json = await handleResponse(response);
@@ -30,8 +34,10 @@ export const checkEmail = async (email: string) => {
   return json.data.hasPasskey;
 };
 
+export type VerifyEmailProps = TokenType & { resend?: boolean };
+
 // Verify the user's email with token sent by email
-export const verifyEmail = async ({ token, resend }: { token: string; resend?: boolean }) => {
+export const verifyEmail = async ({ token, resend }: VerifyEmailProps) => {
   const response = await client['verify-email'].$post({
     json: { token },
     query: { resend: String(resend) },
@@ -40,14 +46,16 @@ export const verifyEmail = async ({ token, resend }: { token: string; resend?: b
   await handleResponse(response);
 };
 
+export type SignInProps = Parameters<(typeof client)['sign-in']['$post']>['0']['json'];
+
 // Sign in a user with email and password
-export const signIn = async ({ email, password, token }: { email: string; password: string; token?: string }) => {
+export const signIn = async ({ email, password, token }: SignInProps) => {
   const response = await client['sign-in'].$post({
     json: { email, password, token },
   });
 
   const json = await handleResponse(response);
-  return json.data;
+  return json.data.emailVerified;
 };
 
 // Start impersonation session by system admin
@@ -78,8 +86,10 @@ export const sendResetPasswordEmail = async (email: string) => {
   await handleResponse(response);
 };
 
+export type ResetPasswordProps = TokenType & { password: string };
+
 // Reset the user's password
-export const resetPassword = async ({ token, password }: { token: string; password: string }) => {
+export const resetPassword = async ({ token, password }: ResetPasswordProps) => {
   const response = await client['reset-password'][':token'].$post({
     param: { token },
     json: { password },

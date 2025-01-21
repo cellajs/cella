@@ -11,9 +11,9 @@ import { Input } from '~/modules/ui/input';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useEffect } from 'react';
-import { useMutation } from '~/hooks/use-mutations';
-import { checkEmail as baseCheckEmail } from '~/modules/auth/api';
-import type { Step, TokenData } from '.';
+import type { Step } from '~/modules/auth';
+import { useCheckEmailMutation } from '~/modules/auth/query-mutations';
+import type { TokenData } from '~/types/common';
 
 const formSchema = emailBodySchema;
 
@@ -30,20 +30,19 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
     defaultValues: { email: '' },
   });
 
-  const { mutate: checkEmail, isPending } = useMutation({
-    mutationFn: baseCheckEmail,
-    onSuccess: (hasPasskey) => {
-      setStep('signIn', form.getValues('email'), hasPasskey);
-    },
-    //TODO: this is unclear what it does
-    onError: (error) => {
-      const nextStep = config.has.registrationEnabled || tokenData ? 'signUp' : config.has.waitlist ? 'waitlist' : 'inviteOnly';
-      if (error.status === 404) return setStep(nextStep, form.getValues('email'), false);
-    },
-  });
+  const { mutate: checkEmail, isPending } = useCheckEmailMutation();
 
   const onSubmit = () => {
-    checkEmail(form.getValues('email'));
+    checkEmail(form.getValues('email'), {
+      onSuccess: (hasPasskey) => {
+        setStep('signIn', form.getValues('email'), hasPasskey);
+      },
+      //TODO: this is unclear what it does
+      onError: (error) => {
+        const nextStep = config.has.registrationEnabled || tokenData ? 'signUp' : config.has.waitlist ? 'waitlist' : 'inviteOnly';
+        if (error.status === 404) return setStep(nextStep, form.getValues('email'), false);
+      },
+    });
   };
 
   const title = config.has.registrationEnabled
