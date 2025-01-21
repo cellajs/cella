@@ -35,6 +35,23 @@ export const TO_COPY: Record<string, string> = {
   './info/QUICKSTART.md': 'README.md',
 };
 
+// Files to be editted after downloading
+export const TO_EDIT: Record<string, { regexMatch: RegExp; replaceWith: string }[]> = {
+  './config/default.ts': [
+    {
+      regexMatch: /enabledAuthenticationStrategies:\s*\[[^\]]+\],/g,
+      replaceWith: "enabledAuthenticationStrategies: ['password', 'passkey'] as const,",
+    },
+    {
+      regexMatch: /imado:\s*(true|false),/g,
+      replaceWith: "imado: false,",
+    },
+    {
+      regexMatch: /enabledOauthProviders:\s*\[[^\]]+\],/g,
+      replaceWith: "enabledOauthProviders: [] as const,",
+    },
+  ],
+};
 // ASCII logo for the CLI output
 export const LOGO = `
                          _ _            

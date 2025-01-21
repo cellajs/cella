@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import colors from 'picocolors';
 
-import { TO_CLEAN, TO_REMOVE, TO_COPY } from '../constants.ts';
+import { TO_CLEAN, TO_REMOVE, TO_COPY, TO_EDIT } from '../constants.ts';
 
 /**
  * Cleans the specified template by removing designated folders and files.
@@ -42,6 +42,13 @@ export async function cleanTemplate({
         TO_REMOVE.map((filePath) => {
           const absolutePath = path.resolve(targetFolder, filePath);
           return removeFileOrFolder(absolutePath);
+        })
+      );
+
+      // Edit specific files
+      await Promise.all(Object.entries(TO_EDIT).map(async ([filePath, edits]) => {
+          const absolutePath = path.resolve(targetFolder, filePath);
+          await editFile(absolutePath, edits);
         })
       );
 
@@ -104,6 +111,38 @@ export async function copyFile(src: string, dest: string): Promise<void> {
   } catch (err: any) {
     if (err.code === 'ENOENT') {
       console.info(`\n${colors.yellow('⚠')} Source file "${src}" does not exist > Skip copy`);
+    } else {
+      throw err;
+    }
+  }
+}
+
+/**
+ * Helper function edit a file by applying regex replacements.
+ * @param src - The source file path.
+ * @param dest - The destination file path.
+ */
+export async function editFile(filePath: string, edits): Promise<void> {
+  try {
+    await fs.access(filePath);
+
+    // Read the existing file content
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    let updatedContent = fileContent;
+    
+    // Apply each edit to the content
+    edits.forEach(({ regexMatch, replaceWith }) => {
+      updatedContent = updatedContent.replace(regexMatch, replaceWith);
+    });
+
+    // Write the updated content back to the file
+    if (fileContent !== updatedContent) {
+      await fs.writeFile(filePath, updatedContent, 'utf8');
+    }
+
+  } catch (err: any) {
+    if (err.code === 'ENOENT') {
+      console.info(`\n${colors.yellow('⚠')} Source file "${filePath}" does not exist > Skip edit`);
     } else {
       throw err;
     }
