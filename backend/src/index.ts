@@ -52,7 +52,6 @@ const main = async () => {
       },
     },
     () => {
-      config.backendUrl = key ? `https://${hostname}:${port}` : config.backendUrl;
       ascii();
       console.info(' ');
       console.info(

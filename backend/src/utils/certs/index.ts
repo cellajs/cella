@@ -49,7 +49,13 @@ export const certs = async () => {
     await installRootCert(caCertPath);
 
     const [key, cert] = await Promise.all([readFile(keyPath, { encoding: 'utf-8' }), readFile(certPath, { encoding: 'utf-8' })]);
-    return key && cert ? { key, cert } : null;
+
+    if (!key || !cert) return null;
+    // Ensure URLs use 'https' protocol
+    config.backendUrl = config.backendUrl.replace('http', 'https');
+    config.backendAuthUrl = config.backendAuthUrl.replace('http', 'https');
+
+    return { key, cert };
   }
   return null;
 };
