@@ -29,7 +29,7 @@ export const TableFilterBarContext = createContext<{
 
 export const FilterBarActions = ({ children, className = '' }: FilterBarChildProps) => {
   const { isFilterActive } = useContext(TableFilterBarContext);
-  return <div className={cn('flex items-center gap-2', className, isFilterActive && 'max-sm:hidden')}>{children}</div>;
+  return <div className={cn('flex items-center gap-3', className, isFilterActive && 'max-sm:hidden')}>{children}</div>;
 };
 
 export const FilterBarContent = ({ children, className = '' }: FilterBarChildProps) => {
