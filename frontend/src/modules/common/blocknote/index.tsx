@@ -1,3 +1,4 @@
+import type { Block } from '@blocknote/core';
 import { FilePanelController, type FilePanelProps, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type KeyboardEventHandler, type MouseEventHandler, useCallback, useEffect, useRef, useState } from 'react';
@@ -12,7 +13,12 @@ import * as Select from '~/modules/ui/select';
 import * as Tabs from '~/modules/ui/tabs';
 import * as Toggle from '~/modules/ui/toggle';
 import * as Tooltip from '~/modules/ui/tooltip';
+
+import { useBreakpoints } from '~/hooks/use-breakpoints';
+import router from '~/lib/router';
+import { type Attachments, openAttachmentDialog } from '~/modules/attachments/helpers';
 import { useThemeStore } from '~/store/theme';
+import type { Member } from '~/types/common';
 
 import {
   allowedFileTypes,
@@ -25,18 +31,10 @@ import { Mention } from '~/modules/common/blocknote/custom-elements/mention';
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu';
-import type { Member } from '~/types/common';
-
-import type { Block } from '@blocknote/core';
-
-import router from '~/lib/router';
 import { compareIsContentSame, focusEditor, getContentAsString, getUrlFromProps, handleSubmitOnEnter } from '~/modules/common/blocknote/helpers';
 import type { BasicBlockBaseTypes, BasicFileBlockTypes, CellaCustomBlockTypes } from '~/modules/common/blocknote/types';
 
-import { type Attachments, openAttachmentDialog } from '~/modules/attachments/helpers';
-
 import '@blocknote/shadcn/style.css';
-import { useBreakpoints } from '~/hooks/use-breakpoints';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 

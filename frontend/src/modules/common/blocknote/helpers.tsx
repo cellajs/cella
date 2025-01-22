@@ -2,8 +2,8 @@ import type { Block, PropSchema, Props } from '@blocknote/core';
 import type { DefaultReactSuggestionItem } from '@blocknote/react';
 import DOMPurify from 'dompurify';
 import { type Attachments, openAttachmentDialog } from '~/modules/attachments/helpers';
+import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowedType } from '~/modules/common/blocknote/blocknote-config';
 import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema, MenusItemsTitle } from '~/modules/common/blocknote/types';
-import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowedType } from './blocknote-config';
 
 export const getSortedSlashMenuItems = (items: DefaultReactSuggestionItem[], allowedBlockTypes: (CellaCustomBlockTypes | BasicBlockTypes)[]) => {
   const indexedItems: readonly string[] = customSlashIndexedItems;
@@ -171,7 +171,7 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
   }
 };
 
-// get url property of el
+// Get url property of el
 export const getUrlFromProps = (props: Props<PropSchema>): string | null => {
   if (props && typeof props.url === 'string') return props.url;
   return null;
