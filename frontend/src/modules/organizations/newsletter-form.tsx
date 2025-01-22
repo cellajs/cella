@@ -36,6 +36,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
     defaultValues: {
       organizationIds: organizationIds,
       subject: '',
+      // roles: ['admin'],
       content: '',
     },
   });
@@ -95,6 +96,19 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
 
         <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-org-newsletter" />
 
+        {/* <FormField
+          control={form.control}
+          name="roles"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('common:subject')}</FormLabel>
+              <FormControl>
+                <SelectRoles {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        /> */}
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton disabled={!isDirty()} loading={isPending}>
             <Send size={16} className="mr-2" />
