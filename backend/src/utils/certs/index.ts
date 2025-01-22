@@ -4,13 +4,14 @@ import { mkdirSync } from 'node:fs';
 import { access, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import { fileURLToPath } from 'node:url';
 import { installRootCert, runCommand } from '#/utils/certs/helpers';
 
 export const certs = async () => {
   const res = await runCommand('npx mkcert --help');
 
   if (res.exitCode === 0) {
-    const path = dirname(new URL(import.meta.url).pathname);
+    const path = dirname(fileURLToPath(import.meta.url));
 
     mkdirSync(path, { recursive: true });
 

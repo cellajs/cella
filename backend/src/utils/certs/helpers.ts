@@ -20,7 +20,7 @@ export const installRootCert = async (certPath: string) => {
         await handleMacCert(certPath, certData);
         break;
       case 'win32':
-        await handleWindowsCert(certPath, certData);
+        await handleWindowsCert(certPath);
         break;
       case 'linux':
         await handleLinuxCert(certPath, certData);
@@ -43,9 +43,9 @@ const handleMacCert = async (certPath: string, certData: string) => {
   console.info('Root certificate installed successfully on Mac!');
 };
 
-const handleWindowsCert = async (certPath: string, certData: string) => {
+const handleWindowsCert = async (certPath: string) => {
   const result = await runCommand(
-    `powershell -Command "Get-ChildItem -Path Cert:\\LocalMachine\\Root | Where-Object { $_.Thumbprint -eq (Get-FileHash -Algorithm SHA1 ${certData} | Select-Object -ExpandProperty Hash) }"`,
+    `powershell -Command "Get-ChildItem -Path Cert:\\LocalMachine\\Root | Where-Object { $_.Thumbprint -eq ((Get-FileHash -Path '${certPath}' -Algorithm SHA1).Hash) }"`,
   );
   if (result.exitCode === 0) return console.info('Root certificate already installed on Windows!');
 
