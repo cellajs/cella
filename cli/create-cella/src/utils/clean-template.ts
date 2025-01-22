@@ -129,7 +129,7 @@ export async function editFile(filePath: string, edits: Array<{regexMatch: RegEx
     // Read the existing file content
     const fileContent = await fs.readFile(filePath, 'utf8');
     let updatedContent = fileContent;
-    
+
     // Apply each edit to the content
     edits.forEach(({ regexMatch, replaceWith }) => {
       updatedContent = updatedContent.replace(regexMatch, replaceWith);

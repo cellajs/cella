@@ -39,15 +39,15 @@ export const TO_COPY: Record<string, string> = {
 export const TO_EDIT: Record<string, { regexMatch: RegExp; replaceWith: string }[]> = {
   './config/default.ts': [
     {
-      regexMatch: /enabledAuthenticationStrategies:\s*\[[^\]]+\],/g,
+      regexMatch: /enabledAuthenticationStrategies:\s*\[[^\]]+\]\s*as\s*const,/g,
       replaceWith: "enabledAuthenticationStrategies: ['password', 'passkey'] as const,",
     },
     {
-      regexMatch: /imado:\s*(true|false),/g,
+      regexMatch: /imado\:\s*(true|false),/g,
       replaceWith: "imado: false,",
     },
     {
-      regexMatch: /enabledOauthProviders:\s*\[[^\]]+\],/g,
+      regexMatch: /enabledOauthProviders:\s*\[[^\]]+\]\s*as\s*const,/g,
       replaceWith: "enabledOauthProviders: [] as const,",
     },
   ],
