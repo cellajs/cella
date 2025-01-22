@@ -81,7 +81,7 @@ export const customBlockTypeSelectItems: (BasicBlockTypes | CellaCustomBlockType
 ];
 
 // Block types that trigger the side menu when selected
-export const sideMenuOpenOnTypes: (BasicBlockBaseTypes | CellaCustomBlockTypes)[] = [
+export const sideMenuOpenOnTypes: (BasicBlockTypes | CellaCustomBlockTypes)[] = [
   'paragraph',
   'heading',
   'bulletListItem',
