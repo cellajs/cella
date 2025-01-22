@@ -14,25 +14,26 @@ export interface CustomFormatToolBarConfig {
   createLink?: boolean;
 }
 
+// Define types for block alignment and styles
 export type BlockAlignTypes = 'right' | 'center' | 'left';
 export type BlockStyleTypes = 'bold' | 'italic' | 'underline' | 'strike' | 'code';
 
+// Define basic block and file types
 export type BasicFileBlockTypes = 'image' | 'video' | 'audio' | 'file';
 export type BasicBlockBaseTypes = 'emoji' | 'table' | 'paragraph' | 'heading' | 'codeBlock' | 'bulletListItem' | 'numberedListItem' | 'checkListItem';
 export type BasicBlockTypes = BasicBlockBaseTypes | BasicFileBlockTypes;
 
-// from react-icon to satisfy side menu icon type for custom elements
-interface IconBaseProps extends React.SVGAttributes<SVGElement> {
-  children?: React.ReactNode;
-  size?: string | number;
-  color?: string;
-  title?: string;
-}
-
-export type IconType = (props: IconBaseProps) => React.ReactElement;
+// Icon type for side menu to satisfy custom elements
+export type IconType = (
+  props: React.SVGAttributes<SVGElement> & {
+    children?: React.ReactNode;
+    size?: string | number;
+    color?: string;
+    title?: string;
+  },
+) => React.ReactElement;
 
 export type BaseCustomBlockTypes = 'notify';
-
 export type BaseMenusItemsTitle =
   | 'Image'
   | 'Video'
@@ -50,6 +51,6 @@ export type BaseMenusItemsTitle =
   | 'Heading 3'
   | 'Paragraph';
 
-// Combine ExtendableTypes with your base types
+// Combine base types with extended types
 export type CellaCustomBlockTypes = ExtendableBlocknoteTypes['BlockTypes'];
 export type MenusItemsTitle = ExtendableBlocknoteTypes['ItemsTitle'];

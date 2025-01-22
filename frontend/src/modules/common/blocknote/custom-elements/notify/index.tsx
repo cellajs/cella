@@ -31,36 +31,35 @@ export const Notify = createReactBlockSpec(
     content: 'inline',
   },
   {
-    render: (props) => {
+    render: ({ block, editor, contentRef }) => {
       const [open, setOpen] = useState(false);
-      const [notifyType] = notifyTypes.filter((a) => a.value === props.block.props.type);
+      const [notifyType] = notifyTypes.filter((a) => a.value === block.props.type);
       const Icon = notifyType.icon;
       return (
-        <div className={'notify'} data-notify-type={props.block.props.type}>
+        <div className={'notify'} data-notify-type={block.props.type}>
           {/*Icon which opens a menu to choose the Alert type*/}
           <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger>
               <div className={'notify-icon-wrapper'} contentEditable={false}>
-                <Icon className={'notify-icon'} data-notify-icon-type={props.block.props.type} size={32} />
+                <Icon className={'notify-icon'} data-notify-icon-type={block.props.type} size={32} />
               </div>
               <DropdownMenuContent>
                 <DropdownMenuLabel>Notify Type</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {notifyTypes.map((type) => {
-                  const ItemIcon = type.icon;
+                {notifyTypes.map(({ icon: Icon, title, value }) => {
                   return (
                     <DropdownMenuItem
-                      key={type.value}
+                      key={value}
                       className="flex flex-row gap-2 p-1 min-h-8"
                       onClick={() =>
-                        props.editor.updateBlock(props.block, {
+                        editor.updateBlock(block, {
                           type: 'notify',
-                          props: { type: type.value },
+                          props: { type: value },
                         })
                       }
                     >
-                      {<ItemIcon className={'notify-icon'} size={16} data-notify-icon-type={type.value} />}
-                      <span className="text-sm">{type.title}</span>
+                      {<Icon className={'notify-icon'} size={16} data-notify-icon-type={value} />}
+                      <span className="text-sm">{title}</span>
                     </DropdownMenuItem>
                   );
                 })}
@@ -68,7 +67,7 @@ export const Notify = createReactBlockSpec(
             </DropdownMenuTrigger>
           </DropdownMenu>
           {/*Rich text field for user to type in*/}
-          <div className={'inline-content'} ref={props.contentRef} />
+          <div className={'inline-content'} ref={contentRef} />
         </div>
       );
     },
