@@ -83,8 +83,8 @@ const OrganizationsTable = () => {
       },
 
       {
-        id: 'draft',
-        label: 'common:draft',
+        id: 'preview',
+        label: 'common:preview',
         element: <OrganizationsNewsletterDraft />,
       },
     ];

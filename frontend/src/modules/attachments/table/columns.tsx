@@ -2,7 +2,8 @@ import type { Attachment } from '~/types/common';
 
 import { config } from 'config';
 import type { TFunction } from 'i18next';
-import { CopyCheckIcon, CopyIcon } from 'lucide-react';
+import { CopyCheckIcon, CopyIcon, Download } from 'lucide-react';
+import useDownloader from 'react-use-downloader';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentThumb from '~/modules/attachments/attachment-thumb';
 import { formatBytes } from '~/modules/attachments/table/helpers';
@@ -28,8 +29,17 @@ export const useColumns = (
       visible: true,
       sortable: false,
       width: 32,
-      renderCell: ({ row: { url, filename, contentType }, rowIdx }) => (
-        <AttachmentThumb url={url} name={filename} openDialog={() => openDialog(rowIdx)} contentType={contentType} />
+      renderCell: ({ row: { url, filename, contentType }, rowIdx, tabIndex }) => (
+        <Button
+          variant="cell"
+          size="icon"
+          className="h-full w-full"
+          tabIndex={tabIndex}
+          onClick={() => openDialog(rowIdx)}
+          aria-label={`View ${filename}`}
+        >
+          <AttachmentThumb url={url} name={filename} contentType={contentType} />
+        </Button>
       ),
     },
     {
@@ -47,17 +57,49 @@ export const useColumns = (
       }),
     },
     {
-      key: 'URL',
+      key: 'url',
       name: '',
       visible: true,
       sortable: false,
       width: 32,
       renderCell: ({ row, tabIndex }) => {
         const { copyToClipboard, copied } = useCopyToClipboard();
+        if (!row.url.startsWith('http')) return <span className="text-muted">-</span>;
+
         const shareLink = `${config.backendUrl}/${row.organizationId}/attachments/${row.id}/link`;
         return (
-          <Button variant="cell" size="icon" tabIndex={tabIndex} className="h-full w-full" onClick={() => copyToClipboard(shareLink)}>
+          <Button
+            variant="cell"
+            size="icon"
+            tabIndex={tabIndex}
+            className="h-full w-full"
+            aria-label="Copy"
+            onClick={() => copyToClipboard(shareLink)}
+          >
             {copied ? <CopyCheckIcon size={16} /> : <CopyIcon size={16} />}
+          </Button>
+        );
+      },
+    },
+    {
+      key: 'download',
+      name: '',
+      visible: true,
+      sortable: false,
+      width: 32,
+      renderCell: ({ row, tabIndex }) => {
+        const { download } = useDownloader();
+        if (!row.url.startsWith('http')) return <span className="text-muted">-</span>;
+        return (
+          <Button
+            variant="cell"
+            size="icon"
+            tabIndex={tabIndex}
+            className="h-full w-full"
+            aria-label="Download"
+            onClick={() => download(row.url, row.filename)}
+          >
+            <Download size={16} />
           </Button>
         );
       },

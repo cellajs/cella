@@ -49,7 +49,7 @@ const Integrations = () => {
                 <img
                   src={`/static/images/integrations/${logo}`}
                   alt={name}
-                  className={`h-10 w-10 object-contain ${invert && mode === 'dark' && 'invert'}`}
+                  className={`h-8 w-8 object-contain ${invert && mode === 'dark' && 'invert'}`}
                   loading="lazy"
                 />
                 <span className="ml-4 font-medium">{name}</span>

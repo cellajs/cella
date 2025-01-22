@@ -1,15 +1,20 @@
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
+import { Download, ExternalLink, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import useDownloader from 'react-use-downloader';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { AttachmentRender } from '~/modules/attachments/attachment-render';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
+import { dialog } from '~/modules/common/dialoger/state';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
+import { Button } from '../ui/button';
+import FilePlaceholder from './file-placeholder';
 
 interface CarouselPropsBase {
   slide?: number;
-  slides?: { src: string; fileType?: string }[];
+  slides?: { src: string; name?: string; filename?: string; fileType?: string }[];
   classNameContainer?: string;
 }
 
@@ -35,6 +40,8 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
   const itemClass = isDialog ? 'object-contain' : '';
   const autoplay = Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true });
 
+  const { download } = useDownloader();
+
   useEventListener('toggleCarouselDrag', (e) => {
     const shouldWatchDrag = e.detail && slides.length > 1;
     setWatchDrag(shouldWatchDrag);
@@ -43,10 +50,10 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
   useEffect(() => {
     if (!saveInSearchParams || slides.length === 0) return;
 
-    const currentSlide = slides[current] ? slides[current].src : undefined;
+    const currentSlide = slides[current] ? slides[current] : undefined;
 
     // Only navigate if the current slide is different from the attachmentPreview
-    if (currentSlide === attachmentPreview) return;
+    if (currentSlide?.src === attachmentPreview) return;
 
     // Decide whether to replace the history entry based on whether the attachmentPreview is already set
     const useReplace = attachmentPreview !== undefined;
@@ -57,7 +64,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
       resetScroll: false,
       search: (prev) => ({
         ...prev,
-        attachmentPreview: currentSlide,
+        attachmentPreview: currentSlide?.src,
       }),
     });
   }, [current]);
@@ -75,6 +82,44 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
         api.on('select', () => setCurrent(api.selectedScrollSnap()));
       }}
     >
+      {slides[current] && isDialog && (
+        <div className="fixed z-10 top-0 left-0 w-full flex gap-2 p-3 text-center sm:text-left bg-background/60 backdrop-blur-sm">
+          {slides[current].name && (
+            <h2 className="text-base tracking-tight flex ml-1 items-center gap-2 leading-6 h-6">
+              {slides[current].fileType && <FilePlaceholder fileType={slides[current].fileType} iconSize={16} strokeWidth={2} />}
+              {slides[current].name}
+            </h2>
+          )}
+          <div className="grow" />
+
+          {slides[current].src.startsWith('http') && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
+              onClick={() => window.open(slides[current].src, '_blank')}
+            >
+              <ExternalLink className="h-5 w-5" strokeWidth={1.5} />
+            </Button>
+          )}
+
+          {slides[current].src.startsWith('http') && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-my-1 w-8 h-8 opacity-70 hover:opacity-100"
+              onClick={() => download(slides[current].src, slides[current].filename || 'file')}
+            >
+              <Download className="h-5 w-5" strokeWidth={1.5} />
+            </Button>
+          )}
+
+          <Button variant="ghost" size="icon" className="-my-1 w-8 h-8 opacity-70 hover:opacity-100" onClick={() => dialog.remove()}>
+            <X className="h-6 w-6" strokeWidth={1.5} />
+          </Button>
+        </div>
+      )}
+
       <CarouselContent className="h-full">
         {slides?.map(({ src, fileType = 'image' }, idx) => {
           return (

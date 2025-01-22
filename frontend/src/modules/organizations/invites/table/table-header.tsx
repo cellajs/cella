@@ -1,4 +1,3 @@
-import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
@@ -8,7 +7,7 @@ import type { BaseTableHeaderProps, BaseTableMethods, OrganizationInvitesInfo } 
 
 type InvitesInfoTableHeaderProps = BaseTableMethods & BaseTableHeaderProps<OrganizationInvitesInfo, InvitesInfoSearch>;
 
-export const InvitesInfoHeader = ({ total, q, setSearch, columns, setColumns, clearSelection }: InvitesInfoTableHeaderProps) => {
+export const InvitesInfoHeader = ({ total, q, setSearch, clearSelection }: InvitesInfoTableHeaderProps) => {
   const isFiltered = !!q;
   // Drop selected Rows on search
   const onSearch = (searchString: string) => {
@@ -35,9 +34,6 @@ export const InvitesInfoHeader = ({ total, q, setSearch, columns, setColumns, cl
           <TableSearch value={q} setQuery={onSearch} />
         </FilterBarContent>
       </TableFilterBar>
-
-      {/* Columns view */}
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
     </TableHeaderContainer>
   );
 };

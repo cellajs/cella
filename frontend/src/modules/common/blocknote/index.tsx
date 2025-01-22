@@ -221,8 +221,10 @@ export const BlockNote = ({
     // Collect attachments based on valid file types
     editor.forEachBlock(({ type, props }) => {
       const blockUrl = getUrlFromProps(props);
+
       if (allowedTypes.includes(type) && blockUrl && blockUrl.length > 0) {
-        newAttachments.push({ src: blockUrl, fileType: type });
+        const filename = blockUrl.split('/').pop() || 'File';
+        newAttachments.push({ src: blockUrl, filename, name: filename, fileType: type });
       }
       return true;
     });

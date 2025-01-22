@@ -119,8 +119,9 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
     if (!url) continue;
 
     url = DOMPurify.sanitize(url);
+    const filename = url.split('/').pop() || 'File';
 
-    urls.push({ src: url, fileType: contentType });
+    urls.push({ src: url, filename, name: filename, fileType: contentType });
 
     switch (contentType) {
       case 'image': {

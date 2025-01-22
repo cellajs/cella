@@ -1,4 +1,4 @@
-import { type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
+import { CancelledError, type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
 import i18next from 'i18next';
 import { ApiError } from '~/lib/api';
 import { i18n } from '~/lib/i18n';
@@ -17,8 +17,13 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 });
 
 export const onError = (error: Error) => {
+  // Ignore cancellation error
+  if (error instanceof CancelledError) {
+    return console.debug('Ignoring CancelledError');
+  }
+
+  // Handle network error (e.g., connection refused)
   if (error instanceof Error && error.message === 'Failed to fetch') {
-    // Handle network error (e.g., connection refused)
     createToast(i18n.t('common:error.network_error'), 'error');
   }
 

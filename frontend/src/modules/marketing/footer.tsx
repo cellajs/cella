@@ -46,7 +46,9 @@ export function Credits({ className }: { className?: string }) {
 
   return (
     <div className={clsx('pb-12 text-center text-xs', className)}>
-      © {currentYear}. {productName} {t('common:is_built_by')} {companyName}.
+      <p>
+        © {currentYear}. {productName} {t('common:is_built_by', { companyName })}.
+      </p>
     </div>
   );
 }
