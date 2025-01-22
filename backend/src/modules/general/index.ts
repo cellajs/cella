@@ -1,6 +1,7 @@
 import { and, eq, ilike, inArray, or } from 'drizzle-orm';
-import { emailSender } from '#/lib/mailer';
-import { InviteSystemEmail } from '../../../emails/system-invite';
+import { setCookie } from 'hono/cookie';
+
+import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 
 import { config } from 'config';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
@@ -8,13 +9,14 @@ import jwt from 'jsonwebtoken';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
+
+import { InviteSystemEmail } from '../../../emails/system-invite';
 import { env } from '../../../env';
 
 import { db } from '#/db/db';
 import { getContextUser, getMemberships } from '#/lib/context';
+import { emailSender } from '#/lib/mailer';
 
-import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { setCookie } from 'hono/cookie';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
@@ -431,8 +433,13 @@ const generalRoutes = app
         await stream.sleep(30000); // 30s
       }
     });
-    // to avoid  HTTP/1 Connection specific headers are forbidden: "transfer-encoding"
+
+    // to avoid  HTTP/1  specific headers:
+    // "transfer-encoding" - HTTP/2 handles streaming without it.
+    // connection - Not allowed in HTTP/2.
     stream.headers.delete('transfer-encoding');
+    stream.headers.delete('connection');
+
     return stream;
   });
 
