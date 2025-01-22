@@ -1,7 +1,7 @@
 import { config } from 'config';
 import { i18n } from '~/lib/i18n';
-import { createToast } from '~/lib/toasts';
 import CountryFlag from '~/modules/common/country-flag';
+import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { updateSelf } from '~/modules/users/api';

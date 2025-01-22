@@ -5,7 +5,7 @@ import { i18n } from '~/lib/i18n';
 import router, { queryClient } from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
 import { useAlertStore } from '~/store/alert';
-import { createToast } from './toasts';
+import { createToast } from '../modules/common/toaster';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({

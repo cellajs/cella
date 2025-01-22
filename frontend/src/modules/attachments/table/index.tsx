@@ -2,14 +2,17 @@ import { config } from 'config';
 import { Suspense, lazy, useRef, useState } from 'react';
 import type { z } from 'zod';
 
+import { Info } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
-import { createToast } from '~/lib/toasts';
 import RemoveAttachmentsForm from '~/modules/attachments/table/remove-attachments-form';
 import { AttachmentsTableHeader } from '~/modules/attachments/table/table-header';
+import { MainAlert } from '~/modules/common/alerter';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
+import { createToast } from '~/modules/common/toaster';
 import type { attachmentsSearchSchema } from '~/routes/organizations';
 import type { Attachment, BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
@@ -83,20 +86,41 @@ const AttachmentsTable = ({ organization, canUpload = true, isSheet = false }: A
         isSheet={isSheet}
         canUpload={canUpload}
       />
-      <Suspense>
-        <BaseDataTable
-          organization={organization}
-          ref={dataTableRef}
-          columns={columns}
-          setColumns={setColumns}
-          queryVars={{ q, sort, order, limit }}
-          updateCounts={updateCounts}
-          isSheet={isSheet}
-          canUpload={canUpload}
-          sortColumns={sortColumns}
-          setSortColumns={setSortColumns}
-        />
-      </Suspense>
+      <div>
+        <AnimatePresence initial={false}>
+          {!!total && (
+            <motion.div
+              key="alert"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{
+                height: { duration: 0.3 },
+                opacity: { delay: 0.6, duration: 0.2 },
+              }}
+              style={{ overflow: 'hidden' }}
+            >
+              <MainAlert id="edit_attachment" variant="plain" Icon={Info}>
+                {t('common:edit_attachment.text')}
+              </MainAlert>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <Suspense>
+          <BaseDataTable
+            organization={organization}
+            ref={dataTableRef}
+            columns={columns}
+            setColumns={setColumns}
+            queryVars={{ q, sort, order, limit }}
+            updateCounts={updateCounts}
+            isSheet={isSheet}
+            canUpload={canUpload}
+            sortColumns={sortColumns}
+            setSortColumns={setSortColumns}
+          />
+        </Suspense>
+      </div>
     </div>
   );
 };

@@ -55,7 +55,7 @@ export const useColumns = () => {
         sortable: true,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.createdAt),
+        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
         minWidth: 80,
       },
       {
@@ -73,7 +73,7 @@ export const useColumns = () => {
         sortable: true,
         visible: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.expiresAt),
+        renderCell: ({ row }) => (row.expiresAt ? dateShort(row.expiresAt) : <span className="text-muted">-</span>),
         minWidth: 80,
       },
     ];

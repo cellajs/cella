@@ -3,7 +3,7 @@ import type { ApiError } from '~/lib/api';
 
 import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
-import { createToast } from '~/lib/toasts';
+import { createToast } from '~/modules/common/toaster';
 import { type LeaveEntityQuery, type UpdateUserParams, deleteMySessions, deleteSelf, leaveEntity, updateSelf, updateUser } from '~/modules/users/api';
 import { meKeys, usersKeys } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';

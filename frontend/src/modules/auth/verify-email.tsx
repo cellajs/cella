@@ -3,10 +3,10 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { createToast } from '~/lib/toasts';
 import type { TokenType } from '~/modules/auth/api';
 import AuthPage from '~/modules/auth/auth-page';
 import { useVerifyEmailMutation } from '~/modules/auth/query-mutations';
+import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 
 const VerifyEmail = () => {

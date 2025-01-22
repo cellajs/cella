@@ -90,7 +90,7 @@ export const insertSlashNotifyItem = (editor: CustomBlockNoteSchema) => ({
   icon: <MessageCircle size={16} />,
 });
 
-// Side menu item to insert an Notify block
+// Side menu item to insert Notify block
 export const insertSideNotifyItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
   name: 'Notify',
   type: 'notify',

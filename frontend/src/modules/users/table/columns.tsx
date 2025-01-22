@@ -78,7 +78,7 @@ export const useColumns = (callback: (users: User[]) => void) => {
         renderCell: ({ row, tabIndex }) => {
           return (
             <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light">
-              {row.email || '-'}
+              {row.email || <span className="text-muted">-</span>}
             </a>
           );
         },
@@ -104,7 +104,7 @@ export const useColumns = (callback: (users: User[]) => void) => {
         sortable: true,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.createdAt),
+        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
         minWidth: 180,
       },
       {
@@ -113,7 +113,7 @@ export const useColumns = (callback: (users: User[]) => void) => {
         sortable: true,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.lastSeenAt),
+        renderCell: ({ row }) => (row.lastSeenAt ? dateShort(row.lastSeenAt) : <span className="text-muted">-</span>),
         minWidth: 180,
       },
       {

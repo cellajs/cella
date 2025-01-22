@@ -3,9 +3,9 @@ import type { User } from '~/types/common';
 import { onlineManager } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { queryClient } from '~/lib/router';
-import { createToast } from '~/lib/toasts';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
+import { createToast } from '~/modules/common/toaster';
 import { usersKeys } from '~/modules/users/query';
 import { useDeleteUserMutation } from '~/modules/users/query-mutations';
 

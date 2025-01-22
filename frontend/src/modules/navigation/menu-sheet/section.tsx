@@ -1,8 +1,9 @@
+import { Info } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import { createToast } from '~/lib/toasts';
+import { MainAlert } from '~/modules/common/alerter';
 import { dialog } from '~/modules/common/dialoger/state';
 import { sheet } from '~/modules/common/sheeter/state';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
@@ -46,7 +47,6 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
   };
 
   const toggleIsEditing = () => {
-    if (!isEditing) createToast(t('common:configure_menu.text'));
     setIsEditing(!isEditing);
   };
 
@@ -63,6 +63,25 @@ export const MenuSheetSection = ({ data, sectionType, sectionLabel, entityType, 
         toggleIsEditing={toggleIsEditing}
         createDialog={createDialog}
       />
+      <AnimatePresence initial={false}>
+        {isEditing && (
+          <motion.div
+            key="alert"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{
+              height: { duration: 0.3 },
+              opacity: { delay: 0.3, duration: 0.2 },
+            }}
+            style={{ overflow: 'hidden' }}
+          >
+            <MainAlert id="menu_management" variant="plain" Icon={Info}>
+              {t('common:configure_menu.text')}
+            </MainAlert>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence initial={false}>
         {isSectionVisible && (
           <motion.ul

@@ -47,7 +47,7 @@
   "close": "Close",
   "color": "Color",
   "columns_view": "Column view",
-  "configure_menu.text": "Manage your menu. You can drag items to change menu order. Changes are saved automatically.",
+  "configure_menu.text": "Archive your menu items or drag to change order. Changes are saved automatically.",
   "confirm.delete_account": "Are you sure you want to delete your account with {{email}} email?",
   "confirm.delete_resource": "Are you sure you want to delete {{resource}} {{name}} ?",
   "confirm.delete_resources": "Are you sure you want to delete these {{resources}}?",
@@ -266,10 +266,11 @@
   "offline.load_more": "Can't load more while offline",
   "offline.text": "Connection lost. Limited functionality available.",
   "offline.text_with_info": "Connection lost. Limited functionality available. Data entered in forms will be saved.",
-  "offline_mode": "Offline access",
-  "offline_mode.text": "Connection lost. <site_anchor>Continue</site_anchor> in offline mode.",
-  "offline_mode_off.text": "{{appName}} cleared offline cache and stopped syncing.",
-  "offline_mode_on.text": "{{appName}} keeps your content synced so you can work offline.",
+  "offline_access": "Offline access",
+  "offline_access.text": "Enable offline access so you can safely work on your content when internet is down. Changes will be synced as you get back online!",
+  "offline_access.offline": "Connection lost. <site_anchor>Continue</site_anchor> in offline mode.",
+  "offline_access_off.text": "{{appName}} cleared offline cache and stopped syncing.",
+  "offline_access_on.text": "{{appName}} keeps your content synced so you can work offline.",
   "onboarding_completed": "Great! Let's go.",
   "onboarding_completed.text": "Have a look around and explore the features of {{appName}}.",
   "onboarding_step1": "Hi {{name}}, this is you?",
@@ -459,5 +460,7 @@
   "decline": "Decline",
   "with": "With",
   "invited_at": "Invited",
-  "invited_by": "Invited by"
+  "invited_by": "Invited by",
+  "edit_attachment.text": "Double-click on a cell in the 'Name' column to edit an attachment name.",
+  "upload_multiple.text": "Up to {{count}} {{item}} at a time. Max. 10MB each."
 }

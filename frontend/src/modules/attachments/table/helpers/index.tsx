@@ -71,6 +71,7 @@ export const openUploadDialog = (organizationId: string) => {
       id: 'upload-attachment',
       drawerOnMobile: false,
       title: t('common:upload_item', { item: t('common:attachments').toLowerCase() }),
+      description: t('common:upload_multiple.text', { item: t('common:attachments').toLowerCase(), count: maxAttachmentsUpload }),
       className: 'md:max-w-xl',
     },
   );

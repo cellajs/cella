@@ -128,4 +128,9 @@ export default {
     },
   },
   plugins: [animatePlugin, typographyPlugin],
+  safelist: [
+    {
+      pattern: /aria-.*/,
+    },
+  ],
 } satisfies Config;
