@@ -71,7 +71,7 @@ export const menusTitleToAllowedType = {
  *  Side Menu Configuration
  */
 
-// Blocks that can be switched
+// Blocks to witch can be switched
 export const customBlockTypeSelectItems: (BasicBlockTypes | CellaCustomBlockTypes)[] = [
   'heading',
   'paragraph',
