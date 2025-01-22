@@ -13,7 +13,7 @@ export interface InvitesInfoProps {
   info: OrganizationInvitesInfo[];
 }
 
-export type InvitesInfoSearch = { q?: string; order?: 'asc' | 'desc'; sort: 'expiredAt' | 'createdAt' | 'createdBy' };
+export type InvitesInfoSearch = { q?: string; order?: 'asc' | 'desc'; sort: 'expiresAt' | 'createdAt' | 'createdBy' };
 
 export const InvitesInfoTable = ({ info }: InvitesInfoProps) => {
   const { search, setSearch } = useSearchParams<InvitesInfoSearch>({ saveDataInSearch: false });

@@ -59,7 +59,7 @@ const BaseDataTable = memo(
         (slideNum: number) =>
           openAttachmentDialog(
             slideNum,
-            rows.map((el) => ({ src: el.url, fileType: el.contentType })),
+            rows.map((el) => ({ src: el.url, filename: el.filename, name: el.name, fileType: el.contentType })),
             true,
             { removeCallback },
           ),
@@ -97,7 +97,7 @@ const BaseDataTable = memo(
       useEffect(() => {
         if (!attachmentPreview) return dialog.remove(true, 'attachment-file-preview');
         if (!rows || rows.length === 0) return;
-        const slides = rows.map((el) => ({ src: el.url, fileType: el.contentType }));
+        const slides = rows.map((el) => ({ src: el.url, filename: el.filename, name: el.name, fileType: el.contentType }));
         const slideIndex = slides.findIndex((slide) => slide.src === attachmentPreview);
 
         // If the slide exists in the slides array, reopen the dialog

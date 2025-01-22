@@ -32,12 +32,15 @@ export const AttachmentRender = ({
   togglePanState,
 }: AttachmentRenderProps) => {
   const isMobile = useBreakpoints('max', 'sm');
-  const sanitizedSource = DOMPurify.sanitize(source);
 
+  const sanitizedSource = DOMPurify.sanitize(source);
   const localUrl = useLocalFile(sanitizedSource, type);
 
-  // Use either remote URL or local URL
   const url = useMemo(() => {
+    // Use direct URL for static images
+    if (sanitizedSource.startsWith('/static/')) return sanitizedSource;
+
+    // Use either remote URL or local URL pointing to indedexedDB
     return sanitizedSource.startsWith('http') ? sanitizedSource : localUrl;
   }, [sanitizedSource, localUrl]);
 
@@ -50,9 +53,9 @@ export const AttachmentRender = ({
           ) : (
             <img src={url} alt={altName} className={`${itemClassName} w-full h-full`} />
           ))}
-        {type.includes('audio') && <RenderAudio src={url} />}
-        {type.includes('video') && <RenderVideo src={url} />}
-        {type.includes('pdf') && <RenderPDF file={url} />}
+        {type.includes('audio') && <RenderAudio src={url} className="w-[80vw] mx-auto -mt-48 h-20" />}
+        {type.includes('video') && <RenderVideo src={url} className="aspect-video max-h-[90vh] mx-auto" />}
+        {type.includes('pdf') && <RenderPDF file={url} className="w-[95vw] m-auto h-[95vh] overflow-auto" />}
       </Suspense>
     </div>
   );

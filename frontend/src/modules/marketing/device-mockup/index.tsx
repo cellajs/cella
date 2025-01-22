@@ -9,8 +9,8 @@ import DeviceFrame from './frame';
 type DeviceType = 'mobile' | 'tablet' | 'pc';
 
 interface DeviceMockupProps {
-  lightSlides?: { src: string }[];
-  darkSlides?: { src: string }[];
+  lightSlides?: { src: string; name?: string }[];
+  darkSlides?: { src: string; name?: string }[];
   className?: string;
   type: DeviceType;
 }
@@ -31,12 +31,8 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
       <DeviceFrame
         type={type}
         inView={inView}
-        renderCarousel={(isDialog, className) => {
-          return isDialog ? (
-            <AttachmentsCarousel slides={slides} isDialog={true} saveInSearchParams={false} />
-          ) : (
-            <AttachmentsCarousel slides={slides} isDialog={false} classNameContainer={className} />
-          );
+        renderCarousel={(className) => {
+          return <AttachmentsCarousel slides={slides} isDialog={false} classNameContainer={className} />;
         }}
       />
     </div>

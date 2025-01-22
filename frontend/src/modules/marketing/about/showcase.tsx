@@ -9,8 +9,14 @@ const DeviceMockup = lazy(() => import('~/modules/marketing/device-mockup'));
 const showcaseItems = [{ id: 'raak', url: 'https://raak.dev' }];
 
 // Slides for light and dark themes
-const lightSlides = [{ src: '/static/images/showcases/raak-1.png' }, { src: '/static/images/showcases/raak-2.png' }];
-const darkSlides = [{ src: '/static/images/showcases/raak-1-dark.png' }, { src: '/static/images/showcases/raak-2-dark.png' }];
+const lightSlides = [
+  { src: '/static/images/showcases/raak-1.png', fileType: 'image/png' },
+  { src: '/static/images/showcases/raak-2.png', fileType: 'image/png' },
+];
+const darkSlides = [
+  { src: '/static/images/showcases/raak-1-dark.png', fileType: 'image/png' },
+  { src: '/static/images/showcases/raak-2-dark.png', fileType: 'image/png' },
+];
 
 const Showcase = () => {
   const { t } = useTranslation();

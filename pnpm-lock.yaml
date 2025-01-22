@@ -599,6 +599,9 @@ importers:
       react-resizable-panels:
         specifier: ^2.1.7
         version: 2.1.7(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      react-use-downloader:
+        specifier: ^1.2.8
+        version: 1.2.8(react@19.0.0)
       recharts:
         specifier: ^2.15.0
         version: 2.15.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -9710,6 +9713,12 @@ packages:
     peerDependencies:
       react: '>=16.6.0'
       react-dom: '>=16.6.0'
+
+  react-use-downloader@1.2.8:
+    resolution: {integrity: sha512-JYb9esgw2TmODSCmSEFSEd/lJ0xtO50ugOu2T/PaO0JNYvscBqJT0uY452p7N5mf37jqSET7Q5DxcgixH1631Q==}
+    engines: {node: '>=8', npm: '>=5'}
+    peerDependencies:
+      react: ^17.0.2 || ^18
 
   react@19.0.0:
     resolution: {integrity: sha512-V8AVnmPIICiWpGfm6GLzCR/W5FXLchHop40W4nXBmdlEceh16rCN8O8LNWm5bh5XUX91fh7KpA+W0TgMKmgTpQ==}
@@ -21254,6 +21263,10 @@ snapshots:
       prop-types: 15.8.1
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
+
+  react-use-downloader@1.2.8(react@19.0.0):
+    dependencies:
+      react: 19.0.0
 
   react@19.0.0: {}
 

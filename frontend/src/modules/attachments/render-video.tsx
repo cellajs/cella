@@ -1,7 +1,7 @@
 import MediaThemeSutro from 'player.style/sutro/react';
 
-const RenderVideo = ({ src }: { src: string }) => (
-  <MediaThemeSutro className="w-full p-4">
+const RenderVideo = ({ src, className }: { src: string; className?: string }) => (
+  <MediaThemeSutro className={className}>
     {/* biome-ignore lint/a11y/useMediaCaption: by author */}
     <video slot="media" src={src} playsInline crossOrigin="anonymous" />
   </MediaThemeSutro>

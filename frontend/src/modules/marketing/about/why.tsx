@@ -8,14 +8,14 @@ const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, 
 
 // Slides for light and dark themes
 const lightSlides = [
-  { src: '/static/screenshots/system-page.png' },
-  { src: '/static/screenshots/org-page.png' },
-  { src: '/static/screenshots/settings.png' },
+  { src: '/static/screenshots/system-page.png', name: 'System page', filename: 'system-page.png', fileType: 'image/png' },
+  { src: '/static/screenshots/org-page.png', name: 'Organization page', filename: 'org-page.png', fileType: 'image/png' },
+  { src: '/static/screenshots/settings.png', name: 'User settings page', filename: 'settings.png', fileType: 'image/png' },
 ];
 const darkSlides = [
-  { src: '/static/screenshots/system-page-dark.png' },
-  { src: '/static/screenshots/org-page-dark.png' },
-  { src: '/static/screenshots/settings-dark.png' },
+  { src: '/static/screenshots/system-page-dark.png', name: 'System page', filename: 'system-page-dark.png', fileType: 'image/png' },
+  { src: '/static/screenshots/org-page-dark.png', name: 'Organization page', filename: 'org-page-dark.png', fileType: 'image/png' },
+  { src: '/static/screenshots/settings-dark.png', name: 'User settings page', filename: 'settings-dark.png', fileType: 'image/png' },
 ];
 
 const Why = () => {

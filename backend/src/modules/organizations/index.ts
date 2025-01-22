@@ -197,7 +197,7 @@ const organizationsRoutes = app
           name: usersTable.name,
           email: tokensTable.email,
           userId: tokensTable.userId,
-          expiredAt: tokensTable.expiresAt,
+          expiresAt: tokensTable.expiresAt,
           createdAt: tokensTable.createdAt,
           createdBy: tokensTable.createdBy,
         })

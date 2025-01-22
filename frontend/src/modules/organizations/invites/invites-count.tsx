@@ -21,8 +21,8 @@ export const InvitedUsers = ({ invitesInfo }: Props) => {
       </Suspense>,
       {
         className: 'max-w-full lg:max-w-4xl',
-        title: t('common:invites_table_title'),
-        description: t('common:invites_table_text', { entity: t('common:organization').toLowerCase() }),
+        title: t('common:pending_invitations'),
+        description: t('common:pending_invitations.text', { entity: t('common:organization').toLowerCase() }),
         id: 'invited-users-info',
         scrollableOverlay: true,
         side: 'right',
