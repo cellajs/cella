@@ -14,6 +14,7 @@ import type {
   CustomBlockNoteSchema,
   CustomFormatToolBarConfig,
   MenusItemsTitle,
+  SlashIndexedItems,
 } from '~/modules/common/blocknote/types';
 
 /**
@@ -97,7 +98,7 @@ export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(d
  */
 
 // Indexed items (max 9 for quick number-based selection)
-export const customSlashIndexedItems: MenusItemsTitle[] = ['Image', 'Video', 'File', 'Bullet List', 'Numbered List', 'Check List', 'Notify', 'Emoji'];
+export const customSlashIndexedItems: SlashIndexedItems = ['Image', 'Video', 'File', 'Bullet List', 'Numbered List', 'Check List', 'Notify', 'Emoji'];
 
 // Non-indexed items (accessed via browsing)
 export const customSlashNotIndexedItems: MenusItemsTitle[] = ['Table', 'Audio', 'Heading 1', 'Heading 2', 'Heading 3', 'Paragraph', 'Code Block'];

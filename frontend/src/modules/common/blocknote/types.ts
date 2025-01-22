@@ -23,6 +23,18 @@ export type BasicFileBlockTypes = 'image' | 'video' | 'audio' | 'file';
 export type BasicBlockBaseTypes = 'emoji' | 'table' | 'paragraph' | 'heading' | 'codeBlock' | 'bulletListItem' | 'numberedListItem' | 'checkListItem';
 export type BasicBlockTypes = BasicBlockBaseTypes | BasicFileBlockTypes;
 
+type MaxNineItems<T extends string> =
+  | [T]
+  | [T, T]
+  | [T, T, T]
+  | [T, T, T, T]
+  | [T, T, T, T, T]
+  | [T, T, T, T, T, T]
+  | [T, T, T, T, T, T, T]
+  | [T, T, T, T, T, T, T, T]
+  | [T, T, T, T, T, T, T, T, T];
+export type SlashIndexedItems = MaxNineItems<MenusItemsTitle>;
+
 // Icon type for side menu to satisfy custom elements
 export type IconType = (
   props: React.SVGAttributes<SVGElement> & {
