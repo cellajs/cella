@@ -17,6 +17,7 @@ import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { setCookie } from 'hono/cookie';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
+import { requestsTable } from '#/db/schema/requests';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
@@ -126,22 +127,26 @@ const generalRoutes = app
     for (const email of emails) {
       const targetUser = await getUserBy('email', email.toLowerCase());
 
+      if (targetUser) continue;
+
       const token = generateId(40);
       await db.insert(tokensTable).values({
         id: token,
         type: 'system_invitation',
-        userId: targetUser?.id,
         email: email.toLowerCase(),
         role,
         createdBy: user.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
 
+      await db
+        .update(requestsTable)
+        .set({ token })
+        .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist')));
+
       const emailHtml = await render(
         SystemInviteEmail({
-          userName: targetUser?.name,
-          userThumbnailUrl: targetUser?.thumbnailUrl,
-          userLanguage: targetUser?.language || user.language,
+          userLanguage: user.language,
           inviteBy: user.name,
           token,
         }),

@@ -6,6 +6,7 @@ import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
@@ -21,7 +22,12 @@ export const useColumns = () => {
         sortable: true,
         visible: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => t(`common:${row.type}`),
+        renderCell: ({ row }) => (
+          <div className="flex flew-row gap-2 items-center">
+            {t(`common:${row.type}`)}
+            {row.type === 'waitlist' && <Badge className={`h-2 w-2 justify-center p-0 ${row.token ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />}
+          </div>
+        ),
         minWidth: 160,
       },
       {
@@ -30,7 +36,7 @@ export const useColumns = () => {
         visible: true,
         sortable: false,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <>{row.email || <span className="text-muted">-</span>}</>,
+        renderCell: ({ row }) => <>{row.email}</>,
       },
       {
         key: 'message',

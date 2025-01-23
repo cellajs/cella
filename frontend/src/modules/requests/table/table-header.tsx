@@ -37,7 +37,7 @@ export const RequestsTableHeaderBar = ({
 }: RequestsTableHeaderBarProps) => {
   const { t } = useTranslation();
 
-  const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist'), [selected]);
+  const selectedToWaitlist = useMemo(() => selected.filter((r) => r.type === 'waitlist' && !r.token), [selected]);
   const selectedContact = useMemo(() => selected.filter((r) => r.type !== 'waitlist'), [selected]);
 
   const isFiltered = !!q;

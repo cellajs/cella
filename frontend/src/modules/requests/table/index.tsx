@@ -7,7 +7,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
 import { invite } from '~/modules/general/api';
-import { deleteRequests, getRequests } from '~/modules/requests/api';
+import { getRequests } from '~/modules/requests/api';
 import DeleteRequests from '~/modules/requests/delete-requests';
 import { openMessageSheet } from '~/modules/requests/helpers';
 import { requestsKeys } from '~/modules/requests/query';
@@ -17,6 +17,7 @@ import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Request } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
+import { nanoid } from '~/utils/nanoid';
 
 const BaseDataTable = lazy(() => import('~/modules/requests/table/table'));
 const LIMIT = config.requestLimits.requests;
@@ -79,18 +80,22 @@ const RequestsTable = () => {
   };
 
   const openInviteDialog = async () => {
-    const waitlistRequests = selected.filter((request) => request.type === 'waitlist');
-    const emails = waitlistRequests.map((request) => request.email);
-    const requestIds = waitlistRequests.map((request) => request.id);
+    const waitlistRequests = selected.filter(({ type }) => type === 'waitlist');
+    const emails = waitlistRequests.map(({ email }) => email);
+
+    // add random token value so state it table changes
+    const updatedWaitLists = waitlistRequests.map((req) => {
+      req.token = nanoid();
+      return req;
+    });
 
     try {
       // Send invite to users
       await invite({ emails, role: 'user' });
       createToast(t('common:success.user_invited'), 'success');
 
-      // TODO: decide delete requests or change status to 'processed'
-      await deleteRequests(requestIds);
-      mutateQuery.remove(waitlistRequests);
+      mutateQuery.update(updatedWaitLists);
+      clearSelection();
     } catch (error) {
       createToast(t('common:error.bad_request_action'), 'error');
     }
