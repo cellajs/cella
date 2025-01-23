@@ -13,7 +13,7 @@ export const config = {
   defaultRedirectPath: '/home',
   firstSignInRedirectPath: '/welcome',
 
-  aboutUrl: '/about',
+  aboutUrl: 'https://cellajs.com/about',
   statusUrl: 'https://status.cellajs.com',
   productionUrl: 'https://cellajs.com',
 
@@ -108,8 +108,8 @@ export const config = {
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
     sync: false, // Realtime updates and sync using Electric Sync
-    registrationEnabled: true, // Allow users to sign up. If disabled, the app is by invitation only
-    waitlist: false, // Suggest a waitlist for unknown emails when sign up is disabled,
+    registrationEnabled: false, // Allow users to sign up. If disabled, the app is by invitation only
+    waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
     imado: true, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
   },
 

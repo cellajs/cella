@@ -9,7 +9,7 @@ import { i18n } from './i18n';
 
 export type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
 
-export type Severity = 'debug' | 'info' | 'log' | 'warn' | 'error';
+export type Severity = z.infer<typeof errorSchema>['severity'];
 
 export type ErrorType = z.infer<typeof errorSchema> & {
   eventData?: EventData;

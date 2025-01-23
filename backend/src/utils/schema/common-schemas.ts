@@ -37,7 +37,7 @@ export const errorSchema = z.object({
   message: z.string(),
   type: z.string(),
   status: z.number(),
-  severity: z.string(),
+  severity: z.enum(['debug', 'log', 'info', 'warn', 'error']),
   entityType: entityTypeSchema.optional(),
   logId: z.string().optional(),
   path: z.string().optional(),

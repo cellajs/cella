@@ -1,5 +1,5 @@
 import type { ClientResponse } from 'hono/client';
-import type { ErrorType } from '#/lib/errors';
+import type { ErrorType, Severity } from '#/lib/errors';
 import type { Entity } from '#/types/common';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to allow any type of response
@@ -24,10 +24,10 @@ export const clientConfig = {
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
-  status: string | number;
+  status: number;
   type?: string;
   entityType?: Entity;
-  severity?: string;
+  severity?: Severity;
   logId?: string;
   path?: string;
   method?: string;

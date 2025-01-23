@@ -48,8 +48,8 @@ export const onError = (error: Error) => {
           : fallback[statusCode as keyof typeof fallback];
 
     // Show toast
-    if (error.severity === 'info') createToast(errorMessage || error.message, 'info');
-    else createToast(errorMessage || error.message, 'error');
+    const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
+    createToast(errorMessage || error.message, toastType);
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
