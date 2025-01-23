@@ -88,9 +88,9 @@ export const deleteOrganizations = async (ids: string[]) => {
 export type NewsLetterBody = Parameters<(typeof client)['send-newsletter']['$post']>['0']['json'];
 
 // Send newsletter to organizations
-export const sendNewsletter = async ({ organizationIds, subject, content }: NewsLetterBody) => {
+export const sendNewsletter = async (body: NewsLetterBody) => {
   const response = await client['send-newsletter'].$post({
-    json: { organizationIds, subject, content },
+    json: body,
   });
 
   const json = await handleResponse(response);

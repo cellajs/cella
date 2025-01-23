@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import {
@@ -47,6 +48,7 @@ export const createOrganizationBodySchema = z.object({
 
 export const sendNewsletterBodySchema = z.object({
   organizationIds: z.array(z.string()),
+  roles: z.array(z.enum(config.rolesByType.entityRoles)),
   subject: z.string(),
   content: z.string(),
 });

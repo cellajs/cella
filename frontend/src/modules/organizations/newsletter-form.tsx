@@ -8,6 +8,7 @@ import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
+import SelectRoles from '~/modules/common/form-fields/select-roles';
 import { sheet } from '~/modules/common/sheeter/state';
 import { useSendNewsLetterMutation } from '~/modules/organizations/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -36,7 +37,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
     defaultValues: {
       organizationIds: organizationIds,
       subject: '',
-      // roles: ['admin'],
+      roles: ['admin'],
       content: '',
     },
   });
@@ -54,15 +55,16 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
     });
   };
 
-  const cancel = () => {
-    form.reset();
-  };
+  const cancel = () => form.reset();
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
   const isDirty = () => {
     const { dirtyFields } = form.formState;
     const fieldsKeys = Object.keys(dirtyFields);
     if (fieldsKeys.length === 0) return false;
+    // select at least one of the roles required
+    if (!form.getValues('roles').length) return false;
+
     if (fieldsKeys.includes('content') && fieldsKeys.length === 1) {
       const content = form.getValues('content');
       const parser = new DOMParser();
@@ -96,19 +98,22 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
 
         <BlockNoteContent control={form.control} name="content" required label={t('common:message')} blocknoteId="blocknote-org-newsletter" />
 
-        {/* <FormField
+        <FormField
           control={form.control}
           name="roles"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('common:subject')}</FormLabel>
+              <FormLabel>
+                {t('common:roles')}
+                <span className="ml-1 opacity-50">*</span>
+              </FormLabel>
               <FormControl>
                 <SelectRoles {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
-        /> */}
+        />
         <div className="flex flex-col sm:flex-row gap-2">
           <SubmitButton disabled={!isDirty()} loading={isPending}>
             <Send size={16} className="mr-2" />
