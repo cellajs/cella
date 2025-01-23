@@ -1,11 +1,11 @@
-import { type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
+import { CancelledError, type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
 import i18next from 'i18next';
 import { ApiError } from '~/lib/api';
 import { i18n } from '~/lib/i18n';
 import router, { queryClient } from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
 import { useAlertStore } from '~/store/alert';
-import { createToast } from './toasts';
+import { createToast } from '../modules/common/toaster';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -17,8 +17,13 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
 });
 
 export const onError = (error: Error) => {
+  // Ignore cancellation error
+  if (error instanceof CancelledError) {
+    return console.debug('Ignoring CancelledError');
+  }
+
+  // Handle network error (e.g., connection refused)
   if (error instanceof Error && error.message === 'Failed to fetch') {
-    // Handle network error (e.g., connection refused)
     createToast(i18n.t('common:error.network_error'), 'error');
   }
 
@@ -48,10 +53,8 @@ export const onError = (error: Error) => {
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
-      // Redirect to sign-in page if the user is not authenticated (except for /me)
-      const redirectOptions: { to: string; replace: boolean; search?: { redirect: string } } = {
+      const redirectOptions: { to: string; search?: { redirect: string } } = {
         to: '/auth/sign-in',
-        replace: true,
       };
 
       // Save the current path as a redirect

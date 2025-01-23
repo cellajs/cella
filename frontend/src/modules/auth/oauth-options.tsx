@@ -3,7 +3,6 @@ import { config } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import type { Step } from '~/modules/auth';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/modules/auth/api';
 import { acceptInvite } from '~/modules/general/api';
@@ -49,7 +48,6 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
   const redirectPath = searchResult.redirect ?? config.defaultRedirectPath;
 
   const successesCallback = () => {
-    toast.success(t('common:success.passkey_sign_in'));
     navigate({ to: redirectPath, replace: true });
   };
 
@@ -76,7 +74,7 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
               key={provider}
               type="button"
               variant="outline"
-              className="gap-1.5"
+              className="gap-1"
               onClick={() => {
                 setLoading(true);
                 if (token) {
@@ -88,10 +86,11 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
                 data-provider={provider}
                 src={`/static/images/${provider.toLowerCase()}-icon.svg`}
                 alt={provider}
-                className="w-4 h-4 group-data-[mode=dark]:data-[provider=github]:invert"
+                className="w-4 h-4 mr-1 group-data-[mode=dark]:data-[provider=github]:invert"
                 loading="lazy"
               />
-              {token ? t('common:accept') : actionType === 'signUp' ? t('common:sign_up') : t('common:sign_in_with', { provider: providerData.name })}
+              <span>{actionType === 'signIn' ? t('common:sign_in') : t('common:sign_up')}</span>
+              <span>{t('common:with').toLowerCase()}</span> <span>{providerData.name}</span>
             </Button>
           );
         })}

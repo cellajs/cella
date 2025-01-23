@@ -3,13 +3,13 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { feedbackLetterBodySchema } from 'backend/modules/requests/schema';
+import { requestMessageBodySchema } from 'backend/modules/requests/schema';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMutation } from '~/hooks/use-mutations';
+import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import { sheet } from '~/modules/common/sheeter/state';
-import { sendResponse as baseSendResponse } from '~/modules/requests/api';
+import { useSendRequestMessageMutation } from '~/modules/requests/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -17,22 +17,21 @@ import { Input } from '~/modules/ui/input';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 
-interface NewsletterFormProps {
+interface MessageFormProps {
   emails: string[];
   dropSelected?: () => void;
   sheet?: boolean;
 }
 
-const formSchema = feedbackLetterBodySchema;
+const formSchema = requestMessageBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const FeedbackLetterForm: React.FC<NewsletterFormProps> = ({ emails, sheet: isSheet, dropSelected }) => {
+const MessageForm: React.FC<MessageFormProps> = ({ emails, sheet: isSheet, dropSelected }) => {
   const { t } = useTranslation();
 
-  const form = useFormWithDraft<FormValues>('send-feedback-letter', {
+  const form = useFormWithDraft<FormValues>('request-message', {
     resolver: zodResolver(formSchema),
     defaultValues: {
       emails,
@@ -41,27 +40,19 @@ const FeedbackLetterForm: React.FC<NewsletterFormProps> = ({ emails, sheet: isSh
     },
   });
 
-  const { mutate: sendNewsletter, isPending } = useMutation({
-    mutationFn: baseSendResponse,
-    onSuccess: () => {
-      form.reset();
-      toast.success(t('common:success.request_feedback'));
-      dropSelected?.();
-      if (isSheet) sheet.remove('feedback-letter-form');
-    },
-  });
-
-  const onSubmit = (values: FormValues) => {
-    sendNewsletter({
-      emails: values.emails,
-      subject: values.subject,
-      content: values.content,
+  const { mutate, isPending } = useSendRequestMessageMutation();
+  const onSubmit = (body: FormValues) => {
+    mutate(body, {
+      onSuccess: () => {
+        form.reset();
+        toast.success(t('common:success.request_feedback'));
+        dropSelected?.();
+        if (isSheet) sheet.remove('feedback-letter-form');
+      },
     });
   };
 
-  const cancel = () => {
-    form.reset();
-  };
+  const cancel = () => form.reset();
 
   // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
   const isDirty = () => {
@@ -115,4 +106,4 @@ const FeedbackLetterForm: React.FC<NewsletterFormProps> = ({ emails, sheet: isSh
   );
 };
 
-export default FeedbackLetterForm;
+export default MessageForm;

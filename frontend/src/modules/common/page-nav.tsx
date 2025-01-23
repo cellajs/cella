@@ -1,10 +1,12 @@
 import { Link, type ToPathOption } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import StickyBox from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
+import { nanoid } from '~/utils/nanoid';
 
 export type PageNavTab = {
   id: string;
@@ -24,6 +26,8 @@ interface Props {
 }
 
 export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
+  const layoutId = useMemo(() => nanoid(), []);
+
   const { t } = useTranslation();
   const { ref: inViewRef, inView } = useInView({ triggerOnce: false, threshold: 0 });
 
@@ -64,7 +68,7 @@ export const PageNav = ({ title, avatar, tabs, className = '' }: Props) => {
                 {isActive && (
                   <motion.span
                     initial={false}
-                    layoutId="page-nav-active"
+                    layoutId={layoutId}
                     transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
                     className="h-1 bg-primary rounded-sm w-[calc(100%-1rem)] absolute bottom-0 left-2"
                   />

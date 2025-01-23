@@ -5,15 +5,15 @@ import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
-import { createToast } from '~/lib/toasts';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheet } from '~/modules/common/sheeter/state';
+import { createToast } from '~/modules/common/toaster';
 import { getOrganizations } from '~/modules/organizations/api';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
-import OrganizationsNewsletterDraft from '~/modules/organizations/newsletter-draft';
-import OrganizationsNewsletterForm from '~/modules/organizations/newsletter-form';
+import NewsletterDraft from '~/modules/organizations/newsletter-draft';
+import NewsletterForm from '~/modules/organizations/newsletter-form';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { useColumns } from '~/modules/organizations/table/columns';
 import { OrganizationsTableHeader } from '~/modules/organizations/table/table-header';
@@ -79,13 +79,13 @@ const OrganizationsTable = () => {
       {
         id: 'write',
         label: 'common:write',
-        element: <OrganizationsNewsletterForm sheet organizationIds={selected.map((o) => o.id)} dropSelectedOrganization={clearSelection} />,
+        element: <NewsletterForm sheet organizationIds={selected.map((o) => o.id)} dropSelectedOrganization={clearSelection} />,
       },
 
       {
-        id: 'draft',
-        label: 'common:draft',
-        element: <OrganizationsNewsletterDraft />,
+        id: 'preview',
+        label: 'common:preview',
+        element: <NewsletterDraft />,
       },
     ];
     sheet.create(<SheetTabs tabs={newsletterTabs} />, {

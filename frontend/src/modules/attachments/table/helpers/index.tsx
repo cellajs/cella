@@ -1,7 +1,5 @@
-import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { Suspense } from 'react';
-import { createToast } from '~/lib/toasts';
 import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -24,8 +22,6 @@ export const formatBytes = (bytes: string): string => {
 
 // Open the upload dialog
 export const openUploadDialog = (organizationId: string) => {
-  if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
-
   const maxAttachmentsUpload = 20;
 
   const UploadDialog = () => {
@@ -75,6 +71,7 @@ export const openUploadDialog = (organizationId: string) => {
       id: 'upload-attachment',
       drawerOnMobile: false,
       title: t('common:upload_item', { item: t('common:attachments').toLowerCase() }),
+      description: t('common:upload_multiple.text', { item: t('common:attachments').toLowerCase(), count: maxAttachmentsUpload }),
       className: 'md:max-w-xl',
     },
   );

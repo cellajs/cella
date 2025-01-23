@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 import { dialog } from '~/modules/common/dialoger/state';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { Button } from '~/modules/ui/button';
-import { deleteMySessions as baseTerminateMySessions } from '~/modules/users/api';
 import { useUserStore } from '~/store/user';
 
 import { onlineManager } from '@tanstack/react-query';
@@ -13,16 +12,16 @@ import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useMutation } from '~/hooks/use-mutations';
-import { createToast } from '~/lib/toasts';
-import { sendResetPasswordEmail } from '~/modules/auth/api';
+import { requestPasswordEmail } from '~/modules/auth/api';
 import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
+import { createToast } from '~/modules/common/toaster';
 import DeleteSelf from '~/modules/users/delete-self';
 import { deletePasskey, registerPasskey } from '~/modules/users/helpers';
+import { useTerminateSessionsMutation } from '~/modules/users/query-mutations';
 import { SessionTile } from '~/modules/users/session-tile';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
@@ -43,26 +42,15 @@ const UserSettingsPage = () => {
   const sessions = Array.from(user.sessions).sort((a) => (a.isCurrent ? -1 : 1));
 
   // Terminate one or all sessions
-  const { mutate: deleteMySessions, isPending } = useMutation({
-    mutationFn: baseTerminateMySessions,
-    onSuccess: (_, variables) => {
-      useUserStore.setState((state) => {
-        state.user.sessions = state.user.sessions.filter((session) => !variables.includes(session.id));
-      });
-      createToast(
-        variables.length === 1 ? t('common:success.session_terminated', { id: variables[0] }) : t('common:success.sessions_terminated'),
-        'success',
-      );
-    },
-  });
+  const { mutate: deleteMySessions, isPending } = useTerminateSessionsMutation();
 
   // Request a password reset email
-  const sendResetPasswordClick = () => {
+  const requestResetPasswordClick = () => {
     if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
     try {
       setDisabledResetPassword(true);
-      sendResetPasswordEmail(user.email);
+      requestPasswordEmail(user.email);
       toast.success(t('common:success.reset_password_email', { email: user.email }));
     } catch {
     } finally {
@@ -229,11 +217,11 @@ const UserSettingsPage = () => {
                 })}
               </div>
 
-              <HelpText content={t('common:reset_password_email.text')}>
+              <HelpText content={t('common:request_password.text')}>
                 <p className="font-semibold">{t('common:reset_password')}</p>{' '}
               </HelpText>
               <div>
-                <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
+                <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
                   <Send size={16} className="mr-2" />
                   {t('common:send_reset_link')}
                 </Button>

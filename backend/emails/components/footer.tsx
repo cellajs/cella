@@ -3,15 +3,15 @@ import { Link, Text } from 'jsx-email';
 import { config } from 'config';
 import { i18n } from '#/lib/i18n';
 
-export const Footer = ({ style }: { style?: React.CSSProperties }) => (
+export const Footer = () => (
   <Text
     style={{
-      color: '#6a737d',
+      color: '#777',
       fontSize: '0.75rem',
       textAlign: 'center' as const,
       marginTop: '2rem',
+      maxWidth: '400px',
       padding: '0rem 1.5rem',
-      ...style,
     }}
   >
     {config.name}・{config.company.streetAddress}・{config.company.city}・{config.company.country}, {config.company.postcode}・
@@ -27,3 +27,6 @@ export const Footer = ({ style }: { style?: React.CSSProperties }) => (
     </Link>
   </Text>
 );
+
+// Template export
+export const Template = Footer;

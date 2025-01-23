@@ -21,50 +21,49 @@ export function ResetBlockTypeItem({ editor, props: { block }, allowedTypes }: R
     return getSideMenuItems(dict).filter((item) => filteredSelectItems.includes(item.type as BasicBlockTypes | CellaCustomBlockTypes));
   }, [editor, dict]);
 
-  const shouldShow: boolean = useMemo(() => filteredItems.find((item) => item.type === block.type) !== undefined, [block.type, filteredItems]);
+  // Determine if the current block type should be shown
+  const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
 
-  const fullItems = useMemo(() => {
-    const onClick = (item: BlockTypeSelectItem & { oneInstanceOnly?: boolean }) => {
-      if (item.oneInstanceOnly) {
-        const blockAlreadyExists = editor.document.find((block) => block.type === item.type);
-        // Convert block to a paragraph if it exists
-        if (blockAlreadyExists) editor.updateBlock(blockAlreadyExists, { type: 'paragraph' });
-      }
+  // Handle item click for updating the block type
+  const handleItemClick = (item: BlockTypeSelectItem & { oneInstanceOnly?: boolean }) => {
+    if (item.oneInstanceOnly) {
+      const existingBlock = editor.document.find((block) => block.type === item.type);
+      if (existingBlock) editor.updateBlock(existingBlock, { type: 'paragraph' });
+    }
 
-      // Update the selected block
-      editor.updateBlock(block, {
-        type: item.type as Exclude<BasicBlockTypes, 'emoji'> | CellaCustomBlockTypes,
-        //In our case we pass props cos by it we get heading level: 1 | 2 | 3
-        props: item.props,
-      });
-      // to reset editor focus so side menu open state does not block the on blur update
-      setTimeout(() => focusEditor(editor, block.id), 0);
-    };
-
-    return filteredItems.map((item) => {
-      const { icon: Icon, isSelected, name } = item;
-      return {
-        type: item.type,
-        title: name,
-        icon: <Icon size={16} />,
-        onClick: () => onClick(item),
-        isSelected: isSelected(block as unknown as Block<Record<string, BlockConfig>, InlineContentSchema, StyleSchema>),
-      };
+    // Update the selected block
+    editor.updateBlock(block, {
+      type: item.type as Exclude<BasicBlockTypes, 'emoji'> | CellaCustomBlockTypes,
+      props: item.props, // Pass props (to get heading level: 1 | 2 | 3)
     });
-  }, [block, filteredItems, editor]);
+    // to reset editor focus so side menu open state does not block the on blur update
+    setTimeout(() => focusEditor(editor, block.id), 0);
+  };
 
+  const fullItems = useMemo(
+    () =>
+      filteredItems.map((item) => {
+        const { type, icon: Icon, isSelected, name } = item;
+        return {
+          type: type,
+          title: name,
+          icon: <Icon size={16} />,
+          onClick: () => handleItemClick(item),
+          isSelected: isSelected(block as unknown as Block<Record<string, BlockConfig>, InlineContentSchema, StyleSchema>),
+        };
+      }),
+    [block, filteredItems, editor],
+  );
+  // If block type should not be shown or the editor is not editable, return null early
   if (!shouldShow || !editor.isEditable) return null;
 
   return (
     <>
-      {fullItems.map((el) => {
-        let isSelected = false;
-        if (block.type === 'heading') {
-          isSelected = el.title.includes(block.props.level.toString());
-        } else isSelected = block.type === el.type;
+      {fullItems.map(({ title, type, icon, onClick }) => {
+        const isSelected = block.type === type || (block.type === 'heading' && title.includes(block.props.level.toString()));
         return (
-          <Components.Generic.Menu.Item className="bn-menu-item" key={el.title} onClick={el.onClick} icon={el.icon} checked={isSelected}>
-            {el.title}
+          <Components.Generic.Menu.Item className="bn-menu-item" key={title} onClick={onClick} icon={icon} checked={isSelected}>
+            {title}
           </Components.Generic.Menu.Item>
         );
       })}

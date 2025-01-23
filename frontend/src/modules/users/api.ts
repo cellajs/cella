@@ -67,10 +67,11 @@ export const deleteUsers = async (userIds: string[]) => {
 export type UpdateUserParams = Parameters<(typeof userClient)[':idOrSlug']['$put']>['0']['json'];
 
 // Update user
-export const updateUser = async (idOrSlug: string, params: UpdateUserParams) => {
+export const updateUser = async (info: UpdateUserParams & { idOrSlug: string }) => {
+  const { idOrSlug, ...body } = info;
   const response = await userClient[':idOrSlug'].$put({
     param: { idOrSlug },
-    json: params,
+    json: body,
   });
 
   const json = await handleResponse(response);
@@ -109,6 +110,17 @@ export const deleteSelf = async () => {
   await handleResponse(response);
 };
 
+export type NewsLetterToSelfBody = Parameters<(typeof meClient)['send-newsletter']['$post']>['0']['json'];
+
+// Send newsletter to self
+export const sendNewsletterToSelf = async (body: NewsLetterToSelfBody) => {
+  const response = await meClient['send-newsletter'].$post({
+    json: body,
+  });
+  const json = await handleResponse(response);
+  return json.success;
+};
+
 // Terminate user sessions
 export const deleteMySessions = async (sessionIds: string[]) => {
   const response = await meClient.sessions.$delete({
@@ -125,8 +137,10 @@ export const deletePasskey = async () => {
   const json = await handleResponse(response);
   return json.success;
 };
+
+export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntity };
 // Leave entity
-export const leaveEntity = async (query: { idOrSlug: string; entityType: ContextEntity }) => {
+export const leaveEntity = async (query: LeaveEntityQuery) => {
   const response = await meClient.leave.$delete({
     query,
   });

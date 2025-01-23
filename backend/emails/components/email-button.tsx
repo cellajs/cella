@@ -11,7 +11,7 @@ export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: st
         background: '#000',
         color: 'white',
         padding: '0.75rem 1.25rem',
-        fontSize: '.75rem',
+        fontSize: '1rem',
         textDecoration: 'none',
         fontWeight: 'font-semibold',
         borderRadius: '0.25rem',
@@ -22,3 +22,6 @@ export const EmailButton = ({ ButtonText, href }: { ButtonText: string; href: st
     </Button>
   </Section>
 );
+
+// Template export
+export const Template = EmailButton;

@@ -2,7 +2,7 @@ import { Filter, FilterX, X } from 'lucide-react';
 import { createContext, useContext, useState } from 'react';
 import { Button } from '~/modules/ui/button';
 
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
@@ -29,7 +29,7 @@ export const TableFilterBarContext = createContext<{
 
 export const FilterBarActions = ({ children, className = '' }: FilterBarChildProps) => {
   const { isFilterActive } = useContext(TableFilterBarContext);
-  return <div className={cn('flex items-center gap-2', className, isFilterActive && 'max-sm:hidden')}>{children}</div>;
+  return <div className={cn('flex items-center gap-3', className, isFilterActive && 'max-sm:hidden')}>{children}</div>;
 };
 
 export const FilterBarContent = ({ children, className = '' }: FilterBarChildProps) => {

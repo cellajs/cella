@@ -10,7 +10,7 @@
     "start": "cross-env NODE_ENV=production tsx dist/index.js",
     "dev": "cross-env NODE_ENV=development tsup --watch --onSuccess \"tsx dist/index.js\""
   },
-  "keywords": ["tus", "imado"],
+  "keywords": ["tus", "imado", "resumable uploads", "file uploads"],
   "author": "CellaJS <info@cellajs.com>",
   "license": "UNLICENSED",
   "dependencies": {

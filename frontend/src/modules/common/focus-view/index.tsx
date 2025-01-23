@@ -1,7 +1,7 @@
 import { Expand, Shrink } from 'lucide-react';
 import type React from 'react';
 import { useTranslation } from 'react-i18next';
-import { createToast } from '~/lib/toasts';
+import { createToast } from '~/modules/common/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';

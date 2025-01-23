@@ -5,8 +5,12 @@ import { getUploadToken } from '~/modules/general/api';
 import type { UploadParams, UploadType, UploadedUppyFile } from '~/types/common';
 
 import '@uppy/core/dist/style.min.css';
+import { onlineManager } from '@tanstack/react-query';
+import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
+import { nanoid } from '~/utils/nanoid';
 
 export type UppyMeta = { public?: boolean; contentType?: string };
+export type LocalFile = UppyFile<UppyMeta, UppyBody>;
 
 // biome-ignore lint/complexity/noBannedTypes: no other way to define this type
 export type UppyBody = {};
@@ -15,8 +19,8 @@ const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
 
 interface ImadoUploadParams extends UploadParams {
   statusEventHandler?: {
-    onFileEditorComplete?: (data: UppyFile<UppyMeta, UppyBody>) => void;
-    onUploadStart?: (data: string) => void;
+    onFileEditorComplete?: (file: UppyFile<UppyMeta, UppyBody>) => void;
+    onUploadStart?: (uploadId: string, files: UppyFile<UppyMeta, UppyBody>[]) => void;
     onError?: (error: Error) => void;
     onComplete?: (mappedResult: UploadedUppyFile[], result: UploadResult<UppyMeta, UppyBody>) => void;
   };
@@ -27,20 +31,50 @@ export async function ImadoUppy(
   uppyOptions: UppyOptions<UppyMeta, UppyBody>,
   opts: ImadoUploadParams = { public: false, organizationId: undefined },
 ): Promise<Uppy> {
-  const token = await getUploadToken(type, { public: opts.public, organizationId: opts.organizationId });
+  const canUpload = onlineManager.isOnline() && config.has.imado;
 
-  if (!token) throw new Error('Failed to get upload token');
+  // Get upload token
+  let token = '';
 
-  const { public: isPublic, sub, imado: useImadoAPI } = readJwt(token);
+  if (canUpload) {
+    token = (await getUploadToken(type, { public: opts.public, organizationId: opts.organizationId })) || '';
+    if (!token) throw new Error('Failed to get upload token');
+  }
 
-  const rootUrl = isPublic ? config.publicCDNUrl : config.privateCDNUrl;
+  const prepareFilesForOffline = async (files: { [key: string]: UppyFile<UppyMeta, UppyBody> }) => {
+    console.warn('Files will be stored offline in indexedDB.');
 
+    // Save files to local storage asynchronously
+    await LocalFileStorage.addFiles(files);
+
+    // Prepare successful files for manual `complete` event
+    const successfulFiles = Object.values(files);
+    return successfulFiles;
+  };
+
+  // Initialize Uppy
   const imadoUppy = new Uppy({
     ...uppyOptions,
     meta: {
-      public: isPublic,
+      public: opts.public,
+    },
+    onBeforeUpload: (files) => {
+      if (!canUpload) {
+        prepareFilesForOffline(files).then((successfulFiles) => {
+          imadoUppy.emit('complete', {
+            successful: successfulFiles,
+            failed: [],
+          });
+        });
+
+        return false; // Block the upload
+      }
+
+      return true; // Allow upload if `canUpload` is true
     },
     onBeforeFileAdded: (file) => {
+      // Simplify id and add contentType to meta
+      file.id = nanoid();
       file.meta = {
         ...file.meta,
         contentType: file.type,
@@ -55,13 +89,13 @@ export async function ImadoUppy(
         authorization: `Bearer ${token}`,
       },
     })
-    .on('file-editor:complete', (data) => {
-      console.info('File editor complete:', data);
-      opts.statusEventHandler?.onFileEditorComplete?.(data);
+    .on('file-editor:complete', (file) => {
+      console.info('File editor complete:', file);
+      opts.statusEventHandler?.onFileEditorComplete?.(file);
     })
-    .on('upload', (data) => {
-      console.info('Upload started:', data);
-      opts.statusEventHandler?.onUploadStart?.(data);
+    .on('upload', (uploadId, files) => {
+      console.info('Upload started:', files);
+      opts.statusEventHandler?.onUploadStart?.(uploadId, files);
     })
     .on('error', (error) => {
       console.error('Upload error:', error);
@@ -69,18 +103,22 @@ export async function ImadoUppy(
     })
     .on('complete', (result: UploadResult<UppyMeta, UppyBody>) => {
       console.info('Upload complete:', result);
-      if (!useImadoAPI) console.warn('Imado API is disabled, files will not be uploaded to Imado.');
 
       let mappedResult: UploadedUppyFile[] = [];
 
-      if (result.successful && useImadoAPI) {
+      if (result.successful && canUpload) {
         mappedResult = result.successful.map((file) => {
+          const rootUrl = opts.public ? config.publicCDNUrl : config.privateCDNUrl;
+          const { sub } = readJwt(token);
           const uploadKey = file.uploadURL?.split('/').pop();
           const url = new URL(`${rootUrl}/${sub}/${uploadKey}`);
           return { file, url: url.toString() };
         });
+      } else if (result.successful && !canUpload) {
+        mappedResult = result.successful.map((file) => {
+          return { file, url: file.id };
+        });
       }
-
       opts.statusEventHandler?.onComplete?.(mappedResult, result);
     });
 

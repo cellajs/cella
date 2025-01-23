@@ -49,7 +49,8 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
       };
 
       for (const section of Object.values(menu)) {
-        await prefetchMenuItems(section);
+        // TODO: assertion for UserMenuItem[]
+        await prefetchMenuItems(section as UserMenuItem[]);
       }
     })();
   }, [offlineAccess]);

@@ -1,5 +1,5 @@
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { ChevronDown, Plus, Settings2 } from 'lucide-react';
+import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';

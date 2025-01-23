@@ -63,17 +63,17 @@ export const getOrganizations = async (
   return json.data;
 };
 
-export type UpdateOrganizationParams = Parameters<(typeof client)[':idOrSlug']['$put']>['0']['json'];
+export type UpdateOrganizationBody = Parameters<(typeof client)[':idOrSlug']['$put']>['0']['json'];
 
 // Update an organization
-export const updateOrganization = async (idOrSlug: string, params: UpdateOrganizationParams) => {
+export const updateOrganization = async ({ idOrSlug, json }: { idOrSlug: string; json: UpdateOrganizationBody }) => {
   const response = await client[':idOrSlug'].$put({
     param: { idOrSlug },
-    json: params,
+    json,
   });
 
-  const json = await handleResponse(response);
-  return json.data;
+  const respJson = await handleResponse(response);
+  return respJson.data;
 };
 
 // Delete organizations
@@ -85,18 +85,12 @@ export const deleteOrganizations = async (ids: string[]) => {
   await handleResponse(response);
 };
 
+export type NewsLetterBody = Parameters<(typeof client)['send-newsletter']['$post']>['0']['json'];
+
 // Send newsletter to organizations
-export const sendNewsletter = async ({
-  organizationIds,
-  subject,
-  content,
-}: {
-  organizationIds: string[];
-  subject: string;
-  content: string;
-}) => {
+export const sendNewsletter = async (body: NewsLetterBody) => {
   const response = await client['send-newsletter'].$post({
-    json: { organizationIds, subject, content },
+    json: body,
   });
 
   const json = await handleResponse(response);

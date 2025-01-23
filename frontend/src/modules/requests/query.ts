@@ -7,6 +7,9 @@ export const requestsKeys = {
   all: ['requests'] as const,
   list: () => [...requestsKeys.all, 'list'] as const,
   table: (filters?: GetRequestsParams) => [...requestsKeys.list(), filters] as const,
+  sendMessage: () => [...requestsKeys.all, 'sendMessage'],
+  create: () => [...requestsKeys.all, 'create'],
+  delete: () => [...requestsKeys.all, 'delete'],
 };
 
 // Infinite Query Options to get a paginated list of requests

@@ -3,7 +3,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createToast } from '~/lib/toasts';
+import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import type { Organization } from '~/types/common';
 

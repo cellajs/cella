@@ -7,10 +7,10 @@ import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
 import { emailSender } from '#/lib/mailer';
-import { InviteMemberEmail } from '../../../emails/member-invite';
+import { MemberInviteEmail } from '../../../emails/member-invite';
 
 import { tokensTable } from '#/db/schema/tokens';
-import { type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
+import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
 import { entityIdFields, menuSections } from '#/entity-config';
 import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
@@ -41,33 +41,37 @@ const membershipsRoutes = app
     const { entity, isAllowed } = await getValidEntity(entityType, 'update', idOrSlug);
     if (!entity || !isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
 
-    const { emails, role, parentEntity } = ctx.req.valid('json');
+    const { emails, role, parentEntity: parentEntityInfo } = ctx.req.valid('json');
 
     const organization = getOrganization();
     const user = getContextUser();
 
-    const contextEntityIdField = entityIdFields[entity.entity];
-
     // Normalize emails for consistent comparison
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
-    // Fetch existing users from the database
-    const existingUsers = await getUsersByConditions([inArray(usersTable.email, normalizedEmails)]);
+    // Query existing memberships and users
+    const [allOrgMemberships, existingUsers] = await Promise.all([
+      db
+        .select()
+        .from(membershipsTable)
+        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization'))),
+      getUsersByConditions([inArray(usersTable.email, normalizedEmails)]),
+    ]);
 
     // Maps to store memberships by existing user
     const organizationMembershipsByUser = new Map<string, MembershipModel>();
     const contextMembershipsByUser = new Map<string, MembershipModel>();
+    const contextEntityIdField = entityIdFields[entity.entity];
 
     if (existingUsers.length) {
+      const userIds = existingUsers.map((user) => user.id);
+
       // Prepare conditions for fetching existing memberships
       const $where = [
         and(
           eq(membershipsTable[contextEntityIdField], entity.id),
           eq(membershipsTable.type, entity.entity),
-          inArray(
-            membershipsTable.userId,
-            existingUsers.map((u) => u.id),
-          ),
+          inArray(membershipsTable.userId, userIds),
         ),
       ];
 
@@ -77,10 +81,7 @@ const membershipsRoutes = app
           and(
             eq(membershipsTable.type, 'organization'),
             eq(membershipsTable.organizationId, organization.id),
-            inArray(
-              membershipsTable.userId,
-              existingUsers.map((u) => u.id),
-            ),
+            inArray(membershipsTable.userId, userIds),
           ),
         );
       }
@@ -98,11 +99,9 @@ const membershipsRoutes = app
       }
     }
 
-    // Map to track existing users
-    const existingUsersByEmail = new Map<string, UserModel>();
-
-    // Array of emails to send invitations
-    const emailsToSendInvitation: string[] = [];
+    // Initialize tracking maps
+    const existingUsersByEmail = new Map();
+    const emailsToSendInvitation = [];
 
     // Establish memberships for existing users
     await Promise.all(
@@ -130,70 +129,62 @@ const membershipsRoutes = app
             (entity.entity !== 'organization' && organizationMembership) || (entity.entity === 'organization' && existingUser.id === user.id);
 
           if (instantCreateMembership) {
-            const parentEntityInto = parentEntity ? await resolveEntity(parentEntity.entity, parentEntity.idOrSlug) : undefined;
+            const parentEntity = parentEntityInfo ? await resolveEntity(parentEntityInfo.entity, parentEntityInfo.idOrSlug) : null;
 
             const [createdParentMembership, createdMembership] = await Promise.all([
-              parentEntityInto
-                ? insertMembership({
-                    user: existingUser,
-                    role,
-                    entity: parentEntityInto,
-                  })
-                : Promise.resolve(null), // No-op if parentEntity is undefined
-              insertMembership({
-                user: existingUser,
-                role,
-                entity: entity,
-                parentEntity: parentEntityInto,
-              }),
+              parentEntity ? insertMembership({ user: existingUser, role, entity: parentEntity }) : Promise.resolve(null),
+              insertMembership({ user: existingUser, role, entity: entity, parentEntity }),
             ]);
 
-            if (createdParentMembership) {
-              // Send a Server-Sent Event (SSE) to the newly added user
+            if (parentEntity && createdParentMembership) {
+              // SSE with parentEntity data, to update user's menu
               sendSSEToUsers([existingUser.id], 'add_entity', {
-                newItem: { ...entity, membership: createdParentMembership },
-                sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
+                newItem: { ...parentEntity, membership: createdParentMembership },
+                sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
               });
             }
 
-            // Send a Server-Sent Event (SSE) to the newly added user
+            // SSE with entity data, to update user's menu
             sendSSEToUsers([existingUser.id], 'add_entity', {
               newItem: { ...entity, membership: createdMembership },
               sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
-              ...(parentEntityInto && { parentSlug: parentEntityInto.slug }),
+              ...(parentEntity && { parentSlug: parentEntity.slug }),
             });
-          }
-
-          // Add email to the invitation list for sending an organization invite to another user
-          else emailsToSendInvitation.push(existingUser.email);
+            // Add email to the invitation list for sending an organization invite to another user
+          } else emailsToSendInvitation.push(existingUser.email);
         }
       }),
     );
 
     // Identify emails that do not have existing users (will need to send a invitation)
-    for (const email of normalizedEmails) {
-      if (!existingUsersByEmail.has(email)) emailsToSendInvitation.push(email);
-    }
+    for (const email of normalizedEmails) if (!existingUsersByEmail.has(email)) emailsToSendInvitation.push(email);
 
     // Send invitations for organization membership
     await Promise.all(
       emailsToSendInvitation.map(async (email) => {
         const targetUser = existingUsersByEmail.get(email);
-
         const token = generateId(40);
+
         await db.insert(tokensTable).values({
           id: token,
           type: 'membership_invitation',
-          userId: targetUser?.id,
+          userId: targetUser?.id ?? null,
           email: email,
+          createdBy: user.id,
           role,
           organizationId: organization.id,
           expiresAt: createDate(new TimeSpan(7, 'd')),
+          ...(entity.entity !== 'organization' && {
+            membershipInfo: {
+              targetEntity: { idOrSlug: entity.id, entity: entity.entity },
+              parentEntity: parentEntityInfo,
+            },
+          }),
         });
 
         // Render email template
         const emailHtml = await render(
-          InviteMemberEmail({
+          MemberInviteEmail({
             userName: targetUser?.name,
             userLanguage: targetUser?.language || user.language,
             userThumbnailUrl: targetUser?.thumbnailUrl,
@@ -211,7 +202,7 @@ const membershipsRoutes = app
         emailSender
           .send(
             config.senderIsReceiver ? user.email : email,
-            i18n.t('backend:email.subject.invitation_to_entity', {
+            i18n.t('backend:email.member_invite.subject', {
               lng: targetUser?.language || organization.defaultLanguage,
               appName: config.name,
               entity: organization.name,
@@ -220,13 +211,19 @@ const membershipsRoutes = app
             user.email,
           )
           .catch((error) => {
-            if (error instanceof Error) {
-              const errorMessage = error.message;
-              logEvent('Error sending email', { errorMessage }, 'error');
-            }
+            if (error instanceof Error) logEvent('Error sending email', { errorMessage: error.message }, 'error');
           });
       }),
     );
+
+    if (emailsToSendInvitation.length > 0) {
+      // SSE to update organizations invite info
+      sendSSEToUsers(
+        allOrgMemberships.map(({ userId }) => userId),
+        'new_member_invite',
+        { id: organization.id, slug: organization.slug },
+      );
+    }
 
     return ctx.json({ success: true }, 200);
   })

@@ -2,6 +2,10 @@ import { useMatches } from '@tanstack/react-router';
 import { config } from 'config';
 import { useEffect } from 'react';
 
+const isPWAInstalled = () => {
+  return window.matchMedia('(display-mode: standalone)').matches;
+};
+
 // Custom hook for setting document title
 export const useSetDocumentTitle = () => {
   const matches = useMatches();
@@ -15,7 +19,8 @@ export const useSetDocumentTitle = () => {
       .filter(Boolean);
 
     void Promise.all(breadcrumbPromises).then((titles) => {
-      document.title = titles.join(' › ') + (titles.length && ' · ') + config.name;
+      const append = isPWAInstalled() ? '' : (titles.length && ' · ') + config.name;
+      document.title = titles.join(' › ') + append;
     });
   }, [matches]);
 };

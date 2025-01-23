@@ -58,9 +58,10 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         renderHeaderCell: HeaderCell,
         minWidth: 140,
         renderCell: ({ row, tabIndex }) => {
+          if (!row.email) return <span className="text-muted">-</span>;
           return (
             <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light">
-              {row.email || '-'}
+              {row.email}
             </a>
           );
         },
@@ -73,7 +74,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <div className="inline-flex items-center gap-1 relative group h-full w-full">
-            {row.membership ? t(`common:${row.membership.role}`) : '-'}
+            {row.membership ? t(`common:${row.membership.role}`) : <span className="text-muted">-</span>}
           </div>
         ),
         width: 100,
@@ -92,7 +93,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         sortable: true,
         visible: !isSheet && !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.createdAt),
+        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
         minWidth: 180,
       },
       {
@@ -101,7 +102,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean) => {
         sortable: true,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.lastSeenAt),
+        renderCell: ({ row }) => (row.lastSeenAt ? dateShort(row.lastSeenAt) : <span className="text-muted">-</span>),
         minWidth: 180,
       },
     ];

@@ -15,30 +15,26 @@ export const slashMenu = (
 
   const handleKeyPress = async (e: KeyboardEvent) => {
     const { key: pressedKey } = e;
+    const itemIndex = Number.parseInt(pressedKey, 10) - 1; // Convert pressed key to an index
 
-    //prevent index click if search is active or if it's mobile
-    if (isMobile || items.length !== originalItemCount) return;
+    if (isMobile || items.length !== originalItemCount || Number.isNaN(itemIndex) || itemIndex < 0 || itemIndex >= indexedItemCount) return;
 
-    // Convert pressed key to an index
-    const itemIndex = Number.parseInt(pressedKey, 10) - 1;
-    // Check if the pressed key corresponds to an item
-    if (!Number.isNaN(itemIndex) && itemIndex >= 0 && itemIndex < indexedItemCount) {
-      const item = items[itemIndex];
-      if (!item) return;
-      // media block opens only if document has next block
-      if (item.group === 'Media') {
-        const { nextBlock } = editor.getTextCursorPosition();
+    const item = items[itemIndex];
+    if (!item) return;
 
-        // if exist next block trigger item
-        if (nextBlock) return triggerItemClick(item, e);
+    // media block opens only if document has next block
+    if (item.group === 'Media') {
+      const { nextBlock } = editor.getTextCursorPosition();
 
-        // if no next block create one and trigger item
-        const block = await editor.tryParseMarkdownToBlocks('');
-        editor.replaceBlocks(editor.document, [...editor.document, ...block]);
-        return setTimeout(() => triggerItemClick(item, e), 0);
-      }
-      return triggerItemClick(item, e);
+      // if exist next block trigger item
+      if (nextBlock) return triggerItemClick(item, e);
+
+      // if no next block create one and trigger item
+      const block = await editor.tryParseMarkdownToBlocks('');
+      editor.replaceBlocks(editor.document, [...editor.document, ...block]);
+      return setTimeout(() => triggerItemClick(item, e), 0);
     }
+    return triggerItemClick(item, e);
   };
 
   const triggerItemClick = (item: DefaultReactSuggestionItem, event: KeyboardEvent | React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -62,10 +58,10 @@ export const slashMenu = (
     };
   }, []);
 
+  // Scroll to the selected item when it changes
   useEffect(() => {
-    if (!selectedIndex) return;
-    const selectedItem = itemRefs.current[selectedIndex];
-    if (selectedItem) selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const selectedItem = itemRefs.current[selectedIndex || 0];
+    selectedItem?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [selectedIndex]);
 
   return (

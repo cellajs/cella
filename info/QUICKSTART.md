@@ -20,12 +20,13 @@ pnpm dev
 pnpm seed
 ```
 
-## Customize
+## Customize & contribute
 1. Customize your config in `/config/default.ts`
 2. Update package.json with your own data
-3. Look at your .env file to understand what is required, for example to send emails you will need an API key.
-4. There are many config files with filenames like `-config.ts`. For example for entities or navigation structure.
-
+3. Look at your `.env` file to understand what is required, for example to send emails you will need an API key.
+4. Explore readmes and config files with filenames like `-config.ts`. For example for entities or navigation structure.
+5. Cella currently uses its homegrown [imado](https://github.com/cellajs/imado) service for file handling. It combines TUS. AWS Lambda, S3 and Cloudfront. However, you can also use local file storage during development. This gives you time to explore how to approach file handling for your app.
+6. Many things can be improved or are missing. Have a look at our roadmap and contact us to get involved.
 
 ## Cella CLI
 Cella CLI is currently limited to: creating a cella project, listing diverged files and pulling upstream changes. Config can be found in `cella.config.js`.

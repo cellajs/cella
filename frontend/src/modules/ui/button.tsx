@@ -3,7 +3,7 @@ import { type VariantProps, cva } from 'class-variance-authority';
 import { t } from 'i18next';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import * as React from 'react';
-import { createToast } from '~/lib/toasts';
+import { createToast } from '~/modules/common/toaster';
 
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TooltipButton } from '~/modules/common/tooltip-button';

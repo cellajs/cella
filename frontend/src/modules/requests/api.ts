@@ -5,10 +5,10 @@ import { requestsHc } from '#/modules/requests/hc';
 // Create Hono clients to make requests to the backend
 export const client = requestsHc(config.backendUrl, clientConfig);
 
-type CreateRequestProp = Parameters<(typeof client.index)['$post']>['0']['json'];
+export type CreateRequestBody = Parameters<(typeof client.index)['$post']>['0']['json'];
 
 // Request access or request info
-export const createRequest = async (requestInfo: CreateRequestProp) => {
+export const createRequest = async (requestInfo: CreateRequestBody) => {
   const response = await client.index.$post({
     json: requestInfo,
   });
@@ -63,11 +63,11 @@ export const deleteRequests = async (ids: string[]) => {
   return json.success;
 };
 
-export type SendResponseParams = Parameters<(typeof client)['send-feedback']['$post']>['0']['json'];
+export type SendResponseBody = Parameters<(typeof client)['send-message']['$post']>['0']['json'];
 
-// send email feedback to requests
-export const sendResponse = async (body: SendResponseParams) => {
-  const response = await client['send-feedback'].$post({
+// send email message in respons to requests
+export const sendRequestMessage = async (body: SendResponseBody) => {
+  const response = await client['send-message'].$post({
     json: body,
   });
 

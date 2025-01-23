@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { config } from 'config';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organizationsTable } from '#/db/schema/organizations';
 import {
@@ -14,6 +15,18 @@ import {
 } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
+export const invitesInfoSchema = z.array(
+  z.object({
+    id: z.string(),
+    email: z.string(),
+    name: z.string().nullable(),
+    userId: z.string().nullable(),
+    expiresAt: z.string(),
+    createdAt: z.string(),
+    createdBy: z.string().nullable(),
+  }),
+);
+
 export const organizationSchema = z.object({
   ...createSelectSchema(organizationsTable).shape,
   createdAt: z.string(),
@@ -22,8 +35,11 @@ export const organizationSchema = z.object({
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
   membership: membershipInfoSchema.nullable(),
+  invitesInfo: invitesInfoSchema.optional(),
   counts: membershipsCountSchema,
 });
+
+export const organizationWithMembershipSchema = organizationSchema.extend({ membership: membershipInfoSchema });
 
 export const createOrganizationBodySchema = z.object({
   name: nameSchema,
@@ -32,6 +48,7 @@ export const createOrganizationBodySchema = z.object({
 
 export const sendNewsletterBodySchema = z.object({
   organizationIds: z.array(z.string()),
+  roles: z.array(z.enum(config.rolesByType.entityRoles)),
   subject: z.string(),
   content: z.string(),
 });

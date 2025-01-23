@@ -8,11 +8,10 @@ import type * as z from 'zod';
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { useMutation } from '~/hooks/use-mutations';
-import { createToast } from '~/lib/toasts';
 import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { createRequest as baseCreateRequest } from '~/modules/requests/api';
+import { createToast } from '~/modules/common/toaster';
+import { useCreateRequestsMutation } from '~/modules/requests/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -37,21 +36,7 @@ export const WaitlistForm = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { mutate: createRequest, isPending } = useMutation({
-    mutationFn: baseCreateRequest,
-    onSuccess: () => {
-      navigate({
-        to: '/about',
-        replace: true,
-      });
-      createToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
-      if (isDialog) dialog.remove();
-      callback?.();
-    },
-    onError: (error) => {
-      if (callback && error.status === 409) return callback();
-    },
-  });
+  const { mutate: createRequest, isPending } = useCreateRequestsMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,13 +47,22 @@ export const WaitlistForm = ({
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (body: z.infer<typeof formSchema>) => {
     if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
-    createRequest({
-      email: values.email,
-      type: values.type,
-      message: values.message,
+    createRequest(body, {
+      onSuccess: () => {
+        navigate({
+          to: '/about',
+          replace: true,
+        });
+        createToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
+        if (isDialog) dialog.remove();
+        callback?.();
+      },
+      onError: (error) => {
+        if (callback && error.status === 409) return callback();
+      },
     });
   };
 
@@ -84,7 +78,7 @@ export const WaitlistForm = ({
               <ChevronDown size={16} className="ml-2" />
             </Button>
           </div>
-          <LegalNotice />
+          <LegalNotice email={email} />
         </>
       )}
       <form onSubmit={form.handleSubmit(onSubmit)} className="max-xs:min-w-full flex flex-col gap-4 sm:flex-row">

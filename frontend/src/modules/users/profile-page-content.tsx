@@ -2,11 +2,11 @@ import { Squirrel } from 'lucide-react';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 
 const ProfilePageContent = ({ sheet, userId, orgIdOrSlug }: { userId: string; orgIdOrSlug?: string; sheet?: boolean }) => {
+  // const queryOptions = userQueryOptions(userId);
   // const { data: user } = useQuery({
-  //   queryKey: usersKeys.single(userId),
-  //   queryFn: () => getUser(userId),
-  //   // Disable the query when `organizationId` is available
-  //   enabled: !organizationId,
+  //   ...queryOptions,
+  //  // Enable the query only when `orgIdOrSlug` is defined
+  //  enabled: !!orgIdOrSlug,
   // });
 
   console.info('ProfilePageContent', { userId, sheet });

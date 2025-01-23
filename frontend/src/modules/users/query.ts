@@ -11,6 +11,12 @@ export const usersKeys = {
   many: ['users'] as const,
   list: () => [...usersKeys.many, 'list'] as const,
   table: (filters?: GetUsersParams) => [...usersKeys.list(), filters] as const,
+  sendNewsletterSelf: () => [...usersKeys.one, 'newsletter', 'self'] as const,
+  leaveEntity: () => [...usersKeys.one, 'leave'] as const,
+  update: () => [...usersKeys.one, 'update'] as const,
+  delete: () => [...usersKeys.one, 'delete'] as const,
+  deleteSelf: () => [...usersKeys.delete(), 'self'] as const,
+  terminateSessions: () => [...usersKeys.one, 'terminate', 'sessions'] as const,
 };
 
 // Keys for meUser(self) query
@@ -32,17 +38,19 @@ export const userQueryOptions = (idOrSlug: string) =>
   });
 
 // Query Options to get current user(self)
-export const meQueryOptions = () =>
+export const meQueryOptions = (retry = 0) =>
   queryOptions({
     queryKey: meKeys.all,
     queryFn: getAndSetMe,
+    retry,
   });
 
 // Query Options to get current user's(self) menu
-export const menuQueryOptions = () =>
+export const menuQueryOptions = (retry = 0) =>
   queryOptions({
     queryKey: menuKeys.all,
     queryFn: getAndSetMenu,
+    retry,
   });
 
 // Infinite Query Options to get a paginated list of users

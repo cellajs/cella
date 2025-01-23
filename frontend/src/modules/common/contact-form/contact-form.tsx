@@ -9,14 +9,14 @@ import { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
-import { useMutation } from '~/hooks/use-mutations';
-import { createToast } from '~/lib/toasts';
 import InputFormField from '~/modules/common/form-fields/input';
+import { createToast } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { createRequest as baseCreateRequest } from '~/modules/requests/api';
+import { useCreateRequestsMutation } from '~/modules/requests/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
+import { createRequestSchema } from '#/modules/requests/schema';
 
 const ContactFormMap = lazy(() => import('~/modules/common/contact-form/contact-form-map'));
 
@@ -26,17 +26,13 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const { user } = useUserStore();
   const isMediumScreen = useBreakpoints('min', 'md');
 
-  const formSchema = z.object({
-    name: z.string().min(2, t('common:error.name_required')).default(''),
-    email: z.string().email(t('common:error.invalid_email')).default(''),
-    message: z.string().default(''),
-  });
+  const formSchema = createRequestSchema.extend({ name: z.string().min(2, t('common:error.name_required')).default('') });
 
   type FormValues = z.infer<typeof formSchema>;
 
   const form = useFormWithDraft<FormValues>('contact-form', {
     resolver: zodResolver(formSchema),
-    defaultValues: { name: user?.name || '', email: user?.email || '', message: '' },
+    defaultValues: { name: user?.name || '', email: user?.email || '', message: '', type: 'contact' },
   });
 
   const cancel = () => {
@@ -44,21 +40,19 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     isDialog && dialog.remove();
   };
 
-  const { mutate: createRequest } = useMutation({
-    mutationFn: baseCreateRequest,
-    onSuccess: () => {
-      createToast(t('common:message_sent.text'), 'success');
-      if (isDialog) dialog.remove();
-      form.reset();
-    },
-    onError: () => {
-      createToast(t('common:error.reported_try_later'), 'error');
-    },
-  });
+  const { mutate: createRequest } = useCreateRequestsMutation();
 
-  const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    const { email, message } = data;
-    createRequest({ email, type: 'contact', message });
+  const onSubmit: SubmitHandler<FormValues> = (body) => {
+    createRequest(body, {
+      onSuccess: () => {
+        createToast(t('common:message_sent.text'), 'success');
+        if (isDialog) dialog.remove();
+        form.reset();
+      },
+      onError: () => {
+        createToast(t('common:error.reported_try_later'), 'error');
+      },
+    });
   };
 
   // Update dialog title with unsaved changes

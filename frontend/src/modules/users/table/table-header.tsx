@@ -1,10 +1,11 @@
-import { motion } from 'framer-motion';
 import { Mail, Trash, XSquare } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import SelectRole from '~/modules/common/form-fields/select-role';
@@ -55,7 +56,7 @@ export const UsersTableHeader = ({
 
   return (
     <>
-      <div className={'flex items-center max-sm:justify-between md:gap-2 mt-4'}>
+      <TableHeaderContainer>
         {/* Table filter bar */}
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
@@ -114,7 +115,7 @@ export const UsersTableHeader = ({
 
         {/* Focus view */}
         <FocusView iconOnly />
-      </div>
+      </TableHeaderContainer>
 
       {/* Container for embedded dialog */}
       <div ref={containerRef} />

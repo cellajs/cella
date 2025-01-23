@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { queryClient } from '~/lib/router';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { useUpdateOrganizationMutation } from '~/modules/organizations/update-organization-form';
+import { useOrganizationUpdateMutation } from '~/modules/organizations/query-mutations';
 import { useUserStore } from '~/store/user';
 
 const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
@@ -34,13 +34,13 @@ const OrganizationPage = () => {
   const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
   const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 1);
 
-  const { mutate } = useUpdateOrganizationMutation(organization.id);
+  const { mutate } = useOrganizationUpdateMutation();
 
   useEventListener('updateEntityCover', (e) => {
     const { bannerUrl, entity } = e.detail;
     if (entity !== organization.entity) return;
     mutate(
-      { bannerUrl },
+      { idOrSlug: organization.id, json: { bannerUrl } },
       {
         onSuccess: () => toast.success(t('common:success.upload_cover')),
         onError: () => toast.error(t('common:error.image_upload_failed')),
@@ -66,7 +66,7 @@ const OrganizationPage = () => {
         }
       />
       <PageNav title={organization.name} avatar={organization} tabs={tabs} />
-      <FocusViewContainer className="container min-h-screen mt-4">
+      <FocusViewContainer className="container min-h-screen">
         <Outlet />
       </FocusViewContainer>
     </>

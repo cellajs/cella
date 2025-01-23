@@ -3,7 +3,7 @@ import { config } from 'config';
 
 import { type GetMembersParams, getMembers } from '~/modules/memberships/api';
 
-// Keys formembers queries
+// Keys for members queries
 export const membersKeys = {
   all: ['members'] as const,
   list: () => [...membersKeys.all, 'list'] as const,

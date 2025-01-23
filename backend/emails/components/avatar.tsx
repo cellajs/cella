@@ -6,6 +6,7 @@ const getRandomColor = () => {
   }
   return color;
 };
+
 export const Avatar = ({ name, type = 'user' }: { name?: string | null; type?: 'user' | 'organization' }) => {
   let initials = 'U';
   if (name) {
@@ -34,4 +35,5 @@ export const Avatar = ({ name, type = 'user' }: { name?: string | null; type?: '
   );
 };
 
-export default Avatar;
+// Template export
+export const Template = Avatar;

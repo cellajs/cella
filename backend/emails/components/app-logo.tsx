@@ -7,3 +7,6 @@ export const AppLogo = ({ style }: { style?: React.CSSProperties }) => (
     <Img src={`${config.productionUrl}/static/logo/logo-small.png`} alt={config.name} style={{ margin: '0 auto', height: '30px', ...style }} />
   </Section>
 );
+
+// Template export
+export const Template = AppLogo;

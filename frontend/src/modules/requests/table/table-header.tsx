@@ -1,11 +1,12 @@
 import { config } from 'config';
-import { Handshake, Mailbox, Trash, XSquare } from 'lucide-react';
+import { Handshake, Mail, Trash, XSquare } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import Export from '~/modules/common/data-table/export';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
+import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import type { RequestsSearch } from '~/modules/requests/table';
@@ -17,7 +18,7 @@ type RequestsTableHeaderBarProps = BaseTableMethods &
   BaseTableHeaderProps<Request, RequestsSearch> & {
     openInviteDialog: () => void;
     openRemoveDialog: () => void;
-    openNewsletterSheet: () => void;
+    openMessageSheet: () => void;
     fetchExport: (limit: number) => Promise<Request[]>;
   };
 
@@ -31,7 +32,7 @@ export const RequestsTableHeaderBar = ({
   clearSelection,
   openInviteDialog,
   openRemoveDialog,
-  openNewsletterSheet,
+  openMessageSheet,
   fetchExport,
 }: RequestsTableHeaderBarProps) => {
   const { t } = useTranslation();
@@ -52,17 +53,17 @@ export const RequestsTableHeaderBar = ({
   };
 
   return (
-    <div className={'flex items-center max-sm:justify-between md:gap-2 mt-4'}>
+    <TableHeaderContainer>
       {/* Filter bar */}
       <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
         <FilterBarActions>
           {selected.length > 0 && (
             <>
               {selectedContact.length > 0 && (
-                <Button onClick={openNewsletterSheet} className="relative">
+                <Button onClick={openMessageSheet} className="relative">
                   <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedContact.length}</Badge>
-                  <Mailbox size={16} />
-                  <span className="ml-1 max-xs:hidden">{t('common:newsletter')}</span>
+                  <Mail size={16} />
+                  <span className="ml-1 max-xs:hidden">{t('common:email')}</span>
                 </Button>
               )}
               {selectedToWaitlist.length > 0 && (
@@ -101,6 +102,6 @@ export const RequestsTableHeaderBar = ({
 
       {/* Focus view */}
       <FocusView iconOnly />
-    </div>
+    </TableHeaderContainer>
   );
 };

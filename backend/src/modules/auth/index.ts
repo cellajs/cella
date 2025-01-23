@@ -2,8 +2,8 @@ import { eq, or } from 'drizzle-orm';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
-import { VerificationEmail } from '../../../emails/email-verification';
-import { ResetPasswordEmail } from '../../../emails/reset-password';
+import { CreatePasswordEmail } from '../../../emails/create-password';
+import { EmailVerificationEmail } from '../../../emails/email-verification';
 
 import { auth } from '#/db/lucia';
 
@@ -18,7 +18,6 @@ import { createSession, findOauthAccount, getRedirectUrl, slugFromEmail, splitFu
 
 import { getRandomValues } from 'node:crypto';
 import { config } from 'config';
-import { t } from 'i18next';
 import type { z } from 'zod';
 import { db } from '#/db/db';
 import { passkeysTable } from '#/db/schema/passkeys';
@@ -73,11 +72,7 @@ const authRoutes = app
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
-    // Check if user has a passkey
-    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
-    const hasPasskey = !!passkey.length;
-
-    return ctx.json({ success: true, data: { hasPasskey } }, 200);
+    return ctx.json({ success: true }, 200);
   })
   /*
    * Sign up with email & password
@@ -88,7 +83,7 @@ const authRoutes = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
     }
 
     // In invitation mode this form is used to complete registration.
@@ -145,12 +140,13 @@ const authRoutes = app
       type: 'email_verification',
       userId: user.id,
       email,
+      createdBy: user.id,
       expiresAt: createDate(new TimeSpan(2, 'h')),
     });
 
     // Generating email html
     const emailHtml = await render(
-      VerificationEmail({
+      EmailVerificationEmail({
         userLanguage: user?.language || config.defaultLanguage,
         verificationLink: `${config.frontendUrl}/auth/verify-email/${token}`,
       }),
@@ -222,7 +218,7 @@ const authRoutes = app
   /*
    * Request reset password email
    */
-  .openapi(authRoutesConfig.resetPassword, async (ctx) => {
+  .openapi(authRoutesConfig.requestPassword, async (ctx) => {
     const { email } = ctx.req.valid('json');
 
     const user = await getUserBy('email', email.toLowerCase());
@@ -236,15 +232,16 @@ const authRoutes = app
       type: 'password_reset',
       userId: user.id,
       email,
+      createdBy: user.id,
       expiresAt: createDate(new TimeSpan(2, 'h')),
     });
 
     // generating email html
     const emailHtml = await render(
-      ResetPasswordEmail({
+      CreatePasswordEmail({
         userName: user.name,
         userLanguage: user?.language || config.defaultLanguage,
-        resetPasswordLink: `${config.frontendUrl}/auth/reset-password/${token}`,
+        createPasswordLink: `${config.frontendUrl}/auth/create-password/${token}`,
       }),
     );
 
@@ -257,21 +254,21 @@ const authRoutes = app
       emailHtml,
     );
 
-    logEvent('Reset password link sent', { user: user.id });
+    logEvent('Create password link sent', { user: user.id });
 
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Reset password with token
+   * Create password with token
    */
-  .openapi(authRoutesConfig.resetPasswordCallback, async (ctx) => {
+  .openapi(authRoutesConfig.createPasswordCallback, async (ctx) => {
     const { password } = ctx.req.valid('json');
     const verificationToken = ctx.req.valid('param').token;
 
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
     }
 
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
@@ -307,7 +304,7 @@ const authRoutes = app
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
-      return errorResponse(ctx, 400, 'Forbidden authentication strategy', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
     }
 
     let tokenData: TokenData | undefined;
@@ -467,13 +464,13 @@ const authRoutes = app
    * Github authentication callback
    */
   .openapi(authRoutesConfig.githubSignInCallback, async (ctx) => {
-    const { code, state, error, error_description } = ctx.req.valid('query');
+    const { code, state, error } = ctx.req.valid('query');
 
     // redirect if there is no code or error in callback
-    if (error || !code) return ctx.redirect(`${config.frontendUrl}/error?error=${error}&errorDescription=${error_description}&severity=error`, 302);
+    if (error || !code) return ctx.redirect(`${config.frontendUrl}/error?error=oauth_failed&severity=error`, 302);
     const strategy = 'github' as EnabledOauthProviderOptions;
 
-    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
+    if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
 
     const stateCookie = getCookie(ctx, 'oauth_state');
 
@@ -532,11 +529,9 @@ const authRoutes = app
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
       if (existingOauthAccount) {
+        // Redirect if already assigned to another user
         if (userId && existingOauthAccount.userId !== userId)
-          return ctx.redirect(
-            `${config.frontendUrl}/error?error=${t('backend:error.link_account')}&errorDescription=${t('backend:error.link_account.text', { service: 'Github' })}&severity=warn`,
-            302,
-          );
+          return ctx.redirect(`${config.frontendUrl}/error?error=oauth_mismatch&severity=warn`, 302);
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -635,6 +630,7 @@ const authRoutes = app
       if (error instanceof Error) {
         const errorMessage = error.message;
         logEvent('Error signing in with GitHub', { strategy, errorMessage }, 'error');
+        return errorResponse(ctx, 401, 'oauth_failed', 'warn', undefined, { strategy });
       }
 
       throw error;
@@ -651,7 +647,7 @@ const authRoutes = app
     const strategy = 'google' as EnabledOauthProviderOptions;
 
     if (!isOAuthEnabled(strategy)) {
-      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
     }
 
     const storedState = getCookie(ctx, 'oauth_state');
@@ -689,12 +685,9 @@ const authRoutes = app
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
-        // redirect home if google already assigned to some user
+        // Redirect if already assigned to another user
         if (userId && existingOauthAccount.userId !== userId)
-          return ctx.redirect(
-            `${config.frontendUrl}/error?error=${t('backend:error.link_account')}&errorDescription=${t('backend:error.link_account.text', { service: 'Google' })}&severity=warn`,
-            302,
-          );
+          return ctx.redirect(`${config.frontendUrl}/error?error=oauth_mismatch&severity=warn`, 302);
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -771,6 +764,7 @@ const authRoutes = app
       if (error instanceof Error) {
         const errorMessage = error.message;
         logEvent('Error signing in with Google', { strategy, errorMessage }, 'error');
+        return errorResponse(ctx, 401, 'oauth_failed', 'warn', undefined, { strategy });
       }
 
       throw error;
@@ -787,7 +781,7 @@ const authRoutes = app
     const strategy = 'microsoft' as EnabledOauthProviderOptions;
 
     if (!isOAuthEnabled(strategy)) {
-      return errorResponse(ctx, 400, 'Unsupported oauth', 'warn', undefined, { strategy });
+      return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
     }
 
     const storedState = getCookie(ctx, 'oauth_state');
@@ -823,12 +817,9 @@ const authRoutes = app
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
-        // redirect home if google already assigned to some user
+        // Redirect if already assigned to another user
         if (userId && existingOauthAccount.userId !== userId)
-          return ctx.redirect(
-            `${config.frontendUrl}/error?error=${t('backend:error.link_account')}&errorDescription=${t('backend:error.link_account.text', { service: 'Microsoft' })}&severity=warn`,
-            302,
-          );
+          return ctx.redirect(`${config.frontendUrl}/error?error=oauth_mismatch&severity=warn`, 302);
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -854,6 +845,7 @@ const authRoutes = app
       }
 
       if (!userEmail) return errorResponse(ctx, 401, 'no_email_found', 'warn', undefined);
+
       // Check if user already exists
       const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
       const [existingUser] = await getUsersByConditions(conditions);
@@ -906,6 +898,7 @@ const authRoutes = app
       if (error instanceof Error) {
         const errorMessage = error.message;
         logEvent('Error signing in with Microsoft', { strategy, errorMessage }, 'error');
+        return errorResponse(ctx, 401, 'oauth_failed', 'warn', undefined, { strategy });
       }
 
       throw error;
@@ -948,23 +941,25 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.verifyPasskey, async (ctx) => {
     const { clientDataJSON, authenticatorData, signature, userEmail } = ctx.req.valid('json');
+    const strategy = 'passkey';
 
     // Retrieve user and challenge record
     const user = await getUserBy('email', userEmail.toLowerCase());
-    if (!user) return errorResponse(ctx, 404, 'User not found', 'warn');
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', undefined, { strategy });
 
     const challengeFromCookie = getCookie(ctx, 'challenge');
 
     const [credential] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
-    if (!credential) return errorResponse(ctx, 404, 'Credential not found', 'warn');
+    if (!credential) return errorResponse(ctx, 404, 'invalid_credentials', 'warn', undefined, { strategy });
 
     try {
       const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credential.publicKey, challengeFromCookie);
-      if (!isValid) return errorResponse(ctx, 401, 'Invalid signature', 'warn', undefined);
+      if (!isValid) return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, { strategy });
     } catch (error) {
       if (error instanceof Error) {
         const errorMessage = error.message;
-        return errorResponse(ctx, 500, errorMessage || 'Passkey verification error', 'error', undefined);
+        logEvent('Error verifying passkey', { strategy, errorMessage }, 'error');
+        return errorResponse(ctx, 500, 'passkey_failed', 'error', undefined, { strategy });
       }
     }
 
