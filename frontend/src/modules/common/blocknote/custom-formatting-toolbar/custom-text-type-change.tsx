@@ -7,23 +7,25 @@ import type { BasicBlockTypes } from '~/modules/common/blocknote/types';
 export const CustomTextStyleSelect = () => {
   const dict = useDictionary();
   const editor = useBlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>();
-
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 
-  const filteredItems = useMemo(() => {
-    return blockTypeSelectItems(dict).filter((item) => formattingToolBarStyleForBlocks.includes(item.type as BasicBlockTypes));
-  }, [editor, dict]);
-  const shouldShow: boolean = useMemo(() => filteredItems.find((item) => item.type === block.type) !== undefined, [block.type, filteredItems]);
+  const filteredItems = useMemo(
+    () => blockTypeSelectItems(dict).filter((item) => formattingToolBarStyleForBlocks.includes(item.type as BasicBlockTypes)),
+    [editor, dict],
+  );
 
-  useEditorContentOrSelectionChange(() => {
-    setBlock(editor.getTextCursorPosition().block);
-  }, editor);
+  const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
+
+  // Update the block on content or selection change
+  useEditorContentOrSelectionChange(() => setBlock(editor.getTextCursorPosition().block), editor);
+
+  // Early return if the block type should not show text styles
   if (!shouldShow) return null;
 
   return (
     <>
       {formattingToolBarTextStyleSelect.map((el) => (
-        <BasicTextStyleButton basicTextStyle={el} key={`${el}StyleButton`} />
+        <BasicTextStyleButton key={`${el}StyleButton`} basicTextStyle={el} />
       ))}
     </>
   );

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { updateSourcesFromDataUrl } from '~/modules/common/blocknote/helpers';
 
-const OrganizationsNewsletterDraft = () => {
+const NewsletterDraft = () => {
   const form = useFormWithDraft('send-org-newsletter');
 
   useEffect(() => {
@@ -10,8 +10,8 @@ const OrganizationsNewsletterDraft = () => {
   }, [form.getValues('content'), form.getValues('subject')]);
 
   return (
-    <div className="p-4 max-w-full leading-[1.5] flex flex-col gap-4 items-center">
-      <section className="rounded-lg my-6 border p-6 w-full">
+    <div className="max-w-full mt-5 leading-[1.5] flex flex-col items-center">
+      <section className="rounded-lgborder p-6 w-full">
         <p className="text-muted-foreground font-light">{form.getValues('subject')}</p>
         <div
           id="org-newsletter-draft-content"
@@ -23,4 +23,4 @@ const OrganizationsNewsletterDraft = () => {
     </div>
   );
 };
-export default OrganizationsNewsletterDraft;
+export default NewsletterDraft;

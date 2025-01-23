@@ -3,8 +3,8 @@ import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-import { createToast } from '~/lib/toasts';
 import { DataTable } from '~/modules/common/data-table';
+import { createToast } from '~/modules/common/toaster';
 import { usersKeys, usersQueryOptions } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';

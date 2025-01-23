@@ -7,7 +7,7 @@ import type * as z from 'zod';
 
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy } from 'react';
 import { useSignUpMutation } from '~/modules/auth/query-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import Spinner from '~/modules/common/spinner';
@@ -48,7 +48,7 @@ export const SignUpForm = ({
       },
       {
         onSuccess: () => {
-          const to = tokenData ? '/auth/invite/$token' : '/auth/verify-email';
+          const to = tokenData ? '/auth/invitation/$token' : '/auth/request-verification';
 
           navigate({
             to,
@@ -61,12 +61,6 @@ export const SignUpForm = ({
       },
     );
   };
-
-  useEffect(() => {
-    if (tokenData?.email) {
-      form.setValue('email', tokenData.email);
-    }
-  }, [tokenData]);
 
   return (
     <Form {...form}>

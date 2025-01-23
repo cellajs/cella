@@ -11,10 +11,9 @@ import { Input } from '~/modules/ui/input';
 
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import { useEffect } from 'react';
 import type { TokenType } from '~/modules/auth/api';
 import { useSignInMutation } from '~/modules/auth/query-mutations';
-import { ResetPasswordRequest } from '~/modules/auth/reset-password/dialog';
+import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { SignInRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { TokenData } from '~/types/common';
@@ -50,9 +49,9 @@ export const SignInForm = ({
       { ...values, token },
       {
         onSuccess: (emailVerified) => {
-          // Redirect to the invite page if token is present
+          // Redirect to invitation page if token is present
           // Otherwise, redirect to a redirect URL or to home
-          const verifiedUserTo = tokenData ? '/auth/invite/$token' : redirect || config.defaultRedirectPath;
+          const verifiedUserTo = tokenData ? '/auth/invitation/$token' : redirect || config.defaultRedirectPath;
           const params = { token: tokenData?.token };
 
           navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
@@ -70,10 +69,6 @@ export const SignInForm = ({
     clearLastUser();
     resetToInitialStep();
   };
-
-  useEffect(() => {
-    if (tokenData?.email) form.setValue('email', tokenData.email);
-  }, [tokenData]);
 
   return (
     <Form {...form}>
@@ -126,7 +121,7 @@ export const SignInForm = ({
               {t('common:sign_in')}
               <ArrowRight size={16} className="ml-2" />
             </SubmitButton>
-            <ResetPasswordRequest email={email} />
+            <RequestPasswordDialog email={email} />
           </>
         )}
       </form>

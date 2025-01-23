@@ -21,7 +21,7 @@ export const getRequestsQuerySchema = paginationQuerySchema.merge(
   }),
 );
 
-export const feedbackLetterBodySchema = z.object({
+export const requestMessageBodySchema = z.object({
   emails: z.array(z.string().min(1).email()),
   subject: z.string(),
   content: z.string(),

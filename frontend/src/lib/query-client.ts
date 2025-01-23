@@ -5,7 +5,7 @@ import { i18n } from '~/lib/i18n';
 import router, { queryClient } from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
 import { useAlertStore } from '~/store/alert';
-import { createToast } from './toasts';
+import { createToast } from '../modules/common/toaster';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -53,7 +53,6 @@ export const onError = (error: Error) => {
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
-      // Redirect to sign-in page if the user is not authenticated (except for /me)
       const redirectOptions: { to: string; replace: boolean; search?: { redirect: string } } = {
         to: '/auth/sign-in',
         replace: true,

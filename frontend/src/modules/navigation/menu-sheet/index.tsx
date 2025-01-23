@@ -8,10 +8,11 @@ import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { config } from 'config';
-import { type LucideProps, Search } from 'lucide-react';
+import { Info, type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { MainAlert } from '~/modules/common/alerter';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { updateMembership } from '~/modules/memberships/api';
 import { getRelativeItemOrder } from '~/modules/navigation/menu-sheet/helpers';
@@ -157,6 +158,11 @@ export const MenuSheet = memo(() => {
                     {t('common:nested_menu')}
                   </label>
                 </div>
+              )}
+              {pwaEnabled && (
+                <MainAlert id="offline_access" variant="plain" Icon={Info}>
+                  {t('common:offline_access.text')}
+                </MainAlert>
               )}
             </div>
           </>

@@ -1,11 +1,11 @@
 import type { NavItemId } from '~/nav-config';
 import {
   AuthRoute,
-  ResetPasswordRoute,
-  ResetPasswordWithTokenRoute,
+  CreatePasswordWithTokenRoute,
+  RequestPasswordRoute,
+  RequestVerificationRoute,
   SignInRoute,
   SignOutRoute,
-  VerifyEmailRoute,
   VerifyEmailWithTokenRoute,
 } from '~/routes/auth';
 import { HomeAliasRoute, HomeRoute, WelcomeRoute } from '~/routes/home';
@@ -13,7 +13,7 @@ import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/rout
 import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system';
 import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
-import { AppRoute, ErrorNoticeRoute, PublicRoute, UnsubscribeRoute, acceptInviteRoute, rootRoute } from './general';
+import { AcceptInviteRoute, AppRoute, ErrorNoticeRoute, PublicRoute, UnsubscribeRoute, rootRoute } from './general';
 
 export const routeTree = rootRoute.addChildren([
   PublicRoute.addChildren([
@@ -26,9 +26,11 @@ export const routeTree = rootRoute.addChildren([
     SignOutRoute,
     AuthRoute.addChildren([
       SignInRoute,
-      ResetPasswordRoute.addChildren([ResetPasswordWithTokenRoute]),
-      VerifyEmailRoute.addChildren([VerifyEmailWithTokenRoute]),
-      acceptInviteRoute,
+      RequestPasswordRoute,
+      CreatePasswordWithTokenRoute,
+      RequestVerificationRoute,
+      VerifyEmailWithTokenRoute,
+      AcceptInviteRoute,
     ]),
   ]),
   AppRoute.addChildren([

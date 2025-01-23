@@ -17,7 +17,6 @@ export const CellaCustomBlockTypeSelect = () => {
   // biome-ignore lint/style/noNonNullAssertion: required by author
   const Components = useComponentsContext()!;
   const dict = useDictionary();
-
   const editor = useBlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>();
 
   const selectedBlocks = useSelectedBlocks(editor);
@@ -25,49 +24,51 @@ export const CellaCustomBlockTypeSelect = () => {
 
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 
-  const filteredItems = useMemo(() => {
-    return blockTypeSelectItems(dict).filter((item) => customBlockTypeSelectItems.includes(item.type as BasicBlockTypes));
-  }, [editor, dict]);
+  const filteredItems = useMemo(
+    () => blockTypeSelectItems(dict).filter((item) => customBlockTypeSelectItems.includes(item.type as BasicBlockTypes)),
+    [editor, dict],
+  );
 
-  const shouldShow: boolean = useMemo(() => filteredItems.find((item) => item.type === block.type) !== undefined, [block.type, filteredItems]);
+  const shouldShow = useMemo(() => filteredItems.some((item) => item.type === block.type), [block.type, filteredItems]);
 
   const selectedItem = useMemo(() => {
-    const { props, type } = currentBlock || {};
-    if (props?.level) {
-      // Return the first matching item with both type and level
-      return filteredItems.find((el) => el.type === type && el.name.includes(props.level));
+    // Return the first matching item with both type and level
+    if (currentBlock?.props?.level) {
+      return filteredItems.find((el) => el.type === currentBlock.type && el.name.includes(currentBlock.props.level));
     }
-    return filteredItems.find((el) => el.type === type);
+    return filteredItems.find((el) => el.type === currentBlock.type);
   }, [filteredItems, currentBlock]);
 
-  const fullItems = useMemo(() => {
-    const onClick = (item: BlockTypeSelectItem) => {
-      editor.focus();
-      for (const block of selectedBlocks) {
-        editor.updateBlock(block, {
-          type: item.type,
-          //In our case we pass props cos by it we get heading level: 1 | 2 | 3
-          // biome-ignore lint/suspicious/noExplicitAny: required by author
-          props: item.props as any,
-        });
-      }
-    };
+  // Handle item click for updating the block type
+  const handleItemClick = (item: BlockTypeSelectItem) => {
+    editor.focus();
+    for (const block of selectedBlocks) {
+      editor.updateBlock(block, {
+        type: item.type,
+        // biome-ignore lint/suspicious/noExplicitAny: required by author
+        props: item.props as any, // Pass props (to get heading level: 1 | 2 | 3)
+      });
+    }
+  };
 
-    return filteredItems.map((item) => {
-      const { icon: Icon, isSelected, name } = item;
-      return {
-        title: name,
-        icon: <Icon size={16} />,
-        onClick: () => onClick(item),
-        isSelected: isSelected(block),
-      };
-    });
-  }, [block, filteredItems, editor, selectedBlocks]);
+  const fullItems = useMemo(
+    () =>
+      filteredItems.map((item) => {
+        const { icon: Icon, isSelected, name } = item;
+        return {
+          title: name,
+          icon: <Icon size={16} />,
+          onClick: () => handleItemClick(item),
+          isSelected: isSelected(block),
+        };
+      }),
+    [block, filteredItems, editor, selectedBlocks],
+  );
 
-  useEditorContentOrSelectionChange(() => {
-    setBlock(editor.getTextCursorPosition().block);
-  }, editor);
+  // Update the block whenever the editor content or selection changes
+  useEditorContentOrSelectionChange(() => setBlock(editor.getTextCursorPosition().block), editor);
 
+  // Return null if the menu should not be shown or the editor is not editable
   if (!shouldShow || !editor.isEditable) return null;
 
   return (
@@ -79,9 +80,9 @@ export const CellaCustomBlockTypeSelect = () => {
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown data-radix-popper-content-wrapper className="bn-shadcn bn-menu-dropdown">
-        {fullItems.map((el) => (
-          <Components.Generic.Menu.Item className="bn-menu-item" key={el.title} onClick={el.onClick} icon={el.icon} checked={el.isSelected}>
-            {el.title}
+        {fullItems.map(({ title, icon, isSelected, onClick }) => (
+          <Components.Generic.Menu.Item className="bn-menu-item" key={title} onClick={onClick} icon={icon} checked={isSelected}>
+            {title}
           </Components.Generic.Menu.Item>
         ))}
       </Components.Generic.Menu.Dropdown>

@@ -19,7 +19,7 @@ import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OrganizationsNewsletter } from '../../../emails/organization-newsletter';
+import { NewsletterEmail } from '../../../emails/newsletter';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import organizationRoutesConfig from './routes';
@@ -292,7 +292,7 @@ const organizationsRoutes = app
 
       // generating email html
       const emailHtml = await render(
-        OrganizationsNewsletter({
+        NewsletterEmail({
           userLanguage: member.language,
           subject,
           content: updateBlocknoteHTML(content),

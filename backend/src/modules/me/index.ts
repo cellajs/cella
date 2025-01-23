@@ -24,7 +24,7 @@ import { emailSender } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import type { MenuItem, UserMenu } from '#/types/common';
 import { updateBlocknoteHTML } from '#/utils/blocknote';
-import { OrganizationsNewsletter } from '../../../emails/organization-newsletter';
+import { NewsletterEmail } from '../../../emails/newsletter';
 import { env } from '../../../env';
 import { getPreparedSessions } from './helpers/get-sessions';
 
@@ -261,7 +261,7 @@ const meRoutes = app
 
     // generating email html
     const emailHtml = await render(
-      OrganizationsNewsletter({
+      NewsletterEmail({
         userLanguage: user.language,
         subject,
         content: updateBlocknoteHTML(content),

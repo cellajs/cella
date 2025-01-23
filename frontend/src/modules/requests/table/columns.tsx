@@ -30,7 +30,7 @@ export const useColumns = () => {
         visible: true,
         sortable: false,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <>{row.email || '-'}</>,
+        renderCell: ({ row }) => <>{row.email || <span className="text-muted">-</span>}</>,
       },
       {
         key: 'message',
@@ -38,7 +38,7 @@ export const useColumns = () => {
         visible: !isMobile,
         sortable: false,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => <>{row.message || '-'}</>,
+        renderCell: ({ row }) => <>{row.message || <span className="text-muted">-</span>}</>,
       },
       {
         key: 'createdAt',
@@ -46,7 +46,7 @@ export const useColumns = () => {
         sortable: true,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.createdAt),
+        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
         minWidth: 180,
       },
     ];

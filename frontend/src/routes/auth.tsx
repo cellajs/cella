@@ -1,10 +1,11 @@
-import { Outlet, createRoute, redirect } from '@tanstack/react-router';
+import { createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { z } from 'zod';
 import SignIn from '~/modules/auth';
 import AuthPage from '~/modules/auth/auth-page';
-import ResetPassword from '~/modules/auth/reset-password';
-import { ResetPasswordForm } from '~/modules/auth/reset-password/form';
+import CreatePasswordForm from '~/modules/auth/create-password-form';
+import { RequestPasswordForm } from '~/modules/auth/request-password-form';
+import RequestVerification from '~/modules/auth/request-verification';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { PublicRoute } from '~/routes/general';
@@ -14,7 +15,7 @@ export const AuthRoute = createRoute({
   id: 'auth-layout',
   staticData: { pageTitle: null, isAuth: false },
   getParentRoute: () => PublicRoute,
-  component: () => <Outlet />,
+  component: () => <AuthPage />,
 });
 
 export const SignInRoute = createRoute({
@@ -22,9 +23,9 @@ export const SignInRoute = createRoute({
   validateSearch: z.object({ redirect: z.string().optional(), token: z.string().optional() }),
   staticData: { pageTitle: 'Sign in', isAuth: false },
   getParentRoute: () => AuthRoute,
-  beforeLoad: async ({ cause, search }) => {
-    // Only check auth if entering
-    if (cause !== 'enter' || search.redirect) return;
+  beforeLoad: async ({ cause }) => {
+    // Only check auth if entering to prevent loop
+    if (cause !== 'enter') return;
 
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
@@ -34,29 +35,25 @@ export const SignInRoute = createRoute({
   component: () => <SignIn />,
 });
 
-export const ResetPasswordRoute = createRoute({
-  path: '/auth/reset-password',
-  staticData: { pageTitle: 'Reset password', isAuth: false },
+export const RequestPasswordRoute = createRoute({
+  path: '/auth/request-password',
+  staticData: { pageTitle: 'Request password link', isAuth: false },
   getParentRoute: () => AuthRoute,
-  component: () => (
-    <AuthPage>
-      <ResetPasswordForm />
-    </AuthPage>
-  ),
+  component: () => <RequestPasswordForm />,
 });
 
-export const ResetPasswordWithTokenRoute = createRoute({
-  path: '/auth/reset-password/$token',
-  staticData: { pageTitle: 'Reset password', isAuth: false },
+export const CreatePasswordWithTokenRoute = createRoute({
+  path: '/auth/create-password/$token',
+  staticData: { pageTitle: 'Create password', isAuth: false },
   getParentRoute: () => AuthRoute,
-  component: () => <ResetPassword />,
+  component: () => <CreatePasswordForm />,
 });
 
-export const VerifyEmailRoute = createRoute({
-  path: '/auth/verify-email',
+export const RequestVerificationRoute = createRoute({
+  path: '/auth/request-verification',
   staticData: { pageTitle: 'Verify email', isAuth: false },
   getParentRoute: () => AuthRoute,
-  component: () => <VerifyEmail />,
+  component: () => <RequestVerification />,
 });
 
 export const VerifyEmailWithTokenRoute = createRoute({

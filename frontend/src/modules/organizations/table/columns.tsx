@@ -55,7 +55,7 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         sortable: false,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (row.membership?.role ? t(`common:${row.membership.role}`) : 'Not a member'),
+        renderCell: ({ row }) => (row.membership?.role ? t(`common:${row.membership.role}`) : <span className="text-muted">-</span>),
         width: 120,
         renderEditCell: ({ row, onRowChange }) =>
           renderSelect({
@@ -70,7 +70,7 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         sortable: false,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: () => '-',
+        renderCell: () => <span className="text-muted">-</span>,
         minWidth: 140,
       },
       {
@@ -79,7 +79,7 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         sortable: true,
         visible: !isMobile,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => dateShort(row.createdAt),
+        renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
         minWidth: 180,
       },
       {

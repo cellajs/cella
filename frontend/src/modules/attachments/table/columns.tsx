@@ -112,7 +112,7 @@ export const useColumns = (
       renderHeaderCell: HeaderCell,
       renderCell: ({ row, tabIndex }) => (
         <span tabIndex={tabIndex} className="group-hover:underline underline-offset-4 truncate font-light">
-          {row.filename || '-'}
+          {row.filename || <span className="text-muted">-</span>}
         </span>
       ),
     },
@@ -124,9 +124,10 @@ export const useColumns = (
       renderHeaderCell: HeaderCell,
       minWidth: 140,
       renderCell: ({ row, tabIndex }) => {
+        if (!row.contentType) return <span className="text-muted">-</span>;
         return (
           <span tabIndex={tabIndex} className="font-light">
-            {row.contentType || '-'}
+            {row.contentType}
           </span>
         );
       },
@@ -146,7 +147,7 @@ export const useColumns = (
       sortable: true,
       visible: !isSheet && !isMobile,
       renderHeaderCell: HeaderCell,
-      renderCell: ({ row }) => dateShort(row.createdAt),
+      renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
       minWidth: 180,
     },
   ];

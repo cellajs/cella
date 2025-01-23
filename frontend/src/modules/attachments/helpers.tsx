@@ -1,15 +1,14 @@
 import { onlineManager } from '@tanstack/react-query';
 import { t } from 'i18next';
-import { createToast } from '~/lib/toasts';
 import AttachmentsCarousel from '~/modules/attachments/carousel';
 import { type DialogT, dialog } from '~/modules/common/dialoger/state';
+import { createToast } from '~/modules/common/toaster';
 
-// TODO: this is a duplicate type?
-export type Attachments = { src: string; filename?: string; name?: string; fileType?: string };
+export type CarouselAttachment = { src: string; filename?: string; name?: string; fileType?: string };
 
 export const openAttachmentDialog = (
   attachment: number,
-  attachments: Attachments[],
+  attachments: CarouselAttachment[],
   saveInSearchParams = false,
   dialogOptions?: Omit<DialogT, 'id'>,
 ) => {

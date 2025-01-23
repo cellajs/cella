@@ -4,7 +4,7 @@ import { config } from 'config';
 import { Check, UserRoundX } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createToast } from '~/lib/toasts';
+import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';

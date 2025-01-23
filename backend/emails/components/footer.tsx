@@ -6,7 +6,7 @@ import { i18n } from '#/lib/i18n';
 export const Footer = () => (
   <Text
     style={{
-      color: '#6a737d',
+      color: '#777',
       fontSize: '0.75rem',
       textAlign: 'center' as const,
       marginTop: '2rem',

@@ -4,7 +4,7 @@ import { type RemoveMembersProps, type UpdateMembershipProp, removeMembers, upda
 import { config } from 'config';
 import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
-import { createToast } from '~/lib/toasts';
+import { createToast } from '~/modules/common/toaster';
 import { membersKeys } from '~/modules/memberships/query';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';

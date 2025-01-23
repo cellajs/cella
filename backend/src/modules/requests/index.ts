@@ -12,7 +12,7 @@ import { sendSlackMessage } from '#/lib/notification';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { RequestsFeedback } from '../../../emails/requests-feedback';
+import { MessageEmail } from '../../../emails/message';
 import { env } from '../../../env';
 import requestsRoutesConfig from './routes';
 
@@ -51,8 +51,8 @@ const requestsRoutes = app
       .returning();
 
     // slack notifications
-    if (type === 'waitlist') await sendSlackMessage('Join waitlist.', email);
-    if (type === 'newsletter') await sendSlackMessage('Newsletter', email);
+    if (type === 'waitlist') await sendSlackMessage('Join waitlist', email);
+    if (type === 'newsletter') await sendSlackMessage('Join newsletter', email);
     if (type === 'contact') await sendSlackMessage(`for contact from ${message}.`, email);
 
     return ctx.json({ success: true, data: createdAccessRequest }, 200);
@@ -100,15 +100,15 @@ const requestsRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   *  Send feedback letter to requests
+   *  Send message to new users
    */
-  .openapi(requestsRoutesConfig.sendFeedbackLetters, async (ctx) => {
+  .openapi(requestsRoutesConfig.sendMessage, async (ctx) => {
     const user = getContextUser();
     const { emails, subject, content } = ctx.req.valid('json');
 
     // Generate email HTML
     const emailHtml = await render(
-      RequestsFeedback({
+      MessageEmail({
         userLanguage: user.language,
         subject,
         content,

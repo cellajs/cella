@@ -2,8 +2,8 @@ import { BlockNoteSchema, type Dictionary, defaultBlockSpecs, defaultInlineConte
 import { blockTypeSelectItems, getDefaultReactSlashMenuItems } from '@blocknote/react';
 
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
-
 import { Notify, getSlashNotifySlashItem } from '~/modules/common/blocknote/custom-elements/notify';
+
 import type {
   BasicBlockBaseTypes,
   BasicBlockTypes,
@@ -14,9 +14,28 @@ import type {
   CustomBlockNoteSchema,
   CustomFormatToolBarConfig,
   MenusItemsTitle,
+  SlashIndexedItems,
 } from '~/modules/common/blocknote/types';
 
-// default config
+/**
+ *  Basic Configuration
+ */
+
+// Custom schema with block specifications and inline content (e.g., Notify block, Mention tag)
+export const customSchema = BlockNoteSchema.create({
+  blockSpecs: { ...defaultBlockSpecs, notify: Notify }, // Adds Notify block
+  inlineContentSpecs: { ...defaultInlineContentSpecs, mention: MentionSchema }, // Adds Mention tag
+});
+
+// Extend Blocknote types to include custom block types and menu titles
+declare module '~/modules/common/blocknote/types' {
+  export interface ExtendableBlocknoteTypes {
+    BlockTypes: BaseCustomBlockTypes;
+    ItemsTitle: BaseMenusItemsTitle;
+  }
+}
+
+// Default allowed block types and file types
 export const allowedFileTypes: BasicFileBlockTypes[] = ['image', 'video', 'audio', 'file'];
 export const allowedTypes: (BasicBlockBaseTypes | CellaCustomBlockTypes)[] = [
   'notify',
@@ -29,8 +48,8 @@ export const allowedTypes: (BasicBlockBaseTypes | CellaCustomBlockTypes)[] = [
   'numberedListItem',
   'checkListItem',
 ];
-export const sideMenuOpenOnTypes = ['summary', 'paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem'];
 
+// Mapping menu titles to block types
 export const menusTitleToAllowedType = {
   Image: 'image',
   Video: 'video',
@@ -49,16 +68,11 @@ export const menusTitleToAllowedType = {
   Paragraph: 'paragraph',
 };
 
-// Slash menu
-// set not more the 9 cos user cant use the num click to activate it
-export const customSlashIndexedItems: MenusItemsTitle[] = ['Image', 'Video', 'File', 'Bullet List', 'Numbered List', 'Check List', 'Notify', 'Emoji'];
+/**
+ *  Side Menu Configuration
+ */
 
-export const customSlashNotIndexedItems: MenusItemsTitle[] = ['Table', 'Audio', 'Heading 1', 'Heading 2', 'Heading 3', 'Paragraph', 'Code Block'];
-
-export const getSlashMenuItems = (editor: CustomBlockNoteSchema) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
-
-// SideMenu
-// blocks in array can be changed in the other types from this array
+// Blocks to witch can be switched
 export const customBlockTypeSelectItems: (BasicBlockTypes | CellaCustomBlockTypes)[] = [
   'heading',
   'paragraph',
@@ -67,10 +81,36 @@ export const customBlockTypeSelectItems: (BasicBlockTypes | CellaCustomBlockType
   'checkListItem',
 ];
 
+// Block types that trigger the side menu when selected
+export const sideMenuOpenOnTypes: (BasicBlockTypes | CellaCustomBlockTypes)[] = [
+  'paragraph',
+  'heading',
+  'bulletListItem',
+  'numberedListItem',
+  'checkListItem',
+];
+
+// Generate side menu items based on dictionary input
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
 
-// Formatting toolbar
-// removed text position left|center|right, also indentation
+/**
+ *  Slash Menu Configuration
+ */
+
+// Indexed items (max 9 for quick number-based selection)
+export const customSlashIndexedItems: SlashIndexedItems = ['Image', 'Video', 'File', 'Bullet List', 'Numbered List', 'Check List', 'Notify', 'Emoji'];
+
+// Non-indexed items (accessed via browsing)
+export const customSlashNotIndexedItems: MenusItemsTitle[] = ['Table', 'Audio', 'Heading 1', 'Heading 2', 'Heading 3', 'Paragraph', 'Code Block'];
+
+// Generate the complete Slash menu items list
+export const getSlashMenuItems = (editor: CustomBlockNoteSchema) => [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor)];
+
+/**
+ *  Formatting toolbar Configuration
+ */
+
+// Toolbar configuration settings
 export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
   blockTypeSelect: false,
   blockStyleSelect: true,
@@ -82,26 +122,11 @@ export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
   createLink: true,
 };
 
+// Text alignment options available in the Formatting Toolbar
 export const formattingToolBarTextAlignItems: BlockAlignTypes[] = ['left', 'center', 'right'];
+
+// Text styles available in the Formatting Toolbar
 export const formattingToolBarTextStyleSelect: BlockStyleTypes[] = ['bold', 'italic', 'underline', 'strike', 'code'];
-// blocks type can be changed between self
+
+// Blocks that can have formatting styles applied
 export const formattingToolBarStyleForBlocks: BasicBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checkListItem'];
-
-export const customSchema = BlockNoteSchema.create({
-  blockSpecs: {
-    ...defaultBlockSpecs,
-    notify: Notify, // Notify block
-  },
-  inlineContentSpecs: {
-    ...defaultInlineContentSpecs,
-    mention: MentionSchema, // Mention tag
-  },
-});
-
-//Extend the interface for additional Custom block types and menus Titles
-declare module '~/modules/common/blocknote/types' {
-  export interface ExtendableBlocknoteTypes {
-    BlockTypes: BaseCustomBlockTypes;
-    ItemsTitle: BaseMenusItemsTitle;
-  }
-}

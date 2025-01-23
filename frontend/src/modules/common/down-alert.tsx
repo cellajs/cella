@@ -41,7 +41,7 @@ export const DownAlert = () => {
 
   const offlineText = offlineAccess ? (
     <Trans
-      i18nKey="common:offline_mode.text"
+      i18nKey="common:offline_access.offline"
       t={t}
       components={{
         site_anchor: <button type="button" className="underline" onClick={cancelAlert} />,

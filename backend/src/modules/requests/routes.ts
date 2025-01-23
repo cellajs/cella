@@ -4,7 +4,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { idsQuerySchema } from '#/utils/schema/common-schemas';
-import { createRequestSchema, feedbackLetterBodySchema, getRequestsQuerySchema, requestSchema } from './schema';
+import { createRequestSchema, getRequestsQuerySchema, requestMessageBodySchema, requestSchema } from './schema';
 
 class RequestsRoutesConfig {
   public createRequest = createRouteConfig({
@@ -43,7 +43,7 @@ class RequestsRoutesConfig {
     guard: [isAuthenticated, systemGuard],
     tags: ['requests'],
     summary: 'Get list of requests',
-    description: 'Get list of requests on system level for waitlist, contact form or newsletter.',
+    description: 'Get list of requests on system level for waitlist, submit contact form or to join newsletter.',
     request: {
       query: getRequestsQuerySchema,
     },
@@ -60,26 +60,26 @@ class RequestsRoutesConfig {
     },
   });
 
-  public sendFeedbackLetters = createRouteConfig({
+  public sendMessage = createRouteConfig({
     method: 'post',
-    path: '/send-feedback',
+    path: '/send-message',
     guard: [isAuthenticated, systemGuard],
     tags: ['requests'],
-    summary: 'Feedback letter for users',
-    description: 'Sends a Feedback letter to users who have pending requests.',
+    summary: 'Message for pending users',
+    description: 'Sends a message to users who have pending requests.',
     request: {
       body: {
         required: true,
         content: {
           'application/json': {
-            schema: feedbackLetterBodySchema,
+            schema: requestMessageBodySchema,
           },
         },
       },
     },
     responses: {
       200: {
-        description: 'Requests feedback',
+        description: 'Message sent',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,
