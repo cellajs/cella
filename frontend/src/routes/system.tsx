@@ -10,7 +10,6 @@ import SystemPage from '~/modules/general/system-page';
 import { organizationsQueryOptions } from '~/modules/organizations/query';
 import { requestsQueryOptions } from '~/modules/requests/query';
 import { usersQueryOptions } from '~/modules/users/query';
-import type { ErrorType } from '#/lib/errors';
 
 import { AppRoute } from '~/routes/general';
 import { noDirectAccess } from '~/utils/no-direct-access';
@@ -36,7 +35,7 @@ export const SystemRoute = createRoute({
   beforeLoad: ({ location }) => noDirectAccess(location.pathname, 'system', '/users'),
   getParentRoute: () => AppRoute,
   component: () => <SystemPage />,
-  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
+  errorComponent: ({ error }) => <ErrorNotice error={error} />,
 });
 
 export const UsersTableRoute = createRoute({

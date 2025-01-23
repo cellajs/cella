@@ -7,33 +7,28 @@ import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
-import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
+import { TimeSpan, createDate } from 'oslo';
 import { env } from '../../../env';
 
 import { db } from '#/db/db';
 import { getContextUser, getMemberships } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
-import { setCookie } from 'hono/cookie';
-import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
-import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
-import { requestsTable } from '#/db/schema/requests';
-import { type TokenModel, tokensTable } from '#/db/schema/tokens';
+import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
-import { entityIdFields, entityTables, menuSections } from '#/entity-config';
-import { resolveEntity } from '#/lib/entity';
+import { entityIdFields, entityTables } from '#/entity-config';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
-import { sendSSEToUsers } from '#/lib/sse';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { CustomHono } from '#/types/common';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { insertMembership } from '../memberships/helpers/insert-membership';
 import { checkSlugAvailable } from './helpers/check-slug';
-import generalRouteConfig from './routes';
+import generalRoutesConfig from './routes';
+import { requestsTable } from '#/db/schema/requests';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
@@ -46,7 +41,7 @@ const generalRoutes = app
   /*
    * Get upload token
    */
-  .openapi(generalRouteConfig.getUploadToken, async (ctx) => {
+  .openapi(generalRoutesConfig.getUploadToken, async (ctx) => {
     const user = getContextUser();
     const { public: isPublic, organization } = ctx.req.valid('query');
 
@@ -66,7 +61,7 @@ const generalRoutes = app
   /*
    * Check if slug is available
    */
-  .openapi(generalRouteConfig.checkSlug, async (ctx) => {
+  .openapi(generalRoutesConfig.checkSlug, async (ctx) => {
     const { slug } = ctx.req.valid('json');
 
     const slugAvailable = await checkSlugAvailable(slug);
@@ -74,53 +69,9 @@ const generalRoutes = app
     return ctx.json({ success: slugAvailable }, 200);
   })
   /*
-   * Check token (token validation)
+   * Invite users to system
    */
-  .openapi(generalRouteConfig.checkToken, async (ctx) => {
-    const { token } = ctx.req.valid('json');
-
-    // Check if token exists
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, token)));
-    if (!tokenRecord) return errorResponse(ctx, 404, 'not_found', 'warn');
-
-    // TODO: we can remove this or we need this?
-    // const user = await getUserBy('email', tokenRecord.email);
-    // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
-
-    // For reset token: check if token has valid user
-    // if (tokenRecord.type === 'password_reset') {
-    //   const user = await getUserBy('email', tokenRecord.email);
-    //   if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
-    // }
-
-    // For system invitation token: check if user email is not already in the system
-    // if (tokenRecord.type === 'system_invitation') {
-    //   const user = await getUserBy('email', tokenRecord.email);
-    //   if (user) return errorResponse(ctx, 409, 'email_exists', 'error');
-    // }
-
-    const data = {
-      type: tokenRecord.type,
-      email: tokenRecord.email || '',
-      organizationName: '',
-      organizationSlug: '',
-    };
-
-    if (tokenRecord.type === 'membership_invitation' && tokenRecord.organizationId) {
-      const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
-      data.organizationName = organization.name;
-      data.organizationSlug = organization.slug;
-    }
-
-    return ctx.json({ success: true, data }, 200);
-  })
-  /*
-   * Invite users to the system
-   */
-  .openapi(generalRouteConfig.createInvite, async (ctx) => {
+  .openapi(generalRoutesConfig.createInvite, async (ctx) => {
     const { emails, role } = ctx.req.valid('json');
     const user = getContextUser();
 
@@ -170,120 +121,9 @@ const generalRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Accept invite token
-   */
-  .openapi(generalRouteConfig.acceptInvite, async (ctx) => {
-    const verificationToken = ctx.req.valid('param').token;
-    const { oauth } = ctx.req.valid('json');
-
-    const [token]: (TokenModel | undefined)[] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, verificationToken)))
-      .limit(1);
-
-    if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
-      return errorResponse(ctx, 401, 'invalid_token_or_expired', 'warn');
-    }
-    // Delete token
-    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
-    // If it is a system invitation, update user role
-    if (token.type === 'system_invitation') {
-      if (oauth) setCookie(ctx, 'oauth_invite_token', token.id);
-
-      return ctx.json({ success: true }, 200);
-    }
-
-    if (!token.organizationId) return errorResponse(ctx, 401, 'invalid_token', 'warn');
-
-    // check if user exists
-    const user = await getUserBy('email', token.email);
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
-
-    // Extract role and membershipInfo from the token, ensuring proper types
-    const { role, membershipInfo } = token as {
-      role: MembershipModel['role'];
-      membershipInfo?: typeof token.membershipInfo;
-    };
-
-    const [organization]: (OrganizationModel | undefined)[] = await db
-      .select()
-      .from(organizationsTable)
-      .where(and(eq(organizationsTable.id, token.organizationId)))
-      .limit(1);
-
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
-
-    const memberships = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
-
-    const existingMembership = memberships.find(({ userId }) => userId === user.id);
-
-    if (existingMembership && existingMembership.role !== role && !membershipInfo) {
-      await db
-        .update(membershipsTable)
-        .set({ role })
-        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
-
-      return ctx.json({ success: true }, 200);
-    }
-
-    // Insert organization membership
-    const orgMembership = await insertMembership({ user, role, entity: organization });
-
-    const newMenuItem = {
-      newItem: { ...organization, membership: orgMembership },
-      sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
-    };
-
-    // SSE with organization data, to update user's menu
-    sendSSEToUsers([user.id], 'add_entity', newMenuItem);
-    // SSE to to update members queries
-    sendSSEToUsers(
-      memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
-      'member_accept_invite',
-      { id: organization.id, slug: organization.slug },
-    );
-
-    if (membershipInfo) {
-      const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
-      const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
-
-      const targetEntity = await resolveEntity(targetEntityType, targetIdOrSlug);
-      // Resolve parentEntity if provided
-      const parentEntity = parentInfo ? await resolveEntity(parentInfo.entity, parentInfo.idOrSlug) : null;
-
-      if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetEntityType, { [targetEntityType]: targetIdOrSlug });
-
-      const [createdParentMembership, createdMembership] = await Promise.all([
-        parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
-        insertMembership({ user, role, entity: targetEntity, parentEntity }),
-      ]);
-
-      if (createdParentMembership && parentEntity) {
-        // SSE with parentEntity data, to update user's menu
-        sendSSEToUsers([user.id], 'add_entity', {
-          newItem: { ...parentEntity, membership: createdParentMembership },
-          sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
-        });
-      }
-
-      // SSE with entity data, to update user's menu
-      sendSSEToUsers([user.id], 'add_entity', {
-        newItem: { ...targetEntity, membership: createdMembership },
-        sectionName: menuSections.find((el) => el.entityType === targetEntity.entity)?.name,
-        ...(parentEntity && { parentSlug: parentEntity.slug }),
-      });
-    }
-
-    return ctx.json({ success: true, data: newMenuItem }, 200);
-  })
-  /*
    * Paddle webhook
    */
-  .openapi(generalRouteConfig.paddleWebhook, async (ctx) => {
+  .openapi(generalRoutesConfig.paddleWebhook, async (ctx) => {
     const signature = ctx.req.header('paddle-signature');
     const rawRequestBody = String(ctx.req.raw.body);
 
@@ -314,7 +154,7 @@ const generalRoutes = app
   /*
    * Get suggestions
    */
-  .openapi(generalRouteConfig.getSuggestionsConfig, async (ctx) => {
+  .openapi(generalRoutesConfig.getSuggestionsConfig, async (ctx) => {
     const { q, type } = ctx.req.valid('query');
 
     const user = getContextUser();
@@ -387,7 +227,7 @@ const generalRoutes = app
   /*
    * Unsubscribe a user by token
    */
-  .openapi(generalRouteConfig.unsubscribeUser, async (ctx) => {
+  .openapi(generalRoutesConfig.unsubscribeUser, async (ctx) => {
     const { token } = ctx.req.valid('query');
 
     // Check if token exists

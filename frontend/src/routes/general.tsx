@@ -5,17 +5,13 @@ import { config } from 'config';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch, onError } from '~/lib/query-client';
-import { queryClient } from '~/lib/router';
-import AcceptInvite from '~/modules/common/accept-invite';
 import ErrorNotice from '~/modules/common/error-notice';
 import { PublicLayout } from '~/modules/common/public-layout';
 import { Root } from '~/modules/common/root';
 import Spinner from '~/modules/common/spinner';
 import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
 import UnsubscribePage from '~/modules/users/unsubscribe-page';
-import { AuthRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import type { ErrorType } from '#/lib/errors';
 
 // Lazy load main App component, which is behind authentication
 const AppLayout = lazy(() => import('~/modules/common/app-layout'));
@@ -28,7 +24,7 @@ const errorSearchSchema = z.object({
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
-  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
+  errorComponent: ({ error }) => <ErrorNotice error={error} />,
 });
 
 export const PublicRoute = createRoute({
@@ -93,7 +89,7 @@ export const AppRoute = createRoute({
       if (!onlineManager.isOnline() && storedUser) return console.info('Continuing as offline user with session');
 
       console.info('Not authenticated -> redirect to sign in');
-      throw redirect({ to: '/auth/sign-in', search: { redirect: location.pathname } });
+      throw redirect({ to: '/auth/authenticate', search: { redirect: location.pathname } });
     }
 
     // If location is root and has user, redirect to home
@@ -107,22 +103,6 @@ export const ErrorNoticeRoute = createRoute({
   staticData: { pageTitle: 'Error', isAuth: false },
   getParentRoute: () => rootRoute,
   component: () => <ErrorNotice />,
-});
-
-export const AcceptInviteRoute = createRoute({
-  path: '/auth/invitation/$token',
-  staticData: { pageTitle: 'Accept invite', isAuth: true },
-  getParentRoute: () => AuthRoute,
-  beforeLoad: async ({ params }) => {
-    try {
-      const queryOptions = meQueryOptions();
-      await queryClient.fetchQuery(queryOptions);
-    } catch {
-      console.info('Not authenticated (silent check) -> redirect to sign in');
-      throw redirect({ to: '/auth/sign-in', search: { token: params.token } });
-    }
-  },
-  component: () => <AcceptInvite />,
 });
 
 export const UnsubscribeRoute = createRoute({

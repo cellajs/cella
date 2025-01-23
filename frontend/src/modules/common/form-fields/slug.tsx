@@ -1,4 +1,3 @@
-import type { Entity } from 'backend/types/common';
 import { config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -10,6 +9,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import InputFormField from '~/modules/common/form-fields/input';
 import { useCheckSlugMutation } from '~/modules/general/query-mutations';
 import { Button } from '~/modules/ui/button';
+import type { Entity } from '~/types/common';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

@@ -1,5 +1,5 @@
 import { config } from 'config';
-import type { Step } from '~/modules/auth';
+import type { Step } from '~/modules/auth/auth-steps';
 
 export const shouldShowDivider = (hasPasskey: boolean, step: Step): boolean => {
   const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
@@ -13,7 +13,7 @@ export const shouldShowDivider = (hasPasskey: boolean, step: Step): boolean => {
     // Case 1: Password is enabled with either (Passkey + user hasPasskey) or OAuth
     (isPasswordEnabled && ((isPasskeyEnabled && hasPasskey) || isOAuthEnabled)) ||
     // Case 2: OAuth are enabled, and the current step is 'check'
-    (isOAuthEnabled && step === 'check')
+    (isOAuthEnabled && step === 'checkEmail')
   );
 };
 

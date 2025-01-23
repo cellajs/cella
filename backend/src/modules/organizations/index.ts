@@ -290,7 +290,7 @@ const organizationsRoutes = app
         .where(eq(organizationsTable.id, membershipsTable.organizationId));
       const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${member.unsubscribeToken}`;
 
-      // generating email html
+      // Generate and send email
       const emailHtml = await render(
         NewsletterEmail({
           userLanguage: member.language,

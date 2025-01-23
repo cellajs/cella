@@ -3,14 +3,14 @@ import { config } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Step } from '~/modules/auth';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/modules/auth/api';
-import { acceptInvite } from '~/modules/general/api';
+import { acceptInvite } from '~/modules/auth/api';
+import type { Step } from '~/modules/auth/auth-steps';
 import { Button } from '~/modules/ui/button';
 import { passkeyAuth } from '~/modules/users/helpers';
-import { SignInRoute } from '~/routes/auth';
+import { AuthenticateRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
-import type { EnabledOauthProviderOptions } from '#/types/common';
+import type { EnabledOauthProvider } from '~/types/common';
 
 export const mapOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },
@@ -21,7 +21,7 @@ export const mapOauthProviders = [
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
 interface OauthOptions {
-  id: EnabledOauthProviderOptions;
+  id: EnabledOauthProvider;
   name: string;
   url: string;
 }
@@ -37,13 +37,13 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
   const navigate = useNavigate();
   const { mode } = useThemeStore();
   const { token } = useSearch({
-    from: SignInRoute.id,
+    from: AuthenticateRoute.id,
   });
 
   const [loading, setLoading] = useState(false);
 
   const searchResult = useSearch({
-    from: SignInRoute.id,
+    from: AuthenticateRoute.id,
   });
   const redirectPath = searchResult.redirect ?? config.defaultRedirectPath;
 

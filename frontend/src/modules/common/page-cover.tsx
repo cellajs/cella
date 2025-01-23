@@ -1,5 +1,4 @@
 import { onlineManager } from '@tanstack/react-query';
-import type { Entity } from 'backend/types/common';
 import { Upload } from 'lucide-react';
 import { Suspense, memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +7,7 @@ import { dispatchCustomEvent } from '~/lib/custom-events';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
-import { UploadType } from '~/types/common';
+import { type Entity, UploadType } from '~/types/common';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 // Lazy load the upload component

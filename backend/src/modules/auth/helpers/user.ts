@@ -5,7 +5,7 @@ import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import type { OauthProviderOptions } from '#/types/common';
+import type { EnabledOauthProvider } from '#/types/common';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { setSessionCookie } from './cookies';
 import { insertOauthAccount } from './oauth';
@@ -15,18 +15,16 @@ import { sendVerificationEmail } from './verify-email';
 export const handleCreateUser = async (
   ctx: Context,
   data: Omit<InsertUserModel, 'unsubscribeToken'>,
-  options?: {
-    isInvite?: boolean;
-    provider?: {
-      id: OauthProviderOptions;
-      userId: string;
-    };
+  options: {
+    isInvite: boolean;
+    provider?: { id: EnabledOauthProvider; userId: string };
     redirectUrl?: string;
   },
 ) => {
   // If sign up is disabled, return an error
-  if (!config.has.registrationEnabled && !options?.isInvite) return errorResponse(ctx, 403, 'sign_up_disabled', 'warn');
-
+  if (!config.has.registrationEnabled && !options.isInvite) {
+    return errorResponse(ctx, 403, 'sign_up_disabled', 'warn');
+  }
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(data.slug);
 
@@ -48,7 +46,7 @@ export const handleCreateUser = async (
       .returning();
 
     // If a provider is passed, insert oauth account
-    if (options?.provider) {
+    if (options.provider) {
       await insertOauthAccount(data.id, options.provider.id, options.provider.userId);
     }
 
@@ -56,10 +54,10 @@ export const handleCreateUser = async (
     if (!data.emailVerified) {
       sendVerificationEmail(data.email);
     } else {
-      await setSessionCookie(ctx, user.id, options?.provider?.id || 'password');
+      await setSessionCookie(ctx, user.id, options.provider?.id || 'password');
     }
 
-    if (options?.redirectUrl) return ctx.redirect(options.redirectUrl, 302);
+    if (options.redirectUrl) return ctx.redirect(options.redirectUrl, 302);
 
     return ctx.json({ success: true }, 200);
   } catch (error) {
@@ -69,7 +67,7 @@ export const handleCreateUser = async (
     }
 
     if (error instanceof Error) {
-      const strategy = options?.provider ? options.provider.id : 'password';
+      const strategy = options.provider ? options.provider.id : 'password';
       const errorMessage = error.message;
       logEvent('Error creating user', { strategy, errorMessage }, 'error');
     }

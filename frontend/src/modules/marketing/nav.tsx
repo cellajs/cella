@@ -106,7 +106,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
               <Github strokeWidth={config.theme.strokeWidth} />
             </Button>
 
-            <Link to="/auth/sign-in" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
+            <Link to="/auth/authenticate" preload={false} className={cn('sm:ml-2 max-xs:hidden"', buttonVariants())}>
               {t('common:sign_in')}
             </Link>
           </div>

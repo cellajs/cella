@@ -3,9 +3,9 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { pageEntityTypeSchema, slugSchema, tokenSchema } from '#/utils/schema/common-schemas';
+import { pageEntityTypeSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
-import { acceptInviteBodySchema, acceptInviteResponseSchema, checkTokenSchema, inviteBodySchema, suggestionsSchema } from './schema';
+import { inviteBodySchema, suggestionsSchema } from './schema';
 
 class GeneralRoutesConfig {
   public unsubscribeUser = createRouteConfig({
@@ -13,7 +13,7 @@ class GeneralRoutesConfig {
     path: '/unsubscribe',
     guard: isPublicAccess,
     middleware: [tokenLimiter],
-    tags: ['users'],
+    tags: ['general'],
     summary: 'Unsubscribe',
     description: 'Unsubscribe using a personal unsubscribe token.',
     request: {
@@ -90,37 +90,6 @@ class GeneralRoutesConfig {
     },
   });
 
-  public checkToken = createRouteConfig({
-    method: 'post',
-    path: '/check-token',
-    middleware: [tokenLimiter],
-    guard: isPublicAccess,
-    tags: ['general'],
-    summary: 'Token validation check',
-    description:
-      'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
-    request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: tokenSchema,
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Token is valid',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(checkTokenSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
   public createInvite = createRouteConfig({
     method: 'post',
     path: '/invite',
@@ -143,37 +112,6 @@ class GeneralRoutesConfig {
         content: {
           'application/json': {
             schema: successWithoutDataSchema,
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public acceptInvite = createRouteConfig({
-    method: 'post',
-    path: '/invite/{token}',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter],
-    tags: ['general'],
-    summary: 'Accept invitation',
-    description: 'Accept invitation token',
-    request: {
-      params: tokenSchema,
-      body: {
-        content: {
-          'application/json': {
-            schema: acceptInviteBodySchema,
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Invitation was accepted',
-        content: {
-          'application/json': {
-            schema: successWithDataSchema(acceptInviteResponseSchema),
           },
         },
       },

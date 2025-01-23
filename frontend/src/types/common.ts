@@ -1,5 +1,7 @@
 import type { UppyFile } from '@uppy/core';
-import type { checkTokenSchema, membersSchema } from 'backend/modules/general/schema';
+import type { attachmentSchema } from 'backend/modules/attachments/schema';
+import type { checkTokenSchema } from 'backend/modules/auth/schema';
+import type { membersSchema } from 'backend/modules/general/schema';
 import type { membershipInfoSchema, membershipSchema } from 'backend/modules/memberships/schema';
 import type { invitesInfoSchema, organizationSchema, organizationWithMembershipSchema } from 'backend/modules/organizations/schema';
 import type { requestSchema } from 'backend/modules/requests/schema';
@@ -12,19 +14,20 @@ import type { z } from 'zod';
 import type { UppyBody, UppyMeta } from '~/lib/imado';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { meClient } from '~/modules/users/api';
-import type { attachmentSchema } from '#/modules/attachments/schema';
-import type { EnabledOauthProviderOptions } from '#/types/common';
 
 // Core types
 export type Entity = (typeof config.entityTypes)[number];
 export type ContextEntity = (typeof config.contextEntityTypes)[number];
 export type PageEntity = (typeof config.pageEntityTypes)[number];
+export type ProductEntity = (typeof config.productEntityTypes)[number];
 
 export type User = z.infer<typeof userSchema>;
 export type LimitedUser = z.infer<typeof limitedUserSchema>;
 
+export type EnabledOauthProvider = (typeof config.enabledOauthProviders)[number];
+
 export type Session = Extract<InferResponseType<(typeof meClient.index)['$get']>, { data: unknown }>['data']['sessions'][number];
-export type MeUser = User & { sessions: Session[]; passkey: boolean; oauth: EnabledOauthProviderOptions[] };
+export type MeUser = User & { sessions: Session[]; passkey: boolean; oauth: EnabledOauthProvider[] };
 export type UserMenu = Extract<InferResponseType<(typeof meClient.menu)['$get']>, { data: unknown }>['data'];
 export type UserMenuItem = UserMenu[keyof UserMenu][number];
 

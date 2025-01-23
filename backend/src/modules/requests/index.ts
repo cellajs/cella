@@ -115,7 +115,7 @@ const requestsRoutes = app
     const user = getContextUser();
     const { emails, subject, content } = ctx.req.valid('json');
 
-    // Generate email HTML
+    // Generate and send email
     const emailHtml = await render(
       MessageEmail({
         userLanguage: user.language,

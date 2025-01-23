@@ -3,15 +3,15 @@ import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-reac
 import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ApiError } from '~/lib/api';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { MainFooter } from '~/modules/common/main-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import type { ErrorType } from '#/lib/errors';
 
 interface ErrorNoticeProps {
-  error?: ErrorType;
+  error?: ApiError | Error;
   resetErrorBoundary?: () => void;
   isRootLevel?: boolean;
 }
@@ -22,7 +22,7 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
 
   const dateNow = new Date().toUTCString();
-  const severity = error?.severity || severityFromQuery;
+  const severity = error && 'status' in error ? error.severity : severityFromQuery;
 
   const [showError, setShowError] = useState(false);
 
@@ -52,28 +52,29 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
   const getErrorTitle = () => {
     if (errorFromQuery) return t(`common:error.${errorFromQuery}`);
 
-    // Check if the error has an entityType
-    if (error?.entityType) return t(`common:error.resource_${error.type}`, { resource: t(error.entityType) });
-    // If no entityType, check if the error has a type
-    if (error?.type) return t(`common:error.${error.type}`);
+    if (!error) return;
 
-    if (error?.message) return error.message;
-    if (errorFromQuery) return errorFromQuery;
-    // Default error message if none of the above conditions are met
-    return t('common:error.error');
+    if ('status' in error) {
+      if (error.entityType) return t(`common:error.resource_${error.type}`, { resource: t(error.entityType) });
+      if (error.type) return t(`common:error.${error.type}`);
+      if (error.message) return error.message;
+    }
+
+    if (error.name) return error.name;
   };
 
-  const getErrorDescription = () => {
+  const getErrorText = () => {
     if (errorFromQuery) return t(`common:error.${errorFromQuery}.text`);
 
-    // Check if the error has an entityType
-    if (error?.entityType) return t(`common:error.resource_${error.type}.text`, { resource: error.entityType });
-    // If no entityType, check if error has a type
-    if (error?.type) return t(`common:error.${error.type}.text`);
+    if (!error) return;
 
-    if (error?.message) return error?.message;
-    // Fallback to a generic message if none of the above match
-    return t('common:error.reported_try_or_contact');
+    if ('status' in error) {
+      // Check if the error has an entityType
+      if (error.entityType) return t(`common:error.resource_${error.type}.text`, { resource: error.entityType });
+      // If no entityType, check if error has a type
+      if (error.type) return t(`common:error.${error.type}.text`);
+      if (error.message) return error.message;
+    }
   };
 
   return (
@@ -81,14 +82,14 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
       <div className="mt-auto mb-auto">
         <Card className="max-w-[36rem] m-4">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl mb-2">{getErrorTitle()}</CardTitle>
+            <CardTitle className="text-2xl mb-2">{getErrorTitle() || t('common:error.error')}</CardTitle>
             <CardDescription>
-              <span>{getErrorDescription()}</span>
+              <span>{getErrorText() || t('common:error.reported_try_or_contact')}</span>
               <span className="ml-1">{severity === 'warn' && t('common:error.contact_mistake')}</span>
               <span className="ml-1">{severity === 'error' && t('common:error.try_again_later')}</span>
             </CardDescription>
           </CardHeader>
-          {error && (
+          {error && 'status' in error && (
             <CardContent className="whitespace-pre-wrap text-red-600 font-mono">
               {error.type && !showError && (
                 <Button variant="link" size="sm" onClick={() => setShowError(true)} className="whitespace-pre-wrap w-full text-red-600">

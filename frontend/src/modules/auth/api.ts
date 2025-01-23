@@ -1,5 +1,6 @@
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
+import type { EnabledOauthProvider } from '~/types/common';
 import { authHc } from '#/modules/auth/hc';
 
 // Create Hono clients to make requests to the backend
@@ -96,6 +97,33 @@ export const createPassword = async ({ token, password }: CreatePasswordProps) =
   });
 
   await handleResponse(response);
+};
+
+// Check token validation
+export const checkToken = async (token: string) => {
+  const response = await client['check-token'].$post({
+    json: { token },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+export interface AcceptInviteProps {
+  token: string;
+  password?: string;
+  oauth?: EnabledOauthProvider | undefined;
+}
+
+// Accept an invitation
+export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps) => {
+  const response = await client['accept-invite'][':token'].$post({
+    param: { token },
+    json: { password, oauth },
+  });
+
+  const json = await handleResponse(response);
+  return json.data;
 };
 
 // Stop impersonation session, returning to user admin page

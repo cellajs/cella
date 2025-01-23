@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from '@tanstack/react-router';
-import { authBodySchema } from 'backend/modules/auth/schema';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { emailPasswordBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
@@ -14,22 +14,26 @@ import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { AuthenticateRoute } from '~/routes/auth';
 import type { TokenData } from '~/types/common';
-import type { TokenType } from './api';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 
-const formSchema = authBodySchema;
+const formSchema = emailPasswordBodySchema;
 
-export const SignUpForm = ({
-  tokenData,
-  email,
-  resetToInitialStep,
-}: { tokenData: (TokenData & TokenType) | null; email: string; resetToInitialStep: () => void }) => {
+interface Props {
+  tokenData: TokenData | null;
+  email: string;
+  resetSteps: () => void;
+  emailEnabled: boolean;
+}
+
+export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const { token } = useSearch({ from: AuthenticateRoute.id });
   const { mutate: signUp, isPending } = useSignUpMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -40,22 +44,18 @@ export const SignUpForm = ({
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (formValues: z.infer<typeof formSchema>) => {
     signUp(
-      {
-        ...values,
-        token: tokenData?.token,
-      },
+      { ...formValues, token },
       {
         onSuccess: () => {
-          const to = tokenData ? '/auth/invitation/$token' : '/auth/request-verification';
+          // Redirect to organization invitation page if token is present
+          const to = token ? '/auth/invitation/$token' : '/auth/request-verification';
 
           navigate({
             to,
             replace: true,
-            params: {
-              token: tokenData?.token,
-            },
+            params: { token },
           });
         },
       },
@@ -67,7 +67,7 @@ export const SignUpForm = ({
       <h1 className="text-2xl text-center">
         {tokenData ? t('common:invite_create_account') : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`} <br />
         {!tokenData && (
-          <Button variant="ghost" onClick={resetToInitialStep} className="font-light mt-2 text-xl">
+          <Button variant="ghost" onClick={resetSteps} className="font-light mt-2 text-xl">
             {email}
             <ChevronDown size={16} className="ml-2" />
           </Button>
@@ -76,42 +76,44 @@ export const SignUpForm = ({
 
       <LegalNotice email={email} />
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem className="hidden">
-              <FormControl>
-                <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            // Custom css due to html injection by browser extensions
-            <FormItem className="gap-0">
-              <FormControl>
-                <div className="relative">
-                  <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
-                  <Suspense>
-                    <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
-                  </Suspense>
-                </div>
-              </FormControl>
-              <FormMessage className="mt-2" />
-            </FormItem>
-          )}
-        />
-        <SubmitButton loading={isPending} className="w-full">
-          {t('common:sign_up')}
-          <ArrowRight size={16} className="ml-2" />
-        </SubmitButton>
-      </form>
+      {emailEnabled && (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="hidden">
+                <FormControl>
+                  <Input {...field} type="email" disabled={true} readOnly={true} placeholder={t('common:email')} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              // Custom css due to html injection by browser extensions
+              <FormItem className="gap-0">
+                <FormControl>
+                  <div className="relative">
+                    <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
+                    <Suspense>
+                      <PasswordStrength password={form.getValues('password') || ''} minLength={8} />
+                    </Suspense>
+                  </div>
+                </FormControl>
+                <FormMessage className="mt-2" />
+              </FormItem>
+            )}
+          />
+          <SubmitButton loading={isPending} className="w-full">
+            {t('common:sign_up')}
+            <ArrowRight size={16} className="ml-2" />
+          </SubmitButton>
+        </form>
+      )}
     </Form>
   );
 };

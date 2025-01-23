@@ -5,7 +5,7 @@ import { auth } from '#/db/lucia';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { CustomHono, type EnabledOauthProviderOptions } from '#/types/common';
+import { CustomHono, type EnabledOauthProvider } from '#/types/common';
 import { removeSessionCookie } from '../auth/helpers/cookies';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
@@ -49,7 +49,7 @@ const meRoutes = app
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
-      .filter((provider): provider is EnabledOauthProviderOptions => config.enabledOauthProviders.includes(provider as EnabledOauthProviderOptions));
+      .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
 
     // Update last visit date
     await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
@@ -220,7 +220,7 @@ const meRoutes = app
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
-      .filter((provider): provider is EnabledOauthProviderOptions => config.enabledOauthProviders.includes(provider as EnabledOauthProviderOptions));
+      .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
     logEvent('User updated', { user: updatedUser.id });
 
     const data = {

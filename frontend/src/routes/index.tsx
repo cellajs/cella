@@ -1,10 +1,11 @@
 import type { NavItemId } from '~/nav-config';
 import {
-  AuthRoute,
+  AcceptInviteRoute,
+  AuthLayoutRoute,
+  AuthenticateRoute,
   CreatePasswordWithTokenRoute,
   RequestPasswordRoute,
   RequestVerificationRoute,
-  SignInRoute,
   SignOutRoute,
   VerifyEmailWithTokenRoute,
 } from '~/routes/auth';
@@ -13,7 +14,7 @@ import { AboutRoute, AccessibilityRoute, ContactRoute, LegalRoute } from '~/rout
 import { OrganizationAttachmentsRoute, OrganizationMembersRoute, OrganizationRoute, OrganizationSettingsRoute } from '~/routes/organizations';
 import { MetricsRoute, OrganizationsTableRoute, RequestsTableRoute, SystemRoute, UsersTableRoute } from '~/routes/system';
 import { UserProfileRoute, UserSettingsRoute } from '~/routes/users';
-import { AcceptInviteRoute, AppRoute, ErrorNoticeRoute, PublicRoute, UnsubscribeRoute, rootRoute } from './general';
+import { AppRoute, ErrorNoticeRoute, PublicRoute, UnsubscribeRoute, rootRoute } from './general';
 
 export const routeTree = rootRoute.addChildren([
   PublicRoute.addChildren([
@@ -24,8 +25,8 @@ export const routeTree = rootRoute.addChildren([
     AccessibilityRoute,
     ErrorNoticeRoute,
     SignOutRoute,
-    AuthRoute.addChildren([
-      SignInRoute,
+    AuthLayoutRoute.addChildren([
+      AuthenticateRoute,
       RequestPasswordRoute,
       CreatePasswordWithTokenRoute,
       RequestVerificationRoute,

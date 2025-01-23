@@ -54,7 +54,7 @@ export const onError = (error: Error) => {
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
       const redirectOptions: { to: string; search?: { redirect: string } } = {
-        to: '/auth/sign-in',
+        to: '/auth/authenticate',
       };
 
       // Save the current path as a redirect

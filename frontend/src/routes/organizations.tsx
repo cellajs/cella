@@ -12,7 +12,6 @@ import { organizationQueryOptions } from '~/modules/organizations/query';
 import { AppRoute } from '~/routes/general';
 import type { Organization as OrganizationType } from '~/types/common';
 import { noDirectAccess } from '~/utils/no-direct-access';
-import type { ErrorType } from '#/lib/errors';
 import { attachmentsQuerySchema } from '#/modules/attachments/schema';
 
 //Lazy-loaded components
@@ -41,7 +40,7 @@ export const OrganizationRoute = createRoute({
     return { organization };
   },
   getParentRoute: () => AppRoute,
-  errorComponent: ({ error }) => <ErrorNotice error={error as ErrorType} />,
+  errorComponent: ({ error }) => <ErrorNotice error={error} />,
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationRoute.id });
     return (
