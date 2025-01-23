@@ -110,6 +110,17 @@ export const deleteSelf = async () => {
   await handleResponse(response);
 };
 
+export type NewsLetterToSelfBody = Parameters<(typeof meClient)['send-newsletter']['$post']>['0']['json'];
+
+// Send newsletter to self
+export const sendNewsletterToSelf = async (body: NewsLetterToSelfBody) => {
+  const response = await meClient['send-newsletter'].$post({
+    json: body,
+  });
+  const json = await handleResponse(response);
+  return json.success;
+};
+
 // Terminate user sessions
 export const deleteMySessions = async (sessionIds: string[]) => {
   const response = await meClient.sessions.$delete({

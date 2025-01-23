@@ -7,7 +7,6 @@ import { config } from 'config';
 import { render } from 'jsx-email';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/util';
 import { getContextUser, getMemberships } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
@@ -21,7 +20,6 @@ import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { NewsletterEmail } from '../../../emails/newsletter';
-import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import organizationRoutesConfig from './routes';
@@ -254,69 +252,56 @@ const organizationsRoutes = app
    */
   .openapi(organizationRoutesConfig.sendNewsletterEmail, async (ctx) => {
     const user = getContextUser();
-    const { organizationIds, subject, content } = ctx.req.valid('json');
+    const { organizationIds, subject, content, roles } = ctx.req.valid('json');
 
-    // For test purposes
-    if (env.NODE_ENV === 'development') {
-      const unsafeUser = await getUserBy('id', user.id, 'unsafe');
-      const unsubscribeLink = unsafeUser ? `${config.backendUrl}/unsubscribe?token=${unsafeUser.unsubscribeToken}` : '';
+    // Get members
+    const organizationsMembersEmails = await db
+      .select({
+        membershipId: membershipsTable.userId,
+        email: usersTable.email,
+        unsubscribeToken: usersTable.unsubscribeToken,
+        newsletter: usersTable.newsletter,
+        language: usersTable.language,
+      })
+      .from(membershipsTable)
+      .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
+      // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
+      .where(
+        and(
+          eq(membershipsTable.type, 'organization'),
+          inArray(membershipsTable.organizationId, organizationIds),
+          inArray(membershipsTable.role, roles),
+        ),
+      );
 
-      // Generate email HTML
+    if (!organizationsMembersEmails.length) return errorResponse(ctx, 404, 'There is no members in organizations', 'warn', 'organization');
+
+    if (organizationsMembersEmails.length === 1 && user.email === organizationsMembersEmails[0].email)
+      return errorResponse(ctx, 400, 'Only receiver is sender', 'warn', 'organization');
+
+    for (const member of organizationsMembersEmails) {
+      if (!member.newsletter) continue;
+      const [organization] = await db
+        .select({
+          name: organizationsTable.name,
+        })
+        .from(organizationsTable)
+        .innerJoin(membershipsTable, and(eq(membershipsTable.userId, member.membershipId)))
+        .where(eq(organizationsTable.id, membershipsTable.organizationId));
+      const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${member.unsubscribeToken}`;
+
+      // generating email html
       const emailHtml = await render(
         NewsletterEmail({
-          userLanguage: user.language,
+          userLanguage: member.language,
           subject,
-          content: user.newsletter ? updateBlocknoteHTML(content) : 'You`ve unsubscribed from news letters',
+          content: updateBlocknoteHTML(content),
           unsubscribeLink,
-          orgName: 'SOME NAME',
+          orgName: organization?.name ?? 'Organization',
         }),
       );
 
-      emailSender.send(env.SEND_ALL_TO_EMAIL ?? user.email, subject, emailHtml);
-    } else {
-      // Get members
-      const organizationsMembersEmails = await db
-        .select({
-          membershipId: membershipsTable.userId,
-          email: usersTable.email,
-          unsubscribeToken: usersTable.unsubscribeToken,
-          newsletter: usersTable.newsletter,
-          language: usersTable.language,
-        })
-        .from(membershipsTable)
-        .innerJoin(usersTable, and(eq(usersTable.id, membershipsTable.userId)))
-        // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
-        .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, organizationIds)));
-
-      if (!organizationsMembersEmails.length) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
-
-      if (organizationsMembersEmails.length === 1 && user.email === organizationsMembersEmails[0].email)
-        return errorResponse(ctx, 400, 'Only receiver is sender', 'warn', 'organization');
-
-      for (const member of organizationsMembersEmails) {
-        if (!member.newsletter) continue;
-        const [organization] = await db
-          .select({
-            name: organizationsTable.name,
-          })
-          .from(organizationsTable)
-          .innerJoin(membershipsTable, and(eq(membershipsTable.userId, member.membershipId)))
-          .where(eq(organizationsTable.id, membershipsTable.organizationId));
-        const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${member.unsubscribeToken}`;
-
-        // generating email html
-        const emailHtml = await render(
-          NewsletterEmail({
-            userLanguage: member.language,
-            subject,
-            content: updateBlocknoteHTML(content),
-            unsubscribeLink,
-            orgName: organization?.name ?? 'Organization',
-          }),
-        );
-
-        emailSender.send(member.email, subject, emailHtml, user.email);
-      }
+      emailSender.send(member.email, subject, emailHtml, user.email);
     }
 
     return ctx.json({ success: true }, 200);

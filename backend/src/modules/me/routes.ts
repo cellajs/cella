@@ -1,9 +1,9 @@
 import { createRouteConfig } from '#/lib/route-config';
-import { isAuthenticated } from '#/middlewares/guard';
+import { isAuthenticated, systemGuard } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { idsQuerySchema } from '#/utils/schema/common-schemas';
 import { updateUserBodySchema, userSchema } from '../users/schema';
-import { leaveEntityQuerySchema, meUserSchema, signUpInfo, userMenuSchema } from './schema';
+import { leaveEntityQuerySchema, meUserSchema, newsletterToSelfSchema, signUpInfo, userMenuSchema } from './schema';
 
 class MeRoutesConfig {
   public getSelf = createRouteConfig({
@@ -67,6 +67,36 @@ class MeRoutesConfig {
     responses: {
       200: {
         description: 'User deleted',
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public sendNewsletterEmailToSelf = createRouteConfig({
+    method: 'post',
+    path: '/send-newsletter',
+    guard: [isAuthenticated, systemGuard],
+    tags: ['me'],
+    summary: 'Newsletter for self',
+    description: 'Sends to self, a newsletter.',
+    request: {
+      body: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: newsletterToSelfSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'News letter sended',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,
