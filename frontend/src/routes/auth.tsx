@@ -23,9 +23,9 @@ export const SignInRoute = createRoute({
   validateSearch: z.object({ redirect: z.string().optional(), token: z.string().optional() }),
   staticData: { pageTitle: 'Sign in', isAuth: false },
   getParentRoute: () => AuthRoute,
-  beforeLoad: async ({ cause }) => {
+  beforeLoad: async ({ cause, search }) => {
     // Only check auth if entering to prevent loop
-    if (cause !== 'enter') return;
+    if (cause !== 'enter' || search.redirect) return;
 
     // If stored user, redirect to home
     const storedUser = useUserStore.getState().user;
