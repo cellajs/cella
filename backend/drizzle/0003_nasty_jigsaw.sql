@@ -1,0 +1,2 @@
+ALTER TABLE "requests" ADD COLUMN "token" varchar;--> statement-breakpoint
+ALTER TABLE "requests" ADD CONSTRAINT "requests_token_tokens_id_fk" FOREIGN KEY ("token") REFERENCES "public"."tokens"("id") ON DELETE cascade ON UPDATE no action;

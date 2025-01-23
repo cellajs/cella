@@ -4,14 +4,16 @@ import { createSelectSchema } from 'drizzle-zod';
 import { requestsTable } from '#/db/schema/requests';
 import { paginationQuerySchema } from '#/utils/schema/common-schemas';
 
-export const requestSchema = z.object({
+const baseRequestSchema = z.object({
   ...createSelectSchema(requestsTable).shape,
   createdAt: z.string(),
 });
 
+export const requestSchema = baseRequestSchema.omit({ token: true }).extend({ requestPending: z.boolean() });
+
 export const createRequestSchema = z.object({
   email: z.string().min(1).email(),
-  type: requestSchema.shape.type,
+  type: baseRequestSchema.shape.type,
   message: z.string().nullable(),
 });
 
