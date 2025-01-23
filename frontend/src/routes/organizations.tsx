@@ -8,7 +8,6 @@ import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import ErrorNotice from '~/modules/common/error-notice';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { baseEntityRoutes } from '~/nav-config';
 
 import { AppRoute } from '~/routes/general';
 import type { Organization as OrganizationType } from '~/types/common';
@@ -32,7 +31,7 @@ export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, so
 });
 
 export const OrganizationRoute = createRoute({
-  path: baseEntityRoutes.organization,
+  path: '/$idOrSlug',
   staticData: { pageTitle: 'Organization', isAuth: true },
   beforeLoad: async ({ location, params: { idOrSlug } }) => {
     noDirectAccess(location.pathname, idOrSlug, '/members');
