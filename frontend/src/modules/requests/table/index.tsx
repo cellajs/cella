@@ -17,7 +17,6 @@ import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { RequestsTableRoute, type requestSearchSchema } from '~/routes/system';
 import type { BaseTableMethods, Request } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
-import { nanoid } from '~/utils/nanoid';
 
 const BaseDataTable = lazy(() => import('~/modules/requests/table/table'));
 const LIMIT = config.requestLimits.requests;
@@ -85,7 +84,7 @@ const RequestsTable = () => {
 
     // add random token value so state it table changes
     const updatedWaitLists = waitlistRequests.map((req) => {
-      req.token = nanoid();
+      req.requestPending = true;
       return req;
     });
 

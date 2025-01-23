@@ -22,10 +22,10 @@ export const useColumns = () => {
         sortable: true,
         visible: true,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row }) => (
+        renderCell: ({ row: { type, requestPending } }) => (
           <div className="flex flew-row gap-2 items-center">
-            {t(`common:${row.type}`)}
-            {row.type === 'waitlist' && <Badge className={`h-2 w-2 justify-center p-0 ${row.token ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />}
+            {t(`common:${type}`)}
+            {type === 'waitlist' && <Badge className={`h-2 w-2 justify-center p-0 ${requestPending ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />}
           </div>
         ),
         minWidth: 160,
