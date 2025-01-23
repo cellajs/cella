@@ -6,14 +6,15 @@ import { DataTable } from '~/modules/common/data-table';
 import type { InvitesInfoProps, InvitesInfoSearch } from '~/modules/organizations/invites/table';
 import type { BaseTableMethods, BaseTableProps, OrganizationInvitesInfo } from '~/types/common';
 
-type BaseDataTableProps = InvitesInfoProps & BaseTableProps<OrganizationInvitesInfo, InvitesInfoSearch>;
+type BaseDataTableProps = InvitesInfoProps &
+  BaseTableProps<OrganizationInvitesInfo, InvitesInfoSearch> & { queryVars: { role: InvitesInfoSearch['role'] } };
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ info, columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
     const { t } = useTranslation();
 
     // Extract query variables and set defaults
-    const { q, sort, order, limit } = queryVars;
+    const { q, sort, order, role, limit } = queryVars;
 
     const [rows, setRows] = useState<OrganizationInvitesInfo[]>(info);
 
@@ -22,10 +23,14 @@ const BaseDataTable = memo(
       let filteredRows = [...rows];
 
       // Apply filtering based on query `q`
-      if (q)
+      if (q) {
         filteredRows = filteredRows.filter(
           (row) => row.email.toLowerCase().includes(q.toLowerCase()) || row.name?.toLowerCase().includes(q.toLowerCase()),
         );
+      }
+
+      // Apply filtering based on `role`
+      if (role) filteredRows = filteredRows.filter(({ role: rowRole }) => rowRole === role);
 
       // Apply sorting based on `sort` and `order`
       if (sort) {
@@ -40,7 +45,7 @@ const BaseDataTable = memo(
       }
 
       return filteredRows;
-    }, [rows, q, sort, order]);
+    }, [rows, q, sort, order, role]);
 
     useEffect(() => {
       setRows(info);
@@ -64,7 +69,7 @@ const BaseDataTable = memo(
           // isLoading,
           // isFetching,
           enableVirtualization: false,
-          isFiltered: !!q,
+          isFiltered: !!q || !!role,
           limit,
           // selectedRows,
           // onRowsChange,
@@ -72,9 +77,7 @@ const BaseDataTable = memo(
           // onSelectedRowsChange: setSelectedRows,
           sortColumns,
           onSortColumnsChange: setSortColumns,
-          NoRowsComponent: (
-            <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:organizations').toLowerCase() })} />
-          ),
+          NoRowsComponent: <ContentPlaceholder Icon={Bird} title={t('common:no_resource_yet', { resource: t('common:invites').toLowerCase() })} />,
         }}
       />
     );

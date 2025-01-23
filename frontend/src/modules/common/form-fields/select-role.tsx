@@ -2,21 +2,20 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import type { ContextEntity } from '~/types/common';
 import { cn } from '~/utils/cn';
 
 interface SelectRoleProps {
-  entityType?: ContextEntity;
+  entity?: boolean;
   onChange: (value?: string) => void;
   value?: string;
   className?: string;
 }
 
-const SelectRole = ({ entityType, onChange, value, className }: SelectRoleProps) => {
+const SelectRole = ({ entity = false, onChange, value, className }: SelectRoleProps) => {
   const { t } = useTranslation();
   const { isOnline } = useOnlineManager();
 
-  const roles = entityType ? config.rolesByType.entityRoles : config.rolesByType.systemRoles;
+  const roles = entity ? config.rolesByType.entityRoles : config.rolesByType.systemRoles;
 
   return (
     <Select value={value === undefined || value === 'all' ? 'all' : value} onValueChange={(role) => onChange(role === 'all' ? undefined : role)}>

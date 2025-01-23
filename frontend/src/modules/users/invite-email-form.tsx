@@ -12,7 +12,7 @@ import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
-import SelectRole from '~/modules/common/form-fields/select-role-radio';
+import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { MultiEmail } from '~/modules/common/multi-email';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { createToast } from '~/modules/common/toaster';
@@ -103,7 +103,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
             <FormItem className="flex-row ml-3 gap-4 items-center">
               <FormLabel>{t('common:role')}</FormLabel>
               <FormControl>
-                <SelectRole value={value} entityType={entity?.entity} onChange={onChange} />
+                <SelectRoleRadio value={value} entityType={entity?.entity} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>
