@@ -325,6 +325,7 @@
   "subscription": "Abonnement",
   "success.archived_resource": "{{resource}} is gearchiveerd.",
   "success.create_newsletter": "Nieuwsbrief is verzonden.",
+  "success.test.create_newsletter": "Newsletter has been sent to self.",
   "success.create_resource": "{{resource}} is aangemaakt.",
   "success.delete_members": "Leden zijn verwijderd.",
   "success.delete_resource": "{{resource}} is verwijderd.",

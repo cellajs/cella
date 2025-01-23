@@ -4,6 +4,7 @@ import { config } from 'config';
 import { type MenuSectionName, menuSections } from '#/entity-config';
 import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
+import { sendNewsletterBodySchema } from '../organizations/schema';
 import { userSchema } from '../users/schema';
 
 export const sessionSchema = z.object({
@@ -42,8 +43,6 @@ export const menuItemSchema = z.object({
   organizationId: membershipInfoSchema.shape.organizationId.optional(),
 });
 
-export type MenuItem = z.infer<typeof menuItemSchema>;
-
 export const menuItemsSchema = z.array(
   z.object({
     ...menuItemSchema.shape,
@@ -62,9 +61,12 @@ export const userMenuSchema = z.object(
   ),
 );
 
-export type UserMenu = z.infer<typeof userMenuSchema>;
-
 export const leaveEntityQuerySchema = z.object({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
+});
+
+export const newsletterToSelfSchema = sendNewsletterBodySchema.omit({
+  organizationIds: true,
+  roles: true,
 });

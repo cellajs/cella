@@ -14,6 +14,7 @@ import { useSendNewsLetterMutation } from '~/modules/organizations/query-mutatio
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
+import { useSendNewsLetterToSelfMutation } from '~/modules/users/query-mutations';
 
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
@@ -35,7 +36,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
   const form = useFormWithDraft<FormValues>('send-org-newsletter', {
     resolver: zodResolver(formSchema),
     defaultValues: {
-      organizationIds: organizationIds,
+      organizationIds,
       subject: '',
       roles: ['admin'],
       content: '',
@@ -43,6 +44,8 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
   });
 
   const { mutate: sendNewsletter, isPending } = useSendNewsLetterMutation();
+
+  const { mutate: sendNewsletterToSelf, isPending: sendToSelfPending } = useSendNewsLetterToSelfMutation();
 
   const onSubmit = (body: FormValues) => {
     sendNewsletter(body, {
@@ -52,6 +55,16 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
         dropSelectedOrganization?.();
         if (isSheet) sheet.remove('org-newsletter-form');
       },
+    });
+  };
+
+  const sendTofSelf = () => {
+    const body = {
+      subject: form.getValues('subject'),
+      content: form.getValues('content'),
+    };
+    sendNewsletterToSelf(body, {
+      onSuccess: () => toast.success(t('common:success.test.create_newsletter')),
     });
   };
 
@@ -119,8 +132,14 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
             <Send size={16} className="mr-2" />
             {t('common:send')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label="Cancel" onClick={cancel}>
+          <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label={t('common:cancel')} onClick={cancel}>
             {t('common:cancel')}
+          </Button>
+
+          <div className="grow" />
+          <Button type="button" disabled={!isDirty()} aria-label={t('common:send_to_self')} loading={sendToSelfPending} onClick={sendTofSelf}>
+            <Send size={16} className="mr-2" />
+            {t('common:send_to_self')}
           </Button>
         </div>
       </form>

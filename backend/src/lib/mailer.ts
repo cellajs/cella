@@ -18,12 +18,16 @@ export const emailSender = {
       return;
     }
 
-    await sendgrid.send({
-      to: env.SEND_ALL_TO_EMAIL || to,
-      replyTo: replyTo ? replyTo : config.supportEmail,
-      from: config.notificationsEmail,
-      subject,
-      html,
-    });
+    try {
+      await sendgrid.send({
+        to: env.SEND_ALL_TO_EMAIL || to,
+        replyTo: replyTo ? replyTo : config.supportEmail,
+        from: config.notificationsEmail,
+        subject: subject || `${config.name} message.`,
+        html,
+      });
+    } catch (err) {
+      console.warn('Failed to send email. \n', err);
+    }
   },
 };
