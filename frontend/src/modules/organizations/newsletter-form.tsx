@@ -28,7 +28,7 @@ const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet: isSheet, dropSelectedOrganization }) => {
+const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet: isSheet, dropSelectedOrganization }) => {
   const { t } = useTranslation();
 
   const form = useFormWithDraft<FormValues>('send-org-newsletter', {
@@ -86,7 +86,7 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
             <FormItem>
               <FormLabel>{t('common:subject')}</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} placeholder={t('common:placeholder.subject')} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -109,4 +109,4 @@ const OrganizationsNewsletterForm: React.FC<NewsletterFormProps> = ({ organizati
   );
 };
 
-export default OrganizationsNewsletterForm;
+export default NewsletterForm;

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
-import AuthPage from '~/modules/auth/auth-page';
 import { SubmitButton } from '~/modules/ui/button';
 
 import { passwordSchema } from 'backend/utils/schema/common-schemas';
@@ -15,7 +14,7 @@ import { useResetPasswordMutation } from '~/modules/auth/query-mutations';
 import { useCheckTokenMutation } from '~/modules/general/query-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
-import { ResetPasswordWithTokenRoute } from '~/routes/auth';
+import { CreatePasswordWithTokenRoute } from '~/routes/auth';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -23,10 +22,10 @@ const formSchema = z.object({
   password: passwordSchema,
 });
 
-const ResetPassword = () => {
+const CreatePasswordForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { token } = useParams({ from: ResetPasswordWithTokenRoute.id });
+  const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
 
   const [email, setEmail] = useState('');
   const [tokenError, setError] = useState<ApiError | null>(null);
@@ -57,49 +56,47 @@ const ResetPassword = () => {
   }, [token]);
 
   return (
-    <AuthPage>
-      <Form {...form}>
-        <h1 className="text-2xl text-center">
-          {t('common:reset_password')} <br />{' '}
-          {email && (
-            <span className="font-light text-xl">
-              {t('common:for')} {email}
-            </span>
-          )}
-        </h1>
-        {email ? (
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="relative">
-                      <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
-                      <Suspense>
-                        <PasswordStrength password={form.getValues('password')} minLength={8} />
-                      </Suspense>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <SubmitButton loading={isPending} className="w-full">
-              {t('common:reset')}
-              <ArrowRight size={16} className="ml-2" />
-            </SubmitButton>
-          </form>
-        ) : (
-          <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
-            {tokenError && <span className="text-muted-foreground text-sm">{t(`common:error.${tokenError.type}`)}</span>}
-            {isPending && <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}
-          </div>
+    <Form {...form}>
+      <h1 className="text-2xl text-center">
+        {t('common:reset_password')} <br />{' '}
+        {email && (
+          <span className="font-light text-xl">
+            {t('common:for')} {email}
+          </span>
         )}
-      </Form>
-    </AuthPage>
+      </h1>
+      {email ? (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <div className="relative">
+                    <Input type="password" autoFocus placeholder={t('common:new_password')} autoComplete="new-password" {...field} />
+                    <Suspense>
+                      <PasswordStrength password={form.getValues('password')} minLength={8} />
+                    </Suspense>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <SubmitButton loading={isPending} className="w-full">
+            {t('common:reset')}
+            <ArrowRight size={16} className="ml-2" />
+          </SubmitButton>
+        </form>
+      ) : (
+        <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
+          {tokenError && <span className="text-muted-foreground text-sm">{t(`common:error.${tokenError.type}`)}</span>}
+          {isPending && <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}
+        </div>
+      )}
+    </Form>
   );
 };
 
-export default ResetPassword;
+export default CreatePasswordForm;

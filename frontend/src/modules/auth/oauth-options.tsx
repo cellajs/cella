@@ -3,7 +3,6 @@ import { config } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import type { Step } from '~/modules/auth';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/modules/auth/api';
 import { acceptInvite } from '~/modules/general/api';
@@ -49,7 +48,6 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
   const redirectPath = searchResult.redirect ?? config.defaultRedirectPath;
 
   const successesCallback = () => {
-    toast.success(t('common:success.passkey_sign_in'));
     navigate({ to: redirectPath, replace: true });
   };
 

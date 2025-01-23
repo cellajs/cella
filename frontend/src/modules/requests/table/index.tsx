@@ -9,7 +9,7 @@ import { createToast } from '~/modules/common/toaster';
 import { invite } from '~/modules/general/api';
 import { deleteRequests, getRequests } from '~/modules/requests/api';
 import DeleteRequests from '~/modules/requests/delete-requests';
-import { openFeedbackLetterSheet } from '~/modules/requests/helpers';
+import { openMessageSheet } from '~/modules/requests/helpers';
 import { requestsKeys } from '~/modules/requests/query';
 import { useColumns } from '~/modules/requests/table/columns';
 import { RequestsTableHeaderBar } from '~/modules/requests/table/table-header';
@@ -53,10 +53,10 @@ const RequestsTable = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
   };
 
-  const openNewsletterSheet = () => {
+  const openSheet = () => {
     const requests = selected.filter((request) => request.type !== 'waitlist');
     const emails = requests.map((request) => request.email);
-    openFeedbackLetterSheet(emails, clearSelection);
+    openMessageSheet(emails, clearSelection);
   };
 
   const openRemoveDialog = () => {
@@ -113,7 +113,7 @@ const RequestsTable = () => {
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}
         openInviteDialog={openInviteDialog}
-        openNewsletterSheet={openNewsletterSheet}
+        openMessageSheet={openSheet}
         fetchExport={fetchExport}
       />
       <Suspense>

@@ -1,28 +1,28 @@
 import { t } from 'i18next';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheet } from '~/modules/common/sheeter/state';
-import { FeedbackLetterDraft } from '~/modules/requests/feedback-letter-draft';
-import FeedbackLetterForm from '~/modules/requests/feedback-letter-form';
+import { MessageDraft } from '~/modules/requests/message-draft';
+import MessageForm from '~/modules/requests/message-form';
 
-export const openFeedbackLetterSheet = (emails: string[], callback: () => void) => {
-  const feedbackLetterTabs = [
+export const openMessageSheet = (emails: string[], callback: () => void) => {
+  const messageTabs = [
     {
       id: 'write',
       label: 'common:write',
-      element: <FeedbackLetterForm sheet emails={emails} dropSelected={callback} />,
+      element: <MessageForm sheet emails={emails} dropSelected={callback} />,
     },
 
     {
       id: 'draft',
       label: 'common:draft',
-      element: <FeedbackLetterDraft />,
+      element: <MessageDraft />,
     },
   ];
-  sheet.create(<SheetTabs tabs={feedbackLetterTabs} />, {
+  sheet.create(<SheetTabs tabs={messageTabs} />, {
     className: 'max-w-full lg:max-w-4xl',
-    title: t('common:feedback_letter'),
-    description: t('common:feedback_letter.text'),
-    id: 'feedback-letter-form',
+    title: t('common:request_message'),
+    description: t('common:request_message.text'),
+    id: 'message-form',
     scrollableOverlay: true,
     side: 'right',
   });

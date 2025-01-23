@@ -3,13 +3,13 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { feedbackLetterBodySchema } from 'backend/modules/requests/schema';
+import { requestMessageBodySchema } from 'backend/modules/requests/schema';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import { sheet } from '~/modules/common/sheeter/state';
-import { useSendNewsLetterMutation } from '~/modules/requests/query-mutations';
+import { useSendRequestMessageMutation } from '~/modules/requests/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -18,20 +18,20 @@ import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
 
-interface NewsletterFormProps {
+interface MessageFormProps {
   emails: string[];
   dropSelected?: () => void;
   sheet?: boolean;
 }
 
-const formSchema = feedbackLetterBodySchema;
+const formSchema = requestMessageBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const FeedbackLetterForm: React.FC<NewsletterFormProps> = ({ emails, sheet: isSheet, dropSelected }) => {
+const MessageForm: React.FC<MessageFormProps> = ({ emails, sheet: isSheet, dropSelected }) => {
   const { t } = useTranslation();
 
-  const form = useFormWithDraft<FormValues>('send-feedback-letter', {
+  const form = useFormWithDraft<FormValues>('request-message', {
     resolver: zodResolver(formSchema),
     defaultValues: {
       emails,
@@ -40,7 +40,7 @@ const FeedbackLetterForm: React.FC<NewsletterFormProps> = ({ emails, sheet: isSh
     },
   });
 
-  const { mutate, isPending } = useSendNewsLetterMutation();
+  const { mutate, isPending } = useSendRequestMessageMutation();
   const onSubmit = (body: FormValues) => {
     mutate(body, {
       onSuccess: () => {
@@ -106,4 +106,4 @@ const FeedbackLetterForm: React.FC<NewsletterFormProps> = ({ emails, sheet: isSh
   );
 };
 
-export default FeedbackLetterForm;
+export default MessageForm;

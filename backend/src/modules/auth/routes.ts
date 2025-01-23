@@ -82,7 +82,7 @@ class AuthRoutesConfig {
         description: 'Email exists',
         content: {
           'application/json': {
-            schema: successWithDataSchema(z.object({ hasPasskey: z.boolean() })),
+            schema: successWithoutDataSchema,
           },
         },
       },
@@ -195,14 +195,14 @@ class AuthRoutesConfig {
     },
   });
 
-  public resetPassword = createRouteConfig({
+  public requestPassword = createRouteConfig({
     method: 'post',
-    path: '/reset-password',
+    path: '/request-password',
     guard: isPublicAccess,
     middleware: [spamLimiter, emailEnumLimiter],
     tags: ['auth'],
-    summary: 'Request reset password',
-    description: 'An email will be sent with a link to reset password.',
+    summary: 'Request new password',
+    description: 'An email will be sent with a link to create a password.',
     security: [],
     request: {
       body: {
@@ -226,13 +226,13 @@ class AuthRoutesConfig {
     },
   });
 
-  public resetPasswordCallback = createRouteConfig({
+  public createPasswordCallback = createRouteConfig({
     method: 'post',
-    path: '/reset-password/{token}',
+    path: '/create-password/{token}',
     guard: isPublicAccess,
     middleware: [tokenLimiter],
     tags: ['auth'],
-    summary: 'Submit password by token',
+    summary: 'Create password by token',
     description: 'Submit new password and directly receive a user session.',
     security: [],
     request: {
@@ -247,7 +247,7 @@ class AuthRoutesConfig {
     },
     responses: {
       200: {
-        description: 'Password reset successfully',
+        description: 'Password created',
         content: {
           'application/json': {
             schema: successWithoutDataSchema,

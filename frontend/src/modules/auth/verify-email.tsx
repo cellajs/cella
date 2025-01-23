@@ -4,15 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { TokenType } from '~/modules/auth/api';
-import AuthPage from '~/modules/auth/auth-page';
 import { useVerifyEmailMutation } from '~/modules/auth/query-mutations';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
+import { VerifyEmailWithTokenRoute } from '~/routes/auth';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();
-  //Strict false is needed because the component is used in two places, one of which does not include parameters
-  const { token }: TokenType = useParams({ strict: false });
+  const { token }: TokenType = useParams({ from: VerifyEmailWithTokenRoute.id });
   const navigate = useNavigate();
   const { isOnline } = useOnlineManager();
 
@@ -36,29 +35,18 @@ const VerifyEmail = () => {
   if (token) {
     if (error) {
       return (
-        <AuthPage>
-          <div className="text-center">
-            <h1 className="text-2xl">{t('common:error.unable_to_verify')}</h1>
-            <p className="font-light mt-4">{t('common:error.token_invalid_request_new')}</p>
-            <Button className="mt-8" onClick={resendEmail}>
-              {t('common:resend_email')}
-            </Button>
-          </div>
-        </AuthPage>
+        <div className="text-center">
+          <h1 className="text-2xl">{t('common:error.unable_to_verify')}</h1>
+          <p className="font-light mt-4">{t('common:error.token_invalid_request_new')}</p>
+          <Button className="mt-8" onClick={resendEmail}>
+            {t('common:resend_email')}
+          </Button>
+        </div>
       );
     }
 
     return null;
   }
-
-  return (
-    <AuthPage>
-      <div className="text-center">
-        <h1 className="text-2xl">{t('common:almost_there')}</h1>
-        <p className="font-light mt-4">{t(`common:${isOnline ? 'verify_email_notice.text' : 'offline.text'}`)}</p>
-      </div>
-    </AuthPage>
-  );
 };
 
 export default VerifyEmail;

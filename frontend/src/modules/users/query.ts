@@ -37,17 +37,19 @@ export const userQueryOptions = (idOrSlug: string) =>
   });
 
 // Query Options to get current user(self)
-export const meQueryOptions = () =>
+export const meQueryOptions = (retry = 0) =>
   queryOptions({
     queryKey: meKeys.all,
     queryFn: getAndSetMe,
+    retry,
   });
 
 // Query Options to get current user's(self) menu
-export const menuQueryOptions = () =>
+export const menuQueryOptions = (retry = 0) =>
   queryOptions({
     queryKey: menuKeys.all,
     queryFn: getAndSetMenu,
+    retry,
   });
 
 // Infinite Query Options to get a paginated list of users

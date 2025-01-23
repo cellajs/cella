@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { CheckEmailForm } from '~/modules/auth/check-email-form';
 import { SignInForm } from '~/modules/auth/sign-in-form';
 import { SignUpForm } from '~/modules/auth/sign-up-form';
@@ -8,7 +8,6 @@ import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/lib/api';
-import AuthPage from '~/modules/auth/auth-page';
 import OauthOptions from '~/modules/auth/oauth-options';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
 import { checkToken } from '~/modules/general/api';
@@ -29,27 +28,23 @@ const SignIn = () => {
   const { t } = useTranslation();
   const { lastUser } = useUserStore();
 
+  const { token } = useSearch({ from: SignInRoute.id });
+
   const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
   const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
-  const [step, setStep] = useState<Step>('check');
-  const [email, setEmail] = useState('');
-  const [hasPasskey, setHasPasskey] = useState(false);
+  const [step, setStep] = useState<Step>(lastUser?.email && !token ? 'signIn' : 'check');
+  const [email, setEmail] = useState(lastUser?.email || '');
+  const [hasPasskey] = useState(!!lastUser?.passkey);
+
   const [tokenData, setTokenData] = useState<SignInTokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
-
-  const { token } = useSearch({
-    from: SignInRoute.id,
-  });
 
   useLayoutEffect(() => {
     if (token) {
       checkToken(token)
         .then((data) => {
-          setTokenData({
-            ...data,
-            token,
-          });
+          setTokenData({ ...data, token });
           setEmail(data.email);
           setError(null);
         })
@@ -60,23 +55,18 @@ const SignIn = () => {
     }
   }, [token]);
 
-  const handleCheckEmail = (step: Step, email: string, hasPasskey: boolean) => {
+  const handleSetStep = (step: Step, email: string) => {
     setEmail(email);
-    setHasPasskey(hasPasskey);
     setStep(step);
   };
 
   const resetToInitialStep = () => setStep('check');
 
-  useEffect(() => {
-    if (lastUser?.email && !token) handleCheckEmail('signIn', lastUser.email, !!lastUser.passkey);
-  }, [lastUser]);
-
   return (
-    <AuthPage>
+    <>
       {!error ? (
         <>
-          {step === 'check' && emailEnabled && <CheckEmailForm tokenData={tokenData} setStep={handleCheckEmail} />}
+          {step === 'check' && emailEnabled && <CheckEmailForm tokenData={tokenData} setStep={handleSetStep} />}
           {step === 'signIn' && emailEnabled && <SignInForm tokenData={tokenData} email={email} resetToInitialStep={resetToInitialStep} />}
           {step === 'signUp' && emailEnabled && <SignUpForm tokenData={tokenData} email={email} resetToInitialStep={resetToInitialStep} />}
           {step === 'waitlist' && <WaitlistForm buttonContent={t('common:request_access')} email={email} changeEmail={resetToInitialStep} />}
@@ -100,6 +90,7 @@ const SignIn = () => {
         </>
       ) : (
         <>
+          {/* TODO: create shared error component for auth pages */}
           <span className="text-muted-foreground text-sm">{t(`common:error.${error.type}`)}</span>
           <Link to="/auth/sign-in" className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
             {t('common:sign_in')}
@@ -107,7 +98,7 @@ const SignIn = () => {
           </Link>
         </>
       )}
-    </AuthPage>
+    </>
   );
 };
 

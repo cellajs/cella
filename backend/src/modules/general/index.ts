@@ -1,6 +1,6 @@
 import { and, eq, ilike, inArray, or } from 'drizzle-orm';
 import { emailSender } from '#/lib/mailer';
-import { InviteSystemEmail } from '../../../emails/system-invite';
+import { SystemInviteEmail } from '../../../emails/system-invite';
 
 import { config } from 'config';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
@@ -85,6 +85,7 @@ const generalRoutes = app
       .where(and(eq(tokensTable.id, token)));
     if (!tokenRecord) return errorResponse(ctx, 404, 'not_found', 'warn');
 
+    // TODO: we can remove this or we need this?
     // const user = await getUserBy('email', tokenRecord.email);
     // if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
@@ -137,7 +138,7 @@ const generalRoutes = app
       });
 
       const emailHtml = await render(
-        InviteSystemEmail({
+        SystemInviteEmail({
           userName: targetUser?.name,
           userThumbnailUrl: targetUser?.thumbnailUrl,
           userLanguage: targetUser?.language || user.language,
@@ -150,7 +151,7 @@ const generalRoutes = app
       emailSender
         .send(
           config.senderIsReceiver ? user.email : email.toLowerCase(),
-          i18n.t('backend:email.subject.invitation_to_system', { lng: config.defaultLanguage, appName: config.name }),
+          i18n.t('backend:email.system_invite.subject', { lng: config.defaultLanguage, appName: config.name }),
           emailHtml,
           user.email,
         )
@@ -390,7 +391,7 @@ const generalRoutes = app
 
     // Verify token
     const isValid = verifyUnsubscribeToken(user.email, token);
-    if (!isValid) return errorResponse(ctx, 401, 'Token verification failed', 'warn', 'user');
+    if (!isValid) return errorResponse(ctx, 401, 'unsubscribe_failed', 'warn', 'user');
 
     // Update user
     await db.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));

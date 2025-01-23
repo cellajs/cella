@@ -16,7 +16,7 @@ import * as Tooltip from '~/modules/ui/tooltip';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
-import { type Attachments, openAttachmentDialog } from '~/modules/attachments/helpers';
+import { type CarouselAttachment, openAttachmentDialog } from '~/modules/attachments/helpers';
 import { useThemeStore } from '~/store/theme';
 import type { Member } from '~/types/common';
 
@@ -214,7 +214,7 @@ export const BlockNote = ({
 
     const url = getUrlFromProps(props);
     if (!allowedTypes.includes(type) || !url || url.length === 0) return;
-    const newAttachments: Attachments[] = [];
+    const newAttachments: CarouselAttachment[] = [];
 
     // Collect attachments based on valid file types
     editor.forEachBlock(({ type, props }) => {

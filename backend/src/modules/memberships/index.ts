@@ -7,7 +7,7 @@ import { render } from 'jsx-email';
 import { generateId } from 'lucia';
 import { TimeSpan, createDate } from 'oslo';
 import { emailSender } from '#/lib/mailer';
-import { InviteMemberEmail } from '../../../emails/member-invite';
+import { MemberInviteEmail } from '../../../emails/member-invite';
 
 import { tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
@@ -184,7 +184,7 @@ const membershipsRoutes = app
 
         // Render email template
         const emailHtml = await render(
-          InviteMemberEmail({
+          MemberInviteEmail({
             userName: targetUser?.name,
             userLanguage: targetUser?.language || user.language,
             userThumbnailUrl: targetUser?.thumbnailUrl,
@@ -202,7 +202,7 @@ const membershipsRoutes = app
         emailSender
           .send(
             config.senderIsReceiver ? user.email : email,
-            i18n.t('backend:email.subject.invitation_to_entity', {
+            i18n.t('backend:email.member_invite.subject', {
               lng: targetUser?.language || organization.defaultLanguage,
               appName: config.name,
               entity: organization.name,

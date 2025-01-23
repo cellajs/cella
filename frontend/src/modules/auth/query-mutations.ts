@@ -4,19 +4,17 @@ import { toast } from 'sonner';
 import type { ApiError } from '~/lib/api';
 
 import {
-  type ResetPasswordProps,
+  type CreatePasswordProps,
   type SignInProps,
   type SignUpProps,
   type VerifyEmailProps,
   checkEmail,
-  resetPassword,
-  sendResetPasswordEmail,
+  createPassword,
   signIn,
   signUp,
   verifyEmail,
 } from '~/modules/auth/api';
 import { authKeys } from '~/modules/auth/query';
-import { dialog } from '~/modules/common/dialoger/state';
 
 export const useVerifyEmailMutation = () => {
   return useMutation<void, ApiError, VerifyEmailProps>({
@@ -26,22 +24,10 @@ export const useVerifyEmailMutation = () => {
 };
 
 export const useResetPasswordMutation = () => {
-  return useMutation<void, ApiError, ResetPasswordProps>({
+  return useMutation<void, ApiError, CreatePasswordProps>({
     mutationKey: authKeys.resetPassword(),
-    mutationFn: resetPassword,
+    mutationFn: createPassword,
     onSuccess: () => toast.success(t('common:success.password_reset')),
-  });
-};
-
-export const useSendResetPasswordMutation = () => {
-  return useMutation<void, ApiError, string>({
-    mutationKey: authKeys.sendResetPassword(),
-    mutationFn: sendResetPasswordEmail,
-    onSuccess: () => {
-      toast.success(t('common:success.reset_link_sent'));
-      dialog.remove();
-    },
-    onError: () => document.getElementById('reset-email-field')?.focus(),
   });
 };
 

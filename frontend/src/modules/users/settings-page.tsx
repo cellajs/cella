@@ -12,7 +12,7 @@ import { config } from 'config';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { sendResetPasswordEmail } from '~/modules/auth/api';
+import { requestPasswordEmail } from '~/modules/auth/api';
 import { mapOauthProviders } from '~/modules/auth/oauth-options';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import HelpText from '~/modules/common/help-text';
@@ -45,12 +45,12 @@ const UserSettingsPage = () => {
   const { mutate: deleteMySessions, isPending } = useTerminateSessionsMutation();
 
   // Request a password reset email
-  const sendResetPasswordClick = () => {
+  const requestResetPasswordClick = () => {
     if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
     try {
       setDisabledResetPassword(true);
-      sendResetPasswordEmail(user.email);
+      requestPasswordEmail(user.email);
       toast.success(t('common:success.reset_password_email', { email: user.email }));
     } catch {
     } finally {
@@ -217,11 +217,11 @@ const UserSettingsPage = () => {
                 })}
               </div>
 
-              <HelpText content={t('common:reset_password_email.text')}>
+              <HelpText content={t('common:request_password.text')}>
                 <p className="font-semibold">{t('common:reset_password')}</p>{' '}
               </HelpText>
               <div>
-                <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={sendResetPasswordClick}>
+                <Button className="w-full sm:w-auto" variant="outline" disabled={disabledResetPassword} onClick={requestResetPasswordClick}>
                   <Send size={16} className="mr-2" />
                   {t('common:send_reset_link')}
                 </Button>

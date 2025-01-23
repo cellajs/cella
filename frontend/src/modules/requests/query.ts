@@ -7,7 +7,7 @@ export const requestsKeys = {
   all: ['requests'] as const,
   list: () => [...requestsKeys.all, 'list'] as const,
   table: (filters?: GetRequestsParams) => [...requestsKeys.list(), filters] as const,
-  sendNewsletter: () => [...requestsKeys.all, 'sendNewsLetter'],
+  sendMessage: () => [...requestsKeys.all, 'sendMessage'],
   create: () => [...requestsKeys.all, 'create'],
   delete: () => [...requestsKeys.all, 'delete'],
 };

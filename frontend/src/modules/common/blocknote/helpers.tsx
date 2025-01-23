@@ -1,7 +1,7 @@
 import type { Block, PropSchema, Props } from '@blocknote/core';
 import type { DefaultReactSuggestionItem } from '@blocknote/react';
 import DOMPurify from 'dompurify';
-import { type Attachments, openAttachmentDialog } from '~/modules/attachments/helpers';
+import { type CarouselAttachment, openAttachmentDialog } from '~/modules/attachments/helpers';
 import { customSlashIndexedItems, customSlashNotIndexedItems, menusTitleToAllowedType } from '~/modules/common/blocknote/blocknote-config';
 import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema, MenusItemsTitle } from '~/modules/common/blocknote/types';
 
@@ -99,7 +99,7 @@ export const updateSourcesFromDataUrl = (elementId: string, openPreviewDialog = 
   const elementsWithDataUrl = parentElement.querySelectorAll('[data-url]');
   // Exit early if no matching elements are found
   if (elementsWithDataUrl.length === 0) return;
-  const urls: Attachments[] = [];
+  const urls: CarouselAttachment[] = [];
 
   const onElClick = (e: MouseEvent) => {
     if (!e.target || !openPreviewDialog) return;

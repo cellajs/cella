@@ -19,7 +19,7 @@ interface ErrorNoticeProps {
 const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, isRootLevel }) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
-  const { error: errorFromQuery, errorDescription, severity: severityFromQuery } = location.search;
+  const { error: errorFromQuery, severity: severityFromQuery } = location.search;
 
   const dateNow = new Date().toUTCString();
   const severity = error?.severity || severityFromQuery;
@@ -50,6 +50,8 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
   };
 
   const getErrorTitle = () => {
+    if (errorFromQuery) return t(`common:error.${errorFromQuery}`);
+
     // Check if the error has an entityType
     if (error?.entityType) return t(`common:error.resource_${error.type}`, { resource: t(error.entityType) });
     // If no entityType, check if the error has a type
@@ -62,13 +64,14 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, is
   };
 
   const getErrorDescription = () => {
+    if (errorFromQuery) return t(`common:error.${errorFromQuery}.text`);
+
     // Check if the error has an entityType
     if (error?.entityType) return t(`common:error.resource_${error.type}.text`, { resource: error.entityType });
     // If no entityType, check if error has a type
     if (error?.type) return t(`common:error.${error.type}.text`);
 
     if (error?.message) return error?.message;
-    if (errorDescription) return errorDescription;
     // Fallback to a generic message if none of the above match
     return t('common:error.reported_try_or_contact');
   };

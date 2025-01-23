@@ -22,7 +22,6 @@ const AppLayout = lazy(() => import('~/modules/common/app-layout'));
 
 const errorSearchSchema = z.object({
   error: z.string().optional(),
-  errorDescription: z.string().optional(),
   severity: z.enum(['warn', 'error']).optional(),
 });
 
@@ -110,8 +109,8 @@ export const ErrorNoticeRoute = createRoute({
   component: () => <ErrorNotice />,
 });
 
-export const acceptInviteRoute = createRoute({
-  path: '/auth/invite/$token',
+export const AcceptInviteRoute = createRoute({
+  path: '/auth/invitation/$token',
   staticData: { pageTitle: 'Accept invite', isAuth: true },
   getParentRoute: () => AuthRoute,
   beforeLoad: async ({ params }) => {

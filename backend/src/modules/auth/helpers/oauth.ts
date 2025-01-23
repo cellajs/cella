@@ -91,7 +91,7 @@ export const updateExistingUser = async (ctx: Context, existingUser: User, provi
   if (!isEmailVerified) {
     sendVerificationEmail(providerUser.email.toLowerCase());
 
-    return ctx.redirect(`${config.frontendUrl}/auth/verify-email`, 302);
+    return ctx.redirect(`${config.frontendUrl}/auth/request-verification`, 302);
   }
 
   await setSessionCookie(ctx, existingUser.id, providerId.toLowerCase());

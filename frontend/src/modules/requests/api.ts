@@ -63,11 +63,11 @@ export const deleteRequests = async (ids: string[]) => {
   return json.success;
 };
 
-export type SendResponseBody = Parameters<(typeof client)['send-feedback']['$post']>['0']['json'];
+export type SendResponseBody = Parameters<(typeof client)['send-message']['$post']>['0']['json'];
 
-// send email feedback to requests
-export const sendResponse = async (body: SendResponseBody) => {
-  const response = await client['send-feedback'].$post({
+// send email message in respons to requests
+export const sendRequestMessage = async (body: SendResponseBody) => {
+  const response = await client['send-message'].$post({
     json: body,
   });
 

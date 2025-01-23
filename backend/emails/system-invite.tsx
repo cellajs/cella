@@ -1,12 +1,10 @@
-import { Column, Row, Section, Text } from 'jsx-email';
-
 import { config } from 'config';
-import { i18n } from '../../backend/src/lib/i18n';
-
+import { Column, Row, Text } from 'jsx-email';
+import { i18n } from '../src/lib/i18n';
 import { AppLogo } from './components/app-logo';
-import { ArrowRight } from './components/arrow-right';
 import { Avatar } from './components/avatar';
 import { EmailContainer } from './components/container';
+import { EmailBody } from './components/email-body';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
@@ -20,56 +18,44 @@ interface Props extends BasicTemplateType {
 
 const appName = config.name;
 
-export const InviteSystemEmail = ({ userName, userLanguage: lng, inviteBy, token }: Props) => {
+export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, token }: Props) => {
   return (
-    <EmailContainer
-      previewText={i18n.t('backend:email.invite_preview_text', { appName, lng })}
-      containerStyle={{
-        marginTop: '2.5rem',
-        marginBottom: '2.5rem',
-        width: '50rem',
-      }}
-    >
+    <EmailContainer previewText={i18n.t('backend:email.system_invite.preview', { appName, lng })}>
+      {inviteBy && (
+        <Row style={{ margin: '1.5rem 0 1rem' }}>
+          <Column align="center">
+            <Avatar name={inviteBy} type="user" />
+          </Column>
+        </Row>
+      )}
+
       <EmailHeader
         headerText={
           <div
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.invite_title', { appName, lng }),
+              __html: i18n.t('backend:email.system_invite.title', { appName, lng }),
             }}
           />
         }
       />
-      <Section
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          borderRadius: '.75rem',
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          borderColor: '#eaeaea',
-          padding: '1.5rem',
-        }}
-      >
-        <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />
-        <UserName beforeText={i18n.t('backend:email.invite_description', { lng, appName })} userName={inviteBy} />
+      <EmailBody>
+        {userName && <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />}
+        <Text>
+          <span
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            dangerouslySetInnerHTML={{
+              __html: i18n.t('backend:email.system_invite.text', { lng, appName, inviteBy }),
+            }}
+          />
+        </Text>
 
-        <Row style={{ margin: '1.5rem 0 1rem' }}>
-          <Column align="right">
-            <Avatar name={userName} type="user" />
-          </Column>
-          <Column align="center">
-            <ArrowRight />
-          </Column>
-          <Column align="left">
-            <AppLogo />
-          </Column>
-        </Row>
-        <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={`${config.frontendUrl}/auth/invite/${token}`} />
-        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0' }}>{i18n.t('backend:email.invite_expire', { lng })}</Text>
-      </Section>
+        <EmailButton ButtonText={i18n.t('common:join', { lng })} href={`${config.frontendUrl}/auth/invitation/${token}`} />
+
+        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
+          {i18n.t('backend:email.invite_expires', { lng })}
+        </Text>
+      </EmailBody>
 
       <AppLogo />
       <Footer />
@@ -78,4 +64,4 @@ export const InviteSystemEmail = ({ userName, userLanguage: lng, inviteBy, token
 };
 
 // Template export
-export const Template = InviteSystemEmail;
+export const Template = SystemInviteEmail;

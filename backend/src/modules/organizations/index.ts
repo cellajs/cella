@@ -20,7 +20,7 @@ import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
 import { splitByAllowance } from '#/utils/split-by-allowance';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { OrganizationsNewsletter } from '../../../emails/organization-newsletter';
+import { NewsletterEmail } from '../../../emails/newsletter';
 import { env } from '../../../env';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
@@ -263,7 +263,7 @@ const organizationsRoutes = app
 
       // Generate email HTML
       const emailHtml = await render(
-        OrganizationsNewsletter({
+        NewsletterEmail({
           userLanguage: user.language,
           subject,
           content: user.newsletter ? updateBlocknoteHTML(content) : 'You`ve unsubscribed from news letters',
@@ -288,7 +288,7 @@ const organizationsRoutes = app
         // eq(usersTable.emailVerified, true) // maybe add for only confirmed emails
         .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, organizationIds)));
 
-      if (!organizationsMembersEmails.length) return errorResponse(ctx, 404, 'There is no members in organizations', 'warn', 'organization');
+      if (!organizationsMembersEmails.length) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
       if (organizationsMembersEmails.length === 1 && user.email === organizationsMembersEmails[0].email)
         return errorResponse(ctx, 400, 'Only receiver is sender', 'warn', 'organization');
@@ -306,7 +306,7 @@ const organizationsRoutes = app
 
         // generating email html
         const emailHtml = await render(
-          OrganizationsNewsletter({
+          NewsletterEmail({
             userLanguage: member.language,
             subject,
             content: updateBlocknoteHTML(content),
