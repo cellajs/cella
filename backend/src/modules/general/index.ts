@@ -7,7 +7,6 @@ import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
-import { TimeSpan, createDate } from 'oslo';
 import { env } from '../../../env';
 
 import { db } from '#/db/db';
@@ -27,6 +26,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { CustomHono } from '#/types/common';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { TimeSpan, createDate } from '#/utils/time-span';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRoutesConfig from './routes';
 

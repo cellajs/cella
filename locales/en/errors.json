@@ -43,7 +43,7 @@
   "newsletter_sign_up": "Unable to submit your email address. Please try again later.",
   "no_email_found": "No email found",
   "no_email_found.text": "No email address could be found on the resource.",
-  "no_password_found": "No password found",
+  "no_password_found": "No password created. Use another authentication method.",
   "no_selected_rows": "Export cannot proceed as no rows are selected.",
   "no_session": "You have no session",
   "no_session.text": "Please reload and sign in again to continue.",

@@ -6,7 +6,6 @@ import { and, eq, or } from 'drizzle-orm';
 import { deleteCookie, getCookie } from 'hono/cookie';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
-import { TimeSpan, createDate, isWithinExpirationDate } from 'oslo';
 import slugify from 'slugify';
 import type { z } from 'zod';
 import { db } from '#/db/db';
@@ -26,9 +25,10 @@ import { i18n } from '#/lib/i18n';
 import { emailSender } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { hashPasswordWithArgon, verifyPasswordWithArgon } from '#/modules/auth/helpers/argon2id';
+import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import { CustomHono, type EnabledOauthProvider } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
+import { TimeSpan, createDate, isWithinExpirationDate } from '#/utils/time-span';
 import { CreatePasswordEmail } from '../../../emails/create-password';
 import { EmailVerificationEmail } from '../../../emails/email-verification';
 import { insertMembership } from '../memberships/helpers/insert-membership';
@@ -99,7 +99,7 @@ const authRoutes = app
       tokenData = data?.data;
     }
 
-    const hashedPassword = await hashPasswordWithArgon(password);
+    const hashedPassword = await hashPassword(password);
     const userId = nanoid();
 
     const slug = slugFromEmail(email);
@@ -272,7 +272,7 @@ const authRoutes = app
     await auth.invalidateUserSessions(user.id);
 
     // hash password
-    const hashedPassword = await hashPasswordWithArgon(password);
+    const hashedPassword = await hashPassword(password);
 
     // update user password and set email verified
     await db.update(usersTable).set({ hashedPassword, emailVerified: true }).where(eq(usersTable.id, user.id));
@@ -312,7 +312,7 @@ const authRoutes = app
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
 
-    const validPassword = await verifyPasswordWithArgon(user.hashedPassword, password);
+    const validPassword = await verifyPasswordHash(user.hashedPassword, password);
     if (!validPassword) return errorResponse(ctx, 403, 'invalid_password', 'warn');
 
     const emailVerified = user.emailVerified || tokenData?.email === user.email;

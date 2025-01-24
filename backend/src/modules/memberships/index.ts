@@ -5,7 +5,6 @@ import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/s
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { generateId } from 'lucia';
-import { TimeSpan, createDate } from 'oslo';
 import { emailSender } from '#/lib/mailer';
 import { MemberInviteEmail } from '../../../emails/member-invite';
 
@@ -24,6 +23,7 @@ import { CustomHono } from '#/types/common';
 import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { TimeSpan, createDate } from '#/utils/time-span';
 import { insertMembership } from './helpers/insert-membership';
 import membershipRouteConfig from './routes';
 
