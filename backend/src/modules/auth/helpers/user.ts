@@ -2,7 +2,7 @@ import { config } from 'config';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
-import { errorResponse } from '#/lib/errors';
+import { errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import type { EnabledOauthProvider } from '#/types/common';
@@ -23,7 +23,7 @@ export const handleCreateUser = async (
 ) => {
   // If sign up is disabled, return an error
   if (!config.has.registrationEnabled && !options.isInvite) {
-    if (options.provider) return ctx.redirect(`${config.frontendUrl}/error?error=sign_up_restricted&severity=warn`, 302);
+    if (options.provider) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
     return errorResponse(ctx, 403, 'sign_up_restricted', 'warn');
   }
   // Check if slug is available

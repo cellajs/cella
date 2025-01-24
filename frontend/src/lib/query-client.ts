@@ -42,7 +42,7 @@ export const onError = (error: Error) => {
     // Translate, try most specific first
     const errorMessage =
       error.entityType && i18next.exists(`error:resource_${error.type}`)
-        ? i18n.t(`error.resource_${error.type}`, { resource: i18n.t(error.entityType) })
+        ? i18n.t(`error:resource_${error.type}`, { resource: i18n.t(error.entityType) })
         : error.type && i18next.exists(`error:${error.type}`)
           ? i18n.t(`error:${error.type}`)
           : fallback[statusCode as keyof typeof fallback];

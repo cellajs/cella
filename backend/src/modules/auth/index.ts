@@ -21,7 +21,7 @@ import { getUserBy, getUsersByConditions } from '#/db/util';
 import { menuSections } from '#/entity-config';
 import { getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { errorResponse } from '#/lib/errors';
+import { errorRedirect, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { emailSender } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -604,7 +604,7 @@ const authRoutes = app
     const { code, state, error } = ctx.req.valid('query');
 
     // redirect if there is no code or error in callback
-    if (error || !code) return ctx.redirect(`${config.frontendUrl}/error?error=oauth_failed&severity=error`, 302);
+    if (error || !code) return errorRedirect(ctx, 'oauth_failed', 'error');
     const strategy = 'github' as EnabledOauthProvider;
 
     if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
@@ -667,8 +667,7 @@ const authRoutes = app
       const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
       if (existingOauthAccount) {
         // Redirect if already assigned to another user
-        if (userId && existingOauthAccount.userId !== userId)
-          return ctx.redirect(`${config.frontendUrl}/error?error=oauth_mismatch&severity=warn`, 302);
+        if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -823,8 +822,7 @@ const authRoutes = app
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
         // Redirect if already assigned to another user
-        if (userId && existingOauthAccount.userId !== userId)
-          return ctx.redirect(`${config.frontendUrl}/error?error=oauth_mismatch&severity=warn`, 302);
+        if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
@@ -955,8 +953,7 @@ const authRoutes = app
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
       if (existingOauthAccount) {
         // Redirect if already assigned to another user
-        if (userId && existingOauthAccount.userId !== userId)
-          return ctx.redirect(`${config.frontendUrl}/error?error=oauth_mismatch&severity=warn`, 302);
+        if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
         await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }

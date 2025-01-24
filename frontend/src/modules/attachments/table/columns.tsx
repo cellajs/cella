@@ -137,18 +137,18 @@ export const useColumns = (
       name: t('common:size'),
       sortable: false,
       visible: !isMobile,
+      width: 100,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative font-light group h-full w-full">{formatBytes(row.size)}</div>,
-      width: 100,
     },
     {
       key: 'createdAt',
       name: t('common:created_at'),
       sortable: true,
       visible: !isSheet && !isMobile,
+      minWidth: 180,
       renderHeaderCell: HeaderCell,
       renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
-      minWidth: 180,
     },
   ];
 

@@ -1,3 +1,4 @@
+import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
@@ -81,3 +82,6 @@ export const errorResponse = (
   // TODO: Review this type assertion (as 400)
   return ctx.json({ success: false, error }, status as 400);
 };
+
+export const errorRedirect = (ctx: Context, type: SimplifiedErrorKey, severity: Severity = 'info') =>
+  ctx.redirect(`${config.frontendUrl}/error?error=${type}&severity=${severity}`, 302);

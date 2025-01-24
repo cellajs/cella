@@ -15,6 +15,7 @@ import { getContextUser, getMemberships } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
+import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
@@ -28,7 +29,6 @@ import { CustomHono } from '#/types/common';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRoutesConfig from './routes';
-import { requestsTable } from '#/db/schema/requests';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
