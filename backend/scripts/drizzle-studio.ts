@@ -13,13 +13,12 @@ const startDrizzleStudio = () => {
     shell: true,
   });
 
+  console.info(' ');
   console.info(`${chalk.greenBright.bold('✔')} Drizzle Studio started`);
+  console.info(' ');
 
   const cleanup = (code: number | null) => {
-    if (code === 130) {
-      process.exit(0);
-    }
-
+    if (code === 130) process.exit(0);
     process.exit(code ?? 0);
   };
 
