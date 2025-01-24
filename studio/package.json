@@ -1,0 +1,20 @@
+{
+  "name": "studio",
+  "version": "0.0.1",
+  "description": "Run Drizzle Studio",
+  "type": "module",
+  "scripts": {
+    "quick": "cross-env PGLITE=true pnpm dev",
+    "dev": "tsx ../backend/scripts/drizzle-studio.ts"
+  },
+  "keywords": ["drizzle"],
+  "author": "CellaJS <info@cellajs.com>",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "chalk": "^5.4.1",
+    "cross-env": "^7.0.3",
+    "drizzle-kit": "^0.30.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

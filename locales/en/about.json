@@ -1,5 +1,5 @@
 {
-  "call_to_action": "Join a small but dedicated club. Work on your own app & contribute pieces to Cella. Sounds interesting?",
+  "call_to_action": "Work on your own app & contribute pieces to Cella. Sounds interesting?",
   "faq.answer_1": "Soon! It has been made public to gather input and feedback from the community. Big changes will still occur. Please help us by <Link>trying it out</Link> and giving feedback.",
   "faq.answer_2": "One core concept is: remain close to libraries & resist applying abstraction layers. We believe this ultimately makes your code easier to read, understand, customize, replace and scale. A React framework doesn't fit in this concept.",
   "faq.answer_3": "You pick NextJS if you want to make many architectural decisions yourself. You pick Cella if you consider less architectural freedom a good tradeoff to save enormous amounts of development time. Oh, and pick Cella if you simply like the beautiful stack we chose :D.",
@@ -26,8 +26,8 @@
   "feature.title_7": "pnpm & vite",
   "feature.title_8": "tanstack",
   "feature.title_9": "electric sync",
-  "hero.subtitle": "Offline, instant updates & realtime data.",
-  "hero.text": "Build your new web app with sync engine as part of a single stack community. Cella is fully open source. ",
+  "hero.subtitle": "Offline, instant & realtime.",
+  "hero.text": "Build your new web app with <strong>sync engine</strong>. Be part of a single stack community. Cella is fully open source. ",
   "hero.title": "",
   "integrations.purpose_1": "App monitoring",
   "integrations.purpose_2": "Log management",

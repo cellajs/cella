@@ -720,6 +720,24 @@ importers:
 
   locales: {}
 
+  studio:
+    devDependencies:
+      chalk:
+        specifier: ^5.4.1
+        version: 5.4.1
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
+      drizzle-kit:
+        specifier: ^0.30.2
+        version: 0.30.2
+      tsx:
+        specifier: ^4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
+
   tus:
     dependencies:
       '@aws-sdk/client-s3':
@@ -11840,7 +11858,7 @@ snapshots:
   '@babel/helper-module-imports@7.25.9':
     dependencies:
       '@babel/traverse': 7.26.5
-      '@babel/types': 7.26.0
+      '@babel/types': 7.26.5
     transitivePeerDependencies:
       - supports-color
 
