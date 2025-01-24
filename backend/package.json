@@ -8,7 +8,7 @@
   "scripts": {
     "quick": "cross-env PGLITE=true tsx scripts/quick.ts && cross-env PGLITE=true pnpm dev",
     "start": "tsx dist/index.js",
-    "dev": "tsx scripts/drizzle-studio.ts && cross-env NODE_ENV=development tsx --watch src/index.ts",
+    "dev": "cross-env NODE_ENV=development tsx --watch src/index.ts",
     "check:types": "tsc --pretty",
     "build": "cross-env NODE_ENV=production tsup",
     "build:dev": "tsup",
