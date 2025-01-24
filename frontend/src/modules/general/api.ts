@@ -2,7 +2,6 @@ import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { type Entity, type PageEntity, type UploadParams, UploadType } from '~/types/common';
 import { generalHc } from '#/modules/general/hc';
-import type { EnabledOauthProviderOptions } from '#/types/common';
 
 // Create Hono clients to make requests to the backend
 export const client = generalHc(config.backendUrl, clientConfig);
@@ -50,37 +49,10 @@ export const checkSlugAvailable = async (params: { slug: string; type: Entity })
   return json.success;
 };
 
-// Check token validation
-export const checkToken = async (token: string) => {
-  const response = await client['check-token'].$post({
-    json: { token },
-  });
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
 // Get suggestions
 export const getSuggestions = async (query: string, type?: PageEntity | undefined) => {
   const response = await client.suggestions.$get({
     query: { q: query, type },
-  });
-
-  const json = await handleResponse(response);
-  return json.data;
-};
-
-export interface AcceptInviteProps {
-  token: string;
-  password?: string;
-  oauth?: EnabledOauthProviderOptions | undefined;
-}
-
-// Accept an invitation
-export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps) => {
-  const response = await client.invite[':token'].$post({
-    param: { token },
-    json: { password, oauth },
   });
 
   const json = await handleResponse(response);

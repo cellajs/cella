@@ -194,7 +194,7 @@ const organizationsRoutes = app
           id: tokensTable.id,
           name: usersTable.name,
           email: tokensTable.email,
-          userId: tokensTable.userId,
+          role: tokensTable.role,
           expiresAt: tokensTable.expiresAt,
           createdAt: tokensTable.createdAt,
           createdBy: tokensTable.createdBy,
@@ -274,10 +274,10 @@ const organizationsRoutes = app
         ),
       );
 
-    if (!organizationsMembersEmails.length) return errorResponse(ctx, 404, 'There is no members in organizations', 'warn', 'organization');
+    if (!organizationsMembersEmails.length) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
     if (organizationsMembersEmails.length === 1 && user.email === organizationsMembersEmails[0].email)
-      return errorResponse(ctx, 400, 'Only receiver is sender', 'warn', 'organization');
+      return errorResponse(ctx, 400, 'sender_is_receiver', 'warn', 'organization');
 
     for (const member of organizationsMembersEmails) {
       if (!member.newsletter) continue;
@@ -290,7 +290,7 @@ const organizationsRoutes = app
         .where(eq(organizationsTable.id, membershipsTable.organizationId));
       const unsubscribeLink = `${config.backendUrl}/unsubscribe?token=${member.unsubscribeToken}`;
 
-      // generating email html
+      // Generate and send email
       const emailHtml = await render(
         NewsletterEmail({
           userLanguage: member.language,

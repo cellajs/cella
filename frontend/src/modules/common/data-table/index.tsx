@@ -199,7 +199,7 @@ export const DataTable = <TData,>({
               )}
 
               {/* Error */}
-              {error && <div className="text-center my-8 text-sm text-red-500">{t('common:error.load_more_failed')}</div>}
+              {error && <div className="text-center my-8 text-sm text-red-500">{t('error:load_more_failed')}</div>}
             </div>
           )}
         </>

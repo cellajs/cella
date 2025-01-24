@@ -20,7 +20,7 @@ export const invitesInfoSchema = z.array(
     id: z.string(),
     email: z.string(),
     name: z.string().nullable(),
-    userId: z.string().nullable(),
+    role: z.enum(config.rolesByType.entityRoles).nullable(),
     expiresAt: z.string(),
     createdAt: z.string(),
     createdBy: z.string().nullable(),

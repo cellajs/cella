@@ -10,11 +10,12 @@ import SSE from '~/modules/common/sse';
 import { SSEProvider } from '~/modules/common/sse/provider';
 import AppNav from '~/modules/navigation';
 
+// Dialoger, dropdowner and sheeter are put here so they fall inside SSE provider.
 const AppLayout = () => {
   return (
     <div id="app-layout">
       <ErrorBoundary
-        fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} isRootLevel resetErrorBoundary={resetErrorBoundary} />}
+        fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} level="root" resetErrorBoundary={resetErrorBoundary} />}
       >
         <SSEProvider>
           <AppNav />

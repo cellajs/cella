@@ -9,11 +9,11 @@ import { createToast } from '../modules/common/toaster';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
-  400: t('common:error.bad_request_action'),
-  401: t('common:error.unauthorized_action'),
-  403: t('common:error.forbidden_action'),
-  404: t('common:error.not_found'),
-  429: t('common:error.too_many_requests'),
+  400: t('error:bad_request_action'),
+  401: t('error:unauthorized_action'),
+  403: t('error:forbidden_action'),
+  404: t('error:not_found'),
+  429: t('error:too_many_requests'),
 });
 
 export const onError = (error: Error) => {
@@ -24,7 +24,7 @@ export const onError = (error: Error) => {
 
   // Handle network error (e.g., connection refused)
   if (error instanceof Error && error.message === 'Failed to fetch') {
-    createToast(i18n.t('common:error.network_error'), 'error');
+    createToast(i18n.t('error:network_error'), 'error');
   }
 
   if (error instanceof ApiError) {
@@ -41,20 +41,20 @@ export const onError = (error: Error) => {
 
     // Translate, try most specific first
     const errorMessage =
-      error.entityType && i18next.exists(`common:error.resource_${error.type}`)
-        ? i18n.t(`error.resource_${error.type}`, { resource: i18n.t(error.entityType) })
-        : error.type && i18next.exists(`common:error.${error.type}`)
-          ? i18n.t(`common:error.${error.type}`)
+      error.entityType && i18next.exists(`error:resource_${error.type}`)
+        ? i18n.t(`error:resource_${error.type}`, { resource: i18n.t(error.entityType) })
+        : error.type && i18next.exists(`error:${error.type}`)
+          ? i18n.t(`error:${error.type}`)
           : fallback[statusCode as keyof typeof fallback];
 
     // Show toast
-    if (error.severity === 'info') createToast(errorMessage || error.message, 'info');
-    else createToast(errorMessage || error.message, 'error');
+    const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
+    createToast(errorMessage || error.message, toastType);
 
     // Redirect to sign-in page if the user is not authenticated (unless already on /auth/*)
     if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
       const redirectOptions: { to: string; search?: { redirect: string } } = {
-        to: '/auth/sign-in',
+        to: '/auth/authenticate',
       };
 
       // Save the current path as a redirect

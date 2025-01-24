@@ -3,7 +3,7 @@ import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { db } from '#/db/db';
-import { requestsTable } from '#/db/schema/requests';
+import { type RequestsModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
 import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
@@ -16,7 +16,8 @@ import { MessageEmail } from '../../../emails/message';
 import { env } from '../../../env';
 import requestsRoutesConfig from './routes';
 
-const conflictingTypes = ['waitlist', 'newsletter'];
+// These requests are only allowed to be created if user has none yet
+const uniqueRequests: RequestsModel['type'][] = ['waitlist', 'newsletter'];
 
 const app = new CustomHono();
 
@@ -32,16 +33,16 @@ const requestsRoutes = app
       if (existingRequest) return errorResponse(ctx, 401, 'request_email_is_user', 'info');
     }
 
-    if (conflictingTypes.includes(type)) {
+    // Check if not duplicate for unique requests
+    if (uniqueRequests.includes(type)) {
       const [existingRequest] = await db
         .select()
         .from(requestsTable)
-        .where(and(eq(requestsTable.email, email), inArray(requestsTable.type, ['waitlist', 'newsletter'])));
+        .where(and(eq(requestsTable.email, email), inArray(requestsTable.type, uniqueRequests)));
       if (existingRequest?.type === type) return errorResponse(ctx, 409, 'request_exists', 'info');
-      if (conflictingTypes.includes(existingRequest?.type)) return errorResponse(ctx, 400, `${type}_request_error`, 'info');
     }
 
-    const [createdAccessRequest] = await db
+    const [{ token, ...createdRequest }] = await db
       .insert(requestsTable)
       .values({
         email,
@@ -50,12 +51,17 @@ const requestsRoutes = app
       })
       .returning();
 
-    // slack notifications
+    // Slack notifications
     if (type === 'waitlist') await sendSlackMessage('Join waitlist', email);
     if (type === 'newsletter') await sendSlackMessage('Join newsletter', email);
     if (type === 'contact') await sendSlackMessage(`for contact from ${message}.`, email);
 
-    return ctx.json({ success: true, data: createdAccessRequest }, 200);
+    const data = {
+      ...createdRequest,
+      requestPending: false,
+    };
+
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    *  Get list of requests for system admins
@@ -81,8 +87,12 @@ const requestsRoutes = app
       order,
     );
 
-    const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const requests = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
+    const items = requests.map(({ token, ...rest }) => ({
+      ...rest,
+      requestPending: token !== null,
+    }));
     return ctx.json({ success: true, data: { items, total } }, 200);
   })
   /*
@@ -106,7 +116,7 @@ const requestsRoutes = app
     const user = getContextUser();
     const { emails, subject, content } = ctx.req.valid('json');
 
-    // Generate email HTML
+    // Generate and send email
     const emailHtml = await render(
       MessageEmail({
         userLanguage: user.language,

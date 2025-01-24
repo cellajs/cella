@@ -10,7 +10,7 @@ import Spinner from '~/modules/common/spinner';
 import { useAcceptInviteMutation, useCheckTokenMutation } from '~/modules/general/query-mutations';
 import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
-import { AcceptInviteRoute } from '~/routes/general';
+import { AcceptInviteRoute } from '~/routes/auth';
 import type { TokenData } from '~/types/common';
 import { cn } from '~/utils/cn';
 
@@ -70,8 +70,8 @@ const AcceptInvite = () => {
           {/* TODO: we should move this to a reusable auth error message component ? */}
           {error && (
             <>
-              <span className="text-muted-foreground text-sm">{t(`common:error.${error.type}`)}</span>
-              <Link to="/auth/sign-in" preload={false} className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
+              <span className="text-muted-foreground text-sm">{t(`error:${error.type}`)}</span>
+              <Link to="/auth/authenticate" preload={false} className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
                 {t('common:sign_in')}
                 <ArrowRight size={16} className="ml-2" />
               </Link>

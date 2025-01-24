@@ -1,20 +1,22 @@
 import { z } from '@hono/zod-openapi';
-
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { cookieSchema, passwordSchema } from '#/utils/schema/common-schemas';
+import { cookieSchema, passwordSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import {
-  authBodySchema,
+  acceptInviteBodySchema,
+  acceptInviteResponseSchema,
+  checkTokenSchema,
   emailBodySchema,
+  emailPasswordBodySchema,
   passkeyChallengeQuerySchema,
   passkeyCreationBodySchema,
   passkeyVerificationBodySchema,
   signInResponse,
 } from './schema';
 
-class AuthRoutesConfig {
+class AuthLayoutRoutesConfig {
   public impersonationSignIn = createRouteConfig({
     method: 'get',
     path: '/impersonation/start',
@@ -103,7 +105,7 @@ class AuthRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: authBodySchema,
+            schema: emailPasswordBodySchema,
           },
         },
       },
@@ -304,7 +306,7 @@ class AuthRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: authBodySchema,
+            schema: emailPasswordBodySchema,
           },
         },
       },
@@ -318,6 +320,68 @@ class AuthRoutesConfig {
         content: {
           'application/json': {
             schema: successWithDataSchema(signInResponse),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public checkToken = createRouteConfig({
+    method: 'post',
+    path: '/check-token',
+    middleware: [tokenLimiter],
+    guard: isPublicAccess,
+    tags: ['auth'],
+    summary: 'Token validation check',
+    description:
+      'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: tokenSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Token is valid',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(checkTokenSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public acceptInvite = createRouteConfig({
+    method: 'post',
+    path: '/accept-invite/{token}',
+    guard: isPublicAccess,
+    middleware: [tokenLimiter],
+    tags: ['auth'],
+    summary: 'Accept invitation',
+    description: 'Accept invitation token',
+    request: {
+      params: tokenSchema,
+      body: {
+        content: {
+          'application/json': {
+            schema: acceptInviteBodySchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'Invitation was accepted',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(acceptInviteResponseSchema),
           },
         },
       },
@@ -537,4 +601,4 @@ class AuthRoutesConfig {
   });
 }
 
-export default new AuthRoutesConfig();
+export default new AuthLayoutRoutesConfig();

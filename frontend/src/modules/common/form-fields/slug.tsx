@@ -1,4 +1,3 @@
-import type { Entity } from 'backend/types/common';
 import { config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -10,6 +9,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import InputFormField from '~/modules/common/form-fields/input';
 import { useCheckSlugMutation } from '~/modules/general/query-mutations';
 import { Button } from '~/modules/ui/button';
+import type { Entity } from '~/types/common';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -56,7 +56,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
           // Slug is not available
           form.setError('slug', {
             type: 'manual',
-            message: t('common:error.slug_exists'),
+            message: t('error:slug_exists'),
           });
           setSlugAvailable('notAvailable');
         },

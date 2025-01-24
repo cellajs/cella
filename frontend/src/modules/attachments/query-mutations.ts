@@ -54,7 +54,7 @@ const onError = (
       queryClient.setQueryData(queryKey, previousData);
     }
   }
-  toast.error(t('common:error.create_resource', { resource: t('common:attachment') }));
+  toast.error(t('error:create_resource', { resource: t('common:attachment') }));
 };
 
 queryClient.setMutationDefaults(attachmentsKeys.create(), {

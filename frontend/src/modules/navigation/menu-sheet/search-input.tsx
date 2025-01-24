@@ -3,8 +3,8 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
+import { menuSections } from '~/menu-config';
 import { Input } from '~/modules/ui/input';
-import { menuSections } from '~/nav-config';
 import type { UserMenu, UserMenuItem } from '~/types/common';
 
 interface MenuSheetSearchProps {

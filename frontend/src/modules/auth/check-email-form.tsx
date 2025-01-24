@@ -10,19 +10,17 @@ import { Input } from '~/modules/ui/input';
 
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
-import { useEffect } from 'react';
-import type { Step } from '~/modules/auth';
+import type { Step } from '~/modules/auth/auth-steps';
 import { useCheckEmailMutation } from '~/modules/auth/query-mutations';
-import type { TokenData } from '~/types/common';
 
 const formSchema = emailBodySchema;
 
 interface CheckEmailProps {
-  tokenData: TokenData | null;
   setStep: (step: Step, email: string) => void;
+  emailEnabled: boolean;
 }
 
-export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
+export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
   const { t } = useTranslation();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -37,53 +35,46 @@ export const CheckEmailForm = ({ tokenData, setStep }: CheckEmailProps) => {
       onSuccess: () => {
         setStep('signIn', form.getValues('email'));
       },
-      //TODO: this is unclear what it does
       onError: (error) => {
-        const nextStep = config.has.registrationEnabled || tokenData ? 'signUp' : config.has.waitlist ? 'waitlist' : 'inviteOnly';
+        let nextStep: Step = 'inviteOnly';
+
+        // If registration is enabled or user has a token, proceed to sign up
+        if (config.has.registrationEnabled) nextStep = 'signUp';
+        // If registration is disabled and user has no token, proceed to waitlist
+        else if (config.has.waitlist) nextStep = 'waitlist';
+
         if (error.status === 404) return setStep(nextStep, form.getValues('email'));
       },
     });
   };
 
-  const title = config.has.registrationEnabled
-    ? tokenData
-      ? t('common:invite_sign_in_or_up')
-      : t('common:sign_in_or_up')
-    : tokenData
-      ? t('common:invite_sign_in')
-      : t('common:sign_in');
-
-  // Directly forward to next step if email is in token
-  useEffect(() => {
-    if (!tokenData?.email) return;
-
-    const nextStep = config.has.registrationEnabled || tokenData ? 'signUp' : config.has.waitlist ? 'waitlist' : 'inviteOnly';
-    setStep(nextStep, tokenData.email);
-  }, [tokenData]);
+  const title = config.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center pb-2 mt-4">{title}</h1>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            // Custom css due to html injection by browser extensions
-            <FormItem className="gap-0">
-              <FormControl>
-                <Input {...field} type="email" autoFocus placeholder={t('common:email')} />
-              </FormControl>
-              <FormMessage className="mt-2" />
-            </FormItem>
-          )}
-        />
-        <SubmitButton loading={isPending} className="w-full">
-          {t('common:continue')}
-          <ArrowRight size={16} className="ml-2" />
-        </SubmitButton>
-      </form>
+      {emailEnabled && (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              // Custom css due to html injection by browser extensions
+              <FormItem className="gap-0">
+                <FormControl>
+                  <Input {...field} type="email" autoFocus placeholder={t('common:email')} />
+                </FormControl>
+                <FormMessage className="mt-2" />
+              </FormItem>
+            )}
+          />
+          <SubmitButton loading={isPending} className="w-full">
+            {t('common:continue')}
+            <ArrowRight size={16} className="ml-2" />
+          </SubmitButton>
+        </form>
+      )}
     </Form>
   );
 };

@@ -32,7 +32,6 @@ function Root() {
       <ReloadPrompt />
       <Toaster richColors toastOptions={{ className: 'max-sm:mb-16' }} position={toastPosition} />
       <DownAlert />
-
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
     </TooltipProvider>
   );

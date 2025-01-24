@@ -54,9 +54,9 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         name: t('common:your_role'),
         sortable: false,
         visible: !isMobile,
+        width: 120,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.membership?.role ? t(`common:${row.membership.role}`) : <span className="text-muted">-</span>),
-        width: 120,
         renderEditCell: ({ row, onRowChange }) =>
           renderSelect({
             row,
@@ -69,24 +69,25 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
         name: t('common:subscription'),
         sortable: false,
         visible: !isMobile,
+        minWidth: 140,
         renderHeaderCell: HeaderCell,
         renderCell: () => <span className="text-muted">-</span>,
-        minWidth: 140,
       },
       {
         key: 'createdAt',
         name: t('common:created_at'),
         sortable: true,
         visible: !isMobile,
+        minWidth: 180,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
-        minWidth: 180,
       },
       {
         key: 'memberCount',
         name: t('common:members'),
         sortable: false,
         visible: !isMobile,
+        width: 140,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
@@ -94,13 +95,13 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
             {row.counts.memberships.members}
           </>
         ),
-        width: 140,
       },
       {
         key: 'adminCount',
         name: t('common:admins'),
         sortable: false,
         visible: !isMobile,
+        width: 140,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
@@ -108,7 +109,6 @@ export const useColumns = (callback: (organizations: Organization[]) => void) =>
             {row.counts.memberships.admins}
           </>
         ),
-        width: 140,
       },
     ];
 

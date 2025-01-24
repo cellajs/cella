@@ -1,7 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 import type { ApiError } from '~/lib/api';
 
-import { type AcceptInviteProps, acceptInvite, checkSlugAvailable, checkToken } from '~/modules/general/api';
+import { type AcceptInviteProps, acceptInvite, checkToken } from '~/modules/auth/api';
+import { checkSlugAvailable } from '~/modules/general/api';
 import { generalKeys } from '~/modules/general/query';
 import type { Entity, TokenData, UserMenu, UserMenuItem } from '~/types/common';
 

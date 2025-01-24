@@ -111,7 +111,7 @@ const usersRoutes = app
       const userId = target.id;
 
       if (user.role !== 'admin' && user.id !== userId) {
-        errors.push(createError(ctx, 403, 'delete_forbidden', 'warn', 'user', { user: userId }));
+        errors.push(createError(ctx, 403, 'delete_resource_forbidden', 'warn', 'user', { user: userId }));
         return false;
       }
 

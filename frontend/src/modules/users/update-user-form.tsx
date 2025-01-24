@@ -145,7 +145,7 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           name="email"
           label={t('common:email')}
           type="email"
-          disabled
+          readOnly
           required
         />
         <InputFormField inputClassName="border" control={form.control} name="bio" label={t('common:bio')} type="textarea" />

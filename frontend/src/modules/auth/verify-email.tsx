@@ -33,19 +33,17 @@ const VerifyEmail = () => {
   }, []);
 
   if (token) {
-    if (error) {
-      return (
-        <div className="text-center">
-          <h1 className="text-2xl">{t('common:error.unable_to_verify')}</h1>
-          <p className="font-light mt-4">{t('common:error.token_invalid_request_new')}</p>
-          <Button className="mt-8" onClick={resendEmail}>
-            {t('common:resend_email')}
-          </Button>
-        </div>
-      );
-    }
+    if (!error) return null;
 
-    return null;
+    return (
+      <div className="text-center">
+        <h1 className="text-2xl">{t('error:unable_to_verify')}</h1>
+        <p className="font-light mt-4">{t('error:token_invalid_request_new')}</p>
+        <Button className="mt-8" onClick={resendEmail}>
+          {t('common:resend_email')}
+        </Button>
+      </div>
+    );
   }
 };
 

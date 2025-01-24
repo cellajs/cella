@@ -1,6 +1,5 @@
 import type { InfiniteQueryData, QueryData } from '~/query/types';
-import type { ContextEntity, Entity, MinimumEntityItem, MinimumMembershipInfo } from '~/types/common';
-import type { ProductEntity } from '#/types/common';
+import type { ContextEntity, Entity, MinimumEntityItem, MinimumMembershipInfo, ProductEntity } from '~/types/common';
 
 export interface ItemData {
   id: string;

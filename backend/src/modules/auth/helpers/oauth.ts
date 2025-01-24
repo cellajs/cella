@@ -10,7 +10,7 @@ import type { User } from 'lucia';
 import slugify from 'slugify';
 import { db } from '#/db/db';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { OauthProviderOptions } from '#/types/common';
+import type { EnabledOauthProvider } from '#/types/common';
 import { sendVerificationEmail } from './verify-email';
 
 // Create a session before redirecting to oauth provider
@@ -39,12 +39,12 @@ export const getRedirectUrl = (ctx: Context, firstSignIn?: boolean): string => {
 };
 
 // Insert oauth account into db
-export const insertOauthAccount = async (userId: string, providerId: OauthProviderOptions, providerUserId: string) => {
+export const insertOauthAccount = async (userId: string, providerId: EnabledOauthProvider, providerUserId: string) => {
   await db.insert(oauthAccountsTable).values({ providerId, providerUserId, userId });
 };
 
 // Find oauth account in db
-export const findOauthAccount = async (providerId: OauthProviderOptions, providerUserId: string) => {
+export const findOauthAccount = async (providerId: EnabledOauthProvider, providerUserId: string) => {
   return db
     .select()
     .from(oauthAccountsTable)
@@ -70,7 +70,7 @@ interface Params {
 }
 
 // Update existing user
-export const updateExistingUser = async (ctx: Context, existingUser: User, providerId: OauthProviderOptions, params: Params) => {
+export const updateExistingUser = async (ctx: Context, existingUser: User, providerId: EnabledOauthProvider, params: Params) => {
   const { providerUser, isEmailVerified, redirectUrl } = params;
 
   await insertOauthAccount(existingUser.id, providerId, providerUser.id);

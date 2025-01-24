@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { authBodySchema } from 'backend/modules/auth/schema';
+import { emailPasswordBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
@@ -11,25 +11,27 @@ import { Input } from '~/modules/ui/input';
 
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
-import type { TokenType } from '~/modules/auth/api';
 import { useSignInMutation } from '~/modules/auth/query-mutations';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
-import { SignInRoute } from '~/routes/auth';
+import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { TokenData } from '~/types/common';
 
-const formSchema = authBodySchema;
+const formSchema = emailPasswordBodySchema;
 
-export const SignInForm = ({
-  tokenData,
-  email,
-  resetToInitialStep,
-}: { tokenData: (TokenData & TokenType) | null; email: string; resetToInitialStep: () => void }) => {
+interface Props {
+  tokenData: TokenData | null;
+  email: string;
+  resetSteps: () => void;
+  emailEnabled: boolean;
+}
+
+export const SignInForm = ({ tokenData, email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { lastUser, clearLastUser } = useUserStore();
 
-  const { redirect } = useSearch({ from: SignInRoute.id });
+  const { redirect, token } = useSearch({ from: AuthenticateRoute.id });
 
   const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
@@ -44,15 +46,14 @@ export const SignInForm = ({
   const { mutate: signIn, isPending } = useSignInMutation();
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const token = tokenData?.token;
     signIn(
       { ...values, token },
       {
         onSuccess: (emailVerified) => {
           // Redirect to invitation page if token is present
           // Otherwise, redirect to a redirect URL or to home
-          const verifiedUserTo = tokenData ? '/auth/invitation/$token' : redirect || config.defaultRedirectPath;
-          const params = { token: tokenData?.token };
+          const verifiedUserTo = token ? '/auth/invitation/$token' : redirect || config.defaultRedirectPath;
+          const params = { token };
 
           navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
         },
@@ -67,13 +68,18 @@ export const SignInForm = ({
 
   const cancel = () => {
     clearLastUser();
-    resetToInitialStep();
+    resetSteps();
   };
 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
+        {tokenData
+          ? t('common:invite_sign_in', { orgName: tokenData.organizationName })
+          : lastUser
+            ? t('common:welcome_back')
+            : t('common:sign_in_as')}{' '}
+        <br />
         {!tokenData && (
           <Button variant="ghost" onClick={cancel} className="font-light mt-2 text-xl">
             {email}
@@ -81,50 +87,52 @@ export const SignInForm = ({
           </Button>
         )}
       </h1>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 !mt-0">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem className="hidden">
-              <FormControl>
-                <Input {...field} disabled type="email" autoComplete="off" placeholder={t('common:email')} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        {enabledStrategies.includes('password') && (
-          <>
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                // Custom css due to html injection by browser extensions
-                <FormItem className="gap-0">
-                  <FormControl>
-                    <Input
-                      type="password"
-                      id="password-field"
-                      autoFocus
-                      {...field}
-                      autoComplete="current-password"
-                      placeholder={t('common:password')}
-                    />
-                  </FormControl>
-                  <FormMessage className="mt-2" />
-                </FormItem>
-              )}
-            />
+      {emailEnabled && (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 !mt-0">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="hidden">
+                <FormControl>
+                  <Input {...field} disabled type="email" autoComplete="off" placeholder={t('common:email')} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {enabledStrategies.includes('password') && (
+            <>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  // Custom css due to html injection by browser extensions
+                  <FormItem className="gap-0">
+                    <FormControl>
+                      <Input
+                        type="password"
+                        id="password-field"
+                        autoFocus
+                        {...field}
+                        autoComplete="current-password"
+                        placeholder={t('common:password')}
+                      />
+                    </FormControl>
+                    <FormMessage className="mt-2" />
+                  </FormItem>
+                )}
+              />
 
-            <SubmitButton loading={isPending} className="w-full">
-              {t('common:sign_in')}
-              <ArrowRight size={16} className="ml-2" />
-            </SubmitButton>
-            <RequestPasswordDialog email={email} />
-          </>
-        )}
-      </form>
+              <SubmitButton loading={isPending} className="w-full">
+                {t('common:sign_in')}
+                <ArrowRight size={16} className="ml-2" />
+              </SubmitButton>
+              <RequestPasswordDialog email={email} />
+            </>
+          )}
+        </form>
+      )}
     </Form>
   );
 };

@@ -115,7 +115,7 @@ export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
   blockTypeSelect: false,
   blockStyleSelect: true,
   blockAlignSelect: false,
-  textColorSelect: true,
+  textColorSelect: false,
   blockNestingSelect: false,
   fileCaption: true,
   replaceFile: true,

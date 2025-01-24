@@ -26,7 +26,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
   const { user } = useUserStore();
   const isMediumScreen = useBreakpoints('min', 'md');
 
-  const formSchema = createRequestSchema.extend({ name: z.string().min(2, t('common:error.name_required')).default('') });
+  const formSchema = createRequestSchema.extend({ name: z.string().min(2, t('error:name_required')).default('') });
 
   type FormValues = z.infer<typeof formSchema>;
 
@@ -50,7 +50,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
         form.reset();
       },
       onError: () => {
-        createToast(t('common:error.reported_try_later'), 'error');
+        createToast(t('error:reported_try_later'), 'error');
       },
     });
   };

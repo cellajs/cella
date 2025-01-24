@@ -6,6 +6,7 @@ import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
 import { queriesToMap } from '~/offline-config';
 import { prefetchQuery, waitFor } from '~/query/helpers';
 import { useGeneralStore } from '~/store/general';
+import { useUserStore } from '~/store/user';
 import type { UserMenuItem } from '~/types/common';
 
 const queryMutationFileImports = import.meta.glob('~/modules/**/query-mutations.ts');
@@ -19,9 +20,10 @@ const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
   const { offlineAccess } = useGeneralStore();
-
+  const { user } = useUserStore();
   useEffect(() => {
-    if (!offlineAccess) return;
+    // Exit early if offline access is disabled or no stored user is available
+    if (!offlineAccess || !user) return;
 
     (async () => {
       await waitFor(1000); // wait for a second to avoid server overload
@@ -53,7 +55,7 @@ export const QueryClientProvider = ({ children }: { children: React.ReactNode })
         await prefetchMenuItems(section as UserMenuItem[]);
       }
     })();
-  }, [offlineAccess]);
+  }, [offlineAccess, user]);
 
   if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;
 

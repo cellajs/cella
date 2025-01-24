@@ -271,7 +271,7 @@ const membershipsRoutes = app
     const allowedTargets = targets.filter((target) => {
       if (user.role !== 'admin' && currentUserMembership?.role !== 'admin') {
         errors.push(
-          createError(ctx, 403, 'delete_forbidden', 'warn', entityType, {
+          createError(ctx, 403, 'delete_resource_forbidden', 'warn', entityType, {
             user: target.userId,
             membership: target.id,
           }),

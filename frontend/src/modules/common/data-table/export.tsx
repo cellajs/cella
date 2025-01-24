@@ -34,7 +34,7 @@ const Export = <R extends Record<string, any>>({ filename, columns, selectedRows
   };
 
   const exportSelected = async (type: 'csv' | 'pdf') => {
-    if (!selectedRows) return createToast(t('common:error.no_selected_rows'), 'warning');
+    if (!selectedRows) return createToast(t('error:no_selected_rows'), 'warning');
     const filenameWithExtension = `${filename}.${type}`;
 
     if (type === 'csv') return exportToCsv(columns, selectedRows, filenameWithExtension);

@@ -73,8 +73,8 @@ export const useColumns = (callback: (users: User[]) => void) => {
         name: t('common:email'),
         sortable: true,
         visible: !isMobile,
-        renderHeaderCell: HeaderCell,
         minWidth: 140,
+        renderHeaderCell: HeaderCell,
         renderCell: ({ row, tabIndex }) => {
           return (
             <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate hover:underline underline-offset-4 outline-0 ring-0 font-light">
@@ -88,9 +88,9 @@ export const useColumns = (callback: (users: User[]) => void) => {
         name: t('common:role'),
         sortable: true,
         visible: !isMobile,
+        width: 100,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => <div className="inline-flex items-center gap-1 relative group h-full w-full">{t(`common:${row.role}`)}</div>,
-        width: 100,
         renderEditCell: ({ row, onRowChange }) =>
           renderSelect({
             row,
@@ -103,24 +103,25 @@ export const useColumns = (callback: (users: User[]) => void) => {
         name: t('common:created_at'),
         sortable: true,
         visible: !isMobile,
+        minWidth: 180,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.createdAt ? dateShort(row.createdAt) : <span className="text-muted">-</span>),
-        minWidth: 180,
       },
       {
         key: 'lastSeenAt',
         name: t('common:last_seen_at'),
         sortable: true,
         visible: !isMobile,
+        minWidth: 180,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (row.lastSeenAt ? dateShort(row.lastSeenAt) : <span className="text-muted">-</span>),
-        minWidth: 180,
       },
       {
         key: 'membershipCount',
         name: 'Memberships',
         sortable: false,
         visible: !isMobile,
+        width: 140,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
           <>
@@ -128,7 +129,6 @@ export const useColumns = (callback: (users: User[]) => void) => {
             {row.counts?.memberships | 0}
           </>
         ),
-        width: 140,
       },
     ];
 

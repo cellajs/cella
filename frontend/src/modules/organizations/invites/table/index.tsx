@@ -1,3 +1,4 @@
+import type { config } from 'config';
 import { Suspense, lazy, useRef, useState } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
 
@@ -13,7 +14,12 @@ export interface InvitesInfoProps {
   info: OrganizationInvitesInfo[];
 }
 
-export type InvitesInfoSearch = { q?: string; order?: 'asc' | 'desc'; sort: 'expiresAt' | 'createdAt' | 'createdBy' };
+export type InvitesInfoSearch = {
+  q?: string;
+  order?: 'asc' | 'desc';
+  sort: 'expiresAt' | 'createdAt' | 'createdBy';
+  role?: (typeof config.rolesByType.entityRoles)[number];
+};
 
 export const InvitesInfoTable = ({ info }: InvitesInfoProps) => {
   const { search, setSearch } = useSearchParams<InvitesInfoSearch>({ saveDataInSearch: false });
@@ -21,7 +27,7 @@ export const InvitesInfoTable = ({ info }: InvitesInfoProps) => {
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
   // Table state
-  const { q, sort, order } = search;
+  const { q, role, sort, order } = search;
 
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
@@ -48,6 +54,7 @@ export const InvitesInfoTable = ({ info }: InvitesInfoProps) => {
         selected={selected}
         columns={columns}
         q={q ?? ''}
+        role={role}
         setSearch={setSearch}
         setColumns={setColumns}
         clearSelection={clearSelection}
@@ -57,7 +64,7 @@ export const InvitesInfoTable = ({ info }: InvitesInfoProps) => {
           ref={dataTableRef}
           info={info}
           columns={columns}
-          queryVars={{ q, sort, order, limit: info.length }}
+          queryVars={{ q, role, sort, order, limit: info.length }}
           updateCounts={updateCounts}
           sortColumns={sortColumns}
           setSortColumns={setSortColumns}

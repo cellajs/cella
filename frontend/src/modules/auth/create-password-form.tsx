@@ -91,7 +91,7 @@ const CreatePasswordForm = () => {
         </form>
       ) : (
         <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
-          {tokenError && <span className="text-muted-foreground text-sm">{t(`common:error.${tokenError.type}`)}</span>}
+          {tokenError && <span className="text-muted-foreground text-sm">{t(`error:${tokenError.type}`)}</span>}
           {isPending && <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}
         </div>
       )}

@@ -38,7 +38,7 @@ const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: 
   return user ? (
     <UserProfilePage sheet user={user} orgIdOrSlug={orgIdOrSlug} />
   ) : (
-    <ContentPlaceholder Icon={isOnline ? FlameKindling : WifiOff} title={t(`common:${isOnline ? 'error.no_user_found' : 'offline.text'}`)} />
+    <ContentPlaceholder Icon={isOnline ? FlameKindling : WifiOff} title={t(`${isOnline ? 'error:no_user_found' : 'common:offline.text'}`)} />
   );
 };
 

@@ -43,7 +43,7 @@ const OrganizationPage = () => {
       { idOrSlug: organization.id, json: { bannerUrl } },
       {
         onSuccess: () => toast.success(t('common:success.upload_cover')),
-        onError: () => toast.error(t('common:error.image_upload_failed')),
+        onError: () => toast.error(t('error:image_upload_failed')),
       },
     );
   });

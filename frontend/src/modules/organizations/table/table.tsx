@@ -46,7 +46,7 @@ const BaseDataTable = memo(
           orgIdOrSlug: organization.id,
         })
           .then(() => toast.success(t('common:success.role_updated')))
-          .catch(() => toast.error(t('common:error.error')));
+          .catch(() => toast.error(t('error:error')));
       }
 
       setRows(changedRows);

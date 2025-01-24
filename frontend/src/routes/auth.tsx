@@ -1,28 +1,31 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { z } from 'zod';
-import SignIn from '~/modules/auth';
+import { queryClient } from '~/lib/router';
+import AcceptInvite from '~/modules/auth/accept-invite';
 import AuthPage from '~/modules/auth/auth-page';
+import AuthSteps from '~/modules/auth/auth-steps';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import RequestVerification from '~/modules/auth/request-verification';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
+import { meQueryOptions } from '~/modules/users/query';
 import { PublicRoute } from '~/routes/general';
 import { useUserStore } from '~/store/user';
 
-export const AuthRoute = createRoute({
+export const AuthLayoutRoute = createRoute({
   id: 'auth-layout',
   staticData: { pageTitle: null, isAuth: false },
   getParentRoute: () => PublicRoute,
   component: () => <AuthPage />,
 });
 
-export const SignInRoute = createRoute({
-  path: '/auth/sign-in',
+export const AuthenticateRoute = createRoute({
+  path: '/auth/authenticate',
   validateSearch: z.object({ redirect: z.string().optional(), token: z.string().optional() }),
-  staticData: { pageTitle: 'Sign in', isAuth: false },
-  getParentRoute: () => AuthRoute,
+  staticData: { pageTitle: 'Authenticate', isAuth: false },
+  getParentRoute: () => AuthLayoutRoute,
   beforeLoad: async ({ cause, search }) => {
     // Only check auth if entering to prevent loop
     if (cause !== 'enter' || search.redirect) return;
@@ -32,35 +35,51 @@ export const SignInRoute = createRoute({
     if (!storedUser) return;
     throw redirect({ to: config.defaultRedirectPath, replace: true });
   },
-  component: () => <SignIn />,
+  component: () => <AuthSteps />,
 });
 
 export const RequestPasswordRoute = createRoute({
   path: '/auth/request-password',
   staticData: { pageTitle: 'Request password link', isAuth: false },
-  getParentRoute: () => AuthRoute,
+  getParentRoute: () => AuthLayoutRoute,
   component: () => <RequestPasswordForm />,
 });
 
 export const CreatePasswordWithTokenRoute = createRoute({
   path: '/auth/create-password/$token',
   staticData: { pageTitle: 'Create password', isAuth: false },
-  getParentRoute: () => AuthRoute,
+  getParentRoute: () => AuthLayoutRoute,
   component: () => <CreatePasswordForm />,
 });
 
 export const RequestVerificationRoute = createRoute({
   path: '/auth/request-verification',
   staticData: { pageTitle: 'Verify email', isAuth: false },
-  getParentRoute: () => AuthRoute,
+  getParentRoute: () => AuthLayoutRoute,
   component: () => <RequestVerification />,
 });
 
 export const VerifyEmailWithTokenRoute = createRoute({
   path: '/auth/verify-email/$token',
   staticData: { pageTitle: 'Verify email', isAuth: false },
-  getParentRoute: () => AuthRoute,
+  getParentRoute: () => AuthLayoutRoute,
   component: () => <VerifyEmail />,
+});
+
+export const AcceptInviteRoute = createRoute({
+  path: '/auth/invitation/$token',
+  staticData: { pageTitle: 'Accept invite', isAuth: true },
+  getParentRoute: () => AuthLayoutRoute,
+  beforeLoad: async ({ params }) => {
+    try {
+      const queryOptions = meQueryOptions();
+      await queryClient.fetchQuery(queryOptions);
+    } catch {
+      console.info('Not authenticated (silent check) -> redirect to sign in');
+      throw redirect({ to: '/auth/authenticate', search: { token: params.token } });
+    }
+  },
+  component: () => <AcceptInvite />,
 });
 
 export const SignOutRoute = createRoute({

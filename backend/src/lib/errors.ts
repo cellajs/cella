@@ -1,3 +1,4 @@
+import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
@@ -6,15 +7,20 @@ import type { Entity } from '#/types/common';
 import type { errorSchema } from '../utils/schema/common-schemas';
 import { getContextUser, getOrganization } from './context';
 import { i18n } from './i18n';
+import type locales from './i18n-locales';
+
+type StripPrefix<T, Prefix extends string> = T extends `${Prefix}${infer Rest}` ? Rest : T;
+type ErrorKey = keyof (typeof locales)['en']['error'];
+type SimplifiedErrorKey = StripPrefix<`error:${ErrorKey & string}`, 'error:'>;
 
 export type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
-
-export type Severity = 'debug' | 'info' | 'log' | 'warn' | 'error';
 
 export type ErrorType = z.infer<typeof errorSchema> & {
   eventData?: EventData;
   name?: Error['name'];
 };
+
+export type Severity = ErrorType['severity'];
 
 export type EventData = {
   readonly [key: string]: number | string | boolean | null;
@@ -24,13 +30,13 @@ export type EventData = {
 export const createError = (
   ctx: Context,
   status: HttpErrorStatus,
-  type: string,
+  type: SimplifiedErrorKey,
   severity: Severity = 'info',
   entityType?: Entity,
   eventData?: EventData,
   err?: Error,
 ) => {
-  const translationKey = `common:error.${type}`;
+  const translationKey = `error:${type}`;
   const message = i18n.t(translationKey);
 
   const user = getContextUser();
@@ -65,7 +71,7 @@ export const createError = (
 export const errorResponse = (
   ctx: Context,
   status: HttpErrorStatus,
-  type: string,
+  type: SimplifiedErrorKey,
   severity: Severity = 'info',
   entityType?: Entity,
   eventData?: EventData,
@@ -76,3 +82,6 @@ export const errorResponse = (
   // TODO: Review this type assertion (as 400)
   return ctx.json({ success: false, error }, status as 400);
 };
+
+export const errorRedirect = (ctx: Context, type: SimplifiedErrorKey, severity: Severity = 'info') =>
+  ctx.redirect(`${config.frontendUrl}/error?error=${type}&severity=${severity}`, 302);

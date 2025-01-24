@@ -43,7 +43,7 @@
 }
 
 .rdg-cell:not([role="columnheader"]):not([aria-readonly="true"]):hover:after {
-  content: '✎';
+  content: "✎";
   display: block;
   position: absolute;
   top: 0.25rem;

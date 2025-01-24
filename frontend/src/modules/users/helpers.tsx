@@ -69,11 +69,11 @@ export const registerPasskey = async () => {
     if (result) {
       toast.success(t('common:success.passkey_added'));
       useUserStore.getState().setUser({ ...user, passkey: true });
-    } else toast.error(t('common:error.passkey_add_failed'));
+    } else toast.error(t('error:passkey_add_failed'));
   } catch (error) {
     // On cancel throws error NotAllowedError
     console.error('Error during passkey registration:', error);
-    toast.error(t('common:error.passkey_add_failed'));
+    toast.error(t('error:passkey_add_failed'));
   }
 };
 
@@ -104,9 +104,9 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
 
     const success = await authThroughPasskey(credentialData);
     if (success) callback?.();
-    else toast.error(t('common:error.passkey_sign_in'));
+    else toast.error(t('error:passkey_sign_in'));
   } catch (err) {
-    toast.error(t('common:error.passkey_sign_in'));
+    toast.error(t('error:passkey_sign_in'));
   }
 };
 
@@ -119,10 +119,10 @@ export const deletePasskey = async () => {
     if (result) {
       toast.success(t('common:success.passkey_removed'));
       useUserStore.getState().setUser({ ...useUserStore.getState().user, passkey: false });
-    } else toast.error(t('common:error.passkey_remove_failed'));
+    } else toast.error(t('error:passkey_remove_failed'));
   } catch (error) {
     console.error('Error removing passkey:', error);
-    toast.error(t('common:error.passkey_remove_failed'));
+    toast.error(t('error:passkey_remove_failed'));
   }
 };
 

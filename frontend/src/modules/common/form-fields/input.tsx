@@ -4,6 +4,7 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessa
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 
+//TODO: can this be refactored?
 interface Props<TFieldValues extends FieldValues> {
   control: Control<TFieldValues>;
   name: Path<TFieldValues>;
@@ -18,6 +19,7 @@ interface Props<TFieldValues extends FieldValues> {
   prefix?: string;
   subComponent?: React.ReactNode;
   required?: boolean;
+  readOnly?: boolean;
   disabled?: boolean;
   icon?: ReactNode;
   autoFocus?: boolean;
@@ -36,6 +38,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
   placeholder,
   subComponent,
   required,
+  readOnly,
   prefix,
   disabled,
   icon,
@@ -95,6 +98,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                   style={{ paddingLeft: prefix ? prefixPadding : icon ? '2rem' : '' }}
                   placeholder={placeholder}
                   onFocus={onFocus}
+                  readOnly={readOnly}
                   autoResize={true}
                   autoFocus={autoFocus}
                   defaultValue={defaultValue}
@@ -110,6 +114,7 @@ const InputFormField = <TFieldValues extends FieldValues>({
                   autoFocus={autoFocus}
                   onFocus={onFocus}
                   placeholder={placeholder}
+                  readOnly={readOnly}
                   defaultValue={defaultValue}
                   value={value || formFieldValue || ''}
                   disabled={disabled}

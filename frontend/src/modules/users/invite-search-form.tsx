@@ -11,7 +11,7 @@ import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { useMutation } from '~/hooks/use-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
-import SelectRole from '~/modules/common/form-fields/select-role-radio';
+import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { QueryCombobox } from '~/modules/common/query-combobox';
 import { createToast } from '~/modules/common/toaster';
 import { Badge } from '~/modules/ui/badge';
@@ -30,6 +30,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   if (!entity) return null;
 
+  // TODO
   const formSchema = z.object({
     emails: z
       .array(z.string().email(t('backend:invalid.email')))
@@ -98,7 +99,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
             <FormItem className="flex-row gap-4 items-center">
               <FormLabel>{t('common:role')}:</FormLabel>
               <FormControl>
-                <SelectRole entityType={entity.entity} value={value} onChange={onChange} />
+                <SelectRoleRadio entityType={entity.entity} value={value} onChange={onChange} />
               </FormControl>
               <FormMessage />
             </FormItem>

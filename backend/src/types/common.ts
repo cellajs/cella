@@ -24,9 +24,7 @@ export type ContextEntityIdFields = {
 
 export type ProductEntity = (typeof config.productEntityTypes)[number];
 
-export type OauthProviderOptions = (typeof config.enabledOauthProviders)[number];
-
-export type EnabledOauthProviderOptions = (typeof config.enabledOauthProviders)[number];
+export type EnabledOauthProvider = (typeof config.enabledOauthProviders)[number];
 
 export type AllowedAuthStrategies = (typeof config.enabledAuthenticationStrategies)[number];
 

@@ -91,7 +91,9 @@ const ContactFormMap = () => {
 
   if (config.company.coordinates && config.googleMapsKey)
     return (
-      <ErrorBoundary fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice error={error} resetErrorBoundary={resetErrorBoundary} />}>
+      <ErrorBoundary
+        fallbackRender={({ error, resetErrorBoundary }) => <ErrorNotice level="app" error={error} resetErrorBoundary={resetErrorBoundary} />}
+      >
         <div className="w-full h-full md:pb-12 md:px-4 overflow-hidden">
           <APIProvider apiKey={config.googleMapsKey} libraries={['marker']}>
             <GMap
