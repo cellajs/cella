@@ -13,7 +13,7 @@ export type { ParseKeys } from 'i18next';
 const initOptions: InitOptions = {
   resources: locales, // Preload default ('en') translations
   debug: env.VITE_DEBUG_I18N,
-  ns: ['common', 'app', 'about'],
+  ns: ['common', 'app', 'about', 'error'],
   partialBundledLanguages: true,
   supportedLngs: config.languages.map((lng) => lng.value),
   load: 'languageOnly',

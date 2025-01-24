@@ -30,7 +30,7 @@ const ImpersonateRow = ({ user, tabIndex }: Props) => {
       toast.success(t('common:success.impersonated'));
       navigate({ to: config.defaultRedirectPath, replace: true });
     } catch (error) {
-      createToast(t('common:error.impersonation_failed'), 'error');
+      createToast(t('error:impersonation_failed'), 'error');
       console.error(error);
     }
   };

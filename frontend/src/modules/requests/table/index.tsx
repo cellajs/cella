@@ -96,7 +96,7 @@ const RequestsTable = () => {
       mutateQuery.update(updatedWaitLists);
       clearSelection();
     } catch (error) {
-      createToast(t('common:error.bad_request_action'), 'error');
+      createToast(t('error:bad_request_action'), 'error');
     }
   };
 

@@ -40,7 +40,7 @@ export const OrganizationRoute = createRoute({
     return { organization };
   },
   getParentRoute: () => AppRoute,
-  errorComponent: ({ error }) => <ErrorNotice error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
     const { idOrSlug } = useParams({ from: OrganizationRoute.id });
     return (

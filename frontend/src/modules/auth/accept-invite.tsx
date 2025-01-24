@@ -70,7 +70,7 @@ const AcceptInvite = () => {
           {/* TODO: we should move this to a reusable auth error message component ? */}
           {error && (
             <>
-              <span className="text-muted-foreground text-sm">{t(`common:error.${error.type}`)}</span>
+              <span className="text-muted-foreground text-sm">{t(`error:${error.type}`)}</span>
               <Link to="/auth/authenticate" preload={false} className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
                 {t('common:sign_in')}
                 <ArrowRight size={16} className="ml-2" />

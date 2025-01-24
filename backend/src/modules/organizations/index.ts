@@ -274,10 +274,10 @@ const organizationsRoutes = app
         ),
       );
 
-    if (!organizationsMembersEmails.length) return errorResponse(ctx, 404, 'There is no members in organizations', 'warn', 'organization');
+    if (!organizationsMembersEmails.length) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
     if (organizationsMembersEmails.length === 1 && user.email === organizationsMembersEmails[0].email)
-      return errorResponse(ctx, 400, 'Only receiver is sender', 'warn', 'organization');
+      return errorResponse(ctx, 400, 'sender_is_receiver', 'warn', 'organization');
 
     for (const member of organizationsMembersEmails) {
       if (!member.newsletter) continue;

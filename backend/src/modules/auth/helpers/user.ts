@@ -23,7 +23,8 @@ export const handleCreateUser = async (
 ) => {
   // If sign up is disabled, return an error
   if (!config.has.registrationEnabled && !options.isInvite) {
-    return errorResponse(ctx, 403, 'sign_up_disabled', 'warn');
+    if (options.provider) return ctx.redirect(`${config.frontendUrl}/error?error=sign_up_restricted&severity=warn`, 302);
+    return errorResponse(ctx, 403, 'sign_up_restricted', 'warn');
   }
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(data.slug);

@@ -32,7 +32,7 @@ const UserProfilePage = ({ user, sheet, orgIdOrSlug }: { user: LimitedUser; shee
           toast.success(t('common:success.upload_cover'));
           if (isSelf) setUser({ ...currentUser, ...{ bannerUrl } });
         },
-        onError: () => toast.error(t('common:error.image_upload_failed')),
+        onError: () => toast.error(t('error:image_upload_failed')),
       },
     );
   });

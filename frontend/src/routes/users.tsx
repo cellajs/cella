@@ -14,7 +14,7 @@ export const UserProfileRoute = createRoute({
   staticData: { pageTitle: 'Profile', isAuth: true },
   getParentRoute: () => AppRoute,
   loader: async ({ params: { idOrSlug } }) => queryClient.ensureQueryData(userQueryOptions(idOrSlug)),
-  errorComponent: ({ error }) => <ErrorNotice error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
   component: () => {
     const { idOrSlug } = useParams({ from: UserProfileRoute.id });
     const { data: user } = useSuspenseQuery(userQueryOptions(idOrSlug));

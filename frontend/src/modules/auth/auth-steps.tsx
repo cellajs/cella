@@ -58,7 +58,7 @@ const AuthSteps = () => {
   if (error) {
     return (
       <>
-        <span className="text-muted-foreground text-sm">{t(`common:error.${error.type}`)}</span>
+        <span className="text-muted-foreground text-sm">{t(`error:${error.type}`)}</span>
         <Link to="/auth/authenticate" className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
           {t('common:sign_in')}
           <ArrowRight size={16} className="ml-2" />

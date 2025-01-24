@@ -35,7 +35,7 @@ export const SystemRoute = createRoute({
   beforeLoad: ({ location }) => noDirectAccess(location.pathname, 'system', '/users'),
   getParentRoute: () => AppRoute,
   component: () => <SystemPage />,
-  errorComponent: ({ error }) => <ErrorNotice error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice level="app" error={error} />,
 });
 
 export const UsersTableRoute = createRoute({

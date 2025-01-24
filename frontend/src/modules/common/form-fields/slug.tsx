@@ -56,7 +56,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
           // Slug is not available
           form.setError('slug', {
             type: 'manual',
-            message: t('common:error.slug_exists'),
+            message: t('error:slug_exists'),
           });
           setSlugAvailable('notAvailable');
         },

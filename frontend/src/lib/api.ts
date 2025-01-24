@@ -1,6 +1,6 @@
 import type { ClientResponse } from 'hono/client';
 import type { Entity } from '~/types/common';
-import type { Severity } from '#/lib/errors';
+import type { HttpErrorStatus, Severity } from '#/lib/errors';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to allow any type of response
 export const handleResponse = async <T extends Record<string, any>, U extends ClientResponse<T, number, 'json'>>(response: U) => {
@@ -24,7 +24,7 @@ export const clientConfig = {
 
 // Custom error class to handle API errors
 export class ApiError extends Error {
-  status: number;
+  status: HttpErrorStatus;
   type?: string;
   entityType?: Entity;
   severity?: Severity;

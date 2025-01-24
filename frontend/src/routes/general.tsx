@@ -21,10 +21,11 @@ const errorSearchSchema = z.object({
   severity: z.enum(['warn', 'error']).optional(),
 });
 
+//
 export const rootRoute = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   staticData: { pageTitle: '', isAuth: false },
   component: () => <Root />,
-  errorComponent: ({ error }) => <ErrorNotice error={error} />,
+  errorComponent: ({ error }) => <ErrorNotice level="root" error={error} />,
 });
 
 export const PublicRoute = createRoute({
@@ -101,8 +102,8 @@ export const ErrorNoticeRoute = createRoute({
   path: '/error',
   validateSearch: errorSearchSchema,
   staticData: { pageTitle: 'Error', isAuth: false },
-  getParentRoute: () => rootRoute,
-  component: () => <ErrorNotice />,
+  getParentRoute: () => PublicRoute,
+  component: () => <ErrorNotice level="public" />,
 });
 
 export const UnsubscribeRoute = createRoute({

@@ -177,7 +177,7 @@ const authRoutes = app
         return ctx.json({ success: true }, 200);
       }
 
-      // t('common:error.invalid_token')
+      // t('error:invalid_token')
       return errorResponse(ctx, 403, 'invalid_token', 'warn', undefined, {
         user: token?.userId || 'na',
         type: 'verification',
@@ -760,7 +760,7 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        // t('common:error.invalid_credentials.text')
+        // t('error:invalid_credentials.text')
         return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
       }
 
