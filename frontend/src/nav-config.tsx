@@ -3,11 +3,8 @@ import { Home, Menu, Search, User } from 'lucide-react';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { MenuSheet } from '~/modules/navigation/menu-sheet';
 
-import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
-
 import type { FooterLinkProps } from '~/modules/common/main-footer';
 import type { NavItem } from '~/modules/navigation';
-import type { SectionItem } from '~/modules/navigation/menu-sheet';
 import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
 import type { UserMenuItem } from './types/common';
 
@@ -28,16 +25,6 @@ export const navItems: NavItem[] = [
   { id: 'home', icon: Home, href: '/home' },
   { id: 'search', icon: Search, dialog: <AppSearch /> },
   { id: 'account', icon: User, sheet: <AccountSheet />, mirrorOnMobile: true },
-];
-
-// Here you declare menu sections
-export const menuSections: SectionItem[] = [
-  {
-    name: 'organizations',
-    entityType: 'organization',
-    createForm: <CreateOrganizationForm replaceToCreatedOrg dialog />,
-    label: 'common:organizations',
-  },
 ];
 
 // Here you set default footer links

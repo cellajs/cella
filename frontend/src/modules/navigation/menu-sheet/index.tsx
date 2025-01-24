@@ -12,6 +12,7 @@ import { Info, type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import { menuSections } from '~/menu-config';
 import { MainAlert } from '~/modules/common/alerter';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { updateMembership } from '~/modules/memberships/api';
@@ -23,7 +24,6 @@ import { MenuSheetSearchInput } from '~/modules/navigation/menu-sheet/search-inp
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
-import { menuSections } from '~/nav-config';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
 

@@ -1,4 +1,4 @@
-import { menuSections } from '~/nav-config';
+import { menuSections } from '~/menu-config';
 import { useNavigationStore } from '~/store/navigation';
 import type { UserMenu, UserMenuItem } from '~/types/common';
 

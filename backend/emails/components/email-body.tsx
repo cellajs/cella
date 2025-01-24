@@ -3,7 +3,7 @@ import { Section } from 'jsx-email';
 export const EmailBody = ({ children }: { children: React.ReactNode }) => (
   <Section
     style={{
-      margin: '0 auto',
+      margin: '0 auto 40px',
       maxWidth: '600px',
       width: '100%',
       fontSize: '1rem',
