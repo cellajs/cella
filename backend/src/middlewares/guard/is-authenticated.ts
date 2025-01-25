@@ -1,34 +1,27 @@
 import { eq } from 'drizzle-orm';
 import type { Context, Next } from 'hono';
 import { db } from '#/db/db';
-import { auth as luciaAuth } from '#/db/lucia';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { errorResponse } from '#/lib/errors';
-import { removeSessionCookie } from '#/modules/auth/helpers/cookies';
+import { deleteSessionCookie, getSessionIdFromCookie, validateSession } from '#/modules/auth/helpers/session';
 
 export async function isAuthenticated(ctx: Context, next: Next): Promise<Response | undefined> {
-  const cookieHeader = ctx.req.raw.headers.get('Cookie');
-  // Read the session ID from the session cookie
-  const sessionId = luciaAuth.readSessionCookie(cookieHeader ?? '');
+  // Get session id from cookie
+  const sessionId = await getSessionIdFromCookie(ctx);
 
-  // If no session ID is found, remove the session cookie
+  // If no session id is found, remove session cookie
   if (!sessionId) {
-    removeSessionCookie(ctx);
+    deleteSessionCookie(ctx);
     return errorResponse(ctx, 401, 'no_session', 'warn');
   }
 
-  const { session, user } = await luciaAuth.validateSession(sessionId);
+  // Validate session
+  const { session, user } = await validateSession(sessionId);
 
   // If session validation fails, remove cookie
   if (!session) {
-    removeSessionCookie(ctx);
+    deleteSessionCookie(ctx);
     return errorResponse(ctx, 401, 'no_session', 'warn');
-  }
-
-  // If the session is newly created, update cookie
-  if (session.fresh) {
-    const sessionCookie = luciaAuth.createSessionCookie(session.id);
-    ctx.header('Set-Cookie', sessionCookie.serialize());
   }
 
   ctx.set('user', user);

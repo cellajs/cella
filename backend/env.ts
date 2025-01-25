@@ -29,6 +29,7 @@ export const env = createEnv({
     UNSUBSCRIBE_TOKEN_SECRET: z.string(),
 
     ARGON_SECRET: z.string(),
+    COOKIE_SECRET: z.string(),
     REMOTE_SYSTEM_ACCESS_IP: z.string(),
 
     NOVU_API_KEY: z.string().optional(),

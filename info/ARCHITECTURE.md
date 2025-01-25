@@ -14,7 +14,6 @@ This document describes the high-level architecture of Cella.
 - [Drizzle ORM](https://orm.drizzle.team/)
 - [Zod](https://github.com/colinhacks/zod)
 - [OpenAPI](https://www.openapis.org)
-- [Lucia Auth](https://lucia-auth.com/)
 - [JSX Email](https://jsx.email/)
 
 ### Frontend

@@ -6,27 +6,26 @@ import { config } from 'config';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { render } from 'jsx-email';
-import { generateId } from 'lucia';
-import { env } from '../../../env';
-
-import { db } from '#/db/db';
-import { getContextUser, getMemberships } from '#/lib/context';
 
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { entityIdFields, entityTables } from '#/entity-config';
+import { getContextUser, getMemberships } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { CustomHono } from '#/types/common';
+import { nanoid } from '#/utils/nanoid';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
+import { env } from '../../../env';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRoutesConfig from './routes';
 
@@ -80,7 +79,7 @@ const generalRoutes = app
 
       if (targetUser) continue;
 
-      const token = generateId(40);
+      const token = nanoid(40);
       await db.insert(tokensTable).values({
         id: token,
         type: 'system_invitation',

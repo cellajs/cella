@@ -2,15 +2,15 @@ import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { getCookie } from 'hono/cookie';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
-import { type InsertUserModel, usersTable } from '#/db/schema/users';
-import { setCookie, setSessionCookie } from './cookies';
+import { type InsertUserModel, type UserModel, usersTable } from '#/db/schema/users';
+import { setUserSession } from './session';
 
 import { config } from 'config';
-import type { User } from 'lucia';
 import slugify from 'slugify';
 import { db } from '#/db/db';
 import { logEvent } from '#/middlewares/logger/log-event';
 import type { EnabledOauthProvider } from '#/types/common';
+import { setCookie } from './cookie';
 import { sendVerificationEmail } from './verify-email';
 
 // Create a session before redirecting to oauth provider
@@ -70,7 +70,7 @@ interface Params {
 }
 
 // Update existing user
-export const updateExistingUser = async (ctx: Context, existingUser: User, providerId: EnabledOauthProvider, params: Params) => {
+export const updateExistingUser = async (ctx: Context, existingUser: UserModel, providerId: EnabledOauthProvider, params: Params) => {
   const { providerUser, isEmailVerified, redirectUrl } = params;
 
   await insertOauthAccount(existingUser.id, providerId, providerUser.id);
@@ -94,6 +94,6 @@ export const updateExistingUser = async (ctx: Context, existingUser: User, provi
     return ctx.redirect(`${config.frontendUrl}/auth/request-verification`, 302);
   }
 
-  await setSessionCookie(ctx, existingUser.id, providerId.toLowerCase());
+  await setUserSession(ctx, existingUser.id, providerId.toLowerCase());
   return ctx.redirect(redirectUrl, 302);
 };

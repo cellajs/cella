@@ -125,7 +125,7 @@ const requestsRoutes = app
         appName: config.name,
       }),
     );
-    // For test purposes
+    // TODO move to emailSender? For test purposes
     if (env.NODE_ENV === 'development') {
       emailSender.send(env.SEND_ALL_TO_EMAIL ?? user.email, subject, emailHtml);
     } else {

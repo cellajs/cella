@@ -17,7 +17,7 @@ import {
 } from './schema';
 
 class AuthLayoutRoutesConfig {
-  public impersonationSignIn = createRouteConfig({
+  public startImpersonation = createRouteConfig({
     method: 'get',
     path: '/impersonation/start',
     guard: [isAuthenticated, systemGuard],
@@ -41,7 +41,7 @@ class AuthLayoutRoutesConfig {
     },
   });
 
-  public impersonationSignOut = createRouteConfig({
+  public stopImpersonation = createRouteConfig({
     method: 'get',
     path: '/impersonation/stop',
     guard: isPublicAccess,

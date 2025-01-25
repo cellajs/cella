@@ -1,16 +1,17 @@
 import { and, asc, eq } from 'drizzle-orm';
 
 import { db } from '#/db/db';
-import { auth } from '#/db/lucia';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono, type EnabledOauthProvider } from '#/types/common';
-import { removeSessionCookie } from '../auth/helpers/cookies';
+import { deleteSessionCookie, getSessionIdFromCookie, invalidateSession, invalidateUserSessions } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
+import { sha256 } from '@oslojs/crypto/sha2';
+import { encodeHexLowerCase } from '@oslojs/encoding';
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
@@ -26,7 +27,7 @@ import type { MenuItem, UserMenu } from '#/types/common';
 import { updateBlocknoteHTML } from '#/utils/blocknote';
 import { NewsletterEmail } from '../../../emails/newsletter';
 import { env } from '../../../env';
-import { getPreparedSessions } from './helpers/get-sessions';
+import { getUserSessions } from './helpers/get-sessions';
 
 const app = new CustomHono();
 
@@ -59,7 +60,7 @@ const meRoutes = app
       ...transformDatabaseUserWithCount(user, memberships.length),
       oauth: validOAuthAccounts,
       passkey: !!passkey.length,
-      sessions: await getPreparedSessions(user.id, ctx),
+      sessions: await getUserSessions(user.id, ctx),
     };
 
     return ctx.json({ success: true, data }, 200);
@@ -154,18 +155,18 @@ const meRoutes = app
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
 
-    const cookieHeader = ctx.req.raw.headers.get('Cookie');
-    const currentSessionId = auth.readSessionCookie(cookieHeader ?? '');
+    const currentSessionId = await getSessionIdFromCookie(ctx);
+    const hashedCurrentSessionId = currentSessionId ? encodeHexLowerCase(sha256(new TextEncoder().encode(currentSessionId))) : '';
 
     const errors: ErrorType[] = [];
 
     await Promise.all(
       sessionIds.map(async (id) => {
         try {
-          if (id === currentSessionId) {
-            removeSessionCookie(ctx);
+          if (id === hashedCurrentSessionId) {
+            deleteSessionCookie(ctx);
           }
-          await auth.invalidateSession(id);
+          await invalidateSession(id);
         } catch (error) {
           errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
         }
@@ -244,8 +245,8 @@ const meRoutes = app
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
 
     // Invalidate sessions
-    await auth.invalidateUserSessions(user.id);
-    removeSessionCookie(ctx);
+    await invalidateUserSessions(user.id);
+    deleteSessionCookie(ctx);
     logEvent('User deleted', { user: user.id });
 
     return ctx.json({ success: true }, 200);
@@ -299,7 +300,7 @@ const meRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Delete passkey of self
+   * TODO? here? Also create then.. Delete passkey of self
    */
   .openapi(meRoutesConfig.deletePasskey, async (ctx) => {
     const user = getContextUser();

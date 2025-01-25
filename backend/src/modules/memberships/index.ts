@@ -4,7 +4,6 @@ import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/s
 
 import { config } from 'config';
 import { render } from 'jsx-email';
-import { generateId } from 'lucia';
 import { emailSender } from '#/lib/mailer';
 import { MemberInviteEmail } from '../../../emails/member-invite';
 
@@ -21,6 +20,7 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { memberCountsQuery } from '#/utils/counts';
+import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
@@ -163,7 +163,7 @@ const membershipsRoutes = app
     await Promise.all(
       emailsToSendInvitation.map(async (email) => {
         const targetUser = existingUsersByEmail.get(email);
-        const token = generateId(40);
+        const token = nanoid(40);
 
         await db.insert(tokensTable).values({
           id: token,

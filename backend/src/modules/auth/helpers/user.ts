@@ -7,8 +7,8 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import type { EnabledOauthProvider } from '#/types/common';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
-import { setSessionCookie } from './cookies';
 import { insertOauthAccount } from './oauth';
+import { setUserSession } from './session';
 import { sendVerificationEmail } from './verify-email';
 
 // Handle creating a user by password or oauth provider
@@ -55,7 +55,7 @@ export const handleCreateUser = async (
     if (!data.emailVerified) {
       sendVerificationEmail(data.email);
     } else {
-      await setSessionCookie(ctx, user.id, options.provider?.id || 'password');
+      await setUserSession(ctx, user.id, options.provider?.id || 'password');
     }
 
     if (options.redirectUrl) return ctx.redirect(options.redirectUrl, 302);

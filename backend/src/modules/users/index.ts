@@ -1,7 +1,6 @@
 import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 
 import { coalesce, db } from '#/db/db';
-import { auth } from '#/db/lucia';
 import { membershipsTable } from '#/db/schema/memberships';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
@@ -11,7 +10,7 @@ import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { removeSessionCookie } from '../auth/helpers/cookies';
+import { invalidateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { getUserMembershipsCount, transformDatabaseUserWithCount } from './helpers/transform-database-user';
 import usersRoutesConfig from './routes';
@@ -118,7 +117,7 @@ const usersRoutes = app
       return true;
     });
 
-    // If the user doesn't have permission to delete any of the users, return an error
+    // Ifuser doesn't have permission to delete, return error
     if (allowedTargets.length === 0) {
       return ctx.json({ success: false, errors: errors }, 200);
     }
@@ -131,14 +130,12 @@ const usersRoutes = app
       ),
     );
 
-    // Send SSE events for the users that were deleted
+    // Send SSE events for users that were deleted
     for (const { id } of allowedTargets) {
-      // Invalidate the user's sessions if the user is deleting themselves
+      // Invalidate session if user is deleting self
       if (user.id === id) {
-        await auth.invalidateUserSessions(user.id);
-        removeSessionCookie(ctx);
+        await invalidateSession(user.id);
       }
-
       logEvent('User deleted', { user: id });
     }
 

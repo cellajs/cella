@@ -5,15 +5,13 @@ import { config } from 'config';
 import { and, eq, or } from 'drizzle-orm';
 import { deleteCookie, getCookie } from 'hono/cookie';
 import { render } from 'jsx-email';
-import { generateId } from 'lucia';
 import slugify from 'slugify';
 import type { z } from 'zod';
 import { db } from '#/db/db';
-import { auth } from '#/db/lucia';
-import { githubAuth, googleAuth, microsoftAuth } from '#/db/lucia';
 import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
+import { sessionsTable } from '#/db/schema/sessions';
 import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy, getUsersByConditions } from '#/db/util';
@@ -26,15 +24,24 @@ import { emailSender } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
+import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/helpers/oauth-providers';
 import { CustomHono, type EnabledOauthProvider } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
-import { TimeSpan, createDate, isWithinExpirationDate } from '#/utils/time-span';
+import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 import { CreatePasswordEmail } from '../../../emails/create-password';
 import { EmailVerificationEmail } from '../../../emails/email-verification';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { removeSessionCookie, setCookie, setSessionCookie } from './helpers/cookies';
+import { setCookie } from './helpers/cookie';
 import { createSession, findOauthAccount, getRedirectUrl, slugFromEmail, splitFullName, updateExistingUser } from './helpers/oauth';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
+import {
+  deleteSessionCookie,
+  getSessionIdFromCookie,
+  invalidateSession,
+  invalidateUserSessions,
+  setUserSession,
+  validateSession,
+} from './helpers/session';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
@@ -131,7 +138,7 @@ const authRoutes = app
 
     // Creating email verification token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
-    const token = generateId(40);
+    const token = nanoid(40);
     await db.insert(tokensTable).values({
       id: token,
       type: 'email_verification',
@@ -167,7 +174,7 @@ const authRoutes = app
     const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
 
     // If the token is not found or expired
-    if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
+    if (!token || !token.userId || isExpiredDate(token.expiresAt)) {
       // If 'resend' is true and the token has an email we will resend the email
       if (resend === 'true' && token && token.email) {
         sendVerificationEmail(token.email);
@@ -203,7 +210,7 @@ const authRoutes = app
     await db.update(usersTable).set({ emailVerified: true }).where(eq(usersTable.id, user.id));
 
     // Sign in user
-    await setSessionCookie(ctx, user.id, 'email_verification');
+    await setUserSession(ctx, user.id, 'email_verification');
 
     return ctx.json({ success: true }, 200);
   })
@@ -218,7 +225,7 @@ const authRoutes = app
 
     // creating password reset token
     await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
-    const token = generateId(40);
+    const token = nanoid(40);
     await db.insert(tokensTable).values({
       id: token,
       type: 'password_reset',
@@ -262,14 +269,14 @@ const authRoutes = app
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
 
     // If the token is not found or expired
-    if (!token || !token.userId || !isWithinExpirationDate(token.expiresAt)) {
+    if (!token || !token.userId || isExpiredDate(token.expiresAt)) {
       return errorResponse(ctx, 401, 'invalid_token', 'warn');
     }
     const user = await getUserBy('id', token.userId);
     // If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
 
-    await auth.invalidateUserSessions(user.id);
+    await invalidateUserSessions(user.id);
 
     // hash password
     const hashedPassword = await hashPassword(password);
@@ -278,7 +285,7 @@ const authRoutes = app
     await db.update(usersTable).set({ hashedPassword, emailVerified: true }).where(eq(usersTable.id, user.id));
 
     // Sign in user
-    await setSessionCookie(ctx, user.id, 'password_reset');
+    await setUserSession(ctx, user.id, 'password_reset');
 
     return ctx.json({ success: true }, 200);
   })
@@ -294,6 +301,7 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
     }
 
+    // TODO: what is this?
     let tokenData: TokenData | undefined;
     if (token) {
       const response = await fetch(`${config.backendUrl + authRoutesConfig.checkToken.path}`, {
@@ -308,18 +316,20 @@ const authRoutes = app
 
     const user = await getUserBy('email', email.toLowerCase(), 'unsafe');
 
-    // If the user is not found or signed up with oauth
+    // If user is not found or doesn't have password
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
     if (!user.hashedPassword) return errorResponse(ctx, 404, 'no_password_found', 'warn');
 
+    // Verify password
     const validPassword = await verifyPasswordHash(user.hashedPassword, password);
     if (!validPassword) return errorResponse(ctx, 403, 'invalid_password', 'warn');
 
     const emailVerified = user.emailVerified || tokenData?.email === user.email;
 
-    // If email is not verified, send a verification email
+    // If email is not verified, send verification email
     if (!emailVerified) sendVerificationEmail(email);
-    else await setSessionCookie(ctx, user.id, 'password');
+    // Sign in user
+    else await setUserSession(ctx, user.id, 'password');
 
     return ctx.json({ success: true, data: { emailVerified } }, 200);
   })
@@ -372,11 +382,11 @@ const authRoutes = app
       .where(and(eq(tokensTable.id, verificationToken)))
       .limit(1);
 
-    if (!token || !token.email || !token.role || !isWithinExpirationDate(token.expiresAt)) {
+    if (!token || !token.email || !token.role || isExpiredDate(token.expiresAt)) {
       return errorResponse(ctx, 401, 'invalid_token_or_expired', 'warn');
     }
 
-    // Prevent wrong user accepting the token
+    // TODO: Prevent wrong user accepting the token
 
     // Delete token
     await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
@@ -474,51 +484,49 @@ const authRoutes = app
     return ctx.json({ success: true, data: newMenuItem }, 200);
   })
   /*
-   * Impersonate sign in
+   * TODO simplify: Start impersonation
    */
-  .openapi(authRoutesConfig.impersonationSignIn, async (ctx) => {
+  .openapi(authRoutesConfig.startImpersonation, async (ctx) => {
     const user = getContextUser();
-    const cookieHeader = ctx.req.raw.headers.get('Cookie');
-    const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+    const sessionId = await getSessionIdFromCookie(ctx);
 
     if (!sessionId) {
-      removeSessionCookie(ctx);
+      deleteSessionCookie(ctx);
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
     const { targetUserId } = ctx.req.valid('query');
-    await setSessionCookie(ctx, targetUserId, null, 'impersonation', user.id);
+    await setUserSession(ctx, targetUserId, null, 'impersonation', user.id);
 
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Impersonate sign out
+   * TODO simplify: Stop impersonation
    */
-  .openapi(authRoutesConfig.impersonationSignOut, async (ctx) => {
-    const cookieHeader = ctx.req.raw.headers.get('Cookie');
-    const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+  .openapi(authRoutesConfig.stopImpersonation, async (ctx) => {
+    const sessionId = await getSessionIdFromCookie(ctx);
 
     if (!sessionId) {
-      removeSessionCookie(ctx);
+      deleteSessionCookie(ctx);
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    const { session } = await auth.validateSession(sessionId);
+    const { session } = await validateSession(sessionId);
 
     if (session) {
-      await auth.invalidateSession(session.id);
+      await invalidateSession(session.id);
       if (session.adminUserId) {
-        const sessions = await auth.getUserSessions(session.adminUserId);
+        const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, session.adminUserId));
         const [lastSession] = sessions.sort((a, b) => b.expiresAt.getTime() - a.expiresAt.getTime());
-        const adminsLastSession = await auth.validateSession(lastSession.id);
+
+        const adminsLastSession = await validateSession(lastSession.id);
+
         if (!adminsLastSession.session) {
-          removeSessionCookie(ctx);
+          deleteSessionCookie(ctx);
           return errorResponse(ctx, 401, 'unauthorized', 'warn');
         }
-        const sessionCookie = auth.createSessionCookie(adminsLastSession.session.id);
-        ctx.header('Set-Cookie', sessionCookie.serialize());
       }
-    } else removeSessionCookie(ctx);
+    } else deleteSessionCookie(ctx);
     logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
 
     return ctx.json({ success: true }, 200);
@@ -527,19 +535,18 @@ const authRoutes = app
    * Sign out
    */
   .openapi(authRoutesConfig.signOut, async (ctx) => {
-    const cookieHeader = ctx.req.raw.headers.get('Cookie');
-    const sessionId = auth.readSessionCookie(cookieHeader ?? '');
+    const sessionId = await getSessionIdFromCookie(ctx);
 
     if (!sessionId) {
-      removeSessionCookie(ctx);
+      deleteSessionCookie(ctx);
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    const { session } = await auth.validateSession(sessionId);
+    const { session } = await validateSession(sessionId);
 
-    if (session) await auth.invalidateSession(session.id);
+    if (session) await invalidateSession(session.id);
 
-    removeSessionCookie(ctx);
+    deleteSessionCookie(ctx);
     logEvent('User signed out', { user: session?.userId || 'na' });
 
     return ctx.json({ success: true }, 200);
@@ -668,7 +675,7 @@ const authRoutes = app
       if (existingOauthAccount) {
         // Redirect if already assigned to another user
         if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-        await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
+        await setUserSession(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
@@ -702,7 +709,7 @@ const authRoutes = app
         await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         // If token is invalid or expired
-        if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
+        if (!token || !token.email || isExpiredDate(token.expiresAt)) {
           return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, {
             strategy,
             type: 'invitation',
@@ -823,7 +830,7 @@ const authRoutes = app
       if (existingOauthAccount) {
         // Redirect if already assigned to another user
         if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-        await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
+        await setUserSession(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
@@ -838,7 +845,7 @@ const authRoutes = app
         await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         // If token is invalid or expired
-        if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
+        if (!token || !token.email || isExpiredDate(token.expiresAt)) {
           return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, {
             strategy,
             type: 'invitation',
@@ -954,7 +961,7 @@ const authRoutes = app
       if (existingOauthAccount) {
         // Redirect if already assigned to another user
         if (userId && existingOauthAccount.userId !== userId) return errorRedirect(ctx, 'oauth_mismatch', 'warn');
-        await setSessionCookie(ctx, existingOauthAccount.userId, strategy);
+        await setUserSession(ctx, existingOauthAccount.userId, strategy);
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
@@ -969,7 +976,7 @@ const authRoutes = app
         await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
 
         // If token is invalid or expired
-        if (!token || !token.email || !isWithinExpirationDate(token.expiresAt)) {
+        if (!token || !token.email || isExpiredDate(token.expiresAt)) {
           return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, {
             strategy,
             type: 'invitation',
@@ -1049,7 +1056,7 @@ const authRoutes = app
     const challenge = getRandomValues(new Uint8Array(32));
     // Convert to string
     const challengeBase64 = encodeBase64(challenge);
-    setCookie(ctx, 'challenge', challengeBase64);
+    // TODO setCookie(ctx, 'challenge', challengeBase64);
     return ctx.json({ challengeBase64 }, 200);
   })
   /*
@@ -1097,7 +1104,7 @@ const authRoutes = app
       }
     }
 
-    await setSessionCookie(ctx, user.id, 'passkey');
+    await setUserSession(ctx, user.id, 'passkey');
     return ctx.json({ success: true }, 200);
   });
 
