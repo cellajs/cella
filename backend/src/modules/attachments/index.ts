@@ -8,9 +8,9 @@ import { attachmentsTable } from '#/db/schema/attachments';
 import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { splitByAllowance } from '#/permissions/split-by-allowance';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
-import { splitByAllowance } from '#/utils/split-by-allowance';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import attachmentsRoutesConfig from './routes';
 

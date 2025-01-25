@@ -84,5 +84,6 @@ export const errorResponse = (
   return ctx.json({ success: false, error }, status as 400);
 };
 
+// Redirect to frontend error page
 export const errorRedirect = (ctx: Context, type: SimplifiedErrorKey, severity: Severity = 'info') =>
   ctx.redirect(`${config.frontendUrl}/error?error=${type}&severity=${severity}`, 302);

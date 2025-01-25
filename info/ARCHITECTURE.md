@@ -15,6 +15,7 @@ This document describes the high-level architecture of Cella.
 - [Zod](https://github.com/colinhacks/zod)
 - [OpenAPI](https://www.openapis.org)
 - [JSX Email](https://jsx.email/)
+- [Oslo](https://oslojs.dev/)
 
 ### Frontend
 - [React](https://reactjs.org)
@@ -48,23 +49,24 @@ This document describes the high-level architecture of Cella.
 │   ├── seed                  Seed scripts
 │   ├── src                   
 │   │   ├── db                Connect, table schemas
-│   │   ├── lib               Init library code & important helpers
+│   │   ├── lib               3rd part libs & important helpers
 │   │   ├── middlewares       Hono middlewares
 │   │   ├── modules           Modular distribution of routes, schemas etc
+│   │   ├── permissions       Setup of your authorization layer
 │   │   └── types             Split between common and app-specific
-│   │   └── utils             
+│   │   └── utils             Generic functions
 ├── config                    Shared config: default, development, production
 ├── frontend                  Frontend SPA
 │   ├── public                
 │   ├── src                   
-│   │   ├── hooks             
-│   │   ├── json              
+│   │   ├── hooks             Generic react hooks
+│   │   ├── json              Static JSON
 │   │   ├── lib               Library code and core helper functions
 │   │   ├── modules           Modular distribution of components
 │   │   ├── routes            Code-based routes
 │   │   ├── store             Zustand data stores
 │   │   ├── types             Split between common and app-specific
-│   │   ├── utils             
+│   │   ├── utils             Generic functions
 ├── info                      General info
 ├── locales                   Translations
 └── tus                       TUS server
