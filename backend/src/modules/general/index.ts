@@ -223,7 +223,7 @@ const generalRoutes = app
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
   })
   /*
-   * Get suggestions
+   * Get invite suggestions
    */
   .openapi(generalRoutesConfig.getInviteSuggestionsConfig, async (ctx) => {
     const { q, entityId, entityType } = ctx.req.valid('query');
@@ -260,18 +260,19 @@ const generalRoutes = app
         membership: membershipSelect,
       })
       .from(usersTable)
-      .innerJoin(membershipsTable, and(eq(usersTable.id, membershipsTable.userId), eq(membershipsTable.type, 'organization')))
-      .where(
+      .innerJoin(
+        membershipsTable,
         and(
-          or(...$or),
-          ne(membershipsTable.userId, user.id),
+          eq(usersTable.id, membershipsTable.userId),
+          eq(membershipsTable.type, 'organization'),
+          inArray(membershipsTable.organizationId, organizationIds),
           notInArray(
-            usersTable.id,
+            membershipsTable.userId,
             currentEntityMembers.map(({ userId }) => userId),
           ),
-          inArray(membershipsTable.organizationId, organizationIds),
         ),
       )
+      .where(and(or(...$or), ne(usersTable.id, user.id)))
       .limit(10);
 
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
