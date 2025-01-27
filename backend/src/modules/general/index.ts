@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray, ne, notInArray, or } from 'drizzle-orm';
+import { and, eq, ilike, inArray, ne, notExists, or } from 'drizzle-orm';
 import { emailSender } from '#/lib/mailer';
 import { SystemInviteEmail } from '../../../emails/system-invite';
 
@@ -245,10 +245,7 @@ const generalRoutes = app
     const entityIdField = entityIdFields[entityType];
 
     // Retrieve current entity members
-    const currentEntityMembers = await db
-      .select({ userId: membershipsTable.userId })
-      .from(membershipsTable)
-      .where(eq(membershipsTable[entityIdField], entityId));
+    const currentEntityMembersQuery = db.select().from(membershipsTable).where(eq(membershipsTable[entityIdField], entityId));
 
     const data = await db
       .selectDistinctOn([usersTable.id], {
@@ -266,10 +263,7 @@ const generalRoutes = app
           eq(usersTable.id, membershipsTable.userId),
           eq(membershipsTable.type, 'organization'),
           inArray(membershipsTable.organizationId, organizationIds),
-          notInArray(
-            membershipsTable.userId,
-            currentEntityMembers.map(({ userId }) => userId),
-          ),
+          notExists(currentEntityMembersQuery),
         ),
       )
       .where(and(or(...$or), ne(usersTable.id, user.id)))
