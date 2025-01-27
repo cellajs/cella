@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, eq, ilike, inArray, ne, notInArray, or } from 'drizzle-orm';
 import { emailSender } from '#/lib/mailer';
 import { SystemInviteEmail } from '../../../emails/system-invite';
 
@@ -172,6 +172,7 @@ const generalRoutes = app
       .map((entityType) => {
         const table = entityTables[entityType];
         const entityIdField = entityIdFields[entityType];
+
         if (!table) return null;
 
         // Base selection setup including membership details
@@ -189,9 +190,7 @@ const generalRoutes = app
         if (q) {
           const query = prepareStringForILikeFilter(q);
           $or.push(ilike(table.name, query));
-          if ('email' in table) {
-            $or.push(ilike(table.email, query));
-          }
+          if ('email' in table) $or.push(ilike(table.email, query));
         }
 
         // Perform the join with memberships
@@ -204,7 +203,7 @@ const generalRoutes = app
 
         // Execute the query using inner join with memberships table
         return db
-          .select({
+          .selectDistinctOn([baseSelect.id], {
             ...baseSelect,
             membership: membershipSelect,
           })
@@ -214,13 +213,66 @@ const generalRoutes = app
             and(eq(table.id, membershipsTable[entityIdField]), eq(membershipsTable.type, entityType === 'user' ? 'organization' : entityType)),
           )
           .where($where)
-          .groupBy(table.id, membershipsTable.id) // Group by entity ID for distinct results
           .limit(10);
       })
       .filter(Boolean); // Filter out null values if any entity type is invalid
 
     const results = await Promise.all(queries);
     const items = results.flat().filter((item) => item !== null);
+
+    return ctx.json({ success: true, data: { items, total: items.length } }, 200);
+  })
+  /*
+   * Get suggestions
+   */
+  .openapi(generalRoutesConfig.getInviteSuggestionsConfig, async (ctx) => {
+    const { q, entityId, entityType } = ctx.req.valid('query');
+
+    const user = getContextUser();
+    const memberships = getMemberships();
+    // Retrieve organizationIds
+    const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
+    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0 } }, 200);
+
+    // Build search filters
+    const $or = [];
+    if (q) {
+      const query = prepareStringForILikeFilter(q);
+      $or.push(ilike(usersTable.name, query));
+      $or.push(ilike(usersTable.email, query));
+    }
+
+    const entityIdField = entityIdFields[entityType];
+
+    const currentEntityMembers = await db
+      .select({ userId: membershipsTable.userId })
+      .from(membershipsTable)
+      .where(eq(membershipsTable[entityIdField], entityId));
+
+    const items = await db
+      .selectDistinctOn([usersTable.id], {
+        id: usersTable.id,
+        slug: usersTable.slug,
+        name: usersTable.name,
+        entity: usersTable.entity,
+        email: usersTable.email,
+        thumbnailUrl: usersTable.thumbnailUrl,
+        membership: membershipSelect,
+      })
+      .from(usersTable)
+      .innerJoin(membershipsTable, and(eq(usersTable.id, membershipsTable.userId), eq(membershipsTable.type, 'organization')))
+      .where(
+        and(
+          or(...$or),
+          ne(membershipsTable.userId, user.id),
+          notInArray(
+            usersTable.id,
+            currentEntityMembers.map(({ userId }) => userId),
+          ),
+          inArray(membershipsTable.organizationId, organizationIds),
+        ),
+      )
+      .limit(10);
 
     return ctx.json({ success: true, data: { items, total: items.length } }, 200);
   })

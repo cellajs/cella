@@ -1,6 +1,6 @@
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import { type Entity, type PageEntity, type UploadParams, UploadType } from '~/types/common';
+import { type ContextEntity, type Entity, type PageEntity, type UploadParams, UploadType } from '~/types/common';
 import { generalHc } from '#/modules/general/hc';
 
 // Create Hono clients to make requests to the backend
@@ -49,11 +49,27 @@ export const checkSlugAvailable = async (params: { slug: string; type: Entity })
   return json.success;
 };
 
+export type SuggestionsProps = {
+  q: string;
+  type?: PageEntity;
+};
 // Get suggestions
-export const getSuggestions = async (query: string, type?: PageEntity | undefined) => {
-  const response = await client.suggestions.$get({
-    query: { q: query, type },
-  });
+export const getSuggestions = async (query: SuggestionsProps) => {
+  const response = await client.suggestions.$get({ query });
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+export type InviteSuggestionsProps = {
+  q: string;
+  entityId: string;
+  entityType: ContextEntity;
+};
+
+// Get invite suggestions
+export const getInviteSuggestions = async (query: InviteSuggestionsProps) => {
+  const response = await client['invite-suggestions'].$get({ query });
 
   const json = await handleResponse(response);
   return json.data;

@@ -3,7 +3,7 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
 import { tokenLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { pageEntityTypeSchema, slugSchema } from '#/utils/schema/common-schemas';
+import { contextEntityTypeSchema, idSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
 import { inviteBodySchema, suggestionsSchema } from './schema';
 
@@ -157,10 +157,29 @@ class GeneralRoutesConfig {
     summary: 'Get list of suggestions',
     description: 'Get search suggestions for page entities such as users and organizations. It returns suggestions to which the user has access.',
     request: {
-      query: z.object({
-        q: z.string().optional(),
-        type: pageEntityTypeSchema.optional(),
-      }),
+      query: z.object({ q: z.string().optional(), type: pageEntityTypeSchema.optional() }),
+    },
+    responses: {
+      200: {
+        description: 'Suggestions',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(suggestionsSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+  public getInviteSuggestionsConfig = createRouteConfig({
+    method: 'get',
+    path: '/invite-suggestions',
+    guard: isAuthenticated,
+    tags: ['general'],
+    summary: 'Get list of user suggestions for invite',
+    description: 'Get search suggestions for user invitations. It returns distinct users with whom you share memberships.',
+    request: {
+      query: z.object({ q: z.string().optional(), entityId: idSchema, entityType: contextEntityTypeSchema }),
     },
     responses: {
       200: {

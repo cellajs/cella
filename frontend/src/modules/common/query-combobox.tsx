@@ -9,13 +9,21 @@ import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
-import { searchQueryOptions } from '~/modules/general/query';
+import { inviteSuggestionsQueryOptions } from '~/modules/general/query';
 import { Badge } from '~/modules/ui/badge';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandLoading } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import type { ContextEntity } from '~/types/common';
 
-export function QueryCombobox({ onChange, value }: { value: string[]; onChange: (items: string[]) => void }) {
+type UserSearchComboboxProps = {
+  value: string[];
+  onChange: (items: string[]) => void;
+  entityId: string;
+  entityType: ContextEntity;
+};
+
+export function UserSearchCombobox({ value, onChange, entityId, entityType }: UserSearchComboboxProps) {
   const { t } = useTranslation();
   const { ref, bounds } = useMeasure<HTMLDivElement>();
 
@@ -48,7 +56,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
     setOpen(false);
   };
 
-  const { data, isLoading: isLoadingOrig } = useQuery(searchQueryOptions(debouncedSearchQuery, 'user'));
+  const { data, isLoading: isLoadingOrig } = useQuery(inviteSuggestionsQueryOptions({ q: debouncedSearchQuery, entityId, entityType }));
   // To get around this https://github.com/TanStack/query/issues/3584
   const isLoading = !!debouncedSearchQuery && isLoadingOrig;
 
