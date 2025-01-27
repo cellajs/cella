@@ -232,7 +232,7 @@ const generalRoutes = app
     const memberships = getMemberships();
     // Retrieve organizationIds
     const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
-    if (!organizationIds.length) return ctx.json({ success: true, data: { items: [], total: 0 } }, 200);
+    if (!organizationIds.length) return ctx.json({ success: true, data: [] }, 200);
 
     // Build search filters
     const $or = [];
@@ -244,12 +244,13 @@ const generalRoutes = app
 
     const entityIdField = entityIdFields[entityType];
 
+    // Retrieve current entity members
     const currentEntityMembers = await db
       .select({ userId: membershipsTable.userId })
       .from(membershipsTable)
       .where(eq(membershipsTable[entityIdField], entityId));
 
-    const items = await db
+    const data = await db
       .selectDistinctOn([usersTable.id], {
         id: usersTable.id,
         slug: usersTable.slug,
@@ -257,7 +258,6 @@ const generalRoutes = app
         entity: usersTable.entity,
         email: usersTable.email,
         thumbnailUrl: usersTable.thumbnailUrl,
-        membership: membershipSelect,
       })
       .from(usersTable)
       .innerJoin(
@@ -275,7 +275,7 @@ const generalRoutes = app
       .where(and(or(...$or), ne(usersTable.id, user.id)))
       .limit(10);
 
-    return ctx.json({ success: true, data: { items, total: items.length } }, 200);
+    return ctx.json({ success: true, data }, 200);
   })
   /*
    * Unsubscribe a user by token

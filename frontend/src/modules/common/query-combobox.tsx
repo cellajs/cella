@@ -114,7 +114,7 @@ export function UserSearchCombobox({ value, onChange, entityId, entityType }: Us
           )}
           <CommandList className="px-1 h-full">
             {!isLoading &&
-              !data?.items.length &&
+              !data.length &&
               (debouncedSearchQuery.length ? (
                 <CommandEmpty className="h-full">
                   <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t('common:users').toLowerCase() })} />
@@ -125,10 +125,10 @@ export function UserSearchCombobox({ value, onChange, entityId, entityType }: Us
                 </CommandEmpty>
               ))}
 
-            {data && data.items?.length > 0 && (
+            {data && data.length > 0 && (
               <ScrollArea className="max-h-[30vh] overflow-y-auto">
                 <CommandGroup>
-                  {data.items.map((user) => (
+                  {data.map((user) => (
                     <CommandItem
                       data-was-selected={selected.some((u) => u === user.email)}
                       key={user.id}

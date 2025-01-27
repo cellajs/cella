@@ -30,6 +30,6 @@ export const inviteSuggestionsQueryOptions = (queryInfo: InviteSuggestionsProps)
     queryFn: () => getInviteSuggestions(queryInfo),
     staleTime: 0,
     enabled: searchQuery.trim().length > 0, // to avoid issues with spaces
-    initialData: { items: [], total: 0 },
+    initialData: [],
   });
 };

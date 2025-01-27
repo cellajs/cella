@@ -5,7 +5,7 @@ import { tokenLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { contextEntityTypeSchema, idSchema, pageEntityTypeSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { userUnsubscribeQuerySchema } from '../users/schema';
-import { inviteBodySchema, suggestionsSchema } from './schema';
+import { entitySuggestionSchema, inviteBodySchema, suggestionsSchema } from './schema';
 
 class GeneralRoutesConfig {
   public unsubscribeUser = createRouteConfig({
@@ -183,10 +183,15 @@ class GeneralRoutesConfig {
     },
     responses: {
       200: {
-        description: 'Suggestions',
+        description: 'Invite Suggestions',
         content: {
           'application/json': {
-            schema: successWithDataSchema(suggestionsSchema),
+            schema: successWithDataSchema(
+              entitySuggestionSchema
+                .omit({ membership: true, email: true, thumbnailUrl: true })
+                .extend({ email: z.string(), thumbnailUrl: z.string().nullable() })
+                .array(),
+            ),
           },
         },
       },
