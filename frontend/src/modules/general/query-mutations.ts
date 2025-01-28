@@ -14,7 +14,7 @@ export const useCheckSlugMutation = () => {
 };
 
 export const useCheckTokenMutation = () => {
-  return useMutation<TokenData, ApiError, { token: string }>({
+  return useMutation<TokenData, ApiError, { id: string }>({
     mutationKey: generalKeys.checkToken(),
     mutationFn: checkToken,
   });

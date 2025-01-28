@@ -24,7 +24,7 @@ const AuthSteps = () => {
   const { t } = useTranslation();
   const { lastUser } = useUserStore();
 
-  const { token } = useSearch({ from: AuthenticateRoute.id });
+  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
   const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
   const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
@@ -38,8 +38,8 @@ const AuthSteps = () => {
 
   // If a token is present, process it to forward user to correct step
   useEffect(() => {
-    if (!token) return;
-    checkToken({ token })
+    if (!token || !tokenId) return;
+    checkToken({ id: tokenId })
       .then((data) => {
         setTokenData(data);
         setEmail(data.email);
@@ -70,7 +70,7 @@ const AuthSteps = () => {
   return (
     <>
       {step === 'checkEmail' && <CheckEmailForm emailEnabled={emailEnabled} setStep={handleSetStep} />}
-      {step === 'signIn' && <SignInForm emailEnabled={emailEnabled} tokenData={tokenData} email={email} resetSteps={resetSteps} />}
+      {step === 'signIn' && <SignInForm emailEnabled={emailEnabled} email={email} resetSteps={resetSteps} />}
       {step === 'signUp' && <SignUpForm emailEnabled={emailEnabled} tokenData={tokenData} email={email} resetSteps={resetSteps} />}
       {step === 'waitlist' && <WaitlistForm buttonContent={t('common:request_access')} email={email} changeEmail={resetSteps} />}
       {step === 'inviteOnly' && (

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
@@ -26,6 +26,7 @@ const CreatePasswordForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
+  const { tokenId } = useSearch({ from: CreatePasswordWithTokenRoute.id });
 
   const [email, setEmail] = useState('');
   const [tokenError, setError] = useState<ApiError | null>(null);
@@ -50,9 +51,9 @@ const CreatePasswordForm = () => {
   };
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !tokenId) return;
 
-    checkToken({ token }, { onSuccess: (result) => setEmail(result.email), onError: (error) => setError(error) });
+    checkToken({ id: tokenId }, { onSuccess: (result) => setEmail(result.email), onError: (error) => setError(error) });
   }, [token]);
 
   return (

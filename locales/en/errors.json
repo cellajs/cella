@@ -85,7 +85,6 @@
   "sign_up_restricted": "Invite only",
   "sign_up_restricted.text": "We are currently invite-only. Can't wait? Contact us for an invite.",
   "slug_exists": "Slug already exists",
-  "token_invalid_request_new": "Token is invalid or expired. Please request a new one.",
   "too_many_requests": "Too many requests. Come back later or contact support.",
   "try_again_later": "Error has been reported. Please try again later or contact support.",
   "unable_to_verify": "Unable to verify",

@@ -11,13 +11,23 @@ export const googleSignInUrl = client.google.$url().href;
 export const microsoftSignInUrl = client.microsoft.$url().href;
 
 export type TokenType = { token: string };
-
 export type SignUpProps = Parameters<(typeof client)['sign-up']['$post']>['0']['json'];
 
 // Sign up a user with the provided email and password
 export const signUp = async (body: SignUpProps) => {
   const response = await client['sign-up'].$post({
     json: body,
+  });
+
+  const json = await handleResponse(response);
+  return json.success;
+};
+
+// Sign up with invitation token
+export const signUpWithToken = async ({ email, password, token }: TokenType & SignUpProps) => {
+  const response = await client['sign-up'][':token'].$post({
+    param: { token },
+    json: { email, password },
   });
 
   const json = await handleResponse(response);
@@ -49,9 +59,9 @@ export const verifyEmail = async ({ token, resend }: VerifyEmailProps) => {
 export type SignInProps = Parameters<(typeof client)['sign-in']['$post']>['0']['json'];
 
 // Sign in a user with email and password
-export const signIn = async ({ email, password, token }: SignInProps) => {
+export const signIn = async ({ email, password }: SignInProps) => {
   const response = await client['sign-in'].$post({
-    json: { email, password, token },
+    json: { email, password },
   });
 
   const json = await handleResponse(response);
@@ -68,10 +78,10 @@ export const impersonationStart = async (targetUserId: string) => {
   return json.success;
 };
 
-// Send a verification email
-export const sendVerificationEmail = async (email: string) => {
+// Send a new verification email
+export const sendVerificationEmail = async ({ tokenId, userId }: { tokenId?: string; userId?: string }) => {
   const response = await client['send-verification-email'].$post({
-    json: { email },
+    json: { tokenId, userId },
   });
 
   await handleResponse(response);
@@ -99,9 +109,9 @@ export const createPassword = async ({ token, password }: CreatePasswordProps) =
 };
 
 // Check token validation
-export const checkToken = async ({ token }: { token: string }) => {
-  const response = await client['check-token'][':token'].$post({
-    param: { token },
+export const checkToken = async ({ id }: { id: string }) => {
+  const response = await client['check-token'][':id'].$post({
+    param: { id },
   });
 
   const json = await handleResponse(response);

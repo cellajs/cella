@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import { config } from 'config';
@@ -19,6 +19,7 @@ const AcceptOrgInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = useParams({ from: AcceptOrgInviteRoute.id });
+  const { tokenId } = useSearch({ from: AcceptOrgInviteRoute.id });
 
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -44,10 +45,10 @@ const AcceptOrgInvite = () => {
 
   // TODO move this to beforeLoad in the route?
   useEffect(() => {
-    if (!token) return;
+    if (!tokenId || !token) return;
 
-    checkToken({ token }, { onSuccess: (result) => setTokenData(result), onError: (error) => setError(error) });
-  }, [token]);
+    checkToken({ id: tokenId }, { onSuccess: (result) => setTokenData(result), onError: (error) => setError(error) });
+  }, [tokenId]);
 
   if (isChecking) return <Spinner />;
 

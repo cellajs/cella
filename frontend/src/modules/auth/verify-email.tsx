@@ -1,9 +1,7 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { useOnlineManager } from '~/hooks/use-online-manager';
-import type { TokenType } from '~/modules/auth/api';
+import { sendVerificationEmail } from '~/modules/auth/api';
 import { useVerifyEmailMutation } from '~/modules/auth/query-mutations';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
@@ -11,20 +9,20 @@ import { VerifyEmailWithTokenRoute } from '~/routes/auth';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();
-  const { token }: TokenType = useParams({ from: VerifyEmailWithTokenRoute.id });
+  const { token } = useParams({ from: VerifyEmailWithTokenRoute.id });
+  const { tokenId } = useSearch({ from: VerifyEmailWithTokenRoute.id });
   const navigate = useNavigate();
-  const { isOnline } = useOnlineManager();
 
   const { mutate: verifyEmail, error } = useVerifyEmailMutation();
 
   const onSuccess = () => {
-    toast.success(t('common:success.email_verified'));
+    createToast(t('common:success.email_verified'), 'success');
     navigate({ to: '/welcome' });
   };
 
-  const resendEmail = () => {
-    if (!isOnline) return createToast(t('common:action.offline.text'), 'warning');
-    verifyEmail({ token, resend: true }, { onSuccess });
+  const sendEmailVerification = () => {
+    if (!tokenId) return;
+    sendVerificationEmail({ tokenId });
   };
 
   useEffect(() => {
@@ -38,10 +36,12 @@ const VerifyEmail = () => {
     return (
       <div className="text-center">
         <h1 className="text-2xl">{t('error:unable_to_verify')}</h1>
-        <p className="font-light mt-4">{t('error:token_invalid_request_new')}</p>
-        <Button className="mt-8" onClick={resendEmail}>
-          {t('common:resend_email')}
-        </Button>
+        <p className="font-light mt-4">{t('error:invalid_token')}</p>
+        {tokenId && (
+          <Button className="mt-8" onClick={sendEmailVerification}>
+            {t('common:resend_email')}
+          </Button>
+        )}
       </div>
     );
   }

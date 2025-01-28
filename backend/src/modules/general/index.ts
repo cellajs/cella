@@ -82,13 +82,16 @@ const generalRoutes = app
       // TODO hash token
       const token = nanoid(40);
 
-      await db.insert(tokensTable).values({
-        token: token,
-        type: 'invitation',
-        email: email.toLowerCase(),
-        createdBy: user.id,
-        expiresAt: createDate(new TimeSpan(7, 'd')),
-      });
+      const [tokenRecord] = await db
+        .insert(tokensTable)
+        .values({
+          token: token,
+          type: 'invitation',
+          email: email.toLowerCase(),
+          createdBy: user.id,
+          expiresAt: createDate(new TimeSpan(7, 'd')),
+        })
+        .returning();
 
       await db
         .update(requestsTable)
@@ -99,7 +102,7 @@ const generalRoutes = app
         SystemInviteEmail({
           userLanguage: user.language,
           inviteBy: user.name,
-          token,
+          systemInviteLink: `${config.frontendUrl}/auth/authenticate?token=${token}&tokenId=${tokenRecord.id}`,
         }),
       );
       logEvent('User invited on system level');

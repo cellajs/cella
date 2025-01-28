@@ -1,7 +1,6 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { z } from 'zod';
-import { queryClient } from '~/lib/router';
 import AcceptOrgInvite from '~/modules/auth/accept-org-invite';
 import AuthPage from '~/modules/auth/auth-page';
 import AuthSteps from '~/modules/auth/auth-steps';
@@ -10,7 +9,6 @@ import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import RequestVerification from '~/modules/auth/request-verification';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
-import { meQueryOptions } from '~/modules/users/query';
 import { PublicRoute } from '~/routes/general';
 import { useUserStore } from '~/store/user';
 
@@ -23,7 +21,7 @@ export const AuthLayoutRoute = createRoute({
 
 export const AuthenticateRoute = createRoute({
   path: '/auth/authenticate',
-  validateSearch: z.object({ redirect: z.string().optional(), token: z.string().optional() }),
+  validateSearch: z.object({ redirect: z.string().optional(), token: z.string().optional(), tokenId: z.string().optional() }),
   staticData: { pageTitle: 'Authenticate', isAuth: false },
   getParentRoute: () => AuthLayoutRoute,
   beforeLoad: async ({ cause, search }) => {
@@ -46,6 +44,7 @@ export const RequestPasswordRoute = createRoute({
 });
 
 export const CreatePasswordWithTokenRoute = createRoute({
+  validateSearch: z.object({ tokenId: z.string() }),
   path: '/auth/create-password/$token',
   staticData: { pageTitle: 'Create password', isAuth: false },
   getParentRoute: () => AuthLayoutRoute,
@@ -60,6 +59,7 @@ export const RequestVerificationRoute = createRoute({
 });
 
 export const VerifyEmailWithTokenRoute = createRoute({
+  validateSearch: z.object({ tokenId: z.string() }),
   path: '/auth/verify-email/$token',
   staticData: { pageTitle: 'Verify email', isAuth: false },
   getParentRoute: () => AuthLayoutRoute,
@@ -67,18 +67,10 @@ export const VerifyEmailWithTokenRoute = createRoute({
 });
 
 export const AcceptOrgInviteRoute = createRoute({
+  validateSearch: z.object({ tokenId: z.string() }),
   path: '/invitation/$token',
-  staticData: { pageTitle: 'Join organization', isAuth: true },
+  staticData: { pageTitle: 'Join organization', isAuth: false },
   getParentRoute: () => AuthLayoutRoute,
-  beforeLoad: async ({ params }) => {
-    try {
-      const queryOptions = meQueryOptions();
-      await queryClient.fetchQuery(queryOptions);
-    } catch {
-      console.info('Not authenticated (silent check) -> redirect to sign in');
-      throw redirect({ to: '/auth/authenticate', search: { token: params.token } });
-    }
-  },
   component: () => <AcceptOrgInvite />,
 });
 
