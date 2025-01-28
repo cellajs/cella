@@ -6,13 +6,15 @@ import { and, eq, or } from 'drizzle-orm';
 import { render } from 'jsx-email';
 import slugify from 'slugify';
 import { db } from '#/db/db';
-import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
+import { organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy, getUsersByConditions } from '#/db/util';
+import { entityIdFields } from '#/entity-config';
 import { getContextToken, getContextUser } from '#/lib/context';
+import { resolveEntity } from '#/lib/entity';
 import { errorRedirect, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { emailSender } from '#/lib/mailer';
@@ -361,7 +363,7 @@ const authRoutes = app
     const token = getContextToken();
     const user = getContextUser();
 
-    // Make sure its an organization invitation
+    // Make sure its not system invitation
     if (!token.organizationId || !token.role) return errorResponse(ctx, 401, 'invalid_token', 'warn');
 
     // Make sure correct user accepts invitation
@@ -369,21 +371,6 @@ const authRoutes = app
 
     // Delete token
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
-
-    // // Extract role and membershipInfo from token, ensuring proper types
-    // // TODO can this endpoint be simplified?
-    // const { role, membershipInfo } = token as {
-    //   role: MembershipModel['role'];
-    //   membershipInfo?: typeof token.membershipInfo;
-    // };
-
-    const [organization]: (OrganizationModel | undefined)[] = await db
-      .select()
-      .from(organizationsTable)
-      .where(and(eq(organizationsTable.id, token.organizationId)))
-      .limit(1);
-
-    // if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
 
     // const memberships = await db
     //   .select()
@@ -401,54 +388,16 @@ const authRoutes = app
     //   return ctx.json({ success: true }, 200);
     // }
 
-    // Insert organization membership
-    await insertMembership({ user, role: token.role, entity: organization });
+    for (const entityType of config.contextEntityTypes) {
+      const entityIdField = entityIdFields[entityType];
+      const entityId = token[entityIdField];
 
-    // const newMenuItem = {
-    //   newItem: { ...organization, membership: orgMembership },
-    //   sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
-    // };
+      const entity = await resolveEntity(entityType, entityId);
+      if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType, { [entityType]: 'targetIdOrSlug' });
 
-    // // SSE with organization data, to update user's menu
-    // sendSSEToUsers([user.id], 'add_entity', newMenuItem);
-
-    // // SSE to to update members queries
-    // sendSSEToUsers(
-    //   memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
-    //   'member_accept_invite',
-    //   { id: organization.id, slug: organization.slug },
-    // );
-
-    // if (membershipInfo) {
-    //   const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
-    //   const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
-
-    //   const targetEntity = await resolveEntity(targetEntityType, targetIdOrSlug);
-    //   // Resolve parentEntity if provided
-    //   const parentEntity = parentInfo ? await resolveEntity(parentInfo.entity, parentInfo.idOrSlug) : null;
-
-    //   if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetEntityType, { [targetEntityType]: targetIdOrSlug });
-
-    //   const [createdParentMembership, createdMembership] = await Promise.all([
-    //     parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
-    //     insertMembership({ user, role, entity: targetEntity, parentEntity }),
-    //   ]);
-
-    //   if (createdParentMembership && parentEntity) {
-    //     // SSE with parentEntity data, to update user's menu
-    //     sendSSEToUsers([user.id], 'add_entity', {
-    //       newItem: { ...parentEntity, membership: createdParentMembership },
-    //       sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
-    //     });
-    //   }
-
-    //   // SSE with entity data, to update user's menu
-    //   sendSSEToUsers([user.id], 'add_entity', {
-    //     newItem: { ...targetEntity, membership: createdMembership },
-    //     sectionName: menuSections.find((el) => el.entityType === targetEntity.entity)?.name,
-    //     ...(parentEntity && { parentSlug: parentEntity.slug }),
-    //   });
-    // }
+      // Insert membership
+      await insertMembership({ user, role: token.role, entity });
+    }
 
     return ctx.json({ success: true }, 200);
   })
