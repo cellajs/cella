@@ -1,5 +1,5 @@
 import type { Context, Next } from 'hono';
-import { getContextUser, getMemberships } from '#/lib/context';
+import { getContextMemberships, getContextUser } from '#/lib/context';
 export { isAuthenticated } from './is-authenticated';
 
 import { every } from 'hono/combine';
@@ -42,7 +42,7 @@ export async function hasOrgAccess(ctx: Context, next: Next): Promise<Response |
   const orgIdOrSlug = ctx.req.param('orgIdOrSlug');
   if (!orgIdOrSlug) return errorResponse(ctx, 401, 'invalid_request', 'warn');
 
-  const memberships = getMemberships();
+  const memberships = getContextMemberships();
   const user = getContextUser();
   const isSystemAdmin = user.role === 'admin';
 

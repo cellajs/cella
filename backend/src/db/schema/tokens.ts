@@ -2,13 +2,15 @@ import { config } from 'config';
 import { json, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import type { ContextEntity } from '#/types/common';
+import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
 
-const tokenTypeEnum = ['email_verification', 'password_reset', 'system_invitation', 'membership_invitation'] as const;
-const roleEnum = config.rolesByType.allRoles;
+const tokenTypeEnum = ['email_verification', 'password_reset', 'invitation'] as const;
+const roleEnum = config.rolesByType.entityRoles;
 
 export const tokensTable = pgTable('tokens', {
-  id: varchar().primaryKey(),
+  id: varchar().primaryKey().$defaultFn(nanoid),
+  token: varchar().notNull(),
   type: varchar({ enum: tokenTypeEnum }).notNull(),
   email: varchar().notNull(),
   role: varchar({ enum: roleEnum }),

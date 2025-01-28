@@ -1,6 +1,6 @@
 import type { MembershipModel } from '#/db/schema/memberships';
 import type { ContextEntity } from '#/types/common';
-import { getContextUser, getMemberships } from '../lib/context';
+import { getContextMemberships, getContextUser } from '../lib/context';
 import { type EntityModel, resolveEntity } from '../lib/entity';
 import permissionManager, { type PermittedAction } from './permission-manager';
 
@@ -26,7 +26,7 @@ export const getValidEntity = async <T extends ContextEntity>(
   }
 
   const user = getContextUser();
-  const memberships = getMemberships();
+  const memberships = getContextMemberships();
 
   const isSystemAdmin = user.role === 'admin';
 

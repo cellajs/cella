@@ -5,7 +5,7 @@ import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 import { html } from 'hono/html';
 import { stream } from 'hono/streaming';
 import { attachmentsTable } from '#/db/schema/attachments';
-import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
+import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
@@ -57,7 +57,7 @@ const attachmentsRoutes = app
   .openapi(attachmentsRoutesConfig.createAttachment, async (ctx) => {
     const newAttachments = ctx.req.valid('json');
 
-    const organization = getOrganization();
+    const organization = getContextOrganization();
     const user = getContextUser();
 
     const fixedNewAttachments = newAttachments.map((el) => ({
@@ -80,7 +80,7 @@ const attachmentsRoutes = app
   .openapi(attachmentsRoutesConfig.getAttachments, async (ctx) => {
     const { q, sort, order, offset, limit } = ctx.req.valid('query');
 
-    const organization = getOrganization();
+    const organization = getContextOrganization();
 
     // Filter at least by valid organization
     const filters: SQL[] = [eq(attachmentsTable.organizationId, organization.id)];
@@ -119,7 +119,7 @@ const attachmentsRoutes = app
   .openapi(attachmentsRoutesConfig.getAttachment, async (ctx) => {
     const { id } = ctx.req.valid('param');
 
-    const organization = getOrganization();
+    const organization = getContextOrganization();
 
     const [attachment] = await db
       .select()
@@ -159,7 +159,7 @@ const attachmentsRoutes = app
   .openapi(attachmentsRoutesConfig.deleteAttachments, async (ctx) => {
     const { ids } = ctx.req.valid('query');
 
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];

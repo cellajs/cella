@@ -3,45 +3,49 @@ import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import { config } from 'config';
 import { and, eq, or } from 'drizzle-orm';
-import { deleteCookie, getCookie } from 'hono/cookie';
 import { render } from 'jsx-email';
 import slugify from 'slugify';
-import type { z } from 'zod';
 import { db } from '#/db/db';
-import { type MembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
-import { type TokenModel, tokensTable } from '#/db/schema/tokens';
+import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy, getUsersByConditions } from '#/db/util';
-import { menuSections } from '#/entity-config';
-import { getContextUser } from '#/lib/context';
-import { resolveEntity } from '#/lib/entity';
+import { getContextToken, getContextUser } from '#/lib/context';
 import { errorRedirect, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { emailSender } from '#/lib/mailer';
-import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
-import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/helpers/oauth-providers';
+import {
+  githubAuth,
+  type githubUserEmailProps,
+  type githubUserProps,
+  googleAuth,
+  type googleUserProps,
+  microsoftAuth,
+  type microsoftUserProps,
+} from '#/modules/auth/helpers/oauth-providers';
 import { CustomHono, type EnabledOauthProvider } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
+// TODO shorten this import
 import { CreatePasswordEmail } from '../../../emails/create-password';
 import { EmailVerificationEmail } from '../../../emails/email-verification';
 import { insertMembership } from '../memberships/helpers/insert-membership';
-import { setCookie } from './helpers/cookie';
-import { createSession, findOauthAccount, getRedirectUrl, slugFromEmail, splitFullName, updateExistingUser } from './helpers/oauth';
-import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie';
 import {
-  deleteSessionCookie,
-  getSessionIdFromCookie,
-  invalidateSession,
-  invalidateUserSessions,
-  setUserSession,
-  validateSession,
-} from './helpers/session';
+  clearOauthSession,
+  createOauthSession,
+  findOauthAccount,
+  getOauthRedirectUrl,
+  slugFromEmail,
+  splitFullName,
+  updateExistingUser,
+} from './helpers/oauth';
+import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
+import { invalidateSession, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
@@ -64,9 +68,6 @@ function isOAuthEnabled(provider: EnabledOauthProvider): boolean {
 
 const app = new CustomHono();
 
-type CheckTokenResponse = z.infer<(typeof authRoutesConfig.checkToken.responses)['200']['content']['application/json']['schema']> | undefined;
-type TokenData = Extract<CheckTokenResponse, { data: unknown }>['data'];
-
 // Authentication endpoints
 const authRoutes = app
   /*
@@ -81,10 +82,14 @@ const authRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Sign up with email & password
+   * Sign up with email & password.
+   * Attention: sign up is also used for new users that received (system or organization) invitations.
+   * Only for organization invitations, user will proceed to accept the invitation after signing up.
    */
   .openapi(authRoutesConfig.signUp, async (ctx) => {
     const { email, password, token } = ctx.req.valid('json');
+
+    const validToken = getContextToken();
 
     // Verify if strategy allowed
     const strategy = 'password';
@@ -92,39 +97,24 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
     }
 
-    // In invitation mode this form is used to complete registration.
-    let tokenData: TokenData | undefined;
-
-    if (token) {
-      const response = await fetch(`${config.backendUrl + authRoutesConfig.checkToken.path}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-
-      const data: CheckTokenResponse = await response.json();
-      tokenData = data?.data;
+    // Stop if sign up is disabled and no invitation
+    if (!config.has.registrationEnabled && !token) {
+      return errorResponse(ctx, 403, 'sign_up_restricted', 'warn');
     }
 
     const hashedPassword = await hashPassword(password);
-    const userId = nanoid();
-
     const slug = slugFromEmail(email);
-
-    const isEmailVerified = tokenData?.email === email;
 
     // Create user & send verification email
     const newUser = {
-      id: userId,
       slug,
       name: slug,
       email: email,
-      emailVerified: isEmailVerified,
-      language: config.defaultLanguage,
+      emailVerified: false,
       hashedPassword,
     };
 
-    return await handleCreateUser(ctx, newUser, { isInvite: !!tokenData });
+    return await handleCreateUser({ ctx, newUser, isInvite: !!validToken });
   })
   /*
    * Send verification email
@@ -136,11 +126,14 @@ const authRoutes = app
     const user = await getUserBy('email', email.toLowerCase());
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user');
 
-    // Creating email verification token
-    await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
+    // Delete previous
+    await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'email_verification')));
+
+    // TODO store hashed token
     const token = nanoid(40);
+
     await db.insert(tokensTable).values({
-      id: token,
+      token: token,
       type: 'email_verification',
       userId: user.id,
       email,
@@ -149,7 +142,7 @@ const authRoutes = app
     });
 
     // Generate & send email
-    const lng = user.language || config.defaultLanguage;
+    const lng = user.language;
     const emailHtml = await render(
       EmailVerificationEmail({
         userLanguage: lng,
@@ -157,7 +150,7 @@ const authRoutes = app
       }),
     );
 
-    const emailSubject = i18n.t('backend:email.subject.verify_email', { lng, appName: config.name });
+    const emailSubject = i18n.t('backend:email.email_verification.subject', { lng, appName: config.name });
     emailSender.send(email, emailSubject, emailHtml);
 
     logEvent('Verification email sent', { user: user.id });
@@ -171,7 +164,11 @@ const authRoutes = app
     const { resend } = ctx.req.valid('query');
     const { token: verificationToken } = ctx.req.valid('json');
 
-    const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
+    // Get verification token
+    const [token] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.token, verificationToken), eq(tokensTable.type, 'email_verification')));
 
     // If the token is not found or expired
     if (!token || !token.userId || isExpiredDate(token.expiresAt)) {
@@ -179,7 +176,7 @@ const authRoutes = app
       if (resend === 'true' && token && token.email) {
         sendVerificationEmail(token.email);
 
-        await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
+        await db.delete(tokensTable).where(eq(tokensTable.token, verificationToken));
 
         return ctx.json({ success: true }, 200);
       }
@@ -191,6 +188,7 @@ const authRoutes = app
       });
     }
 
+    // Get user based on token
     const user = await getUserBy('id', token.userId);
 
     // If user not found or email different from token email
@@ -199,7 +197,7 @@ const authRoutes = app
       if (resend === 'true' && token && token.email) {
         sendVerificationEmail(token.email);
 
-        await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
+        await db.delete(tokensTable).where(eq(tokensTable.token, verificationToken));
 
         return ctx.json({ success: true }, 200);
       }
@@ -224,10 +222,13 @@ const authRoutes = app
     if (!user) return errorResponse(ctx, 401, 'invalid_email', 'warn');
 
     // creating password reset token
-    await db.delete(tokensTable).where(eq(tokensTable.userId, user.id));
+    await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
+
+    // TODO store hashed token
     const token = nanoid(40);
+
     await db.insert(tokensTable).values({
-      id: token,
+      token: token,
       type: 'password_reset',
       userId: user.id,
       email,
@@ -236,7 +237,7 @@ const authRoutes = app
     });
 
     // Generate & send email
-    const lng = user.language || config.defaultLanguage;
+    const lng = user.language;
     const emailHtml = await render(
       CreatePasswordEmail({
         userName: user.name,
@@ -245,7 +246,7 @@ const authRoutes = app
       }),
     );
 
-    const emailSubject = i18n.t('backend:email.subject.reset_password', { lng, appName: config.name });
+    const emailSubject = i18n.t('backend:email.create_password.subject', { lng, appName: config.name });
     emailSender.send(email, emailSubject, emailHtml);
 
     logEvent('Create password link sent', { user: user.id });
@@ -257,7 +258,7 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.createPasswordCallback, async (ctx) => {
     const { password } = ctx.req.valid('json');
-    const verificationToken = ctx.req.valid('param').token;
+    const passwordToken = ctx.req.valid('param').token;
 
     // Verify if strategy allowed
     const strategy = 'password';
@@ -265,8 +266,12 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
     }
 
-    const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, verificationToken));
-    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
+    // Get password token
+    const [token] = await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.token, passwordToken), eq(tokensTable.type, 'password_reset')));
+    await db.delete(tokensTable).where(eq(tokensTable.token, passwordToken));
 
     // If the token is not found or expired
     if (!token || !token.userId || isExpiredDate(token.expiresAt)) {
@@ -291,27 +296,16 @@ const authRoutes = app
   })
   /*
    * Sign in with email and password
+   * Attention: sign in is also used to accept organization invitations (when signed out),
+   * after signing in, we proceed to accept the invitation.
    */
   .openapi(authRoutesConfig.signIn, async (ctx) => {
-    const { email, password, token } = ctx.req.valid('json');
+    const { email, password } = ctx.req.valid('json');
 
     // Verify if strategy allowed
     const strategy = 'password';
     if (!enabledStrategies.includes(strategy)) {
       return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
-    }
-
-    // TODO: what is this?
-    let tokenData: TokenData | undefined;
-    if (token) {
-      const response = await fetch(`${config.backendUrl + authRoutesConfig.checkToken.path}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-
-      const data: CheckTokenResponse = await response.json();
-      tokenData = data?.data;
     }
 
     const user = await getUserBy('email', email.toLowerCase(), 'unsafe');
@@ -324,7 +318,7 @@ const authRoutes = app
     const validPassword = await verifyPasswordHash(user.hashedPassword, password);
     if (!validPassword) return errorResponse(ctx, 403, 'invalid_password', 'warn');
 
-    const emailVerified = user.emailVerified || tokenData?.email === user.email;
+    const emailVerified = user.emailVerified;
 
     // If email is not verified, send verification email
     if (!emailVerified) sendVerificationEmail(email);
@@ -337,77 +331,51 @@ const authRoutes = app
    * Check token (token validation)
    */
   .openapi(authRoutesConfig.checkToken, async (ctx) => {
-    const { token } = ctx.req.valid('json');
-
-    // Check if token exists
-    const [tokenRecord] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, token)));
-    if (!tokenRecord) return errorResponse(ctx, 404, 'not_found', 'warn');
-
-    // For system invitation token: check if user email is not already in the system
-    if (tokenRecord.type === 'system_invitation') {
-      const user = await getUserBy('email', tokenRecord.email);
-      if (user) return errorResponse(ctx, 409, 'email_exists', 'warn');
-    }
+    const validToken = getContextToken();
 
     const data = {
-      type: tokenRecord.type,
-      userId: tokenRecord.userId || '',
-      email: tokenRecord.email,
-      organizationName: '',
-      organizationSlug: '',
+      email: validToken.email,
+      userId: validToken.userId || '',
     };
+
+    if (!validToken.organizationId) return ctx.json({ success: true, data }, 200);
 
     // If it is a membership invitation, get organization details
-    if (tokenRecord.type === 'membership_invitation' && tokenRecord.organizationId) {
-      const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, tokenRecord.organizationId));
-      data.organizationName = organization.name;
-      data.organizationSlug = organization.slug;
-    }
+    const [organization] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, validToken.organizationId));
+    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
 
-    return ctx.json({ success: true, data }, 200);
+    const dataWithOrg = {
+      email: validToken.email,
+      userId: validToken.userId || '',
+      organizationId: organization.id || '',
+      organizationName: organization.name || '',
+      organizationSlug: organization.slug || '',
+    };
+
+    return ctx.json({ success: true, data: dataWithOrg }, 200);
   })
   /*
-   * Accept invite token
+   * Accept org invite token for signed in users
    */
-  .openapi(authRoutesConfig.acceptInvite, async (ctx) => {
-    const verificationToken = ctx.req.valid('param').token;
-    const { oauth } = ctx.req.valid('json');
+  .openapi(authRoutesConfig.acceptOrgInvite, async (ctx) => {
+    const token = getContextToken();
+    const user = getContextUser();
 
-    const [token]: (TokenModel | undefined)[] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.id, verificationToken)))
-      .limit(1);
+    // Make sure its an organization invitation
+    if (!token.organizationId || !token.role) return errorResponse(ctx, 401, 'invalid_token', 'warn');
 
-    if (!token || !token.email || !token.role || isExpiredDate(token.expiresAt)) {
-      return errorResponse(ctx, 401, 'invalid_token_or_expired', 'warn');
-    }
-
-    // TODO: Prevent wrong user accepting the token
+    // Make sure correct user accepts invitation
+    if (user.id !== token.userId) return errorResponse(ctx, 401, 'user_mismatch', 'warn');
 
     // Delete token
-    await db.delete(tokensTable).where(eq(tokensTable.id, verificationToken));
-    // If it is a system invitation, update user role
-    if (token.type === 'system_invitation') {
-      if (oauth) setCookie(ctx, 'oauth_invite_token', token.id);
+    await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-      return ctx.json({ success: true }, 200);
-    }
-
-    if (!token.organizationId) return errorResponse(ctx, 401, 'invalid_token', 'warn');
-
-    // check if user exists
-    const user = await getUserBy('email', token.email);
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { email: token.email });
-
-    // Extract role and membershipInfo from the token, ensuring proper types
-    const { role, membershipInfo } = token as {
-      role: MembershipModel['role'];
-      membershipInfo?: typeof token.membershipInfo;
-    };
+    // // Extract role and membershipInfo from token, ensuring proper types
+    // // TODO can this endpoint be simplified?
+    // const { role, membershipInfo } = token as {
+    //   role: MembershipModel['role'];
+    //   membershipInfo?: typeof token.membershipInfo;
+    // };
 
     const [organization]: (OrganizationModel | undefined)[] = await db
       .select()
@@ -415,88 +383,89 @@ const authRoutes = app
       .where(and(eq(organizationsTable.id, token.organizationId)))
       .limit(1);
 
-    if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
+    // if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization', { organization: token.organizationId });
 
-    const memberships = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
+    // const memberships = await db
+    //   .select()
+    //   .from(membershipsTable)
+    //   .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
 
-    const existingMembership = memberships.find(({ userId }) => userId === user.id);
+    // const existingMembership = memberships.find(({ userId }) => userId === user.id);
 
-    if (existingMembership && existingMembership.role !== role && !membershipInfo) {
-      await db
-        .update(membershipsTable)
-        .set({ role })
-        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
+    // if (existingMembership && existingMembership.role !== role && !membershipInfo) {
+    //   await db
+    //     .update(membershipsTable)
+    //     .set({ role })
+    //     .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
 
-      return ctx.json({ success: true }, 200);
-    }
+    //   return ctx.json({ success: true }, 200);
+    // }
 
     // Insert organization membership
-    const orgMembership = await insertMembership({ user, role, entity: organization });
+    await insertMembership({ user, role: token.role, entity: organization });
 
-    const newMenuItem = {
-      newItem: { ...organization, membership: orgMembership },
-      sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
-    };
+    // const newMenuItem = {
+    //   newItem: { ...organization, membership: orgMembership },
+    //   sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
+    // };
 
-    // SSE with organization data, to update user's menu
-    sendSSEToUsers([user.id], 'add_entity', newMenuItem);
-    // SSE to to update members queries
-    sendSSEToUsers(
-      memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
-      'member_accept_invite',
-      { id: organization.id, slug: organization.slug },
-    );
+    // // SSE with organization data, to update user's menu
+    // sendSSEToUsers([user.id], 'add_entity', newMenuItem);
 
-    if (membershipInfo) {
-      const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
-      const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
+    // // SSE to to update members queries
+    // sendSSEToUsers(
+    //   memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
+    //   'member_accept_invite',
+    //   { id: organization.id, slug: organization.slug },
+    // );
 
-      const targetEntity = await resolveEntity(targetEntityType, targetIdOrSlug);
-      // Resolve parentEntity if provided
-      const parentEntity = parentInfo ? await resolveEntity(parentInfo.entity, parentInfo.idOrSlug) : null;
+    // if (membershipInfo) {
+    //   const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
+    //   const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
 
-      if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetEntityType, { [targetEntityType]: targetIdOrSlug });
+    //   const targetEntity = await resolveEntity(targetEntityType, targetIdOrSlug);
+    //   // Resolve parentEntity if provided
+    //   const parentEntity = parentInfo ? await resolveEntity(parentInfo.entity, parentInfo.idOrSlug) : null;
 
-      const [createdParentMembership, createdMembership] = await Promise.all([
-        parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
-        insertMembership({ user, role, entity: targetEntity, parentEntity }),
-      ]);
+    //   if (!targetEntity) return errorResponse(ctx, 404, 'not_found', 'warn', targetEntityType, { [targetEntityType]: targetIdOrSlug });
 
-      if (createdParentMembership && parentEntity) {
-        // SSE with parentEntity data, to update user's menu
-        sendSSEToUsers([user.id], 'add_entity', {
-          newItem: { ...parentEntity, membership: createdParentMembership },
-          sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
-        });
-      }
+    //   const [createdParentMembership, createdMembership] = await Promise.all([
+    //     parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
+    //     insertMembership({ user, role, entity: targetEntity, parentEntity }),
+    //   ]);
 
-      // SSE with entity data, to update user's menu
-      sendSSEToUsers([user.id], 'add_entity', {
-        newItem: { ...targetEntity, membership: createdMembership },
-        sectionName: menuSections.find((el) => el.entityType === targetEntity.entity)?.name,
-        ...(parentEntity && { parentSlug: parentEntity.slug }),
-      });
-    }
+    //   if (createdParentMembership && parentEntity) {
+    //     // SSE with parentEntity data, to update user's menu
+    //     sendSSEToUsers([user.id], 'add_entity', {
+    //       newItem: { ...parentEntity, membership: createdParentMembership },
+    //       sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
+    //     });
+    //   }
 
-    return ctx.json({ success: true, data: newMenuItem }, 200);
+    //   // SSE with entity data, to update user's menu
+    //   sendSSEToUsers([user.id], 'add_entity', {
+    //     newItem: { ...targetEntity, membership: createdMembership },
+    //     sectionName: menuSections.find((el) => el.entityType === targetEntity.entity)?.name,
+    //     ...(parentEntity && { parentSlug: parentEntity.slug }),
+    //   });
+    // }
+
+    return ctx.json({ success: true }, 200);
   })
   /*
    * TODO simplify: Start impersonation
    */
   .openapi(authRoutesConfig.startImpersonation, async (ctx) => {
     const user = getContextUser();
-    const sessionId = await getSessionIdFromCookie(ctx);
+    const sessionToken = await getAuthCookie(ctx, 'session');
 
-    if (!sessionId) {
-      deleteSessionCookie(ctx);
+    if (!sessionToken) {
+      deleteAuthCookie(ctx, 'session');
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
     const { targetUserId } = ctx.req.valid('query');
-    await setUserSession(ctx, targetUserId, null, 'impersonation', user.id);
+    await setUserSession(ctx, targetUserId, 'impersonation', user.id);
 
     return ctx.json({ success: true }, 200);
   })
@@ -504,14 +473,14 @@ const authRoutes = app
    * TODO simplify: Stop impersonation
    */
   .openapi(authRoutesConfig.stopImpersonation, async (ctx) => {
-    const sessionId = await getSessionIdFromCookie(ctx);
+    const sessionToken = await getAuthCookie(ctx, 'session');
 
-    if (!sessionId) {
-      deleteSessionCookie(ctx);
+    if (!sessionToken) {
+      deleteAuthCookie(ctx, 'session');
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    const { session } = await validateSession(sessionId);
+    const { session } = await validateSession(sessionToken);
 
     if (session) {
       await invalidateSession(session.id);
@@ -522,11 +491,11 @@ const authRoutes = app
         const adminsLastSession = await validateSession(lastSession.id);
 
         if (!adminsLastSession.session) {
-          deleteSessionCookie(ctx);
+          deleteAuthCookie(ctx, 'session');
           return errorResponse(ctx, 401, 'unauthorized', 'warn');
         }
       }
-    } else deleteSessionCookie(ctx);
+    } else deleteAuthCookie(ctx, 'session');
     logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
 
     return ctx.json({ success: true }, 200);
@@ -535,18 +504,20 @@ const authRoutes = app
    * Sign out
    */
   .openapi(authRoutesConfig.signOut, async (ctx) => {
-    const sessionId = await getSessionIdFromCookie(ctx);
+    const sessionToken = await getAuthCookie(ctx, 'session');
 
-    if (!sessionId) {
-      deleteSessionCookie(ctx);
+    if (!sessionToken) {
+      deleteAuthCookie(ctx, 'session');
       return errorResponse(ctx, 401, 'unauthorized', 'warn');
     }
 
-    const { session } = await validateSession(sessionId);
-
+    // Find session & invalidate
+    const { session } = await validateSession(sessionToken);
     if (session) await invalidateSession(session.id);
 
-    deleteSessionCookie(ctx);
+    // Delete session cookie
+    deleteAuthCookie(ctx, 'session');
+
     logEvent('User signed out', { user: session?.userId || 'na' });
 
     return ctx.json({ success: true }, 200);
@@ -555,16 +526,12 @@ const authRoutes = app
    * Github authentication
    */
   .openapi(authRoutesConfig.githubSignIn, async (ctx) => {
-    const { redirect } = ctx.req.valid('query');
+    const { redirect, connect, token } = ctx.req.valid('query');
 
     const state = generateState();
-    const url = await githubAuth.createAuthorizationURL(state, githubScopes);
+    const url = githubAuth.createAuthorizationURL(state, githubScopes);
 
-    createSession(ctx, 'github', state, '', redirect);
-
-    // Get the userId cookie that been set in (frontend/src/modules/users/settings-page)
-    const userId = deleteCookie(ctx, 'link_to_userId');
-    if (userId) setCookie(ctx, 'oauth_link_userId', userId);
+    createOauthSession(ctx, 'github', state, '', redirect, connect, token);
 
     return ctx.redirect(url.toString(), 302);
   })
@@ -572,17 +539,13 @@ const authRoutes = app
    * Google authentication
    */
   .openapi(authRoutesConfig.googleSignIn, async (ctx) => {
-    const { redirect } = ctx.req.valid('query');
+    const { redirect, connect, token } = ctx.req.valid('query');
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
-    const url = await googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
+    const url = googleAuth.createAuthorizationURL(state, codeVerifier, googleScopes);
 
-    createSession(ctx, 'google', state, codeVerifier, redirect);
-
-    // Get the userId cookie that been set in (frontend/src/modules/users/settings-page)
-    const userId = deleteCookie(ctx, 'link_to_userId');
-    if (userId) setCookie(ctx, 'oauth_link_userId', userId);
+    createOauthSession(ctx, 'google', state, codeVerifier, redirect, connect, token);
 
     return ctx.redirect(url.toString(), 302);
   })
@@ -590,17 +553,13 @@ const authRoutes = app
    * Microsoft authentication
    */
   .openapi(authRoutesConfig.microsoftSignIn, async (ctx) => {
-    const { redirect } = ctx.req.valid('query');
+    const { redirect, connect, token } = ctx.req.valid('query');
 
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
-    const url = await microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
+    const url = microsoftAuth.createAuthorizationURL(state, codeVerifier, microsoftScopes);
 
-    createSession(ctx, 'microsoft', state, codeVerifier, redirect);
-
-    // Get the userId cookie that been set in (frontend/src/modules/users/settings-page)
-    const userId = deleteCookie(ctx, 'link_to_userId');
-    if (userId) setCookie(ctx, 'oauth_link_userId', userId);
+    createOauthSession(ctx, 'microsoft', state, codeVerifier, redirect, connect, token);
 
     return ctx.redirect(url.toString(), 302);
   })
@@ -616,14 +575,14 @@ const authRoutes = app
 
     if (!isOAuthEnabled(strategy)) return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
 
-    const stateCookie = getCookie(ctx, 'oauth_state');
+    const stateCookie = await getAuthCookie(ctx, 'oauth_state');
 
     // verify state
     if (!state || !stateCookie || !code || stateCookie !== state) {
       return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
-    const redirectExistingUserUrl = getRedirectUrl(ctx);
+    const redirectExistingUserUrl = await getOauthRedirectUrl(ctx);
 
     try {
       const githubValidation = await githubAuth.validateAuthorizationCode(code);
@@ -633,42 +592,10 @@ const authRoutes = app
       const githubUserResponse = await fetch('https://api.github.com/user', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const githubUser: {
-        avatar_url: string;
-        bio: string | null;
-        blog: string | null;
-        company: string | null;
-        created_at: string;
-        email: string | null;
-        events_url: string;
-        followers: number;
-        followers_url: string;
-        following: number;
-        following_url: string;
-        gists_url: string;
-        gravatar_id: string | null;
-        hireable: boolean | null;
-        html_url: string;
-        id: number;
-        location: string | null;
-        login: string;
-        name: string | null;
-        node_id: string;
-        organizations_url: string;
-        public_gists: number;
-        public_repos: number;
-        received_events_url: string;
-        repos_url: string;
-        site_admin: boolean;
-        starred_url: string;
-        subscriptions_url: string;
-        type: string;
-        updated_at: string;
-        url: string;
-      } = await githubUserResponse.json();
+      const githubUser: githubUserProps = await githubUserResponse.json();
 
       // Check if it's account link
-      const userId = getCookie(ctx, 'oauth_link_userId');
+      const userId = await getAuthCookie(ctx, 'oauth_connect');
 
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
@@ -684,12 +611,7 @@ const authRoutes = app
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      const githubUserEmails: {
-        email: string;
-        primary: boolean;
-        verified: boolean;
-        visibility: string | null;
-      }[] = await githubUserEmailsResponse.json();
+      const githubUserEmails: githubUserEmailProps[] = await githubUserEmailsResponse.json();
 
       const primaryEmail = githubUserEmails.find((email) => email.primary);
       if (!primaryEmail) return errorResponse(ctx, 401, 'no_email_found', 'warn');
@@ -697,72 +619,49 @@ const authRoutes = app
       const slug = slugify(githubUser.login, { lower: true, strict: true });
       const { firstName, lastName } = splitFullName(githubUser.name || slug);
 
-      // Check if user has an invite token
-      const inviteToken = getCookie(ctx, 'oauth_invite_token');
+      // TODO: handle token  Check if user has an invite token
+      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
 
-      const githubUserEmail = primaryEmail.email.toLowerCase();
-      let userEmail = githubUserEmail;
-
-      if (inviteToken) {
-        const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
-        // Delete token
-        await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
-
-        // If token is invalid or expired
-        if (!token || !token.email || isExpiredDate(token.expiresAt)) {
-          return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, {
-            strategy,
-            type: 'invitation',
-          });
-        }
-        userEmail = token.email;
-      }
+      const userEmail = primaryEmail.email.toLowerCase();
 
       // Check if user already exists
       const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
       const [existingUser] = await getUsersByConditions(conditions);
 
       if (existingUser) {
+        const emailVerified = existingUser.emailVerified || !!inviteToken || primaryEmail.verified;
         return await updateExistingUser(ctx, existingUser, strategy, {
           providerUser: {
             id: String(githubUser.id),
             email: userEmail,
-            bio: githubUser.bio,
             thumbnailUrl: githubUser.avatar_url,
             firstName,
             lastName,
           },
           redirectUrl: redirectExistingUserUrl,
-          isEmailVerified: existingUser.emailVerified || !!inviteToken || primaryEmail.verified,
+          emailVerified,
         });
       }
 
-      const newUserId = nanoid();
-      const redirectNewUserUrl = getRedirectUrl(ctx, true);
+      const redirectNewUserUrl = await getOauthRedirectUrl(ctx, true);
       // Create new user and oauth account
-      return await handleCreateUser(
+      // TODO can we simplify this?
+      const newUser = {
+        slug: slugify(githubUser.login, { lower: true, strict: true }),
+        email: userEmail,
+        name: githubUser.name || githubUser.login,
+        thumbnailUrl: githubUser.avatar_url,
+        emailVerified: primaryEmail.verified,
+        firstName,
+        lastName,
+      };
+      return await handleCreateUser({
         ctx,
-        {
-          id: newUserId,
-          slug: slugify(githubUser.login, { lower: true, strict: true }),
-          email: userEmail,
-          name: githubUser.name || githubUser.login,
-          thumbnailUrl: githubUser.avatar_url,
-          bio: githubUser.bio,
-          emailVerified: primaryEmail.verified,
-          language: config.defaultLanguage,
-          firstName,
-          lastName,
-        },
-        {
-          provider: {
-            id: strategy,
-            userId: String(githubUser.id),
-          },
-          isInvite: !!inviteToken,
-          redirectUrl: redirectNewUserUrl,
-        },
-      );
+        isInvite: !!inviteToken,
+        redirectUrl: redirectNewUserUrl,
+        provider: { id: strategy, userId: String(githubUser.id) },
+        newUser,
+      });
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
@@ -778,8 +677,7 @@ const authRoutes = app
 
       throw error;
     } finally {
-      deleteCookie(ctx, 'oauth_link_userId');
-      deleteCookie(ctx, 'oauth_invite_token');
+      clearOauthSession(ctx);
     }
   })
   /*
@@ -793,15 +691,15 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
     }
 
-    const storedState = getCookie(ctx, 'oauth_state');
-    const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
+    const storedState = await getAuthCookie(ctx, 'oauth_state');
+    const storedCodeVerifier = await getAuthCookie(ctx, 'oauth_code_verifier');
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
       return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
-    const redirectExistingUserUrl = getRedirectUrl(ctx);
+    const redirectExistingUserUrl = await getOauthRedirectUrl(ctx);
 
     try {
       const googleValidation = await googleAuth.validateAuthorizationCode(code, storedCodeVerifier);
@@ -811,19 +709,10 @@ const authRoutes = app
       const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const user: {
-        sub: string;
-        name: string;
-        given_name: string;
-        family_name: string;
-        picture: string;
-        email: string;
-        email_verified: boolean;
-        locale: string;
-      } = await response.json();
+      const user: googleUserProps = await response.json();
 
       // Check if it's account link
-      const userId = getCookie(ctx, 'oauth_link_userId');
+      const userId = await getAuthCookie(ctx, 'oauth_connect');
 
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
@@ -834,25 +723,10 @@ const authRoutes = app
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
-      // Check if user has an invite token
-      const inviteToken = getCookie(ctx, 'oauth_invite_token');
+      // TODO: handle token  Check if user has an invite token
+      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
 
-      let userEmail = user.email.toLowerCase();
-
-      if (inviteToken) {
-        const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
-        // Delete token
-        await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
-
-        // If token is invalid or expired
-        if (!token || !token.email || isExpiredDate(token.expiresAt)) {
-          return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, {
-            strategy,
-            type: 'invitation',
-          });
-        }
-        userEmail = token.email;
-      }
+      const userEmail = user.email.toLowerCase();
 
       // Check if user already exists
       const conditions = [or(eq(usersTable.email, userEmail), ...(userId ? [eq(usersTable.id, userId)] : []))];
@@ -868,35 +742,28 @@ const authRoutes = app
             lastName: user.family_name,
           },
           redirectUrl: redirectExistingUserUrl,
-          isEmailVerified: existingUser.emailVerified || !!inviteToken || user.email_verified,
+          emailVerified: existingUser.emailVerified || !!inviteToken || user.email_verified,
         });
       }
 
-      const newUserId = nanoid();
-      const redirectNewUserUrl = getRedirectUrl(ctx, true);
+      const redirectNewUserUrl = await getOauthRedirectUrl(ctx, true);
       // Create new user and oauth account
-      return await handleCreateUser(
+      const newUser = {
+        slug: slugFromEmail(userEmail),
+        email: userEmail,
+        name: user.given_name,
+        emailVerified: user.email_verified,
+        thumbnailUrl: user.picture,
+        firstName: user.given_name,
+        lastName: user.family_name,
+      };
+      return await handleCreateUser({
         ctx,
-        {
-          id: newUserId,
-          slug: slugFromEmail(userEmail),
-          email: userEmail,
-          name: user.given_name,
-          emailVerified: user.email_verified,
-          language: config.defaultLanguage,
-          thumbnailUrl: user.picture,
-          firstName: user.given_name,
-          lastName: user.family_name,
-        },
-        {
-          provider: {
-            id: strategy,
-            userId: user.sub,
-          },
-          isInvite: !!inviteToken,
-          redirectUrl: redirectNewUserUrl,
-        },
-      );
+        isInvite: !!inviteToken,
+        redirectUrl: redirectNewUserUrl,
+        provider: { id: strategy, userId: user.sub },
+        newUser,
+      });
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
@@ -911,8 +778,7 @@ const authRoutes = app
 
       throw error;
     } finally {
-      deleteCookie(ctx, 'oauth_link_userId');
-      deleteCookie(ctx, 'oauth_invite_token');
+      clearOauthSession(ctx);
     }
   })
   /*
@@ -926,15 +792,15 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'unsupported_oauth', 'warn', undefined, { strategy });
     }
 
-    const storedState = getCookie(ctx, 'oauth_state');
-    const storedCodeVerifier = getCookie(ctx, 'oauth_code_verifier');
+    const storedState = await getAuthCookie(ctx, 'oauth_state');
+    const storedCodeVerifier = await getAuthCookie(ctx, 'oauth_code_verifier');
 
     // verify state
     if (!code || !storedState || !storedCodeVerifier || state !== storedState) {
       return errorResponse(ctx, 401, 'invalid_state', 'warn', undefined, { strategy });
     }
 
-    const redirectExistingUserUrl = getRedirectUrl(ctx);
+    const redirectExistingUserUrl = await getOauthRedirectUrl(ctx);
 
     try {
       const microsoftValidation = await microsoftAuth.validateAuthorizationCode(code, storedCodeVerifier);
@@ -944,17 +810,10 @@ const authRoutes = app
       const response = await fetch('https://graph.microsoft.com/oidc/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      const user: {
-        sub: string;
-        name: string;
-        given_name: string;
-        family_name: string;
-        picture: string;
-        email: string | undefined;
-      } = await response.json();
+      const user: microsoftUserProps = await response.json();
 
       // Check if it's account link
-      const userId = getCookie(ctx, 'oauth_link_userId');
+      const userId = await getAuthCookie(ctx, 'oauth_connect');
 
       // Check if oauth account already exists
       const [existingOauthAccount] = await findOauthAccount(strategy, user.sub);
@@ -965,26 +824,10 @@ const authRoutes = app
         return ctx.redirect(redirectExistingUserUrl, 302);
       }
 
-      // Check if user has an invite token
-      const inviteToken = getCookie(ctx, 'oauth_invite_token');
+      // TODO: handle token  Check if user has an invite token
+      const inviteToken = await getAuthCookie(ctx, 'oauth_invite_token');
 
-      let userEmail = user.email ? user.email.toLowerCase() : null;
-
-      if (inviteToken) {
-        const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inviteToken));
-        // Delete token
-        await db.delete(tokensTable).where(eq(tokensTable.id, inviteToken));
-
-        // If token is invalid or expired
-        if (!token || !token.email || isExpiredDate(token.expiresAt)) {
-          return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, {
-            strategy,
-            type: 'invitation',
-          });
-        }
-        userEmail = token.email;
-      }
-
+      const userEmail = user.email?.toLowerCase();
       if (!userEmail) return errorResponse(ctx, 401, 'no_email_found', 'warn', undefined);
 
       // Check if user already exists
@@ -1001,35 +844,30 @@ const authRoutes = app
             lastName: user.family_name,
           },
           redirectUrl: redirectExistingUserUrl,
-          isEmailVerified: existingUser.emailVerified || !!inviteToken,
+          emailVerified: existingUser.emailVerified || !!inviteToken,
         });
       }
 
-      const newUserId = nanoid();
-      const redirectNewUserUrl = getRedirectUrl(ctx, true);
+      const redirectNewUserUrl = await getOauthRedirectUrl(ctx, true);
       // Create new user and oauth account
-      return await handleCreateUser(
+      // TODO how to shorten this?
+      const newUser = {
+        slug: slugFromEmail(userEmail),
+        email: userEmail,
+        emailVerified: false,
+        name: user.given_name,
+        thumbnailUrl: user.picture,
+        firstName: user.given_name,
+        lastName: user.family_name,
+      };
+
+      return await handleCreateUser({
         ctx,
-        {
-          id: newUserId,
-          slug: slugFromEmail(userEmail),
-          language: config.defaultLanguage,
-          email: userEmail,
-          emailVerified: false,
-          name: user.given_name,
-          thumbnailUrl: user.picture,
-          firstName: user.given_name,
-          lastName: user.family_name,
-        },
-        {
-          provider: {
-            id: strategy,
-            userId: user.sub,
-          },
-          isInvite: !!inviteToken,
-          redirectUrl: redirectNewUserUrl,
-        },
-      );
+        newUser,
+        isInvite: !!inviteToken,
+        redirectUrl: redirectNewUserUrl,
+        provider: { id: strategy, userId: user.sub },
+      });
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
@@ -1044,8 +882,7 @@ const authRoutes = app
 
       throw error;
     } finally {
-      deleteCookie(ctx, 'oauth_link_userId');
-      deleteCookie(ctx, 'oauth_invite_token');
+      clearOauthSession(ctx);
     }
   })
   /*
@@ -1054,47 +891,52 @@ const authRoutes = app
   .openapi(authRoutesConfig.getPasskeyChallenge, async (ctx) => {
     // Generate a random challenge
     const challenge = getRandomValues(new Uint8Array(32));
+
     // Convert to string
     const challengeBase64 = encodeBase64(challenge);
-    // TODO setCookie(ctx, 'challenge', challengeBase64);
+
+    // Save challenge in cookie
+    await setAuthCookie(ctx, 'passkey_challenge', challengeBase64, new TimeSpan(5, 'm'));
     return ctx.json({ challengeBase64 }, 200);
   })
   /*
    * Passkey registration
    */
-  .openapi(authRoutesConfig.setPasskey, async (ctx) => {
+  .openapi(authRoutesConfig.registerPasskey, async (ctx) => {
     const { attestationObject, clientDataJSON, userEmail } = ctx.req.valid('json');
 
-    const challengeFromCookie = getCookie(ctx, 'challenge');
+    const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
+    if (!challengeFromCookie) return errorResponse(ctx, 401, 'invalid_credentials', 'error');
 
     const { credentialId, publicKey } = parseAndValidatePasskeyAttestation(clientDataJSON, attestationObject, challengeFromCookie);
-    // Save public key in the database
 
-    await db.insert(passkeysTable).values({
-      userEmail,
-      credentialId,
-      publicKey,
-    });
+    // Save public key in the database
+    await db.insert(passkeysTable).values({ userEmail, credentialId, publicKey });
+
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Verifies the passkey response
+   * Verify passkey
    */
   .openapi(authRoutesConfig.verifyPasskey, async (ctx) => {
     const { clientDataJSON, authenticatorData, signature, userEmail } = ctx.req.valid('json');
     const strategy = 'passkey';
 
     // Retrieve user and challenge record
+    // TODO why use email to find user?
     const user = await getUserBy('email', userEmail.toLowerCase());
-    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', undefined, { strategy });
+    if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { strategy });
 
-    const challengeFromCookie = getCookie(ctx, 'challenge');
+    // Check if passkey challenge exists
+    const challengeFromCookie = await getAuthCookie(ctx, 'passkey_challenge');
+    if (!challengeFromCookie) return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
 
-    const [credential] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
-    if (!credential) return errorResponse(ctx, 404, 'invalid_credentials', 'warn', undefined, { strategy });
+    // Get passkey credentials
+    const [credentials] = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, userEmail));
+    if (!credentials) return errorResponse(ctx, 404, 'not_found', 'warn', undefined, { strategy });
 
     try {
-      const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credential.publicKey, challengeFromCookie);
+      const isValid = await verifyPassKeyPublic(signature, authenticatorData, clientDataJSON, credentials.publicKey, challengeFromCookie);
       if (!isValid) return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, { strategy });
     } catch (error) {
       if (error instanceof Error) {

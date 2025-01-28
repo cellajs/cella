@@ -1,6 +1,7 @@
 import type { HttpBindings } from '@hono/node-server';
 import type { MembershipModel } from '#/db/schema/memberships';
 import type { OrganizationModel } from '#/db/schema/organizations';
+import type { TokenModel } from '#/db/schema/tokens';
 import type { UserModel } from '#/db/schema/users';
 
 // Access node server bindings
@@ -15,6 +16,7 @@ export type Env = {
     user: UserModel;
     organization: OrganizationModel;
     memberships: [MembershipModel];
+    token: TokenModel;
   };
   Bindings: Bindings;
 };

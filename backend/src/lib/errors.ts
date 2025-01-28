@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
 import type { Entity } from '#/types/common';
 import type { errorSchema } from '#/utils/schema/common-schemas';
-import { getContextUser, getOrganization } from './context';
+import { getContextOrganization, getContextUser } from './context';
 import { i18n } from './i18n';
 import type locales from './i18n-locales';
 
@@ -41,7 +41,7 @@ export const createError = (
   const message = i18n.t(translationKey);
 
   const user = getContextUser();
-  const organization = getOrganization();
+  const organization = getContextOrganization();
 
   const error: ErrorType = {
     message,

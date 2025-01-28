@@ -29,6 +29,7 @@ interface Props {
   emailEnabled: boolean;
 }
 
+// Either simply sign up using password or sign up with token to accept system invitation
 export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -49,8 +50,10 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
       { ...formValues, token },
       {
         onSuccess: () => {
-          // Redirect to organization invitation page if token is present
-          const to = token ? '/auth/invitation/$token' : '/auth/request-verification';
+          // Redirect to organization invitation page if there is a membership invitation
+          // TODO perhaps return updated token in response and use it here
+          const isMemberInvitation = tokenData?.organizationSlug;
+          const to = isMemberInvitation ? '/invitation/$token' : '/auth/request-verification';
 
           navigate({
             to,
@@ -65,7 +68,12 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData ? t('common:invite_create_account') : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`} <br />
+        {tokenData?.organizationSlug
+          ? t('common:invite_accept_proceed')
+          : tokenData
+            ? t('common:invite_create_account')
+            : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
+        <br />
         {!tokenData && (
           <Button variant="ghost" onClick={resetSteps} className="font-light mt-2 text-xl">
             {email}

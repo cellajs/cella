@@ -2,7 +2,7 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import { config } from 'config';
 import { z } from 'zod';
 import { queryClient } from '~/lib/router';
-import AcceptInvite from '~/modules/auth/accept-invite';
+import AcceptOrgInvite from '~/modules/auth/accept-org-invite';
 import AuthPage from '~/modules/auth/auth-page';
 import AuthSteps from '~/modules/auth/auth-steps';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
@@ -66,9 +66,9 @@ export const VerifyEmailWithTokenRoute = createRoute({
   component: () => <VerifyEmail />,
 });
 
-export const AcceptInviteRoute = createRoute({
-  path: '/auth/invitation/$token',
-  staticData: { pageTitle: 'Accept invite', isAuth: true },
+export const AcceptOrgInviteRoute = createRoute({
+  path: '/invitation/$token',
+  staticData: { pageTitle: 'Join organization', isAuth: true },
   getParentRoute: () => AuthLayoutRoute,
   beforeLoad: async ({ params }) => {
     try {
@@ -79,7 +79,7 @@ export const AcceptInviteRoute = createRoute({
       throw redirect({ to: '/auth/authenticate', search: { token: params.token } });
     }
   },
-  component: () => <AcceptInvite />,
+  component: () => <AcceptOrgInvite />,
 });
 
 export const SignOutRoute = createRoute({

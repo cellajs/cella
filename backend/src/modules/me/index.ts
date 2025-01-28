@@ -5,7 +5,7 @@ import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono, type EnabledOauthProvider } from '#/types/common';
-import { deleteSessionCookie, getSessionIdFromCookie, invalidateSession, invalidateUserSessions } from '../auth/helpers/session';
+import { invalidateSession, invalidateUserSessions } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
@@ -19,7 +19,7 @@ import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
 import { getUserBy } from '#/db/util';
 import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/entity-config';
-import { getContextUser, getMemberships } from '#/lib/context';
+import { getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { emailSender } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -27,6 +27,7 @@ import type { MenuItem, UserMenu } from '#/types/common';
 import { updateBlocknoteHTML } from '#/utils/blocknote';
 import { NewsletterEmail } from '../../../emails/newsletter';
 import { env } from '../../../env';
+import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { getUserSessions } from './helpers/get-sessions';
 
 const app = new CustomHono();
@@ -38,7 +39,7 @@ const meRoutes = app
    */
   .openapi(meRoutesConfig.getSelf, async (ctx) => {
     const user = getContextUser();
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
 
@@ -68,7 +69,7 @@ const meRoutes = app
   // Your main function
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = getContextUser();
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     // Fetch function for each menu section, including handling submenus
     const fetchMenuItemsForSection = async (section: MenuSection) => {
@@ -155,7 +156,7 @@ const meRoutes = app
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
 
-    const currentSessionId = await getSessionIdFromCookie(ctx);
+    const currentSessionId = await getAuthCookie(ctx, 'session');
     const hashedCurrentSessionId = currentSessionId ? encodeHexLowerCase(sha256(new TextEncoder().encode(currentSessionId))) : '';
 
     const errors: ErrorType[] = [];
@@ -164,7 +165,7 @@ const meRoutes = app
       sessionIds.map(async (id) => {
         try {
           if (id === hashedCurrentSessionId) {
-            deleteSessionCookie(ctx);
+            deleteAuthCookie(ctx, 'session');
           }
           await invalidateSession(id);
         } catch (error) {
@@ -180,11 +181,11 @@ const meRoutes = app
    */
   .openapi(meRoutesConfig.updateSelf, async (ctx) => {
     const user = getContextUser();
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
-    const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+    const { email, bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -196,7 +197,6 @@ const meRoutes = app
       .set({
         email,
         bannerUrl,
-        bio,
         firstName,
         lastName,
         language,
@@ -246,13 +246,13 @@ const meRoutes = app
 
     // Invalidate sessions
     await invalidateUserSessions(user.id);
-    deleteSessionCookie(ctx);
+    deleteAuthCookie(ctx, 'session');
     logEvent('User deleted', { user: user.id });
 
     return ctx.json({ success: true }, 200);
   })
   /*
-   * Send newsletter to current user (self)
+   * TODO: we should use one endpoint for newsletter. Send newsletter to current user (self)
    */
   .openapi(meRoutesConfig.sendNewsletterEmailToSelf, async (ctx) => {
     const user = getContextUser();
@@ -300,7 +300,7 @@ const meRoutes = app
     return ctx.json({ success: true }, 200);
   })
   /*
-   * TODO? here? Also create then.. Delete passkey of self
+   * TODO? here? Also create then..? Delete passkey of self
    */
   .openapi(meRoutesConfig.deletePasskey, async (ctx) => {
     const user = getContextUser();

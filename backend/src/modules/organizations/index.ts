@@ -7,7 +7,7 @@ import { config } from 'config';
 import { render } from 'jsx-email';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getContextUser, getMemberships } from '#/lib/context';
+import { getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
@@ -188,6 +188,8 @@ const organizationsRoutes = app
     const counts = { memberships: memberCounts };
     const data = { ...organization, membership, counts };
 
+    // Get invites info if user is admin
+    // TODO create select schema or use existing schema?
     if (membership && membership.role === 'admin') {
       const invitesInfo = await db
         .select({
@@ -200,7 +202,7 @@ const organizationsRoutes = app
           createdBy: tokensTable.createdBy,
         })
         .from(tokensTable)
-        .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'membership_invitation')))
+        .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'invitation')))
         .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId));
 
       return ctx.json({ success: true, data: { ...data, invitesInfo } }, 200);
@@ -213,7 +215,7 @@ const organizationsRoutes = app
   .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
     const { ids } = ctx.req.valid('query');
 
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];

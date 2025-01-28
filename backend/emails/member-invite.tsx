@@ -55,7 +55,9 @@ export const MemberInviteEmail = ({ userName, userLanguage: lng, inviteBy, organ
           />
         </Text>
 
-        <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={`${config.frontendUrl}/auth/invitation/${token}`} />
+        {/* User is sent to org invite page, where this invitation token will be used to accept invitation. If not already signed in, 
+        it will either forward user to sign in if user exists, or to sign up if user does not exist. */}
+        <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={`${config.frontendUrl}/invitation/${token}`} />
 
         <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
           {i18n.t('backend:email.invite_expires', { lng })}

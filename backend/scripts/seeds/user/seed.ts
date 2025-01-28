@@ -14,11 +14,12 @@ export const adminUser = {
 
 // Seed an admin user to access app first time
 export const userSeed = async () => {
+  if (config.mode === 'production') return console.warn('In production mode, skipping seed');
+
   const usersInTable = await db.select().from(usersTable).limit(1);
 
   if (usersInTable.length > 0) {
-    console.info('Users table is not empty, skipping seed');
-    return;
+    return console.warn('Users table is not empty, skipping seed');
   }
 
   await db

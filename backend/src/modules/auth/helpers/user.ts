@@ -6,59 +6,57 @@ import { errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import type { EnabledOauthProvider } from '#/types/common';
+import { nanoid } from '#/utils/nanoid';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { insertOauthAccount } from './oauth';
 import { setUserSession } from './session';
 import { sendVerificationEmail } from './verify-email';
 
+interface HandleCreateUserProps {
+  ctx: Context;
+  newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
+  isInvite?: boolean;
+  redirectUrl?: string;
+  provider?: { id: EnabledOauthProvider; userId: string };
+}
+
 // Handle creating a user by password or oauth provider
-export const handleCreateUser = async (
-  ctx: Context,
-  data: Omit<InsertUserModel, 'unsubscribeToken'>,
-  options: {
-    isInvite: boolean;
-    provider?: { id: EnabledOauthProvider; userId: string };
-    redirectUrl?: string;
-  },
-) => {
+export const handleCreateUser = async ({ ctx, newUser, isInvite, redirectUrl, provider }: HandleCreateUserProps) => {
   // If sign up is disabled, return an error
-  if (!config.has.registrationEnabled && !options.isInvite) {
-    if (options.provider) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
+  if (!config.has.registrationEnabled && !isInvite) {
+    if (provider) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
     return errorResponse(ctx, 403, 'sign_up_restricted', 'warn');
   }
   // Check if slug is available
-  const slugAvailable = await checkSlugAvailable(data.slug);
+  const slugAvailable = await checkSlugAvailable(newUser.slug);
 
   try {
-    // Insert user into database
+    // Insert new user into database
+    const userEmail = newUser.email.toLowerCase();
     const [user] = await db
       .insert(usersTable)
       .values({
-        id: data.id,
-        slug: slugAvailable ? data.slug : `${data.slug}-${data.id}`,
-        firstName: data.firstName,
-        emailVerified: data.emailVerified,
-        email: data.email.toLowerCase(),
-        name: data.name,
-        unsubscribeToken: generateUnsubscribeToken(data.email),
+        slug: slugAvailable ? newUser.slug : `${newUser.slug}-${nanoid(5)}`,
+        firstName: newUser.firstName,
+        emailVerified: newUser.emailVerified,
+        email: userEmail.toLowerCase(),
+        name: newUser.name,
+        unsubscribeToken: generateUnsubscribeToken(userEmail),
         language: config.defaultLanguage,
-        hashedPassword: data.hashedPassword,
+        hashedPassword: newUser.hashedPassword,
       })
       .returning();
 
     // If a provider is passed, insert oauth account
-    if (options.provider) {
-      await insertOauthAccount(data.id, options.provider.id, options.provider.userId);
+    if (provider) {
+      await insertOauthAccount(user.id, provider.id, provider.userId);
     }
 
-    // If email is not verified, send verification email
-    if (!data.emailVerified) {
-      sendVerificationEmail(data.email);
-    } else {
-      await setUserSession(ctx, user.id, options.provider?.id || 'password');
-    }
+    // If email is not verified, send verification email. Otherwise, sign in user
+    if (!newUser.emailVerified) sendVerificationEmail(newUser.email);
+    else await setUserSession(ctx, user.id, provider?.id || 'password');
 
-    if (options.redirectUrl) return ctx.redirect(options.redirectUrl, 302);
+    if (redirectUrl) return ctx.redirect(redirectUrl, 302);
 
     return ctx.json({ success: true }, 200);
   } catch (error) {
@@ -68,7 +66,7 @@ export const handleCreateUser = async (
     }
 
     if (error instanceof Error) {
-      const strategy = options.provider ? options.provider.id : 'password';
+      const strategy = provider ? provider.id : 'password';
       const errorMessage = error.message;
       logEvent('Error creating user', { strategy, errorMessage }, 'error');
     }

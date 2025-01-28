@@ -1,6 +1,5 @@
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import type { EnabledOauthProvider } from '~/types/common';
 import { authHc } from '#/modules/auth/hc';
 
 // Create Hono clients to make requests to the backend
@@ -100,26 +99,23 @@ export const createPassword = async ({ token, password }: CreatePasswordProps) =
 };
 
 // Check token validation
-export const checkToken = async (token: string) => {
-  const response = await client['check-token'].$post({
-    json: { token },
+export const checkToken = async ({ token }: { token: string }) => {
+  const response = await client['check-token'][':token'].$post({
+    param: { token },
   });
 
   const json = await handleResponse(response);
   return json.data;
 };
 
-export interface AcceptInviteProps {
+export interface AcceptOrgInviteProps {
   token: string;
-  password?: string;
-  oauth?: EnabledOauthProvider | undefined;
 }
 
 // Accept an invitation
-export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps) => {
+export const acceptOrgInvite = async ({ token }: AcceptOrgInviteProps) => {
   const response = await client['accept-invite'][':token'].$post({
     param: { token },
-    json: { password, oauth },
   });
 
   const json = await handleResponse(response);
@@ -137,10 +133,10 @@ export const getChallenge = async () => {
   return json;
 };
 
-type SetPasskeyProp = Parameters<(typeof client)['passkey-registration']['$post']>['0']['json'];
+type RegisterPasskeyProp = Parameters<(typeof client)['passkey-registration']['$post']>['0']['json'];
 
 // Register a passkey for user
-export const setPasskey = async (data: SetPasskeyProp) => {
+export const registerPasskey = async (data: RegisterPasskeyProp) => {
   const apiResponse = await client['passkey-registration'].$post({
     json: data,
   });
@@ -148,10 +144,10 @@ export const setPasskey = async (data: SetPasskeyProp) => {
   return json.success;
 };
 
-type AuthThroughPasskeyProp = Parameters<(typeof client)['passkey-verification']['$post']>['0']['json'];
+type AuthWithPasskeyProp = Parameters<(typeof client)['passkey-verification']['$post']>['0']['json'];
 
 // Authenticate user through passkey
-export const authThroughPasskey = async (data: AuthThroughPasskeyProp) => {
+export const authenticateWithPasskey = async (data: AuthWithPasskeyProp) => {
   const response = await client['passkey-verification'].$post({
     json: data,
   });

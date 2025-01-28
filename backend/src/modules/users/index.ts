@@ -4,13 +4,12 @@ import { coalesce, db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
-import { getContextUser, getMemberships } from '#/lib/context';
+import { getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { invalidateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { getUserMembershipsCount, transformDatabaseUserWithCount } from './helpers/transform-database-user';
 import usersRoutesConfig from './routes';
@@ -130,14 +129,7 @@ const usersRoutes = app
       ),
     );
 
-    // Send SSE events for users that were deleted
-    for (const { id } of allowedTargets) {
-      // Invalidate session if user is deleting self
-      if (user.id === id) {
-        await invalidateSession(user.id);
-      }
-      logEvent('User deleted', { user: id });
-    }
+    logEvent('Users deleted');
 
     return ctx.json({ success: true, errors: errors }, 200);
   })
@@ -147,7 +139,7 @@ const usersRoutes = app
   .openapi(usersRoutesConfig.getUser, async (ctx) => {
     const idOrSlug = ctx.req.param('idOrSlug');
     const user = getContextUser();
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     if (idOrSlug === user.id || idOrSlug === user.slug) {
       return ctx.json({ success: true, data: transformDatabaseUserWithCount(user, memberships.length) }, 200);
@@ -184,7 +176,7 @@ const usersRoutes = app
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
     if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
 
-    const { email, bannerUrl, bio, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
+    const { email, bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
 
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
@@ -197,7 +189,6 @@ const usersRoutes = app
       .set({
         email,
         bannerUrl,
-        bio,
         firstName,
         lastName,
         language,

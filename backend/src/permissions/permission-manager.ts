@@ -1,6 +1,6 @@
 import {
   type AccessPolicyConfiguration,
-  Context as EntityContext,
+  Context,
   type Membership,
   MembershipAdapter,
   PermissionManager,
@@ -16,7 +16,7 @@ export type PermittedAction = 'create' | 'read' | 'update' | 'delete';
 /**
  * Define hierarchical structure for contexts with roles, and for products without roles.
  */
-new EntityContext('organization', ['admin', 'member']);
+new Context('organization', ['admin', 'member']);
 
 /**
  * Initialize the PermissionManager and configure access policies.

@@ -39,7 +39,7 @@ const AuthSteps = () => {
   // If a token is present, process it to forward user to correct step
   useEffect(() => {
     if (!token) return;
-    checkToken(token)
+    checkToken({ token })
       .then((data) => {
         setTokenData(data);
         setEmail(data.email);

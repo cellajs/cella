@@ -28,6 +28,9 @@ export const config = {
   debug: false,
   maintenance: false,
 
+  // Reset version when changing cookie structure
+  cookieVersion: 'v1',
+
   // Which scripts to run when seeding the database
   seedScripts: ['pnpm run seed:user', 'pnpm run seed:organizations'],
 
@@ -108,8 +111,8 @@ export const config = {
   has: {
     pwa: true, // Progressive Web App support for preloading static assets and offline support
     sync: false, // Realtime updates and sync using Electric Sync
-    registrationEnabled: false, // Allow users to sign up. If disabled, the app is by invitation only
-    waitlist: true, // Suggest a waitlist for unknown emails when sign up is disabled,
+    registrationEnabled: true, // Allow users to sign up. If disabled, the app is by invitation only
+    waitlist: false, // Suggest a waitlist for unknown emails when sign up is disabled,
     imado: true, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
   },
 

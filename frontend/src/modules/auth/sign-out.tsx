@@ -20,6 +20,7 @@ export const flushStoresAndCache = () => {
   useNavigationStore.getState().clearNavigationStore();
 };
 
+// Sign out user and clear all stores and query cache
 const SignOut = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();

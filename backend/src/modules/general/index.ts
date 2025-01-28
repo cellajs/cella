@@ -15,7 +15,7 @@ import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getUserBy } from '#/db/util';
 import { entityIdFields, entityTables } from '#/entity-config';
-import { getContextUser, getMemberships } from '#/lib/context';
+import { getContextMemberships, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
@@ -71,7 +71,7 @@ const generalRoutes = app
    * Invite users to system
    */
   .openapi(generalRoutesConfig.createInvite, async (ctx) => {
-    const { emails, role } = ctx.req.valid('json');
+    const { emails } = ctx.req.valid('json');
     const user = getContextUser();
 
     for (const email of emails) {
@@ -79,12 +79,13 @@ const generalRoutes = app
 
       if (targetUser) continue;
 
+      // TODO hash token
       const token = nanoid(40);
+
       await db.insert(tokensTable).values({
-        id: token,
-        type: 'system_invitation',
+        token: token,
+        type: 'invitation',
         email: email.toLowerCase(),
-        role,
         createdBy: user.id,
         expiresAt: createDate(new TimeSpan(7, 'd')),
       });
@@ -157,7 +158,7 @@ const generalRoutes = app
     const { q, type } = ctx.req.valid('query');
 
     const user = getContextUser();
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     // Retrieve organizationIds
     const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));
