@@ -396,6 +396,7 @@ const authRoutes = app
       if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType, { [entityType]: 'targetIdOrSlug' });
 
       // Insert membership
+      //TODO assign passed role only for target entity
       await insertMembership({ user, role: token.role, entity });
     }
 

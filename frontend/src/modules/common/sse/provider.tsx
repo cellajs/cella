@@ -5,8 +5,6 @@ import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 
 export const SSEContext = createContext<EventSource | null>(null);
 
-export const SSEConsumer = SSEContext.Consumer;
-
 type Props = React.PropsWithChildren;
 
 export const SSEProvider: FC<Props> = ({ children }) => {

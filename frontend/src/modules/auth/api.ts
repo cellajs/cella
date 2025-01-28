@@ -119,7 +119,7 @@ export const acceptOrgInvite = async ({ token }: AcceptOrgInviteProps) => {
   });
 
   const json = await handleResponse(response);
-  return json.data;
+  return json.success;
 };
 
 // Stop impersonation session, returning to user admin page

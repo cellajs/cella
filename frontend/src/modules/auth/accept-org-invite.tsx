@@ -6,19 +6,19 @@ import { Ban, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { ApiError } from '~/lib/api';
+import { useBroadcastChannel } from '~/modules/common/broadcast';
 import Spinner from '~/modules/common/spinner';
 import { useAcceptOrgInviteMutation, useCheckTokenMutation } from '~/modules/general/query-mutations';
-import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import type { TokenData } from '~/types/common';
 import { cn } from '~/utils/cn';
 
-// Accept organization invitation when user is signed in
 const AcceptOrgInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = useParams({ from: AcceptOrgInviteRoute.id });
+  const { triggerAction } = useBroadcastChannel();
 
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -31,9 +31,8 @@ const AcceptOrgInvite = () => {
     acceptOrgInvite(
       { token },
       {
-        onSuccess: (data) => {
-          if (data) addMenuItem(data.newItem, data.sectionName);
-
+        onSuccess: () => {
+          triggerAction('refetchMenu');
           toast.success(t('common:invitation_accepted'));
           navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
         },

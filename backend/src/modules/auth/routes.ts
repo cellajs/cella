@@ -6,7 +6,6 @@ import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { cookieSchema, passwordSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import {
-  acceptOrgInviteResponseSchema,
   checkTokenSchema,
   emailBodySchema,
   emailPasswordBodySchema,
@@ -370,7 +369,7 @@ class AuthLayoutRoutesConfig {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: successWithDataSchema(acceptOrgInviteResponseSchema),
+            schema: successWithoutDataSchema,
           },
         },
       },
