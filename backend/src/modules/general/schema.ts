@@ -14,8 +14,7 @@ import { membershipInfoSchema } from '../memberships/schema';
 import { userSchema } from '../users/schema';
 
 export const inviteBodySchema = z.object({
-  emails: userSchema.shape.email.array().min(1),
-  role: z.enum(['user']),
+  emails: userSchema.shape.email.array().min(1).max(20),
 });
 
 export const entitySuggestionSchema = z.object({

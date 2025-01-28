@@ -8,7 +8,7 @@ export const generalKeys = {
   search: (value: string) => ['search', value] as const,
   checkToken: () => [...generalKeys.check, 'token'] as const,
   checkSlug: () => [...generalKeys.check, 'slug'] as const,
-  acceptInvite: ['invite', 'accept'] as const,
+  acceptOrgInvite: ['invite', 'accept'] as const,
 };
 
 export const searchQueryOptions = (searchQuery: string, entity?: PageEntity | undefined) =>

@@ -26,6 +26,7 @@ interface Props {
   emailEnabled: boolean;
 }
 
+// Either simply sign in with password or sign in with token to also accept organization invitation
 export const SignInForm = ({ tokenData, email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -50,12 +51,8 @@ export const SignInForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
       { ...values, token },
       {
         onSuccess: (emailVerified) => {
-          // Redirect to invitation page if token is present
-          // Otherwise, redirect to a redirect URL or to home
-          const verifiedUserTo = token ? '/auth/invitation/$token' : redirect || config.defaultRedirectPath;
-          const params = { token };
-
-          navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
+          const verifiedUserTo = redirect || config.defaultRedirectPath;
+          navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', replace: true });
         },
         onError: (error) => {
           if (error.type !== 'invalid_password') return;
@@ -66,7 +63,7 @@ export const SignInForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
     );
   };
 
-  const cancel = () => {
+  const resetAuth = () => {
     clearLastUser();
     resetSteps();
   };
@@ -81,7 +78,7 @@ export const SignInForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
             : t('common:sign_in_as')}{' '}
         <br />
         {!tokenData && (
-          <Button variant="ghost" onClick={cancel} className="font-light mt-2 text-xl">
+          <Button variant="ghost" onClick={resetAuth} className="font-light mt-2 text-xl">
             {email}
             <ChevronDown size={16} className="ml-2" />
           </Button>

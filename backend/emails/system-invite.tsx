@@ -50,7 +50,8 @@ export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, token
           />
         </Text>
 
-        <EmailButton ButtonText={i18n.t('common:join', { lng })} href={`${config.frontendUrl}/auth/invitation/${token}`} />
+        {/* User is sent to authenticate page, where this invitation token will be used to complete the sign up process */}
+        <EmailButton ButtonText={i18n.t('common:join', { lng })} href={`${config.frontendUrl}/auth/authenticate?token=${token}`} />
 
         <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
           {i18n.t('backend:email.invite_expires', { lng })}

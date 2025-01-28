@@ -18,21 +18,17 @@ import { Input } from '~/modules/ui/input';
 
 const formSchema = createRequestSchema;
 
-export const WaitlistForm = ({
-  email,
-  buttonContent,
-  emailField,
-  dialog: isDialog,
-  changeEmail,
-  callback,
-}: {
+interface WaitlistFormProps {
   email: string;
   buttonContent?: string | React.ReactNode;
   emailField?: boolean;
   dialog?: boolean;
   changeEmail?: () => void;
   callback?: () => void;
-}) => {
+}
+
+// TODO also use in route to access directly?
+export const WaitlistForm: React.FC<WaitlistFormProps> = ({ email, buttonContent, emailField, dialog: isDialog, changeEmail, callback }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 

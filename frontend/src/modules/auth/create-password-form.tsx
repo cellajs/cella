@@ -52,7 +52,7 @@ const CreatePasswordForm = () => {
   useEffect(() => {
     if (!token) return;
 
-    checkToken(token, { onSuccess: (result) => setEmail(result.email), onError: (error) => setError(error) });
+    checkToken({ token }, { onSuccess: (result) => setEmail(result.email), onError: (error) => setError(error) });
   }, [token]);
 
   return (

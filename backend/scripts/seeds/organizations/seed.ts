@@ -10,7 +10,7 @@ import chalk from 'chalk';
 import { type InsertMembershipModel, membershipsTable } from '#/db/schema/memberships';
 import { type InsertOrganizationModel, organizationsTable } from '#/db/schema/organizations';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
-import { hashPasswordWithArgon } from '#/modules/auth/helpers/argon2id';
+import { hashPassword } from '#/modules/auth/helpers/argon2id';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import { adminUser } from '../user/seed';
 
@@ -57,7 +57,7 @@ export const organizationsSeed = async () => {
   console.info(' ');
   console.info('◔ Seeding members and memberships, this can take a while...');
 
-  const hashedPassword = await hashPasswordWithArgon('12345678');
+  const hashedPassword = await hashPassword('12345678');
 
   const usersSlugUniqueEnforcer = new UniqueEnforcer();
   const usersEmailUniqueEnforcer = new UniqueEnforcer();
