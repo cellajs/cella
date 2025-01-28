@@ -32,7 +32,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: ^2.1.8
-        version: 2.1.8(@types/node@22.10.9)(jsdom@26.0.0(canvas@3.1.0))(terser@5.37.0)
+        version: 2.1.8(@types/node@22.10.9)(jsdom@26.0.0)(terser@5.37.0)
 
   backend:
     dependencies:
@@ -620,6 +620,9 @@ importers:
       vaul:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.0.3(@types/react@19.0.8))(@types/react@19.0.8)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      virtua:
+        specifier: ^0.39.3
+        version: 0.39.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       workbox-window:
         specifier: ^7.3.0
         version: 7.3.0
@@ -713,7 +716,7 @@ importers:
         version: 3.2.2(vite@6.0.11(@types/node@22.10.9)(jiti@2.4.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))
       vite-plugin-pwa:
         specifier: ^0.21.1
-        version: 0.21.1(@vite-pwa/assets-generator@0.2.6(bare-buffer@3.0.1))(vite@6.0.11(@types/node@22.10.9)(jiti@2.4.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))(workbox-build@7.1.1(@types/babel__core@7.20.5))(workbox-window@7.3.0)
+        version: 0.21.1(@vite-pwa/assets-generator@0.2.6)(vite@6.0.11(@types/node@22.10.9)(jiti@2.4.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))(workbox-build@7.1.1(@types/babel__core@7.20.5))(workbox-window@7.3.0)
       vite-plugin-static-copy:
         specifier: ^2.2.0
         version: 2.2.0(vite@6.0.11(@types/node@22.10.9)(jiti@2.4.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))
@@ -2871,6 +2874,7 @@ packages:
 
   '@evilmartians/lefthook@1.10.10':
     resolution: {integrity: sha512-MRIA0zJzUBbmcbecI7QjI08li4ffpmZ6DeVydEiZSg0vSx5mElEMEjDEjkI60eSV0XOm7LRbQKz2rfW6NqH8Cw==}
+    cpu: [x64, arm64, ia32]
     os: [darwin, linux, win32]
     hasBin: true
 
@@ -6188,10 +6192,6 @@ packages:
 
   balanced-match@2.0.0:
     resolution: {integrity: sha512-1ugUSr8BHXRnK23KfuYS+gVMC3LB8QGH9W1iGtDPsNWoQbgtXSExkBu2aDR4epiGWZOjZsj6lDl/N/AqqTC3UA==}
-
-  bare-buffer@3.0.1:
-    resolution: {integrity: sha512-QuDV/Wv5k1xsevh24zQwEjlQJuRvt3tUC39VFai6PoJiDIwmISEoc76ZTae4yVcacRBw0HBArrHssV1o3TEKhQ==}
-    engines: {bare: '>=1.13.0'}
 
   bare-events@2.5.4:
     resolution: {integrity: sha512-+gFfDkR8pj4/TrWCGUGWmJIkBwuxPS5F+a5yWjOHQt2hHvNZd5YLzadjmDUtFmMM4y429bnKLa8bYBMHcYdnQA==}
@@ -10758,6 +10758,26 @@ packages:
 
   victory-vendor@36.9.2:
     resolution: {integrity: sha512-PnpQQMuxlwYdocC8fIJqVXvkeViHYzotI+NJrCuav0ZYFoq912ZHBk3mCeuj+5/VpodOjPe1z0Fk2ihgzlXqjQ==}
+
+  virtua@0.39.3:
+    resolution: {integrity: sha512-Ep3aiJXSGPm1UUniThr5mGDfG0upAleP7pqQs5mvvCgM1wPhII1ZKa7eNCWAJRLkC+InpXKokKozyaaj/aMYOQ==}
+    peerDependencies:
+      react: '>=16.14.0'
+      react-dom: '>=16.14.0'
+      solid-js: '>=1.0'
+      svelte: '>=5.0'
+      vue: '>=3.2'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+      solid-js:
+        optional: true
+      svelte:
+        optional: true
+      vue:
+        optional: true
 
   vite-node@2.1.8:
     resolution: {integrity: sha512-uPAwSr57kYjAUux+8E2j0q0Fxpn8M9VoyfGiRI8Kfktz9NcYMCenwY5RnZxnF1WTu3TGiYipirIzacLL3VVGFg==}
@@ -16836,13 +16856,13 @@ snapshots:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 
-  '@vite-pwa/assets-generator@0.2.6(bare-buffer@3.0.1)':
+  '@vite-pwa/assets-generator@0.2.6':
     dependencies:
       cac: 6.7.14
       colorette: 2.0.20
       consola: 3.4.0
-      sharp: 0.32.6(bare-buffer@3.0.1)
-      sharp-ico: 0.1.5(bare-buffer@3.0.1)
+      sharp: 0.32.6
+      sharp-ico: 0.1.5
       unconfig: 0.3.13
     transitivePeerDependencies:
       - bare-buffer
@@ -17103,17 +17123,14 @@ snapshots:
 
   balanced-match@2.0.0: {}
 
-  bare-buffer@3.0.1:
-    optional: true
-
   bare-events@2.5.4:
     optional: true
 
-  bare-fs@4.0.1(bare-buffer@3.0.1):
+  bare-fs@4.0.1:
     dependencies:
       bare-events: 2.5.4
       bare-path: 3.0.0
-      bare-stream: 2.6.4(bare-buffer@3.0.1)(bare-events@2.5.4)
+      bare-stream: 2.6.4(bare-events@2.5.4)
     transitivePeerDependencies:
       - bare-buffer
     optional: true
@@ -17126,11 +17143,10 @@ snapshots:
       bare-os: 3.4.0
     optional: true
 
-  bare-stream@2.6.4(bare-buffer@3.0.1)(bare-events@2.5.4):
+  bare-stream@2.6.4(bare-events@2.5.4):
     dependencies:
       streamx: 2.21.1
     optionalDependencies:
-      bare-buffer: 3.0.1
       bare-events: 2.5.4
     optional: true
 
@@ -21645,16 +21661,16 @@ snapshots:
 
   shallow-equal@3.1.0: {}
 
-  sharp-ico@0.1.5(bare-buffer@3.0.1):
+  sharp-ico@0.1.5:
     dependencies:
       decode-ico: 0.4.1
       ico-endec: 0.1.6
-      sharp: 0.32.6(bare-buffer@3.0.1)
+      sharp: 0.32.6
     transitivePeerDependencies:
       - bare-buffer
     optional: true
 
-  sharp@0.32.6(bare-buffer@3.0.1):
+  sharp@0.32.6:
     dependencies:
       color: 4.2.3
       detect-libc: 2.0.3
@@ -21662,7 +21678,7 @@ snapshots:
       prebuild-install: 7.1.3
       semver: 7.6.3
       simple-get: 4.0.1
-      tar-fs: 3.0.8(bare-buffer@3.0.1)
+      tar-fs: 3.0.8
       tunnel-agent: 0.6.0
     transitivePeerDependencies:
       - bare-buffer
@@ -22019,12 +22035,12 @@ snapshots:
       tar-stream: 2.2.0
     optional: true
 
-  tar-fs@3.0.8(bare-buffer@3.0.1):
+  tar-fs@3.0.8:
     dependencies:
       pump: 3.0.2
       tar-stream: 3.1.7
     optionalDependencies:
-      bare-fs: 4.0.1(bare-buffer@3.0.1)
+      bare-fs: 4.0.1
       bare-path: 3.0.0
     transitivePeerDependencies:
       - bare-buffer
@@ -22607,6 +22623,11 @@ snapshots:
       d3-time: 3.1.0
       d3-timer: 3.0.1
 
+  virtua@0.39.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+    optionalDependencies:
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+
   vite-node@2.1.8(@types/node@22.10.9)(terser@5.37.0):
     dependencies:
       cac: 6.7.14
@@ -22641,7 +22662,7 @@ snapshots:
       pathe: 0.2.0
       vite: 6.0.11(@types/node@22.10.9)(jiti@2.4.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0)
 
-  vite-plugin-pwa@0.21.1(@vite-pwa/assets-generator@0.2.6(bare-buffer@3.0.1))(vite@6.0.11(@types/node@22.10.9)(jiti@2.4.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))(workbox-build@7.1.1(@types/babel__core@7.20.5))(workbox-window@7.3.0):
+  vite-plugin-pwa@0.21.1(@vite-pwa/assets-generator@0.2.6)(vite@6.0.11(@types/node@22.10.9)(jiti@2.4.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.7.0))(workbox-build@7.1.1(@types/babel__core@7.20.5))(workbox-window@7.3.0):
     dependencies:
       debug: 4.4.0
       pretty-bytes: 6.1.1
@@ -22650,7 +22671,7 @@ snapshots:
       workbox-build: 7.1.1(@types/babel__core@7.20.5)
       workbox-window: 7.3.0
     optionalDependencies:
-      '@vite-pwa/assets-generator': 0.2.6(bare-buffer@3.0.1)
+      '@vite-pwa/assets-generator': 0.2.6
     transitivePeerDependencies:
       - supports-color
 
@@ -22685,7 +22706,7 @@ snapshots:
       tsx: 4.19.2
       yaml: 2.7.0
 
-  vitest@2.1.8(@types/node@22.10.9)(jsdom@26.0.0(canvas@3.1.0))(terser@5.37.0):
+  vitest@2.1.8(@types/node@22.10.9)(jsdom@26.0.0)(terser@5.37.0):
     dependencies:
       '@vitest/expect': 2.1.8
       '@vitest/mocker': 2.1.8(vite@5.4.14(@types/node@22.10.9)(terser@5.37.0))
