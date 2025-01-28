@@ -10,7 +10,7 @@ import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { ScrollArea } from '~/modules/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 
 interface ComboBoxOption {
   value: string;
@@ -109,7 +109,10 @@ const Combobox: React.FC<ComboboxProps> = ({
             </CommandEmpty>
 
             <CommandGroup>
-              <ScrollArea viewPortRef={scrollViewportRef} className="max-h-[30vh] overflow-y-auto">
+              {/* To avoid conflicts between ScrollArea and Virtualizer, do not set a max-h value on ScrollArea. 
+              As this will cause all list elements to render at once in Virtualizer*/}
+              <ScrollArea className="h-[30vh]" viewPortRef={scrollViewportRef}>
+                <ScrollBar />
                 <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef} overscan={1}>
                   {options
                     .filter(({ label }) => label.toLowerCase().includes(searchValue.toLowerCase()))
