@@ -124,7 +124,7 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
   // Send verification email if not verified and redirect to verify page
   if (!emailVerified) {
     sendVerificationEmail(providerUser.id);
-    return ctx.redirect(`${config.frontendUrl}/auth/request-verification`, 302);
+    return ctx.redirect(`${config.frontendUrl}/auth/email-verification`, 302);
   }
 
   // Sign in user

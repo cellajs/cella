@@ -63,7 +63,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
           { ...formValues },
           {
             onSuccess: () => {
-              navigate({ to: '/auth/request-verification', replace: true });
+              navigate({ to: '/auth/email-verification', replace: true });
             },
           },
         );

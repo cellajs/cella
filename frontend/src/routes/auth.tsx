@@ -5,8 +5,8 @@ import AcceptOrgInvite from '~/modules/auth/accept-org-invite';
 import AuthPage from '~/modules/auth/auth-page';
 import AuthSteps from '~/modules/auth/auth-steps';
 import CreatePasswordForm from '~/modules/auth/create-password-form';
+import RequestVerification from '~/modules/auth/email-verification';
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
-import RequestVerification from '~/modules/auth/request-verification';
 import SignOut from '~/modules/auth/sign-out';
 import VerifyEmail from '~/modules/auth/verify-email';
 import { PublicRoute } from '~/routes/general';
@@ -52,7 +52,7 @@ export const CreatePasswordWithTokenRoute = createRoute({
 });
 
 export const RequestVerificationRoute = createRoute({
-  path: '/auth/request-verification',
+  path: '/auth/email-verification',
   staticData: { pageTitle: 'Verify email', isAuth: false },
   getParentRoute: () => AuthLayoutRoute,
   component: () => <RequestVerification />,

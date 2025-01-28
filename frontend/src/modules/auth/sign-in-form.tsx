@@ -51,7 +51,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
         onSuccess: (emailVerified) => {
           if (token && tokenId) navigate({ to: '/invitation/$token', params: { token }, search: { tokenId }, replace: true });
           const verifiedUserTo = redirect || config.defaultRedirectPath;
-          navigate({ to: emailVerified ? verifiedUserTo : '/auth/request-verification', replace: true });
+          navigate({ to: emailVerified ? verifiedUserTo : '/auth/email-verification', replace: true });
         },
         onError: (error) => {
           if (error.type !== 'invalid_password') return;
