@@ -4,7 +4,7 @@ import { usersTable } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
 import type { ContextEntityIdFields, DynamicColumn } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
-import { createDynamicTable, generateContextEntityDynamicFields } from '../util';
+import { createDynamicTable, generateContextEntityDynamicFields } from './helpers';
 
 const roleEnum = config.rolesByType.entityRoles;
 

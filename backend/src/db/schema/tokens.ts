@@ -2,7 +2,7 @@ import { config } from 'config';
 import { timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
-import { createDynamicTable, generateContextEntityDynamicFields } from '../util';
+import { createDynamicTable, generateContextEntityDynamicFields } from './helpers';
 
 const tokenTypeEnum = ['email_verification', 'password_reset', 'invitation'] as const;
 const roleEnum = config.rolesByType.entityRoles;
