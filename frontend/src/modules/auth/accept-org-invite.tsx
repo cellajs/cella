@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import { config } from 'config';
@@ -13,18 +13,19 @@ import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import type { TokenData } from '~/types/common';
 import { cn } from '~/utils/cn';
+import AuthNotice from './auth-notice';
 
 const AcceptOrgInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = useParams({ from: AcceptOrgInviteRoute.id });
   const { triggerAction } = useBroadcastChannel();
+  const { tokenId } = useSearch({ from: AcceptOrgInviteRoute.id });
 
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
   const { mutate: checkToken, isPending: isChecking } = useCheckTokenMutation();
-
   const { mutate: acceptOrgInvite, isPending } = useAcceptOrgInviteMutation();
 
   const onSubmit = () => {
@@ -43,16 +44,14 @@ const AcceptOrgInvite = () => {
 
   // TODO move this to beforeLoad in the route?
   useEffect(() => {
-    if (!token) return;
+    if (!tokenId || !token) return;
 
-    checkToken({ token }, { onSuccess: (result) => setTokenData(result), onError: (error) => setError(error) });
-  }, [token]);
+    checkToken({ id: tokenId }, { onSuccess: (result) => setTokenData(result), onError: (error) => setError(error) });
+  }, [tokenId]);
 
   if (isChecking) return <Spinner />;
 
-  if (error) {
-    return <>{/* TODO Error here */}</>;
-  }
+  if (error) return <AuthNotice error={error} />;
 
   return (
     <>

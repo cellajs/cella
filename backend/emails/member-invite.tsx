@@ -9,11 +9,10 @@ import { EmailBody } from './components/email-body';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import { UserName } from './components/user-name';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
-  token: string;
+  memberInviteLink: string;
   inviteBy: string;
   organizationName?: string;
   organizationThumbnailUrl?: string | null;
@@ -21,7 +20,7 @@ interface Props extends BasicTemplateType {
 
 const appName = config.name;
 
-export const MemberInviteEmail = ({ userName, userLanguage: lng, inviteBy, organizationName, token }: Props) => {
+export const MemberInviteEmail = ({ userName, userLanguage: lng, inviteBy, organizationName, memberInviteLink }: Props) => {
   const orgName = organizationName || i18n.t('common:unknown_organization', { lng });
 
   return (
@@ -45,8 +44,8 @@ export const MemberInviteEmail = ({ userName, userLanguage: lng, inviteBy, organ
         }
       />
       <EmailBody>
-        {userName && <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />}
         <Text>
+          <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
@@ -57,9 +56,9 @@ export const MemberInviteEmail = ({ userName, userLanguage: lng, inviteBy, organ
 
         {/* User is sent to org invite page, where this invitation token will be used to accept invitation. If not already signed in, 
         it will either forward user to sign in if user exists, or to sign up if user does not exist. */}
-        <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={`${config.frontendUrl}/invitation/${token}`} />
+        <EmailButton ButtonText={i18n.t('common:accept', { lng })} href={memberInviteLink} />
 
-        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
+        <Text style={{ fontSize: '.85rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
           {i18n.t('backend:email.invite_expires', { lng })}
         </Text>
       </EmailBody>

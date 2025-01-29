@@ -166,22 +166,25 @@ const membershipsRoutes = app
         // TODO - store hashed token?
         const token = nanoid(40);
 
-        await db.insert(tokensTable).values({
-          token: token,
-          type: 'invitation',
-          userId: targetUser?.id ?? null,
-          email: email,
-          createdBy: user.id,
-          role,
-          organizationId: organization.id,
-          expiresAt: createDate(new TimeSpan(7, 'd')),
-          ...(entity.entity !== 'organization' && {
-            membershipInfo: {
-              targetEntity: { idOrSlug: entity.id, entity: entity.entity },
-              parentEntity: parentEntityInfo,
-            },
-          }),
-        });
+        const [tokenRecord] = await db
+          .insert(tokensTable)
+          .values({
+            token: token,
+            type: 'invitation',
+            userId: targetUser?.id ?? null,
+            email: email,
+            createdBy: user.id,
+            role,
+            organizationId: organization.id,
+            expiresAt: createDate(new TimeSpan(7, 'd')),
+            ...(entity.entity !== 'organization' && {
+              membershipInfo: {
+                targetEntity: { idOrSlug: entity.id, entity: entity.entity },
+                parentEntity: parentEntityInfo,
+              },
+            }),
+          })
+          .returning();
 
         // Render email template
         const emailHtml = await render(
@@ -192,7 +195,7 @@ const membershipsRoutes = app
             inviteBy: user.name,
             organizationName: organization.name,
             organizationThumbnailUrl: organization.logoUrl || organization.thumbnailUrl,
-            token,
+            memberInviteLink: `${config.frontendUrl}/invitation/${token}?tokenId=${tokenRecord.id}`,
           }),
         );
 

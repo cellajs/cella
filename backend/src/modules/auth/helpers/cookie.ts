@@ -12,9 +12,9 @@ export type CookieName =
   | 'oauth_state'
   | 'oauth_code_verifier'
   | 'oauth_redirect'
-  | 'passkey_challenge'
-  | 'oauth_connect'
-  | 'oauth_invite_token';
+  | 'oauth_connect_user_id'
+  | 'oauth_invite_token'
+  | 'passkey_challenge';
 
 // Set auth cookie (to store content such as session id or oauth state)
 export const setAuthCookie = async (ctx: Context, name: CookieName, content: string, timeSpan: TimeSpan) => {

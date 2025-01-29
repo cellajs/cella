@@ -2,11 +2,12 @@ import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { setUserSession } from './session';
+import { setUserSession, validateSession } from './session';
 
 import { config } from 'config';
 import slugify from 'slugify';
 import { db } from '#/db/db';
+import { errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import type { EnabledOauthProvider } from '#/types/common';
 import { TimeSpan } from '#/utils/time-span';
@@ -16,32 +17,41 @@ import { sendVerificationEmail } from './verify-email';
 const cookieExpires = new TimeSpan(5, 'm');
 
 // Create a session before redirecting to oauth provider
-export const createOauthSession = (
+export const createOauthSession = async (
   ctx: Context,
   provider: string,
+  url: URL,
   state: string,
   codeVerifier?: string,
   redirect?: string,
-  connect?: boolean,
+  connect?: string,
   token?: string,
 ) => {
   setAuthCookie(ctx, 'oauth_state', state, cookieExpires);
+  // If connecting oauth account to user, make sure same user is logged in
+  if (connect) {
+    const sessionToken = await getAuthCookie(ctx, 'session');
+    if (!sessionToken) return errorResponse(ctx, 401, 'no_session', 'warn');
+    const { user } = await validateSession(sessionToken);
+    if (user?.id !== connect) return errorResponse(ctx, 404, 'user_mismatch', 'warn');
+  }
 
-  // TODO If connecting, verif user is logged in
+  // If sign up is disabled, stop early if no token or connect
+  if (!config.has.registrationEnabled && !token && !connect) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
 
-  // TODO If accepting invite, verify token
-
-  if (codeVerifier) setAuthCookie(ctx, 'oauth_code_verifier', codeVerifier, cookieExpires);
-  if (redirect) setAuthCookie(ctx, 'oauth_redirect', redirect, cookieExpires);
-  if (connect) setAuthCookie(ctx, 'oauth_connect', 'TODO connectUserHere', cookieExpires);
-  if (token) setAuthCookie(ctx, 'oauth_invite_token', token, cookieExpires);
+  if (codeVerifier) await setAuthCookie(ctx, 'oauth_code_verifier', codeVerifier, cookieExpires);
+  if (redirect) await setAuthCookie(ctx, 'oauth_redirect', redirect, cookieExpires);
+  if (connect) await setAuthCookie(ctx, 'oauth_connect_user_id', connect, cookieExpires);
+  if (token) await setAuthCookie(ctx, 'oauth_invite_token', token, cookieExpires);
 
   logEvent('User redirected', { strategy: provider });
+
+  return ctx.redirect(url.toString(), 302);
 };
 
 // Clear oauth session
 export const clearOauthSession = (ctx: Context) => {
-  const cookies: CookieName[] = ['oauth_state', 'oauth_code_verifier', 'oauth_redirect', 'oauth_connect', 'oauth_invite_token'];
+  const cookies: CookieName[] = ['oauth_state', 'oauth_code_verifier', 'oauth_redirect', 'oauth_connect_user_id', 'oauth_invite_token'];
   for (const cookie of cookies) {
     deleteAuthCookie(ctx, cookie);
   }
@@ -113,8 +123,8 @@ export const updateExistingUser = async (ctx: Context, existingUser: UserModel, 
 
   // Send verification email if not verified and redirect to verify page
   if (!emailVerified) {
-    sendVerificationEmail(providerUser.email.toLowerCase());
-    return ctx.redirect(`${config.frontendUrl}/auth/request-verification`, 302);
+    sendVerificationEmail(providerUser.id);
+    return ctx.redirect(`${config.frontendUrl}/auth/email-verification`, 302);
   }
 
   // Sign in user

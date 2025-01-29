@@ -137,7 +137,7 @@ const usersRoutes = app
    * Get a user by id or slug
    */
   .openapi(usersRoutesConfig.getUser, async (ctx) => {
-    const idOrSlug = ctx.req.param('idOrSlug');
+    const { idOrSlug } = ctx.req.valid('param');
     const user = getContextUser();
     const memberships = getContextMemberships();
 

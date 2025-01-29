@@ -9,4 +9,5 @@ export const authKeys = {
   resetPassword: () => [...authKeys.all, 'resetPassword'] as const,
   signIn: () => [...authKeys.all, 'signIn'] as const,
   signUp: () => [...authKeys.all, 'signUp'] as const,
+  signUpWithToken: () => [...authKeys.all, 'signUp'] as const,
 };

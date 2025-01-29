@@ -4,7 +4,7 @@ import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guar
 import { hasValidToken } from '#/middlewares/has-valid-token';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { cookieSchema, passwordSchema, tokenSchema } from '#/utils/schema/common-schemas';
+import { cookieSchema, idSchema, passwordSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import {
   checkTokenSchema,
   emailBodySchema,
@@ -13,6 +13,7 @@ import {
   passkeyChallengeQuerySchema,
   passkeyRegistrationBodySchema,
   passkeyVerificationBodySchema,
+  sendVerificationEmailBodySchema,
   signInResponse,
 } from './schema';
 
@@ -68,7 +69,7 @@ class AuthLayoutRoutesConfig {
     middleware: [emailEnumLimiter],
     tags: ['auth'],
     summary: 'Check if email exists',
-    description: 'Check if user with email address exists and whether user has a passkey.',
+    description: 'Check if user with email address exists.',
     security: [],
     request: {
       body: {
@@ -130,6 +131,45 @@ class AuthLayoutRoutesConfig {
     },
   });
 
+  public signUpWithToken = createRouteConfig({
+    method: 'post',
+    path: '/sign-up/{token}',
+    guard: isPublicAccess,
+    middleware: [spamLimiter, emailEnumLimiter, hasValidToken('invitation')],
+    tags: ['auth'],
+    summary: 'Sign up to accept invite',
+    description: 'Sign up with email and password to accept system or organization invitation.',
+    security: [],
+    request: {
+      params: tokenSchema,
+      body: {
+        content: {
+          'application/json': {
+            schema: emailPasswordBodySchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'User signed up',
+        headers: z.object({
+          'Set-Cookie': cookieSchema,
+        }),
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      302: {
+        headers: z.object({ Location: z.string() }),
+        description: 'Redirect to frontend',
+      },
+      ...errorResponses,
+    },
+  });
+
   public sendVerificationEmail = createRouteConfig({
     method: 'post',
     path: '/send-verification-email',
@@ -137,13 +177,13 @@ class AuthLayoutRoutesConfig {
     middleware: [spamLimiter],
     tags: ['auth'],
     summary: 'Resend verification email',
-    description: 'Resend verification email to user based on email address.',
+    description: 'Resend verification email to user based on token id.',
     security: [],
     request: {
       body: {
         content: {
           'application/json': {
-            schema: emailBodySchema,
+            schema: sendVerificationEmailBodySchema,
           },
         },
       },
@@ -163,26 +203,15 @@ class AuthLayoutRoutesConfig {
 
   public verifyEmail = createRouteConfig({
     method: 'post',
-    path: '/verify-email',
+    path: '/verify-email/{token}',
     guard: isPublicAccess,
-    middleware: [tokenLimiter],
+    middleware: [tokenLimiter, hasValidToken('email_verification')],
     tags: ['auth'],
     summary: 'Verify email by token',
     description: 'Verify email address by token from the verification email. Receive a user session when successful.',
     security: [],
     request: {
-      query: z.object({
-        resend: z.string().optional(),
-      }),
-      body: {
-        content: {
-          'application/json': {
-            schema: z.object({
-              token: z.string(),
-            }),
-          },
-        },
-      },
+      params: tokenSchema,
     },
     responses: {
       200: {
@@ -228,7 +257,7 @@ class AuthLayoutRoutesConfig {
     },
   });
 
-  public createPasswordCallback = createRouteConfig({
+  public createPasswordWithToken = createRouteConfig({
     method: 'post',
     path: '/create-password/{token}',
     guard: isPublicAccess,
@@ -329,15 +358,15 @@ class AuthLayoutRoutesConfig {
 
   public checkToken = createRouteConfig({
     method: 'post',
-    path: '/check-token/{token}',
-    middleware: [tokenLimiter, hasValidToken()],
+    path: '/check-token/{id}',
+    middleware: [tokenLimiter],
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Token validation check',
     description:
       'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
     request: {
-      params: tokenSchema,
+      params: z.object({ id: idSchema }),
     },
     responses: {
       200: {
@@ -383,7 +412,8 @@ class AuthLayoutRoutesConfig {
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with GitHub',
-    description: 'Authenticate with Github to sign in or sign up.',
+    description:
+      'Authenticate with Github to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
     security: [],
     request: {
       query: oauthQuerySchema,
@@ -484,7 +514,8 @@ class AuthLayoutRoutesConfig {
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with Google',
-    description: 'Authenticate with Google to sign in or sign up.',
+    description:
+      'Authenticate with Google to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
     security: [],
     request: {
       query: oauthQuerySchema,
@@ -528,7 +559,8 @@ class AuthLayoutRoutesConfig {
     guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with Microsoft',
-    description: 'Authenticate with Microsoft to sign in or sign up.',
+    description:
+      'Authenticate with Microsoft to sign in or sign up.  A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
     security: [],
     request: {
       query: oauthQuerySchema,

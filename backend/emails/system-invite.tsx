@@ -8,17 +8,16 @@ import { EmailBody } from './components/email-body';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import { UserName } from './components/user-name';
 import type { BasicTemplateType } from './types';
 
 interface Props extends BasicTemplateType {
-  token: string;
+  systemInviteLink: string;
   inviteBy: string;
 }
 
 const appName = config.name;
 
-export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, token }: Props) => {
+export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, systemInviteLink }: Props) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.system_invite.preview', { appName, lng })}>
       {inviteBy && (
@@ -40,8 +39,8 @@ export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, token
         }
       />
       <EmailBody>
-        {userName && <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />}
         <Text>
+          <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
@@ -51,11 +50,9 @@ export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, token
         </Text>
 
         {/* User is sent to authenticate page, where this invitation token will be used to complete the sign up process */}
-        <EmailButton ButtonText={i18n.t('common:join', { lng })} href={`${config.frontendUrl}/auth/authenticate?token=${token}`} />
+        <EmailButton ButtonText={i18n.t('common:join', { lng })} href={systemInviteLink} />
 
-        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
-          {i18n.t('backend:email.invite_expires', { lng })}
-        </Text>
+        <Text style={{ fontSize: '.85rem', margin: '0.5rem 0 0 0', textAlign: 'center' }}>{i18n.t('backend:email.invite_expires', { lng })}</Text>
       </EmailBody>
 
       <AppLogo />

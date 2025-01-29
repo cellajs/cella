@@ -35,7 +35,7 @@ export const NewsletterEmail = ({ userLanguage: lng, content, subject, unsubscri
         <div dangerouslySetInnerHTML={{ __html: content }} />
 
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Link style={{ fontSize: '.75rem', lineHeight: '1.13rem' }} href={unsubscribeLink}>
+          <Link style={{ fontSize: '.85rem', lineHeight: '1.13rem' }} href={unsubscribeLink}>
             {i18n.t('backend:email.unsubscribe', { lng })}
           </Link>
         </div>

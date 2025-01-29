@@ -7,11 +7,13 @@ import {
   type CreatePasswordProps,
   type SignInProps,
   type SignUpProps,
+  type TokenType,
   type VerifyEmailProps,
   checkEmail,
   createPassword,
   signIn,
   signUp,
+  signUpWithToken,
   verifyEmail,
 } from '~/modules/auth/api';
 import { authKeys } from '~/modules/auth/query';
@@ -49,5 +51,12 @@ export const useSignUpMutation = () => {
   return useMutation<boolean, ApiError, SignUpProps>({
     mutationKey: authKeys.signUp(),
     mutationFn: signUp,
+  });
+};
+
+export const useSignUpWithTokenMutation = () => {
+  return useMutation<boolean, ApiError, TokenType & SignUpProps>({
+    mutationKey: authKeys.signUpWithToken(),
+    mutationFn: signUpWithToken,
   });
 };

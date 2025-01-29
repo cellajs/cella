@@ -75,14 +75,18 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
 export const validateSession = async (sessionToken: string) => {
   const hashedSessionToken = encodeHexLowerCase(sha256(new TextEncoder().encode(sessionToken)));
 
-  const result = await db
+  const [result] = await db
     .select({ session: sessionsTable, user: usersTable })
     .from(sessionsTable)
     .where(eq(sessionsTable.token, hashedSessionToken))
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
 
-  const { user, session } = result[0];
+  // If session is not found, for example due to a new hash method, return null
+  if (!result) return { session: null, user: null };
 
+  const { user, session } = result;
+
+  // If session is expired, invalidate it
   if (isExpiredDate(session.expiresAt)) {
     await invalidateSession(session.id);
     return { session: null, user: null };

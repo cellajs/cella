@@ -7,7 +7,6 @@ import { userSchema } from '../users/schema';
 export const emailPasswordBodySchema = z.object({
   email: userSchema.shape.email,
   password: passwordSchema,
-  token: z.string().optional(),
 });
 
 export const checkTokenSchema = z.object({
@@ -52,6 +51,11 @@ export const acceptOrgInviteResponseSchema = z
 
 export const oauthQuerySchema = z.object({
   redirect: z.string().optional(),
-  connect: z.boolean().optional(),
+  connect: z.string().optional(),
   token: z.string().optional(),
+});
+
+export const sendVerificationEmailBodySchema = z.object({
+  tokenId: z.string().optional(),
+  userId: z.string().optional(),
 });

@@ -10,7 +10,7 @@ export async function isAuthenticated(ctx: Context, next: Next): Promise<Respons
   // Get session id from cookie
   const sessionToken = await getAuthCookie(ctx, 'session');
 
-  // If no session id is found, remove session cookie
+  // If no session id is found (or its corrupted/deprecated), remove session cookie
   if (!sessionToken) {
     deleteAuthCookie(ctx, 'session');
     return errorResponse(ctx, 401, 'no_session', 'warn');

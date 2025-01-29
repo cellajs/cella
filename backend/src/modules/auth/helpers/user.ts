@@ -1,8 +1,10 @@
 import { config } from 'config';
+import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
+import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
-import { errorRedirect, errorResponse } from '#/lib/errors';
+import { errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
 import type { EnabledOauthProvider } from '#/types/common';
@@ -15,18 +17,13 @@ import { sendVerificationEmail } from './verify-email';
 interface HandleCreateUserProps {
   ctx: Context;
   newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
-  isInvite?: boolean;
   redirectUrl?: string;
   provider?: { id: EnabledOauthProvider; userId: string };
+  tokenId?: string;
 }
 
 // Handle creating a user by password or oauth provider
-export const handleCreateUser = async ({ ctx, newUser, isInvite, redirectUrl, provider }: HandleCreateUserProps) => {
-  // If sign up is disabled, return an error
-  if (!config.has.registrationEnabled && !isInvite) {
-    if (provider) return errorRedirect(ctx, 'sign_up_restricted', 'warn');
-    return errorResponse(ctx, 403, 'sign_up_restricted', 'warn');
-  }
+export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, tokenId }: HandleCreateUserProps) => {
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 
@@ -48,16 +45,19 @@ export const handleCreateUser = async ({ ctx, newUser, isInvite, redirectUrl, pr
       .returning();
 
     // If a provider is passed, insert oauth account
-    if (provider) {
-      await insertOauthAccount(user.id, provider.id, provider.userId);
-    }
+    if (provider) await insertOauthAccount(user.id, provider.id, provider.userId);
+
+    // If signing up with token, update it with new user id
+    if (tokenId) await db.update(tokensTable).set({ userId: user.id }).where(eq(tokensTable.id, tokenId));
 
     // If email is not verified, send verification email. Otherwise, sign in user
-    if (!newUser.emailVerified) sendVerificationEmail(newUser.email);
+    if (!user.emailVerified) sendVerificationEmail(user.id);
     else await setUserSession(ctx, user.id, provider?.id || 'password');
 
+    // Redirect to URL if provided
     if (redirectUrl) return ctx.redirect(redirectUrl, 302);
 
+    // Return
     return ctx.json({ success: true }, 200);
   } catch (error) {
     // If the email already exists, return an error
