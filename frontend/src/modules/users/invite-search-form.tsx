@@ -1,10 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
-import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
+import type { z } from 'zod';
+import { inviteMembers } from '~/modules/memberships/api';
 
-import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
-import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
 import type { UseFormProps } from 'react-hook-form';
@@ -18,6 +16,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types/common';
+import { createMembershipBodySchema } from '#/modules/memberships/schema';
 
 interface Props {
   entity?: EntityPage;
@@ -25,21 +24,13 @@ interface Props {
   dialog?: boolean;
 }
 
+const formSchema = createMembershipBodySchema;
+type FormValues = z.infer<typeof formSchema>;
+
 // Invite members by searching for users which are already in the system
 const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
   const { t } = useTranslation();
   if (!entity) return null;
-
-  // TODO
-  const formSchema = z.object({
-    emails: z
-      .array(z.string().email(t('backend:invalid.email')))
-      .min(1, { message: t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-    role: z.enum(config.rolesByType.entityRoles).optional(),
-    idOrSlug: idOrSlugSchema.optional(),
-  });
-
-  type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
     () => ({
@@ -47,6 +38,7 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
       defaultValues: {
         emails: [],
         role: 'member',
+        parentEntity: entity.parentEntity,
       },
     }),
     [],
@@ -59,10 +51,9 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
       return inviteMembers({
         ...values,
         idOrSlug: entity.id,
-        entityType: entity.entity || 'organization',
-        parentEntity: entity.parentEntity,
+        entityType: entity.entity,
         orgIdOrSlug: entity.organizationId || entity.id,
-      } as InviteMemberProps);
+      });
     },
     onSuccess: () => {
       form.reset(undefined, { keepDirtyValues: true });

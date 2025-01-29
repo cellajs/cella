@@ -5,6 +5,7 @@ import { userSchema } from '../users/schema';
 
 export const inviteBodySchema = z.object({
   emails: userSchema.shape.email.array().min(1).max(20),
+  role: userSchema.shape.role,
 });
 
 export const entitySuggestionSchema = z.object({

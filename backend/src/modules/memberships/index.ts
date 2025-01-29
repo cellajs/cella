@@ -144,6 +144,7 @@ const membershipsRoutes = app
         // TODO - store hashed token?
         const token = nanoid(40);
 
+        // TODO add here entity ids
         const [tokenRecord] = await db
           .insert(tokensTable)
           .values({

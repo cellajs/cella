@@ -1,12 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { type SystemInviteProps, invite as inviteSystem } from '~/modules/general/api';
 import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 
-import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
-import { config } from 'config';
 import { Send } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -20,6 +18,8 @@ import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types/common';
+import { inviteBodySchema } from '#/modules/general/schema';
+import { createMembershipBodySchema } from '#/modules/memberships/schema';
 
 interface Props {
   entity?: EntityPage;
@@ -28,20 +28,15 @@ interface Props {
   children?: React.ReactNode;
 }
 
+const entityFormSchema = createMembershipBodySchema;
+const systemFormSchema = inviteBodySchema;
+
 // When no entity type, it's a system invite
 const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props) => {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
-  // TODO
-  const formSchema = z.object({
-    emails: z
-      .array(z.string().email(t('backend:invalid.email')))
-      .min(1, { message: t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
-    role: z.enum(config.rolesByType.allRoles),
-    idOrSlug: idOrSlugSchema.optional(),
-  });
-
+  const formSchema = entity ? entityFormSchema : systemFormSchema;
   type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = useMemo(
@@ -50,6 +45,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
       defaultValues: {
         emails: [],
         role: entity ? 'member' : 'user',
+        parentEntity: entity?.parentEntity,
       },
     }),
     [],
@@ -57,6 +53,7 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
 
   const form = useFormWithDraft<FormValues>(`invite-users${entity ? `-${entity?.id}` : ''}`, formOptions);
 
+  //TODO improve mutations
   // It uses inviteSystem if no entity type is provided
   const { mutate: invite, isPending } = useMutation({
     mutationFn: (values: FormValues) => {
@@ -65,7 +62,6 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
         ...values,
         idOrSlug: entity.id,
         entityType: entity.entity,
-        parentEntity: entity.parentEntity,
         orgIdOrSlug: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },
