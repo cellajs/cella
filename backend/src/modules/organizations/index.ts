@@ -3,6 +3,7 @@ import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { organizationsTable } from '#/db/schema/organizations';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { usersTable } from '#/db/schema/users';
@@ -13,7 +14,7 @@ import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getValidEntity } from '#/permissions/get-valid-entity';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
-import { CustomHono } from '#/types/common';
+import type { Env } from '#/types/app';
 import { updateBlocknoteHTML } from '#/utils/blocknote';
 import { memberCountsQuery } from '#/utils/counts';
 import { getOrderColumn } from '#/utils/order-column';
@@ -23,7 +24,7 @@ import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import organizationRoutesConfig from './routes';
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // Organization endpoints
 const organizationsRoutes = app

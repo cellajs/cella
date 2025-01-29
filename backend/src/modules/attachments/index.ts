@@ -1,5 +1,6 @@
 import { db } from '#/db/db';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 import { html } from 'hono/html';
@@ -9,12 +10,12 @@ import { getContextMemberships, getContextOrganization, getContextUser } from '#
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { splitByAllowance } from '#/permissions/split-by-allowance';
-import { CustomHono } from '#/types/common';
+import type { Env } from '#/types/app';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import attachmentsRoutesConfig from './routes';
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // Attachment endpoints
 const attachmentsRoutes = app

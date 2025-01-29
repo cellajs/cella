@@ -1,4 +1,5 @@
 import { getRandomValues } from 'node:crypto';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import { config } from 'config';
@@ -29,7 +30,8 @@ import {
   microsoftAuth,
   type microsoftUserProps,
 } from '#/modules/auth/helpers/oauth-providers';
-import { CustomHono, type EnabledOauthProvider } from '#/types/common';
+import type { Env } from '#/types/app';
+import type { EnabledOauthProvider } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 // TODO shorten this import
@@ -68,7 +70,7 @@ function isOAuthEnabled(provider: EnabledOauthProvider): boolean {
   return enabledOauthProviders.includes(provider);
 }
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // Authentication endpoints
 const authRoutes = app
@@ -378,7 +380,7 @@ const authRoutes = app
     const token = getContextToken();
     const user = getContextUser();
 
-    // Make sure its not system invitation
+    // Make sure its an organization invitation
     if (!token.organizationId || !token.role) return errorResponse(ctx, 401, 'invalid_token', 'warn');
 
     // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)

@@ -43,14 +43,14 @@ export const sendNewsletterBodySchema = z.object({
 export const updateOrganizationBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
   name: nameSchema,
-  shortName: nameSchema,
+  shortName: nameSchema.nullable(),
   languages: z.array(languageSchema).optional(),
   emailDomains: validDomainsSchema,
   authStrategies: z.array(z.string()).optional(),
-  websiteUrl: validUrlSchema,
-  thumbnailUrl: imageUrlSchema,
-  bannerUrl: imageUrlSchema,
-  logoUrl: imageUrlSchema,
+  websiteUrl: validUrlSchema.nullable(),
+  thumbnailUrl: imageUrlSchema.nullable(),
+  bannerUrl: imageUrlSchema.nullable(),
+  logoUrl: imageUrlSchema.nullable(),
 })
   .pick({
     slug: true,

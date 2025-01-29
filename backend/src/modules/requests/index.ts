@@ -1,5 +1,6 @@
 import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { config } from 'config';
 import { render } from 'jsx-email';
 import { db } from '#/db/db';
@@ -9,7 +10,7 @@ import { getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { emailSender } from '#/lib/mailer';
 import { sendSlackMessage } from '#/lib/notification';
-import { CustomHono } from '#/types/common';
+import type { Env } from '#/types/app';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { MessageEmail } from '../../../emails/message';
@@ -19,7 +20,7 @@ import requestsRoutesConfig from './routes';
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestsModel['type'][] = ['waitlist', 'newsletter'];
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // Requests endpoints
 const requestsRoutes = app
