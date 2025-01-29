@@ -7,6 +7,7 @@ import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
 import { render } from 'jsx-email';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
 import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
@@ -21,7 +22,7 @@ import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import { CustomHono } from '#/types/common';
+import type { Env } from '#/types/app';
 import { nanoid } from '#/utils/nanoid';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
@@ -31,7 +32,7 @@ import generalRoutesConfig from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 export const streams = new Map<string, SSEStreamingApi>();
 

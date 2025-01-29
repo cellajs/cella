@@ -2,8 +2,8 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, systemGuard } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { idsQuerySchema } from '#/utils/schema/common-schemas';
-import { updateUserBodySchema, userSchema } from '../users/schema';
-import { leaveEntityQuerySchema, meUserSchema, newsletterToSelfSchema, signUpInfo, userMenuSchema } from './schema';
+import { updateUserBodySchema, updatedUserSchema } from '../users/schema';
+import { leaveEntityQuerySchema, meUserSchema, newsletterToSelfSchema, userMenuSchema } from './schema';
 
 class MeRoutesConfig {
   public getSelf = createRouteConfig({
@@ -49,7 +49,7 @@ class MeRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successWithDataSchema(userSchema.extend(signUpInfo.shape)),
+            schema: successWithDataSchema(updatedUserSchema),
           },
         },
       },

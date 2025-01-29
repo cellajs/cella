@@ -7,6 +7,7 @@ import { render } from 'jsx-email';
 import { emailSender } from '#/lib/mailer';
 import { MemberInviteEmail } from '../../../emails/member-invite';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
@@ -18,7 +19,7 @@ import { i18n } from '#/lib/i18n';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getValidEntity } from '#/permissions/get-valid-entity';
-import { CustomHono } from '#/types/common';
+import type { Env } from '#/types/app';
 import { memberCountsQuery } from '#/utils/counts';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
@@ -27,7 +28,7 @@ import { TimeSpan, createDate } from '#/utils/time-span';
 import { insertMembership } from './helpers/insert-membership';
 import membershipRouteConfig from './routes';
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // Membership endpoints
 const membershipsRoutes = app

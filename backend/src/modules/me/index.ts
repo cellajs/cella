@@ -4,12 +4,13 @@ import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { CustomHono, type EnabledOauthProvider } from '#/types/common';
+import type { EnabledOauthProvider } from '#/types/common';
 import { invalidateSession, invalidateUserSessions } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { sha256 } from '@oslojs/crypto/sha2';
 import { encodeHexLowerCase } from '@oslojs/encoding';
 import { config } from 'config';
@@ -23,6 +24,7 @@ import { getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { emailSender } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
+import type { Env } from '#/types/app';
 import type { MenuItem, UserMenu } from '#/types/common';
 import { updateBlocknoteHTML } from '#/utils/blocknote';
 import { NewsletterEmail } from '../../../emails/newsletter';
@@ -30,7 +32,7 @@ import { env } from '../../../env';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { getUserSessions } from './helpers/get-sessions';
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // Me (self) endpoints
 const meRoutes = app

@@ -1,5 +1,6 @@
 import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { coalesce, db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
@@ -7,14 +8,14 @@ import { getUsersByConditions } from '#/db/util';
 import { getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { CustomHono } from '#/types/common';
+import type { Env } from '#/types/app';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { getUserMembershipsCount, transformDatabaseUserWithCount } from './helpers/transform-database-user';
 import usersRoutesConfig from './routes';
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // User endpoints
 const usersRoutes = app
