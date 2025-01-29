@@ -372,22 +372,6 @@ const authRoutes = app
     // Delete token
     await db.delete(tokensTable).where(eq(tokensTable.id, token.id));
 
-    // const memberships = await db
-    //   .select()
-    //   .from(membershipsTable)
-    //   .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization')));
-
-    // const existingMembership = memberships.find(({ userId }) => userId === user.id);
-
-    // if (existingMembership && existingMembership.role !== role && !membershipInfo) {
-    //   await db
-    //     .update(membershipsTable)
-    //     .set({ role })
-    //     .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.userId, user.id)));
-
-    //   return ctx.json({ success: true }, 200);
-    // }
-
     for (const entityType of config.contextEntityTypes) {
       const entityIdField = entityIdFields[entityType];
       const entityId = token[entityIdField];
@@ -395,9 +379,31 @@ const authRoutes = app
       const entity = await resolveEntity(entityType, entityId);
       if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType, { [entityType]: 'targetIdOrSlug' });
 
-      // Insert membership
-      //TODO assign passed role only for target entity
+      // const memberships = await db
+      //   .select()
+      //   .from(membershipsTable)
+      //   .where(and(eq(membershipsTable[entityIdField], entityId), eq(membershipsTable.type, entityType)));
+
+      // const existingMembership = memberships.find(({ userId }) => userId === user.id);
+      //
+      // const newMembership =
+      // existingMembership && existingMembership.role !== token.role
+      //   ? (
+      //       await db
+      //         .update(membershipsTable)
+      //         .set({ role: token.role })
+      //         .where(and(eq(membershipsTable.organizationId, token.organizationId), eq(membershipsTable.userId, user.id)))
+      //         .returning(membershipSelect)
+      //     )[0]
+      //   : await insertMembership({ user, role: token.role, entity });
+
       await insertMembership({ user, role: token.role, entity });
+      // SSE to to update members queries
+      // sendSSEToUsers(
+      //   memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
+      //   'member_accept_invite',
+      //   { tokenId: token.id, newMember: { ...user, ...{ membership: newMembership }, entity } },
+      // );
     }
 
     return ctx.json({ success: true }, 200);
