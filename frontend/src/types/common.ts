@@ -2,8 +2,8 @@ import type { UppyFile } from '@uppy/core';
 import type { attachmentSchema } from 'backend/modules/attachments/schema';
 import type { checkTokenSchema } from 'backend/modules/auth/schema';
 import type { membersSchema } from 'backend/modules/general/schema';
-import type { membershipInfoSchema, membershipSchema } from 'backend/modules/memberships/schema';
-import type { invitesInfoSchema, organizationSchema, organizationWithMembershipSchema } from 'backend/modules/organizations/schema';
+import type { invitedMembersSchema, membershipInfoSchema, membershipSchema } from 'backend/modules/memberships/schema';
+import type { organizationSchema, organizationWithMembershipSchema } from 'backend/modules/organizations/schema';
 import type { requestSchema } from 'backend/modules/requests/schema';
 import type { limitedUserSchema, userSchema } from 'backend/modules/users/schema';
 import type { config } from 'config';
@@ -32,7 +32,6 @@ export type UserMenu = Extract<InferResponseType<(typeof meClient.menu)['$get']>
 export type UserMenuItem = UserMenu[keyof UserMenu][number];
 
 export type Organization = z.infer<typeof organizationSchema>;
-export type OrganizationInvitesInfo = z.infer<typeof invitesInfoSchema>[number];
 export type OrganizationWithMembership = z.infer<typeof organizationWithMembershipSchema>;
 
 export type Attachment = z.infer<typeof attachmentSchema>;
@@ -41,6 +40,7 @@ export type TokenData = z.infer<typeof checkTokenSchema>;
 export type Language = Organization['languages'][number];
 
 export type Member = z.infer<typeof membersSchema>;
+export type InvitedMemberInfo = z.infer<typeof invitedMembersSchema>;
 export type Membership = z.infer<typeof membershipSchema>;
 export type MinimumMembershipInfo = z.infer<typeof membershipInfoSchema>;
 

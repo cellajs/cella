@@ -5,7 +5,6 @@ import { organizationsTable } from '#/db/schema/organizations';
 
 import { config } from 'config';
 import { render } from 'jsx-email';
-import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
 import { getContextMemberships, getContextUser } from '#/lib/context';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -188,25 +187,6 @@ const organizationsRoutes = app
     const counts = { memberships: memberCounts };
     const data = { ...organization, membership, counts };
 
-    // Get invites info if user is admin
-    // TODO create select schema or use existing schema?
-    if (membership && membership.role === 'admin') {
-      const invitesInfo = await db
-        .select({
-          id: tokensTable.id,
-          name: usersTable.name,
-          email: tokensTable.email,
-          role: tokensTable.role,
-          expiresAt: tokensTable.expiresAt,
-          createdAt: tokensTable.createdAt,
-          createdBy: tokensTable.createdBy,
-        })
-        .from(tokensTable)
-        .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'invitation')))
-        .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId));
-
-      return ctx.json({ success: true, data: { ...data, invitesInfo } }, 200);
-    }
     return ctx.json({ success: true, data }, 200);
   })
   /*

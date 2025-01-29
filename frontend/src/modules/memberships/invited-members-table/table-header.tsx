@@ -3,11 +3,11 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import type { InvitesInfoSearch } from '~/modules/organizations/invites/table';
-import type { BaseTableHeaderProps, BaseTableMethods, OrganizationInvitesInfo } from '~/types/common';
+import type { BaseTableHeaderProps, BaseTableMethods, InvitedMemberInfo } from '~/types/common';
+import type { InvitesInfoSearch } from '.';
 
 type InvitesInfoTableHeaderProps = BaseTableMethods &
-  BaseTableHeaderProps<OrganizationInvitesInfo, InvitesInfoSearch> & { role: InvitesInfoSearch['role'] };
+  BaseTableHeaderProps<InvitedMemberInfo, InvitesInfoSearch> & { role: InvitesInfoSearch['role'] };
 
 export const InvitesInfoHeader = ({ total, q, role, setSearch, clearSelection }: InvitesInfoTableHeaderProps) => {
   const isFiltered = !!q || !!role;

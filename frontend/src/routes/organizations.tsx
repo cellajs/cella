@@ -1,5 +1,5 @@
 import { createRoute, useParams } from '@tanstack/react-router';
-import { membersQuerySchema } from 'backend/modules/general/schema';
+import { invitedMembersQuerySchema, membersQuerySchema } from 'backend/modules/memberships/schema';
 import { Suspense, lazy } from 'react';
 import { z } from 'zod';
 import { offlineFetch, offlineFetchInfinite } from '~/lib/query-client';
@@ -24,6 +24,8 @@ const OrganizationSettings = lazy(() => import('~/modules/organizations/organiza
 export const membersSearchSchema = membersQuerySchema
   .pick({ q: true, sort: true, order: true, role: true })
   .extend({ sheetId: z.string().optional() });
+
+export const invitedMembersSearchSchema = invitedMembersQuerySchema.pick({ q: true, sort: true, order: true, role: true });
 
 export const attachmentsSearchSchema = attachmentsQuerySchema.pick({ q: true, sort: true, order: true }).extend({
   attachmentPreview: z.string().optional(),

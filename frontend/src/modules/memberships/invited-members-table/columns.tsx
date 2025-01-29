@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { OrganizationInvitesInfo } from '~/types/common';
+import type { InvitedMemberInfo } from '~/types/common';
 
 import { useMemo, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
@@ -12,11 +12,11 @@ export const useColumns = () => {
   const isMobile = useBreakpoints('max', 'sm');
 
   const columns = useMemo(() => {
-    const cols: ColumnOrColumnGroup<OrganizationInvitesInfo>[] = [
+    const cols: ColumnOrColumnGroup<InvitedMemberInfo>[] = [
       {
         key: 'email',
         name: t('common:email'),
-        sortable: false,
+        sortable: true,
         visible: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => row.email,
@@ -25,7 +25,7 @@ export const useColumns = () => {
       {
         key: 'role',
         name: t('common:role'),
-        sortable: false,
+        sortable: true,
         visible: true,
         renderHeaderCell: HeaderCell,
         renderCell: ({ row }) => (
@@ -67,5 +67,5 @@ export const useColumns = () => {
     return cols;
   }, []);
 
-  return useState<ColumnOrColumnGroup<OrganizationInvitesInfo>[]>(columns);
+  return useState<ColumnOrColumnGroup<InvitedMemberInfo>[]>(columns);
 };

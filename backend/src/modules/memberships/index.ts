@@ -451,6 +451,74 @@ const membershipsRoutes = app
     );
 
     return ctx.json({ success: true, data: { items: members, total } }, 200);
+  })
+  /*
+   * Get invited members by entity id/slug and type
+   */
+  .openapi(membershipRouteConfig.getInvitedMembers, async (ctx) => {
+    const { idOrSlug, entityType, q, sort, order, offset, limit, role } = ctx.req.valid('query');
+
+    const { entity, isAllowed, membership } = await getValidEntity(entityType, 'read', idOrSlug);
+
+    if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
+    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
+    if (!membership || membership.role !== 'admin') return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
+
+    const entityIdField = entityIdFields[entity.entity];
+
+    // Build search filters
+    const $or = [];
+    if (q) {
+      const query = prepareStringForILikeFilter(q);
+      $or.push(ilike(usersTable.name, query), ilike(usersTable.email, query));
+    }
+
+    const filters = [eq(membershipsTable[entityIdField], entity.id), eq(membershipsTable.type, entityType)];
+
+    if (role) filters.push(eq(membershipsTable.role, role));
+
+    const orderColumn = getOrderColumn(
+      {
+        id: tokensTable.id,
+        name: usersTable.name,
+        email: tokensTable.email,
+        role: tokensTable.role,
+        expiresAt: tokensTable.expiresAt,
+        createdAt: tokensTable.createdAt,
+        createdBy: tokensTable.createdBy,
+      },
+      sort,
+      tokensTable.createdAt,
+      order,
+    );
+
+    // TODO create select schema or use existing schema?
+    const invitedMembersQuery = db
+      .select({
+        id: tokensTable.id,
+        name: usersTable.name,
+        email: tokensTable.email,
+        role: tokensTable.role,
+        expiresAt: tokensTable.expiresAt,
+        createdAt: tokensTable.createdAt,
+        createdBy: tokensTable.createdBy,
+      })
+      .from(tokensTable)
+      .where(and(eq(tokensTable[entityIdField], entity.id), eq(tokensTable.type, 'invitation')))
+      .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId))
+      .orderBy(orderColumn);
+
+    const [{ total }] = await db.select({ total: count() }).from(invitedMembersQuery.as('invites'));
+
+    const result = await invitedMembersQuery.limit(Number(limit)).offset(Number(offset));
+
+    const items = result.map(({ expiresAt, createdAt, ...rest }) => ({
+      ...rest,
+      expiresAt: expiresAt.toISOString(),
+      createdAt: createdAt.toISOString(),
+    }));
+
+    return ctx.json({ success: true, data: { items, total } }, 200);
   });
 
 export default membershipsRoutes;

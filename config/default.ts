@@ -141,6 +141,7 @@ export const config = {
     default: 40,
     users: 100,
     members: 40,
+    invitedMembers: 40,
     organizations: 40,
     requests: 40,
     attachments: 40,

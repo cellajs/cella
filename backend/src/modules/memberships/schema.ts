@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
+import { config } from 'config';
 import { createSelectSchema } from 'drizzle-zod';
 import { membershipsTable } from '#/db/schema/memberships';
-import { contextEntityTypeSchema, idOrSlugSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+import { contextEntityTypeSchema, idOrSlugSchema, idsQuerySchema, paginationQuerySchema } from '#/utils/schema/common-schemas';
 import { userSchema } from '../users/schema';
 
 const membershipTableSchema = createSelectSchema(membershipsTable);
@@ -30,6 +31,28 @@ export const updateMembershipBodySchema = z.object({
 const baseMembersQuerySchema = z.object({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
+});
+
+export const membersQuerySchema = paginationQuerySchema.extend({
+  ...baseMembersQuerySchema.shape,
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).default('createdAt').optional(),
+  role: z.enum(config.rolesByType.entityRoles).default('member').optional(),
+});
+
+export const invitedMembersQuerySchema = paginationQuerySchema.extend({
+  ...baseMembersQuerySchema.shape,
+  sort: z.enum(['email', 'role', 'expiresAt', 'createdAt', 'createdBy']).default('createdAt').optional(),
+  role: z.enum(config.rolesByType.entityRoles).default('member').optional(),
+});
+
+export const invitedMembersSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  name: z.string().nullable(),
+  role: z.enum(config.rolesByType.entityRoles).nullable(),
+  expiresAt: z.string(),
+  createdAt: z.string(),
+  createdBy: z.string().nullable(),
 });
 
 export const createMembershipQuerySchema = baseMembersQuerySchema;

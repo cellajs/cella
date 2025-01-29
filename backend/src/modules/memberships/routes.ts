@@ -10,11 +10,14 @@ import {
   successWithoutDataSchema,
 } from '#/utils/schema/common-responses';
 import { idOrSlugSchema, idSchema } from '#/utils/schema/common-schemas';
-import { membersQuerySchema, membersSchema } from '../general/schema';
+import { membersSchema } from '../general/schema';
 import {
   createMembershipBodySchema,
   createMembershipQuerySchema,
   deleteMembersQuerySchema,
+  invitedMembersQuerySchema,
+  invitedMembersSchema,
+  membersQuerySchema,
   membershipSchema,
   updateMembershipBodySchema,
 } from './schema';
@@ -124,6 +127,32 @@ class MembershipRoutesConfig {
         content: {
           'application/json': {
             schema: successWithPaginationSchema(membersSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getInvitedMembers = createRouteConfig({
+    method: 'get',
+    path: '/invited-members',
+    guard: [isAuthenticated, hasOrgAccess],
+    tags: ['memberships'],
+    summary: 'Get list of invited members',
+    description: 'Get invited members of a context entity by id or slug. It returns invite info.',
+    request: {
+      query: invitedMembersQuerySchema,
+      params: z.object({
+        orgIdOrSlug: idOrSlugSchema.optional(),
+      }),
+    },
+    responses: {
+      200: {
+        description: 'Invited members',
+        content: {
+          'application/json': {
+            schema: successWithPaginationSchema(invitedMembersSchema),
           },
         },
       },

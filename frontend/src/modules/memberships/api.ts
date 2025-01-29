@@ -118,3 +118,56 @@ export const getMembers = async (
   const json = await handleResponse(response);
   return json.data;
 };
+
+// Combined type
+export type GetInvitedMembersParams = RequiredGetMembersParams &
+  Omit<Parameters<(typeof client)['invited-members']['$get']>['0']['query'], 'limit' | 'offset'> & {
+    limit?: number;
+    offset?: number;
+    page?: number;
+  };
+
+// Get a list of invited members in an entity
+export const getInvitedMembers = async (
+  {
+    idOrSlug,
+    orgIdOrSlug,
+    entityType,
+    q,
+    sort = 'createdAt',
+    order = 'asc',
+    role,
+    page = 0,
+    limit = config.requestLimits.invitedMembers,
+    offset,
+  }: GetInvitedMembersParams,
+  signal?: AbortSignal,
+) => {
+  const response = await client['invited-members'].$get(
+    {
+      query: {
+        idOrSlug,
+        entityType,
+        q,
+        sort,
+        order,
+        offset: typeof offset === 'number' ? String(offset) : String(page * limit),
+        limit: String(limit),
+        role,
+      },
+      param: { orgIdOrSlug },
+    },
+    {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+        return fetch(input, {
+          ...init,
+          credentials: 'include',
+          signal,
+        });
+      },
+    },
+  );
+
+  const json = await handleResponse(response);
+  return json.data;
+};
