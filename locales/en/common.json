@@ -128,7 +128,7 @@
   "invite_members_search.text": "Search for users to invite within {{appName}} who share a membership with you or are part of the same entity.",
   "invite_only": "Invite only",
   "invite_only.text": "{{appName}} is currently invite-only. Can't wait? Contact us for an invite.",
-  "invite_sign_in": "Sign in to accept the invitation for {{orgName}}",
+  "invite_sign_in": "Sign in to proceed with invitation",
   "invite_users.text": "Invited users will receive an email to accept the invitation.",
   "invited_at": "Invited",
   "invited_by": "Invited by",

@@ -22,13 +22,15 @@ export const CreatePasswordEmail = ({ userName, userLanguage: lng, createPasswor
   return (
     <EmailContainer previewText={i18n.t('backend:email.create_password.preview', { appName, lng })}>
       <EmailBody>
-        <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
-        <div
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
-          dangerouslySetInnerHTML={{
-            __html: i18n.t('backend:email.create_password.text', { appName, lng }),
-          }}
-        />
+        <Text>
+          <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
+          <div
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+            dangerouslySetInnerHTML={{
+              __html: i18n.t('backend:email.create_password.text', { appName, lng }),
+            }}
+          />
+        </Text>
         <EmailButton ButtonText={i18n.t('common:reset_password', { lng })} href={createPasswordLink} />
 
         <Text style={{ fontSize: '0.85rem', textAlign: 'center' }}>

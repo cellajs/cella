@@ -44,13 +44,12 @@ export const checkEmail = async (email: string) => {
   return json.success;
 };
 
-export type VerifyEmailProps = TokenType & { resend?: boolean };
+export type VerifyEmailProps = TokenType;
 
 // Verify the user's email with token sent by email
-export const verifyEmail = async ({ token, resend }: VerifyEmailProps) => {
-  const response = await client['verify-email'].$post({
-    json: { token },
-    query: { resend: String(resend) },
+export const verifyEmail = async ({ token }: VerifyEmailProps) => {
+  const response = await client['verify-email'][':token'].$post({
+    param: { token },
   });
 
   await handleResponse(response);

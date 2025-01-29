@@ -3,20 +3,18 @@ import { CheckEmailForm } from '~/modules/auth/check-email-form';
 import { SignInForm } from '~/modules/auth/sign-in-form';
 import { SignUpForm } from '~/modules/auth/sign-up-form';
 
-import { Link, useSearch } from '@tanstack/react-router';
+import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/lib/api';
 import { checkToken } from '~/modules/auth/api';
 import OauthOptions from '~/modules/auth/oauth-options';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
-import { buttonVariants } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { TokenData } from '~/types/common';
 import { shouldShowDivider } from '~/utils';
-import { cn } from '~/utils/cn';
+import AuthNotice from './auth-notice';
 
 export type Step = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist';
 
@@ -55,18 +53,10 @@ const AuthSteps = () => {
 
   const resetSteps = () => setStep('checkEmail');
 
-  if (error) {
-    return (
-      <>
-        <span className="text-muted-foreground text-sm">{t(`error:${error.type}`)}</span>
-        <Link to="/auth/authenticate" className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
-          {t('common:sign_in')}
-          <ArrowRight size={16} className="ml-2" />
-        </Link>
-      </>
-    );
-  }
+  // If error, show authentication error notice
+  if (error) return <AuthNotice error={error} />;
 
+  // Render form based on current step
   return (
     <>
       {step === 'checkEmail' && <CheckEmailForm emailEnabled={emailEnabled} setStep={handleSetStep} />}

@@ -204,7 +204,7 @@ class AuthLayoutRoutesConfig {
 
   public verifyEmail = createRouteConfig({
     method: 'post',
-    path: '/verify-email',
+    path: '/verify-email/{token}',
     guard: isPublicAccess,
     middleware: [tokenLimiter, hasValidToken('email_verification')],
     tags: ['auth'],
@@ -212,18 +212,7 @@ class AuthLayoutRoutesConfig {
     description: 'Verify email address by token from the verification email. Receive a user session when successful.',
     security: [],
     request: {
-      query: z.object({
-        resend: z.string().optional(),
-      }),
-      body: {
-        content: {
-          'application/json': {
-            schema: z.object({
-              token: z.string(),
-            }),
-          },
-        },
-      },
+      params: tokenSchema,
     },
     responses: {
       200: {
@@ -269,7 +258,7 @@ class AuthLayoutRoutesConfig {
     },
   });
 
-  public createPasswordCallback = createRouteConfig({
+  public createPasswordWithToken = createRouteConfig({
     method: 'post',
     path: '/create-password/{token}',
     guard: isPublicAccess,

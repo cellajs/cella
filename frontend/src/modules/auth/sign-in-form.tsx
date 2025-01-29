@@ -49,9 +49,10 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
       { ...values },
       {
         onSuccess: (emailVerified) => {
-          if (token && tokenId) navigate({ to: '/invitation/$token', params: { token }, search: { tokenId }, replace: true });
-          const verifiedUserTo = redirect || config.defaultRedirectPath;
-          navigate({ to: emailVerified ? verifiedUserTo : '/auth/email-verification', replace: true });
+          if (!emailVerified) return navigate({ to: '/auth/email-verification', replace: true });
+
+          if (token && tokenId) return navigate({ to: '/invitation/$token', params: { token }, search: { tokenId }, replace: true });
+          navigate({ to: redirect || config.defaultRedirectPath, replace: true });
         },
         onError: (error) => {
           if (error.type !== 'invalid_password') return;
@@ -70,10 +71,10 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
-        <Button variant="ghost" onClick={resetAuth} className="font-light mt-2 text-xl">
+        {token ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
+        <Button variant="ghost" onClick={resetAuth} disabled={!!token} className="font-light mt-2 text-xl">
           {email}
-          <ChevronDown size={16} className="ml-2" />
+          {!token && <ChevronDown size={16} className="ml-2" />}
         </Button>
       </h1>
       {emailEnabled && (

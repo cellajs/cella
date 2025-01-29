@@ -3,7 +3,7 @@
   "email.create_password.expire": "This link will expire in 3 hours. To get a new password reset link, visit:",
   "email.create_password.ignore": "Ignore this email if you don't want to change your password or didn't request it.",
   "email.create_password.preview": "Reset your {{appName}} password",
-  "email.create_password.subject": "Reset {{appName}} password",
+  "email.create_password.subject": "Reset password",
   "email.create_password.text": "A password reset link has been requested for your <strong>{{appName}}</strong> account.",
   "email.email_verification.preview": "Verify your email for {{appName}}",
   "email.email_verification.subject": "Verify email",

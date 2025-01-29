@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 // TODO consider reusable auth notification component
-const RequestVerification = () => {
+const EmailVerification = () => {
   const { t } = useTranslation();
   return (
     <div className="text-center">
@@ -11,4 +11,4 @@ const RequestVerification = () => {
   );
 };
 
-export default RequestVerification;
+export default EmailVerification;

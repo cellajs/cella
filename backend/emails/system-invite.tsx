@@ -39,8 +39,8 @@ export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, syste
         }
       />
       <EmailBody>
-        <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
         <Text>
+          <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{

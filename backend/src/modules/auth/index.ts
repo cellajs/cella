@@ -118,6 +118,7 @@ const authRoutes = app
    */
   .openapi(authRoutesConfig.signUpWithToken, async (ctx) => {
     const { password } = ctx.req.valid('json');
+    const userId = nanoid();
 
     const validToken = getContextToken();
     if (!validToken) return errorResponse(ctx, 400, 'invalid_request', 'warn');
@@ -128,14 +129,15 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
     }
 
-    // Delete token to prevent reuse
-    await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
+    // Delete token to not needed anymore (if no membership invitation)
+    if (!validToken.organizationId) await db.delete(tokensTable).where(eq(tokensTable.id, validToken.id));
 
     const hashedPassword = await hashPassword(password);
     const slug = slugFromEmail(validToken.email);
 
     // Create user & send verification email
     const newUser = {
+      id: userId,
       slug,
       name: slug,
       email: validToken.email,
@@ -143,7 +145,7 @@ const authRoutes = app
       hashedPassword,
     };
 
-    return await handleCreateUser({ ctx, newUser });
+    return await handleCreateUser({ ctx, newUser, tokenId: validToken.id });
   })
   /*
    * Send verification email, also used to resend verification email.
@@ -225,7 +227,7 @@ const authRoutes = app
     const user = await getUserBy('email', email.toLowerCase());
     if (!user) return errorResponse(ctx, 401, 'invalid_email', 'warn');
 
-    // Delete old token that if exists
+    // Delete old token if exists
     await db.delete(tokensTable).where(and(eq(tokensTable.userId, user.id), eq(tokensTable.type, 'password_reset')));
 
     // TODO store hashed token
@@ -263,9 +265,9 @@ const authRoutes = app
   /*
    * Create password with token
    */
-  .openapi(authRoutesConfig.createPasswordCallback, async (ctx) => {
+  .openapi(authRoutesConfig.createPasswordWithToken, async (ctx) => {
     const { password } = ctx.req.valid('json');
-    const passwordToken = ctx.req.valid('param').token;
+    const token = getContextToken();
 
     // Verify if strategy allowed
     const strategy = 'password';
@@ -273,24 +275,21 @@ const authRoutes = app
       return errorResponse(ctx, 400, 'forbidden_strategy', 'warn', undefined, { strategy });
     }
 
-    // Get password token
-    const [token] = await db
-      .select()
-      .from(tokensTable)
-      .where(and(eq(tokensTable.token, passwordToken), eq(tokensTable.type, 'password_reset')));
-    await db.delete(tokensTable).where(eq(tokensTable.token, passwordToken));
-
     // If the token is not found or expired
-    if (!token || !token.userId || isExpiredDate(token.expiresAt)) {
-      return errorResponse(ctx, 401, 'invalid_token', 'warn');
-    }
+    if (!token || !token.userId) return errorResponse(ctx, 401, 'invalid_token', 'warn');
+
+    // Delete token to prevent reuse
+    await db.delete(tokensTable).where(and(eq(tokensTable.id, token.id), eq(tokensTable.type, 'password_reset')));
+
     const user = await getUserBy('id', token.userId);
     // If the user is not found or the email is different from the token email
     if (!user || user.email !== token.email) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { userId: token.userId });
 
+    // Clear all sessions
+    // TODO delete cookie too?
     await invalidateUserSessions(user.id);
 
-    // hash password
+    // Hash password
     const hashedPassword = await hashPassword(password);
 
     // update user password and set email verified
@@ -380,7 +379,7 @@ const authRoutes = app
     // Make sure its an organization invitation
     if (!token.organizationId || !token.role) return errorResponse(ctx, 401, 'invalid_token', 'warn');
 
-    // Make sure correct user accepts invitation
+    // Make sure correct user accepts invitation (for example another user could have a sessions and click on email invite of another user)
     if (user.id !== token.userId) return errorResponse(ctx, 401, 'user_mismatch', 'warn');
 
     // Delete token

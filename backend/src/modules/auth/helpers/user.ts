@@ -1,6 +1,8 @@
 import { config } from 'config';
+import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
+import { tokensTable } from '#/db/schema/tokens';
 import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
@@ -17,10 +19,11 @@ interface HandleCreateUserProps {
   newUser: Omit<InsertUserModel, 'unsubscribeToken'>;
   redirectUrl?: string;
   provider?: { id: EnabledOauthProvider; userId: string };
+  tokenId?: string;
 }
 
 // Handle creating a user by password or oauth provider
-export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider }: HandleCreateUserProps) => {
+export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, tokenId }: HandleCreateUserProps) => {
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);
 
@@ -44,12 +47,17 @@ export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider }: 
     // If a provider is passed, insert oauth account
     if (provider) await insertOauthAccount(user.id, provider.id, provider.userId);
 
+    // If signing up with token, update it with new user id
+    if (tokenId) await db.update(tokensTable).set({ userId: user.id }).where(eq(tokensTable.id, tokenId));
+
     // If email is not verified, send verification email. Otherwise, sign in user
     if (!user.emailVerified) sendVerificationEmail(user.id);
     else await setUserSession(ctx, user.id, provider?.id || 'password');
 
+    // Redirect to URL if provided
     if (redirectUrl) return ctx.redirect(redirectUrl, 302);
 
+    // Return
     return ctx.json({ success: true }, 200);
   } catch (error) {
     // If the email already exists, return an error

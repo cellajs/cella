@@ -44,8 +44,8 @@ export const MemberInviteEmail = ({ userName, userLanguage: lng, inviteBy, organ
         }
       />
       <EmailBody>
-        <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
         <Text>
+          <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{

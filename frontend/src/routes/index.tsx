@@ -4,8 +4,8 @@ import {
   AuthLayoutRoute,
   AuthenticateRoute,
   CreatePasswordWithTokenRoute,
+  EmailVerificationRoute,
   RequestPasswordRoute,
-  RequestVerificationRoute,
   SignOutRoute,
   VerifyEmailWithTokenRoute,
 } from '~/routes/auth';
@@ -30,7 +30,7 @@ export const routeTree = rootRoute.addChildren([
       AuthenticateRoute,
       RequestPasswordRoute,
       CreatePasswordWithTokenRoute,
-      RequestVerificationRoute,
+      EmailVerificationRoute,
       VerifyEmailWithTokenRoute,
     ]),
   ]),

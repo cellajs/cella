@@ -14,7 +14,7 @@ export const hasValidToken = (requiredType: TokenModel['type']): MiddlewareHandl
 
     // Check if token exists
     const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
-    if (!tokenRecord) return errorResponse(ctx, 404, 'not_found', 'warn');
+    if (!tokenRecord) return errorResponse(ctx, 404, 'token_not_found', 'warn');
 
     // If token is expired, return an error
     if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 401, 'expired_token', 'warn', undefined);

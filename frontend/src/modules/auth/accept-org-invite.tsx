@@ -13,6 +13,7 @@ import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import type { TokenData } from '~/types/common';
 import { cn } from '~/utils/cn';
+import AuthNotice from './auth-notice';
 
 // Accept organization invitation when user is signed in
 const AcceptOrgInvite = () => {
@@ -25,7 +26,6 @@ const AcceptOrgInvite = () => {
   const [error, setError] = useState<ApiError | null>(null);
 
   const { mutate: checkToken, isPending: isChecking } = useCheckTokenMutation();
-
   const { mutate: acceptOrgInvite, isPending } = useAcceptOrgInviteMutation();
 
   const onSubmit = () => {
@@ -52,9 +52,7 @@ const AcceptOrgInvite = () => {
 
   if (isChecking) return <Spinner />;
 
-  if (error) {
-    return <>{/* TODO Error here */}</>;
-  }
+  if (error) return <AuthNotice error={error} />;
 
   return (
     <>
