@@ -4,7 +4,7 @@ import type { ContextEntity } from '~/types/common';
 import { meHc } from '#/modules/me/hc';
 import { usersHc } from '#/modules/users/hc';
 
-// Create Hono clients to make requests to the backend
+// RPC
 export const meClient = meHc(config.backendUrl, clientConfig);
 export const userClient = usersHc(config.backendUrl, clientConfig);
 

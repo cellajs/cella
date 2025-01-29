@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
@@ -9,7 +8,6 @@ import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import { sheet } from '~/modules/common/sheeter/state';
-import { useSendRequestMessageMutation } from '~/modules/requests/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -17,18 +15,18 @@ import { Input } from '~/modules/ui/input';
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
+import { useMutation } from '@tanstack/react-query';
+import { sendRequestMessage } from './api';
 
 interface MessageFormProps {
   emails: string[];
-  dropSelected?: () => void;
-  sheet?: boolean;
 }
 
 const formSchema = requestMessageBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const MessageForm: React.FC<MessageFormProps> = ({ emails, sheet: isSheet, dropSelected }) => {
+const MessageForm = ({ emails }: MessageFormProps) => {
   const { t } = useTranslation();
 
   const form = useFormWithDraft<FormValues>('request-message', {
@@ -40,21 +38,23 @@ const MessageForm: React.FC<MessageFormProps> = ({ emails, sheet: isSheet, dropS
     },
   });
 
-  const { mutate, isPending } = useSendRequestMessageMutation();
+  const { mutate, isPending } = useMutation({
+    mutationFn: sendRequestMessage,
+    onSuccess: () => {
+      form.reset();
+      toast.success(t('common:success.request_feedback'));
+      sheet.remove('feedback-letter-form');
+    },
+  });
+
   const onSubmit = (body: FormValues) => {
-    mutate(body, {
-      onSuccess: () => {
-        form.reset();
-        toast.success(t('common:success.request_feedback'));
-        dropSelected?.();
-        if (isSheet) sheet.remove('feedback-letter-form');
-      },
-    });
+    mutate(body);
   };
 
   const cancel = () => form.reset();
 
-  // default value in blocknote <p class="bn-inline-content"></p> so check if there it's only one
+  // default value in blocknote <p class="bn-inline-content"></p> so check if it's only one
+  // TODO move this to blocknote helper?
   const isDirty = () => {
     const { dirtyFields } = form.formState;
     const fieldsKeys = Object.keys(dirtyFields);
@@ -75,7 +75,7 @@ const MessageForm: React.FC<MessageFormProps> = ({ emails, sheet: isSheet, dropS
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="feedback-editor-container" className="space-y-6 pb-8 h-max">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="message-form" className="space-y-6 pb-8 h-max">
         <FormField
           control={form.control}
           name="subject"

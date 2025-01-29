@@ -5,7 +5,7 @@ import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { organizationsKeys } from '~/modules/organizations/query';
-import { useOrganizationDeleteMutation } from '~/modules/organizations/query-mutations';
+import { useOrganizationDeleteMutation } from '~/modules/organizations/query';
 
 interface Props {
   organizations: Organization[];

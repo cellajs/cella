@@ -15,7 +15,7 @@ import {
 } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
-export const invitesInfoSchema = z.array(
+export const invitesSchema = z.array(
   z.object({
     id: z.string(),
     email: z.string(),
@@ -35,7 +35,7 @@ export const organizationSchema = z.object({
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
   membership: membershipInfoSchema.nullable(),
-  invitesInfo: invitesInfoSchema.optional(),
+  invites: invitesSchema.optional(),
   counts: membershipsCountSchema,
 });
 

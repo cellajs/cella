@@ -30,7 +30,7 @@ const AuthSteps = () => {
 
   const [step, setStep] = useState<Step>(!token && lastUser?.email ? 'signIn' : 'checkEmail');
   const [email, setEmail] = useState((!token && lastUser?.email) || '');
-  const [hasPasskey] = useState(!token && !!lastUser?.passkey);
+  const [hasPasskey, setHasPasskey] = useState(!token && !!lastUser?.passkey);
 
   // Update step and email to proceed after email is checked
   const handleSetStep = (step: Step, email: string) => {
@@ -40,17 +40,19 @@ const AuthSteps = () => {
 
   // Reset steps to the first action: check email
   // Even if all email authentication is disabled, we still show check email form
-  const resetSteps = () => setStep('checkEmail');
+  const resetSteps = () => {
+    setStep('checkEmail');
+    setHasPasskey(false);
+  };
 
   // Set up query to check token
   const tokenQueryOptions = {
-    queryKey: ['tokenData', tokenId],
+    queryKey: [],
     queryFn: async () => {
       if (!tokenId || !token) return;
       return checkToken({ id: tokenId, type: 'invitation' });
     },
     enabled: !!tokenId && !!token,
-    staleTime: 0,
     select: (data: TokenData | undefined) => {
       if (!data) return;
       setEmail(data.email);

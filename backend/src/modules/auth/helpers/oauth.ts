@@ -69,7 +69,7 @@ export const getOauthRedirectUrl = async (ctx: Context, firstSignIn?: boolean) =
     redirectPath = redirectCookieUrl;
   }
 
-  if (firstSignIn) redirectPath = config.firstSignInRedirectPath;
+  if (firstSignIn) redirectPath = config.welcomeRedirectPath;
   return config.frontendUrl + redirectPath;
 };
 

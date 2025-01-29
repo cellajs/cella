@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import Logo from '~/modules/common/logo';
 import { footerSections, legalLinks } from '~/modules/marketing/about/about-config';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
-import NewsletterForm from '~/modules/marketing/newsletter';
+import SubscribeNewsletterForm from '~/modules/marketing/newsletter';
 
 const currentYear = new Date().getFullYear();
 const companyName = config.company.name;
@@ -70,7 +70,7 @@ export function MarketingFooter() {
             <div className="">
               <div className="font-display text-sm font-semibold tracking-wider text-white/50">{t('common:request_info')}</div>
               <div className="mt-4 text-sm text-white/90">{t('common:request_info.text', { appName: config.name })}</div>
-              <NewsletterForm />
+              <SubscribeNewsletterForm />
             </div>
           </div>
 

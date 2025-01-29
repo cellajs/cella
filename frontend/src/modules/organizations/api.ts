@@ -2,7 +2,7 @@ import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { organizationsHc } from '#/modules/organizations/hc';
 
-// Create Hono clients to make requests to the backend
+// RPC
 export const client = organizationsHc(config.backendUrl, clientConfig);
 
 export type CreateOrganizationParams = Parameters<(typeof client.index)['$post']>['0']['json'];

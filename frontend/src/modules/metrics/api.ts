@@ -2,7 +2,7 @@ import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { metricsHc } from '#/modules/metrics/hc';
 
-// Create Hono clients to make requests to the backend
+// RPC
 export const client = metricsHc(config.backendUrl, clientConfig);
 
 // Get public counts for about page

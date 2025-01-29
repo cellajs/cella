@@ -5,34 +5,43 @@ import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import { Button, SubmitButton } from '~/modules/ui/button';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { passwordSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
-import { useResetPasswordMutation } from '~/modules/auth/query-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
 import Spinner from '../common/spinner';
-import { checkToken } from './api';
+import { createToast } from '../common/toaster';
+import { checkToken, createPassword } from './api';
 import AuthNotice from './auth-notice';
 import { RequestPasswordDialog } from './request-password-dialog';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
-const formSchema = z.object({
-  password: passwordSchema,
-});
+const formSchema = z.object({ password: passwordSchema });
 
 const CreatePasswordForm = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
   const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
   const { tokenId } = useSearch({ from: CreatePasswordWithTokenRoute.id });
 
-  // Reset password and sign in
-  const { mutate: resetPassword, isPending, error: resetPasswordError } = useResetPasswordMutation();
+  // Reset password & sign in
+  const {
+    mutate: _createPassword,
+    isPending,
+    error: resetPasswordError,
+  } = useMutation({
+    mutationFn: createPassword,
+    onSuccess: () => {
+      createToast(t('common:success.password_reset'), 'success');
+      navigate({ to: config.defaultRedirectPath });
+    },
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,21 +53,23 @@ const CreatePasswordForm = () => {
   // Submit new password
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const { password } = values;
-    resetPassword({ token, password }, { onSuccess: () => navigate({ to: config.defaultRedirectPath }) });
+    _createPassword({ token, password });
   };
 
+  // Check token id first
   const tokenQueryOptions = {
-    queryKey: ['tokenData', tokenId],
+    queryKey: [],
     queryFn: async () => {
       if (!tokenId || !token) return;
       return checkToken({ id: tokenId, type: 'password_reset' });
     },
-    staleTime: 0,
   };
 
   const { data, isLoading, error } = useQuery(tokenQueryOptions);
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
+
+  // If error, allow to request new password reset
   if (error || resetPasswordError)
     return (
       <AuthNotice error={error || resetPasswordError}>
@@ -67,6 +78,7 @@ const CreatePasswordForm = () => {
         </RequestPasswordDialog>
       </AuthNotice>
     );
+
   if (!data?.email) return null;
 
   return (

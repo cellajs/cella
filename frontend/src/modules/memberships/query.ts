@@ -13,7 +13,7 @@ export const membersKeys = {
   delete: () => [...membersKeys.all, 'delete'] as const,
 };
 
-// Infinite Query Options to get a paginated list of members
+// Infinite query options to get a paginated list of members
 export const membersQueryOptions = ({
   idOrSlug,
   orgIdOrSlug,

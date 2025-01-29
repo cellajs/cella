@@ -4,14 +4,14 @@ import { useRef } from 'react';
 
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { useCreateRequestsMutation } from '~/modules/requests/query-mutations';
+import { useCreateRequestMutation } from '~/modules/requests/query';
 import { SubmitButton } from '~/modules/ui/button';
 
-const NewsletterForm = () => {
+const SubscribeNewsletterForm = () => {
   const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const { mutate: createRequest, isPending } = useCreateRequestsMutation();
+  const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -29,6 +29,7 @@ const NewsletterForm = () => {
       },
     );
   };
+
   return (
     <form ref={formRef} onSubmit={handleSubmit}>
       <div className="relative mt-6">
@@ -52,4 +53,4 @@ const NewsletterForm = () => {
   );
 };
 
-export default NewsletterForm;
+export default SubscribeNewsletterForm;

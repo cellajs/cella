@@ -14,14 +14,14 @@ import type { MemberSearch, MembersTableProps } from '~/modules/memberships/memb
 import { InvitedUsers } from '~/modules/organizations/invites/invites-count';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { BaseTableHeaderProps, BaseTableMethods, Member, OrganizationInvitesInfo } from '~/types/common';
+import type { BaseTableHeaderProps, BaseTableMethods, Member, OrganizationInvites } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 
 type MembersTableHeaderProps = MembersTableProps &
   BaseTableMethods &
   BaseTableHeaderProps<Member, MemberSearch> & {
     role: MemberSearch['role'];
-    invitesInfo?: OrganizationInvitesInfo[];
+    invites?: OrganizationInvites[];
     openInviteDialog: (container: HTMLElement | null) => void;
     openRemoveDialog: () => void;
     fetchExport: (limit: number) => Promise<Member[]>;
@@ -32,7 +32,7 @@ export const MembersTableHeader = ({
   total,
   selected,
   q,
-  invitesInfo,
+  invites,
   setSearch,
   role,
   columns,
@@ -116,7 +116,7 @@ export const MembersTableHeader = ({
             )}
             {selected.length === 0 && (
               <TableCount count={total} type="member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-                {invitesInfo && <InvitedUsers invitesInfo={invitesInfo} />}
+                {invites && <InvitedUsers invites={invites} />}
               </TableCount>
             )}
           </FilterBarActions>

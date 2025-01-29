@@ -390,5 +390,6 @@
   "write": "Write",
   "year": "year",
   "your_role": "Your role",
-  "resend_sent": "Check your inbox "
+  "resend_sent": "Check your inbox ",
+  "success.sent_verification_email": "Open your inbox to verify your account!"
 }

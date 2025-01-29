@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
@@ -10,7 +9,6 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import BlockNoteContent from '~/modules/common/form-fields/blocknote-content';
 import SelectRoles from '~/modules/common/form-fields/select-roles';
 import { sheet } from '~/modules/common/sheeter/state';
-import { useSendNewsLetterMutation } from '~/modules/organizations/query-mutations';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
@@ -19,21 +17,22 @@ import { useSendNewsLetterToSelfMutation } from '~/modules/users/query-mutations
 import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
+import { useMutation } from '@tanstack/react-query';
+import { sendNewsletter } from './api';
 
 interface NewsletterFormProps {
   organizationIds: string[];
-  dropSelectedOrganization?: () => void;
-  sheet?: boolean;
 }
 
 const formSchema = sendNewsletterBodySchema;
 
 type FormValues = z.infer<typeof formSchema>;
 
-const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet: isSheet, dropSelectedOrganization }) => {
+const NewsletterForm = ({ organizationIds }: NewsletterFormProps) => {
   const { t } = useTranslation();
 
-  const form = useFormWithDraft<FormValues>('send-org-newsletter', {
+  // Create form
+  const form = useFormWithDraft<FormValues>('newsletter', {
     resolver: zodResolver(formSchema),
     defaultValues: {
       organizationIds,
@@ -43,19 +42,20 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet:
     },
   });
 
-  const { mutate: sendNewsletter, isPending } = useSendNewsLetterMutation();
+  // Send newsletter
+  const { mutate: _sendNewsletter, isPending } = useMutation({
+    mutationFn: sendNewsletter,
+    onSuccess: () => {
+      form.reset();
+      toast.success(t('common:success.create_newsletter'));
+      sheet.remove('newsletter-sheet');
+    },
+  });
 
   const { mutate: sendNewsletterToSelf, isPending: sendToSelfPending } = useSendNewsLetterToSelfMutation();
 
   const onSubmit = (body: FormValues) => {
-    sendNewsletter(body, {
-      onSuccess: () => {
-        form.reset();
-        toast.success(t('common:success.create_newsletter'));
-        dropSelectedOrganization?.();
-        if (isSheet) sheet.remove('org-newsletter-form');
-      },
-    });
+    _sendNewsletter(body);
   };
 
   const sendTofSelf = () => {
@@ -94,7 +94,7 @@ const NewsletterForm: React.FC<NewsletterFormProps> = ({ organizationIds, sheet:
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-editor-container" className="space-y-6 pb-8 h-max">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="space-y-6 pb-8 h-max">
         <FormField
           control={form.control}
           name="subject"

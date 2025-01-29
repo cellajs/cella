@@ -13,6 +13,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const { t } = useTranslation();
   const [emailValue, setEmailValue] = useState(email);
 
+  // Send create/reset password email
   const { mutate: requestPasswordEmail, isPending } = useMutation({
     mutationFn: baseSendCreatePasswordEmail,
     onSuccess: () => {

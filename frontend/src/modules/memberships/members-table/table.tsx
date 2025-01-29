@@ -7,7 +7,7 @@ import { DataTable } from '~/modules/common/data-table';
 import { createToast } from '~/modules/common/toaster';
 import type { MemberSearch, MembersTableProps } from '~/modules/memberships/members-table';
 import { membersKeys, membersQueryOptions } from '~/modules/memberships/query';
-import { useMembersUpdateMutation } from '~/modules/memberships/query-mutations';
+import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import type { BaseTableMethods, BaseTableProps, Member } from '~/types/common';
 
@@ -40,7 +40,7 @@ const BaseDataTable = memo(
         }),
       );
 
-    const updateMemberMembership = useMembersUpdateMutation();
+    const updateMemberMembership = useMemberUpdateMutation();
 
     // Update rows
     const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {

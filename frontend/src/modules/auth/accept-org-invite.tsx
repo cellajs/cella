@@ -1,16 +1,15 @@
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import Spinner from '~/modules/common/spinner';
-import { useAcceptOrgInviteMutation } from '~/modules/general/query-mutations';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
-import { checkToken } from './api';
+import { acceptOrgInvite, checkToken } from './api';
 import AuthNotice from './auth-notice';
 
 // Accept organization invitation when user is signed in
@@ -21,30 +20,33 @@ const AcceptOrgInvite = () => {
   const { token } = useParams({ from: AcceptOrgInviteRoute.id });
   const { tokenId } = useSearch({ from: AcceptOrgInviteRoute.id });
 
-  const { mutate: acceptOrgInvite, isPending, error: acceptInviteError } = useAcceptOrgInviteMutation();
+  const {
+    mutate: _acceptOrgInvite,
+    isPending,
+    error: acceptInviteError,
+  } = useMutation({
+    mutationFn: acceptOrgInvite,
+    onSuccess: () => {
+      toast.success(t('common:invitation_accepted'));
+      navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
+    },
+  });
 
   // Accept organization invitation
   const onSubmit = () => {
-    acceptOrgInvite(
-      { token },
-      {
-        onSuccess: () => {
-          toast.success(t('common:invitation_accepted'));
-          navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
-        },
-      },
-    );
+    _acceptOrgInvite({ token });
   };
 
+  // Set up query options to check token
   const tokenQueryOptions = {
-    queryKey: ['tokenData', tokenId],
+    queryKey: [],
     queryFn: async () => {
       if (!tokenId || !token) return;
       return checkToken({ id: tokenId, type: 'invitation' });
     },
-    staleTime: 0,
   };
 
+  // Fetch token data on mount
   const { data: tokenData, isLoading, error } = useQuery(tokenQueryOptions);
 
   if (isLoading) return <Spinner className="h-10 w-10" />;

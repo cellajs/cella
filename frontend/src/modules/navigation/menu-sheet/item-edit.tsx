@@ -21,7 +21,7 @@ interface MenuItemEditProps {
 export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
   const { t } = useTranslation();
   // Directly create the mutation to avoid lazy loading for MenuItemEdit,
-  // since useMembersUpdateMutation relies on queryClient.
+  // since useMemberUpdateMutation relies on queryClient.
   const { mutate: updateMembership, status } = useMutation({
     mutationFn: baseUpdateMembership,
     onMutate: ({ archived, muted }) => {

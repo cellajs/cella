@@ -3,7 +3,7 @@ import { clientConfig, handleResponse } from '~/lib/api';
 import { type Entity, type PageEntity, type UploadParams, UploadType } from '~/types/common';
 import { generalHc } from '#/modules/general/hc';
 
-// Create Hono clients to make requests to the backend
+// RPC
 export const client = generalHc(config.backendUrl, clientConfig);
 
 // Get upload token to securely upload files with imado: https://imado.eu

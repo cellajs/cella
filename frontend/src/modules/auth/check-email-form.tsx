@@ -8,10 +8,12 @@ import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
+import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
+import type { ApiError } from '~/lib/api';
 import type { Step } from '~/modules/auth/auth-steps';
-import { useCheckEmailMutation } from '~/modules/auth/query-mutations';
+import { checkEmail } from './api';
 
 const formSchema = emailBodySchema;
 
@@ -22,34 +24,35 @@ interface CheckEmailProps {
 
 export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
   const { t } = useTranslation();
+
   const isMobile = window.innerWidth < 640;
+  const title = config.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '' },
   });
 
-  const { mutate: checkEmail, isPending } = useCheckEmailMutation();
+  const { mutate: _checkEmail, isPending } = useMutation({
+    mutationFn: checkEmail,
+    onSuccess: () => {
+      setStep('signIn', form.getValues('email'));
+    },
+    onError: (error: ApiError) => {
+      let nextStep: Step = 'inviteOnly';
+
+      // If registration is enabled or user has a token, proceed to sign up
+      if (config.has.registrationEnabled) nextStep = 'signUp';
+      // If registration is disabled and user has no token, proceed to waitlist
+      else if (config.has.waitlist) nextStep = 'waitlist';
+
+      if (error.status === 404) return setStep(nextStep, form.getValues('email'));
+    },
+  });
 
   const onSubmit = () => {
-    checkEmail(form.getValues('email'), {
-      onSuccess: () => {
-        setStep('signIn', form.getValues('email'));
-      },
-      onError: (error) => {
-        let nextStep: Step = 'inviteOnly';
-
-        // If registration is enabled or user has a token, proceed to sign up
-        if (config.has.registrationEnabled) nextStep = 'signUp';
-        // If registration is disabled and user has no token, proceed to waitlist
-        else if (config.has.waitlist) nextStep = 'waitlist';
-
-        if (error.status === 404) return setStep(nextStep, form.getValues('email'));
-      },
-    });
+    _checkEmail(form.getValues('email'));
   };
-
-  const title = config.has.registrationEnabled ? t('common:sign_in_or_up') : t('common:sign_in');
 
   return (
     <Form {...form}>

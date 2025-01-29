@@ -189,10 +189,10 @@ const organizationsRoutes = app
     const counts = { memberships: memberCounts };
     const data = { ...organization, membership, counts };
 
-    // Get invites info if user is admin
+    // Get invites if user is admin
     // TODO create select schema or use existing schema?
     if (membership && membership.role === 'admin') {
-      const invitesInfo = await db
+      const invites = await db
         .select({
           id: tokensTable.id,
           name: usersTable.name,
@@ -206,7 +206,7 @@ const organizationsRoutes = app
         .where(and(eq(tokensTable.organizationId, organization.id), eq(tokensTable.type, 'invitation')))
         .leftJoin(usersTable, eq(usersTable.id, tokensTable.userId));
 
-      return ctx.json({ success: true, data: { ...data, invitesInfo } }, 200);
+      return ctx.json({ success: true, data: { ...data, invites } }, 200);
     }
     return ctx.json({ success: true, data }, 200);
   })

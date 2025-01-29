@@ -11,7 +11,7 @@ export const config = {
   electricUrl: 'https://electric.cellajs.com',
 
   defaultRedirectPath: '/home',
-  firstSignInRedirectPath: '/welcome',
+  welcomeRedirectPath: '/welcome',
 
   aboutUrl: 'https://cellajs.com/about',
   statusUrl: 'https://status.cellajs.com',

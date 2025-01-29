@@ -3,13 +3,12 @@ import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/co
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
 import SelectRole from '~/modules/common/form-fields/select-role';
-import type { InvitesInfoSearch } from '~/modules/organizations/invites/table';
-import type { BaseTableHeaderProps, BaseTableMethods, OrganizationInvitesInfo } from '~/types/common';
+import type { InvitesSearch } from '~/modules/organizations/invites/table';
+import type { BaseTableHeaderProps, BaseTableMethods, OrganizationInvites } from '~/types/common';
 
-type InvitesInfoTableHeaderProps = BaseTableMethods &
-  BaseTableHeaderProps<OrganizationInvitesInfo, InvitesInfoSearch> & { role: InvitesInfoSearch['role'] };
+type InvitesTableHeaderProps = BaseTableMethods & BaseTableHeaderProps<OrganizationInvites, InvitesSearch> & { role: InvitesSearch['role'] };
 
-export const InvitesInfoHeader = ({ total, q, role, setSearch, clearSelection }: InvitesInfoTableHeaderProps) => {
+export const InvitesHeader = ({ total, q, role, setSearch, clearSelection }: InvitesTableHeaderProps) => {
   const isFiltered = !!q || !!role;
 
   // Drop selected Rows on search
@@ -20,7 +19,7 @@ export const InvitesInfoHeader = ({ total, q, role, setSearch, clearSelection }:
   // Drop selected Rows on role change
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as InvitesInfoSearch['role']) });
+    setSearch({ role: role === 'all' ? undefined : (role as InvitesSearch['role']) });
   };
 
   const onResetFilters = () => {

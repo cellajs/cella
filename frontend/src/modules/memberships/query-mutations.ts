@@ -16,7 +16,7 @@ type MemberContextProp = ContextProp<Member, string | null>;
 
 const limit = config.requestLimits.members;
 
-export const useMembersUpdateMutation = () => {
+export const useMemberUpdateMutation = () => {
   return useMutation<Membership, Error, UpdateMembershipProp>({
     mutationKey: membersKeys.update(),
     mutationFn: updateMembership,
