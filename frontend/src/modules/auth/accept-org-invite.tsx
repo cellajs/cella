@@ -6,7 +6,7 @@ import { Ban, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { ApiError } from '~/lib/api';
-import { useBroadcastChannel } from '~/modules/common/broadcast';
+import { useBroadcastChannel } from '~/modules/common/broadcast-channel/context';
 import Spinner from '~/modules/common/spinner';
 import { useAcceptOrgInviteMutation, useCheckTokenMutation } from '~/modules/general/query-mutations';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
@@ -32,7 +32,7 @@ const AcceptOrgInvite = () => {
       { token },
       {
         onSuccess: () => {
-          triggerAction('refetchMenu');
+          triggerAction('refetchMenu', true);
           toast.success(t('common:invitation_accepted'));
           navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
         },

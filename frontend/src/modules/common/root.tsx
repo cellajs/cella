@@ -3,10 +3,10 @@ import { config } from 'config';
 import { Suspense } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 
-import useLazyComponent from '~/hooks/use-lazy-component'; // Adjust the import path accordingly
+import useLazyComponent from '~/hooks/use-lazy-component';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { useSetDocumentTitle } from '~/hooks/use-set-document-title';
-import { BroadcastChannelProvider } from '~/modules/common/broadcast';
+import { BroadcastChannelProvider } from '~/modules/common/broadcast-channel/context';
 import { DownAlert } from '~/modules/common/down-alert';
 import ReloadPrompt from '~/modules/common/reload-prompt';
 import { Toaster } from '~/modules/ui/sonner';
