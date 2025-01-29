@@ -4,7 +4,7 @@ import { t } from 'i18next';
 import { decodeBase64, encodeBase64 } from '@oslojs/encoding';
 import { type QueryKey, onlineManager } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { authThroughPasskey, getChallenge, setPasskey } from '~/modules/auth/api';
+import { authenticateWithPasskey, getChallenge, registerPasskey } from '~/modules/auth/api';
 import { createToast } from '~/modules/common/toaster';
 import { deletePasskey as baseRemovePasskey, getSelf, getUserMenu } from '~/modules/users/api';
 import { getQueryItems } from '~/query/helpers/mutate-query';
@@ -13,31 +13,28 @@ import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { LimitedUser } from '~/types/common';
 
-// Register a new passkey
-export const registerPasskey = async () => {
+// Register new passkey
+export const passkeyRegistration = async () => {
   if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
   const user = useUserStore.getState().user;
 
   try {
-    // Random bytes generated in the server.
-    // This must be generated on each attempt.
+    // Random bytes generated on each attempt.
     const { challengeBase64 } = await getChallenge();
 
     // random ID for the authenticator
-    // this does not need to match the actual user ID
     const userId = new Uint8Array(20);
     crypto.getRandomValues(userId);
 
-    const userName = user.firstName || user.name;
-    const passkeyNameOnDevice = config.mode === 'development' ? `${userName} for ${config.name}` : userName;
+    const nameOnDevice = config.mode === 'development' ? `${user.email} for ${config.name}` : user.email;
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: decodeBase64(challengeBase64),
         user: {
           id: userId,
-          name: passkeyNameOnDevice,
-          displayName: userName,
+          name: nameOnDevice,
+          displayName: user.name || user.email,
         },
         rp: {
           id: config.mode === 'development' ? 'localhost' : config.domain,
@@ -47,8 +44,9 @@ export const registerPasskey = async () => {
           { type: 'public-key', alg: -7 }, // ES256
           { type: 'public-key', alg: -257 }, // RS256
         ],
-        attestation: 'none', // none for passkeys
+        attestation: 'none', // No verification of authenticator device
         authenticatorSelection: {
+          residentKey: 'required',
           userVerification: 'required',
         },
       },
@@ -64,12 +62,12 @@ export const registerPasskey = async () => {
       clientDataJSON: encodeBase64(new Uint8Array(response.clientDataJSON)),
     };
 
-    const result = await setPasskey(credentialData);
+    const result = await registerPasskey(credentialData);
 
-    if (result) {
-      toast.success(t('common:success.passkey_added'));
-      useUserStore.getState().setUser({ ...user, passkey: true });
-    } else toast.error(t('error:passkey_add_failed'));
+    if (!result) toast.error(t('error:passkey_add_failed'));
+
+    toast.success(t('common:success.passkey_added'));
+    useUserStore.getState().setUser({ ...user, passkey: true });
   } catch (error) {
     // On cancel throws error NotAllowedError
     console.error('Error during passkey registration:', error);
@@ -77,11 +75,10 @@ export const registerPasskey = async () => {
   }
 };
 
-// Sigh in by the passkey
+// Sigh in with passkey
 export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
   try {
-    // Random bytes generated in the server.
-    // This must be generated on each attempt.
+    // Random bytes generated on each attempt
     const { challengeBase64 } = await getChallenge();
 
     const credential = await navigator.credentials.get({
@@ -91,7 +88,9 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
       },
     });
 
+    // TODO: Handle error?
     if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
+
     const { response } = credential;
     if (!(response instanceof AuthenticatorAssertionResponse)) throw new Error('Unexpected response type');
 
@@ -102,7 +101,7 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
       userEmail,
     };
 
-    const success = await authThroughPasskey(credentialData);
+    const success = await authenticateWithPasskey(credentialData);
     if (success) callback?.();
     else toast.error(t('error:passkey_sign_in'));
   } catch (err) {

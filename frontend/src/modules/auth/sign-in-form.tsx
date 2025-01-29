@@ -15,23 +15,22 @@ import { useSignInMutation } from '~/modules/auth/query-mutations';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import type { TokenData } from '~/types/common';
 
 const formSchema = emailPasswordBodySchema;
 
 interface Props {
-  tokenData: TokenData | null;
   email: string;
   resetSteps: () => void;
   emailEnabled: boolean;
 }
 
-export const SignInForm = ({ tokenData, email, resetSteps, emailEnabled }: Props) => {
+// Either simply sign in with password or sign in with token to also accept organization invitation
+export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { lastUser, clearLastUser } = useUserStore();
 
-  const { redirect, token } = useSearch({ from: AuthenticateRoute.id });
+  const { redirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
   const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 
@@ -47,15 +46,13 @@ export const SignInForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     signIn(
-      { ...values, token },
+      { ...values },
       {
         onSuccess: (emailVerified) => {
-          // Redirect to invitation page if token is present
-          // Otherwise, redirect to a redirect URL or to home
-          const verifiedUserTo = token ? '/auth/invitation/$token' : redirect || config.defaultRedirectPath;
-          const params = { token };
+          if (!emailVerified) return navigate({ to: '/auth/email-verification', replace: true });
 
-          navigate({ to: emailVerified ? verifiedUserTo : '/auth/verify-email', params, replace: true });
+          if (token && tokenId) return navigate({ to: '/invitation/$token', params: { token }, search: { tokenId }, replace: true });
+          navigate({ to: redirect || config.defaultRedirectPath, replace: true });
         },
         onError: (error) => {
           if (error.type !== 'invalid_password') return;
@@ -66,7 +63,7 @@ export const SignInForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
     );
   };
 
-  const cancel = () => {
+  const resetAuth = () => {
     clearLastUser();
     resetSteps();
   };
@@ -74,18 +71,11 @@ export const SignInForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData
-          ? t('common:invite_sign_in', { orgName: tokenData.organizationName })
-          : lastUser
-            ? t('common:welcome_back')
-            : t('common:sign_in_as')}{' '}
-        <br />
-        {!tokenData && (
-          <Button variant="ghost" onClick={cancel} className="font-light mt-2 text-xl">
-            {email}
-            <ChevronDown size={16} className="ml-2" />
-          </Button>
-        )}
+        {token ? t('common:invite_sign_in') : lastUser ? t('common:welcome_back') : t('common:sign_in_as')} <br />
+        <Button variant="ghost" onClick={resetAuth} disabled={!!token} className="font-light mt-2 text-xl">
+          {email}
+          {!token && <ChevronDown size={16} className="ml-2" />}
+        </Button>
       </h1>
       {emailEnabled && (
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 !mt-0">

@@ -60,7 +60,6 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
         thumbnailUrl: cleanUrl(user.thumbnailUrl),
         firstName: user.firstName,
         lastName: user.lastName,
-        bio: user.bio,
         email: user.email,
         language: user.language,
         newsletter: user.newsletter,
@@ -148,7 +147,6 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           readOnly
           required
         />
-        <InputFormField inputClassName="border" control={form.control} name="bio" label={t('common:bio')} type="textarea" />
         <FormField
           control={form.control}
           name="language"

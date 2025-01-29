@@ -1,37 +1,40 @@
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import { config } from 'config';
-import { ArrowRight, Ban, Check, Loader2 } from 'lucide-react';
+import { Ban, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { ApiError } from '~/lib/api';
 import Spinner from '~/modules/common/spinner';
-import { useAcceptInviteMutation, useCheckTokenMutation } from '~/modules/general/query-mutations';
+import { useAcceptOrgInviteMutation, useCheckTokenMutation } from '~/modules/general/query-mutations';
 import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
-import { AcceptInviteRoute } from '~/routes/auth';
+import { AcceptOrgInviteRoute } from '~/routes/auth';
 import type { TokenData } from '~/types/common';
 import { cn } from '~/utils/cn';
+import AuthNotice from './auth-notice';
 
-const AcceptInvite = () => {
+// Accept organization invitation when user is signed in
+const AcceptOrgInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { token } = useParams({ from: AcceptInviteRoute.id });
+  const { token } = useParams({ from: AcceptOrgInviteRoute.id });
+  const { tokenId } = useSearch({ from: AcceptOrgInviteRoute.id });
 
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
   const { mutate: checkToken, isPending: isChecking } = useCheckTokenMutation();
-
-  const { mutate: acceptInvite, isPending } = useAcceptInviteMutation();
+  const { mutate: acceptOrgInvite, isPending } = useAcceptOrgInviteMutation();
 
   const onSubmit = () => {
-    acceptInvite(
+    acceptOrgInvite(
       { token },
       {
         onSuccess: (data) => {
           if (data) addMenuItem(data.newItem, data.sectionName);
+
           toast.success(t('common:invitation_accepted'));
           navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
         },
@@ -40,13 +43,16 @@ const AcceptInvite = () => {
     );
   };
 
+  // TODO move this to beforeLoad in the route?
   useEffect(() => {
-    if (!token) return;
+    if (!tokenId || !token) return;
 
-    checkToken(token, { onSuccess: (result) => setTokenData(result), onError: (error) => setError(error) });
-  }, [token]);
+    checkToken({ id: tokenId }, { onSuccess: (result) => setTokenData(result), onError: (error) => setError(error) });
+  }, [tokenId]);
 
   if (isChecking) return <Spinner />;
+
+  if (error) return <AuthNotice error={error} />;
 
   return (
     <>
@@ -54,7 +60,7 @@ const AcceptInvite = () => {
 
       <p className="font-light mb-4">{t('common:accept_invite_text', { email: tokenData?.email, organization: tokenData?.organizationName })}</p>
 
-      {tokenData?.email && !error ? (
+      {tokenData?.email && (
         <div className="space-y-4">
           <SubmitButton loading={isPending} className="w-full" onClick={onSubmit}>
             <Check size={16} className="mr-2" />
@@ -65,23 +71,9 @@ const AcceptInvite = () => {
             {t('common:decline')}
           </Link>
         </div>
-      ) : (
-        <div className="max-w-[32rem] m-4 flex flex-col items-center text-center">
-          {/* TODO: we should move this to a reusable auth error message component ? */}
-          {error && (
-            <>
-              <span className="text-muted-foreground text-sm">{t(`error:${error.type}`)}</span>
-              <Link to="/auth/authenticate" preload={false} className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
-                {t('common:sign_in')}
-                <ArrowRight size={16} className="ml-2" />
-              </Link>
-            </>
-          )}
-          {isPending && <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />}
-        </div>
       )}
     </>
   );
 };
 
-export default AcceptInvite;
+export default AcceptOrgInvite;

@@ -4,8 +4,6 @@ import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/s
 
 import { config } from 'config';
 import { render } from 'jsx-email';
-import { generateId } from 'lucia';
-import { TimeSpan, createDate } from 'oslo';
 import { emailSender } from '#/lib/mailer';
 import { MemberInviteEmail } from '../../../emails/member-invite';
 
@@ -13,17 +11,19 @@ import { tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
 import { entityIdFields, menuSections } from '#/entity-config';
-import { getContextUser, getMemberships, getOrganization } from '#/lib/context';
+import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
-import { getValidEntity } from '#/lib/permission-manager';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
+import { getValidEntity } from '#/permissions/get-valid-entity';
 import { CustomHono } from '#/types/common';
 import { memberCountsQuery } from '#/utils/counts';
+import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { TimeSpan, createDate } from '#/utils/time-span';
 import { insertMembership } from './helpers/insert-membership';
 import membershipRouteConfig from './routes';
 
@@ -43,7 +43,7 @@ const membershipsRoutes = app
 
     const { emails, role, parentEntity: parentEntityInfo } = ctx.req.valid('json');
 
-    const organization = getOrganization();
+    const organization = getContextOrganization();
     const user = getContextUser();
 
     // Normalize emails for consistent comparison
@@ -163,24 +163,28 @@ const membershipsRoutes = app
     await Promise.all(
       emailsToSendInvitation.map(async (email) => {
         const targetUser = existingUsersByEmail.get(email);
-        const token = generateId(40);
+        // TODO - store hashed token?
+        const token = nanoid(40);
 
-        await db.insert(tokensTable).values({
-          id: token,
-          type: 'membership_invitation',
-          userId: targetUser?.id ?? null,
-          email: email,
-          createdBy: user.id,
-          role,
-          organizationId: organization.id,
-          expiresAt: createDate(new TimeSpan(7, 'd')),
-          ...(entity.entity !== 'organization' && {
-            membershipInfo: {
-              targetEntity: { idOrSlug: entity.id, entity: entity.entity },
-              parentEntity: parentEntityInfo,
-            },
-          }),
-        });
+        const [tokenRecord] = await db
+          .insert(tokensTable)
+          .values({
+            token: token,
+            type: 'invitation',
+            userId: targetUser?.id ?? null,
+            email: email,
+            createdBy: user.id,
+            role,
+            organizationId: organization.id,
+            expiresAt: createDate(new TimeSpan(7, 'd')),
+            ...(entity.entity !== 'organization' && {
+              membershipInfo: {
+                targetEntity: { idOrSlug: entity.id, entity: entity.entity },
+                parentEntity: parentEntityInfo,
+              },
+            }),
+          })
+          .returning();
 
         // Render email template
         const emailHtml = await render(
@@ -191,7 +195,7 @@ const membershipsRoutes = app
             inviteBy: user.name,
             organizationName: organization.name,
             organizationThumbnailUrl: organization.logoUrl || organization.thumbnailUrl,
-            token,
+            memberInviteLink: `${config.frontendUrl}/invitation/${token}?tokenId=${tokenRecord.id}`,
           }),
         );
 
@@ -312,8 +316,8 @@ const membershipsRoutes = app
     const { role, archived, muted, order } = ctx.req.valid('json');
 
     const user = getContextUser();
-    const memberships = getMemberships();
-    const organization = getOrganization();
+    const memberships = getContextMemberships();
+    const organization = getContextOrganization();
 
     let orderToUpdate = order;
 

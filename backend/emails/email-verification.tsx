@@ -10,14 +10,13 @@ import { EmailButton } from './components/email-button';
 import { Footer } from './components/footer';
 import type { BasicTemplateType } from './types';
 
-const baseUrl = config.frontendUrl;
 const appName = config.name;
 
 interface Props extends BasicTemplateType {
   verificationLink: string;
 }
 
-export const EmailVerificationEmail = ({ userLanguage: lng, verificationLink = baseUrl }: Props) => {
+export const EmailVerificationEmail = ({ userLanguage: lng, verificationLink }: Props) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.email_verification.preview', { appName, lng })}>
       <EmailBody>

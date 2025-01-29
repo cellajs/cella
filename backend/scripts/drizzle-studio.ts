@@ -2,9 +2,13 @@ import { spawn } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
+import dotenv from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const parentDir = resolve(__dirname, '..');
+
+// Load .env variables from the parent directory
+dotenv.config({ path: resolve(parentDir, '.env') });
 
 const startDrizzleStudio = () => {
   const studioProcess = spawn('npx', ['drizzle-kit', 'studio', '--config', 'drizzle.config.ts', '--port', '4983'], {

@@ -1,6 +1,5 @@
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import type { EnabledOauthProvider } from '~/types/common';
 import { authHc } from '#/modules/auth/hc';
 
 // Create Hono clients to make requests to the backend
@@ -12,13 +11,23 @@ export const googleSignInUrl = client.google.$url().href;
 export const microsoftSignInUrl = client.microsoft.$url().href;
 
 export type TokenType = { token: string };
-
 export type SignUpProps = Parameters<(typeof client)['sign-up']['$post']>['0']['json'];
 
 // Sign up a user with the provided email and password
 export const signUp = async (body: SignUpProps) => {
   const response = await client['sign-up'].$post({
     json: body,
+  });
+
+  const json = await handleResponse(response);
+  return json.success;
+};
+
+// Sign up with invitation token
+export const signUpWithToken = async ({ email, password, token }: TokenType & SignUpProps) => {
+  const response = await client['sign-up'][':token'].$post({
+    param: { token },
+    json: { email, password },
   });
 
   const json = await handleResponse(response);
@@ -35,13 +44,12 @@ export const checkEmail = async (email: string) => {
   return json.success;
 };
 
-export type VerifyEmailProps = TokenType & { resend?: boolean };
+export type VerifyEmailProps = TokenType;
 
 // Verify the user's email with token sent by email
-export const verifyEmail = async ({ token, resend }: VerifyEmailProps) => {
-  const response = await client['verify-email'].$post({
-    json: { token },
-    query: { resend: String(resend) },
+export const verifyEmail = async ({ token }: VerifyEmailProps) => {
+  const response = await client['verify-email'][':token'].$post({
+    param: { token },
   });
 
   await handleResponse(response);
@@ -50,9 +58,9 @@ export const verifyEmail = async ({ token, resend }: VerifyEmailProps) => {
 export type SignInProps = Parameters<(typeof client)['sign-in']['$post']>['0']['json'];
 
 // Sign in a user with email and password
-export const signIn = async ({ email, password, token }: SignInProps) => {
+export const signIn = async ({ email, password }: SignInProps) => {
   const response = await client['sign-in'].$post({
-    json: { email, password, token },
+    json: { email, password },
   });
 
   const json = await handleResponse(response);
@@ -69,10 +77,10 @@ export const impersonationStart = async (targetUserId: string) => {
   return json.success;
 };
 
-// Send a verification email
-export const sendVerificationEmail = async (email: string) => {
+// Send a new verification email
+export const sendVerificationEmail = async ({ tokenId, userId }: { tokenId?: string; userId?: string }) => {
   const response = await client['send-verification-email'].$post({
-    json: { email },
+    json: { tokenId, userId },
   });
 
   await handleResponse(response);
@@ -100,26 +108,23 @@ export const createPassword = async ({ token, password }: CreatePasswordProps) =
 };
 
 // Check token validation
-export const checkToken = async (token: string) => {
-  const response = await client['check-token'].$post({
-    json: { token },
+export const checkToken = async ({ id }: { id: string }) => {
+  const response = await client['check-token'][':id'].$post({
+    param: { id },
   });
 
   const json = await handleResponse(response);
   return json.data;
 };
 
-export interface AcceptInviteProps {
+export interface AcceptOrgInviteProps {
   token: string;
-  password?: string;
-  oauth?: EnabledOauthProvider | undefined;
 }
 
 // Accept an invitation
-export const acceptInvite = async ({ token, password, oauth }: AcceptInviteProps) => {
+export const acceptOrgInvite = async ({ token }: AcceptOrgInviteProps) => {
   const response = await client['accept-invite'][':token'].$post({
     param: { token },
-    json: { password, oauth },
   });
 
   const json = await handleResponse(response);
@@ -137,10 +142,10 @@ export const getChallenge = async () => {
   return json;
 };
 
-type SetPasskeyProp = Parameters<(typeof client)['passkey-registration']['$post']>['0']['json'];
+type RegisterPasskeyProp = Parameters<(typeof client)['passkey-registration']['$post']>['0']['json'];
 
 // Register a passkey for user
-export const setPasskey = async (data: SetPasskeyProp) => {
+export const registerPasskey = async (data: RegisterPasskeyProp) => {
   const apiResponse = await client['passkey-registration'].$post({
     json: data,
   });
@@ -148,10 +153,10 @@ export const setPasskey = async (data: SetPasskeyProp) => {
   return json.success;
 };
 
-type AuthThroughPasskeyProp = Parameters<(typeof client)['passkey-verification']['$post']>['0']['json'];
+type AuthWithPasskeyProp = Parameters<(typeof client)['passkey-verification']['$post']>['0']['json'];
 
 // Authenticate user through passkey
-export const authThroughPasskey = async (data: AuthThroughPasskeyProp) => {
+export const authenticateWithPasskey = async (data: AuthWithPasskeyProp) => {
   const response = await client['passkey-verification'].$post({
     json: data,
   });

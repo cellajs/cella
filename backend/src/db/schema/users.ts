@@ -1,5 +1,6 @@
 import { config } from 'config';
 import { boolean, foreignKey, index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { nanoid } from '#/utils/nanoid';
 import { omitKeys } from '#/utils/omit';
 
 const roleEnum = config.rolesByType.systemRoles;
@@ -7,7 +8,7 @@ const roleEnum = config.rolesByType.systemRoles;
 export const usersTable = pgTable(
   'users',
   {
-    id: varchar().primaryKey(),
+    id: varchar().primaryKey().$defaultFn(nanoid),
     entity: varchar({ enum: ['user'] })
       .notNull()
       .default('user'),
@@ -19,10 +20,7 @@ export const usersTable = pgTable(
     lastName: varchar(),
     email: varchar().notNull().unique(),
     emailVerified: boolean().notNull().default(false),
-    bio: varchar(),
-    language: varchar({
-      enum: ['en', 'nl'],
-    })
+    language: varchar({ enum: ['en', 'nl'] })
       .notNull()
       .default(config.defaultLanguage),
     bannerUrl: varchar(),
@@ -54,7 +52,6 @@ const detailedFields = [
   'firstName',
   'lastName',
   'emailVerified',
-  'bio',
   'language',
   'newsletter',
   'lastSeenAt',

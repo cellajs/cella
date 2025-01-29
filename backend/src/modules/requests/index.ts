@@ -30,7 +30,7 @@ const requestsRoutes = app
     const { email, type, message } = ctx.req.valid('json');
     if (type === 'waitlist') {
       const [existingRequest] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
-      if (existingRequest) return errorResponse(ctx, 401, 'request_email_is_user', 'info');
+      if (existingRequest) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
     }
 
     // Check if not duplicate for unique requests
@@ -125,7 +125,7 @@ const requestsRoutes = app
         appName: config.name,
       }),
     );
-    // For test purposes
+    // TODO move to emailSender? For test purposes
     if (env.NODE_ENV === 'development') {
       emailSender.send(env.SEND_ALL_TO_EMAIL ?? user.email, subject, emailHtml);
     } else {

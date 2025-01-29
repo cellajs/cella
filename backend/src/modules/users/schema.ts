@@ -56,7 +56,6 @@ export const updateUserBodySchema = createInsertSchema(usersTable, {
   .pick({
     email: true,
     bannerUrl: true,
-    bio: true,
     firstName: true,
     lastName: true,
     language: true,

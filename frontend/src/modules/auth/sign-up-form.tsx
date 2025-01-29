@@ -8,7 +8,7 @@ import type * as z from 'zod';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy } from 'react';
-import { useSignUpMutation } from '~/modules/auth/query-mutations';
+import { useSignUpMutation, useSignUpWithTokenMutation } from '~/modules/auth/query-mutations';
 import { dialog } from '~/modules/common/dialoger/state';
 import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -29,12 +29,14 @@ interface Props {
   emailEnabled: boolean;
 }
 
+// Either simply sign up using password or sign up with token to accept system invitation
 export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token } = useSearch({ from: AuthenticateRoute.id });
+  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
   const { mutate: signUp, isPending } = useSignUpMutation();
+  const { mutate: signUpWithToken, isPending: isPendingWithToken } = useSignUpWithTokenMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,27 +47,37 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   });
 
   const onSubmit = (formValues: z.infer<typeof formSchema>) => {
-    signUp(
-      { ...formValues, token },
-      {
-        onSuccess: () => {
-          // Redirect to organization invitation page if token is present
-          const to = token ? '/auth/invitation/$token' : '/auth/request-verification';
-
-          navigate({
-            to,
-            replace: true,
-            params: { token },
-          });
-        },
-      },
-    );
+    token && tokenId
+      ? signUpWithToken(
+          { ...formValues, token },
+          {
+            onSuccess: () => {
+              // Redirect to organization invitation page if there is a membership invitation
+              const isMemberInvitation = tokenData?.organizationSlug;
+              if (isMemberInvitation) return navigate({ to: '/invitation/$token', replace: true, params: { token }, search: { tokenId } });
+              return navigate({ to: config.firstSignInRedirectPath, replace: true });
+            },
+          },
+        )
+      : signUp(
+          { ...formValues },
+          {
+            onSuccess: () => {
+              navigate({ to: '/auth/email-verification', replace: true });
+            },
+          },
+        );
   };
 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData ? t('common:invite_create_account') : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`} <br />
+        {tokenData?.organizationSlug
+          ? t('common:invite_accept_proceed')
+          : tokenData
+            ? t('common:invite_create_account')
+            : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
+        <br />
         {!tokenData && (
           <Button variant="ghost" onClick={resetSteps} className="font-light mt-2 text-xl">
             {email}
@@ -108,7 +120,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
               </FormItem>
             )}
           />
-          <SubmitButton loading={isPending} className="w-full">
+          <SubmitButton loading={isPending || isPendingWithToken} className="w-full">
             {t('common:sign_up')}
             <ArrowRight size={16} className="ml-2" />
           </SubmitButton>
