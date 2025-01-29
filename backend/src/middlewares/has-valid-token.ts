@@ -14,13 +14,13 @@ export const hasValidToken = (requiredType: TokenModel['type']): MiddlewareHandl
 
     // Check if token exists
     const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.token, token));
-    if (!tokenRecord) return errorResponse(ctx, 404, 'token_not_found', 'warn');
+    if (!tokenRecord) return errorResponse(ctx, 404, `${requiredType}_not_found`, 'warn', undefined, { type: requiredType });
 
     // If token is expired, return an error
-    if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 401, 'expired_token', 'warn', undefined);
+    if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 401, `${requiredType}_expired`, 'warn', undefined, { type: requiredType });
 
     // Check if token type matches the required type (if specified)
-    if (tokenRecord.type !== requiredType) return errorResponse(ctx, 401, 'invalid_token', 'warn');
+    if (tokenRecord.type !== requiredType) return errorResponse(ctx, 401, 'invalid_token', 'warn', undefined, { type: requiredType });
 
     // Set token in context
     ctx.set('token', tokenRecord);

@@ -1,4 +1,4 @@
-import { useRouterState } from '@tanstack/react-router';
+import { SearchParamError, useRouterState } from '@tanstack/react-router';
 import type { TFunction } from 'i18next';
 import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import type React from 'react';
@@ -13,8 +13,10 @@ import { MainFooter } from '~/modules/common/main-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 
+export type ErrorNoticeError = ApiError | Error | null;
+
 interface ErrorNoticeProps {
-  error?: ApiError | Error;
+  error?: ErrorNoticeError;
   resetErrorBoundary?: () => void;
   level: 'root' | 'app' | 'public';
 }
@@ -32,9 +34,11 @@ export const handleAskForHelp = () => {
   window.Gleap.openConversations();
 };
 
-export const getErrorTitle = (t: TFunction, error?: ApiError | Error, errorFromQuery?: string) => {
+export const getErrorTitle = (t: TFunction, error?: ErrorNoticeError, errorFromQuery?: string) => {
   if (errorFromQuery) return t(`error:${errorFromQuery}`);
   if (!error) return;
+
+  if (error instanceof SearchParamError) return t('error:invalid_param');
 
   if ('status' in error) {
     if (error.entityType) return t(`error:resource_${error.type}`, { resource: t(error.entityType) });
@@ -45,9 +49,11 @@ export const getErrorTitle = (t: TFunction, error?: ApiError | Error, errorFromQ
   if (error.name) return error.name;
 };
 
-export const getErrorText = (t: TFunction, error?: ApiError | Error, errorFromQuery?: string) => {
+export const getErrorText = (t: TFunction, error?: ErrorNoticeError, errorFromQuery?: string) => {
   if (errorFromQuery) return t(`error:${errorFromQuery}.text`);
   if (!error) return;
+
+  if (error instanceof SearchParamError) return t('error:invalid_param.text');
 
   if ('status' in error) {
     // Check if the error has an entityType

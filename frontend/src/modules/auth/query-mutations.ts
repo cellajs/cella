@@ -8,22 +8,13 @@ import {
   type SignInProps,
   type SignUpProps,
   type TokenType,
-  type VerifyEmailProps,
   checkEmail,
   createPassword,
   signIn,
   signUp,
   signUpWithToken,
-  verifyEmail,
 } from '~/modules/auth/api';
 import { authKeys } from '~/modules/auth/query';
-
-export const useVerifyEmailMutation = () => {
-  return useMutation<void, ApiError, VerifyEmailProps>({
-    mutationKey: authKeys.verifyEmail(),
-    mutationFn: verifyEmail,
-  });
-};
 
 export const useResetPasswordMutation = () => {
   return useMutation<void, ApiError, CreatePasswordProps>({

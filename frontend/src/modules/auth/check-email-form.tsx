@@ -22,6 +22,7 @@ interface CheckEmailProps {
 
 export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
   const { t } = useTranslation();
+  const isMobile = window.innerWidth < 640;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -63,7 +64,7 @@ export const CheckEmailForm = ({ setStep, emailEnabled }: CheckEmailProps) => {
               // Custom css due to html injection by browser extensions
               <FormItem className="gap-0">
                 <FormControl>
-                  <Input {...field} type="email" autoFocus placeholder={t('common:email')} />
+                  <Input {...field} type="email" autoFocus={!isMobile} placeholder={t('common:email')} />
                 </FormControl>
                 <FormMessage className="mt-2" />
               </FormItem>

@@ -26,8 +26,11 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes
 
       refetchOnWindowFocus: true, // Refetch on window focus
-      refetchOnReconnect: true, // Refetch on reconnect
-      retry: 1, // Retry once on failure
+      refetchOnReconnect: true,
+      retry: false,
+    },
+    mutations: {
+      retry: false,
     },
   },
 });

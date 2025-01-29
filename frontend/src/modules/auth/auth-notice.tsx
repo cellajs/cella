@@ -1,12 +1,12 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { MessageCircleQuestion } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { ApiError } from '~/lib/api';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import { getErrorText, getErrorTitle, handleAskForHelp } from '../common/error-notice';
+import { type ErrorNoticeError, getErrorText, getErrorTitle, handleAskForHelp } from '../common/error-notice';
 
-const AuthNotice = ({ error }: { error: ApiError }) => {
+// Notify user about an authentication related error
+const AuthNotice = ({ error, children }: { error: ErrorNoticeError; children?: React.ReactNode }) => {
   const { t } = useTranslation();
   const { location } = useRouterState();
   const { error: errorFromQuery, severity: severityFromQuery } = location.search;
@@ -24,7 +24,8 @@ const AuthNotice = ({ error }: { error: ApiError }) => {
         </CardDescription>
       </CardHeader>
       <CardFooter className="flex gap-2 mt-8 justify-center">
-        <Link to="/auth/authenticate" className={buttonVariants({ size: 'lg' })}>
+        {children}
+        <Link to="/auth/authenticate" className={buttonVariants({ size: 'lg', variant: 'plain' })}>
           {t('common:sign_in')}
         </Link>
         {severity && ['warn', 'error'].includes(severity) && (

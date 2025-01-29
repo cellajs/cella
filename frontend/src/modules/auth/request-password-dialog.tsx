@@ -1,10 +1,14 @@
+import { type ReactElement, cloneElement, forwardRef, isValidElement } from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { RequestPasswordForm } from '~/modules/auth/request-password-form';
 import { dialog } from '~/modules/common/dialoger/state';
-import { Button } from '~/modules/ui/button';
 
-export const RequestPasswordDialog = ({ email }: { email: string }) => {
+interface RequestPasswordDialogProps {
+  email?: string;
+  children: ReactElement;
+}
+
+export const RequestPasswordDialog = forwardRef<HTMLButtonElement, RequestPasswordDialogProps>(({ email, children }) => {
   const { t } = useTranslation();
 
   const openDialog = () => {
@@ -16,9 +20,16 @@ export const RequestPasswordDialog = ({ email }: { email: string }) => {
     });
   };
 
-  return (
-    <Button variant="ghost" type="button" size="sm" className="w-full font-normal" onClick={openDialog}>
-      {t('common:forgot_password')}
-    </Button>
-  );
-};
+  if (!isValidElement(children)) return children;
+
+  // TODO can we clean this up?
+  return cloneElement(children as ReactElement<{ onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void }>, {
+    onClick: (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      (children as ReactElement<{ onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void }>).props.onClick?.(event);
+      openDialog();
+    },
+  });
+});
+
+RequestPasswordDialog.displayName = 'RequestPasswordDialog';

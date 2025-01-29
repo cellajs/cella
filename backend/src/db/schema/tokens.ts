@@ -4,7 +4,7 @@ import { usersTable } from '#/db/schema/users';
 import { nanoid } from '#/utils/nanoid';
 import { createDynamicTable, generateContextEntityDynamicFields } from './helpers';
 
-const tokenTypeEnum = ['email_verification', 'password_reset', 'invitation'] as const;
+export const tokenTypeEnum = ['email_verification', 'password_reset', 'invitation'] as const;
 const roleEnum = config.rolesByType.entityRoles;
 
 const baseColumns = {
