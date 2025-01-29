@@ -1,5 +1,6 @@
 import { MailService } from '@sendgrid/mail';
 import { config } from 'config';
+import { logEvent } from '#/middlewares/logger/log-event';
 import { env } from '../../env';
 
 const sendgrid = new MailService();
@@ -27,7 +28,7 @@ export const emailSender = {
         html,
       });
     } catch (err) {
-      console.warn('Failed to send email. \n', err);
+      if (err instanceof Error) logEvent('Error sending email', { errorMessage: err.message }, 'error');
     }
   },
 };

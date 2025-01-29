@@ -37,7 +37,7 @@ const BaseDataTable = memo(
       for (const index of indexes) {
         const organization = changedRows[index];
         if (!organization.membership?.role) continue;
-
+        // TODO rework it
         inviteMembers({
           idOrSlug: organization.id,
           emails: [user.email],

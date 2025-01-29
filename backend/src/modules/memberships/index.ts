@@ -36,21 +36,19 @@ const membershipsRoutes = app
    * Invite members to an entity such as an organization
    */
   .openapi(membershipRouteConfig.createMembership, async (ctx) => {
-    const { idOrSlug, entityType } = ctx.req.valid('query');
-
-    // Allowed to invite members to an entity when user has update permission on the entity
-    const { entity, isAllowed } = await getValidEntity(entityType, 'update', idOrSlug);
-    if (!entity || !isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
-
+    const { idOrSlug, entityType: passedEntityType } = ctx.req.valid('query');
     const { emails, role, parentEntity: parentEntityInfo } = ctx.req.valid('json');
 
+    const { entity, isAllowed } = await getValidEntity(passedEntityType, 'update', idOrSlug);
+    if (!entity || !isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', passedEntityType);
+
+    const { entity: entityType, id: targetEntityId } = entity;
     const organization = getContextOrganization();
     const user = getContextUser();
 
-    // Normalize emails for consistent comparison
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
-    // Query existing memberships and users
+    // Fetch existing memberships and users
     const [allOrgMemberships, existingUsers] = await Promise.all([
       db
         .select()
@@ -59,86 +57,65 @@ const membershipsRoutes = app
       getUsersByConditions([inArray(usersTable.email, normalizedEmails)]),
     ]);
 
-    // Maps to store memberships by existing user
-    const organizationMembershipsByUser = new Map<string, MembershipModel>();
-    const contextMembershipsByUser = new Map<string, MembershipModel>();
-    const contextEntityIdField = entityIdFields[entity.entity];
+    const existingUsersByEmail = new Map(existingUsers.map((user) => [user.email, user]));
+    const targetMembershipsByUser = new Map<string, MembershipModel>();
+    const userIds = existingUsers.map((user) => user.id);
+    const orgMembersIds = allOrgMemberships.map(({ userId }) => userId);
 
-    if (existingUsers.length) {
-      const userIds = existingUsers.map((user) => user.id);
-
-      // Prepare conditions for fetching existing memberships
-      const $where = [
-        and(
-          eq(membershipsTable[contextEntityIdField], entity.id),
-          eq(membershipsTable.type, entity.entity),
-          inArray(membershipsTable.userId, userIds),
-        ),
-      ];
-
-      // Add conditions for organization memberships if applicable
-      if (entity.entity !== 'organization') {
-        $where.push(
+    if (userIds.length) {
+      const existingTargetMemberships = await db
+        .select()
+        .from(membershipsTable)
+        .where(
           and(
-            eq(membershipsTable.type, 'organization'),
-            eq(membershipsTable.organizationId, organization.id),
+            eq(membershipsTable[entityIdFields[entityType]], targetEntityId),
+            eq(membershipsTable.type, entityType),
             inArray(membershipsTable.userId, userIds),
           ),
         );
-      }
 
-      // Query existing memberships
-      const existingMemberships = await db
-        .select()
-        .from(membershipsTable)
-        .where($where.length > 1 ? or(...$where) : $where[0]);
-
-      // Group memberships by user
-      for (const membership of existingMemberships) {
-        if (membership.userId && membership.type === 'organization') organizationMembershipsByUser.set(membership.userId, membership);
-        if (membership.userId && membership.type === entity.entity) contextMembershipsByUser.set(membership.userId, membership);
+      for (const membership of existingTargetMemberships) {
+        targetMembershipsByUser.set(membership.userId, membership);
       }
     }
 
-    // Initialize tracking maps
-    const existingUsersByEmail = new Map();
-    const emailsToSendInvitation = [];
+    const emailsToInvite: string[] = [];
 
     // Establish memberships for existing users
     await Promise.all(
       existingUsers.map(async (existingUser) => {
         existingUsersByEmail.set(existingUser.email, existingUser);
 
-        const existingMembership = contextMembershipsByUser.get(existingUser.id);
-        const organizationMembership = organizationMembershipsByUser.get(existingUser.id);
+        const targetMembership = targetMembershipsByUser.get(existingUser.id);
+        const organizationMembership = orgMembersIds.find((id) => id === existingUser.id);
 
-        if (existingMembership) {
-          logEvent(`User already member of ${entity.entity}`, { user: existingUser.id, id: entity.id });
+        if (targetMembership) {
+          logEvent(`User already member of ${entityType}`, { user: existingUser.id, id: targetEntityId });
 
           // Check if the role needs to be updated (downgrade or upgrade)
-          if (role && existingMembership.role !== role) {
+          if (role && targetMembership.role !== role) {
             await db
               .update(membershipsTable)
               .set({ role, modifiedAt: new Date(), modifiedBy: user.id })
-              .where(eq(membershipsTable.id, existingMembership.id));
+              .where(eq(membershipsTable.id, targetMembership.id));
 
-            logEvent('User role updated', { user: existingUser.id, id: entity.id, type: existingMembership.type, role });
+            logEvent('User role updated', { user: existingUser.id, id: targetEntityId, type: targetMembership.type, role });
           }
         } else {
           // Check if membership creation is allowed and if invitation is needed
           const instantCreateMembership =
-            (entity.entity !== 'organization' && organizationMembership) || (entity.entity === 'organization' && existingUser.id === user.id);
+            (entityType !== 'organization' && organizationMembership) || (entityType === 'organization' && existingUser.id === user.id);
 
           if (instantCreateMembership) {
             const parentEntity = parentEntityInfo ? await resolveEntity(parentEntityInfo.entity, parentEntityInfo.idOrSlug) : null;
 
             const [createdParentMembership, createdMembership] = await Promise.all([
               parentEntity ? insertMembership({ user: existingUser, role, entity: parentEntity }) : Promise.resolve(null),
-              insertMembership({ user: existingUser, role, entity: entity, parentEntity }),
+              insertMembership({ user: existingUser, role, entity, parentEntity }),
             ]);
 
+            // SSE with parentEntity data, to update user's menu
             if (parentEntity && createdParentMembership) {
-              // SSE with parentEntity data, to update user's menu
               sendSSEToUsers([existingUser.id], 'add_entity', {
                 newItem: { ...parentEntity, membership: createdParentMembership },
                 sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
@@ -148,21 +125,21 @@ const membershipsRoutes = app
             // SSE with entity data, to update user's menu
             sendSSEToUsers([existingUser.id], 'add_entity', {
               newItem: { ...entity, membership: createdMembership },
-              sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
+              sectionName: menuSections.find((el) => el.entityType === entityType)?.name,
               ...(parentEntity && { parentSlug: parentEntity.slug }),
             });
             // Add email to the invitation list for sending an organization invite to another user
-          } else emailsToSendInvitation.push(existingUser.email);
+          } else emailsToInvite.push(existingUser.email);
         }
       }),
     );
 
     // Identify emails that do not have existing users (will need to send a invitation)
-    for (const email of normalizedEmails) if (!existingUsersByEmail.has(email)) emailsToSendInvitation.push(email);
+    for (const email of normalizedEmails) if (!existingUsersByEmail.has(email)) emailsToInvite.push(email);
 
     // Send invitations for organization membership
     await Promise.all(
-      emailsToSendInvitation.map(async (email) => {
+      emailsToInvite.map(async (email) => {
         const targetUser = existingUsersByEmail.get(email);
         // TODO - store hashed token?
         const token = nanoid(40);
@@ -170,20 +147,14 @@ const membershipsRoutes = app
         const [tokenRecord] = await db
           .insert(tokensTable)
           .values({
-            token: token,
+            token,
             type: 'invitation',
             userId: targetUser?.id ?? null,
-            email: email,
+            email,
             createdBy: user.id,
             role,
             organizationId: organization.id,
             expiresAt: createDate(new TimeSpan(7, 'd')),
-            ...(entity.entity !== 'organization' && {
-              membershipInfo: {
-                targetEntity: { idOrSlug: entity.id, entity: entity.entity },
-                parentEntity: parentEntityInfo,
-              },
-            }),
           })
           .returning();
 
@@ -204,29 +175,25 @@ const membershipsRoutes = app
         logEvent('User invited to organization', { organization: organization.id });
 
         // Send invitation email
-        emailSender
-          .send(
-            config.senderIsReceiver ? user.email : email,
-            i18n.t('backend:email.member_invite.subject', {
-              lng: targetUser?.language || organization.defaultLanguage,
-              appName: config.name,
-              entity: organization.name,
-            }),
-            emailHtml,
-            user.email,
-          )
-          .catch((error) => {
-            if (error instanceof Error) logEvent('Error sending email', { errorMessage: error.message }, 'error');
-          });
+        emailSender.send(
+          config.senderIsReceiver ? user.email : email,
+          i18n.t('backend:email.member_invite.subject', {
+            lng: targetUser?.language || organization.defaultLanguage,
+            appName: config.name,
+            entity: organization.name,
+          }),
+          emailHtml,
+          user.email,
+        );
       }),
     );
 
-    if (emailsToSendInvitation.length > 0) {
-      // SSE to update organizations invite info
+    // SSE to update organizations invite info
+    // TODO  handle SSE new_member_invite
+    if (emailsToInvite.length > 0) {
       sendSSEToUsers(
         allOrgMemberships.map(({ userId }) => userId),
         'new_member_invite',
-        { id: organization.id, slug: organization.slug },
       );
     }
 
