@@ -23,7 +23,7 @@ const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 const formSchema = emailPasswordBodySchema;
 
 interface Props {
-  tokenData: TokenData | null;
+  tokenData: TokenData | undefined;
   email: string;
   resetSteps: () => void;
   emailEnabled: boolean;
@@ -135,7 +135,7 @@ export const LegalNotice = ({ email }: { email: string }) => {
 
   const openDialog = (mode: 'terms' | 'privacy') => () => {
     const dialogComponent = (
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
         <LegalText textFor={mode} />
       </Suspense>
     );

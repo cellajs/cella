@@ -5,18 +5,19 @@ import { useTranslation } from 'react-i18next';
 import * as z from 'zod';
 import { Button, SubmitButton } from '~/modules/ui/button';
 
+import { useQuery } from '@tanstack/react-query';
 import { passwordSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
-import { Suspense, lazy, useEffect, useState } from 'react';
-import type { ApiError } from '~/lib/api';
+import { Suspense, lazy } from 'react';
 import { useResetPasswordMutation } from '~/modules/auth/query-mutations';
-import { useCheckTokenMutation } from '~/modules/general/query-mutations';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
 import Spinner from '../common/spinner';
+import { checkToken } from './api';
 import AuthNotice from './auth-notice';
+import { RequestPasswordDialog } from './request-password-dialog';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
@@ -30,14 +31,8 @@ const CreatePasswordForm = () => {
   const { token } = useParams({ from: CreatePasswordWithTokenRoute.id });
   const { tokenId } = useSearch({ from: CreatePasswordWithTokenRoute.id });
 
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState<ApiError | null>(null);
-
-  // Check reset password token and get email
-  const { mutate: checkToken, isPending: isChecking } = useCheckTokenMutation();
-
   // Reset password and sign in
-  const { mutate: resetPassword, isPending } = useResetPasswordMutation();
+  const { mutate: resetPassword, isPending, error: resetPasswordError } = useResetPasswordMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,23 +47,35 @@ const CreatePasswordForm = () => {
     resetPassword({ token, password }, { onSuccess: () => navigate({ to: config.defaultRedirectPath }) });
   };
 
-  useEffect(() => {
-    if (!token || !tokenId) return;
+  const tokenQueryOptions = {
+    queryKey: ['tokenData', tokenId],
+    queryFn: async () => {
+      if (!tokenId || !token) return;
+      return checkToken({ id: tokenId, type: 'password_reset' });
+    },
+    staleTime: 0,
+  };
 
-    checkToken({ id: tokenId }, { onSuccess: (result) => setEmail(result.email), onError: (error) => setError(error) });
-  }, [token]);
+  const { data, isLoading, error } = useQuery(tokenQueryOptions);
 
-  if (isChecking) return <Spinner />;
-
-  if (error) return <AuthNotice error={error} />;
+  if (isLoading) return <Spinner className="h-10 w-10" />;
+  if (error || resetPasswordError)
+    return (
+      <AuthNotice error={error || resetPasswordError}>
+        <RequestPasswordDialog email={data?.email}>
+          <Button size="lg">{t('common:forgot_password')}</Button>
+        </RequestPasswordDialog>
+      </AuthNotice>
+    );
+  if (!data?.email) return null;
 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
         {t('common:reset_password')} <br />{' '}
-        {email && (
+        {data.email && (
           <Button variant="ghost" disabled className="font-light mt-2 text-xl">
-            {email}
+            {data.email}
           </Button>
         )}
       </h1>

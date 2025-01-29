@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 
-// TODO consider reusable auth notification component
 const EmailVerification = () => {
   const { t } = useTranslation();
   return (

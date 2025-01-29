@@ -29,6 +29,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { lastUser, clearLastUser } = useUserStore();
+  const isMobile = window.innerWidth < 640;
 
   const { redirect, token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
@@ -55,6 +56,8 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
           navigate({ to: redirect || config.defaultRedirectPath, replace: true });
         },
         onError: (error) => {
+          if (error?.status === 404) return resetSteps();
+
           if (error.type !== 'invalid_password') return;
           document.getElementById('password-field')?.focus();
           form.reset(form.getValues());
@@ -103,7 +106,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
                       <Input
                         type="password"
                         id="password-field"
-                        autoFocus
+                        autoFocus={!isMobile}
                         {...field}
                         autoComplete="current-password"
                         placeholder={t('common:password')}
@@ -118,7 +121,11 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
                 {t('common:sign_in')}
                 <ArrowRight size={16} className="ml-2" />
               </SubmitButton>
-              <RequestPasswordDialog email={email} />
+              <RequestPasswordDialog email={email}>
+                <Button variant="ghost" size="sm" className="w-full font-normal">
+                  {t('common:forgot_password')}
+                </Button>
+              </RequestPasswordDialog>
             </>
           )}
         </form>

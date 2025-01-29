@@ -1,5 +1,6 @@
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
+import type { TokenModel } from '#/db/schema/tokens';
 import { authHc } from '#/modules/auth/hc';
 
 // Create Hono clients to make requests to the backend
@@ -108,9 +109,10 @@ export const createPassword = async ({ token, password }: CreatePasswordProps) =
 };
 
 // Check token validation
-export const checkToken = async ({ id }: { id: string }) => {
+export const checkToken = async ({ id, type }: { id: string; type: TokenModel['type'] }) => {
   const response = await client['check-token'][':id'].$post({
     param: { id },
+    query: { type },
   });
 
   const json = await handleResponse(response);

@@ -22,13 +22,13 @@ interface SlugFieldProps {
 }
 
 export const SlugFormField = ({ control, label, previousSlug, description, nameValue, type }: SlugFieldProps) => {
-  const form = useFormContext<{
-    slug: string;
-  }>();
   const { t } = useTranslation();
+  const { isOnline } = useOnlineManager();
+
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
-  const { isOnline } = useOnlineManager();
+
+  const form = useFormContext<{ slug: string }>();
 
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });

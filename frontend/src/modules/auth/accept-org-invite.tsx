@@ -1,66 +1,62 @@
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
+import { useQuery } from '@tanstack/react-query';
 import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import type { ApiError } from '~/lib/api';
 import Spinner from '~/modules/common/spinner';
-import { useAcceptOrgInviteMutation, useCheckTokenMutation } from '~/modules/general/query-mutations';
-import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
+import { useAcceptOrgInviteMutation } from '~/modules/general/query-mutations';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
-import type { TokenData } from '~/types/common';
 import { cn } from '~/utils/cn';
+import { checkToken } from './api';
 import AuthNotice from './auth-notice';
 
 // Accept organization invitation when user is signed in
 const AcceptOrgInvite = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
   const { token } = useParams({ from: AcceptOrgInviteRoute.id });
   const { tokenId } = useSearch({ from: AcceptOrgInviteRoute.id });
 
-  const [tokenData, setTokenData] = useState<TokenData | null>(null);
-  const [error, setError] = useState<ApiError | null>(null);
+  const { mutate: acceptOrgInvite, isPending, error: acceptInviteError } = useAcceptOrgInviteMutation();
 
-  const { mutate: checkToken, isPending: isChecking } = useCheckTokenMutation();
-  const { mutate: acceptOrgInvite, isPending } = useAcceptOrgInviteMutation();
-
+  // Accept organization invitation
   const onSubmit = () => {
     acceptOrgInvite(
       { token },
       {
-        onSuccess: (data) => {
-          if (data) addMenuItem(data.newItem, data.sectionName);
-
+        onSuccess: () => {
           toast.success(t('common:invitation_accepted'));
           navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
         },
-        onError: (error) => setError(error),
       },
     );
   };
 
-  // TODO move this to beforeLoad in the route?
-  useEffect(() => {
-    if (!tokenId || !token) return;
+  const tokenQueryOptions = {
+    queryKey: ['tokenData', tokenId],
+    queryFn: async () => {
+      if (!tokenId || !token) return;
+      return checkToken({ id: tokenId, type: 'invitation' });
+    },
+    staleTime: 0,
+  };
 
-    checkToken({ id: tokenId }, { onSuccess: (result) => setTokenData(result), onError: (error) => setError(error) });
-  }, [tokenId]);
+  const { data: tokenData, isLoading, error } = useQuery(tokenQueryOptions);
 
-  if (isChecking) return <Spinner />;
-
-  if (error) return <AuthNotice error={error} />;
+  if (isLoading) return <Spinner className="h-10 w-10" />;
+  if (error || acceptInviteError) return <AuthNotice error={error || acceptInviteError} />;
+  if (!tokenData) return null;
 
   return (
     <>
       <h1 className="text-2xl text-center">{t('common:accept_invite')}</h1>
+      <p className="font-light mb-4">{t('common:accept_invite_text', { email: tokenData.email, organization: tokenData.organizationName })}</p>
 
-      <p className="font-light mb-4">{t('common:accept_invite_text', { email: tokenData?.email, organization: tokenData?.organizationName })}</p>
-
-      {tokenData?.email && (
+      {tokenData.email && (
         <div className="space-y-4">
           <SubmitButton loading={isPending} className="w-full" onClick={onSubmit}>
             <Check size={16} className="mr-2" />

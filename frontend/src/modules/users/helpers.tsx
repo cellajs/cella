@@ -88,7 +88,6 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
       },
     });
 
-    // TODO: Handle error?
     if (!(credential instanceof PublicKeyCredential)) throw new Error('Failed to create public key');
 
     const { response } = credential;

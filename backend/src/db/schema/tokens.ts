@@ -5,7 +5,7 @@ import type { ContextEntity } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
 
-const tokenTypeEnum = ['email_verification', 'password_reset', 'invitation'] as const;
+export const tokenTypeEnum = ['email_verification', 'password_reset', 'invitation'] as const;
 const roleEnum = config.rolesByType.entityRoles;
 
 export const tokensTable = pgTable('tokens', {

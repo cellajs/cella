@@ -341,14 +341,14 @@ const authRoutes = app
   .openapi(authRoutesConfig.checkToken, async (ctx) => {
     // Find token in request
     const { id } = ctx.req.valid('param');
-    if (!id) return errorResponse(ctx, 400, 'invalid_request', 'warn');
+    const { type } = ctx.req.valid('query');
 
     // Check if token exists
     const [tokenRecord] = await db.select().from(tokensTable).where(eq(tokensTable.id, id));
-    if (!tokenRecord) return errorResponse(ctx, 404, 'not_found', 'warn');
+    if (!tokenRecord) return errorResponse(ctx, 404, `${type}_not_found`, 'warn');
 
     // If token is expired, return an error
-    if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 401, 'expired_token', 'warn', undefined);
+    if (isExpiredDate(tokenRecord.expiresAt)) return errorResponse(ctx, 401, `${type}_expired`, 'warn', undefined);
 
     const data = {
       email: tokenRecord.email,
