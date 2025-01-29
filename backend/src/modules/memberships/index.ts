@@ -10,7 +10,7 @@ import { MemberInviteEmail } from '../../../emails/member-invite';
 import { tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
-import { entityIdFields, menuSections } from '#/entity-config';
+import { entityIdFields } from '#/entity-config';
 import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
@@ -124,32 +124,20 @@ const membershipsRoutes = app
             logEvent('User role updated', { user: existingUser.id, id: entity.id, type: existingMembership.type, role });
           }
         } else {
-          // Check if membership creation is allowed and if invitation is needed
+          //Check if membership creation is allowed and if invitation is needed
           const instantCreateMembership =
             (entity.entity !== 'organization' && organizationMembership) || (entity.entity === 'organization' && existingUser.id === user.id);
 
           if (instantCreateMembership) {
             const parentEntity = parentEntityInfo ? await resolveEntity(parentEntityInfo.entity, parentEntityInfo.idOrSlug) : null;
 
-            const [createdParentMembership, createdMembership] = await Promise.all([
+            await Promise.all([
               parentEntity ? insertMembership({ user: existingUser, role, entity: parentEntity }) : Promise.resolve(null),
               insertMembership({ user: existingUser, role, entity: entity, parentEntity }),
             ]);
 
-            if (parentEntity && createdParentMembership) {
-              // SSE with parentEntity data, to update user's menu
-              sendSSEToUsers([existingUser.id], 'add_entity', {
-                newItem: { ...parentEntity, membership: createdParentMembership },
-                sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
-              });
-            }
+            sendSSEToUsers([existingUser.id], 'refetch_menu');
 
-            // SSE with entity data, to update user's menu
-            sendSSEToUsers([existingUser.id], 'add_entity', {
-              newItem: { ...entity, membership: createdMembership },
-              sectionName: menuSections.find((el) => el.entityType === entity.entity)?.name,
-              ...(parentEntity && { parentSlug: parentEntity.slug }),
-            });
             // Add email to the invitation list for sending an organization invite to another user
           } else emailsToSendInvitation.push(existingUser.email);
         }
@@ -298,7 +286,7 @@ const membershipsRoutes = app
     for (const membership of allowedTargets) {
       // Send the event to the user if they are a member of the organization
       const memberIds = targets.map((el) => el.userId);
-      sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entity: entity.entity });
+      sendSSEToUsers(memberIds, 'refetch_menu');
 
       logEvent('Member deleted', { membership: membership.id });
     }
@@ -367,10 +355,7 @@ const membershipsRoutes = app
       .where(and(eq(membershipsTable.id, membershipId)))
       .returning();
 
-    sendSSEToUsers([membershipToUpdate.userId], 'update_entity', {
-      ...membershipContext,
-      membership: updatedMembership,
-    });
+    sendSSEToUsers([membershipToUpdate.userId], 'refetch_menu');
 
     logEvent('Membership updated', { user: updatedMembership.userId, membership: updatedMembership.id });
 

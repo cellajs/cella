@@ -294,7 +294,7 @@ const meRoutes = app
       .delete(membershipsTable)
       .where(and(eq(membershipsTable.userId, user.id), eq(membershipsTable.type, entityType), eq(membershipsTable[entityIdField], entity.id)));
 
-    sendSSEToUsers([user.id], 'remove_entity', { id: entity.id, entity: entity.entity });
+    sendSSEToUsers([user.id], 'refetch_menu');
     logEvent('User leave entity', { user: user.id });
 
     return ctx.json({ success: true }, 200);

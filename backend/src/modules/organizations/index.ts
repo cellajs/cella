@@ -218,11 +218,11 @@ const organizationsRoutes = app
     await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
     // Send SSE events to all members of organizations that were deleted
-    for (const id of allowedIds) {
+    for (const _ of allowedIds) {
       if (!memberIds.length) continue;
 
       const userIds = memberIds.map((m) => m.id);
-      sendSSEToUsers(userIds, 'remove_entity', { id, entity: 'organization' });
+      sendSSEToUsers(userIds, 'refetch_menu');
     }
 
     logEvent('Organizations deleted', { ids: allowedIds.join() });
