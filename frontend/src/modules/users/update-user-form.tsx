@@ -1,10 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { updateUserBodySchema } from 'backend/modules/users/schema';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
 import type { User } from '~/types/common';
+import { updateUserBodySchema } from '#/modules/users/schema';
 
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { Button, SubmitButton } from '~/modules/ui/button';

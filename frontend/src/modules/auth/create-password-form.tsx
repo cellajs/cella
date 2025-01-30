@@ -6,13 +6,13 @@ import * as z from 'zod';
 import { Button, SubmitButton } from '~/modules/ui/button';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { passwordSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
+import { passwordSchema } from '#/utils/schema/common-schemas';
 import Spinner from '../common/spinner';
 import { createToast } from '../common/toaster';
 import { checkToken, createPassword } from './api';

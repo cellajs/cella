@@ -4,9 +4,6 @@
     "lib": ["ES2021", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "vite-plugin-pwa/client"],
 
-    /* Bundler mode */
-    "jsx": "react-jsx",
-
     "paths": {
       "#/*": ["../backend/src/*"],
       "~/*": ["./src/*"]

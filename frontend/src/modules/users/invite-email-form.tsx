@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { type SystemInviteProps, invite as inviteSystem } from '~/modules/general/api';
 import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 
-import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
@@ -20,6 +19,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types/common';
+import { idOrSlugSchema } from '#/utils/schema/common-schemas';
 
 interface Props {
   entity?: EntityPage;

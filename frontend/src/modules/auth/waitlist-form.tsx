@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
-import { createRequestSchema } from 'backend/modules/requests/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
+import { createRequestSchema } from '#/modules/requests/schema';
 
 import { onlineManager } from '@tanstack/react-query';
 import { config } from 'config';

@@ -2,7 +2,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
-import { sendNewsletterBodySchema } from 'backend/modules/organizations/schema';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
@@ -13,11 +12,12 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { useSendNewsLetterToSelfMutation } from '~/modules/users/query-mutations';
+import { sendNewsletterBodySchema } from '#/modules/organizations/schema';
 
 import '@blocknote/shadcn/style.css';
+import { useMutation } from '@tanstack/react-query';
 import '~/modules/common/blocknote/app-specific-custom/styles.css';
 import '~/modules/common/blocknote/styles.css';
-import { useMutation } from '@tanstack/react-query';
 import { sendNewsletter } from './api';
 
 interface NewsletterFormProps {

@@ -22,7 +22,12 @@
 
     /* Type checking */
     "incremental": true,
-    "declaration": true
+    "declaration": true,
+    "composite": true,
+
+    /* Bundler mode */
+    "jsx": "react-jsx"
   },
+  "include": ["tus/**/*", "frontend/src/**/*", "config/*", "backend/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

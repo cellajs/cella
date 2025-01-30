@@ -1,11 +1,6 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "composite": true,
-
-    /* Bundler mode */
-    "jsx": "react-jsx",
-
     "sourceMap": true,
     "inlineSources": true,
 
@@ -13,9 +8,6 @@
     // from generated source code references.
     // This improves issue grouping in Sentry.
     "sourceRoot": "/",
-
-    // Alias `#/*` imports to `./src/*`
-    "baseUrl": ".",
 
     "paths": {
       "#/*": ["./src/*"]

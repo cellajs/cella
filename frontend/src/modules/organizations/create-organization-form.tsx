@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
 // Change this in the future on current schema
-import { createOrganizationBodySchema } from 'backend/modules/organizations/schema';
+import { createOrganizationBodySchema } from '#/modules/organizations/schema';
 
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';
@@ -17,8 +17,7 @@ import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { organizationsKeys } from '~/modules/organizations/query';
-import { useOrganizationCreateMutation } from '~/modules/organizations/query';
+import { organizationsKeys, useOrganizationCreateMutation } from '~/modules/organizations/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';

@@ -1,11 +1,4 @@
 import type { UppyFile } from '@uppy/core';
-import type { attachmentSchema } from 'backend/modules/attachments/schema';
-import type { checkTokenSchema } from 'backend/modules/auth/schema';
-import type { membersSchema } from 'backend/modules/general/schema';
-import type { membershipInfoSchema, membershipSchema } from 'backend/modules/memberships/schema';
-import type { invitesSchema, organizationSchema, organizationWithMembershipSchema } from 'backend/modules/organizations/schema';
-import type { requestSchema } from 'backend/modules/requests/schema';
-import type { limitedUserSchema, userSchema } from 'backend/modules/users/schema';
 import type { config } from 'config';
 import type { InferResponseType } from 'hono/client';
 import type { Dispatch, SetStateAction } from 'react';
@@ -14,6 +7,13 @@ import type { z } from 'zod';
 import type { UppyBody, UppyMeta } from '~/lib/imado';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { meClient } from '~/modules/users/api';
+import type { attachmentSchema } from '#/modules/attachments/schema';
+import type { checkTokenSchema } from '#/modules/auth/schema';
+import type { membersSchema } from '#/modules/general/schema';
+import type { membershipInfoSchema, membershipSchema } from '#/modules/memberships/schema';
+import type { invitesSchema, organizationSchema, organizationWithMembershipSchema } from '#/modules/organizations/schema';
+import type { requestSchema } from '#/modules/requests/schema';
+import type { limitedUserSchema, userSchema } from '#/modules/users/schema';
 
 // Core types
 export type Entity = (typeof config.entityTypes)[number];

@@ -122,7 +122,7 @@ export const ImadoTus = (opts: TusOptions) => {
           console.debug('Upload finished:', upload);
           return { res };
         },
-        async onResponseError(req, res, err) {
+        async onResponseError(_, __, err) {
           console.error('Error:', err);
           return { status_code: 500, body: 'TUS Server Error' };
         },
