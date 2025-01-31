@@ -18,7 +18,6 @@ type RequestsTableHeaderBarProps = BaseTableMethods &
   BaseTableHeaderProps<Request, RequestsSearch> & {
     openInviteDialog: () => void;
     openRemoveDialog: () => void;
-    openMessageSheet: () => void;
     fetchExport: (limit: number) => Promise<Request[]>;
   };
 
@@ -32,7 +31,6 @@ export const RequestsTableHeaderBar = ({
   clearSelection,
   openInviteDialog,
   openRemoveDialog,
-  openMessageSheet,
   fetchExport,
 }: RequestsTableHeaderBarProps) => {
   const { t } = useTranslation();
@@ -60,7 +58,7 @@ export const RequestsTableHeaderBar = ({
           {selected.length > 0 && (
             <>
               {selectedContact.length > 0 && (
-                <Button onClick={openMessageSheet} className="relative">
+                <Button className="relative">
                   <Badge className="py-0 px-1 absolute -right-2 min-w-5 flex justify-center -top-1.5">{selectedContact.length}</Badge>
                   <Mail size={16} />
                   <span className="ml-1 max-xs:hidden">{t('common:email')}</span>

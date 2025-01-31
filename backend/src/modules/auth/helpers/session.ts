@@ -4,8 +4,8 @@ import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
 import { supportedOauthProviders } from '#/db/schema/oauth-accounts';
-import { sessionsTable } from '#/db/schema/sessions';
-import { type UserModel, usersTable } from '#/db/schema/users';
+import { type SessionModel, sessionsTable } from '#/db/schema/sessions';
+import { type UnsafeUserModel, type UserModel, safeUserSelect, usersTable } from '#/db/schema/users';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
@@ -76,7 +76,7 @@ export const validateSession = async (sessionToken: string) => {
   const hashedSessionToken = encodeHexLowerCase(sha256(new TextEncoder().encode(sessionToken)));
 
   const [result] = await db
-    .select({ session: sessionsTable, user: usersTable })
+    .select({ session: sessionsTable, user: safeUserSelect })
     .from(sessionsTable)
     .where(eq(sessionsTable.token, hashedSessionToken))
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
@@ -84,7 +84,7 @@ export const validateSession = async (sessionToken: string) => {
   // If session is not found, for example due to a new hash method, return null
   if (!result) return { session: null, user: null };
 
-  const { user, session } = result;
+  const { session } = result;
 
   // If session is expired, invalidate it
   if (isExpiredDate(session.expiresAt)) {
@@ -92,7 +92,7 @@ export const validateSession = async (sessionToken: string) => {
     return { session: null, user: null };
   }
 
-  return { session, user };
+  return result satisfies { session: SessionModel; user: UnsafeUserModel };
 };
 
 // Invalidate all sessions based on user id

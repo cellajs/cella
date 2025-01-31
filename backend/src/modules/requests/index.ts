@@ -1,20 +1,14 @@
 import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { config } from 'config';
-import { render } from 'jsx-email';
 import { db } from '#/db/db';
 import { type RequestsModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
-import { getContextUser } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import { emailSender } from '#/lib/mailer';
 import { sendSlackMessage } from '#/lib/notification';
-import type { Env } from '#/types/app';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { MessageEmail } from '../../../emails/message';
-import { env } from '../../../env';
 import requestsRoutesConfig from './routes';
 
 // These requests are only allowed to be created if user has none yet
@@ -107,31 +101,6 @@ const requestsRoutes = app
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
-
-    return ctx.json({ success: true }, 200);
-  })
-  /*
-   *  Send message to new users
-   */
-  .openapi(requestsRoutesConfig.sendMessage, async (ctx) => {
-    const user = getContextUser();
-    const { emails, subject, content } = ctx.req.valid('json');
-
-    // Generate and send email
-    const emailHtml = await render(
-      MessageEmail({
-        userLanguage: user.language,
-        subject,
-        content,
-        appName: config.name,
-      }),
-    );
-    // TODO move to emailSender? For test purposes
-    if (env.NODE_ENV === 'development') {
-      emailSender.send(env.SEND_ALL_TO_EMAIL ?? user.email, subject, emailHtml);
-    } else {
-      for (const email of emails) emailSender.send(email, subject, emailHtml);
-    }
 
     return ctx.json({ success: true }, 200);
   });

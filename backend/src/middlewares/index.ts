@@ -6,9 +6,9 @@ import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
 import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
+import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { observabilityMiddleware } from '#/middlewares/observability/';
-import type { Env } from '#/types/app';
 import { logEvent } from './logger/log-event';
 import { logger } from './logger/logger';
 

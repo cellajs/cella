@@ -2,9 +2,9 @@ import type { Context, MiddlewareHandler } from 'hono';
 import type { RateLimiterMemory, RateLimiterPostgres } from 'rate-limiter-flexible';
 import { RateLimiterRes } from 'rate-limiter-flexible';
 
+import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { getRateLimiterInstance, getRetryAfter } from '#/middlewares/rate-limiter/helpers';
-import type { Env } from '#/types/app';
 import { getIp } from '#/utils/get-ip';
 
 type RateLimitMode = 'limit' | 'success' | 'fail' | 'failseries';

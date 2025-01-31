@@ -4,7 +4,6 @@ import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import { config } from 'config';
 import { and, eq, or } from 'drizzle-orm';
-import { render } from 'jsx-email';
 import slugify from 'slugify';
 import { db } from '#/db/db';
 import { type OrganizationModel, organizationsTable } from '#/db/schema/organizations';
@@ -13,10 +12,10 @@ import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
 import { getUserBy, getUsersByConditions } from '#/db/util';
-import { getContextToken, getContextUser } from '#/lib/context';
+import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { errorRedirect, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
-import { emailSender } from '#/lib/mailer';
+import { mailer } from '#/lib/mailer';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { hashPassword, verifyPasswordHash } from '#/modules/auth/helpers/argon2id';
 import {
@@ -28,13 +27,12 @@ import {
   microsoftAuth,
   type microsoftUserProps,
 } from '#/modules/auth/helpers/oauth-providers';
-import type { Env } from '#/types/app';
 import type { EnabledOauthProvider } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 // TODO shorten this import
-import { CreatePasswordEmail } from '../../../emails/create-password';
-import { EmailVerificationEmail } from '../../../emails/email-verification';
+import { CreatePasswordEmail, type CreatePasswordEmailProps } from '../../../emails/create-password';
+import { EmailVerificationEmail, type EmailVerificationEmailProps } from '../../../emails/email-verification';
 import { insertMembership } from '../memberships/helpers/insert-membership';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from './helpers/cookie';
 import {
@@ -186,17 +184,16 @@ const authRoutes = app
       })
       .returning();
 
-    // Generate & send email
+    // Send email
     const lng = user.language;
-    const emailHtml = await render(
-      EmailVerificationEmail({
-        userLanguage: lng,
-        verificationLink: `${config.frontendUrl}/auth/verify-email/${token}?tokenId=${tokenRecord.id}`,
-      }),
-    );
+    const verificationLink = `${config.frontendUrl}/auth/verify-email/${token}?tokenId=${tokenRecord.id}`;
+    const subject = i18n.t('backend:email.email_verification.subject', { lng, appName: config.name });
+    const staticProps = { verificationLink, subject, lng };
+    const recipients = [{ email: user.email }];
 
-    const emailSubject = i18n.t('backend:email.email_verification.subject', { lng, appName: config.name });
-    emailSender.send(user.email, emailSubject, emailHtml);
+    type Recipient = { email: string };
+
+    mailer.prepareEmails<EmailVerificationEmailProps, Recipient>(EmailVerificationEmail, staticProps, recipients);
 
     logEvent('Verification email sent', { user: user.id });
 
@@ -247,18 +244,16 @@ const authRoutes = app
       })
       .returning();
 
-    // Generate & send email
+    // Send email
     const lng = user.language;
-    const emailHtml = await render(
-      CreatePasswordEmail({
-        userName: user.name,
-        userLanguage: lng,
-        createPasswordLink: `${config.frontendUrl}/auth/create-password/${token}?tokenId=${tokenRecord.id}`,
-      }),
-    );
+    const createPasswordLink = `${config.frontendUrl}/auth/create-password/${token}?tokenId=${tokenRecord.id}`;
+    const subject = i18n.t('backend:email.create_password.subject', { lng, appName: config.name });
+    const staticProps = { createPasswordLink, subject, lng };
+    const recipients = [{ email: user.email }];
 
-    const emailSubject = i18n.t('backend:email.create_password.subject', { lng, appName: config.name });
-    emailSender.send(email, emailSubject, emailHtml);
+    type Recipient = { email: string };
+
+    mailer.prepareEmails<CreatePasswordEmailProps, Recipient>(CreatePasswordEmail, staticProps, recipients);
 
     logEvent('Create password link sent', { user: user.id });
 
@@ -608,6 +603,7 @@ const authRoutes = app
       const userId = await getAuthCookie(ctx, 'oauth_connect_user_id');
 
       // Check if oauth account already exists
+      // TODO this is same for all oauth providers, handle existingOauthAccount for this?
       const [existingOauthAccount] = await findOauthAccount(strategy, String(githubUser.id));
       if (existingOauthAccount) {
         // Redirect if already assigned to another user

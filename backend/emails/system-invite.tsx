@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { Column, Row, Text } from 'jsx-email';
 import { i18n } from '../src/lib/i18n';
+import type { BasicTemplateType } from '../src/lib/mailer';
 import { AppLogo } from './components/app-logo';
 import { Avatar } from './components/avatar';
 import { EmailContainer } from './components/container';
@@ -8,22 +9,21 @@ import { EmailBody } from './components/email-body';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import type { BasicTemplateType } from './types';
 
-interface Props extends BasicTemplateType {
+export interface SystemInviteEmailProps extends BasicTemplateType {
   systemInviteLink: string;
-  inviteBy: string;
+  senderName: string;
 }
 
 const appName = config.name;
 
-export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, systemInviteLink }: Props) => {
+export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: SystemInviteEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.system_invite.preview', { appName, lng })}>
-      {inviteBy && (
+      {senderName && (
         <Row style={{ margin: '1.5rem 0 1rem' }}>
           <Column align="center">
-            <Avatar name={inviteBy} type="user" />
+            <Avatar name={senderName} type="user" />
           </Column>
         </Row>
       )}
@@ -40,11 +40,11 @@ export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, syste
       />
       <EmailBody>
         <Text>
-          <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
+          <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.system_invite.text', { lng, appName, inviteBy }),
+              __html: i18n.t('backend:email.system_invite.text', { lng, appName, senderName }),
             }}
           />
         </Text>

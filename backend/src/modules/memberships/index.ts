@@ -1,30 +1,30 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { and, count, eq, ilike, inArray, or } from 'drizzle-orm';
+
 import { db } from '#/db/db';
 import { type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 
 import { config } from 'config';
-import { render } from 'jsx-email';
-import { emailSender } from '#/lib/mailer';
-import { MemberInviteEmail } from '../../../emails/member-invite';
+import { mailer } from '#/lib/mailer';
 
-import { OpenAPIHono } from '@hono/zod-openapi';
 import { tokensTable } from '#/db/schema/tokens';
 import { safeUserSelect, usersTable } from '#/db/schema/users';
 import { getUsersByConditions } from '#/db/util';
 import { entityIdFields, menuSections } from '#/entity-config';
-import { getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
+import { type Env, getContextMemberships, getContextOrganization, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { sendSSEToUsers } from '#/lib/sse';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { getValidEntity } from '#/permissions/get-valid-entity';
-import type { Env } from '#/types/app';
 import { memberCountsQuery } from '#/utils/counts';
 import { nanoid } from '#/utils/nanoid';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
+import { MemberInviteEmail, type MemberInviteEmailProps } from '../../../emails/member-invite';
+import { slugFromEmail } from '../auth/helpers/oauth';
 import { insertMembership } from './helpers/insert-membership';
 import membershipRouteConfig from './routes';
 
@@ -35,6 +35,7 @@ const membershipsRoutes = app
   /*
    * Invite members to an entity such as an organization
    */
+  // TODO simplify this, put parts in helper functions
   .openapi(membershipRouteConfig.createMembership, async (ctx) => {
     const { idOrSlug, entityType } = ctx.req.valid('query');
 
@@ -102,7 +103,7 @@ const membershipsRoutes = app
 
     // Initialize tracking maps
     const existingUsersByEmail = new Map();
-    const emailsToSendInvitation = [];
+    const emailsToSendInvitation: { email: string; userId: string | null }[] = [];
 
     // Establish memberships for existing users
     await Promise.all(
@@ -152,74 +153,62 @@ const membershipsRoutes = app
               ...(parentEntity && { parentSlug: parentEntity.slug }),
             });
             // Add email to the invitation list for sending an organization invite to another user
-          } else emailsToSendInvitation.push(existingUser.email);
+          } else emailsToSendInvitation.push({ email: existingUser.email, userId: existingUser.id });
         }
       }),
     );
 
     // Identify emails that do not have existing users (will need to send a invitation)
-    for (const email of normalizedEmails) if (!existingUsersByEmail.has(email)) emailsToSendInvitation.push(email);
+    for (const email of normalizedEmails) if (!existingUsersByEmail.has(email)) emailsToSendInvitation.push({ email, userId: null });
 
-    // Send invitations for organization membership
-    await Promise.all(
-      emailsToSendInvitation.map(async (email) => {
-        const targetUser = existingUsersByEmail.get(email);
-        // TODO - store hashed token?
-        const token = nanoid(40);
+    // Stop if no recipients
+    if (emailsToSendInvitation.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
-        const [tokenRecord] = await db
-          .insert(tokensTable)
-          .values({
-            token: token,
-            type: 'invitation',
-            userId: targetUser?.id ?? null,
-            email: email,
-            createdBy: user.id,
-            role,
-            organizationId: organization.id,
-            expiresAt: createDate(new TimeSpan(7, 'd')),
-            ...(entity.entity !== 'organization' && {
-              membershipInfo: {
-                targetEntity: { idOrSlug: entity.id, entity: entity.entity },
-                parentEntity: parentEntityInfo,
-              },
-            }),
-          })
-          .returning();
-
-        // Render email template
-        const emailHtml = await render(
-          MemberInviteEmail({
-            userName: targetUser?.name,
-            userLanguage: targetUser?.language || user.language,
-            userThumbnailUrl: targetUser?.thumbnailUrl,
-            inviteBy: user.name,
-            organizationName: organization.name,
-            organizationThumbnailUrl: organization.logoUrl || organization.thumbnailUrl,
-            memberInviteLink: `${config.frontendUrl}/invitation/${token}?tokenId=${tokenRecord.id}`,
-          }),
-        );
-
-        // Log event for user invitation
-        logEvent('User invited to organization', { organization: organization.id });
-
-        // Send invitation email
-        emailSender
-          .send(
-            config.senderIsReceiver ? user.email : email,
-            i18n.t('backend:email.member_invite.subject', {
-              lng: targetUser?.language || organization.defaultLanguage,
-              appName: config.name,
-              entity: organization.name,
-            }),
-            emailHtml,
-            user.email,
-          )
-          .catch((error) => {
-            if (error instanceof Error) logEvent('Error sending email', { errorMessage: error.message }, 'error');
-          });
+    // Generate tokens
+    const tokens = emailsToSendInvitation.map(({ email, userId }) => ({
+      token: nanoid(40),
+      type: 'invitation' as const,
+      email: email.toLowerCase(),
+      createdBy: user.id,
+      expiresAt: createDate(new TimeSpan(7, 'd')),
+      role,
+      userId,
+      organizationId: organization.id,
+      ...(entity.entity !== 'organization' && {
+        membershipInfo: {
+          targetEntity: { idOrSlug: entity.id, entity: entity.entity },
+          parentEntity: parentEntityInfo,
+        },
       }),
-    );
+    }));
+
+    // Batch insert tokens
+    const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
+
+    // Prepare emails
+    const orgName = entity.name;
+    const senderName = user.name;
+    const senderThumbnailUrl = user.thumbnailUrl;
+    const subject = i18n.t('backend:email.member_invite.subject', {
+      lng: organization.defaultLanguage,
+      appName: config.name,
+      entity: organization.name,
+    });
+
+    const recipients = insertedTokens.map((tokenRecord) => ({
+      email: tokenRecord.email,
+      name: slugFromEmail(tokenRecord.email),
+      memberInviteLink: `${config.frontendUrl}/invitation/${tokenRecord.token}?tokenId=${tokenRecord.id}`,
+    }));
+
+    type Recipient = (typeof recipients)[number];
+
+    // Send invitation
+    const staticProps = { senderName, senderThumbnailUrl, orgName, subject, lng: organization.defaultLanguage };
+    await mailer.prepareEmails<MemberInviteEmailProps, Recipient>(MemberInviteEmail, staticProps, recipients, user.email);
+
+    // Log event for user invitation
+    logEvent('Users invited to organization', { organization: organization.id });
 
     if (emailsToSendInvitation.length > 0) {
       // SSE to update organizations invite info
