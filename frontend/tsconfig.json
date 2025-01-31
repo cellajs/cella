@@ -3,12 +3,13 @@
   "compilerOptions": {
     "lib": ["ES2021", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "vite-plugin-pwa/client"],
+    "jsx": "react-jsx",
 
+    "baseUrl": ".",
     "paths": {
       "#/*": ["../backend/src/*"],
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "vite.config.ts", "../config/*", "../backend/**/*", "../locales/*", "env.ts"],
-  "exclude": ["**/node_modules", "**/dist", "**/.*/"]
+  "include": ["src/**/*", "vite.config.ts", "../config/*", "../backend/**/*", "../locales/*", "env.ts"]
 }

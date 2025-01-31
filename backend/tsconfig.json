@@ -3,16 +3,17 @@
   "compilerOptions": {
     "sourceMap": true,
     "inlineSources": true,
+    "jsx": "react-jsx",
 
     // Set `sourceRoot` to  "/" to strip the build path prefix
     // from generated source code references.
     // This improves issue grouping in Sentry.
     "sourceRoot": "/",
 
+    "baseUrl": ".",
     "paths": {
       "#/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "drizzle.config.ts", "env.ts", "emails", "scripts", "tests"],
-  "exclude": ["**/node_modules", "**/dist", "**/.*/"]
+  "include": ["src/**/*", "drizzle.config.ts", "env.ts", "emails", "scripts", "tests"]
 }

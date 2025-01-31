@@ -6,7 +6,7 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
@@ -23,10 +23,7 @@
     /* Type checking */
     "incremental": true,
     "declaration": true,
-    "composite": true,
-
-    /* Bundler mode */
-    "jsx": "react-jsx"
+    "composite": true
   },
   "include": ["tus/**/*", "frontend/src/**/*", "config/*", "backend/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
