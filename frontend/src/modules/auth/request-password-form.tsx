@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useMutation } from '~/hooks/use-mutations';
-import { requestPasswordEmail as baseSendCreatePasswordEmail } from '~/modules/auth/api';
+import { requestPasswordEmail } from '~/modules/auth/api';
 import { dialog } from '~/modules/common/dialoger/state';
 
 export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
@@ -14,8 +14,8 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
   const [emailValue, setEmailValue] = useState(email);
 
   // Send create/reset password email
-  const { mutate: requestPasswordEmail, isPending } = useMutation({
-    mutationFn: baseSendCreatePasswordEmail,
+  const { mutate: _requestPasswordEmail, isPending } = useMutation({
+    mutationFn: requestPasswordEmail,
     onSuccess: () => {
       toast.success(t('common:success.reset_link_sent'));
       dialog.remove();
@@ -37,7 +37,7 @@ export const RequestPasswordForm = ({ email = '' }: { email?: string }) => {
         onChange={(e) => setEmailValue(e.target.value)}
         required
       />
-      <SubmitButton className="w-full" disabled={!emailValue} loading={isPending} onClick={() => requestPasswordEmail(emailValue)}>
+      <SubmitButton className="w-full" disabled={!emailValue} loading={isPending} onClick={() => _requestPasswordEmail(emailValue)}>
         <Send size={16} className="mr-2" />
         {t('common:send_reset_link')}
       </SubmitButton>

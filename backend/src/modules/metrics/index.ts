@@ -5,9 +5,9 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { register } from 'prom-client';
 import { entityTables } from '#/entity-config';
+import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/helpers/utils';
-import type { Env } from '#/types/app';
 import MetricsRoutesConfig from './routes';
 
 const app = new OpenAPIHono<Env>();

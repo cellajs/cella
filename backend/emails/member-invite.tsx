@@ -2,6 +2,7 @@ import { config } from 'config';
 import { Column, Row, Text } from 'jsx-email';
 import { i18n } from '../src/lib/i18n';
 
+import type { BasicTemplateType } from '../src/lib/mailer';
 import { AppLogo } from './components/app-logo';
 import { Avatar } from './components/avatar';
 import { EmailContainer } from './components/container';
@@ -9,26 +10,22 @@ import { EmailBody } from './components/email-body';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import type { BasicTemplateType } from './types';
 
-interface Props extends BasicTemplateType {
+export interface MemberInviteEmailProps extends BasicTemplateType {
   memberInviteLink: string;
-  inviteBy: string;
-  organizationName?: string;
-  organizationThumbnailUrl?: string | null;
+  senderName: string;
+  orgName: string;
 }
 
 const appName = config.name;
 
-export const MemberInviteEmail = ({ userName, userLanguage: lng, inviteBy, organizationName, memberInviteLink }: Props) => {
-  const orgName = organizationName || i18n.t('common:unknown_organization', { lng });
-
+export const MemberInviteEmail = ({ name, lng, senderName, orgName, memberInviteLink }: MemberInviteEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.member_invite.preview', { lng, orgName, appName })}>
-      {inviteBy && (
+      {senderName && (
         <Row style={{ margin: '1.5rem 0 1rem' }}>
           <Column align="center">
-            <Avatar name={inviteBy} type="user" />
+            <Avatar name={senderName} type="user" />
           </Column>
         </Row>
       )}
@@ -45,11 +42,11 @@ export const MemberInviteEmail = ({ userName, userLanguage: lng, inviteBy, organ
       />
       <EmailBody>
         <Text>
-          <p style={{ marginBottom: '4px' }}>{userName && i18n.t('backend:email.hi', { lng, userName })}</p>
+          <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.member_invite.text', { lng, orgName, appName, inviteBy }),
+              __html: i18n.t('backend:email.member_invite.text', { lng, orgName, appName, senderName }),
             }}
           />
         </Text>

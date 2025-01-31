@@ -23,7 +23,6 @@ export const config = {
 
   supportEmail: 'support@cellajs.com',
   notificationsEmail: 'notifications@cellajs.com',
-  senderIsReceiver: false,
 
   debug: false,
   maintenance: false,

@@ -14,21 +14,14 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { sha256 } from '@oslojs/crypto/sha2';
 import { encodeHexLowerCase } from '@oslojs/encoding';
 import { config } from 'config';
-import { render } from 'jsx-email';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { getUserBy } from '#/db/util';
 import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/entity-config';
-import { getContextMemberships, getContextUser } from '#/lib/context';
+import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
-import { emailSender } from '#/lib/mailer';
 import { sendSSEToUsers } from '#/lib/sse';
-import type { Env } from '#/types/app';
 import type { MenuItem, UserMenu } from '#/types/common';
-import { updateBlocknoteHTML } from '#/utils/blocknote';
-import { NewsletterEmail } from '../../../emails/newsletter';
-import { env } from '../../../env';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { getUserSessions } from './helpers/get-sessions';
 
@@ -250,30 +243,6 @@ const meRoutes = app
     await invalidateUserSessions(user.id);
     deleteAuthCookie(ctx, 'session');
     logEvent('User deleted', { user: user.id });
-
-    return ctx.json({ success: true }, 200);
-  })
-  /*
-   * TODO: we should use one endpoint for newsletter. Send newsletter to current user (self)
-   */
-  .openapi(meRoutesConfig.sendNewsletterEmailToSelf, async (ctx) => {
-    const user = getContextUser();
-    const { subject, content } = ctx.req.valid('json');
-
-    const unsafeUser = await getUserBy('id', user.id, 'unsafe');
-
-    // generating email html
-    const emailHtml = await render(
-      NewsletterEmail({
-        userLanguage: user.language,
-        subject,
-        content: updateBlocknoteHTML(content),
-        unsubscribeLink: `${config.backendUrl}/unsubscribe?token=${unsafeUser?.unsubscribeToken}`,
-        orgName: 'Organization',
-      }),
-    );
-
-    await emailSender.send(env.SEND_ALL_TO_EMAIL ?? user.email, subject, emailHtml, user.email);
 
     return ctx.json({ success: true }, 200);
   })

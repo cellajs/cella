@@ -9,7 +9,6 @@ import { createToast } from '~/modules/common/toaster';
 import { invite } from '~/modules/general/api';
 import { getRequests } from '~/modules/requests/api';
 import DeleteRequests from '~/modules/requests/delete-requests';
-import { openMessageSheet } from '~/modules/requests/helpers';
 import { requestsKeys } from '~/modules/requests/query';
 import { useColumns } from '~/modules/requests/table/columns';
 import { RequestsTableHeaderBar } from '~/modules/requests/table/table-header';
@@ -51,12 +50,6 @@ const RequestsTable = () => {
 
   const clearSelection = () => {
     if (dataTableRef.current) dataTableRef.current.clearSelection();
-  };
-
-  const openSheet = () => {
-    const requests = selected.filter((request) => request.type !== 'waitlist');
-    const emails = requests.map((request) => request.email);
-    openMessageSheet(emails, clearSelection);
   };
 
   const openRemoveDialog = () => {
@@ -117,7 +110,6 @@ const RequestsTable = () => {
         clearSelection={clearSelection}
         openRemoveDialog={openRemoveDialog}
         openInviteDialog={openInviteDialog}
-        openMessageSheet={openSheet}
         fetchExport={fetchExport}
       />
       <Suspense>

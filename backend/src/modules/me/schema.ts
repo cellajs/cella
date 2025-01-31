@@ -4,7 +4,6 @@ import { config } from 'config';
 import { type MenuSectionName, menuSections } from '#/entity-config';
 import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
-import { sendNewsletterBodySchema } from '../organizations/schema';
 import { signUpInfo, userSchema } from '../users/schema';
 
 export const sessionsSchema = z.object({
@@ -65,9 +64,4 @@ export const userMenuSchema = z.object(
 export const leaveEntityQuerySchema = z.object({
   idOrSlug: idOrSlugSchema,
   entityType: contextEntityTypeSchema,
-});
-
-export const newsletterToSelfSchema = sendNewsletterBodySchema.omit({
-  organizationIds: true,
-  roles: true,
 });

@@ -247,8 +247,6 @@
   "request_access": "Request access",
   "request_info": "Request info",
   "request_info.text": "Interested in more info about {{appName}} and its roadmap? Leave your email and we will contact you.",
-  "request_message": "Message",
-  "request_message.text": "Create a message and send it to pending users.",
   "request_password.text": "Reset your password by sending a reset link to your email address.",
   "request_type": "Request type",
   "request_verification.text": "We sent you an email. Please check your inbox and click on the link to verify your email address.",
@@ -284,7 +282,7 @@
   "selected": "Selected",
   "send": "Send",
   "send_reset_link": "Send reset link",
-  "send_to_self": "Send to self",
+  "test_email": "Test email only",
   "session": "Session",
   "sessions": "Sessions",
   "sessions.text": "Here you can view and terminate your active sessions. Terminating a session will sign you out from that device.",
@@ -336,7 +334,7 @@
   "success.sessions_terminated": "All sessions have been terminated.",
   "success.signed_out": "You have been signed out.",
   "success.stopped_impersonation": "Successfully stopped impersonating.",
-  "success.test.create_newsletter": "Newsletter has been sent to self.",
+  "success.test_email": "Test email has been sent to yourself.",
   "success.unmute_resource": "{{resource}} has been unmuted.",
   "success.update_item": "{{item}} updated.",
   "success.update_resource": "{{resource}} has been updated.",
@@ -391,5 +389,7 @@
   "year": "year",
   "your_role": "Your role",
   "resend_sent": "Check your inbox ",
-  "success.sent_verification_email": "Open your inbox to verify your account!"
+  "success.sent_verification_email": "Open your inbox to verify your account!",
+  "test_email.text": "This email will only be sent to yourself when you send it. The newsletter form will not close.",
+  "send_test_email": "Send test email"
 }

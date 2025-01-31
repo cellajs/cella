@@ -1,8 +1,8 @@
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { apiReference } from '@scalar/hono-api-reference';
 import { config } from 'config';
+import type { Env } from '#/lib/context';
 import { appModulesList } from '#/routes';
-import type { Env } from '#/types/app';
 
 const commonModulesList = [
   { name: 'me', description: 'Current user endpoints. They are split from `users` due to a different authorization flow.' },

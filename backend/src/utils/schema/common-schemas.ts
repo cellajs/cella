@@ -28,6 +28,11 @@ export const languageSchema = constructZodLiteralUnionType(config.languages.map(
 
 export const validUrlSchema = z.string().refine((url: string) => url.startsWith('https'), 'URL must start with https://');
 
+export const booleanQuerySchema = z
+  .union([z.string(), z.boolean()])
+  .default('false')
+  .transform((v) => v === true || v === 'true');
+
 export const imageUrlSchema = z
   .string()
   .url()

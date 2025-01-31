@@ -1,7 +1,7 @@
 import { contextStorage } from 'hono/context-storage';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { Env } from '#/types/app';
+import type { Env } from '#/lib/context';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import defaultHook from './utils/default-hook';

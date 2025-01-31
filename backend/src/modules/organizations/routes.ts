@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, systemGuard } from '#/middlewares/guard';
 import {
@@ -7,7 +8,7 @@ import {
   successWithPaginationSchema,
   successWithoutDataSchema,
 } from '#/utils/schema/common-responses';
-import { entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
+import { booleanQuerySchema, entityParamSchema, idsQuerySchema } from '#/utils/schema/common-schemas';
 import {
   createOrganizationBodySchema,
   getOrganizationsQuerySchema,
@@ -124,7 +125,7 @@ class OrganizationRoutesConfig {
     },
   });
 
-  public sendNewsletterEmail = createRouteConfig({
+  public sendNewsletter = createRouteConfig({
     method: 'post',
     path: '/send-newsletter',
     guard: [isAuthenticated, systemGuard],
@@ -132,6 +133,7 @@ class OrganizationRoutesConfig {
     summary: 'Newsletter for members',
     description: 'Sends to requested organizations members, a newsletter.',
     request: {
+      query: z.object({ toSelf: booleanQuerySchema }),
       body: {
         required: true,
         content: {
