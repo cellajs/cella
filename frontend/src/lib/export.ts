@@ -11,16 +11,15 @@ type Row = Record<string, any>;
 type Column = ColumnOrColumnGroup<Row>;
 
 // Format data for a single row based on column configuration
-const formatRowData = <R extends Row>(row: R, column: Column) => {
+const formatRowData = <R extends Row>(row: R, column: Column): string | number => {
   // Handle special cases
   if ((column.key === 'adminCount' || column.key === 'memberCount') && 'counts' in row && 'memberships' in row.counts) {
     const key = column.key.replace('Count', 's');
     return row.counts.memberships[key];
   }
   const date = dayjs(row[column.key]);
-  if (date.isValid()) {
-    return date.format('lll');
-  }
+  if (date.isValid()) return date.format('lll');
+
   return row[column.key];
 };
 
@@ -36,7 +35,11 @@ const filterColumns = (column: Column) => {
 };
 
 // Export table data to CSV
-export async function exportToCsv<R extends Row>(columns: { key: string; name: ReactElement | string }[], rows: R[], fileName: string) {
+export async function exportToCsv<R extends Row>(
+  columns: { key: string; name: ReactElement | string }[],
+  rows: R[],
+  fileName: string,
+): Promise<void> {
   if (!rows.length) return;
 
   const preparedColumns = columns.filter((column) => filterColumns(column));
@@ -53,7 +56,7 @@ export async function exportToPdf<R extends Row>(
   fileName: string,
   pageName: string,
   mode: Mode,
-) {
+): Promise<void> {
   // Redo type assign into the  columns
   const preparedColumns = columns.filter((column) => filterColumns(column));
   const head = [preparedColumns.map((column) => String(column.name))];
@@ -98,7 +101,7 @@ export async function exportToPdf<R extends Row>(
 }
 
 // Serialize cell values for CSV export
-function serialiseCellValue(value: unknown) {
+function serialiseCellValue(value: unknown): unknown {
   if (typeof value === 'string') {
     const formattedValue = value.replace(/"/g, '""');
     return formattedValue.includes(',') ? `"${formattedValue}"` : formattedValue;
@@ -107,7 +110,7 @@ function serialiseCellValue(value: unknown) {
 }
 
 // Trigger file download in the browser
-function downloadFile(fileName: string, data: Blob) {
+function downloadFile(fileName: string, data: Blob): void {
   const downloadLink = document.createElement('a');
   downloadLink.download = fileName;
   const url = URL.createObjectURL(data);

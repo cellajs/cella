@@ -1,6 +1,6 @@
 import { menuSections } from '~/menu-config';
+import type { UserMenu, UserMenuItem } from '~/modules/navigation/types';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenu, UserMenuItem } from '~/types/common';
 
 const useTransformOnMenuItems = (transform: (items: UserMenuItem[]) => UserMenuItem[]) => {
   const { menu } = useNavigationStore.getState();

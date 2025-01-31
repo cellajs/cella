@@ -1,4 +1,4 @@
-import type { Organization } from '~/types/common';
+import type { Organization } from '~/modules/organizations/types';
 
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';

@@ -1,6 +1,5 @@
-import { config } from 'config';
+import { type ContextEntity, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import type { ContextEntity } from '~/types/common';
 import { meHc } from '#/modules/me/hc';
 import { usersHc } from '#/modules/users/hc';
 

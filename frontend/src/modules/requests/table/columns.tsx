@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Request } from '~/types/common';
+import type { Request } from '~/modules/requests/types';
 
 import { useMemo, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';

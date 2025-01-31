@@ -10,7 +10,7 @@ const day = 864e5;
 const year = 31536e6;
 
 // convert date in into a minimal format'
-export const dateMini = (startDate: string, passedLoc: keyof typeof locale, addStr?: string) => {
+export const dateMini = (startDate: string, passedLoc: keyof typeof locale, addStr?: string): string => {
   const start = dayjs(startDate);
   const end = dayjs();
   const diff = Math.abs(end.diff(start));

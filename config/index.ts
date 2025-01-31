@@ -31,7 +31,18 @@ const configModes = {
   tunnel,
 };
 
-export type ConfigMode = keyof typeof configModes;
-
-const mode = (process.env.NODE_ENV || 'development') as ConfigMode;
+const mode = (process.env.NODE_ENV || 'development') as keyof typeof configModes;
 export const config = mergeDeep(_default, configModes[mode]);
+
+export type Entity = (typeof config.entityTypes)[number];
+export type ProductEntity = (typeof config.productEntityTypes)[number];
+export type ContextEntity = (typeof config.contextEntityTypes)[number];
+export type PageEntity = (typeof config.pageEntityTypes)[number];
+export type EntityRoles = (typeof config.rolesByType.entityRoles)[number];
+export type Language = (typeof config.languages)[number]['value'];
+
+export type SystemRoles = (typeof config.rolesByType.systemRoles)[number];
+
+export type EnabledOauthProvider = (typeof config.enabledOauthProviders)[number];
+
+export type AllowedAuthStrategies = (typeof config.enabledAuthenticationStrategies)[number];

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { Organization } from '~/types/common';
+import type { Organization } from '~/modules/organizations/types';
 
 import { Link } from '@tanstack/react-router';
 import { config } from 'config';

@@ -1,10 +1,10 @@
 import { and, asc, eq } from 'drizzle-orm';
 
+import type { EnabledOauthProvider } from 'config';
 import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { EnabledOauthProvider } from '#/types/common';
 import { invalidateSession, invalidateUserSessions } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
@@ -17,13 +17,14 @@ import { config } from 'config';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
 import { passkeysTable } from '#/db/schema/passkeys';
-import { type MenuSection, entityIdFields, entityTables, menuSections } from '#/entity-config';
+import { entityIdFields, entityTables, menuSections } from '#/entity-config';
+import type { MenuSection } from '#/entity-config.types';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { resolveEntity } from '#/lib/entity';
 import { sendSSEToUsers } from '#/lib/sse';
-import type { MenuItem, UserMenu } from '#/types/common';
 import { deleteAuthCookie, getAuthCookie } from '../auth/helpers/cookie';
 import { getUserSessions } from './helpers/get-sessions';
+import type { MenuItem, UserMenu } from './types';
 
 const app = new OpenAPIHono<Env>();
 

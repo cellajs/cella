@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
+import type { PageEntity } from 'config';
 import { getSuggestions } from '~/modules/general/api';
-import type { PageEntity } from '~/types/common';
 
 // TODO: can we benefit from cache?
 export const searchQueryOptions = (searchQuery: string, entity?: PageEntity | undefined) =>

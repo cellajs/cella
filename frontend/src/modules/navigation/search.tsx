@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import type { Entity } from 'config';
 import { config } from 'config';
 import { History, Search, X } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
@@ -15,7 +16,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { getEntityRoute, suggestionSections } from '~/nav-config';
 import { useNavigationStore } from '~/store/navigation';
-import type { Entity } from '~/types/common';
 import type { entitySuggestionSchema } from '#/modules/general/schema';
 
 export type SuggestionType = z.infer<typeof entitySuggestionSchema>;

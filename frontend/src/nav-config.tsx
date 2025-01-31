@@ -6,7 +6,7 @@ import { MenuSheet } from '~/modules/navigation/menu-sheet';
 import type { FooterLinkProps } from '~/modules/common/main-footer';
 import type { NavItem } from '~/modules/navigation';
 import { AppSearch, type SuggestionSection, type SuggestionType } from '~/modules/navigation/search';
-import type { UserMenuItem } from './types/common';
+import type { UserMenuItem } from '~/modules/navigation/types';
 
 // Set entity paths so we can dynamically use them in the app
 export const baseEntityRoutes = {

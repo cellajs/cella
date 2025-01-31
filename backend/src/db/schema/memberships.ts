@@ -2,8 +2,8 @@ import { config } from 'config';
 import { type PgColumn, type PgVarcharBuilderInitial, boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
 import { entityIdFields, entityTables } from '#/entity-config';
-import type { ContextEntityIdFields } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
+import type { ContextEntityIdFields } from '../types';
 
 const roleEnum = config.rolesByType.entityRoles;
 

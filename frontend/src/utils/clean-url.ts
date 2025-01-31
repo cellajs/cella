@@ -1,5 +1,5 @@
 // Clean a URL by removing search and hash
-export function cleanUrl(url?: string | null) {
+export function cleanUrl(url?: string | null): string | null {
   if (!url) return null;
 
   const newUrl = new URL(url);

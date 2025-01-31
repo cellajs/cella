@@ -2,6 +2,7 @@ import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
+import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { and, eq, or } from 'drizzle-orm';
 import slugify from 'slugify';
@@ -27,7 +28,6 @@ import {
   microsoftAuth,
   type microsoftUserProps,
 } from '#/modules/auth/helpers/oauth-providers';
-import type { EnabledOauthProvider } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 // TODO shorten this import

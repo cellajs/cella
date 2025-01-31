@@ -8,7 +8,8 @@ import type { AttachmentInfiniteQueryData } from '~/modules/attachments/query-mu
 import { env } from '~/../env';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { attachmentsQueryOptions } from '~/modules/attachments/query';
-import type { Attachment } from '~/types/common';
+import type { Attachment } from '~/modules/attachments/types';
+
 import { objectKeys } from '~/utils/object';
 import { attachmentsTableColumns } from '#/db/schema/attachments';
 

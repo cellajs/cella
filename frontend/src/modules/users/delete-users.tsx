@@ -1,4 +1,4 @@
-import type { User } from '~/types/common';
+import type { User } from '~/modules/users/types';
 
 import { onlineManager } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';

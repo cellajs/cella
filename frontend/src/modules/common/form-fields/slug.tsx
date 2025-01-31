@@ -10,7 +10,8 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import InputFormField from '~/modules/common/form-fields/input';
 import { checkSlugAvailable } from '~/modules/general/api';
 import { Button } from '~/modules/ui/button';
-import type { Entity } from '~/types/common';
+
+import type { Entity } from 'config';
 
 interface SlugFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

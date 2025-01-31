@@ -1,4 +1,4 @@
-import type { Request } from '~/types/common';
+import type { Request } from '~/modules/requests/types';
 
 import { useMutation } from '@tanstack/react-query';
 import { DeleteForm } from '~/modules/common/delete-form';

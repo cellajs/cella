@@ -3,11 +3,11 @@ import { Trash, Upload } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { lazyWithPreload } from 'react-lazy-with-preload';
+import { UploadType } from '~/modules/attachments/types';
 import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
-import { UploadType } from '~/types/common';
 
 const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/upload-uppy'));
 

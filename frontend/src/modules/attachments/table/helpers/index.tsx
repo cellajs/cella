@@ -1,9 +1,9 @@
 import { t } from 'i18next';
 import { Suspense } from 'react';
 import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
+import { UploadType, type UploadedUppyFile } from '~/modules/attachments/types';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
-import { UploadType, type UploadedUppyFile } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 
 export const formatBytes = (bytes: string): string => {

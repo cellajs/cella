@@ -1,4 +1,5 @@
 import type { QueryKey } from '@tanstack/react-query';
+import type { Entity } from 'config';
 import { queryClient } from '~/lib/router';
 import type {
   ArbitraryEntityQueryData,
@@ -9,7 +10,6 @@ import type {
   ItemData,
   QueryDataActions,
 } from '~/query/hooks/use-mutate-query-data/types';
-import type { Entity } from '~/types/common';
 
 // determine if the data is ArbitraryEntityQueryData
 export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQueryData => {

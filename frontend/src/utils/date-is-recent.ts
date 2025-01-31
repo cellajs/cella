@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 
 // Check if the passed date is between passed number of days and today(inclusive)
-export const dateIsRecent = (date: string | null, days: number) => {
+export const dateIsRecent = (date: string | null, days: number): boolean => {
   if (!date) return false;
   const convertedDate = new Date(date);
   // Calculate the date days ago and today using dayjs

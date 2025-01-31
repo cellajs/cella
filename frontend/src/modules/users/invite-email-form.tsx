@@ -15,10 +15,10 @@ import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { MultiEmail } from '~/modules/common/multi-email';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { createToast } from '~/modules/common/toaster';
+import type { EntityPage } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { EntityPage } from '~/types/common';
 import { idOrSlugSchema } from '#/utils/schema/common-schemas';
 
 interface Props {

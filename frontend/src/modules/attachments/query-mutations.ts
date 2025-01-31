@@ -5,10 +5,10 @@ import { toast } from 'sonner';
 import { queryClient } from '~/lib/router';
 import { createAttachment, deleteAttachments, updateAttachment } from '~/modules/attachments/api';
 import { attachmentsKeys } from '~/modules/attachments/query';
+import type { Attachment } from '~/modules/attachments/types';
 import { compareQueryKeys } from '~/query/helpers';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
-import type { Attachment } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 
 type AttachmentQueryData = QueryData<Attachment>;

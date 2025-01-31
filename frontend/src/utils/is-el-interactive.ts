@@ -1,5 +1,5 @@
 // Check if focused element is interactive
-export function isElementInteractive(element: Element | null) {
+export function isElementInteractive(element: Element | null): boolean {
   if (!element) return false;
   return (
     element instanceof HTMLInputElement ||

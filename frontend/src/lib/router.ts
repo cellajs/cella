@@ -35,7 +35,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery') {
+function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery'): Persister {
   return {
     persistClient: async (client: PersistedClient) => {
       await set(idbValidKey, client);

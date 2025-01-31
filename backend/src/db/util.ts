@@ -1,12 +1,7 @@
 import { type SQL, and, eq } from 'drizzle-orm';
 import { db } from './db';
 import { type LimitedUserModel, type UnsafeUserModel, type UserModel, baseLimitedUserSelect, safeUserSelect, usersTable } from './schema/users';
-
-type SafeQuery = typeof safeUserSelect;
-type UnsafeQuery = typeof usersTable;
-
-type SafeField = Extract<keyof SafeQuery, keyof SafeQuery['_']['columns']>;
-type UnsafeField = Extract<keyof UnsafeQuery, keyof UnsafeQuery['_']['columns']>;
+import type { SafeField, UnsafeField } from './types';
 
 // Overload signatures
 export function getUserBy(field: SafeField, value: string): Promise<UserModel | null>;

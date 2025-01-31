@@ -1,7 +1,7 @@
+import type { ContextEntity } from 'config';
 import { config } from 'config';
 import { json, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import type { ContextEntity } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
 import { organizationsTable } from './organizations';
 

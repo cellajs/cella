@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import type { EnabledOauthProvider } from 'config';
 import { config } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
@@ -9,7 +10,6 @@ import { Button } from '~/modules/ui/button';
 import { passkeyAuth } from '~/modules/users/helpers';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useThemeStore } from '~/store/theme';
-import type { EnabledOauthProvider } from '~/types/common';
 
 export const mapOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },

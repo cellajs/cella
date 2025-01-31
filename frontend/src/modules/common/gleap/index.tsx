@@ -3,8 +3,8 @@ import Gleap from 'gleap';
 import { useEffect } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import '~/modules/common/gleap/style.css';
+import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
-import type { User } from '~/types/common';
 
 declare global {
   interface Window {

@@ -7,11 +7,11 @@ import { toast } from 'sonner';
 import { authenticateWithPasskey, getChallenge, registerPasskey } from '~/modules/auth/api';
 import { createToast } from '~/modules/common/toaster';
 import { deletePasskey as baseRemovePasskey, getSelf, getUserMenu } from '~/modules/users/api';
+import type { LimitedUser } from '~/modules/users/types';
 import { getQueryItems } from '~/query/helpers/mutate-query';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { LimitedUser } from '~/types/common';
 
 // Register new passkey
 export const passkeyRegistration = async () => {

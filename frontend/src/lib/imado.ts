@@ -1,13 +1,13 @@
+import { onlineManager } from '@tanstack/react-query';
 import { type UploadResult, Uppy, type UppyFile, type UppyOptions } from '@uppy/core';
 import Tus from '@uppy/tus';
 import { config } from 'config';
+import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
+import type { UploadParams, UploadType, UploadedUppyFile } from '~/modules/attachments/types';
 import { getUploadToken } from '~/modules/general/api';
-import type { UploadParams, UploadType, UploadedUppyFile } from '~/types/common';
+import { nanoid } from '~/utils/nanoid';
 
 import '@uppy/core/dist/style.min.css';
-import { onlineManager } from '@tanstack/react-query';
-import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
-import { nanoid } from '~/utils/nanoid';
 
 export type UppyMeta = { public?: boolean; contentType?: string };
 export type LocalFile = UppyFile<UppyMeta, UppyBody>;

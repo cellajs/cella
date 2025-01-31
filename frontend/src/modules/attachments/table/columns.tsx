@@ -1,4 +1,4 @@
-import type { Attachment } from '~/types/common';
+import type { Attachment } from '~/modules/attachments/types';
 
 import { config } from 'config';
 import type { TFunction } from 'i18next';

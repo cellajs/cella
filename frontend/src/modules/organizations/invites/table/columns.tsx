@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type { OrganizationInvites } from '~/types/common';
+import type { OrganizationInvites } from '~/modules/organizations/types';
 
 import { useMemo, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';

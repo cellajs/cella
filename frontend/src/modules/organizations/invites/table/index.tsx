@@ -3,9 +3,11 @@ import { Suspense, lazy, useRef, useState } from 'react';
 import useSearchParams from '~/hooks/use-search-params';
 
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { useColumns } from '~/modules/organizations/invites/table/columns';
 import { InvitesHeader } from '~/modules/organizations/invites/table/table-header';
-import type { BaseTableMethods, OrganizationInvites } from '~/types/common';
+import type { OrganizationInvites } from '~/modules/organizations/types';
+
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/organizations/invites/table/table'));

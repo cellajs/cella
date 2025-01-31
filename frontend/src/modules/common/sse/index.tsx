@@ -2,9 +2,9 @@ import { queryClient } from '~/lib/router';
 import { useSSE } from '~/modules/common/sse/use-sse';
 import { membersKeys } from '~/modules/memberships/query';
 import { addMenuItem, deleteMenuItem, updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
+import type { UserMenuItem } from '~/modules/navigation/types';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { getSimilarQueries } from '~/query/helpers/mutate-query';
-import type { UserMenuItem } from '~/types/common';
 
 const SSE = () => {
   const addEntity = (e: MessageEvent<string>) => {

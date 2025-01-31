@@ -3,15 +3,16 @@ import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
 import { openUploadDialog } from '~/modules/attachments/table/helpers';
+import type { Attachment } from '~/modules/attachments/types';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
+import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import type { Attachment, BaseTableHeaderProps, BaseTableMethods } from '~/types/common';
 
 type AttachmentsTableHeaderProps = AttachmentsTableProps &
   BaseTableMethods &

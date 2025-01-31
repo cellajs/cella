@@ -1,5 +1,5 @@
+import type { ContextEntity } from 'config';
 import type { MembershipModel } from '#/db/schema/memberships';
-import type { ContextEntity } from '#/types/common';
 import { getContextMemberships, getContextUser } from '../lib/context';
 import { type EntityModel, resolveEntity } from '../lib/entity';
 import permissionManager, { type PermittedAction } from './permission-manager';

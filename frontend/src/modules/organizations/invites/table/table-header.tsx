@@ -2,9 +2,10 @@ import TableCount from '~/modules/common/data-table/table-count';
 import { FilterBarActions, FilterBarContent, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableHeaderContainer } from '~/modules/common/data-table/table-header-container';
 import TableSearch from '~/modules/common/data-table/table-search';
+import type { BaseTableHeaderProps, BaseTableMethods } from '~/modules/common/data-table/types';
 import SelectRole from '~/modules/common/form-fields/select-role';
 import type { InvitesSearch } from '~/modules/organizations/invites/table';
-import type { BaseTableHeaderProps, BaseTableMethods, OrganizationInvites } from '~/types/common';
+import type { OrganizationInvites } from '~/modules/organizations/types';
 
 type InvitesTableHeaderProps = BaseTableMethods & BaseTableHeaderProps<OrganizationInvites, InvitesSearch> & { role: InvitesSearch['role'] };
 

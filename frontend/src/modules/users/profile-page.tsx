@@ -1,13 +1,13 @@
 import { Link } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 
-import type { LimitedUser } from '~/types/common';
+import type { LimitedUser } from '~/modules/users/types';
 
 import { UserCog } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { PageHeader } from '~/modules/common/page-header';
+import { PageHeader } from '~/modules/common/page/header';
 import { useUpdateUserMutation } from '~/modules/users/query-mutations';
 import { useUserStore } from '~/store/user';
 

@@ -17,7 +17,7 @@ export const shouldShowDivider = (hasPasskey: boolean, step: Step): boolean => {
   );
 };
 
-export const arraysHaveSameElements = (arr1: { id: string }[], arr2: { id: string }[]) => {
+export const arraysHaveSameElements = (arr1: { id: string }[], arr2: { id: string }[]): boolean => {
   if (arr1.length !== arr2.length) return false;
 
   const ids1 = new Set(arr1.map((item) => item.id));

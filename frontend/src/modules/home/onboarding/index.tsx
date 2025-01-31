@@ -5,12 +5,13 @@ import StepperFooter from '~/modules/home/onboarding/footer';
 import { onDefaultBoardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { OnboardingStart } from '~/modules/home/onboarding/start';
 import CreateOrganizationForm from '~/modules/organizations/create-organization-form';
+import type { Organization } from '~/modules/organizations/types';
 import { Card, CardContent, CardDescription, CardHeader } from '~/modules/ui/card';
 import InviteUsers from '~/modules/users/invite-users';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { Organization } from '~/types/common';
+
 import { cn } from '~/utils/cn';
 
 export type OnboardingStates = 'start' | 'stepper' | 'completed';

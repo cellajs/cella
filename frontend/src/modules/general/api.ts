@@ -1,6 +1,7 @@
+import type { Entity, PageEntity } from 'config';
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import { type Entity, type PageEntity, type UploadParams, UploadType } from '~/types/common';
+import { type UploadParams, UploadType } from '~/modules/attachments/types';
 import { generalHc } from '#/modules/general/hc';
 
 // RPC

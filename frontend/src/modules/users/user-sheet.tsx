@@ -5,11 +5,11 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import Spinner from '~/modules/common/spinner';
 import { membersKeys } from '~/modules/memberships/query';
+import type { Member } from '~/modules/memberships/types';
 import { findUserFromQueries } from '~/modules/users/helpers';
 import UserProfilePage from '~/modules/users/profile-page';
 import { userQueryOptions } from '~/modules/users/query';
 import { getSimilarQueries } from '~/query/helpers/mutate-query';
-import type { Member } from '~/types/common';
 
 const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: string }) => {
   const { t } = useTranslation();

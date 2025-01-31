@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 import { config } from 'config';
-import { type MenuSectionName, menuSections } from '#/entity-config';
+import { menuSections } from '#/entity-config';
+import type { MenuSectionName } from '#/entity-config.types';
 import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 import { signUpInfo, userSchema } from '../users/schema';

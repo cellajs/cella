@@ -11,8 +11,8 @@ import Spinner from '~/modules/common/spinner';
 import { createToast } from '~/modules/common/toaster';
 import { updateMembership as baseUpdateMembership } from '~/modules/memberships/api';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
+import type { UserMenuItem } from '~/modules/navigation/types';
 import { Button } from '~/modules/ui/button';
-import type { UserMenuItem } from '~/types/common';
 
 interface MenuItemEditProps {
   item: UserMenuItem;

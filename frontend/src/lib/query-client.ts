@@ -16,10 +16,11 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
   429: t('error:too_many_requests'),
 });
 
-export const onError = (error: Error) => {
+export const onError = (error: Error): void => {
   // Ignore cancellation error
   if (error instanceof CancelledError) {
-    return console.debug('Ignoring CancelledError');
+    console.debug('Ignoring CancelledError');
+    return;
   }
 
   // Handle network error (e.g., connection refused)
@@ -68,13 +69,13 @@ export const onError = (error: Error) => {
   }
 };
 
-const onSuccess = () => {
+const onSuccess = (): void => {
   // Clear down alerts
   useAlertStore.getState().setDownAlert(null);
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
-export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any>) => {
+export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any>): Promise<any> => {
   const cachedData = queryClient.getQueryData(options.queryKey);
 
   // If offline, return cached data or undefined if no cache exists
@@ -90,7 +91,7 @@ export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
-export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>) => {
+export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>): Promise<any> => {
   const cachedData = queryClient.getQueryData(options.queryKey);
 
   // If offline, return cached data or undefined if no cache exists

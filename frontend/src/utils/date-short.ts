@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 
 // Format a date to a relative time
-export function dateShort(date?: string | null | Date) {
+export function dateShort(date?: string | null | Date): string {
   if (!date) return '-';
 
   return dayjs(date).calendar(null, {

@@ -3,9 +3,9 @@ import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import StickyBox from '~/modules/common/sticky-box';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import type { UserMenu, UserMenuItem } from '~/modules/navigation/types';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenu, UserMenuItem } from '~/types/common';
 
 interface MenuSectionButtonProps {
   sectionType: keyof UserMenu;

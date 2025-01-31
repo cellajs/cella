@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import useMounted from '~/hooks/use-mounted';
 import { menuSections } from '~/menu-config';
+import type { UserMenu, UserMenuItem } from '~/modules/navigation/types';
 import { Input } from '~/modules/ui/input';
-import type { UserMenu, UserMenuItem } from '~/types/common';
 
 interface MenuSheetSearchProps {
   menu: UserMenu;

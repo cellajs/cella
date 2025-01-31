@@ -4,13 +4,14 @@ import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
+import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { createToast } from '~/modules/common/toaster';
 import { usersKeys, usersQueryOptions } from '~/modules/users/query';
+import { useUpdateUserMutation } from '~/modules/users/query-mutations';
 import type { UsersSearch } from '~/modules/users/table';
+import type { User } from '~/modules/users/types';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import type { BaseTableMethods, BaseTableProps, User } from '~/types/common';
-import { useUpdateUserMutation } from '../query-mutations';
 
 type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
   queryVars: { role: UsersSearch['role'] };

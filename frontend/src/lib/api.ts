@@ -1,9 +1,11 @@
+import type { Entity } from 'config';
 import type { ClientResponse } from 'hono/client';
-import type { Entity } from '~/types/common';
 import type { HttpErrorStatus, Severity } from '#/lib/errors';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to allow any type of response
-export const handleResponse = async <T extends Record<string, any>, U extends ClientResponse<T, number, 'json'>>(response: U) => {
+export const handleResponse = async <T extends Record<string, any>, U extends ClientResponse<T, number, 'json'>>(
+  response: U,
+): Promise<ReturnType<Extract<U, { status: 200 }>['json']>> => {
   const json = await response.json();
 
   if (response.ok) {

@@ -1,10 +1,10 @@
+import type { ContextEntity } from 'config';
 import { eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type InsertMembershipModel, type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { BaseEntityModel, ContextEntity } from '#/types/common';
 
 interface Props<T> {
   user: UserModel;
@@ -15,6 +15,12 @@ interface Props<T> {
     id: string;
   } | null;
   createdBy?: UserModel['id'];
+}
+
+interface BaseEntityModel<T extends ContextEntity> {
+  id: string;
+  entity: T;
+  organizationId?: string;
 }
 
 // Helper function to insert a membership and give it proper order number

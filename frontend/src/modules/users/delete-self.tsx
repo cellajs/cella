@@ -1,4 +1,4 @@
-import type { User } from '~/types/common';
+import type { User } from '~/modules/users/types';
 
 import { useNavigate } from '@tanstack/react-router';
 import { queryClient } from '~/lib/router';
