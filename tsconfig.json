@@ -13,6 +13,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "jsx": "react-jsx",
 
     /* Linting */
     "strict": true,
@@ -25,6 +26,6 @@
     "declaration": true,
     "composite": true
   },
-  "include": ["tus/**/*", "frontend/src/**/*", "config/*", "backend/**/*"],
+  "include": ["tus/**/*", "frontend/**/*", "backend/**/*", "config/*", "locales/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }
