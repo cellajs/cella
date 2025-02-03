@@ -1,7 +1,7 @@
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { idsQuerySchema } from '#/utils/schema/common-schemas';
+import { idsBodySchema } from '#/utils/schema/common-schemas';
 import { updateUserBodySchema, updatedUserSchema } from '../users/schema';
 import { leaveEntityQuerySchema, meUserSchema, userMenuSchema } from './schema';
 
@@ -106,8 +106,11 @@ class MeRoutesConfig {
     summary: 'Terminate sessions',
     description: 'Terminate all sessions of the current user, except for current session.',
     request: {
-      query: idsQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
+
     responses: {
       200: {
         description: 'Success',

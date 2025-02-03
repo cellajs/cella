@@ -226,7 +226,8 @@ const membershipsRoutes = app
    * When user is allowed to delete entity, they can delete memberships too
    */
   .openapi(membershipRouteConfig.deleteMemberships, async (ctx) => {
-    const { entityType, ids, idOrSlug } = ctx.req.valid('query');
+    const { entityType, idOrSlug } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
 
     const { entity, isAllowed } = await getValidEntity(entityType, 'delete', idOrSlug);
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);

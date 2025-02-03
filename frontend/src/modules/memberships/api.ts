@@ -23,16 +23,17 @@ export const inviteMembers = async ({ idOrSlug, entityType, orgIdOrSlug, ...rest
   await handleResponse(response);
 };
 
-export type RemoveMembersProps = Parameters<(typeof client.index)['$delete']>['0']['param'] & {
-  idOrSlug: string;
-  entityType: ContextEntity;
-  ids: string[];
-};
+export type RemoveMembersProps = Parameters<(typeof client.index)['$delete']>['0']['param'] &
+  Parameters<(typeof client.index)['$delete']>['0']['json'] & {
+    idOrSlug: string;
+    entityType: ContextEntity;
+  };
 
 export const removeMembers = async ({ idOrSlug, entityType, ids, orgIdOrSlug }: RemoveMembersProps) => {
   const response = await client.index.$delete({
     param: { orgIdOrSlug },
-    query: { idOrSlug, entityType, ids },
+    query: { idOrSlug, entityType },
+    json: { ids },
   });
 
   await handleResponse(response);

@@ -80,14 +80,14 @@ export const updateAttachment = async ({ orgIdOrSlug, id, ...params }: UpdateAtt
   return json.success;
 };
 
-export type DeleteAttachmentsParams = Parameters<(typeof client)['index']['$delete']>['0']['query'] & {
+export type DeleteAttachmentsParams = Parameters<(typeof client)['index']['$delete']>['0']['json'] & {
   orgIdOrSlug: string;
 };
 
 // Delete attachments
 export const deleteAttachments = async ({ orgIdOrSlug, ids }: DeleteAttachmentsParams) => {
   const response = await client.index.$delete({
-    query: { ids },
+    json: { ids },
     param: { orgIdOrSlug },
   });
 

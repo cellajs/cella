@@ -94,7 +94,7 @@ const requestsRoutes = app
    *  Delete requests
    */
   .openapi(requestsRoutesConfig.deleteRequests, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
 
     // Convert the ids to an array
     const toDeleteIds = Array.isArray(ids) ? ids : [ids];

@@ -4,8 +4,8 @@ import { createRouteConfig } from '#/lib/route-config';
 import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/guard';
 
 import { z } from 'zod';
-import { idOrSlugSchema, idSchema } from '#/utils/schema/common-schemas';
-import { attachmentSchema, attachmentsQuerySchema, createAttachmentSchema, deleteAttachmentsQuerySchema, updateAttachmentBodySchema } from './schema';
+import { idOrSlugSchema, idSchema, idsBodySchema } from '#/utils/schema/common-schemas';
+import { attachmentSchema, attachmentsQuerySchema, createAttachmentSchema, updateAttachmentBodySchema } from './schema';
 
 class AttachmentRoutesConfig {
   public createAttachment = createRouteConfig({
@@ -133,7 +133,9 @@ class AttachmentRoutesConfig {
     description: 'Delete attachments by their ids',
     request: {
       params: z.object({ orgIdOrSlug: idOrSlugSchema }),
-      query: deleteAttachmentsQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
     responses: {
       200: {

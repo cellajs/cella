@@ -147,7 +147,7 @@ const meRoutes = app
    * Terminate a session
    */
   .openapi(meRoutesConfig.deleteSessions, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
 

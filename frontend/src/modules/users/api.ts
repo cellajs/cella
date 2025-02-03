@@ -58,7 +58,7 @@ export const getUsers = async (
 // Delete users from system
 export const deleteUsers = async (userIds: string[]) => {
   const response = await userClient.index.$delete({
-    query: { ids: userIds },
+    json: { ids: userIds },
   });
 
   await handleResponse(response);
@@ -113,7 +113,7 @@ export const deleteSelf = async () => {
 // Terminate user sessions
 export const deleteMySessions = async (sessionIds: string[]) => {
   const response = await meClient.sessions.$delete({
-    query: { ids: sessionIds },
+    json: { ids: sessionIds },
   });
 
   await handleResponse(response);

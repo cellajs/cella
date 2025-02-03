@@ -79,7 +79,7 @@ export const updateOrganization = async ({ idOrSlug, json }: { idOrSlug: string;
 // Delete organizations
 export const deleteOrganizations = async (ids: string[]) => {
   const response = await client.index.$delete({
-    query: { ids },
+    json: { ids },
   });
 
   await handleResponse(response);

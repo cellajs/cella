@@ -157,7 +157,7 @@ const attachmentsRoutes = app
    * Delete attachments
    */
   .openapi(attachmentsRoutesConfig.deleteAttachments, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
 

@@ -56,7 +56,7 @@ export const getRequests = async (
 // delete requests
 export const deleteRequests = async (ids: string[]) => {
   const response = await client.index.$delete({
-    query: { ids },
+    json: { ids },
   });
 
   const json = await handleResponse(response);

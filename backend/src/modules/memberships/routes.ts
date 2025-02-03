@@ -9,15 +9,9 @@ import {
   successWithPaginationSchema,
   successWithoutDataSchema,
 } from '#/utils/schema/common-responses';
-import { idOrSlugSchema, idSchema } from '#/utils/schema/common-schemas';
+import { idOrSlugSchema, idSchema, idsBodySchema } from '#/utils/schema/common-schemas';
 import { membersQuerySchema, membersSchema } from '../general/schema';
-import {
-  createMembershipBodySchema,
-  createMembershipQuerySchema,
-  deleteMembersQuerySchema,
-  membershipSchema,
-  updateMembershipBodySchema,
-} from './schema';
+import { baseMembersQuerySchema, createMembershipBodySchema, membershipSchema, updateMembershipBodySchema } from './schema';
 
 class MembershipRoutesConfig {
   public createMembership = createRouteConfig({
@@ -28,7 +22,7 @@ class MembershipRoutesConfig {
     summary: 'Invite members',
     description: 'Invite members to an entity such as an organization.',
     request: {
-      query: createMembershipQuerySchema,
+      query: baseMembersQuerySchema,
       params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       body: {
         content: {
@@ -60,7 +54,10 @@ class MembershipRoutesConfig {
     description: 'Delete memberships by their ids. This will remove the membership but not delete any user(s).',
     request: {
       params: z.object({ orgIdOrSlug: idOrSlugSchema }),
-      query: deleteMembersQuerySchema,
+      query: baseMembersQuerySchema,
+      body: {
+        content: { 'application/json': { schema: idsBodySchema } },
+      },
     },
     responses: {
       200: {

@@ -1,6 +1,6 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
-import { idsQuerySchema, nameSchema, paginationQuerySchema } from '#/utils/schema/common-schemas';
+import { nameSchema, paginationQuerySchema } from '#/utils/schema/common-schemas';
 import { attachmentsTable } from '../../db/schema/attachments';
 
 export const createAttachmentSchema = z.array(
@@ -13,8 +13,6 @@ export const createAttachmentSchema = z.array(
     createdBy: true,
   }),
 );
-
-export const deleteAttachmentsQuerySchema = idsQuerySchema;
 
 export const updateAttachmentBodySchema = createInsertSchema(attachmentsTable, {
   name: nameSchema,

@@ -211,7 +211,7 @@ const organizationsRoutes = app
    * Delete organizations by ids
    */
   .openapi(organizationRoutesConfig.deleteOrganizations, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
 
     const memberships = getContextMemberships();
 
@@ -233,7 +233,7 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.type, 'organization'), inArray(membershipsTable.organizationId, allowedIds)));
 
     // Delete the organizations
-    await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
+    // await db.delete(organizationsTable).where(inArray(organizationsTable.id, allowedIds));
 
     // Send SSE events to all members of organizations that were deleted
     for (const id of allowedIds) {

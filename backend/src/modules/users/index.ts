@@ -86,7 +86,7 @@ const usersRoutes = app
    * Delete users
    */
   .openapi(usersRoutesConfig.deleteUsers, async (ctx) => {
-    const { ids } = ctx.req.valid('query');
+    const { ids } = ctx.req.valid('json');
     const user = getContextUser();
 
     // Convert the user ids to an array

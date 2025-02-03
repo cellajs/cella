@@ -1,11 +1,12 @@
 import { CancelledError, type FetchInfiniteQueryOptions, type FetchQueryOptions, onlineManager } from '@tanstack/react-query';
 import i18next from 'i18next';
+import { ZodError } from 'zod';
 import { ApiError } from '~/lib/api';
 import { i18n } from '~/lib/i18n';
 import router, { queryClient } from '~/lib/router';
 import { flushStoresAndCache } from '~/modules/auth/sign-out';
+import { createToast } from '~/modules/common/toaster';
 import { useAlertStore } from '~/store/alert';
-import { createToast } from '../modules/common/toaster';
 
 // Fallback messages for common errors
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
@@ -23,8 +24,11 @@ export const onError = (error: Error) => {
   }
 
   // Handle network error (e.g., connection refused)
-  if (error instanceof Error && error.message === 'Failed to fetch') {
-    createToast(i18n.t('error:network_error'), 'error');
+  if (error instanceof Error && error.message === 'Failed to fetch') createToast(i18n.t('error:network_error'), 'error');
+
+  // TODO scale reaction on ZodErrors
+  if (error instanceof ZodError) {
+    for (const err of error.issues) createToast(err.message, 'error');
   }
 
   if (error instanceof ApiError) {
