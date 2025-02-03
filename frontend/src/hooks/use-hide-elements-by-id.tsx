@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 /**
  * useHideElementsById - A custom React hook to hide elements by their IDs.
  *
- * @param {string[]} ids - An array of element IDs to hide.
+ * @param ids - An array of element IDs to hide.
  */
 const useHideElementsById = (ids: string[]): void => {
   useEffect(() => {

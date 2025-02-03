@@ -28,13 +28,15 @@ export const slowOptions = {
   blockDuration: 60 * 60 * 3, // Block for 3 hours
 };
 
-// Rate limit error response
+// Rate limit Error response
 const rateLimitError = (ctx: Context, limitState: RateLimiterRes, rateLimitKey: string) => {
   ctx.header('Retry-After', getRetryAfter(limitState.msBeforeNext));
   return errorResponse(ctx, 429, 'too_many_requests', 'warn', undefined, { rateLimitKey });
 };
 
-/*
+/**
+ * Rate Limiter Middleware for API routes to control the rate of requests based on different modes and identifiers.
+ *
  * This file contains the implementation of a rate limiter middleware, which supports multiple modes.
  * It uses the `rate-limiter-flexible` library to limit the number of requests.
  * https://github.com/animir/node-rate-limiter-flexible#readme
@@ -46,8 +48,13 @@ const rateLimitError = (ctx: Context, limitState: RateLimiterRes, rateLimitKey: 
  *
  * Each mode runs a slow brute force instance in parallel to the rate limiter instance itself.
  * This is to prevent attackers from slowly trying to access data in a larger timeframe (24h).
+ *
+ * @param mode - Rate limit mode that dictates how rate limiting is applied.
+ * @param key - The key to identify the user or entity being rate-limited (e.g., user ID, email).
+ * @param identifiers - `("ip" | "email")[]` A list of identifiers to consider when generating rate limit key.
+ * @param options - Optional custom configuration for rate limiting.
+ * @returns Middleware handler for rate limiting.
  */
-
 const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitIdentifier[], options?: RateLimitOptions): MiddlewareHandler<Env> => {
   const limiter = getRateLimiterInstance({ ...defaultOptions, ...options, keyPrefix: `${key}_${mode}` });
   const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${key}_${mode}:slow` });

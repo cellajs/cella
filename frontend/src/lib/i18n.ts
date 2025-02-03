@@ -9,7 +9,9 @@ import locales from './i18n-locales';
 
 export type { ParseKeys } from 'i18next';
 
-// Set up i18n with hybrid preload and lazy loading strategy
+/**
+ * i18n options with hybrid preload and lazy loading strategy
+ */
 const initOptions: InitOptions = {
   resources: locales, // Preload default ('en') translations
   debug: env.VITE_DEBUG_I18N,

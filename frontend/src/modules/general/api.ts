@@ -1,12 +1,17 @@
 import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
-import { type Entity, type PageEntity, type UploadParams, UploadType } from '~/types/common';
+import type { UploadParams } from '~/lib/imado';
+import { type Entity, type PageEntity, UploadType } from '~/types/common';
 import { generalHc } from '#/modules/general/hc';
 
 // RPC
 export const client = generalHc(config.backendUrl, clientConfig);
 
-// Get upload token to securely upload files with imado: https://imado.eu
+/**
+ * Get upload token to securely upload files with imado
+ *
+ * @link https://imado.eu
+ */
 export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
   const id = query.organizationId;
 

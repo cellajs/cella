@@ -16,7 +16,19 @@ import { sendVerificationEmail } from './verify-email';
 
 const cookieExpires = new TimeSpan(5, 'm');
 
-// Create a session before redirecting to oauth provider
+/**
+ * Creates an OAuth session by setting the necessary cookies and ensuring session validity before redirecting to the OAuth provider.
+ *
+ * @param ctx - Request/response context.
+ * @param provider - OAuth provider (e.g., Google, GitHub, Microsoft).
+ * @param url - URL of the OAuth provider's authorization endpoint.
+ * @param state - OAuth state parameter to prevent CSRF attacks.
+ * @param codeVerifier - Optional, code verifier for PKCE.
+ * @param redirect - Optional, URL to redirect the user to after OAuth.
+ * @param connect - Optional, user ID to connect the OAuth account to.
+ * @param token - Optional, invitation token for the OAuth process.
+ * @returns Redirect response to the OAuth provider's authorization URL.
+ */
 export const createOauthSession = async (
   ctx: Context,
   provider: string,

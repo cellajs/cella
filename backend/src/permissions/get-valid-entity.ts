@@ -4,8 +4,20 @@ import { getContextMemberships, getContextUser } from '../lib/context';
 import { type EntityModel, resolveEntity } from '../lib/entity';
 import permissionManager, { type PermittedAction } from './permission-manager';
 
-// Check if the user is allowed to perform an action on an entity.
-// Return the entity, whether the user is allowed, and the membership.
+/**
+ * Checks if user has permission to perform an action on an entity.
+ *
+ * Resolves entity based on the given type and ID/slug, checks user permissions (including system admins),
+ * and retrieves the user's membership for the entity.
+ *
+ * @param entityType - The type of entity (e.g., organization, project).
+ * @param action - Action to check `"create" | "read" | "update" | "delete"`.
+ * @param idOrSlug - entity's id or slug.
+ * @returns An object with:
+ *   - `entity`: Resolved entity or `null` if not found.
+ *   - `isAllowed`: Whether user can perform the action.
+ *   - `membership`: User's membership or `null` if not found.
+ */
 export const getValidEntity = async <T extends ContextEntity>(
   entityType: T,
   action: PermittedAction,

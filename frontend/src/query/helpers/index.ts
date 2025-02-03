@@ -5,10 +5,16 @@ import type { InferType } from '~/query/types';
 
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export async function prefetchQuery<T extends UseQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
-
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export async function prefetchQuery<T extends UseInfiniteQueryOptions<any, any, any, any>>(options: T): Promise<InferType<T>>;
 
+/**
+ * Prefetches a query and returns cached data if available.
+ * If the data is not cached and the user is online, it fetches the query.
+ *
+ * @param options - Query options for a regular or infinite query.
+ * @returns Cached data if available, or fetched data if online; otherwise undefined.
+ */
 export async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryOptions) {
   const cachedData = queryClient.getQueryData(options.queryKey);
 
@@ -24,6 +30,13 @@ export async function prefetchQuery(options: UseQueryOptions | UseInfiniteQueryO
 
 export const waitFor = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Compares two query keys for equality by checking their lengths and elements.
+ *
+ * @param queryKey1 - First query key to compare.
+ * @param queryKey2 - Second query key to compare.
+ * @returns Boolean(if query keys are equal).
+ */
 export const compareQueryKeys = (queryKey1: QueryKey, queryKey2: QueryKey): boolean => {
   if (queryKey1.length !== queryKey2.length) return false; // Different lengths, cannot be equal
 

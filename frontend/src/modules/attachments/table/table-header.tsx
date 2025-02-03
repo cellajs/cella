@@ -36,6 +36,7 @@ export const AttachmentsTableHeader = ({
 
   const isFiltered = !!q;
   const isAdmin = organization.membership?.role === 'admin';
+  const showUpload = canUpload && !isFiltered && isAdmin;
 
   // Drop selected rows on search
   const onSearch = (searchString: string) => {
@@ -82,9 +83,7 @@ export const AttachmentsTableHeader = ({
               </Button>
             </>
           ) : (
-            canUpload &&
-            !isFiltered &&
-            isAdmin && (
+            showUpload && (
               <Button asChild onClick={() => openUploadDialog(organization.id)}>
                 <motion.button transition={{ duration: 0.1 }} layoutId="attachments-filter-bar-button">
                   <motion.span layoutId="attachments-filter-bar-icon">

@@ -66,11 +66,6 @@ export enum UploadType {
   Personal,
   Organization,
 }
-export interface UploadParams {
-  public: boolean;
-  organizationId?: string;
-}
-
 export type UploadedUppyFile = { file: UppyFile<UppyMeta, UppyBody>; url: string };
 
 // Drag and drop data
@@ -82,6 +77,7 @@ export type DraggableItemData<T> = {
   order: number;
 };
 
+// TODO: move below to data-table?
 export type BaseTableProps<T, K extends { q?: unknown; sort?: unknown; order?: unknown }> = {
   queryVars: BaseTableQueryVariables<K>;
   columns: ColumnOrColumnGroup<T>[];

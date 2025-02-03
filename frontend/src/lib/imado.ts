@@ -2,7 +2,7 @@ import { type UploadResult, Uppy, type UppyFile, type UppyOptions } from '@uppy/
 import Tus from '@uppy/tus';
 import { config } from 'config';
 import { getUploadToken } from '~/modules/general/api';
-import type { UploadParams, UploadType, UploadedUppyFile } from '~/types/common';
+import type { UploadType, UploadedUppyFile } from '~/types/common';
 
 import '@uppy/core/dist/style.min.css';
 import { onlineManager } from '@tanstack/react-query';
@@ -15,9 +15,14 @@ export type LocalFile = UppyFile<UppyMeta, UppyBody>;
 // biome-ignore lint/complexity/noBannedTypes: no other way to define this type
 export type UppyBody = {};
 
+export interface UploadParams {
+  public: boolean;
+  organizationId?: string;
+}
+
 const readJwt = (token: string) => JSON.parse(atob(token.split('.')[1]));
 
-interface ImadoUploadParams extends UploadParams {
+interface ImadoOptions extends UploadParams {
   statusEventHandler?: {
     onFileEditorComplete?: (file: UppyFile<UppyMeta, UppyBody>) => void;
     onUploadStart?: (uploadId: string, files: UppyFile<UppyMeta, UppyBody>[]) => void;
@@ -25,15 +30,25 @@ interface ImadoUploadParams extends UploadParams {
     onComplete?: (mappedResult: UploadedUppyFile[], result: UploadResult<UppyMeta, UppyBody>) => void;
   };
 }
-
+/**
+ * Initialize Uppy with Imado configuration. It is used to upload files to Imado using TUS or store them offline.
+ *
+ * @param type Personal or Organization upload
+ * @param uppyOptions Uppy options
+ * @param opts Imado options
+ * @returns Uppy instance
+ *
+ * @link https://uppy.io/docs/uppy/#new-uppyoptions
+ */
 export async function ImadoUppy(
   type: UploadType,
   uppyOptions: UppyOptions<UppyMeta, UppyBody>,
-  opts: ImadoUploadParams = { public: false, organizationId: undefined },
+  opts: ImadoOptions = { public: false, organizationId: undefined },
 ): Promise<Uppy> {
+  // Determine if we can upload
   const canUpload = onlineManager.isOnline() && config.has.imado;
 
-  // Get upload token
+  // Get upload token if so
   let token = '';
 
   if (canUpload) {
@@ -41,10 +56,11 @@ export async function ImadoUppy(
     if (!token) throw new Error('Failed to get upload token');
   }
 
+  // Prepare files for offline storage
   const prepareFilesForOffline = async (files: { [key: string]: UppyFile<UppyMeta, UppyBody> }) => {
     console.warn('Files will be stored offline in indexedDB.');
 
-    // Save files to local storage asynchronously
+    // Save to local storage asynchronously
     await LocalFileStorage.addFiles(files);
 
     // Prepare successful files for manual `complete` event
@@ -67,7 +83,7 @@ export async function ImadoUppy(
           });
         });
 
-        return false; // Block the upload
+        return false; // Block upload
       }
 
       return true; // Allow upload if `canUpload` is true
@@ -85,9 +101,7 @@ export async function ImadoUppy(
     .use(Tus, {
       endpoint: config.tusUrl,
       removeFingerprintOnSuccess: true,
-      headers: {
-        authorization: `Bearer ${token}`,
-      },
+      headers: { authorization: `Bearer ${token}` },
     })
     .on('file-editor:complete', (file) => {
       console.info('File editor complete:', file);

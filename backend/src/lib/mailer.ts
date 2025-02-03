@@ -21,6 +21,15 @@ export type BasicTemplateType = {
 };
 
 export const mailer = {
+  /**
+   * Prepare and send emails to multiple recipients using a provided template.
+   * It will render the template for each recipient and send the email.
+   *
+   * @param template - React component template that will be used to render the email content.
+   * @param staticProps - Static properties that are shared across all recipients, such as subject and other common data.
+   * @param recipients - The list of recipients with email addresses and any recipient-specific properties.
+   * @param replyTo - Optional, email address for the "Reply-To" field.
+   */
   async prepareEmails<T extends BasicTemplateType, R extends { email: string }>(
     template: (props: T & R) => React.ReactElement,
     staticProps: Partial<T> & BasicTemplateType,
@@ -42,7 +51,14 @@ export const mailer = {
     }
   },
 
-  // Send an email
+  /**
+   * Send an email using the SendGrid service.
+   *
+   * @param to - Recipient email address.
+   * @param subject - Subject of the email.
+   * @param html - HTML content of the email.
+   * @param replyTo - Optional, email address for the "Reply-To" field.
+   */
   async send(to: string, subject: string, html: string, replyTo?: string) {
     if (!hasApiKey) {
       console.info(`Email to ${to} is not sent because API key is missing.`);

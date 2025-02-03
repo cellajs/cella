@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 
-// This hook is used to fire events when the app has scrolled, mounted (0 ms), started (+ 200ms), and waited (+ 800ms)
+/**
+ * Custom hook to track mounting stages of a component.
+ *
+ * @returns flags for:
+ * - `hasMounted`: component mounted
+ * - `hasStarted`: component started after 200ms
+ * - `hasWaited`: component after 800ms
+ */
 export const useMounted = () => {
   const [hasMounted, setMounted] = useState(false);
   const [hasStarted, setStarted] = useState(false);

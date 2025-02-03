@@ -9,33 +9,18 @@ dayjs.extend(localizedFormat);
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
 type Row = Record<string, any>;
 type Column = ColumnOrColumnGroup<Row>;
-
-// Format data for a single row based on column configuration
-const formatRowData = <R extends Row>(row: R, column: Column) => {
-  // Handle special cases
-  if ((column.key === 'adminCount' || column.key === 'memberCount') && 'counts' in row && 'memberships' in row.counts) {
-    const key = column.key.replace('Count', 's');
-    return row.counts.memberships[key];
-  }
-  const date = dayjs(row[column.key]);
-  if (date.isValid()) {
-    return date.format('lll');
-  }
-  return row[column.key];
-};
-
-// Format the body data based on column definitions
-const formatBodyData = <R extends Row>(rows: R[], columns: Column[]): (string | number)[][] => {
-  return rows.map((row) => columns.map((column) => formatRowData(row, column)));
-};
-
-// Filter columns based on visibility
-const filterColumns = (column: Column) => {
-  if ('visible' in column && column.key !== 'checkbox-column') return column.visible;
-  return false;
-};
-
-// Export table data to CSV
+/**
+ * Exports table data to a CSV file.
+ *
+ * Filters columns, formats rows, serializes cell values, and creates a CSV file.CSV content is then
+ * downloaded with provided file name.
+ *
+ * @param columns - Column definitions (key and name) for table.
+ * @param rows - Data rows to be displayed in table.
+ * @param fileName - Name of generated CSV file.
+ *
+ * @returns A promise that resolves when CSV is downloaded.
+ */
 export async function exportToCsv<R extends Row>(columns: { key: string; name: ReactElement | string }[], rows: R[], fileName: string) {
   if (!rows.length) return;
 
@@ -47,6 +32,21 @@ export async function exportToCsv<R extends Row>(columns: { key: string; name: R
   downloadFile(fileName, new Blob([content], { type: 'text/csv;charset=utf-8;' }));
 }
 
+/**
+ * Generates and exports tabular data to a PDF file, applying styling based on dark or light mode.
+ *
+ * Filters the columns, formats the rows into a table, and dynamically imports `jsPDF` and `jspdf-autotable`
+ * to create and style PDF. Export includes metadata like the page name and export date. PDF is
+ * saved with the provided filename.
+ *
+ * @param columns - Column definitions (key and name) for table.
+ * @param rows - Data rows to be displayed in table.
+ * @param fileName - Name of generated PDF file.
+ * @param pageName - Name of page from which data is exported.
+ * @param mode - Mode `"dark" | "light"` to determine color scheme.
+ *
+ * @returns A promise that resolves when PDF is saved.
+ */
 export async function exportToPdf<R extends Row>(
   columns: { key: string; name: ReactElement | string }[],
   rows: R[],
@@ -96,6 +96,31 @@ export async function exportToPdf<R extends Row>(
   });
   doc.save(fileName);
 }
+
+// Format data for a single row based on column configuration
+const formatRowData = <R extends Row>(row: R, column: Column) => {
+  // Handle special cases
+  if ((column.key === 'adminCount' || column.key === 'memberCount') && 'counts' in row && 'memberships' in row.counts) {
+    const key = column.key.replace('Count', 's');
+    return row.counts.memberships[key];
+  }
+  const date = dayjs(row[column.key]);
+  if (date.isValid()) {
+    return date.format('lll');
+  }
+  return row[column.key];
+};
+
+// Format the body data based on column definitions
+const formatBodyData = <R extends Row>(rows: R[], columns: Column[]): (string | number)[][] => {
+  return rows.map((row) => columns.map((column) => formatRowData(row, column)));
+};
+
+// Filter columns based on visibility
+const filterColumns = (column: Column) => {
+  if ('visible' in column && column.key !== 'checkbox-column') return column.visible;
+  return false;
+};
 
 // Serialize cell values for CSV export
 function serialiseCellValue(value: unknown) {
