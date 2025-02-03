@@ -4,6 +4,15 @@
     "sourceMap": true,
     "inlineSources": true,
 
+    // to use references
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "emitDeclarationOnly": true,
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+
     // Set `sourceRoot` to  "/" to strip the build path prefix
     // from generated source code references.
     // This improves issue grouping in Sentry.
