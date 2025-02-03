@@ -1,5 +1,5 @@
 {
-  "id": "f9ab7262-683f-420e-b7cb-31bf121650bc",
+  "id": "403062a9-ffe9-4dc6-ab05-a5b5dfd35be9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -128,7 +128,9 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.memberships": {
       "name": "memberships",
@@ -268,7 +270,9 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.oauth_accounts": {
       "name": "oauth_accounts",
@@ -326,7 +330,9 @@
         }
       },
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.organizations": {
       "name": "organizations",
@@ -548,7 +554,9 @@
           ]
         }
       },
-      "checkConstraints": {}
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.passkeys": {
       "name": "passkeys",
@@ -604,7 +612,9 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.requests": {
       "name": "requests",
@@ -633,6 +643,12 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -674,10 +690,26 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "requests_token_tokens_id_fk": {
+          "name": "requests_token_tokens_id_fk",
+          "tableFrom": "requests",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "token"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.sessions": {
       "name": "sessions",
@@ -687,6 +719,12 @@
           "name": "id",
           "type": "varchar",
           "primaryKey": true,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar",
+          "primaryKey": false,
           "notNull": true
         },
         "user_id": {
@@ -800,7 +838,9 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.tokens": {
       "name": "tokens",
@@ -810,6 +850,12 @@
           "name": "id",
           "type": "varchar",
           "primaryKey": true,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "varchar",
+          "primaryKey": false,
           "notNull": true
         },
         "type": {
@@ -822,7 +868,7 @@
           "name": "email",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "role": {
           "name": "role",
@@ -849,11 +895,23 @@
           "notNull": true,
           "default": "now()"
         },
+        "created_by": {
+          "name": "created_by",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "expires_at": {
           "name": "expires_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
+        },
+        "membership_info": {
+          "name": "membership_info",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -883,11 +941,26 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "tokens_created_by_users_id_fk": {
+          "name": "tokens_created_by_users_id_fk",
+          "tableFrom": "tokens",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.users": {
       "name": "users",
@@ -954,12 +1027,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "bio": {
-          "name": "bio",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
         },
         "language": {
           "name": "language",
@@ -1133,12 +1200,16 @@
           ]
         }
       },
-      "checkConstraints": {}
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {},
   "schemas": {},
   "sequences": {},
+  "roles": {},
+  "policies": {},
   "views": {},
   "_meta": {
     "columns": {},

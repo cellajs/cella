@@ -101,7 +101,7 @@ export function QueryCombobox({ onChange, value }: { value: string[]; onChange: 
           />
           {isLoading && (
             <CommandLoading className="flex flex-col items-center w-full text-center p-8 h-full justify-center relative">
-              <Spinner className="h-8 w-8" inline />
+              <Spinner className="h-8 w-8" />
             </CommandLoading>
           )}
           <CommandList className="px-1 h-full">

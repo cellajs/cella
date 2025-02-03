@@ -21,7 +21,7 @@ interface MenuItemEditProps {
 export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
   const { t } = useTranslation();
   // Directly create the mutation to avoid lazy loading for MenuItemEdit,
-  // since useMembersUpdateMutation relies on queryClient.
+  // since useMemberUpdateMutation relies on queryClient.
   const { mutate: updateMembership, status } = useMutation({
     mutationFn: baseUpdateMembership,
     onMutate: ({ archived, muted }) => {
@@ -79,7 +79,6 @@ export const MenuItemEdit = ({ item }: MenuItemEditProps) => {
           <Spinner
             className="p-1 m-2 text-black opacity-50 h-10 w-10 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:mx-3
             group-data-[submenu=false]/menuOptions:p-1 group-data-[submenu=false]/menuOptions:h-8 group-data-[submenu=false]/menuOptions:w-8"
-            inline
           />
         </div>
       )}

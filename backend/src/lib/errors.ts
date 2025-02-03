@@ -2,10 +2,11 @@ import { config } from 'config';
 import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
+
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
 import type { Entity } from '#/types/common';
-import type { errorSchema } from '../utils/schema/common-schemas';
-import { getContextUser, getOrganization } from './context';
+import type { errorSchema } from '#/utils/schema/common-schemas';
+import { getContextOrganization, getContextUser } from './context';
 import { i18n } from './i18n';
 import type locales from './i18n-locales';
 
@@ -40,7 +41,7 @@ export const createError = (
   const message = i18n.t(translationKey);
 
   const user = getContextUser();
-  const organization = getOrganization();
+  const organization = getContextOrganization();
 
   const error: ErrorType = {
     message,
@@ -83,5 +84,6 @@ export const errorResponse = (
   return ctx.json({ success: false, error }, status as 400);
 };
 
+// Redirect to frontend error page
 export const errorRedirect = (ctx: Context, type: SimplifiedErrorKey, severity: Severity = 'info') =>
   ctx.redirect(`${config.frontendUrl}/error?error=${type}&severity=${severity}`, 302);

@@ -3,7 +3,7 @@ import { Outlet, useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page-header';
-import { PageNav, type PageNavTab } from '~/modules/common/page-nav';
+import { PageNav, type PageTab } from '~/modules/common/page-nav';
 import { OrganizationRoute } from '~/routes/organizations';
 
 import { Suspense, lazy } from 'react';
@@ -11,12 +11,12 @@ import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { queryClient } from '~/lib/router';
 import { organizationQueryOptions } from '~/modules/organizations/query';
-import { useOrganizationUpdateMutation } from '~/modules/organizations/query-mutations';
+import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import { useUserStore } from '~/store/user';
 
 const LeaveButton = lazy(() => import('~/modules/organizations/leave-button'));
 
-const organizationTabs: PageNavTab[] = [
+const organizationTabs: PageTab[] = [
   { id: 'members', label: 'common:members', path: '/$idOrSlug/members' },
   { id: 'attachments', label: 'common:attachments', path: '/$idOrSlug/attachments' },
   { id: 'settings', label: 'common:settings', path: '/$idOrSlug/settings' },

@@ -22,8 +22,7 @@
 
     /* Type checking */
     "incremental": true,
-    "declaration": true,
-    "composite": true
+    "declaration": true
   },
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

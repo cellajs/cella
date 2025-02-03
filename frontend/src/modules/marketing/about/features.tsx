@@ -3,23 +3,13 @@ import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
+import { features } from './about-config';
 
 type FeatureProps = {
   icon: string;
   invertClass: string;
   index: number;
 };
-const features = [
-  { icon: 'hono' },
-  { icon: 'react' },
-  { icon: 'drizzle' },
-  { icon: 'shadcn' },
-  { icon: 'lucia' },
-  { icon: 'openapi' },
-  { icon: 'vite' },
-  { icon: 'tanstack' },
-  { icon: 'electric' },
-];
 
 const Feature = ({ icon, invertClass, index }: FeatureProps) => {
   const { t } = useTranslation();

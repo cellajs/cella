@@ -12,7 +12,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import InputFormField from '~/modules/common/form-fields/input';
 import { createToast } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { useCreateRequestsMutation } from '~/modules/requests/query-mutations';
+import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/form';
 import { useUserStore } from '~/store/user';
@@ -40,7 +40,7 @@ const ContactForm = ({ dialog: isDialog }: { dialog?: boolean }) => {
     isDialog && dialog.remove();
   };
 
-  const { mutate: createRequest } = useCreateRequestsMutation();
+  const { mutate: createRequest } = useCreateRequestMutation();
 
   const onSubmit: SubmitHandler<FormValues> = (body) => {
     createRequest(body, {

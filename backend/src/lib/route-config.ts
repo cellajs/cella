@@ -1,6 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
-import type { Env } from '#/types/app';
+import type { Env } from '#/lib/context';
 import type { NonEmptyArray } from '#/types/common';
 
 export type RouteOptions = Parameters<typeof createRoute>[0] & {

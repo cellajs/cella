@@ -1,6 +1,7 @@
 import { config } from 'config';
 import { Column, Row, Text } from 'jsx-email';
 import { i18n } from '../src/lib/i18n';
+import type { BasicTemplateType } from '../src/lib/mailer';
 import { AppLogo } from './components/app-logo';
 import { Avatar } from './components/avatar';
 import { EmailContainer } from './components/container';
@@ -8,23 +9,21 @@ import { EmailBody } from './components/email-body';
 import { EmailButton } from './components/email-button';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import { UserName } from './components/user-name';
-import type { BasicTemplateType } from './types';
 
-interface Props extends BasicTemplateType {
-  token: string;
-  inviteBy: string;
+export interface SystemInviteEmailProps extends BasicTemplateType {
+  systemInviteLink: string;
+  senderName: string;
 }
 
 const appName = config.name;
 
-export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, token }: Props) => {
+export const SystemInviteEmail = ({ name, lng, senderName, systemInviteLink }: SystemInviteEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.system_invite.preview', { appName, lng })}>
-      {inviteBy && (
+      {senderName && (
         <Row style={{ margin: '1.5rem 0 1rem' }}>
           <Column align="center">
-            <Avatar name={inviteBy} type="user" />
+            <Avatar name={senderName} type="user" />
           </Column>
         </Row>
       )}
@@ -40,21 +39,20 @@ export const SystemInviteEmail = ({ userName, userLanguage: lng, inviteBy, token
         }
       />
       <EmailBody>
-        {userName && <UserName beforeText={i18n.t('backend:email.hi', { lng })} userName={userName} />}
         <Text>
+          <p style={{ marginBottom: '4px' }}>{name && i18n.t('backend:email.hi', { lng, name })}</p>
           <span
             // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
             dangerouslySetInnerHTML={{
-              __html: i18n.t('backend:email.system_invite.text', { lng, appName, inviteBy }),
+              __html: i18n.t('backend:email.system_invite.text', { lng, appName, senderName }),
             }}
           />
         </Text>
 
-        <EmailButton ButtonText={i18n.t('common:join', { lng })} href={`${config.frontendUrl}/auth/invitation/${token}`} />
+        {/* User is sent to authenticate page, where this invitation token will be used to complete the sign up process */}
+        <EmailButton ButtonText={i18n.t('common:join', { lng })} href={systemInviteLink} />
 
-        <Text style={{ fontSize: '.75rem', color: '#6a737d', margin: '0.5rem 0 0 0', textAlign: 'center' }}>
-          {i18n.t('backend:email.invite_expires', { lng })}
-        </Text>
+        <Text style={{ fontSize: '.85rem', margin: '0.5rem 0 0 0', textAlign: 'center' }}>{i18n.t('backend:email.invite_expires', { lng })}</Text>
       </EmailBody>
 
       <AppLogo />

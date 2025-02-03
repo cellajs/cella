@@ -3,7 +3,7 @@ import { env } from '../../env';
 
 import { getSignedUrl as cloudfrontGetSignedUrl } from '@aws-sdk/cloudfront-signer';
 
-export type ImadoUrlParams = {
+type ImadoUrlParams = {
   width?: number;
   height?: number;
   quality?: number;
@@ -16,7 +16,8 @@ interface ImadoUrlConfig {
   cloudfrontPrivateKey: string;
 }
 
-export class ImadoUrl {
+// TODO why is all this not used?
+class ImadoUrl {
   private config: ImadoUrlConfig;
 
   constructor(config: ImadoUrlConfig) {

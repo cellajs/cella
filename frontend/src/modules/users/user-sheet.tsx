@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { FlameKindling, WifiOff } from 'lucide-react';
+import { FlameKindling, ServerCrash, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
@@ -24,14 +24,13 @@ const UserSheet = ({ idOrSlug, orgIdOrSlug }: { idOrSlug: string; orgIdOrSlug?: 
   // Use the cached user if available, otherwise fallback to the server-fetched data
   const user = cashedUser || data;
 
-  // TODO show error message
-  if (isError) return null;
+  if (isError) return <ContentPlaceholder Icon={ServerCrash} title={t('error:request_failed')} />;
 
-  // Show a loading spinner if no cached user exists and the data is still loading
+  // Show a loading spinner if no cached user exists and data is still loading
   if (!cashedUser && isLoading) {
     return (
       <div className="block">
-        <Spinner className="h-10 w-10" />
+        <Spinner className="mt-[40vh] h-10 w-10" />
       </div>
     );
   }

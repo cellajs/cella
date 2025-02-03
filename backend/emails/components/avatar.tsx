@@ -7,6 +7,7 @@ const getRandomColor = () => {
   return color;
 };
 
+// TODO make it use the same color for the same id
 export const Avatar = ({ name, type = 'user' }: { name?: string | null; type?: 'user' | 'organization' }) => {
   let initials = 'U';
   if (name) {

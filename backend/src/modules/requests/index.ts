@@ -1,25 +1,20 @@
 import { type SQL, and, count, eq, ilike, inArray } from 'drizzle-orm';
 
-import { config } from 'config';
-import { render } from 'jsx-email';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { db } from '#/db/db';
 import { type RequestsModel, requestsTable } from '#/db/schema/requests';
 import { usersTable } from '#/db/schema/users';
-import { getContextUser } from '#/lib/context';
+import type { Env } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
-import { emailSender } from '#/lib/mailer';
 import { sendSlackMessage } from '#/lib/notification';
-import { CustomHono } from '#/types/common';
 import { getOrderColumn } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
-import { MessageEmail } from '../../../emails/message';
-import { env } from '../../../env';
 import requestsRoutesConfig from './routes';
 
 // These requests are only allowed to be created if user has none yet
 const uniqueRequests: RequestsModel['type'][] = ['waitlist', 'newsletter'];
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // Requests endpoints
 const requestsRoutes = app
@@ -30,7 +25,7 @@ const requestsRoutes = app
     const { email, type, message } = ctx.req.valid('json');
     if (type === 'waitlist') {
       const [existingRequest] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
-      if (existingRequest) return errorResponse(ctx, 401, 'request_email_is_user', 'info');
+      if (existingRequest) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
     }
 
     // Check if not duplicate for unique requests
@@ -106,31 +101,6 @@ const requestsRoutes = app
 
     // Delete the requests
     await db.delete(requestsTable).where(inArray(requestsTable.id, toDeleteIds));
-
-    return ctx.json({ success: true }, 200);
-  })
-  /*
-   *  Send message to new users
-   */
-  .openapi(requestsRoutesConfig.sendMessage, async (ctx) => {
-    const user = getContextUser();
-    const { emails, subject, content } = ctx.req.valid('json');
-
-    // Generate and send email
-    const emailHtml = await render(
-      MessageEmail({
-        userLanguage: user.language,
-        subject,
-        content,
-        appName: config.name,
-      }),
-    );
-    // For test purposes
-    if (env.NODE_ENV === 'development') {
-      emailSender.send(env.SEND_ALL_TO_EMAIL ?? user.email, subject, emailHtml);
-    } else {
-      for (const email of emails) emailSender.send(email, subject, emailHtml);
-    }
 
     return ctx.json({ success: true }, 200);
   });

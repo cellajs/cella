@@ -22,7 +22,7 @@ export const TextEffect: React.FC<TextEffectProps> = ({ text, className = '' }) 
   const isInView = useInView(ref, { once: true });
 
   return (
-    <motion.h2
+    <motion.div
       ref={ref}
       initial="hidden"
       animate={isInView ? 'show' : ''}
@@ -36,6 +36,6 @@ export const TextEffect: React.FC<TextEffectProps> = ({ text, className = '' }) 
           {word}
         </motion.span>
       ))}
-    </motion.h2>
+    </motion.div>
   );
 };

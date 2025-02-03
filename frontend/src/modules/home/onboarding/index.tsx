@@ -53,7 +53,8 @@ const Onboarding = ({ onboarding = 'start', onboardingToStepper }: OnboardingPro
                     </CardHeader>
                     <CardContent>
                       {id === 'profile' && (
-                        <UpdateUserForm user={user} hiddenFields={['email', 'bio', 'newsletter', 'slug']}>
+                        //  TODO make hiddenhields type safe
+                        <UpdateUserForm user={user} hiddenFields={['email', 'newsletter', 'slug']}>
                           <StepperFooter />
                         </UpdateUserForm>
                       )}

@@ -8,12 +8,12 @@ export const membersKeys = {
   all: ['members'] as const,
   list: () => [...membersKeys.all, 'list'] as const,
   table: (filters?: GetMembersParams) => [...membersKeys.list(), filters] as const,
-  similar: (filters?: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...membersKeys.all, filters] as const,
+  similar: (filters?: Pick<GetMembersParams, 'orgIdOrSlug' | 'idOrSlug' | 'entityType'>) => [...membersKeys.list(), filters] as const,
   update: () => [...membersKeys.all, 'update'] as const,
   delete: () => [...membersKeys.all, 'delete'] as const,
 };
 
-// Infinite Query Options to get a paginated list of members
+// Infinite query options to get a paginated list of members
 export const membersQueryOptions = ({
   idOrSlug,
   orgIdOrSlug,

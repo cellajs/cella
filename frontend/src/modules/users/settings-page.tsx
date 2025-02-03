@@ -20,7 +20,7 @@ import { PageAside } from '~/modules/common/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { createToast } from '~/modules/common/toaster';
 import DeleteSelf from '~/modules/users/delete-self';
-import { deletePasskey, registerPasskey } from '~/modules/users/helpers';
+import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
 import { useTerminateSessionsMutation } from '~/modules/users/query-mutations';
 import { SessionTile } from '~/modules/users/session-tile';
 import UpdateUserForm from '~/modules/users/update-user-form';
@@ -40,6 +40,9 @@ const UserSettingsPage = () => {
 
   const sessionsWithoutCurrent = useMemo(() => user.sessions.filter((session) => !session.isCurrent), [user.sessions]);
   const sessions = Array.from(user.sessions).sort((a) => (a.isCurrent ? -1 : 1));
+
+  const [disabledResetPassword, setDisabledResetPassword] = useState(false);
+  const invertClass = mode === 'dark' ? 'invert' : '';
 
   // Terminate one or all sessions
   const { mutate: deleteMySessions, isPending } = useTerminateSessionsMutation();
@@ -77,13 +80,16 @@ const UserSettingsPage = () => {
     );
   };
 
-  const [disabledResetPassword, setDisabledResetPassword] = useState(false);
-  const invertClass = mode === 'dark' ? 'invert' : '';
-
   const onDeleteSession = (ids: string[]) => {
     if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
-
     deleteMySessions(ids);
+  };
+
+  const authenticateWithProvider = (provider: (typeof mapOauthProviders)[number]) => {
+    if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
+
+    // Proceed to OAuth URL with redirect and connect=true
+    window.location.href = `${provider.url}?connect=true&redirect=${encodeURIComponent(window.location.href)}`;
   };
 
   return (
@@ -158,7 +164,7 @@ const UserSettingsPage = () => {
                 </div>
               )}
               <div className="flex max-sm:flex-col gap-2 mb-6">
-                <Button key="setPasskey" type="button" variant="plain" onClick={registerPasskey}>
+                <Button key="registerPasskey" type="button" variant="plain" onClick={passkeyRegistration}>
                   <KeyRound className="w-4 h-4 mr-2" />
                   {user.passkey ? t('common:reset_passkey') : `${t('common:add')} ${t('common:new_passkey').toLowerCase()}`}
                 </Button>
@@ -192,19 +198,7 @@ const UserSettingsPage = () => {
                       </div>
                     );
                   return (
-                    <Button
-                      key={provider.id}
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
-                        // Set cookies before redirecting same(as in backend/src/modules/auth/index)
-                        document.cookie = `link_to_userId=${user.id}; path=/; secure; SameSite=Strict`;
-
-                        // Redirect to the provider's URL
-                        window.location.href = `${provider.url}?redirect=${encodeURIComponent(window.location.href)}`;
-                      }}
-                    >
+                    <Button key={provider.id} type="button" variant="outline" onClick={() => authenticateWithProvider(provider)}>
                       <img
                         src={`/static/images/${provider.id}-icon.svg`}
                         alt={provider.id}

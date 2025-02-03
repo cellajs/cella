@@ -1,14 +1,16 @@
-import { Check, ChevronDown } from 'lucide-react';
-import * as React from 'react';
-import { useEffect } from 'react';
+import { Check, ChevronDown, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { Virtualizer } from 'virtua';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
+import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { Button } from '~/modules/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
-import { ScrollArea } from '~/modules/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 
 interface ComboBoxOption {
   value: string;
@@ -37,14 +39,17 @@ const Combobox: React.FC<ComboboxProps> = ({
   contentWidthMatchInput,
   disabled,
 }) => {
-  const formValue = useFormContext?.()?.getValues(name);
+  const { t } = useTranslation();
+  const formValue = useFormContext()?.getValues(name);
+  const isMobile = useBreakpoints('max', 'sm');
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   const { ref, bounds } = useMeasure<HTMLButtonElement>();
-  const isMobile = useBreakpoints('max', 'sm');
-  const [open, setOpen] = React.useState(false);
-  const [selectedOption, setSelectedOption] = React.useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
+  const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [selectedOption, setSelectedOption] = useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
 
-  const [searchValue, setSearchValue] = React.useState('');
+  const excludeAvatarWrapFields = ['timezone', 'country'];
 
   const handleSelect = (newResult: string) => {
     const result = options.find((o) => o.label === newResult);
@@ -75,51 +80,59 @@ const Combobox: React.FC<ComboboxProps> = ({
         >
           {selectedOption ? (
             <div className="flex items-center truncate gap-2">
-              {name !== 'timezone' && name !== 'country' && (
+              {!excludeAvatarWrapFields.includes(name) && (
                 <AvatarWrap className="h-6 w-6 text-xs shrink-0" id={selectedOption.value} name={name} url={selectedOption.url} />
               )}
-              {renderOption && selectedOption ? renderOption(selectedOption) : <span className="truncate">{selectedOption.label}</span>}
+              {renderOption?.(selectedOption) ?? <span className="truncate">{selectedOption.label}</span>}
             </div>
           ) : (
-            <span className="truncate">{placeholder || ''}</span>
+            <span className="truncate">{placeholder || t('common:select')}</span>
           )}
           <ChevronDown className={`ml-2 h-4 w-4 shrink-0 opacity-50 transition-transform ${open ? '-rotate-90' : 'rotate-0'}`} />
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" style={{ width: `${contentWidthMatchInput ? `${bounds.left + bounds.right + 2}px` : '100%'}` }} className={'p-0'}>
+      <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }} className="p-0">
         <Command>
           {!isMobile && (
             <CommandInput
               value={searchValue}
-              onValueChange={(searchValue) => {
-                setSearchValue(searchValue);
-              }}
+              onValueChange={setSearchValue}
               clearValue={setSearchValue}
-              placeholder={searchPlaceholder || ''}
+              placeholder={searchPlaceholder || t('common:search')}
             />
           )}
 
           <CommandList>
-            <CommandEmpty>No option found</CommandEmpty>
-            <ScrollArea className="max-h-[30vh] overflow-y-auto">
-              <CommandGroup>
-                {options.map((option) => (
-                  <CommandItem
-                    key={option.value?.trim().toLowerCase() + Math.floor(Math.random() * 1000)}
-                    value={option.label}
-                    onSelect={handleSelect}
-                    className="group rounded-md flex justify-between items-center w-full leading-normal"
-                  >
-                    <div className="flex items-center gap-2">
-                      {name !== 'timezone' && name !== 'country' && <AvatarWrap id={option.value} name={name} url={option.url} />}
-                      {renderOption ? renderOption(option) : <> {option.label}</>}
-                    </div>
-                    <Check size={16} className={`text-success ${formValue !== option.value && 'invisible'}`} />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </ScrollArea>
+            <CommandEmpty>
+              <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t(`common:${name}`).toLowerCase() })} />
+            </CommandEmpty>
+
+            <CommandGroup>
+              {/* To avoid conflicts between ScrollArea and Virtualizer, do not set a max-h value on ScrollArea. 
+              As this will cause all list elements to render at once in Virtualizer*/}
+              <ScrollArea className="h-[30vh]" viewPortRef={scrollViewportRef}>
+                <ScrollBar />
+                <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef} overscan={1}>
+                  {options
+                    .filter(({ label }) => label.toLowerCase().includes(searchValue.toLowerCase()))
+                    .map((option) => (
+                      <CommandItem
+                        key={option.value}
+                        value={option.label}
+                        onSelect={handleSelect}
+                        className="group rounded-md flex justify-between items-center w-full leading-normal"
+                      >
+                        <div className="flex items-center gap-2">
+                          {!excludeAvatarWrapFields.includes(name) && <AvatarWrap id={option.value} name={name} url={option.url} />}
+                          {renderOption?.(option) ?? option.label}
+                        </div>
+                        <Check size={16} className={`text-success ${formValue !== option.value && 'invisible'}`} />
+                      </CommandItem>
+                    ))}
+                </Virtualizer>
+              </ScrollArea>
+            </CommandGroup>
           </CommandList>
         </Command>
       </PopoverContent>

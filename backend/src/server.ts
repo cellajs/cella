@@ -1,14 +1,13 @@
 import { contextStorage } from 'hono/context-storage';
 
-import type { Env } from '#/types/app';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import type { Env } from '#/lib/context';
 import { errorResponse } from './lib/errors';
 import middlewares from './middlewares';
 import defaultHook from './utils/default-hook';
 
-import { CustomHono } from '#/types/common';
-
 // Set default hook to catch validation errors
-const baseApp = new CustomHono<Env>({
+const baseApp = new OpenAPIHono<Env>({
   defaultHook,
 });
 

@@ -4,8 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { nanoid } from '~/utils/nanoid';
 
+type SheetTab = { id: string; label: string; element: React.ReactNode };
+
 interface Props {
-  tabs: { id: string; label: string; element: React.ReactNode }[];
+  tabs: SheetTab[];
 }
 
 export const SheetTabs = ({ tabs }: Props) => {

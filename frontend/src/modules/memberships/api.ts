@@ -3,7 +3,7 @@ import { clientConfig, handleResponse } from '~/lib/api';
 import type { ContextEntity } from '~/types/common';
 import { membershipsHc } from '#/modules/memberships/hc';
 
-// Create Hono clients to make requests to the backend
+// RPC
 export const client = membershipsHc(config.backendUrl, clientConfig);
 
 export type InviteMemberProps = Parameters<(typeof client.index)['$post']>['0']['json'] &

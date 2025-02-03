@@ -1,7 +1,19 @@
-import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 
-import { type GetOrganizationsParams, getOrganization, getOrganizations } from '~/modules/organizations/api';
+import type { ApiError } from '~/lib/api';
+import { queryClient } from '~/lib/router';
+import {
+  type CreateOrganizationParams,
+  type GetOrganizationsParams,
+  type UpdateOrganizationBody,
+  createOrganization,
+  deleteOrganizations,
+  getOrganization,
+  getOrganizations,
+  updateOrganization,
+} from '~/modules/organizations/api';
+import type { OrganizationWithMembership } from '~/types/common';
 
 export const organizationsKeys = {
   one: ['organization'] as const,
@@ -12,7 +24,6 @@ export const organizationsKeys = {
   create: () => [...organizationsKeys.one, 'create'] as const,
   update: () => [...organizationsKeys.one, 'update'] as const,
   delete: () => [...organizationsKeys.one, 'delete'] as const,
-  sendNewsLetter: () => [...organizationsKeys.one, 'sendNewsLetter'] as const,
 };
 
 export const organizationQueryOptions = (idOrSlug: string) =>
@@ -39,5 +50,31 @@ export const organizationsQueryOptions = ({
     refetchOnWindowFocus: false,
     queryFn: async ({ pageParam: page, signal }) => await getOrganizations({ page, q, sort, order, limit, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
+  });
+};
+
+export const useOrganizationCreateMutation = () => {
+  return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationParams>({
+    mutationKey: organizationsKeys.create(),
+    mutationFn: createOrganization,
+  });
+};
+
+export const useOrganizationUpdateMutation = () => {
+  return useMutation<OrganizationWithMembership, ApiError, { idOrSlug: string; json: UpdateOrganizationBody }>({
+    mutationKey: organizationsKeys.update(),
+    mutationFn: updateOrganization,
+    onSuccess: (updatedOrganization, { idOrSlug }) => {
+      queryClient.setQueryData(organizationsKeys.single(idOrSlug), updatedOrganization);
+      queryClient.invalidateQueries({ queryKey: organizationsKeys.one });
+    },
+    gcTime: 1000 * 10,
+  });
+};
+
+export const useOrganizationDeleteMutation = () => {
+  return useMutation<void, ApiError, string[]>({
+    mutationKey: organizationsKeys.delete(),
+    mutationFn: deleteOrganizations,
   });
 };

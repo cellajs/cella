@@ -1,15 +1,16 @@
 import { count } from 'drizzle-orm';
 import { db } from '#/db/db';
 
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { getTableConfig } from 'drizzle-orm/pg-core';
 import { register } from 'prom-client';
 import { entityTables } from '#/entity-config';
+import type { Env } from '#/lib/context';
 import { metricsConfig } from '#/middlewares/observability/config';
 import { calculateRequestsPerMinute, parsePromMetrics } from '#/modules/metrics/helpers/utils';
-import { CustomHono } from '#/types/common';
 import MetricsRoutesConfig from './routes';
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 // Metric endpoints
 const metricRoutes = app

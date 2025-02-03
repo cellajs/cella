@@ -18,7 +18,7 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { organizationsKeys } from '~/modules/organizations/query';
-import { useOrganizationCreateMutation } from '~/modules/organizations/query-mutations';
+import { useOrganizationCreateMutation } from '~/modules/organizations/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';

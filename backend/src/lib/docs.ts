@@ -1,7 +1,8 @@
+import type { OpenAPIHono } from '@hono/zod-openapi';
 import { apiReference } from '@scalar/hono-api-reference';
 import { config } from 'config';
+import type { Env } from '#/lib/context';
 import { appModulesList } from '#/routes';
-import type { CustomHono } from '#/types/common';
 
 const commonModulesList = [
   { name: 'me', description: 'Current user endpoints. They are split from `users` due to a different authorization flow.' },
@@ -24,7 +25,7 @@ const commonModulesList = [
 ];
 
 // Generate OpenAPI documentation using hono/zod-openapi and scalar/hono-api-reference
-const docs = (app: CustomHono) => {
+const docs = (app: OpenAPIHono<Env>) => {
   const registry = app.openAPIRegistry;
   const tags = commonModulesList.concat(appModulesList);
 

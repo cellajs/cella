@@ -5,10 +5,11 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
 
+import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy } from 'react';
-import { useSignUpMutation } from '~/modules/auth/query-mutations';
+import { signUp, signUpWithToken } from '~/modules/auth/api';
 import { dialog } from '~/modules/common/dialoger/state';
 import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
@@ -23,7 +24,7 @@ const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));
 const formSchema = emailPasswordBodySchema;
 
 interface Props {
-  tokenData: TokenData | null;
+  tokenData: TokenData | undefined;
   email: string;
   resetSteps: () => void;
   emailEnabled: boolean;
@@ -33,9 +34,28 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { token } = useSearch({ from: AuthenticateRoute.id });
-  const { mutate: signUp, isPending } = useSignUpMutation();
+  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
+  // Handle basic sign up
+  const { mutate: _signUp, isPending } = useMutation({
+    mutationFn: signUp,
+    onSuccess: () => {
+      navigate({ to: '/auth/email-verification', replace: true });
+    },
+  });
+
+  // Handle sign up with token to accept invitation
+  const { mutate: _signUpWithToken, isPending: isPendingWithToken } = useMutation({
+    mutationFn: signUpWithToken,
+    onSuccess: () => {
+      // Redirect to organization invitation page if there is a membership invitation
+      const isMemberInvitation = tokenData?.organizationSlug && token && tokenId;
+      if (isMemberInvitation) return navigate({ to: '/invitation/$token', replace: true, params: { token }, search: { tokenId } });
+      return navigate({ to: config.welcomeRedirectPath, replace: true });
+    },
+  });
+
+  // Create form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -44,28 +64,21 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
     },
   });
 
+  // Handle submit action
   const onSubmit = (formValues: z.infer<typeof formSchema>) => {
-    signUp(
-      { ...formValues, token },
-      {
-        onSuccess: () => {
-          // Redirect to organization invitation page if token is present
-          const to = token ? '/auth/invitation/$token' : '/auth/request-verification';
-
-          navigate({
-            to,
-            replace: true,
-            params: { token },
-          });
-        },
-      },
-    );
+    if (token && tokenId) return _signUpWithToken({ ...formValues, token });
+    _signUp({ ...formValues });
   };
 
   return (
     <Form {...form}>
       <h1 className="text-2xl text-center">
-        {tokenData ? t('common:invite_create_account') : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`} <br />
+        {tokenData?.organizationSlug
+          ? t('common:invite_accept_proceed')
+          : tokenData
+            ? t('common:invite_create_account')
+            : `${t('common:create_resource', { resource: t('common:account').toLowerCase() })}?`}{' '}
+        <br />
         {!tokenData && (
           <Button variant="ghost" onClick={resetSteps} className="font-light mt-2 text-xl">
             {email}
@@ -108,7 +121,7 @@ export const SignUpForm = ({ tokenData, email, resetSteps, emailEnabled }: Props
               </FormItem>
             )}
           />
-          <SubmitButton loading={isPending} className="w-full">
+          <SubmitButton loading={isPending || isPendingWithToken} className="w-full">
             {t('common:sign_up')}
             <ArrowRight size={16} className="ml-2" />
           </SubmitButton>
@@ -123,7 +136,7 @@ export const LegalNotice = ({ email }: { email: string }) => {
 
   const openDialog = (mode: 'terms' | 'privacy') => () => {
     const dialogComponent = (
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<Spinner className="mt-[40vh] h-10 w-10" />}>
         <LegalText textFor={mode} />
       </Suspense>
     );

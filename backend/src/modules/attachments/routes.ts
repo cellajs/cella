@@ -170,7 +170,7 @@ class AttachmentRoutesConfig {
     method: 'get',
     path: '/{id}/link',
     tags: ['attachments'],
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     summary: 'Redirect to attachment',
     description: 'Redirect to attachment by id.',
     request: {
@@ -189,7 +189,7 @@ class AttachmentRoutesConfig {
   public getAttachmentCover = createRouteConfig({
     method: 'get',
     path: '/{id}/cover',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     tags: ['attachments'],
     summary: 'Get attachment cover',
     description: 'Get attachment cover image by id.',

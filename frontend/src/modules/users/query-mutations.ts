@@ -4,17 +4,7 @@ import type { ApiError } from '~/lib/api';
 import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
 import { createToast } from '~/modules/common/toaster';
-import {
-  type LeaveEntityQuery,
-  type NewsLetterToSelfBody,
-  type UpdateUserParams,
-  deleteMySessions,
-  deleteSelf,
-  leaveEntity,
-  sendNewsletterToSelf,
-  updateSelf,
-  updateUser,
-} from '~/modules/users/api';
+import { type LeaveEntityQuery, type UpdateUserParams, deleteMySessions, deleteSelf, leaveEntity, updateSelf, updateUser } from '~/modules/users/api';
 import { meKeys, usersKeys } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';
 import type { User } from '~/types/common';
@@ -44,13 +34,6 @@ export const useDeleteUserMutation = () => {
   return useMutation<void, ApiError, string[]>({
     mutationKey: usersKeys.delete(),
     mutationFn: deleteSelf,
-  });
-};
-
-export const useSendNewsLetterToSelfMutation = () => {
-  return useMutation<boolean, ApiError, NewsLetterToSelfBody>({
-    mutationKey: usersKeys.sendNewsletterSelf(),
-    mutationFn: sendNewsletterToSelf,
   });
 };
 

@@ -8,7 +8,7 @@ import StickyBox from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
 import { nanoid } from '~/utils/nanoid';
 
-export type PageNavTab = {
+export type PageTab = {
   id: string;
   label: string;
   path: ToPathOption;
@@ -21,7 +21,7 @@ interface Props {
     thumbnailUrl?: string | null;
     name: string;
   };
-  tabs: PageNavTab[];
+  tabs: PageTab[];
   className?: string;
 }
 

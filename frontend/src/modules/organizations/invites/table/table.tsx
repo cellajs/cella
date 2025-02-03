@@ -3,11 +3,10 @@ import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useState } f
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
-import type { InvitesInfoProps, InvitesInfoSearch } from '~/modules/organizations/invites/table';
-import type { BaseTableMethods, BaseTableProps, OrganizationInvitesInfo } from '~/types/common';
+import type { InvitesProps, InvitesSearch } from '~/modules/organizations/invites/table';
+import type { BaseTableMethods, BaseTableProps, OrganizationInvites } from '~/types/common';
 
-type BaseDataTableProps = InvitesInfoProps &
-  BaseTableProps<OrganizationInvitesInfo, InvitesInfoSearch> & { queryVars: { role: InvitesInfoSearch['role'] } };
+type BaseDataTableProps = InvitesProps & BaseTableProps<OrganizationInvites, InvitesSearch> & { queryVars: { role: InvitesSearch['role'] } };
 
 const BaseDataTable = memo(
   forwardRef<BaseTableMethods, BaseDataTableProps>(({ info, columns, queryVars, updateCounts, sortColumns, setSortColumns }, ref) => {
@@ -16,7 +15,7 @@ const BaseDataTable = memo(
     // Extract query variables and set defaults
     const { q, sort, order, role, limit } = queryVars;
 
-    const [rows, setRows] = useState<OrganizationInvitesInfo[]>(info);
+    const [rows, setRows] = useState<OrganizationInvites[]>(info);
 
     // Handle sorting and filtering
     const filteredAndSortedRows = useMemo(() => {
@@ -58,7 +57,7 @@ const BaseDataTable = memo(
     }));
 
     return (
-      <DataTable<OrganizationInvitesInfo>
+      <DataTable<OrganizationInvites>
         {...{
           columns: columns.filter((column) => column.visible),
           rows: filteredAndSortedRows,

@@ -1,23 +1,26 @@
 import { z } from '@hono/zod-openapi';
+import { tokenTypeEnum } from '#/db/schema/tokens';
 import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated, isPublicAccess, systemGuard } from '#/middlewares/guard';
+import { hasValidToken } from '#/middlewares/has-valid-token';
 import { emailEnumLimiter, passwordLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
-import { cookieSchema, passwordSchema, tokenSchema } from '#/utils/schema/common-schemas';
+import { cookieSchema, idSchema, passwordSchema, tokenSchema } from '#/utils/schema/common-schemas';
 import {
-  acceptInviteBodySchema,
-  acceptInviteResponseSchema,
+  acceptOrgInviteResponseSchema,
   checkTokenSchema,
   emailBodySchema,
   emailPasswordBodySchema,
+  oauthQuerySchema,
   passkeyChallengeQuerySchema,
-  passkeyCreationBodySchema,
+  passkeyRegistrationBodySchema,
   passkeyVerificationBodySchema,
+  sendVerificationEmailBodySchema,
   signInResponse,
 } from './schema';
 
 class AuthLayoutRoutesConfig {
-  public impersonationSignIn = createRouteConfig({
+  public startImpersonation = createRouteConfig({
     method: 'get',
     path: '/impersonation/start',
     guard: [isAuthenticated, systemGuard],
@@ -41,7 +44,7 @@ class AuthLayoutRoutesConfig {
     },
   });
 
-  public impersonationSignOut = createRouteConfig({
+  public stopImpersonation = createRouteConfig({
     method: 'get',
     path: '/impersonation/stop',
     guard: isPublicAccess,
@@ -68,7 +71,7 @@ class AuthLayoutRoutesConfig {
     middleware: [emailEnumLimiter],
     tags: ['auth'],
     summary: 'Check if email exists',
-    description: 'Check if user with email address exists and whether user has a passkey.',
+    description: 'Check if user with email address exists.',
     security: [],
     request: {
       body: {
@@ -130,6 +133,45 @@ class AuthLayoutRoutesConfig {
     },
   });
 
+  public signUpWithToken = createRouteConfig({
+    method: 'post',
+    path: '/sign-up/{token}',
+    guard: isPublicAccess,
+    middleware: [spamLimiter, emailEnumLimiter, hasValidToken('invitation')],
+    tags: ['auth'],
+    summary: 'Sign up to accept invite',
+    description: 'Sign up with email and password to accept system or organization invitation.',
+    security: [],
+    request: {
+      params: tokenSchema,
+      body: {
+        content: {
+          'application/json': {
+            schema: emailPasswordBodySchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: 'User signed up',
+        headers: z.object({
+          'Set-Cookie': cookieSchema,
+        }),
+        content: {
+          'application/json': {
+            schema: successWithoutDataSchema,
+          },
+        },
+      },
+      302: {
+        headers: z.object({ Location: z.string() }),
+        description: 'Redirect to frontend',
+      },
+      ...errorResponses,
+    },
+  });
+
   public sendVerificationEmail = createRouteConfig({
     method: 'post',
     path: '/send-verification-email',
@@ -137,13 +179,13 @@ class AuthLayoutRoutesConfig {
     middleware: [spamLimiter],
     tags: ['auth'],
     summary: 'Resend verification email',
-    description: 'Resend verification email to user based on email address.',
+    description: 'Resend verification email to user based on token id.',
     security: [],
     request: {
       body: {
         content: {
           'application/json': {
-            schema: emailBodySchema,
+            schema: sendVerificationEmailBodySchema,
           },
         },
       },
@@ -163,26 +205,15 @@ class AuthLayoutRoutesConfig {
 
   public verifyEmail = createRouteConfig({
     method: 'post',
-    path: '/verify-email',
+    path: '/verify-email/{token}',
     guard: isPublicAccess,
-    middleware: [tokenLimiter],
+    middleware: [tokenLimiter, hasValidToken('email_verification')],
     tags: ['auth'],
     summary: 'Verify email by token',
     description: 'Verify email address by token from the verification email. Receive a user session when successful.',
     security: [],
     request: {
-      query: z.object({
-        resend: z.string().optional(),
-      }),
-      body: {
-        content: {
-          'application/json': {
-            schema: z.object({
-              token: z.string(),
-            }),
-          },
-        },
-      },
+      params: tokenSchema,
     },
     responses: {
       200: {
@@ -228,11 +259,11 @@ class AuthLayoutRoutesConfig {
     },
   });
 
-  public createPasswordCallback = createRouteConfig({
+  public createPasswordWithToken = createRouteConfig({
     method: 'post',
     path: '/create-password/{token}',
     guard: isPublicAccess,
-    middleware: [tokenLimiter],
+    middleware: [tokenLimiter, hasValidToken('password_reset')],
     tags: ['auth'],
     summary: 'Create password by token',
     description: 'Submit new password and directly receive a user session.',
@@ -263,7 +294,7 @@ class AuthLayoutRoutesConfig {
   public verifyPasskey = createRouteConfig({
     method: 'post',
     path: '/passkey-verification',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Verify passkey',
@@ -296,7 +327,7 @@ class AuthLayoutRoutesConfig {
   public signIn = createRouteConfig({
     method: 'post',
     path: '/sign-in',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     middleware: [passwordLimiter],
     tags: ['auth'],
     summary: 'Sign in with password',
@@ -329,7 +360,7 @@ class AuthLayoutRoutesConfig {
 
   public checkToken = createRouteConfig({
     method: 'post',
-    path: '/check-token',
+    path: '/check-token/{id}',
     middleware: [tokenLimiter],
     guard: isPublicAccess,
     tags: ['auth'],
@@ -337,13 +368,8 @@ class AuthLayoutRoutesConfig {
     description:
       'This endpoint is used to check if a token is still valid. It is used to provide direct user feedback on the validity of tokens such as reset password and invitation.',
     request: {
-      body: {
-        content: {
-          'application/json': {
-            schema: tokenSchema,
-          },
-        },
-      },
+      params: z.object({ id: idSchema }),
+      query: z.object({ type: z.enum(tokenTypeEnum) }),
     },
     responses: {
       200: {
@@ -358,30 +384,24 @@ class AuthLayoutRoutesConfig {
     },
   });
 
-  public acceptInvite = createRouteConfig({
+  // Info: this route requires authentication
+  public acceptOrgInvite = createRouteConfig({
     method: 'post',
     path: '/accept-invite/{token}',
-    guard: isPublicAccess,
-    middleware: [tokenLimiter],
+    guard: [isAuthenticated],
+    middleware: [tokenLimiter, hasValidToken('invitation')],
     tags: ['auth'],
     summary: 'Accept invitation',
     description: 'Accept invitation token',
     request: {
       params: tokenSchema,
-      body: {
-        content: {
-          'application/json': {
-            schema: acceptInviteBodySchema,
-          },
-        },
-      },
     },
     responses: {
       200: {
         description: 'Invitation was accepted',
         content: {
           'application/json': {
-            schema: successWithDataSchema(acceptInviteResponseSchema),
+            schema: successWithDataSchema(acceptOrgInviteResponseSchema),
           },
         },
       },
@@ -392,13 +412,14 @@ class AuthLayoutRoutesConfig {
   public githubSignIn = createRouteConfig({
     method: 'get',
     path: '/github',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with GitHub',
-    description: 'Authenticate with Github to sign in or sign up.',
+    description:
+      'Authenticate with Github to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
     security: [],
     request: {
-      query: z.object({ redirect: z.string().optional() }),
+      query: oauthQuerySchema,
     },
     responses: {
       302: {
@@ -412,7 +433,7 @@ class AuthLayoutRoutesConfig {
   public githubSignInCallback = createRouteConfig({
     method: 'get',
     path: '/github/callback',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Callback for GitHub',
@@ -439,7 +460,7 @@ class AuthLayoutRoutesConfig {
   public getPasskeyChallenge = createRouteConfig({
     method: 'get',
     path: '/passkey-challenge',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Get passkey challenge',
     description: 'Handing over the challenge: this results in a key pair, private and public key being created on the device.',
@@ -457,10 +478,10 @@ class AuthLayoutRoutesConfig {
     },
   });
 
-  public setPasskey = createRouteConfig({
+  public registerPasskey = createRouteConfig({
     method: 'post',
     path: '/passkey-registration',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Register passkey',
@@ -472,7 +493,7 @@ class AuthLayoutRoutesConfig {
         required: true,
         content: {
           'application/json': {
-            schema: passkeyCreationBodySchema,
+            schema: passkeyRegistrationBodySchema,
           },
         },
       },
@@ -493,13 +514,14 @@ class AuthLayoutRoutesConfig {
   public googleSignIn = createRouteConfig({
     method: 'get',
     path: '/google',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with Google',
-    description: 'Authenticate with Google to sign in or sign up.',
+    description:
+      'Authenticate with Google to sign in or sign up. A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
     security: [],
     request: {
-      query: z.object({ redirect: z.string().optional() }),
+      query: oauthQuerySchema,
     },
     responses: {
       302: {
@@ -513,7 +535,7 @@ class AuthLayoutRoutesConfig {
   public googleSignInCallback = createRouteConfig({
     method: 'get',
     path: '/google/callback',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Callback for Google',
@@ -537,15 +559,14 @@ class AuthLayoutRoutesConfig {
   public microsoftSignIn = createRouteConfig({
     method: 'get',
     path: '/microsoft',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     tags: ['auth'],
     summary: 'Authenticate with Microsoft',
-    description: 'Authenticate with Microsoft to sign in or sign up.',
+    description:
+      'Authenticate with Microsoft to sign in or sign up.  A `connect` (userId),`redirect` or `token` query parameter can be used to connect account, redirect to a specific page or to accept invitation.',
     security: [],
     request: {
-      query: z.object({
-        redirect: z.string().optional(),
-      }),
+      query: oauthQuerySchema,
     },
     responses: {
       302: {
@@ -559,7 +580,7 @@ class AuthLayoutRoutesConfig {
   public microsoftSignInCallback = createRouteConfig({
     method: 'get',
     path: '/microsoft/callback',
-    guard: [isPublicAccess],
+    guard: isPublicAccess,
     middleware: [tokenLimiter],
     tags: ['auth'],
     summary: 'Callback for Microsoft',
