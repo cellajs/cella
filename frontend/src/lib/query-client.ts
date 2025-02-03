@@ -7,7 +7,9 @@ import { flushStoresAndCache } from '~/modules/auth/sign-out';
 import { useAlertStore } from '~/store/alert';
 import { createToast } from '../modules/common/toaster';
 
-// Fallback messages for common errors
+/**
+ * Fallback messages for common 400 errors
+ */
 const fallbackMessages = (t: (typeof i18n)['t']) => ({
   400: t('error:bad_request_action'),
   401: t('error:unauthorized_action'),
@@ -16,7 +18,12 @@ const fallbackMessages = (t: (typeof i18n)['t']) => ({
   429: t('error:too_many_requests'),
 });
 
-export const onError = (error: Error) => {
+/**
+ * Global error handler for API requests.
+ * Handles network errors, API errors, and redirects to the sign-in page if the user is not authenticated.
+ * @param error - The error object.
+ */
+export const onError = (error: Error | ApiError) => {
   // Ignore cancellation error
   if (error instanceof CancelledError) {
     return console.debug('Ignoring CancelledError');

@@ -32,7 +32,7 @@ export async function isSystemAdmin(ctx: Context, next: Next): Promise<Response 
 }
 
 /**
- * Middleware  that combine system admin check with IP restriction.
+ * Middleware that combines system admin check with IP restriction.
  * Uses `every` function from Hono to ensure both system admin check and IP restriction are passed.
  *
  * @returns Error response or undefined if the user is allowed to proceed.
@@ -46,7 +46,7 @@ export const systemGuard = every(
 
 /**
  * Middleware for routes that are publicly accessible.
- * This is a placeholder for routes that can be accessed by anyone.
+ * This is a required placeholder for routes that can be accessed by anyone.
  *
  * @param _ - Request context (unused here, but required by Hono middleware signature).
  * @param next - The next middleware or route handler.
