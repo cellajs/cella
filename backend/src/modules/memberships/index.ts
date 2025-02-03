@@ -223,6 +223,7 @@ const membershipsRoutes = app
   })
   /*
    * Delete memberships to remove users from entity
+   * When user is allowed to delete entity, they can delete memberships too
    */
   .openapi(membershipRouteConfig.deleteMemberships, async (ctx) => {
     const { entityType, ids, idOrSlug } = ctx.req.valid('query');
@@ -231,64 +232,41 @@ const membershipsRoutes = app
     if (!entity) return errorResponse(ctx, 404, 'not_found', 'warn', entityType);
     if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', entityType);
 
-    const user = getContextUser();
     const entityIdField = entityIdFields[entityType];
 
     // Convert ids to an array
-    const memberToDeleteIds = Array.isArray(ids) ? ids : [ids];
+    const membershipIds = Array.isArray(ids) ? ids : [ids];
 
     const errors: ErrorType[] = [];
 
     const filters = [eq(membershipsTable.type, entityType), eq(membershipsTable[entityIdField], entity.id)];
 
-    // Get user membership
-    const [currentUserMembership]: (MembershipModel | undefined)[] = await db
-      .select()
-      .from(membershipsTable)
-      .where(and(...filters, eq(membershipsTable.userId, user.id)))
-      .limit(1);
-
     // Get target memberships
     const targets = await db
       .select()
       .from(membershipsTable)
-      .where(and(inArray(membershipsTable.userId, memberToDeleteIds), ...filters));
+      .where(and(inArray(membershipsTable.userId, membershipIds), ...filters));
 
     // Check if membership exist
-    for (const id of memberToDeleteIds) {
+    for (const id of membershipIds) {
       if (!targets.some((target) => target.userId === id)) {
         errors.push(createError(ctx, 404, 'not_found', 'warn', entityType, { user: id }));
       }
     }
 
-    // Filter out what user doesn't have permission to delete
-    const allowedTargets = targets.filter((target) => {
-      if (user.role !== 'admin' && currentUserMembership?.role !== 'admin') {
-        errors.push(
-          createError(ctx, 403, 'delete_resource_forbidden', 'warn', entityType, {
-            user: target.userId,
-            membership: target.id,
-          }),
-        );
-        return false;
-      }
-
-      return true;
-    });
-
     // If the user doesn't have permission to delete any of the memberships, return an error
-    if (allowedTargets.length === 0) return ctx.json({ success: false, errors: errors }, 200);
+    if (targets.length === 0) return ctx.json({ success: false, errors: errors }, 200);
 
     // Delete the memberships
     await db.delete(membershipsTable).where(
       inArray(
         membershipsTable.id,
-        allowedTargets.map((target) => target.id),
+        targets.map((target) => target.id),
       ),
     );
 
     // Send SSE events for the memberships that were deleted
-    for (const membership of allowedTargets) {
+    for (const membership of targets) {
       // Send the event to the user if they are a member of the organization
       const memberIds = targets.map((el) => el.userId);
       sendSSEToUsers(memberIds, 'remove_entity', { id: entity.id, entity: entity.entity });
