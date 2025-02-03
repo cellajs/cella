@@ -1,5 +1,10 @@
 import * as React from 'react';
 
+/**
+ * Prevents body scroll by locking the body's overflow style.
+ *
+ * Resets the overflow style when the component using this hook is unmounted.
+ */
 // @see https://usehooks.com/useLockBodyScroll.
 export function useLockBody() {
   React.useLayoutEffect((): (() => void) => {

@@ -11,7 +11,12 @@ import type {
 } from '~/query/hooks/use-mutate-query-data/types';
 import type { Entity } from '~/types/common';
 
-// determine if the data is ArbitraryEntityQueryData
+/**
+ * Determines if the given data matches the structure of ArbitraryEntityQueryData.
+ *
+ * @param data - The data to check.
+ * @returns True if the data is ArbitraryEntityQueryData, false otherwise.
+ */
 export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQueryData => {
   if (typeof data !== 'object' || data === null) return false;
 
@@ -21,8 +26,13 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
   });
 };
 
-// Data change
-
+/**
+ * Updates the infinite query data based on the specified action.
+ *
+ * @param queryKey - Query key.
+ * @param items - items to update.
+ * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ */
 export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   queryClient.setQueryData<InfiniteEntityQueryData>(queryKey, (data) => {
     if (!data) return;
@@ -40,6 +50,13 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
   });
 };
 
+/**
+ * Updates the query data based on the specified action.
+ *
+ * @param queryKey - Query key.
+ * @param items - items to update.
+ * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ */
 export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   queryClient.setQueryData<EntityQueryData>(queryKey, (data) => {
     if (!data) return;
@@ -55,6 +72,15 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
   });
 };
 
+/**
+ * Updates arbitrary query data based on the specified action.
+ *
+ * @param queryKey - Query key.
+ * @param items - items to update.
+ * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ * @param entity - Entity to update the data for.
+ * @param keyToOperateIn - Optional key to specify which part of the data to update.
+ */
 export const changeArbitraryQueryData = (
   queryKey: QueryKey,
   items: EntityData[] | ContextEntityData[],
@@ -91,8 +117,14 @@ export const changeArbitraryQueryData = (
   });
 };
 
-// Helper funcs
-
+/**
+ * Helper function to update an array of items based on the action.
+ *
+ * @param items - Current items to update.
+ * @param dataItems - Items to merge into current items.
+ * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ * @returns The updated array of items.
+ */
 const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action: QueryDataActions) => {
   // Determine how to handle dataItems in the items array based on action type
   switch (action) {
@@ -130,6 +162,14 @@ const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action
   }
 };
 
+/**
+ * Helper function to update a single item based on the action.
+ *
+ * @param prevItem - Previous item to update.
+ * @param newItem - New item to merge.
+ * @param action - `"create" | "update" | "delete" | "updateMembership"`
+ * @returns The updated item.
+ */
 const updateItem = <T extends ItemData>(prevItem: T, newItem: T, action: QueryDataActions) => {
   // Determine how to handle dataItems in the items array based on action type
   switch (action) {

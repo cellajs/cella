@@ -9,7 +9,21 @@ const day = 864e5;
 // const month = 2592e6;
 const year = 31536e6;
 
-// convert date in into a minimal format'
+/**
+ * Converts a date into a minimal format, based on the difference between the current date and the provided start date.
+ *
+ * If the difference is less than:
+ * - a second, returns "now".
+ * - a minute, returns the number of seconds.
+ * - an hour, returns the number of minutes.
+ * - a day, returns the number of hours.
+ * - a year, returns the full date in "MMM D" format.
+ *
+ * @param startDate - The start date to compare against the current date.
+ * @param passedLoc - Key for the locale to use for formatting the output.
+ * @param addStr - Optional, additional string to append to the result.
+ * @returns A string representing the formatted date difference or the full date.
+ */
 export const dateMini = (startDate: string, passedLoc: keyof typeof locale, addStr?: string) => {
   const start = dayjs(startDate);
   const end = dayjs();

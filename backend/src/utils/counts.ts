@@ -45,8 +45,8 @@ export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnNa
  * Executes the query to count admins and members for a given entity or entity id.
  * Filters by id, if provided, otherwise, it returns counts for all entities.
  *
- * @param  entity - The entity to filter by, or null for all entities.
- * @param  entityIdColumnName - The column name for the entity's id.
+ * @param entity - The entity to filter by, or null for all entities.
+ * @param entityIdColumnName - The column name for the entity's id.
  * @param id - Optional, id to filter the count by a specific entity instance.
  * @returns - The count of admins, members, and total members.
  */

@@ -1,5 +1,15 @@
 import { useThemeStore } from '~/store/theme';
 
+/**
+ * Converts a HEX color to HSL format.
+ *
+ * Validates the HEX format, expands 3-digit codes, and calculates the HSL values.
+ * Returns the HSL string in the format "h, s%, l%".
+ *
+ * @param hex - HEX color code (3 or 6 digits).
+ * @throws Error if the HEX code is invalid.
+ * @returns The HSL color as a string.
+ */
 export const hexToHsl = (hex: string): string => {
   // Validate hex format
   const hexPattern = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;

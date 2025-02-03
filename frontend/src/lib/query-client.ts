@@ -73,6 +73,12 @@ const onSuccess = () => {
   useAlertStore.getState().setDownAlert(null);
 };
 
+/**
+ * Function to fetch data. If online, fetches the query even if there is cached. If offline or an error occurs, it tries to get the cached data.
+ *
+ * @param options - Fetch query options that define the query behavior and parameters.
+ * @returns Returns query data of  undefined.
+ */
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any>) => {
   const cachedData = queryClient.getQueryData(options.queryKey);
@@ -89,6 +95,13 @@ export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any
   }
 };
 
+/**
+ * Function to fetch infinite data. If online, fetches the query even if there is cached. If offline or an error occurs, it tries to get the cached data.
+ *
+ * @param options - Fetch infinite query options that define the query behavior and parameters, including the query key and other settings.
+ * @returns Returns query data of  undefined.
+ *
+ */
 // biome-ignore lint/suspicious/noExplicitAny: any is used to infer the type of the options
 export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<any, any, any, any, any>) => {
   const cachedData = queryClient.getQueryData(options.queryKey);

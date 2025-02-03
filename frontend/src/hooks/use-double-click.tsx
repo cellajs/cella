@@ -1,16 +1,5 @@
 import { type RefObject, useEffect } from 'react';
 
-/**
- * A simple React hook for differentiating single and double clicks on the same component.
- *
- * @param {node} ref Dom node to watch for double clicks
- * @param {number} [latency=300] The amount of time (in milliseconds) to wait before differentiating a single from a double click
- * @param {function} onSingleClick A callback function for single click events
- * @param {function} onDoubleClick A callback function for double click events
- * @param {string[]} allowedTargets Set a Lover case element name that allow to be tracked by hook
- * @param {string[]} excludeIds Set a element id that excluded from tracking by hook
- */
-
 interface UseDoubleClickOptions {
   ref: RefObject<HTMLButtonElement | HTMLElement | null>;
   allowedTargets?: string[];
@@ -20,6 +9,16 @@ interface UseDoubleClickOptions {
   onDoubleClick?: (event: MouseEvent) => void;
 }
 
+/**
+ * A simple React hook for differentiating single and double clicks on the same component.
+ *
+ * @param ref - Dom node to watch for double clicks
+ * @param latency - The amount of time (in milliseconds) to wait before differentiating a single from a double click, default 300
+ * @param onSingleClick - A callback function for single click events
+ * @param onDoubleClick - A callback function for double click events
+ * @param allowedTargets - Set a Lover case element name that allow to be tracked by hook
+ * @param excludeIds - Set a element id that excluded from tracking by hook
+ */
 const useDoubleClick = ({
   ref,
   latency = 300,

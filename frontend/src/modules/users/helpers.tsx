@@ -13,7 +13,13 @@ import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
 import type { LimitedUser } from '~/types/common';
 
-// Register new passkey
+/**
+ * Registers a new passkey for the user.
+ *
+ * This function generates a challenge for passkey creation, and then creates a passkey using the WebAuthn API.
+ *
+ * @throws Error if passkey creation fails or if the response is unexpected.
+ */
 export const passkeyRegistration = async () => {
   if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
@@ -75,7 +81,17 @@ export const passkeyRegistration = async () => {
   }
 };
 
-// Sigh in with passkey
+/**
+ * Signs in a user using a passkey (WebAuthn).
+ *
+ * This function generates a challenge for passkey authentication, retrieves the user's credentials via
+ * the WebAuthn API, and sends the authentication data to the server for validation.
+ *
+ * @param userEmail - User's email address.
+ * @param callback - An optional callback function that is triggered upon successful authentication.
+ *
+ * @throws Error if credential creation or response is invalid.
+ */
 export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
   try {
     // Random bytes generated on each attempt
@@ -108,7 +124,11 @@ export const passkeyAuth = async (userEmail: string, callback?: () => void) => {
   }
 };
 
-// Delete an existing passkey
+/**
+ * Deletes an existing passkey for current user.
+ *
+ * @throws Error if there is an issue with removing the passkey.
+ */
 export const deletePasskey = async () => {
   if (!onlineManager.isOnline()) return createToast(t('common:action.offline.text'), 'warning');
 
@@ -124,6 +144,12 @@ export const deletePasskey = async () => {
   }
 };
 
+/**
+ * Retrieves the current user's information and updates the user store.
+ * If the user is impersonating, it does not update the last user.
+ *
+ * @returns The user data object.
+ */
 export const getAndSetMe = async () => {
   const user = await getSelf();
   const currentSession = user.sessions.find((s) => s.isCurrent);
@@ -134,12 +160,24 @@ export const getAndSetMe = async () => {
   return user;
 };
 
+/**
+ * Retrieves the user's navigation menu and updates the navigation store.
+ *
+ * @returns The menu data.
+ */
 export const getAndSetMenu = async () => {
   const menu = await getUserMenu();
   useNavigationStore.setState({ menu });
   return menu;
 };
 
+/**
+ * Searches through the query data to find a user by their ID or slug.
+ *
+ * @param queries - An array of tuples, each containing a query key and associated data.
+ * @param idOrSlug - The ID or slug to search for.
+ * @returns User data if found, otherwise null.
+ */
 export const findUserFromQueries = (queries: [QueryKey, InfiniteQueryData<LimitedUser> | QueryData<LimitedUser> | undefined][], idOrSlug: string) => {
   for (const [_, prevData] of queries) {
     if (!prevData) continue;

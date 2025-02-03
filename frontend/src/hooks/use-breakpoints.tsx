@@ -3,6 +3,23 @@ import { useEffect, useState } from 'react';
 
 type ValidBreakpoints = keyof typeof config.theme.screenSizes;
 
+/**
+ * Custom hook to evaluate and track breakpoints in the browser window's size.
+ *
+ * This hook returns a boolean indicating whether the current breakpoints match the specified conditions
+ * ('min' or 'max') and compares it with a target breakpoint from the configuration.
+ * It optionally supports reactivity for updates on window resizing.
+ *
+ * @param mustBe - The condition to match `'min' | 'max'`.
+ *   - 'min' checks if the current window width exceeds or matches the specified breakpoint.
+ *   - 'max' checks if the current window width is less than or equal to the specified breakpoint.
+ * @param breakpoint - Target breakpoint to compare against.
+ * @param enableReactivity - Optional parameter to enable or disable reactivity.
+ *   If enabled, the hook listens to window resize events and updates the breakpoints accordingly.
+ *   Default is `true`.
+ *
+ * @returns Boolean (current window width matches the specified condition for the given breakpoint).
+ */
 export const useBreakpoints = (
   mustBe: 'min' | 'max',
   breakpoint: ValidBreakpoints,

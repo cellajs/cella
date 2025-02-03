@@ -6,8 +6,8 @@ import { JSDOM } from 'jsdom';
  * - For videos and audio, sets the 'src' attribute.
  * - For files, wraps the element in a link and sets the 'href' and 'download' attributes.
  *
- * @param {string} passedHTML - The HTML string to be updated.
- * @returns {string} The updated HTML string.
+ * @param passedHTML - The HTML string to be updated.
+ * @returns The updated HTML string.
  */
 export const updateBlocknoteHTML = (passedHTML: string): string => {
   // Parse the HTML string with JSDOM

@@ -22,6 +22,7 @@ import { config } from 'config';
  * @param clientDataJSON -Client data JSON from the attestation.
  * @param encodedAttestationObject - Base64-encoded attestation object.
  * @param challengeFromCookie - Challenge value from the cookie to validate.
+ * @throws Error if some data is invalid.
  * @returns An object with encoded public key and credential ID.
  */
 export const parseAndValidatePasskeyAttestation = (
@@ -84,6 +85,7 @@ export const parseAndValidatePasskeyAttestation = (
  * @param clientDataJSON - Base64-encoded client data JSON.
  * @param publicKey - Base64-encoded public key for verification.
  * @param challengeFromCookie - Challenge value from the cookie to validate.
+ * @throws Error if some data is invalid.
  * @returns Boolean indicating whether the signature is valid.
  */
 export const verifyPassKeyPublic = async (

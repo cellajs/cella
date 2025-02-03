@@ -37,7 +37,6 @@ export type EventData = {
  * @param entityType - Optional entity type (e.g., user, organization) related to the error.
  * @param eventData - Optional additional data for event logging.
  * @param err - Optional Error object to be logged.
- *
  * @returns An error object containing details of the error.
  */
 export const createError = (
@@ -89,7 +88,6 @@ export const createError = (
  * @param entityType - Optional entity type (e.g., user, organization) related to the error.
  * @param eventData - Optional additional data for event logging.
  * @param err - Optional Error object to be logged.
- *
  * @returns The HTTP Error response in JSON format.
  */
 export const errorResponse = (
@@ -112,7 +110,6 @@ export const errorResponse = (
  * @param ctx - Request/response context.
  * @param type - The error key, which is a `keyof locales.error`. It refers to an error type in your localization system.
  * @param severity - `'debug' | 'log' | 'info' | 'warn' | 'error'`, The severity of the error, defaults to 'info'.
- *
  * @returns A 302 redirect response to the frontend error page.
  */
 export const errorRedirect = (ctx: Context, type: SimplifiedErrorKey, severity: Severity = 'info') =>
