@@ -2,7 +2,7 @@ import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { organizationsHc } from '#/modules/organizations/hc';
 
-// Create Hono clients to make requests to the backend
+// RPC
 export const client = organizationsHc(config.backendUrl, clientConfig);
 
 export type CreateOrganizationParams = Parameters<(typeof client.index)['$post']>['0']['json'];
@@ -88,9 +88,10 @@ export const deleteOrganizations = async (ids: string[]) => {
 export type NewsLetterBody = Parameters<(typeof client)['send-newsletter']['$post']>['0']['json'];
 
 // Send newsletter to organizations
-export const sendNewsletter = async (body: NewsLetterBody) => {
+export const sendNewsletter = async ({ body, toSelf = false }: { body: NewsLetterBody; toSelf: boolean }) => {
   const response = await client['send-newsletter'].$post({
     json: body,
+    query: { toSelf },
   });
 
   const json = await handleResponse(response);

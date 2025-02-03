@@ -1,38 +1,37 @@
-import { and, eq, ilike, inArray, or } from 'drizzle-orm';
-import { emailSender } from '#/lib/mailer';
-import { SystemInviteEmail } from '../../../emails/system-invite';
+import { and, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { mailer } from '#/lib/mailer';
+import { SystemInviteEmail, type SystemInviteEmailProps } from '../../../emails/system-invite';
 
 import { config } from 'config';
 import { type SSEStreamingApi, streamSSE } from 'hono/streaming';
 import jwt from 'jsonwebtoken';
-import { render } from 'jsx-email';
-import { generateId } from 'lucia';
-import { TimeSpan, createDate } from 'oslo';
-import { env } from '../../../env';
 
-import { db } from '#/db/db';
-import { getContextUser, getMemberships } from '#/lib/context';
-
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { EventName, Paddle } from '@paddle/paddle-node-sdk';
+import { db } from '#/db/db';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy } from '#/db/util';
+import { getUserBy, getUsersByConditions } from '#/db/util';
 import { entityIdFields, entityTables } from '#/entity-config';
+import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import { CustomHono } from '#/types/common';
+import { nanoid } from '#/utils/nanoid';
 import { prepareStringForILikeFilter } from '#/utils/sql';
+import { TimeSpan, createDate } from '#/utils/time-span';
+import { env } from '../../../env';
+import { slugFromEmail } from '../auth/helpers/oauth';
 import { checkSlugAvailable } from './helpers/check-slug';
 import generalRoutesConfig from './routes';
 
 const paddle = new Paddle(env.PADDLE_API_KEY || '');
 
-const app = new CustomHono();
+const app = new OpenAPIHono<Env>();
 
 export const streams = new Map<string, SSEStreamingApi>();
 
@@ -72,51 +71,63 @@ const generalRoutes = app
    * Invite users to system
    */
   .openapi(generalRoutesConfig.createInvite, async (ctx) => {
-    const { emails, role } = ctx.req.valid('json');
+    const { emails } = ctx.req.valid('json');
     const user = getContextUser();
 
-    for (const email of emails) {
-      const targetUser = await getUserBy('email', email.toLowerCase());
+    // Static
+    const lng = user.language;
+    const senderName = user.name;
+    const senderThumbnailUrl = user.thumbnailUrl;
+    const subject = i18n.t('backend:email.system_invite.subject', { lng, appName: config.name });
 
-      if (targetUser) continue;
+    const targets = await getUsersByConditions([inArray(usersTable.email, emails)]);
 
-      const token = generateId(40);
-      await db.insert(tokensTable).values({
-        id: token,
-        type: 'system_invitation',
-        email: email.toLowerCase(),
-        role,
-        createdBy: user.id,
-        expiresAt: createDate(new TimeSpan(7, 'd')),
-      });
+    // Filter out existing users
+    const recipientEmails = emails.filter((email) => !targets.some((target) => target.email === email));
 
-      await db
-        .update(requestsTable)
-        .set({ token })
-        .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist')));
+    // Stop if no recipients
+    if (recipientEmails.length === 0) return errorResponse(ctx, 400, 'no_recipients', 'warn');
 
-      const emailHtml = await render(
-        SystemInviteEmail({
-          userLanguage: user.language,
-          inviteBy: user.name,
-          token,
-        }),
+    // Generate tokens
+    const tokens = recipientEmails.map((email) => ({
+      token: nanoid(40),
+      type: 'invitation' as const,
+      email: email.toLowerCase(),
+      createdBy: user.id,
+      expiresAt: createDate(new TimeSpan(7, 'd')),
+    }));
+
+    // Batch insert tokens
+    const insertedTokens = await db.insert(tokensTable).values(tokens).returning();
+
+    // Update requests table for all emails
+    await db
+      .update(requestsTable)
+      .set({ token: sql`tokens_table.id` }) // Using raw SQL to reference token
+      .from(tokensTable)
+      .where(
+        and(
+          inArray(requestsTable.email, recipientEmails),
+          eq(requestsTable.type, 'waitlist'),
+          eq(tokensTable.email, requestsTable.email), // Join tokensTable for correct token mapping
+        ),
       );
-      logEvent('User invited on system level');
 
-      emailSender
-        .send(
-          config.senderIsReceiver ? user.email : email.toLowerCase(),
-          i18n.t('backend:email.system_invite.subject', { lng: config.defaultLanguage, appName: config.name }),
-          emailHtml,
-          user.email,
-        )
-        .catch((error) => {
-          if (error instanceof Error) {
-            logEvent('Error sending email', { error: error.message }, 'error');
-          }
-        });
-    }
+    // Prepare emails
+    const recipients = insertedTokens.map((tokenRecord) => ({
+      email: tokenRecord.email,
+      lng: lng,
+      name: slugFromEmail(tokenRecord.email),
+      systemInvitelink: `${config.frontendUrl}/auth/authenticate?token=${tokenRecord.token}&tokenId=${tokenRecord.id}`,
+    }));
+
+    type Recipient = (typeof recipients)[number];
+
+    // Send invitation
+    const staticProps = { senderName, senderThumbnailUrl, subject, lng };
+    await mailer.prepareEmails<SystemInviteEmailProps, Recipient>(SystemInviteEmail, staticProps, recipients, user.email);
+
+    logEvent('Users invited on system level');
 
     return ctx.json({ success: true }, 200);
   })
@@ -158,7 +169,7 @@ const generalRoutes = app
     const { q, type } = ctx.req.valid('query');
 
     const user = getContextUser();
-    const memberships = getMemberships();
+    const memberships = getContextMemberships();
 
     // Retrieve organizationIds
     const organizationIds = memberships.filter((el) => el.type === 'organization').map((el) => String(el.organizationId));

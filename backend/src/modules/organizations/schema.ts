@@ -15,7 +15,7 @@ import {
 } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
 
-export const invitesInfoSchema = z.array(
+export const invitesSchema = z.array(
   z.object({
     id: z.string(),
     email: z.string(),
@@ -35,7 +35,7 @@ export const organizationSchema = z.object({
   emailDomains: z.array(z.string()),
   authStrategies: z.array(z.string()),
   membership: membershipInfoSchema.nullable(),
-  invitesInfo: invitesInfoSchema.optional(),
+  invites: invitesSchema.optional(),
   counts: membershipsCountSchema,
 });
 
@@ -56,14 +56,14 @@ export const sendNewsletterBodySchema = z.object({
 export const updateOrganizationBodySchema = createInsertSchema(organizationsTable, {
   slug: validSlugSchema,
   name: nameSchema,
-  shortName: nameSchema,
+  shortName: nameSchema.nullable(),
   languages: z.array(languageSchema).optional(),
   emailDomains: validDomainsSchema,
   authStrategies: z.array(z.string()).optional(),
-  websiteUrl: validUrlSchema,
-  thumbnailUrl: imageUrlSchema,
-  bannerUrl: imageUrlSchema,
-  logoUrl: imageUrlSchema,
+  websiteUrl: validUrlSchema.nullable(),
+  thumbnailUrl: imageUrlSchema.nullable(),
+  bannerUrl: imageUrlSchema.nullable(),
+  logoUrl: imageUrlSchema.nullable(),
 })
   .pick({
     slug: true,

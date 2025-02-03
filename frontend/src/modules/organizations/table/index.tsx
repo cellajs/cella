@@ -75,26 +75,20 @@ const OrganizationsTable = () => {
   };
 
   const openNewsletterSheet = () => {
+    const ids = selected.map((o) => o.id);
     const newsletterTabs = [
-      {
-        id: 'write',
-        label: 'common:write',
-        element: <NewsletterForm sheet organizationIds={selected.map((o) => o.id)} dropSelectedOrganization={clearSelection} />,
-      },
-
-      {
-        id: 'preview',
-        label: 'common:preview',
-        element: <NewsletterDraft />,
-      },
+      { id: 'write', label: 'common:write', element: <NewsletterForm organizationIds={ids} /> },
+      { id: 'preview', label: 'common:preview', element: <NewsletterDraft /> },
     ];
+
     sheet.create(<SheetTabs tabs={newsletterTabs} />, {
       className: 'max-w-full lg:max-w-4xl',
       title: t('common:newsletter'),
       description: t('common:newsletter.text'),
-      id: 'org-newsletter-form',
+      id: 'newsletter-sheet',
       scrollableOverlay: true,
       side: 'right',
+      removeCallback: clearSelection,
     });
   };
 

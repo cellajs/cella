@@ -2,7 +2,7 @@ import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { requestsHc } from '#/modules/requests/hc';
 
-// Create Hono clients to make requests to the backend
+// RPC
 export const client = requestsHc(config.backendUrl, clientConfig);
 
 export type CreateRequestBody = Parameters<(typeof client.index)['$post']>['0']['json'];
@@ -57,18 +57,6 @@ export const getRequests = async (
 export const deleteRequests = async (ids: string[]) => {
   const response = await client.index.$delete({
     query: { ids },
-  });
-
-  const json = await handleResponse(response);
-  return json.success;
-};
-
-export type SendResponseBody = Parameters<(typeof client)['send-message']['$post']>['0']['json'];
-
-// send email message in respons to requests
-export const sendRequestMessage = async (body: SendResponseBody) => {
-  const response = await client['send-message'].$post({
-    json: body,
   });
 
   const json = await handleResponse(response);

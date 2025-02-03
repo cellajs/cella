@@ -11,32 +11,29 @@ import { ArrowRight, ChevronDown } from 'lucide-react';
 import { LegalNotice } from '~/modules/auth/sign-up-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
-import { useCreateRequestsMutation } from '~/modules/requests/query-mutations';
+import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 
 const formSchema = createRequestSchema;
 
-export const WaitlistForm = ({
-  email,
-  buttonContent,
-  emailField,
-  dialog: isDialog,
-  changeEmail,
-  callback,
-}: {
+interface WaitlistFormProps {
   email: string;
   buttonContent?: string | React.ReactNode;
   emailField?: boolean;
   dialog?: boolean;
   changeEmail?: () => void;
   callback?: () => void;
-}) => {
+}
+
+// TODO also use in route to access directly?
+// TODO, bit many props?
+export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialog, changeEmail, callback }: WaitlistFormProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { mutate: createRequest, isPending } = useCreateRequestsMutation();
+  const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,10 +49,7 @@ export const WaitlistForm = ({
 
     createRequest(body, {
       onSuccess: () => {
-        navigate({
-          to: '/about',
-          replace: true,
-        });
+        navigate({ to: '/about', replace: true });
         createToast(t('common:success.waitlist_request', { appName: config.name }), 'success');
         if (isDialog) dialog.remove();
         callback?.();

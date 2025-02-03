@@ -1,14 +1,14 @@
 import type { MembershipModel } from '#/db/schema/memberships';
 import { getContextUser } from '#/lib/context';
 import { resolveEntities } from '#/lib/entity';
-import permissionManager from '#/lib/permission-manager';
+import permissionManager, { type PermittedAction } from '#/permissions/permission-manager';
 import type { Entity } from '#/types/common';
 
-export const splitByAllowance = async (action: string, entityType: Entity, ids: string[], memberships: [MembershipModel]) => {
-  // Extract user
+// Split entities into those that user is allowed to act (action) on from the ones that are restricted
+export const splitByAllowance = async (action: PermittedAction, entityType: Entity, ids: string[], memberships: [MembershipModel]) => {
   const user = getContextUser();
 
-  // Resolve ids
+  // Resolve entities
   const entities = await resolveEntities(entityType, ids);
 
   // Logic to split ids based on permission

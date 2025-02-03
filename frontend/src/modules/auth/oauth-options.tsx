@@ -4,7 +4,6 @@ import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/modules/auth/api';
-import { acceptInvite } from '~/modules/auth/api';
 import type { Step } from '~/modules/auth/auth-steps';
 import { Button } from '~/modules/ui/button';
 import { passkeyAuth } from '~/modules/users/helpers';
@@ -32,42 +31,44 @@ interface OauthOptionsProps {
   showPasskey?: boolean;
 }
 
+// TODO: split passkeyAuth into separate file
 const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: OauthOptionsProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { mode } = useThemeStore();
-  const { token } = useSearch({
-    from: AuthenticateRoute.id,
-  });
+  const { token, redirect } = useSearch({ from: AuthenticateRoute.id });
 
   const [loading, setLoading] = useState(false);
 
-  const searchResult = useSearch({
-    from: AuthenticateRoute.id,
-  });
-  const redirectPath = searchResult.redirect ?? config.defaultRedirectPath;
+  const redirectPath = redirect ?? config.defaultRedirectPath;
 
-  const successesCallback = () => {
+  const successCallback = () => {
     navigate({ to: redirectPath, replace: true });
   };
 
-  const navigateToUrl = (path: string) => window.location.assign(path); // for better history handling
+  const authenticateWithProvider = async (provider: EnabledOauthProvider) => {
+    setLoading(true);
+
+    // Map provider data
+    const providerData = mapOauthProviders.find((p) => p.id === provider);
+    if (!providerData) return;
+
+    let providerUrl = `${providerData.url}?redirect=${redirectPath}`;
+    if (token) providerUrl += `&token=${token}`;
+
+    window.location.assign(providerUrl);
+  };
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {showPasskey && (
-        <Button type="button" onClick={() => passkeyAuth(email, successesCallback)} variant="plain" className="w-full gap-1.5">
+        <Button type="button" onClick={() => passkeyAuth(email, successCallback)} variant="plain" className="w-full gap-1.5">
           <Fingerprint size={16} />
           {t('common:passkey_sign_in')}
         </Button>
       )}
       {enabledStrategies.includes('oauth') &&
         config.enabledOauthProviders.map((provider) => {
-          // Map the provider data
-          const providerData = mapOauthProviders.find((p) => p.id === provider);
-          if (!providerData) return;
-
-          const relocatePath = `${providerData.url}?redirect=${redirectPath}`;
           return (
             <Button
               loading={loading}
@@ -75,12 +76,7 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
               type="button"
               variant="outline"
               className="gap-1"
-              onClick={() => {
-                setLoading(true);
-                if (token) {
-                  acceptInvite({ token, oauth: provider }).then(() => navigateToUrl(relocatePath));
-                } else navigateToUrl(relocatePath);
-              }}
+              onClick={() => authenticateWithProvider(provider)}
             >
               <img
                 data-provider={provider}
@@ -90,7 +86,7 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
                 loading="lazy"
               />
               <span>{actionType === 'signIn' ? t('common:sign_in') : t('common:sign_up')}</span>
-              <span>{t('common:with').toLowerCase()}</span> <span>{providerData.name}</span>
+              <span>{t('common:with').toLowerCase()}</span> <span className="capitalize">{provider}</span>
             </Button>
           );
         })}

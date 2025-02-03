@@ -1,9 +1,11 @@
-import { useRouterState } from '@tanstack/react-router';
+import { SearchParamError, useRouterState } from '@tanstack/react-router';
+import type { TFunction } from 'i18next';
 import { ChevronDown, Home, MessageCircleQuestion, RefreshCw } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiError } from '~/lib/api';
+import { i18n } from '~/lib/i18n';
 import ContactForm from '~/modules/common/contact-form/contact-form';
 import { Dialoger } from '~/modules/common/dialoger';
 import { dialog } from '~/modules/common/dialoger/state';
@@ -11,11 +13,56 @@ import { MainFooter } from '~/modules/common/main-footer';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 
+export type ErrorNoticeError = ApiError | Error | null;
+
 interface ErrorNoticeProps {
-  error?: ApiError | Error;
+  error?: ErrorNoticeError;
   resetErrorBoundary?: () => void;
   level: 'root' | 'app' | 'public';
 }
+
+export const handleAskForHelp = () => {
+  if (!window.Gleap) {
+    return dialog(<ContactForm dialog />, {
+      id: 'contact-form',
+      drawerOnMobile: false,
+      className: 'sm:max-w-5xl',
+      title: i18n.t('common:contact_us'),
+      description: i18n.t('common:contact_us.text'),
+    });
+  }
+  window.Gleap.openConversations();
+};
+
+export const getErrorTitle = (t: TFunction, error?: ErrorNoticeError, errorFromQuery?: string) => {
+  if (errorFromQuery) return t(`error:${errorFromQuery}`);
+  if (!error) return;
+
+  if (error instanceof SearchParamError) return t('error:invalid_param');
+
+  if ('status' in error) {
+    if (error.entityType) return t(`error:resource_${error.type}`, { resource: t(error.entityType) });
+    if (error.type) return t(`error:${error.type}`);
+    if (error.message) return error.message;
+  }
+
+  if (error.name) return error.name;
+};
+
+export const getErrorText = (t: TFunction, error?: ErrorNoticeError, errorFromQuery?: string) => {
+  if (errorFromQuery) return t(`error:${errorFromQuery}.text`);
+  if (!error) return;
+
+  if (error instanceof SearchParamError) return t('error:invalid_param.text');
+
+  if ('status' in error) {
+    // Check if the error has an entityType
+    if (error.entityType) return t(`error:resource_${error.type}.text`, { resource: error.entityType });
+    // If no entityType, check if error has a type
+    if (error.type) return t(`error:${error.type}.text`);
+    if (error.message) return error.message;
+  }
+};
 
 // Error can be shown in multiple levels
 // - root: no footer can be shown because services are not available
@@ -41,45 +88,6 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, le
     window.location.replace('/');
   };
 
-  const handleAskForHelp = () => {
-    if (!window.Gleap) {
-      return dialog(<ContactForm dialog />, {
-        id: 'contact-form',
-        drawerOnMobile: false,
-        className: 'sm:max-w-5xl',
-        title: t('common:contact_us'),
-        description: t('common:contact_us.text'),
-      });
-    }
-    window.Gleap.openConversations();
-  };
-
-  const getErrorTitle = () => {
-    if (errorFromQuery) return t(`error:${errorFromQuery}`);
-    if (!error) return;
-
-    if ('status' in error) {
-      if (error.entityType) return t(`error:resource_${error.type}`, { resource: t(error.entityType) });
-      if (error.type) return t(`error:${error.type}`);
-      if (error.message) return error.message;
-    }
-
-    if (error.name) return error.name;
-  };
-
-  const getErrorText = () => {
-    if (errorFromQuery) return t(`error:${errorFromQuery}.text`);
-    if (!error) return;
-
-    if ('status' in error) {
-      // Check if the error has an entityType
-      if (error.entityType) return t(`error:resource_${error.type}.text`, { resource: error.entityType });
-      // If no entityType, check if error has a type
-      if (error.type) return t(`error:${error.type}.text`);
-      if (error.message) return error.message;
-    }
-  };
-
   return (
     <>
       {level === 'root' && <Dialoger />}
@@ -87,9 +95,9 @@ const ErrorNotice: React.FC<ErrorNoticeProps> = ({ error, resetErrorBoundary, le
         <div className="mt-auto mb-auto">
           <Card className="max-w-[36rem] m-4">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl mb-2">{getErrorTitle() || t('error:error')}</CardTitle>
+              <CardTitle className="text-2xl mb-2">{getErrorTitle(t, error, errorFromQuery) || t('error:error')}</CardTitle>
               <CardDescription className="text-base">
-                <span>{getErrorText() || t('error:reported_try_or_contact')}</span>
+                <span>{getErrorText(t, error, errorFromQuery) || t('error:reported_try_or_contact')}</span>
                 <span className="ml-1">{severity === 'warn' && t('error:contact_mistake')}</span>
                 <span className="ml-1">{severity === 'error' && t('error:try_again_later')}</span>
               </CardDescription>

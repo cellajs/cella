@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { Undo } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -7,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import slugify from 'slugify';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import InputFormField from '~/modules/common/form-fields/input';
-import { useCheckSlugMutation } from '~/modules/general/query-mutations';
+import { checkSlugAvailable } from '~/modules/general/api';
 import { Button } from '~/modules/ui/button';
 import type { Entity } from '~/types/common';
 
@@ -22,19 +23,29 @@ interface SlugFieldProps {
 }
 
 export const SlugFormField = ({ control, label, previousSlug, description, nameValue, type }: SlugFieldProps) => {
-  const form = useFormContext<{
-    slug: string;
-  }>();
   const { t } = useTranslation();
+  const { isOnline } = useOnlineManager();
+
   const [isDeviating, setDeviating] = useState(false);
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
-  const { isOnline } = useOnlineManager();
+
+  const form = useFormContext<{ slug: string }>();
 
   // Watch to check if slug availability
   const slug = useWatch({ control: form.control, name: 'slug' });
 
   // Check if slug is available
-  const { mutate: checkAvailability } = useCheckSlugMutation();
+  const { mutate: checkAvailability } = useMutation({
+    mutationKey: ['slug'],
+    mutationFn: checkSlugAvailable,
+    onSuccess: (isAvailable) => {
+      if (isValidSlug(slug)) form.clearErrors('slug');
+      if (isAvailable && isValidSlug(slug)) return setSlugAvailable('available');
+      // Slug is not available
+      form.setError('slug', { type: 'manual', message: t('error:slug_exists') });
+      setSlugAvailable('notAvailable');
+    },
+  });
 
   // Only show green ring if slug is valid
   const isValidSlug = (value: string) => {
@@ -49,18 +60,7 @@ export const SlugFormField = ({ control, label, previousSlug, description, nameV
       if (!isOnline) return;
 
       const params = { slug, type };
-      return checkAvailability(params, {
-        onSuccess: (isAvailable) => {
-          if (isValidSlug(slug)) form.clearErrors('slug');
-          if (isAvailable && isValidSlug(slug)) return setSlugAvailable('available');
-          // Slug is not available
-          form.setError('slug', {
-            type: 'manual',
-            message: t('error:slug_exists'),
-          });
-          setSlugAvailable('notAvailable');
-        },
-      });
+      return checkAvailability(params);
     }
     if (!isValidSlug(slug)) return setSlugAvailable('notAvailable');
   }, [slug]);

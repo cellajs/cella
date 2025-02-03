@@ -3,7 +3,7 @@ import { useFormWithDraft } from '~/hooks/use-draft-form';
 import { updateSourcesFromDataUrl } from '~/modules/common/blocknote/helpers';
 
 const NewsletterDraft = () => {
-  const form = useFormWithDraft('send-org-newsletter');
+  const form = useFormWithDraft('newsletter');
 
   useEffect(() => {
     updateSourcesFromDataUrl('org-newsletter-draft-content');

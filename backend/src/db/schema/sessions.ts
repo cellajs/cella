@@ -1,10 +1,12 @@
 import { index, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
+import { nanoid } from '#/utils/nanoid';
 
 export const sessionsTable = pgTable(
   'sessions',
   {
-    id: varchar().primaryKey(),
+    id: varchar().primaryKey().$defaultFn(nanoid),
+    token: varchar().notNull(),
     userId: varchar()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),

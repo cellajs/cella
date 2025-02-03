@@ -1,21 +1,19 @@
 import { Link, Text } from 'jsx-email';
 import { i18n } from '../src/lib/i18n';
 
+import type { BasicTemplateType } from '../src/lib/mailer';
 import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailBody } from './components/email-body';
 import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import type { BasicTemplateType } from './types';
 
-interface Props extends BasicTemplateType {
+export interface NewsletterEmailProps extends BasicTemplateType {
   orgName: string;
   content: string;
-  subject: string;
-  unsubscribeLink: string;
 }
 
-export const NewsletterEmail = ({ userLanguage: lng, content, subject, unsubscribeLink, orgName }: Props) => {
+export const NewsletterEmail = ({ lng, content, subject, unsubscribeLink, orgName, testEmail }: NewsletterEmailProps) => {
   return (
     <EmailContainer previewText={subject}>
       <EmailHeader
@@ -29,13 +27,14 @@ export const NewsletterEmail = ({ userLanguage: lng, content, subject, unsubscri
         }
       />
       <EmailBody>
+        <Text>{testEmail && 'THIS IS A TEST'}</Text>
         <Text>{subject}</Text>
 
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>*/}
         <div dangerouslySetInnerHTML={{ __html: content }} />
 
         <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Link style={{ fontSize: '.75rem', lineHeight: '1.13rem' }} href={unsubscribeLink}>
+          <Link style={{ fontSize: '.85rem', lineHeight: '1.13rem' }} href={unsubscribeLink}>
             {i18n.t('backend:email.unsubscribe', { lng })}
           </Link>
         </div>

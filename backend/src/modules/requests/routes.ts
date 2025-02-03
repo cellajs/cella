@@ -4,7 +4,7 @@ import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter } from '#/middlewares/rate-limiter';
 import { errorResponses, successWithDataSchema, successWithPaginationSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { idsQuerySchema } from '#/utils/schema/common-schemas';
-import { createRequestSchema, getRequestsQuerySchema, requestMessageBodySchema, requestSchema } from './schema';
+import { createRequestSchema, getRequestsQuerySchema, requestSchema } from './schema';
 
 class RequestsRoutesConfig {
   public createRequest = createRouteConfig({
@@ -53,36 +53,6 @@ class RequestsRoutesConfig {
         content: {
           'application/json': {
             schema: successWithPaginationSchema(requestSchema),
-          },
-        },
-      },
-      ...errorResponses,
-    },
-  });
-
-  public sendMessage = createRouteConfig({
-    method: 'post',
-    path: '/send-message',
-    guard: [isAuthenticated, systemGuard],
-    tags: ['requests'],
-    summary: 'Message for pending users',
-    description: 'Sends a message to users who have pending requests.',
-    request: {
-      body: {
-        required: true,
-        content: {
-          'application/json': {
-            schema: requestMessageBodySchema,
-          },
-        },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Message sent',
-        content: {
-          'application/json': {
-            schema: successWithoutDataSchema,
           },
         },
       },

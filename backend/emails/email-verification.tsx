@@ -3,23 +3,24 @@ import { Text } from 'jsx-email';
 import { config } from 'config';
 import { i18n } from '../src/lib/i18n';
 
+import type { BasicTemplateType } from '../src/lib/mailer';
 import { AppLogo } from './components/app-logo';
 import { EmailContainer } from './components/container';
 import { EmailBody } from './components/email-body';
 import { EmailButton } from './components/email-button';
+import { EmailHeader } from './components/email-header';
 import { Footer } from './components/footer';
-import type { BasicTemplateType } from './types';
 
-const baseUrl = config.frontendUrl;
 const appName = config.name;
 
-interface Props extends BasicTemplateType {
+export interface EmailVerificationEmailProps extends BasicTemplateType {
   verificationLink: string;
 }
 
-export const EmailVerificationEmail = ({ userLanguage: lng, verificationLink = baseUrl }: Props) => {
+export const EmailVerificationEmail = ({ lng, verificationLink }: EmailVerificationEmailProps) => {
   return (
     <EmailContainer previewText={i18n.t('backend:email.email_verification.preview', { appName, lng })}>
+      <EmailHeader headerText={i18n.t('backend:email.email_verification.preview', { appName, lng })} />
       <EmailBody>
         <Text>
           <span

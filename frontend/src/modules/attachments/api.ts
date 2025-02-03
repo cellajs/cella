@@ -2,7 +2,7 @@ import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { attachmentsHc } from '#/modules/attachments/hc';
 
-// Create Hono clients to make requests to the backend
+// RPC
 export const client = attachmentsHc(config.backendUrl, clientConfig);
 
 type CreateAttachmentParams = Parameters<(typeof client.index)['$post']>['0']['json'];

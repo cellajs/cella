@@ -1,35 +1,35 @@
 import { Suspense, lazy, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { OrganizationInvitesInfo } from '~/types/common';
+import type { OrganizationInvites } from '~/types/common';
 
-const InvitesInfoTable = lazy(() => import('~/modules/organizations/invites/table'));
+const InvitesTable = lazy(() => import('~/modules/organizations/invites/table'));
 
 interface Props {
-  invitesInfo: OrganizationInvitesInfo[];
+  invites: OrganizationInvites[];
 }
 
-export const InvitedUsers = ({ invitesInfo }: Props) => {
+export const InvitedUsers = ({ invites }: Props) => {
   const { t } = useTranslation();
 
-  const count = useMemo(() => invitesInfo.length, [invitesInfo.length]);
+  const count = useMemo(() => invites.length, [invites.length]);
 
   const openInfoSheet = () => {
     sheet.create(
       <Suspense>
-        <InvitesInfoTable info={invitesInfo} />
+        <InvitesTable info={invites} />
       </Suspense>,
       {
         className: 'max-w-full lg:max-w-4xl',
         title: t('common:pending_invitations'),
         description: t('common:pending_invitations.text', { entity: t('common:organization').toLowerCase() }),
-        id: 'invited-users-info',
+        id: 'invites-sheet',
         scrollableOverlay: true,
         side: 'right',
       },
     );
   };
-  if (!invitesInfo.length) return null;
+  if (!invites.length) return null;
 
   return (
     <button

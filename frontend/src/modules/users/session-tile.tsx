@@ -19,7 +19,7 @@ export const SessionTile = ({ session, deleteMySessions, isPending }: SessionTil
     <Card className="w-full">
       <CardContent className="flex p-3 items-center gap-3">
         {session.deviceType === 'desktop' ? <Monitor size={32} strokeWidth={1.25} /> : <Smartphone size={32} strokeWidth={1.25} />}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 overflow-hidden">
           <div className="flex gap-2">
             <div className="font-semibold">{session.deviceName || t('common:unknown_device')}</div>
             {session.isCurrent && (

@@ -4,25 +4,25 @@ import useSearchParams from '~/hooks/use-search-params';
 
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useColumns } from '~/modules/organizations/invites/table/columns';
-import { InvitesInfoHeader } from '~/modules/organizations/invites/table/table-header';
-import type { BaseTableMethods, OrganizationInvitesInfo } from '~/types/common';
+import { InvitesHeader } from '~/modules/organizations/invites/table/table-header';
+import type { BaseTableMethods, OrganizationInvites } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/organizations/invites/table/table'));
 
-export interface InvitesInfoProps {
-  info: OrganizationInvitesInfo[];
+export interface InvitesProps {
+  info: OrganizationInvites[];
 }
 
-export type InvitesInfoSearch = {
+export type InvitesSearch = {
   q?: string;
   order?: 'asc' | 'desc';
   sort: 'expiresAt' | 'createdAt' | 'createdBy';
   role?: (typeof config.rolesByType.entityRoles)[number];
 };
 
-export const InvitesInfoTable = ({ info }: InvitesInfoProps) => {
-  const { search, setSearch } = useSearchParams<InvitesInfoSearch>({ saveDataInSearch: false });
+export const InvitesTable = ({ info }: InvitesProps) => {
+  const { search, setSearch } = useSearchParams<InvitesSearch>({ saveDataInSearch: false });
 
   const dataTableRef = useRef<BaseTableMethods | null>(null);
 
@@ -31,10 +31,10 @@ export const InvitesInfoTable = ({ info }: InvitesInfoProps) => {
 
   // State for selected and total counts
   const [total, setTotal] = useState<number | undefined>(undefined);
-  const [selected, setSelected] = useState<OrganizationInvitesInfo[]>([]);
+  const [selected, setSelected] = useState<OrganizationInvites[]>([]);
 
   // Update total and selected counts
-  const updateCounts = (newSelected: OrganizationInvitesInfo[], newTotal: number | undefined) => {
+  const updateCounts = (newSelected: OrganizationInvites[], newTotal: number | undefined) => {
     if (newTotal !== total) setTotal(newTotal);
     if (!arraysHaveSameElements(selected, newSelected)) setSelected(newSelected);
   };
@@ -49,7 +49,7 @@ export const InvitesInfoTable = ({ info }: InvitesInfoProps) => {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <InvitesInfoHeader
+      <InvitesHeader
         total={total}
         selected={selected}
         columns={columns}
@@ -74,4 +74,4 @@ export const InvitesInfoTable = ({ info }: InvitesInfoProps) => {
   );
 };
 
-export default InvitesInfoTable;
+export default InvitesTable;

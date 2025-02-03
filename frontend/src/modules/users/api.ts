@@ -4,7 +4,7 @@ import type { ContextEntity } from '~/types/common';
 import { meHc } from '#/modules/me/hc';
 import { usersHc } from '#/modules/users/hc';
 
-// Create Hono clients to make requests to the backend
+// RPC
 export const meClient = meHc(config.backendUrl, clientConfig);
 export const userClient = usersHc(config.backendUrl, clientConfig);
 
@@ -108,17 +108,6 @@ export const updateSelf = async (params: Omit<UpdateUserParams, 'role'>) => {
 export const deleteSelf = async () => {
   const response = await meClient.index.$delete();
   await handleResponse(response);
-};
-
-export type NewsLetterToSelfBody = Parameters<(typeof meClient)['send-newsletter']['$post']>['0']['json'];
-
-// Send newsletter to self
-export const sendNewsletterToSelf = async (body: NewsLetterToSelfBody) => {
-  const response = await meClient['send-newsletter'].$post({
-    json: body,
-  });
-  const json = await handleResponse(response);
-  return json.success;
 };
 
 // Terminate user sessions

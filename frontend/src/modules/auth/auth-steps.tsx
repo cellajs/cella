@@ -1,76 +1,76 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CheckEmailForm } from '~/modules/auth/check-email-form';
 import { SignInForm } from '~/modules/auth/sign-in-form';
 import { SignUpForm } from '~/modules/auth/sign-up-form';
 
-import { Link, useSearch } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
-import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { ApiError } from '~/lib/api';
 import { checkToken } from '~/modules/auth/api';
 import OauthOptions from '~/modules/auth/oauth-options';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
-import { buttonVariants } from '~/modules/ui/button';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
 import type { TokenData } from '~/types/common';
 import { shouldShowDivider } from '~/utils';
-import { cn } from '~/utils/cn';
+import Spinner from '../common/spinner';
+import AuthNotice from './auth-notice';
 
 export type Step = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist';
+
+const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
+const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
 
 const AuthSteps = () => {
   const { t } = useTranslation();
   const { lastUser } = useUserStore();
 
-  const { token } = useSearch({ from: AuthenticateRoute.id });
-
-  const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
-  const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');
+  const { token, tokenId } = useSearch({ from: AuthenticateRoute.id });
 
   const [step, setStep] = useState<Step>(!token && lastUser?.email ? 'signIn' : 'checkEmail');
   const [email, setEmail] = useState((!token && lastUser?.email) || '');
-  const [hasPasskey] = useState(!token && !!lastUser?.passkey);
+  const [hasPasskey, setHasPasskey] = useState(!token && !!lastUser?.passkey);
 
-  const [tokenData, setTokenData] = useState<TokenData | null>(null);
-  const [error, setError] = useState<ApiError | null>(null);
-
-  // If a token is present, process it to forward user to correct step
-  useEffect(() => {
-    if (!token) return;
-    checkToken(token)
-      .then((data) => {
-        setTokenData(data);
-        setEmail(data.email);
-        setStep(data.userId ? 'signIn' : 'signUp');
-      })
-      .catch(setError);
-  }, [token]);
-
+  // Update step and email to proceed after email is checked
   const handleSetStep = (step: Step, email: string) => {
     setEmail(email);
     setStep(step);
   };
 
-  const resetSteps = () => setStep('checkEmail');
+  // Reset steps to the first action: check email
+  // Even if all email authentication is disabled, we still show check email form
+  const resetSteps = () => {
+    setStep('checkEmail');
+    setHasPasskey(false);
+  };
 
-  if (error) {
-    return (
-      <>
-        <span className="text-muted-foreground text-sm">{t(`error:${error.type}`)}</span>
-        <Link to="/auth/authenticate" className={cn(buttonVariants({ size: 'lg' }), 'mt-8')}>
-          {t('common:sign_in')}
-          <ArrowRight size={16} className="ml-2" />
-        </Link>
-      </>
-    );
-  }
+  // Set up query to check token
+  const tokenQueryOptions = {
+    queryKey: [],
+    queryFn: async () => {
+      if (!tokenId || !token) return;
+      return checkToken({ id: tokenId, type: 'invitation' });
+    },
+    enabled: !!tokenId && !!token,
+    select: (data: TokenData | undefined) => {
+      if (!data) return;
+      setEmail(data.email);
+      setStep(data.userId ? 'signIn' : 'signUp');
+      return data;
+    },
+  };
 
+  const { data: tokenData, isLoading, error } = useQuery(tokenQueryOptions);
+
+  if (isLoading) return <Spinner className="h-10 w-10" />;
+  if (error) return <AuthNotice error={error} />;
+
+  // Render form based on current step
   return (
     <>
       {step === 'checkEmail' && <CheckEmailForm emailEnabled={emailEnabled} setStep={handleSetStep} />}
-      {step === 'signIn' && <SignInForm emailEnabled={emailEnabled} tokenData={tokenData} email={email} resetSteps={resetSteps} />}
+      {step === 'signIn' && <SignInForm emailEnabled={emailEnabled} email={email} resetSteps={resetSteps} />}
       {step === 'signUp' && <SignUpForm emailEnabled={emailEnabled} tokenData={tokenData} email={email} resetSteps={resetSteps} />}
       {step === 'waitlist' && <WaitlistForm buttonContent={t('common:request_access')} email={email} changeEmail={resetSteps} />}
       {step === 'inviteOnly' && (
