@@ -17,7 +17,17 @@ interface Props<T> {
   createdBy?: UserModel['id'];
 }
 
-// Helper function to insert a membership and give it proper order number
+/**
+ * Inserts a new membership for a user, assigning it the next available order number.
+ * The membership can be linked to an entity and optionally to a parent entity.
+ *
+ * @param user - User to be added to the membership.
+ * @param role - Role of user within the entity.
+ * @param entity - Entity to which membership belongs.
+ * @param parentEntity - Parent entity of membership, if applicable.
+ * @param createdBy - The user who created the membership (defaults to the current user).
+ * @returns The newly inserted membership record.
+ */
 export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({
   user,
   role,

@@ -56,7 +56,7 @@ const meRoutes = app
       ...transformDatabaseUserWithCount(user, memberships.length),
       oauth: validOAuthAccounts,
       passkey: !!passkey.length,
-      sessions: await getUserSessions(user.id, ctx),
+      sessions: await getUserSessions(ctx, user.id),
     };
 
     return ctx.json({ success: true, data }, 200);

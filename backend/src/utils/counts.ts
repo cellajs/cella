@@ -6,7 +6,15 @@ import type { ContextEntity } from '#/types/common';
 type MemberCounts = { admins: number; members: number; total: number };
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];
 
-// Generate a query to count the number members id  entity
+/**
+ * Generates a query to count the number of admins and members for a specific entity.
+ * If an entity is provided, counts are filtered by entity. Otherwise, counts are for all entities.
+ *
+ * @param entity - The entity type to filter by, or null for counting all entities.
+ * @param entityIdColumnName - The name of the column that represents the entity's ID in the memberships table.
+ *
+ * @returns Query object that can be executed
+ */
 const getQuery = (entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames) => {
   // Retrieve the column reference
   const entityIdColumn = membershipsTable[entityIdColumnName];
@@ -33,7 +41,15 @@ const getQuery = (entity: ContextEntity | null, entityIdColumnName: EntityIdColu
 export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames): ReturnType<typeof getQuery>;
 export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames, id: string): Promise<MemberCounts>;
 
-// Implementation
+/**
+ * Executes the query to count admins and members for a given entity or entity id.
+ * Filters by id, if provided, otherwise, it returns counts for all entities.
+ *
+ * @param  entity - The entity to filter by, or null for all entities.
+ * @param  entityIdColumnName - The column name for the entity's id.
+ * @param id - Optional, id to filter the count by a specific entity instance.
+ * @returns - The count of admins, members, and total members.
+ */
 export function memberCountsQuery(entity: ContextEntity | null, entityIdColumnName: EntityIdColumnNames, id?: string) {
   const query = getQuery(entity, entityIdColumnName);
 

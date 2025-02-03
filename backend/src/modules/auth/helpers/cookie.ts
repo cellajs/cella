@@ -16,7 +16,14 @@ export type CookieName =
   | 'oauth_invite_token'
   | 'passkey_challenge';
 
-// Set auth cookie (to store content such as session id or oauth state)
+/**
+ * Sets an authentication cookie.
+ *
+ * @param ctx - Request/response context.
+ * @param name - Cookie name.
+ * @param content - Content to store in the cookie.
+ * @param timeSpan - Duration for which the cookie is valid.
+ */
 export const setAuthCookie = async (ctx: Context, name: CookieName, content: string, timeSpan: TimeSpan) => {
   const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
   const options = {
@@ -30,14 +37,25 @@ export const setAuthCookie = async (ctx: Context, name: CookieName, content: str
   isProduction ? await setSignedCookie(ctx, versionedName, content, env.COOKIE_SECRET, options) : setCookie(ctx, versionedName, content, options);
 };
 
-// Get content from an auth cookie
+/**
+ * Retrieves content from an authentication cookie.
+ *
+ * @param ctx - Request/response context.
+ * @param name - Cookie name.
+ * @returns The content stored in the cookie.
+ */
 export const getAuthCookie = async (ctx: Context, name: CookieName) => {
   const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
   const content = isProduction ? await getSignedCookie(ctx, env.COOKIE_SECRET, versionedName) : getCookie(ctx, versionedName);
   return content;
 };
 
-// Delete session cookie
+/**
+ * Deletes an authentication cookie.
+ *
+ * @param ctx - Request/response context.
+ * @param name - Cookie name.
+ */
 export const deleteAuthCookie = (ctx: Context, name: CookieName) => {
   const versionedName = `${config.slug}-${name}-${config.cookieVersion}`;
   deleteCookie(ctx, versionedName, {

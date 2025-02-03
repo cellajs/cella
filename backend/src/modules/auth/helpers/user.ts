@@ -22,7 +22,18 @@ interface HandleCreateUserProps {
   tokenId?: string;
 }
 
-// Handle creating a user by password or oauth provider
+/**
+ * Handles user creation, including password or OAuth-based sign-up.
+ * Inserts the user into the database, processes OAuth accounts, and sends verification emails.
+ * Sets a user session upon successful sign-up.
+ *
+ * @param ctx - Request/response context.
+ * @param newUser - New user data for registration(InsertUserModel).
+ * @param redirectUrl - Optional, URL to redirect the user to after successful sign-up.
+ * @param provider - Optional, OAuth provider data for linking the user.
+ * @param tokenId - Optional, token ID to associate with the new user.
+ * @returns Error response or Redirect response or Response
+ */
 export const handleCreateUser = async ({ ctx, newUser, redirectUrl, provider, tokenId }: HandleCreateUserProps) => {
   // Check if slug is available
   const slugAvailable = await checkSlugAvailable(newUser.slug);

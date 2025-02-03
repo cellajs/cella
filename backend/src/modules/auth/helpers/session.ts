@@ -25,7 +25,15 @@ const isAuthStrategy = (strategy: string): strategy is (typeof allSupportedStrat
 // Validate auth strategy
 const validateAuthStrategy = (strategy: string) => (isAuthStrategy(strategy) ? strategy : null);
 
-// Set user session (sign in user)
+/**
+ * Sets a user session and stores it in the database.
+ * Generates a session token, records device information, and optionally associates an admin user for impersonation.
+ *
+ * @param ctx - Request/response context.
+ * @param userId - ID of the user being signed in.
+ * @param strategy - The authentication strategy `'impersonation' | 'regular'`.
+ * @param adminUserId - Optional , id of the admin user if the session is an impersonation.
+ */
 export const setUserSession = async (ctx: Context, userId: UserModel['id'], strategy: string, adminUserId?: UserModel['id']) => {
   // Get device information
   const device = deviceInfo(ctx);
@@ -71,7 +79,12 @@ export const setUserSession = async (ctx: Context, userId: UserModel['id'], stra
   }
 };
 
-// Validate session and return session & user
+/**
+ * Validates a session by checking the provided session token.
+ *
+ * @param sessionToken - The session token to validate.
+ * @returns The session and user data if valid, otherwise null.
+ */
 export const validateSession = async (sessionToken: string) => {
   const hashedSessionToken = encodeHexLowerCase(sha256(new TextEncoder().encode(sessionToken)));
 

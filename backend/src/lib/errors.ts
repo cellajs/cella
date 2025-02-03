@@ -27,7 +27,19 @@ export type EventData = {
   readonly [key: string]: number | string | boolean | null;
 };
 
-// Create error object and log it if needed
+/**
+ * Create an error object, log it if needed, and return the error details.
+ *
+ * @param ctx - Request/response context.
+ * @param status - The HTTP error status (e.g., 400, 500).
+ * @param type - The error key, which is a `keyof locales.error`. It refers to an error type in your localization system.
+ * @param severity - `'debug' | 'log' | 'info' | 'warn' | 'error'`, The severity of the error, defaults to 'info'.
+ * @param entityType - Optional entity type (e.g., user, organization) related to the error.
+ * @param eventData - Optional additional data for event logging.
+ * @param err - Optional Error object to be logged.
+ *
+ * @returns An error object containing details of the error.
+ */
 export const createError = (
   ctx: Context,
   status: HttpErrorStatus,
@@ -40,6 +52,7 @@ export const createError = (
   const translationKey = `error:${type}`;
   const message = i18n.t(translationKey);
 
+  // Get the current user and organization from context
   const user = getContextUser();
   const organization = getContextOrganization();
 
@@ -61,14 +74,24 @@ export const createError = (
 
     if (logtail) logtail[severity](message, undefined, data);
     if (err) console.error(err);
-  }
-  // Log significant events with additional data
-  else if (eventData) logEvent(message, eventData, severity);
+  } else if (eventData) logEvent(message, eventData, severity); // Log significant events with additional data
 
   return error;
 };
 
-// Return error as http response
+/**
+ * Return an Error response as an HTTP JSON response.
+ *
+ * @param ctx - Request/response context.
+ * @param status - The HTTP error status (e.g., 400, 500).
+ * @param type - The error key, which is a `keyof locales.error`. It refers to an error type in your localization system.
+ * @param severity - `'debug' | 'log' | 'info' | 'warn' | 'error'`, The severity of the error, defaults to 'info'.
+ * @param entityType - Optional entity type (e.g., user, organization) related to the error.
+ * @param eventData - Optional additional data for event logging.
+ * @param err - Optional Error object to be logged.
+ *
+ * @returns The HTTP Error response in JSON format.
+ */
 export const errorResponse = (
   ctx: Context,
   status: HttpErrorStatus,
@@ -80,10 +103,18 @@ export const errorResponse = (
 ) => {
   const error: ErrorType = createError(ctx, status, type, severity, entityType, eventData, err);
 
-  // TODO: Review this type assertion (as 400)
-  return ctx.json({ success: false, error }, status as 400);
+  return ctx.json({ success: false, error }, status as 400); // TODO: Review type assertion (as 400)
 };
 
-// Redirect to frontend error page
+/**
+ * Redirect the user to the frontend error page.
+ *
+ * @param ctx - Request/response context.
+ * @param type - The error key, which is a `keyof locales.error`. It refers to an error type in your localization system.
+ * @param severity - `'debug' | 'log' | 'info' | 'warn' | 'error'`, The severity of the error, defaults to 'info'.
+ *
+ * @returns A 302 redirect response to the frontend error page.
+ */
 export const errorRedirect = (ctx: Context, type: SimplifiedErrorKey, severity: Severity = 'info') =>
+  // Redirect to the frontend error page with query parameters for error details
   ctx.redirect(`${config.frontendUrl}/error?error=${type}&severity=${severity}`, 302);

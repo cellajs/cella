@@ -13,6 +13,17 @@ import {
 } from '@oslojs/webauthn';
 import { config } from 'config';
 
+/**
+ * Parses and validates passkey attestation data.
+ *
+ * Verifies attestation statement, relying party ID hash, user presence and verification, credential, algorithm, and challenge.
+ * If valid, returns the encoded public key and credential ID.
+ *
+ * @param clientDataJSON -Client data JSON from the attestation.
+ * @param encodedAttestationObject - Base64-encoded attestation object.
+ * @param challengeFromCookie - Challenge value from the cookie to validate.
+ * @returns An object with encoded public key and credential ID.
+ */
 export const parseAndValidatePasskeyAttestation = (
   clientDataJSON: string,
   encodedAttestationObject: string,
@@ -63,6 +74,18 @@ export const parseAndValidatePasskeyAttestation = (
   };
 };
 
+/**
+ * Verifies a passkey public key signature.
+ *
+ * Verifies that signature matches public key and client data, ensuring request is valid.
+ *
+ * @param signature - Base64-encoded signature to verify.
+ * @param authenticatorObject - Base64-encoded authenticator object.
+ * @param clientDataJSON - Base64-encoded client data JSON.
+ * @param publicKey - Base64-encoded public key for verification.
+ * @param challengeFromCookie - Challenge value from the cookie to validate.
+ * @returns Boolean indicating whether the signature is valid.
+ */
 export const verifyPassKeyPublic = async (
   signature: string,
   authenticatorObject: string,

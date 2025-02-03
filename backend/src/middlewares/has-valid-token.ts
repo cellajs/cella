@@ -5,7 +5,14 @@ import { type TokenModel, tokensTable } from '#/db/schema/tokens';
 import { errorResponse } from '#/lib/errors';
 import { isExpiredDate } from '#/utils/time-span';
 
-// Middleware to get and check the validity of a token, and set token data in context
+/**
+ * Middleware to get and check the validity of a token, and set token data in context.
+ * If all checks pass, the token data is added to the context for further processing in request lifecycle.
+ *
+ * @param requiredType - `"email_verification" | "password_reset" | "invitation"` Type of token that is required. This parameter ensures that only tokens of the specified type are accepted.
+ * @returns Error response or undefined if the token valid.
+ *
+ */
 export const hasValidToken = (requiredType: TokenModel['type']): MiddlewareHandler => {
   return async (ctx, next) => {
     // Find token in request

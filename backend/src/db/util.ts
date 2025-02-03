@@ -12,7 +12,16 @@ type UnsafeField = Extract<keyof UnsafeQuery, keyof UnsafeQuery['_']['columns']>
 export function getUserBy(field: SafeField, value: string): Promise<UserModel | null>;
 export function getUserBy(field: UnsafeField, value: string, type: 'unsafe'): Promise<UnsafeUserModel | null>;
 
-// Implementation
+/**
+ * Fetch a user based on a field and value, with optional support for UnsafeUserModel.
+ *
+ * @param field - The field to search by.
+ * @param value - The value to search for in the specified field.
+ * @param type(optional) - can be 'unsafe' or undefined. Determines which user fields to return:
+ *              - 'unsafe' returns the full users table,
+ *              - undefined defaults to the safe user fields.
+ * @returns A promise that resolves to a `UserModel`, `UnsafeUserModel`, or `null` if no user is found.
+ */
 export async function getUserBy(field: SafeField | UnsafeField, value: string, type?: 'unsafe'): Promise<UserModel | UnsafeUserModel | null> {
   const select = type === 'unsafe' ? usersTable : safeUserSelect;
 
@@ -27,7 +36,16 @@ export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[]): 
 export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type: 'unsafe'): Promise<UnsafeUserModel[]>;
 export function getUsersByConditions(whereArray: (SQL<unknown> | undefined)[], type: 'limited'): Promise<LimitedUserModel[]>;
 
-// Implementation
+/**
+ * Fetch users based on multiple conditions, with optional support for unsafe or limited data queries.
+ *
+ * @param whereArray - An array of drizzle filter and conditional operators, combined using the `and` operator to apply the conditions.
+ * @param type (optional) - can be 'unsafe', 'limited', or undefined. Determines which user fields to return:
+ *               - 'unsafe' returns the full users table,
+ *               - 'limited' returns limited user data,
+ *               - undefined defaults to the safe user fields.
+ * @returns A promise that resolves to an array of `UserModel`s, `UnsafeUserModel`s, or `LimitedUserModel`s based on the `type`.
+ */
 export async function getUsersByConditions(
   whereArray: (SQL<unknown> | undefined)[],
   type?: 'unsafe' | 'limited',

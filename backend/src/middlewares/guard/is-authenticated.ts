@@ -6,6 +6,14 @@ import { errorResponse } from '#/lib/errors';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/helpers/cookie';
 import { validateSession } from '#/modules/auth/helpers/session';
 
+/**
+ * Middleware to ensure that the user is authenticated by checking the session cookie.
+ * If no valid session is found, it responds with a 401 error.
+ *
+ * @param ctx - Request/response context.
+ * @param next - The next middleware or route handler to call if authentication succeeds.
+ * @returns Error response or undefined if the user is allowed to proceed.
+ */
 export async function isAuthenticated(ctx: Context, next: Next): Promise<Response | undefined> {
   // Get session id from cookie
   const sessionToken = await getAuthCookie(ctx, 'session');

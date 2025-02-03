@@ -4,7 +4,18 @@ import { resolveEntities } from '#/lib/entity';
 import permissionManager, { type PermittedAction } from '#/permissions/permission-manager';
 import type { Entity } from '#/types/common';
 
-// Split entities into those that user is allowed to act (action) on from the ones that are restricted
+/**
+ * Splits entity IDs into allowed and disallowed based on the user's permissions.
+ *
+ * Resolves the entities and checks whether the user can perform the specified action.
+ * The result is split into `allowedIds` and `disallowedIds`.
+ *
+ * @param action - Action to check `"create" | "read" | "update" | "delete"`.
+ * @param entityType - The type of entity (e.g., 'organization').
+ * @param ids - The entity IDs to check.
+ * @param memberships - The user's memberships.
+ * @returns An object with `allowedIds` and `disallowedIds` arrays.
+ */
 export const splitByAllowance = async (action: PermittedAction, entityType: Entity, ids: string[], memberships: [MembershipModel]) => {
   const user = getContextUser();
 
