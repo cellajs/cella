@@ -8,7 +8,7 @@ import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { checkToken } from '~/modules/auth/api';
-import AuthNotice from '~/modules/auth/auth-notice';
+import AuthNotice from '~/modules/auth/notice';
 import OauthOptions from '~/modules/auth/oauth-options';
 import type { Step, TokenData } from '~/modules/auth/types';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';

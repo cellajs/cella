@@ -9,7 +9,7 @@ import { config } from 'config';
 import { toast } from 'sonner';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
 import { dialog } from '~/modules/common/dialoger/state';
-import { PageAside } from '~/modules/common/page-aside';
+import { PageAside } from '~/modules/common/page/aside';
 import StickyBox from '~/modules/common/sticky-box';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import Subscription from '~/modules/organizations/subscription';

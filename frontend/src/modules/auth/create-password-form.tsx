@@ -10,7 +10,7 @@ import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { checkToken, createPassword } from '~/modules/auth/api';
-import AuthNotice from '~/modules/auth/auth-notice';
+import AuthNotice from '~/modules/auth/notice';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import Spinner from '~/modules/common/spinner';
 import { createToast } from '~/modules/common/toaster';

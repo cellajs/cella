@@ -16,8 +16,8 @@ import {
 import type { OrganizationWithMembership } from '~/modules/organizations/types';
 
 /**
- * Keys for organizations queries.
- * These keys help in managing query caching and invalidation.
+ * Keys for organizations related queries. These keys help to uniquely identify different query.
+ * For managing query caching and invalidation.
  */
 export const organizationsKeys = {
   one: ['organization'] as const,
@@ -49,10 +49,10 @@ export const organizationQueryOptions = (idOrSlug: string) =>
  *
  * This function returns infinite query options to fetch a list of organizations with support for pagination.
  *
- * @param q - Search query string for filtering organizations(default is an empty string).
- * @param sort - Field to sort by (default is 'createdAt').
- * @param order - Order of sorting (default is 'desc').
- * @param limit - Number of items per page (default: `config.requestLimits.organizations`).
+ * @param param.q - Search query for filtering organizations(default is an empty string).
+ * @param param.sort - Field to sort by (default is 'createdAt').
+ * @param param.order - Order of sorting (default is 'desc').
+ * @param param.limit - Number of items per page (default: `config.requestLimits.organizations`).
  * @returns Infinite query options.
  */
 export const organizationsQueryOptions = ({

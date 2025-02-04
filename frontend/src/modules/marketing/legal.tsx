@@ -2,7 +2,7 @@ import { config } from 'config';
 import { lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AsideAnchor } from '~/modules/common/aside-anchor';
-import { PageAside } from '~/modules/common/page-aside';
+import { PageAside } from '~/modules/common/page/aside';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import StickyBox from '~/modules/common/sticky-box';
 import PublicPage from '~/modules/marketing/page';

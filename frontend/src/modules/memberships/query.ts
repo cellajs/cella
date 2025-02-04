@@ -4,8 +4,8 @@ import { config } from 'config';
 import { type GetMembersParams, getMembers } from '~/modules/memberships/api';
 
 /**
- * Keys for members queries.
- * This object contains different keys for identifying and caching queries related to members.
+ * Keys for members related queries. These keys help to uniquely identify different query.
+ * For managing query caching and invalidation.
  */
 export const membersKeys = {
   all: ['members'] as const,
@@ -21,14 +21,14 @@ export const membersKeys = {
  *
  * This function returns the configuration needed to query a list of members from target entity with pagination.
  *
- * @param idOrSlug - ID or slug of entity.
- * @param entityType - Type of entity.
- * @param orgIdOrSlug - ID or slug of organization based of witch entity created.
- * @param q - Optional search query to filter members by (default is an empty string).
- * @param role - Role of the members to filter by.
- * @param sort - Field to sort by (default is 'createdAt').
- * @param order - Order of sorting (default is 'desc').
- * @param limit - Number of items per page (default is configured in `config.requestLimits.members`).
+ * @param param.idOrSlug - ID or slug of entity.
+ * @param param.entityType - Type of entity.
+ * @param param.orgIdOrSlug - ID or slug of organization based of witch entity created.
+ * @param param.q - Optional search query to filter members by (default is an empty string).
+ * @param param.role - Role of the members to filter by.
+ * @param param.sort - Field to sort by (default is 'createdAt').
+ * @param param.order - Order of sorting (default is 'desc').
+ * @param param.limit - Number of items per page (default is configured in `config.requestLimits.members`).
  * @returns Infinite query options.
  */
 export const membersQueryOptions = ({

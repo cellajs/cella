@@ -9,7 +9,7 @@ import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
 /**
- * Keys for user queries to manage user-related data.
+ * Keys for user related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
  */
 export const usersKeys = {
   one: ['user'] as const,
@@ -23,8 +23,8 @@ export const usersKeys = {
 };
 
 /**
- * Keys for the current authenticated user(self).
- * Used to manage self-related data.
+ * Keys for current authenticated user(self) related queries. These keys help to uniquely identify different query.
+ * For managing query caching and invalidation.
  */
 export const meKeys = {
   all: ['me'] as const,
@@ -58,10 +58,10 @@ export const menuQueryOptions = (retry = 0) => queryOptions({ queryKey: ['menu']
 /**
  * Infinite query options to get a paginated list of users.
  *
- * @param q - Optional search query to filter users by (default is an empty string).
- * @param sort - Field to sort by (default is 'createdAt').
- * @param order - Order of sorting (default is 'desc').
- * @param limit - Number of items per page (default is configured in `config.requestLimits.users`).
+ * @param param.q - Optional search query to filter users by (default is an empty string).
+ * @param param.sort - Field to sort by (default is 'createdAt').
+ * @param param.order - Order of sorting (default is 'desc').
+ * @param param.limit - Number of items per page (default is configured in `config.requestLimits.users`).
  * @returns Infinite query options.
  */
 export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrder, role, limit = config.requestLimits.users }: GetUsersParams) => {
