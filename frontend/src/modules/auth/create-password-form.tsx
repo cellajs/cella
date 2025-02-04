@@ -9,14 +9,14 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import { Suspense, lazy } from 'react';
+import { checkToken, createPassword } from '~/modules/auth/api';
+import AuthNotice from '~/modules/auth/auth-notice';
+import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
+import Spinner from '~/modules/common/spinner';
+import { createToast } from '~/modules/common/toaster';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
-import Spinner from '../common/spinner';
-import { createToast } from '../common/toaster';
-import { checkToken, createPassword } from './api';
-import AuthNotice from './auth-notice';
-import { RequestPasswordDialog } from './request-password-dialog';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 

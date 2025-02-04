@@ -1,7 +1,7 @@
 import { Suspense, lazy, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sheet } from '~/modules/common/sheeter/state';
-import type { OrganizationInvites } from '~/types/common';
+import type { OrganizationInvites } from '~/modules/organizations/types';
 
 const InvitesTable = lazy(() => import('~/modules/organizations/invites/table'));
 

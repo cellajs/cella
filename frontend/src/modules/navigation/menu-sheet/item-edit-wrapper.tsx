@@ -7,7 +7,7 @@ import { isPageData } from '~/modules/navigation/menu-sheet';
 import { MenuItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
-import type { UserMenuItem } from '~/types/common';
+import type { UserMenuItem } from '~/modules/users/types';
 import { getDraggableItemData } from '~/utils/drag-drop';
 
 interface MenuItemEditWrapperProps {

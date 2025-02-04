@@ -2,10 +2,10 @@ import { Grab, Hand, Minus, Plus, RefreshCw, RotateCwSquare } from 'lucide-react
 import type React from 'react';
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { dispatchCustomEvent } from '~/lib/custom-events';
+import ImageViewer from '~/modules/attachments/render-image/image-viewer';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
-import { TooltipButton } from '../../common/tooltip-button';
-import ImageViewer from './image-viewer';
 
 type RenderImageProps = {
   image: string;

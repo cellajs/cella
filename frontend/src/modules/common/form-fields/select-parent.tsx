@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import type { ContextEntity } from 'config';
 import Combobox from '~/modules/ui/combobox';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
+import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 import { useNavigationStore } from '~/store/navigation';
-import type { UserMenu, UserMenuItem } from '~/types/common';
 
 interface Props {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>

@@ -17,12 +17,11 @@ import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { addMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { organizationsKeys } from '~/modules/organizations/query';
-import { useOrganizationCreateMutation } from '~/modules/organizations/query';
+import { organizationsKeys, useOrganizationCreateMutation } from '~/modules/organizations/query';
+import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/form';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
-import type { Organization } from '~/types/common';
 
 interface CreateOrganizationFormProps {
   callback?: (org: Organization) => void;

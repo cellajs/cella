@@ -13,10 +13,10 @@ import { dialog } from '~/modules/common/dialoger/state';
 import SelectRoleRadio from '~/modules/common/form-fields/select-role-radio';
 import { QueryCombobox } from '~/modules/common/query-combobox';
 import { createToast } from '~/modules/common/toaster';
+import type { EntityPage } from '~/modules/general/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
-import type { EntityPage } from '~/types/common';
 
 interface Props {
   entity?: EntityPage;

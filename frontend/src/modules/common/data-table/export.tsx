@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import router from '~/lib/router';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { createToast } from '~/modules/common/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { useThemeStore } from '~/store/theme';
-import type { ColumnOrColumnGroup } from './columns-view';
 
 interface Props<TData> {
   filename: string;

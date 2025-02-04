@@ -24,7 +24,7 @@ export const Notify = createReactBlockSpec(
       textColor: defaultProps.textColor,
       type: {
         default: 'warning',
-        // must match notifyTypes in ./notifyOptions
+        // must match notifyTypes in ~/modules/common/blocknote/notifyOptions
         values: ['warning', 'error', 'info', 'success'],
       },
     },

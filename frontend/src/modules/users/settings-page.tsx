@@ -19,12 +19,12 @@ import HelpText from '~/modules/common/help-text';
 import { PageAside } from '~/modules/common/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import { createToast } from '~/modules/common/toaster';
+import { deleteMySessions } from '~/modules/users/api';
 import DeleteSelf from '~/modules/users/delete-self';
 import { deletePasskey, passkeyRegistration } from '~/modules/users/helpers';
 import { SessionTile } from '~/modules/users/session-tile';
 import UpdateUserForm from '~/modules/users/update-user-form';
 import { useThemeStore } from '~/store/theme';
-import { deleteMySessions } from './api';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

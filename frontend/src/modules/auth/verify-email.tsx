@@ -4,11 +4,11 @@ import { config } from 'config';
 import { Check, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { sendVerificationEmail, verifyEmail } from '~/modules/auth/api';
+import AuthNotice from '~/modules/auth/auth-notice';
+import Spinner from '~/modules/common/spinner';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { VerifyEmailWithTokenRoute } from '~/routes/auth';
-import Spinner from '../common/spinner';
-import AuthNotice from './auth-notice';
 
 const VerifyEmail = () => {
   const { t } = useTranslation();

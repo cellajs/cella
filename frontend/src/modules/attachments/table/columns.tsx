@@ -1,5 +1,3 @@
-import type { Attachment } from '~/types/common';
-
 import { config } from 'config';
 import type { TFunction } from 'i18next';
 import { CopyCheckIcon, CopyIcon, Download } from 'lucide-react';
@@ -7,9 +5,10 @@ import useDownloader from 'react-use-downloader';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import AttachmentThumb from '~/modules/attachments/attachment-thumb';
 import { formatBytes } from '~/modules/attachments/table/helpers';
+import type { Attachment } from '~/modules/attachments/types';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { dateShort } from '~/utils/date-short';

@@ -6,6 +6,7 @@ import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import useSearchParams from '~/hooks/use-search-params';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheet } from '~/modules/common/sheeter/state';
@@ -17,8 +18,8 @@ import NewsletterForm from '~/modules/organizations/newsletter-form';
 import { organizationsKeys } from '~/modules/organizations/query';
 import { useColumns } from '~/modules/organizations/table/columns';
 import { OrganizationsTableHeader } from '~/modules/organizations/table/table-header';
+import type { Organization } from '~/modules/organizations/types';
 import { OrganizationsTableRoute, type organizationsSearchSchema } from '~/routes/system';
-import type { BaseTableMethods, Organization } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/organizations/table/table'));

@@ -2,7 +2,7 @@ import { Outlet } from '@tanstack/react-router';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import Alerter from '~/modules/common/alerter/alerter';
-import ErrorNotice from './error-notice';
+import ErrorNotice from '~/modules/common/error-notice';
 
 export const AppContent = () => {
   return (

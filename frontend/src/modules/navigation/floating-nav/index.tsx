@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { NavItem } from '~/modules/navigation';
-import FloatingNavButton from './button';
+import FloatingNavButton from '~/modules/navigation/floating-nav/button';
 
 const FloatingNav = ({ items, onClick }: { items: NavItem[]; onClick: (index: number) => void }) => {
   const [showButtons, setShowButtons] = useState(true);

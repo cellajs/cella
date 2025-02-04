@@ -6,9 +6,9 @@ import { t } from 'i18next';
 import { queryClient } from '~/lib/router';
 import { createToast } from '~/modules/common/toaster';
 import { membersKeys } from '~/modules/memberships/query';
+import type { Member, Membership } from '~/modules/memberships/types';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
-import type { Member, Membership } from '~/types/common';
 
 type MemberQueryData = QueryData<Member>;
 type InfiniteMemberQueryData = InfiniteQueryData<Member>;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LocalFileStorage } from './local-file-storage';
+import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
 
 // Fetch file from IndexedDB and return a Blob URL
 export const useLocalFile = (key: string, fileType?: string): string => {

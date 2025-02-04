@@ -18,9 +18,9 @@ import Showcase from '~/modules/marketing/about/showcase';
 // import Pricing from '~/modules/marketing/about/pricing';
 import Why from '~/modules/marketing/about/why';
 
+import CallToAction from '~/modules/marketing/about/call-to-action';
 import '~/modules/marketing/about/glow-button.css';
 import { Input } from '~/modules/ui/input';
-import CallToAction from './call-to-action';
 
 interface AboutSectionProps {
   section: string;

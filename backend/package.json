@@ -10,6 +10,7 @@
     "start": "tsx dist/index.js",
     "dev": "cross-env NODE_ENV=development tsx --watch src/index.ts",
     "check:types": "tsc --pretty",
+    "ts:perf": "rm -rf tsconfig.tsbuildinfo && cross-env NODE_ENV=development tsc --noEmit --extendedDiagnostics",
     "build": "cross-env NODE_ENV=production tsup",
     "build:dev": "tsup",
     "docker:up": "docker compose --env-file .env up",

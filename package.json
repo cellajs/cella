@@ -25,6 +25,7 @@
     "seed": "pnpm --filter backend seed",
     "check": "pnpm dlx @biomejs/biome check .",
     "check:types": "pnpm -r --parallel check:types",
+    "ts:perf": "pnpm -r --parallel ts:perf",
     "check:fix": "pnpm dlx @biomejs/biome check --write .",
     "build": "pnpm -r --parallel clean && pnpm -r --parallel build",
     "build:dev": "pnpm -r _-parallel build:dev",

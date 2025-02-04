@@ -12,8 +12,8 @@ import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight } from 'lucide-react';
 import type { ApiError } from '~/lib/api';
-import type { Step } from '~/modules/auth/auth-steps';
-import { checkEmail } from './api';
+import { checkEmail } from '~/modules/auth/api';
+import type { Step } from '~/modules/auth/types';
 
 const formSchema = emailBodySchema;
 

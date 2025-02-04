@@ -3,11 +3,11 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { useEffect } from 'react';
 import { persister, queryClient } from '~/lib/router';
 import { meQueryOptions, menuQueryOptions } from '~/modules/users/query';
+import type { UserMenuItem } from '~/modules/users/types';
 import { queriesToMap } from '~/offline-config';
 import { prefetchQuery, waitFor } from '~/query/helpers';
 import { useGeneralStore } from '~/store/general';
 import { useUserStore } from '~/store/user';
-import type { UserMenuItem } from '~/types/common';
 
 const queryMutationFileImports = import.meta.glob('~/modules/**/query-mutations.ts');
 

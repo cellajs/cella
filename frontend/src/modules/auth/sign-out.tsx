@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { queryClient } from '~/lib/router';
 import { signOut } from '~/modules/auth/api';
 import { createToast } from '~/modules/common/toaster';
+import type { MeUser } from '~/modules/users/types';
 import { useDraftStore } from '~/store/draft';
 import { useNavigationStore } from '~/store/navigation';
 import { useUserStore } from '~/store/user';
-import type { MeUser } from '~/types/common';
 
 export const signOutUser = async () => {
   await signOut();
