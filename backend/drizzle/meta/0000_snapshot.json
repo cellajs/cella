@@ -1,5 +1,5 @@
 {
-  "id": "403062a9-ffe9-4dc6-ab05-a5b5dfd35be9",
+  "id": "759a1d53-7107-4e6f-9ce7-3d3cc2d10237",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -206,6 +206,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "token_id": {
+          "name": "token_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "organization_id": {
           "name": "organization_id",
           "type": "varchar",
@@ -247,6 +253,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "modified_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "memberships_token_id_tokens_id_fk": {
+          "name": "memberships_token_id_tokens_id_fk",
+          "tableFrom": "memberships",
+          "tableTo": "tokens",
+          "columnsFrom": [
+            "token_id"
           ],
           "columnsTo": [
             "id"
@@ -644,8 +663,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "token": {
-          "name": "token",
+        "token_id": {
+          "name": "token_id",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -691,12 +710,12 @@
         }
       },
       "foreignKeys": {
-        "requests_token_tokens_id_fk": {
-          "name": "requests_token_tokens_id_fk",
+        "requests_token_id_tokens_id_fk": {
+          "name": "requests_token_id_tokens_id_fk",
           "tableFrom": "requests",
           "tableTo": "tokens",
           "columnsFrom": [
-            "token"
+            "token_id"
           ],
           "columnsTo": [
             "id"
@@ -906,12 +925,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
-        },
-        "membership_info": {
-          "name": "membership_info",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},

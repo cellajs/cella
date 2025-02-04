@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { updateOrganizationBodySchema } from 'backend/modules/organizations/schema';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 import type { Organization } from '~/types/common';
+import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
 
 import { config } from 'config';
 import { isValidElement, useEffect } from 'react';

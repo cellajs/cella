@@ -3,6 +3,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
 import { config } from 'config';
+import type { EnabledOauthProvider } from 'config';
 import { and, eq, or } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '#/db/db';
@@ -11,7 +12,6 @@ import { passkeysTable } from '#/db/schema/passkeys';
 import { sessionsTable } from '#/db/schema/sessions';
 import { tokensTable } from '#/db/schema/tokens';
 import { type UserModel, usersTable } from '#/db/schema/users';
-import { getUserBy, getUsersByConditions } from '#/db/util';
 import { type Env, getContextToken, getContextUser } from '#/lib/context';
 import { errorRedirect, errorResponse } from '#/lib/errors';
 import { i18n } from '#/lib/i18n';
@@ -27,7 +27,7 @@ import {
   microsoftAuth,
   type microsoftUserProps,
 } from '#/modules/auth/helpers/oauth-providers';
-import type { EnabledOauthProvider } from '#/types/common';
+import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
 import { TimeSpan, createDate, isExpiredDate } from '#/utils/time-span';
 // TODO shorten this import
@@ -670,7 +670,6 @@ const authRoutes = app
     } catch (error) {
       // Handle invalid credentials
       if (error instanceof OAuth2RequestError) {
-        // t('error:invalid_credentials.text')
         return errorResponse(ctx, 401, 'invalid_credentials', 'warn', undefined, { strategy });
       }
 

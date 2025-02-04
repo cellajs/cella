@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { type InviteMemberProps, inviteMembers } from '~/modules/memberships/api';
 
-import { idOrSlugSchema } from 'backend/utils/schema/common-schemas';
 import { config } from 'config';
 import { Send } from 'lucide-react';
 import { useMemo } from 'react';
@@ -18,6 +17,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types/common';
+import { idOrSlugSchema } from '#/utils/schema/common-schemas';
 
 interface Props {
   entity?: EntityPage;
@@ -60,7 +60,6 @@ const InviteSearchForm = ({ entity, callback, dialog: isDialog }: Props) => {
         ...values,
         idOrSlug: entity.id,
         entityType: entity.entity || 'organization',
-        parentEntity: entity.parentEntity,
         orgIdOrSlug: entity.organizationId || entity.id,
       } as InviteMemberProps);
     },

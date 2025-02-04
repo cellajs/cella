@@ -5,11 +5,11 @@ import { type UserModel, usersTable } from '#/db/schema/users';
 import { setUserSession, validateSession } from './session';
 
 import { config } from 'config';
+import type { EnabledOauthProvider } from 'config';
 import slugify from 'slugify';
 import { db } from '#/db/db';
 import { errorRedirect, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { EnabledOauthProvider } from '#/types/common';
 import { TimeSpan } from '#/utils/time-span';
 import { type CookieName, deleteAuthCookie, getAuthCookie, setAuthCookie } from './cookie';
 import { sendVerificationEmail } from './verify-email';

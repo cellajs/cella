@@ -1,7 +1,8 @@
 import { createRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/lib/context';
-import type { NonEmptyArray } from '#/types/common';
+
+type NonEmptyArray<T> = readonly [T, ...T[]];
 
 export type RouteOptions = Parameters<typeof createRoute>[0] & {
   guard: MiddlewareHandler | NonEmptyArray<MiddlewareHandler>;
@@ -15,7 +16,7 @@ export type RouteConfig = {
 
 export type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<typeof createRoute<P, Omit<R, 'guard'>>>;
 
-// Custom wrapper around hono createRoute to extend it with setting guard and other middleware.
+// Custom wrapper around hono/zod-openapi createRoute to extend it with setting guard and other middleware.
 export const createRouteConfig = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>({
   guard,
   ...routeConfig

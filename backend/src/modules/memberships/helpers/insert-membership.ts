@@ -1,19 +1,21 @@
+import type { ContextEntity, Entity } from 'config';
 import { eq, max } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { type InsertMembershipModel, type MembershipModel, membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import type { UserModel } from '#/db/schema/users';
 import { entityIdFields } from '#/entity-config';
 import { logEvent } from '#/middlewares/logger/log-event';
-import type { BaseEntityModel, ContextEntity } from '#/types/common';
+
+type BaseEntityModel<T extends Entity> = {
+  id: string;
+  entity: T;
+  organizationId?: string;
+};
 
 interface Props<T> {
   user: UserModel;
   role: MembershipModel['role'];
   entity: T;
-  parentEntity?: {
-    entity: ContextEntity;
-    id: string;
-  } | null;
   createdBy?: UserModel['id'];
 }
 
@@ -24,17 +26,10 @@ interface Props<T> {
  * @param user - User to be added to the membership.
  * @param role - Role of user within the entity.
  * @param entity - Entity to which membership belongs.
- * @param parentEntity - Parent entity of membership, if applicable.
  * @param createdBy - The user who created the membership (defaults to the current user).
  * @returns The newly inserted membership record.
  */
-export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({
-  user,
-  role,
-  entity,
-  parentEntity,
-  createdBy = user.id,
-}: Props<T>) => {
+export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>({ user, role, entity, createdBy = user.id }: Props<T>) => {
   // Get the max order number
   const [{ maxOrder }] = await db
     .select({
@@ -55,10 +50,7 @@ export const insertMembership = async <T extends BaseEntityModel<ContextEntity>>
   newMembership.organizationId = entity.organizationId ?? entity.id;
   const entityIdField = entityIdFields[entity.entity];
 
-  if (parentEntity) {
-    const idFieldKey = entityIdFields[parentEntity.entity];
-    newMembership[idFieldKey] = parentEntity.id;
-  }
+  //TODO-entitymap map over entityIdFields
 
   // If you add more entities to membership
   newMembership[entityIdField] = entity.id;

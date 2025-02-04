@@ -1,7 +1,7 @@
+import type { ContextEntity } from 'config';
 import { count, eq, sql } from 'drizzle-orm';
 import { db } from '#/db/db';
 import { membershipsTable } from '#/db/schema/memberships';
-import type { ContextEntity } from '#/types/common';
 
 type MemberCounts = { admins: number; members: number; total: number };
 type EntityIdColumnNames = keyof (typeof membershipsTable)['_']['columns'];

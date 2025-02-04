@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
 
 // Change this in the future on current schema
-import { createOrganizationBodySchema } from 'backend/modules/organizations/schema';
+import { createOrganizationBodySchema } from '#/modules/organizations/schema';
 
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo } from 'react';

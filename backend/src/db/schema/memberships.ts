@@ -1,9 +1,9 @@
 import { config } from 'config';
 import { type PgColumn, type PgVarcharBuilderInitial, boolean, doublePrecision, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { usersTable } from '#/db/schema/users';
-import { entityIdFields, entityTables } from '#/entity-config';
-import type { ContextEntityIdFields } from '#/types/common';
+import { type ContextEntityIdFields, entityIdFields, entityTables } from '#/entity-config';
 import { nanoid } from '#/utils/nanoid';
+import { tokensTable } from './tokens';
 
 const roleEnum = config.rolesByType.entityRoles;
 
@@ -26,12 +26,13 @@ function createDynamicMembershipTable() {
     archived: boolean().default(false).notNull(),
     muted: boolean().default(false).notNull(),
     order: doublePrecision().notNull(),
+    tokenId: varchar().references(() => tokensTable.id, { onDelete: 'set null' }),
     organizationId: organizationId.notNull(),
     ...rest,
   });
 }
 
-// Dynamic part of the select based on contextEntityTypes that you can set in config
+// Dynamic part of the select based on contextEntityTypes that you can set in entity config
 const membershipDynamicSelect = config.contextEntityTypes
   .filter((e) => e !== 'organization')
   .reduce(

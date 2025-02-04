@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { config } from 'config';
+import { type Entity, config } from 'config';
 import { ChevronRight, Home, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
@@ -7,7 +7,7 @@ import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover } from '~/modules/common/page-cover';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { baseEntityRoutes } from '~/nav-config';
-import type { Entity, MinimumEntityItem } from '~/types/common';
+import type { MinimumEntityItem } from '~/types/common';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {

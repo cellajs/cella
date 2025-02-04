@@ -80,7 +80,7 @@
   "route_not_found": "Route not found",
   "route_not_found.text": "The server could not find the requested route.",
   "server_error": "Server error",
-  "server_text": "A server error has been reported.",
+  "server_error.text": "Your request could not be completed.",
   "show_details": "Show error details",
   "password_reset_not_found": "Can't reset password",
   "password_reset_not_found.text": "The token is used or doesn't exist. Use forgot password to request a new one.",

@@ -1,5 +1,5 @@
 'use client';
-import { config } from 'config';
+import { type Language, config } from 'config';
 import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
@@ -10,7 +10,6 @@ import { Button } from '~/modules/ui/button';
 import { Command, CommandGroup, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
-import type { Language } from '~/types/common';
 
 const languages = config.languages;
 

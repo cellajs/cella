@@ -100,10 +100,7 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   },
-  "imports": {
-    "#/*": ["./dist/src/*"]
-  },
   "exports": {
-    "./*": "./src/*.ts"
+    "development": "./src/"
   }
 }

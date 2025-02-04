@@ -1,6 +1,7 @@
+import type { Entity } from 'config';
 import type { ClientResponse } from 'hono/client';
 import { ZodError } from 'zod';
-import type { Entity } from '~/types/common';
+// TODO get from config?
 import type { HttpErrorStatus, Severity } from '#/lib/errors';
 
 /**

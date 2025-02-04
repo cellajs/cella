@@ -77,7 +77,6 @@ const RequestsTable = () => {
 
     // add random token value so state it table changes
     const updatedWaitLists = waitlistRequests.map((req) => {
-      req.requestPending = true;
       return req;
     });
 

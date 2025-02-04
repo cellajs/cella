@@ -1,4 +1,5 @@
 import { config } from 'config';
+import type { EnabledOauthProvider } from 'config';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { db } from '#/db/db';
@@ -7,7 +8,6 @@ import { type InsertUserModel, usersTable } from '#/db/schema/users';
 import { errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { generateUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
-import type { EnabledOauthProvider } from '#/types/common';
 import { nanoid } from '#/utils/nanoid';
 import { checkSlugAvailable } from '../../general/helpers/check-slug';
 import { insertOauthAccount } from './oauth';

@@ -11,10 +11,10 @@ import {
 } from '#/utils/schema/common-responses';
 import { idOrSlugSchema, idSchema, idsBodySchema } from '#/utils/schema/common-schemas';
 import { membersQuerySchema, membersSchema } from '../general/schema';
-import { baseMembersQuerySchema, createMembershipBodySchema, membershipSchema, updateMembershipBodySchema } from './schema';
+import { baseMembersQuerySchema, createMembershipsBodySchema, membershipSchema, updateMembershipBodySchema } from './schema';
 
 class MembershipRoutesConfig {
-  public createMembership = createRouteConfig({
+  public createMemberships = createRouteConfig({
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
@@ -27,7 +27,7 @@ class MembershipRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: createMembershipBodySchema,
+            schema: createMembershipsBodySchema,
           },
         },
       },

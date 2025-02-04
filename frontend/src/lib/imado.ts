@@ -2,15 +2,18 @@ import { type UploadResult, Uppy, type UppyFile, type UppyOptions } from '@uppy/
 import Tus from '@uppy/tus';
 import { config } from 'config';
 import { getUploadToken } from '~/modules/general/api';
-import type { UploadType, UploadedUppyFile } from '~/types/common';
 
 import '@uppy/core/dist/style.min.css';
 import { onlineManager } from '@tanstack/react-query';
 import { LocalFileStorage } from '~/modules/attachments/local-file-storage';
+import type { UploadUppyProps } from '~/modules/attachments/upload/upload-uppy';
 import { nanoid } from '~/utils/nanoid';
 
 export type UppyMeta = { public?: boolean; contentType?: string };
+
 export type LocalFile = UppyFile<UppyMeta, UppyBody>;
+
+export type UploadedUppyFile = { file: UppyFile<UppyMeta, UppyBody>; url: string };
 
 // biome-ignore lint/complexity/noBannedTypes: no other way to define this type
 export type UppyBody = {};
@@ -41,7 +44,7 @@ interface ImadoOptions extends UploadParams {
  * @link https://uppy.io/docs/uppy/#new-uppyoptions
  */
 export async function ImadoUppy(
-  type: UploadType,
+  type: UploadUppyProps['uploadType'],
   uppyOptions: UppyOptions<UppyMeta, UppyBody>,
   opts: ImadoOptions = { public: false, organizationId: undefined },
 ): Promise<Uppy> {

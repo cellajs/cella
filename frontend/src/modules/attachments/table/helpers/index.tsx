@@ -1,9 +1,9 @@
 import { t } from 'i18next';
 import { Suspense } from 'react';
+import type { UploadedUppyFile } from '~/lib/imado';
 import { useAttachmentCreateMutation } from '~/modules/attachments/query-mutations';
 import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
-import { UploadType, type UploadedUppyFile } from '~/types/common';
 import { nanoid } from '~/utils/nanoid';
 
 export const formatBytes = (bytes: string): string => {
@@ -43,8 +43,8 @@ export const openUploadDialog = (organizationId: string) => {
 
     return (
       <UploadUppy
-        isPublic={true}
-        uploadType={UploadType.Personal}
+        isPublic
+        uploadType="personal"
         uppyOptions={{
           restrictions: {
             maxFileSize: 10 * 1024 * 1024, // 10MB

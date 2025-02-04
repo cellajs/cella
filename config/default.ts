@@ -115,27 +115,42 @@ export const config = {
     imado: true, // Imado fully configured, if false, files will be stored in local browser (indexedDB)
   },
 
-  // Languages
+  /**
+   * Default language
+   */
   defaultLanguage: 'en' as const,
 
+  /**
+   * Language options
+   */
   languages: [
     { value: 'en', label: 'English' },
     { value: 'nl', label: 'Nederlands' },
   ] as const,
 
-  // All entity types
+  /**
+   * All entity types used in the app
+   */
   entityTypes: ['user', 'organization', 'attachment'] as const,
 
-  // Page entity types (pages with memberships + users)
+  /**
+   * Page entity types (pages with memberships + users)
+   */
   pageEntityTypes: ['user', 'organization'] as const,
 
-  // Context entity types (memberships)
+  /**
+   * Context entity types (memberships)
+   */
   contextEntityTypes: ['organization'] as const,
 
-  // Product entity types (no memberships)
+  /**
+   * Product entity types (mostly content)
+   */
   productEntityTypes: ['attachment'] as const,
 
-  // Request limits
+  /**
+   * Request limits for lists
+   */
   requestLimits: {
     default: 40,
     users: 100,

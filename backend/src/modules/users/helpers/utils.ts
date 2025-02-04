@@ -1,6 +1,6 @@
 import { type SQL, and, eq } from 'drizzle-orm';
-import { db } from './db';
-import { type LimitedUserModel, type UnsafeUserModel, type UserModel, baseLimitedUserSelect, safeUserSelect, usersTable } from './schema/users';
+import { db } from '#/db/db';
+import { type LimitedUserModel, type UnsafeUserModel, type UserModel, baseLimitedUserSelect, safeUserSelect, usersTable } from '#/db/schema/users';
 
 type SafeQuery = typeof safeUserSelect;
 type UnsafeQuery = typeof usersTable;

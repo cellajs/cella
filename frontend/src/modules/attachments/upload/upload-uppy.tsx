@@ -7,7 +7,6 @@ import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { useEffect, useState } from 'react';
 import { ImadoUppy, type UppyBody, type UppyMeta } from '~/lib/imado';
 import { useThemeStore } from '~/store/theme';
-import type { UploadType } from '~/types/common';
 
 import '@uppy/audio/dist/style.css';
 import '@uppy/dashboard/dist/style.min.css';
@@ -17,8 +16,8 @@ import '@uppy/webcam/dist/style.css';
 import '~/modules/attachments/upload/uppy.css';
 import { getImageEditorOptions } from './image-editor-options';
 
-interface UploadUppyProps {
-  uploadType: UploadType;
+export interface UploadUppyProps {
+  uploadType: 'organization' | 'personal';
   isPublic: boolean;
   plugins?: ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | string)[];
   uppyOptions: UppyOptions<UppyMeta, UppyBody>;
@@ -95,4 +94,3 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, uppyOptions, 
 };
 
 export default UploadUppy;
-export type { UploadUppyProps };

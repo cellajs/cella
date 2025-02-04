@@ -19,14 +19,11 @@ export const deviceInfo = (ctx: Context) => {
   const getType = (): 'mobile' | 'desktop' => {
     return device.type === 'wearable' || device.type === 'mobile' ? 'mobile' : 'desktop';
   };
-  const getOs = () => (os.name && os.version ? `${os.name} ${os.version}` : os.name || null);
-
-  const getBrowser = () => (browser.name && browser.version ? `${browser.name} ${browser.version}` : browser.name || null);
 
   return {
     name: getName(),
     type: getType(),
-    os: getOs(),
-    browser: getBrowser(),
+    os: os.name || null,
+    browser: browser.name || null,
   };
 };

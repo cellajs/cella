@@ -13,7 +13,6 @@ import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { requestsTable } from '#/db/schema/requests';
 import { tokensTable } from '#/db/schema/tokens';
 import { usersTable } from '#/db/schema/users';
-import { getUserBy, getUsersByConditions } from '#/db/util';
 import { entityIdFields, entityTables } from '#/entity-config';
 import { type Env, getContextMemberships, getContextUser } from '#/lib/context';
 import { errorResponse } from '#/lib/errors';
@@ -21,6 +20,7 @@ import { i18n } from '#/lib/i18n';
 import { isAuthenticated } from '#/middlewares/guard';
 import { logEvent } from '#/middlewares/logger/log-event';
 import { verifyUnsubscribeToken } from '#/modules/users/helpers/unsubscribe-token';
+import { getUserBy, getUsersByConditions } from '#/modules/users/helpers/utils';
 import { nanoid } from '#/utils/nanoid';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 import { TimeSpan, createDate } from '#/utils/time-span';
@@ -103,7 +103,7 @@ const generalRoutes = app
     // Update requests table for all emails
     await db
       .update(requestsTable)
-      .set({ token: sql`tokens_table.id` }) // Using raw SQL to reference token
+      .set({ tokenId: sql`tokens_table.id` }) // Using raw SQL to reference token
       .from(tokensTable)
       .where(
         and(

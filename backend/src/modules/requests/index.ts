@@ -23,6 +23,7 @@ const requestsRoutes = app
    */
   .openapi(requestsRoutesConfig.createRequest, async (ctx) => {
     const { email, type, message } = ctx.req.valid('json');
+
     if (type === 'waitlist') {
       const [existingRequest] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
       if (existingRequest) return errorResponse(ctx, 400, 'request_email_is_user', 'info');
@@ -37,14 +38,7 @@ const requestsRoutes = app
       if (existingRequest?.type === type) return errorResponse(ctx, 409, 'request_exists', 'info');
     }
 
-    const [{ token, ...createdRequest }] = await db
-      .insert(requestsTable)
-      .values({
-        email,
-        type,
-        message,
-      })
-      .returning();
+    const [{ ...createdRequest }] = await db.insert(requestsTable).values({ email, type, message }).returning();
 
     // Slack notifications
     if (type === 'waitlist') await sendSlackMessage('Join waitlist', email);
@@ -53,7 +47,6 @@ const requestsRoutes = app
 
     const data = {
       ...createdRequest,
-      requestPending: false,
     };
 
     return ctx.json({ success: true, data }, 200);
@@ -82,12 +75,8 @@ const requestsRoutes = app
       order,
     );
 
-    const requests = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
+    const items = await db.select().from(requestsQuery.as('requests')).orderBy(orderColumn).limit(Number(limit)).offset(Number(offset));
 
-    const items = requests.map(({ token, ...rest }) => ({
-      ...rest,
-      requestPending: token !== null,
-    }));
     return ctx.json({ success: true, data: { items, total } }, 200);
   })
   /*

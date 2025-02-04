@@ -23,10 +23,10 @@ export const useColumns = () => {
         visible: true,
         width: 160,
         renderHeaderCell: HeaderCell,
-        renderCell: ({ row: { type, requestPending } }) => (
+        renderCell: ({ row: { type, tokenId } }) => (
           <div className="flex flew-row gap-2 items-center">
             {t(`common:${type}`)}
-            {type === 'waitlist' && <Badge className={`h-2 w-2 justify-center p-0 ${requestPending ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />}
+            {type === 'waitlist' && <Badge className={`h-2 w-2 justify-center p-0 ${tokenId ? 'bg-yellow-400 ' : 'bg-gray-400'}`} />}
           </div>
         ),
       },

@@ -18,13 +18,11 @@ baseApp.route('/', middlewares);
 
 // Not found handler
 baseApp.notFound((ctx) => {
-  // t('error:route_not_found.text')
   return errorResponse(ctx, 404, 'route_not_found', 'warn', undefined, { path: ctx.req.path });
 });
 
 // Error handler
 baseApp.onError((err, ctx) => {
-  // t('error:server_error.text')
   return errorResponse(ctx, 500, 'server_error', 'error', undefined, {}, err);
 });
 

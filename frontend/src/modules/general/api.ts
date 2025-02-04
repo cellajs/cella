@@ -1,7 +1,6 @@
-import { config } from 'config';
+import { type Entity, type PageEntity, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import type { UploadParams } from '~/lib/imado';
-import { type Entity, type PageEntity, UploadType } from '~/types/common';
 import { generalHc } from '#/modules/general/hc';
 
 // RPC
@@ -12,12 +11,12 @@ export const client = generalHc(config.backendUrl, clientConfig);
  *
  * @link https://imado.eu
  */
-export const getUploadToken = async (type: UploadType, query: UploadParams = { public: false, organizationId: undefined }) => {
+export const getUploadToken = async (type: 'organization' | 'personal', query: UploadParams = { public: false, organizationId: undefined }) => {
   const id = query.organizationId;
 
-  if (!id && type === UploadType.Organization) return console.error('Organization id required for organization uploads');
+  if (!id && type === 'organization') return console.error('Organization id required for organization uploads');
 
-  if (id && type === UploadType.Personal) return console.error('Personal uploads should be typed as personal');
+  if (id && type === 'personal') return console.error('Personal uploads should be typed as personal');
 
   const preparedQuery = {
     public: String(query.public),

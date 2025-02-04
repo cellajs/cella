@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ContextEntity, DraggableItemData, UserMenu, UserMenuItem } from '~/types/common';
+import type { UserMenu, UserMenuItem } from '~/types/common';
 
 import { useNavigationStore } from '~/store/navigation';
 
@@ -7,7 +7,7 @@ import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-sc
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { config } from 'config';
+import { type ContextEntity, config } from 'config';
 import { Info, type LucideProps, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -24,6 +24,7 @@ import { MenuSheetSearchInput } from '~/modules/navigation/menu-sheet/search-inp
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Switch } from '~/modules/ui/switch';
+import type { DraggableItemData } from '~/utils/drag-drop';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem> & { type: 'menuItem' };
 

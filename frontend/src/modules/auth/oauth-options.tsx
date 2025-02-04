@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { config } from 'config';
+import { type EnabledOauthProvider, config } from 'config';
 import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,8 +8,8 @@ import type { Step } from '~/modules/auth/auth-steps';
 import { Button } from '~/modules/ui/button';
 import { passkeyAuth } from '~/modules/users/helpers';
 import { AuthenticateRoute } from '~/routes/auth';
+(']');
 import { useThemeStore } from '~/store/theme';
-import type { EnabledOauthProvider } from '~/types/common';
 
 export const mapOauthProviders = [
   { id: 'github', name: 'Github', url: githubSignInUrl },

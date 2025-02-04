@@ -1,5 +1,14 @@
+import type { Entity } from 'config';
 import type { DraggableItemType } from '~/types/app';
-import type { DraggableItemData, Entity } from '~/types/common';
+
+// Drag and drop data
+export type DraggableItemData<T> = {
+  type: string;
+  item: T;
+  itemType: Entity;
+  dragItem: true;
+  order: number;
+};
 
 /**
  * Creates data for draggable items to be used in a drag-and-drop interface.

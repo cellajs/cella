@@ -7,7 +7,6 @@ import { AvatarWrap, type AvatarWrapProps } from '~/modules/common/avatar-wrap';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
-import { UploadType } from '~/types/common';
 
 const UploadUppy = lazyWithPreload(() => import('~/modules/attachments/upload/upload-uppy'));
 
@@ -27,8 +26,8 @@ export const UploadAvatar = ({ type, id, name, url, setUrl }: UploadAvatarProps)
     dialog(
       <Suspense>
         <UploadUppy
-          isPublic={true}
-          uploadType={UploadType.Personal}
+          isPublic
+          uploadType="personal"
           uppyOptions={{
             restrictions: {
               maxFileSize: 10 * 1024 * 1024, // 10MB

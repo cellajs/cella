@@ -14,10 +14,9 @@ export const membershipSchema = membershipTableSchema.extend({
   modifiedAt: z.string().nullable(),
 });
 
-export const createMembershipBodySchema = z.object({
-  emails: userSchema.shape.email.array().min(1),
+export const createMembershipsBodySchema = z.object({
+  emails: userSchema.shape.email.array().min(1).max(20),
   role: membershipSchema.shape.role,
-  parentEntity: z.object({ idOrSlug: idOrSlugSchema, entity: contextEntityTypeSchema }).optional(),
 });
 
 export const updateMembershipBodySchema = z.object({
@@ -38,6 +37,7 @@ export const membershipInfoSchema = z.object(
     createdBy: true,
     modifiedAt: true,
     modifiedBy: true,
+    tokenId: true,
     userId: true,
     type: true,
   }).shape,

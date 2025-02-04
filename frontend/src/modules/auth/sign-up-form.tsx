@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { emailPasswordBodySchema } from 'backend/modules/auth/schema';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type * as z from 'zod';
+import { emailPasswordBodySchema } from '#/modules/auth/schema';
 
 import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';

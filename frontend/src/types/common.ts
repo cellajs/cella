@@ -1,30 +1,20 @@
-import type { UppyFile } from '@uppy/core';
-import type { attachmentSchema } from 'backend/modules/attachments/schema';
-import type { checkTokenSchema } from 'backend/modules/auth/schema';
-import type { membersSchema } from 'backend/modules/general/schema';
-import type { membershipInfoSchema, membershipSchema } from 'backend/modules/memberships/schema';
-import type { invitesSchema, organizationSchema, organizationWithMembershipSchema } from 'backend/modules/organizations/schema';
-import type { requestSchema } from 'backend/modules/requests/schema';
-import type { limitedUserSchema, userSchema } from 'backend/modules/users/schema';
-import type { config } from 'config';
+import type { ContextEntity, EnabledOauthProvider } from 'config';
 import type { InferResponseType } from 'hono/client';
 import type { Dispatch, SetStateAction } from 'react';
 import type { SortColumn } from 'react-data-grid';
 import type { z } from 'zod';
-import type { UppyBody, UppyMeta } from '~/lib/imado';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import type { meClient } from '~/modules/users/api';
-
-// Core types
-export type Entity = (typeof config.entityTypes)[number];
-export type ContextEntity = (typeof config.contextEntityTypes)[number];
-export type PageEntity = (typeof config.pageEntityTypes)[number];
-export type ProductEntity = (typeof config.productEntityTypes)[number];
+import type { attachmentSchema } from '#/modules/attachments/schema';
+import type { checkTokenSchema } from '#/modules/auth/schema';
+import type { membersSchema } from '#/modules/general/schema';
+import type { membershipInfoSchema, membershipSchema } from '#/modules/memberships/schema';
+import type { invitesSchema, organizationSchema, organizationWithMembershipSchema } from '#/modules/organizations/schema';
+import type { requestSchema } from '#/modules/requests/schema';
+import type { limitedUserSchema, userSchema } from '#/modules/users/schema';
 
 export type User = z.infer<typeof userSchema>;
 export type LimitedUser = z.infer<typeof limitedUserSchema>;
-
-export type EnabledOauthProvider = (typeof config.enabledOauthProviders)[number];
 
 export type Session = Extract<InferResponseType<(typeof meClient.index)['$get']>, { data: unknown }>['data']['sessions'][number];
 export type MeUser = User & { sessions: Session[]; passkey: boolean; oauth: EnabledOauthProvider[] };
@@ -38,7 +28,6 @@ export type OrganizationWithMembership = z.infer<typeof organizationWithMembersh
 export type Attachment = z.infer<typeof attachmentSchema>;
 
 export type TokenData = z.infer<typeof checkTokenSchema>;
-export type Language = Organization['languages'][number];
 
 export type Member = z.infer<typeof membersSchema>;
 export type Membership = z.infer<typeof membershipSchema>;
@@ -58,23 +47,6 @@ export type MinimumEntityItem = {
 export type EntityPage = MinimumEntityItem & {
   organizationId?: string | null;
   membership: MinimumMembershipInfo | null;
-  parentEntity?: { idOrSlug: string; entity: ContextEntity };
-};
-
-// Uppy and Imado upload types
-export enum UploadType {
-  Personal,
-  Organization,
-}
-export type UploadedUppyFile = { file: UppyFile<UppyMeta, UppyBody>; url: string };
-
-// Drag and drop data
-export type DraggableItemData<T> = {
-  type: string;
-  item: T;
-  itemType: Entity;
-  dragItem: true;
-  order: number;
 };
 
 // TODO: move below to data-table?
