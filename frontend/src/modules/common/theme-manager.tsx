@@ -1,6 +1,6 @@
-import { config } from 'config';
+import { type Theme, config } from 'config';
 import { useEffect } from 'react';
-import { type Mode, type Theme, useThemeStore } from '~/store/theme';
+import { type Mode, useThemeStore } from '~/store/theme';
 import { hexToHsl } from '~/utils/hex-to-hsl';
 
 const root = window.document.documentElement;
