@@ -7,12 +7,8 @@ import { type ChartConfig, ChartContainer } from '~/modules/ui/chart';
 export const description = 'An interactive bar chart';
 
 const chartConfig = {
-  views: {
-    label: 'Page Views',
-  },
-  count: {
-    label: 'count',
-  },
+  views: { label: 'Page Views' },
+  count: { label: 'count' },
 } satisfies ChartConfig;
 
 type Metrics = {

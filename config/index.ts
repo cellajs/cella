@@ -34,6 +34,10 @@ export type EnabledOauthProvider = (typeof _default.enabledOauthProviders)[numbe
 export type Language = (typeof _default.languages)[number]['value'];
 
 /**
+ * Theme options
+ */
+export type Theme = keyof typeof _default.theme.colors | 'none';
+/**
  * Severity levels to be used in error handling
  */
 export type Severity = (typeof _default.severityLevels)[number];

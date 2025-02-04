@@ -6,7 +6,7 @@ import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { acceptOrgInvite, checkToken } from '~/modules/auth/api';
-import AuthNotice from '~/modules/auth/auth-notice';
+import AuthNotice from '~/modules/auth/notice';
 import Spinner from '~/modules/common/spinner';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { getAndSetMenu } from '~/modules/users/helpers';

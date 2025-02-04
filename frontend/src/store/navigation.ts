@@ -1,4 +1,4 @@
-import { type ContextEntity, config } from 'config';
+import { config } from 'config';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -6,32 +6,46 @@ import { menuSections } from '~/menu-config';
 
 import type { UserMenu } from '~/modules/users/types';
 
-type EntitySubList = Record<string, string[]>;
-export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: EntitySubList }>;
-
 interface NavigationState {
-  recentSearches: string[];
-  setRecentSearches: (searchValue: string[]) => void;
-  menu: UserMenu;
-  navSheetOpen: string | null;
-  setNavSheetOpen: (sheet: string | null) => void;
-  keepMenuOpen: boolean;
-  setKeepMenuOpen: (status: boolean) => void;
-  keepOpenPreference: boolean;
-  toggleKeepOpenPreference: (status: boolean) => void;
-  hideSubmenu: boolean;
-  toggleHideSubmenu: (status: boolean) => void;
-  activeSections: Record<string, boolean> | null;
-  toggleSection: (section: string) => void;
-  setSectionsDefault: () => void;
-  navLoading: boolean;
-  setLoading: (status: boolean) => void;
-  focusView: boolean;
-  setFocusView: (status: boolean) => void;
-  finishedOnboarding: boolean;
-  setFinishedOnboarding: () => void;
-  clearNavigationStore: () => void;
+  recentSearches: string[]; // Recent search (from AppSearch),
+  setRecentSearches: (searchValue: string[]) => void; // Updates recent searches
+
+  menu: UserMenu; // User menu
+  navSheetOpen: string | null; // Currently open navigation sheet
+  setNavSheetOpen: (sheet: string | null) => void; // Sets navigation sheet
+
+  keepMenuOpen: boolean; // Menu remains open state
+  setKeepMenuOpen: (status: boolean) => void; // Toggles menu open state
+
+  keepOpenPreference: boolean; // User Preference for keeping the menu open
+  toggleKeepOpenPreference: (status: boolean) => void; // Toggles keep-open preference
+
+  hideSubmenu: boolean; // Hides submenu state(for Menu sheet)
+  toggleHideSubmenu: (status: boolean) => void; // Toggles submenu visibility
+
+  activeSections: Record<string, boolean> | null; // Tracks expanded/collapsed entities sections and their archived sections
+  toggleSection: (section: string) => void; // Toggle a section expanded/collapsed state
+  setSectionsDefault: () => void; // Resets all sections to default state
+
+  navLoading: boolean; // Navigation is in a loading state
+  setLoading: (status: boolean) => void; // Updates the loading state
+
+  focusView: boolean; // Focused view mode state
+  setFocusView: (status: boolean) => void; // Toggles focus view state
+
+  finishedOnboarding: boolean; // Tracks if the user has completed onboarding
+  setFinishedOnboarding: () => void; // Marks onboarding as complete
+
+  clearNavigationStore: () => void; // Resets navigation store to initial state
 }
+
+// Defines the initial menu structure, excluding submenu items
+const initialMenuState: UserMenu = menuSections
+  .filter((el) => !el.submenu)
+  .reduce((acc, section) => {
+    acc[section.name] = [];
+    return acc;
+  }, {} as UserMenu);
 
 interface InitStore
   extends Pick<
@@ -48,17 +62,11 @@ interface InitStore
     | 'keepOpenPreference'
   > {}
 
-const initialMenuState: UserMenu = menuSections
-  .filter((el) => !el.submenu)
-  .reduce((acc, section) => {
-    acc[section.name] = [];
-    return acc;
-  }, {} as UserMenu);
-
+// Default state values
 const initStore: InitStore = {
   recentSearches: [],
   navSheetOpen: null,
-  keepMenuOpen: window.innerWidth > 1280,
+  keepMenuOpen: window.innerWidth > 1280, // Auto-open menu on wider screens
   keepOpenPreference: false,
   hideSubmenu: false,
   navLoading: false,

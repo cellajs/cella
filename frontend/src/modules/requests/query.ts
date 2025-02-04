@@ -3,7 +3,9 @@ import { config } from 'config';
 import type { ApiError } from '~/lib/api';
 import { type CreateRequestBody, type GetRequestsParams, createRequest, getRequests } from '~/modules/requests/api';
 
-// Keys for requests queries
+/**
+ * Keys for request related queries. These keys help to uniquely identify different query. For managing query caching and invalidation.
+ */
 export const requestsKeys = {
   all: ['requests'] as const,
   list: () => [...requestsKeys.all, 'list'] as const,
@@ -12,7 +14,17 @@ export const requestsKeys = {
   delete: () => [...requestsKeys.all, 'delete'],
 };
 
-// Infinite query options to get a paginated list of requests
+/**
+ * Query options to get a paginated list of requests.
+ *
+ * This function returns infinite query options to fetch a list of requests with support for pagination.
+ *
+ * @param param.q - Search query for filtering requests(default is an empty string).
+ * @param param.sort - Field to sort by (default is 'createdAt').
+ * @param param.order - Order of sorting (default is 'desc').
+ * @param param.limit - Number of items per page (default: `config.requestLimits.requests`).
+ * @returns Infinite query options.
+ */
 export const requestsQueryOptions = ({
   q = '',
   sort: initialSort,
@@ -34,7 +46,11 @@ export const requestsQueryOptions = ({
   });
 };
 
-// Mutation to create a new request, used in multiple components
+/**
+ * Mutation hook to create a new request.
+ *
+ * @returns Mutation hook for creating a new request.
+ */
 export const useCreateRequestMutation = () => {
   return useMutation<boolean, ApiError, CreateRequestBody>({
     mutationKey: requestsKeys.create(),

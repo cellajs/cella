@@ -3,24 +3,20 @@ import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-// Down levels are specific categories of alerts for maintenance (503) or offline (no connection) status
-type downLevels = 'maintenance' | 'offline' | null;
+type DownLevels = 'maintenance' | 'offline' | null;
 
 interface AlertState {
-  alertsSeen: string[];
-  downAlert: downLevels;
-  setAlertSeen: (alertSeen: string) => void;
-  resetAlertSeen: (alertSeen: string[]) => void;
-  setDownAlert: (downLevel: downLevels) => void;
-  clearAlertStore: () => void;
+  alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)
+  downAlert: DownLevels; // Down alert type
+
+  setAlertSeen: (alertSeen: string) => void; // Adds an alert to the seen list
+  resetAlertSeen: (alertSeen: string[]) => void; // Resets seen alerts to a new array
+  setDownAlert: (downLevel: DownLevels) => void; // Sets the current down alert type
+  clearAlertStore: () => void; // Resets to initial state
 }
 
-interface InitStore extends Pick<AlertState, 'alertsSeen' | 'downAlert'> {}
-
-const initStore: InitStore = {
-  downAlert: config.maintenance ? 'maintenance' : null,
-  alertsSeen: [],
-};
+// Initial store state, using config to determine maintenance mode
+const initStore: Pick<AlertState, 'alertsSeen' | 'downAlert'> = { downAlert: config.maintenance ? 'maintenance' : null, alertsSeen: [] };
 
 export const useAlertStore = create<AlertState>()(
   devtools(

@@ -33,7 +33,14 @@ export interface SystemInviteProps {
   role: 'user';
 }
 
-// Invite users
+/**
+ * Sends invitations to users via email.
+ *
+ * @param values - Invitation details.
+ * @param values.emails - An array of email addresses to invite.
+ * @param values.role - Role assigned to invited users ('user').
+ * @returns A promise that resolves when invitations are successfully sent.
+ */
 export const invite = async (values: SystemInviteProps) => {
   const response = await client.invite.$post({
     json: values,
@@ -42,7 +49,14 @@ export const invite = async (values: SystemInviteProps) => {
   await handleResponse(response);
 };
 
-// Check if slug is available
+/**
+ * Check if a slug is available for a given entity type.
+ *
+ * @param params - Parameters to check slug availability.
+ * @param params.slug - Slug to check.
+ * @param params.type - Entity type for which the slug is being checked.
+ * @returns A boolean indicating whether the slug is available.
+ */
 export const checkSlugAvailable = async (params: { slug: string; type: Entity }) => {
   const response = await client['check-slug'].$post({
     json: params,
@@ -52,7 +66,13 @@ export const checkSlugAvailable = async (params: { slug: string; type: Entity })
   return json.success;
 };
 
-// Get suggestions
+/**
+ * Get suggestions for a given query and optional entity type.
+ *
+ * @param query - Search query.
+ * @param type - Optional, type of entity to filter suggestions by.
+ * @returns An array of suggested entities based on the query.
+ */
 export const getSuggestions = async (query: string, type?: PageEntity | undefined) => {
   const response = await client.suggestions.$get({
     query: { q: query, type },
