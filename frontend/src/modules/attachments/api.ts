@@ -4,7 +4,9 @@ import { attachmentsHc } from '#/modules/attachments/hc';
 
 export const client = attachmentsHc(config.backendUrl, clientConfig);
 
-type CreateAttachmentParams = Parameters<(typeof client.index)['$post']>['0']['json'];
+export type CreateAttachmentParams = { attachments: Parameters<(typeof client.index)['$post']>['0']['json'] } & Parameters<
+  (typeof client.index)['$post']
+>['0']['param'];
 
 /**
  * Create a new attachment
@@ -20,14 +22,8 @@ type CreateAttachmentParams = Parameters<(typeof client.index)['$post']>['0']['j
  * @param organizationId - Organization ID, used to check permissions and associate the attachment
  * @returns The created attachment data.
  */
-export const createAttachment = async ({
-  attachments,
-  organizationId,
-}: {
-  attachments: CreateAttachmentParams;
-  organizationId: string;
-}) => {
-  const response = await client.index.$post({ param: { orgIdOrSlug: organizationId }, json: attachments });
+export const createAttachment = async ({ attachments, orgIdOrSlug }: CreateAttachmentParams) => {
+  const response = await client.index.$post({ param: { orgIdOrSlug }, json: attachments });
   const json = await handleResponse(response);
   return json.data;
 };

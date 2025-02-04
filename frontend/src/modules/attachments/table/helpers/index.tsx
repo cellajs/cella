@@ -37,7 +37,7 @@ export const openUploadDialog = (organizationId: string) => {
         organizationId,
       }));
 
-      createAttachment({ attachments, organizationId });
+      createAttachment({ attachments, orgIdOrSlug: organizationId });
       dialog.remove(true, 'upload-attachment');
     };
 
