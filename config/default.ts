@@ -185,6 +185,9 @@ export const config = {
     },
   },
 
+  // Error handling
+  severityLevels: ['debug', 'log', 'info', 'warn', 'error'] as const,
+
   // UI settings
   navLogoAnimation: 'animate-spin-slow',
 

@@ -19,7 +19,6 @@ import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import type { EntityPage } from '~/types/common';
-import { idOrSlugSchema } from '#/utils/schema/common-schemas';
 
 interface Props {
   entity?: EntityPage;
@@ -33,13 +32,12 @@ const InviteEmailForm = ({ entity, callback, dialog: isDialog, children }: Props
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
-  // TODO
   const formSchema = z.object({
     emails: z
       .array(z.string().email(t('backend:invalid.email')))
       .min(1, { message: t('backend:invalid.min_items', { items_count: 'one', item: 'email' }) }),
     role: z.enum(config.rolesByType.allRoles),
-    idOrSlug: idOrSlugSchema.optional(),
+    idOrSlug: z.string().optional(),
   });
 
   type FormValues = z.infer<typeof formSchema>;

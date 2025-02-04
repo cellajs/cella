@@ -12,7 +12,6 @@ import { Suspense, lazy } from 'react';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { CreatePasswordWithTokenRoute } from '~/routes/auth';
-import { passwordSchema } from '#/utils/schema/common-schemas';
 import Spinner from '../common/spinner';
 import { createToast } from '../common/toaster';
 import { checkToken, createPassword } from './api';
@@ -21,7 +20,7 @@ import { RequestPasswordDialog } from './request-password-dialog';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 
-const formSchema = z.object({ password: passwordSchema });
+const formSchema = z.object({ password: z.string().min(8).max(100) });
 
 const CreatePasswordForm = () => {
   const { t } = useTranslation();
