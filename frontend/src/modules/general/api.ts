@@ -3,7 +3,6 @@ import { clientConfig, handleResponse } from '~/lib/api';
 import type { UploadParams } from '~/lib/imado';
 import { generalHc } from '#/modules/general/hc';
 
-// RPC
 export const client = generalHc(config.backendUrl, clientConfig);
 
 /**

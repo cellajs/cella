@@ -3,7 +3,6 @@ import { clientConfig, handleResponse } from '~/lib/api';
 import type { TokenModel } from '#/db/schema/tokens';
 import { authHc } from '#/modules/auth/hc';
 
-// RPC
 export const client = authHc(config.backendUrl, clientConfig);
 
 // Oath endpoints

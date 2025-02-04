@@ -3,7 +3,6 @@ import { clientConfig, handleResponse } from '~/lib/api';
 import { meHc } from '#/modules/me/hc';
 import { usersHc } from '#/modules/users/hc';
 
-// RPC
 export const meClient = meHc(config.backendUrl, clientConfig);
 export const userClient = usersHc(config.backendUrl, clientConfig);
 
