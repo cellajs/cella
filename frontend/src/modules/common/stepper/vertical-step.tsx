@@ -15,20 +15,20 @@ type VerticalStepProps = StepSharedProps & {
 const verticalStepVariants = cva(
   [
     'flex flex-col relative transition-all duration-200',
-    'data-[completed=true]:[&:not(:last-child)]:after:bg-primary',
-    'data-[invalid=true]:[&:not(:last-child)]:after:bg-destructive',
+    'data-[completed=true]:not-last:after:bg-primary',
+    'data-[invalid=true]:not-last:after:bg-destructive',
   ],
   {
     variants: {
       variant: {
         circle: cn(
-          '[&:not(:last-child)]:pb-[var(--step-gap)] [&:not(:last-child)]:gap-[var(--step-gap)]',
-          "[&:not(:last-child)]:after:content-[''] [&:not(:last-child)]:after:w-0.5 [&:not(:last-child)]:after:bg-border",
-          '[&:not(:last-child)]:after:inset-x-[calc(var(--step-icon-size)/2)]',
-          '[&:not(:last-child)]:after:absolute',
-          '[&:not(:last-child)]:after:top-[calc(var(--step-icon-size)+var(--step-gap))]',
-          '[&:not(:last-child)]:after:bottom-[var(--step-gap)]',
-          '[&:not(:last-child)]:after:transition-all [&:not(:last-child)]:after:duration-200',
+          'not-last:pb-(--step-gap) not-last:gap-(--step-gap)',
+          "not-last:after:content-[''] not-last:after:w-0.5 not-last:after:bg-border",
+          'not-last:after:inset-x-[calc(var(--step-icon-size)/2)]',
+          'not-last:after:absolute',
+          'not-last:after:top-[calc(var(--step-icon-size)+var(--step-gap))]',
+          'not-last:after:bottom-(--step-gap)',
+          'not-last:after:transition-all not-last:after:duration-200',
         ),
         line: 'flex-1 border-t-0 mb-4',
       },
@@ -159,7 +159,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>((props,
         className={cn(
           'stepper__vertical-step-content',
           !isLastStep && 'min-h-4',
-          variant !== 'line' && 'sm:ps-[--step-icon-size] max-sm:relative max-sm:z-[1]',
+          variant !== 'line' && 'sm:ps-(--step-icon-size) max-sm:relative max-sm:z-1',
           variant === 'line' && orientation === 'vertical' && 'min-h-0',
           styles?.['vertical-step-content'],
         )}

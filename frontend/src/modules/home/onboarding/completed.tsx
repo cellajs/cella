@@ -32,7 +32,7 @@ export const OnboardingCompleted = () => {
           side: 'left',
           modal: false,
           className:
-            'fixed sm:z-[80] inset-0 left-16 p-0 backdrop-blur-sm max-w-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'fixed sm:z-80 inset-0 left-16 p-0 backdrop-blur-xs max-w-80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         });
         onBoardingFinishCallback();
       },
@@ -41,7 +41,7 @@ export const OnboardingCompleted = () => {
   }, []);
 
   return (
-    <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-[1] max-w-3xl">
+    <div className="min-w-full h-screen flex flex-col items-center justify-center text-center mx-auto space-y-6 p-4 relative z-1 max-w-3xl">
       {isExploding && <Confetti fire />}
 
       {finishedOnboarding && (

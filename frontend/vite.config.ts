@@ -3,6 +3,7 @@ import path from 'node:path';
 import MillionLint from '@million/lint';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
+import tailwindcss from '@tailwindcss/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 // import { visualizer } from 'rollup-plugin-visualizer';
@@ -12,8 +13,8 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
 import { env } from './env';
-
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+
 const ReactCompilerConfig = {
   /* ... */
 };
@@ -52,6 +53,7 @@ export default defineConfig(() => {
           plugins: [['babel-plugin-react-compiler', ReactCompilerConfig]],
         },
       }),
+      tailwindcss(),
       config.sentSentrySourceMaps
         ? sentryVitePlugin({
             disable: config.mode === 'development',

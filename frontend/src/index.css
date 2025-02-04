@@ -1,10 +1,50 @@
 /* Custom gradients that are not easy to build using tailwind */
-@import "./gradients.css";
-@import "./modules/common/blocknote/styles.css";
+@import './gradients.css' layer(base);
+@import './modules/common/blocknote/styles.css' layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@config '../tailwind.config.ts';
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+@utility submenu-section {
+  &:before {
+    border-left: 2px dotted hsl(var(--foreground));
+    content: '';
+    display: block;
+    position: absolute;
+    margin-top: 0.5rem;
+    margin-left: 1.7rem;
+    opacity: 0.5;
+    z-index: 0;
+    width: 1px;
+    height: calc(100% - 1.5rem);
+  }
+}
+
+/* Override tailwind here */
+@layer components {
+  .grid.rdg-wrapper > .rdg {
+    border: none;
+  }
+}
 
 @layer base {
   .bn-container.bn-shadcn,
@@ -130,21 +170,3 @@
     @apply flex flex-col min-h-full;
   }
 }
-
-@layer utilities {
-  .submenu-section:before {
-    border-left: 2px dotted hsl(var(--foreground));
-    content: "";
-    display: block;
-    position: absolute;
-    margin-top: 0.5rem;
-    margin-left: 1.7rem;
-    opacity: 0.5;
-    z-index: 0;
-    width: 1px;
-    height: calc(100% - 1.5rem);
-  }
-}
-
-/* Override tailwind here */
-/* @layer components {} */

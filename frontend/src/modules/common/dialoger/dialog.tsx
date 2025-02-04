@@ -54,7 +54,7 @@ export default function StandardDialog({ dialog, removeDialog }: DialogProp) {
       {container && containerBackdrop && (
         <div
           className={cn(
-            'fixed inset-0 z-[100] bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+            'fixed inset-0 z-100 bg-background/75 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
             containerBackdropClassName,
           )}
         />

@@ -83,7 +83,7 @@ const AttachmentsCarousel = ({ slides = [], isDialog = false, slide = 0, saveInS
       }}
     >
       {slides[current] && isDialog && (
-        <div className="fixed z-10 top-0 left-0 w-full flex gap-2 p-3 text-center sm:text-left bg-background/60 backdrop-blur-sm">
+        <div className="fixed z-10 top-0 left-0 w-full flex gap-2 p-3 text-center sm:text-left bg-background/60 backdrop-blur-xs">
           {slides[current].name && (
             <h2 className="text-base tracking-tight flex ml-1 items-center gap-2 leading-6 h-6">
               {slides[current].fileType && <FilePlaceholder fileType={slides[current].fileType} iconSize={16} strokeWidth={2} />}

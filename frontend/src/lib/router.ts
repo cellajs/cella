@@ -66,6 +66,7 @@ export const persister = createIDBPersister();
  * @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
  */
 const router = createRouter({
+  scrollRestorationBehavior: 'auto',
   routeTree,
   // notFoundRoute,
   defaultPreload: false,

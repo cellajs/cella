@@ -4,7 +4,7 @@ import { Drawer as DrawerPrimitive } from 'vaul';
 
 import { cn } from '~/utils/cn';
 
-const DrawerVariants = cva('fixed z-[125] p-4 overflow-x-hidden flex flex-col rounded-t-2.5 border bg-background', {
+const DrawerVariants = cva('fixed z-125 p-4 overflow-x-hidden flex flex-col rounded-t-2.5 border bg-background', {
   variants: {
     direction: {
       top: 'inset-x-0 top-0 mb-24 flex-col',
@@ -47,7 +47,7 @@ const DrawerOverlay = React.forwardRef<
   React.ComponentRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-[120] bg-background/40 backdrop-blur-sm', className)} {...props} />
+  <DrawerPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-120 bg-background/40 backdrop-blur-xs', className)} {...props} />
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 

@@ -52,7 +52,7 @@ const UserProfilePage = ({ user, sheet, orgIdOrSlug }: { user: LimitedUser; shee
               <Link
                 to="/settings"
                 tabIndex={0}
-                className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/80"
+                className="inline-flex items-center justify-center whitespace-nowrap h-9 rounded-md px-3 text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 bg-primary text-primary-foreground hover:bg-primary/80"
               >
                 <UserCog size={16} />
                 <span className="max-sm:hidden ml-1">{t('common:settings')}</span>

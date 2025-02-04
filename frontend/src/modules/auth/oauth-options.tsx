@@ -81,7 +81,7 @@ const OauthOptions = ({ email, actionType = 'signIn', showPasskey = false }: Oau
                 data-provider={provider}
                 src={`/static/images/${provider.toLowerCase()}-icon.svg`}
                 alt={provider}
-                className="w-4 h-4 mr-1 group-data-[mode=dark]:data-[provider=github]:invert"
+                className="w-4 h-4 mr-1 data-[provider=github]:group-data-[mode=dark]:invert"
                 loading="lazy"
               />
               <span>{actionType === 'signIn' ? t('common:sign_in') : t('common:sign_up')}</span>
