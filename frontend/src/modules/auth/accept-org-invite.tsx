@@ -9,6 +9,7 @@ import { acceptOrgInvite, checkToken } from '~/modules/auth/api';
 import AuthNotice from '~/modules/auth/auth-notice';
 import Spinner from '~/modules/common/spinner';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
+import { getAndSetMenu } from '~/modules/users/helpers';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
 
@@ -27,6 +28,7 @@ const AcceptOrgInvite = () => {
   } = useMutation({
     mutationFn: acceptOrgInvite,
     onSuccess: () => {
+      getAndSetMenu();
       toast.success(t('common:invitation_accepted'));
       navigate({ to: tokenData?.organizationSlug ? `/${tokenData.organizationSlug}` : config.defaultRedirectPath });
     },

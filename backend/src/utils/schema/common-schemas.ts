@@ -23,9 +23,13 @@ export const idOrSlugSchema = idSchema.or(slugSchema);
 export const tokenSchema = z.object({ token: z.string() });
 
 export const idsBodySchema = z.object({
-  ids: z.array(z.string()).refine((ids) => ids.length < 50, {
-    message: 'The number of ids cannot exceed 50',
-  }),
+  ids: z
+    .array(z.string())
+    .min(1)
+    .max(50)
+    .refine((ids) => ids.length <= 50, {
+      message: 'The number of ids cannot exceed 50',
+    }),
 });
 
 export const languageSchema = constructZodLiteralUnionType(config.languages.map((lang) => z.literal(lang.value)));

@@ -15,7 +15,7 @@ export const membershipSchema = membershipTableSchema.extend({
 });
 
 export const createMembershipsBodySchema = z.object({
-  emails: userSchema.shape.email.array().min(1).max(20),
+  emails: userSchema.shape.email.array().min(1).max(50),
   role: membershipSchema.shape.role,
 });
 
