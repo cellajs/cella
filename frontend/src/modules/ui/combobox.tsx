@@ -116,9 +116,9 @@ const Combobox: React.FC<ComboboxProps> = ({
                 <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef} overscan={1}>
                   {options
                     .filter(({ label }) => label.toLowerCase().includes(searchValue.toLowerCase()))
-                    .map((option) => (
+                    .map((option, index) => (
                       <CommandItem
-                        key={option.value}
+                        key={`${option.value}-${index}`}
                         value={option.label}
                         onSelect={handleSelect}
                         className="group rounded-md flex justify-between items-center w-full leading-normal"

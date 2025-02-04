@@ -5,10 +5,10 @@ import { dialog } from '~/modules/common/dialoger/state';
 
 interface RequestPasswordDialogProps {
   email?: string;
-  children: ReactElement;
+  children: ReactElement<{ onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void }>;
 }
 
-export const RequestPasswordDialog = forwardRef<HTMLButtonElement, RequestPasswordDialogProps>(({ email, children }) => {
+export const RequestPasswordDialog = forwardRef<HTMLButtonElement, RequestPasswordDialogProps>(({ email, children }, _) => {
   const { t } = useTranslation();
 
   const openDialog = () => {
@@ -20,16 +20,15 @@ export const RequestPasswordDialog = forwardRef<HTMLButtonElement, RequestPasswo
     });
   };
 
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    children.props.onClick?.(event);
+    openDialog();
+  };
+
   if (!isValidElement(children)) return children;
 
-  // TODO can we clean this up?
-  return cloneElement(children as ReactElement<{ onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void }>, {
-    onClick: (event: React.MouseEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      (children as ReactElement<{ onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void }>).props.onClick?.(event);
-      openDialog();
-    },
-  });
+  return cloneElement(children, { onClick: handleClick });
 });
 
 RequestPasswordDialog.displayName = 'RequestPasswordDialog';
