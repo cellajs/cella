@@ -15,6 +15,10 @@ import {
 } from '~/modules/organizations/api';
 import type { OrganizationWithMembership } from '~/modules/organizations/types';
 
+/**
+ * Keys for organizations queries.
+ * These keys help in managing query caching and invalidation.
+ */
 export const organizationsKeys = {
   one: ['organization'] as const,
   single: (idOrSlug: string) => [...organizationsKeys.one, idOrSlug] as const,
@@ -26,12 +30,31 @@ export const organizationsKeys = {
   delete: () => [...organizationsKeys.one, 'delete'] as const,
 };
 
+/**
+ * Query options for a single organization by id or slug.
+ *
+ * This function returns query options for fetching a single organization using its id or slug.
+ *
+ * @param idOrSlug - Organization id or slug.
+ * @returns Query options.
+ */
 export const organizationQueryOptions = (idOrSlug: string) =>
   queryOptions({
     queryKey: organizationsKeys.single(idOrSlug),
     queryFn: () => getOrganization(idOrSlug),
   });
 
+/**
+ * Query options to get a paginated list of organizations.
+ *
+ * This function returns infinite query options to fetch a list of organizations with support for pagination.
+ *
+ * @param q - Search query string for filtering organizations(default is an empty string).
+ * @param sort - Field to sort by (default is 'createdAt').
+ * @param order - Order of sorting (default is 'desc').
+ * @param limit - Number of items per page (default: `config.requestLimits.organizations`).
+ * @returns Infinite query options.
+ */
 export const organizationsQueryOptions = ({
   q = '',
   sort: initialSort,
@@ -53,6 +76,12 @@ export const organizationsQueryOptions = ({
   });
 };
 
+/**
+ * Custom hook to create a new organization.
+ * This hook provides the functionality to create a new organization.
+ *
+ * @returns The mutation hook for creating an organization.
+ */
 export const useOrganizationCreateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, CreateOrganizationParams>({
     mutationKey: organizationsKeys.create(),
@@ -60,6 +89,13 @@ export const useOrganizationCreateMutation = () => {
   });
 };
 
+/**
+ * Custom hook to update an existing organization.
+ * This hook provides the functionality to update an organization. After a successful update,
+ * it updates the local cache and invalidates relevant queries to keep the data fresh.
+ *
+ * @returns The mutation hook for updating an organization.
+ */
 export const useOrganizationUpdateMutation = () => {
   return useMutation<OrganizationWithMembership, ApiError, { idOrSlug: string; json: UpdateOrganizationBody }>({
     mutationKey: organizationsKeys.update(),
@@ -68,10 +104,16 @@ export const useOrganizationUpdateMutation = () => {
       queryClient.setQueryData(organizationsKeys.single(idOrSlug), updatedOrganization);
       queryClient.invalidateQueries({ queryKey: organizationsKeys.one });
     },
-    gcTime: 1000 * 10,
+    gcTime: 1000 * 10, // Garbage collect after 10 seconds
   });
 };
 
+/**
+ * Custom hook to delete organizations.
+ * This hook provides the functionality to delete one or more organizations.
+ *
+ * @returns The mutation hook for deleting organizations.
+ */
 export const useOrganizationDeleteMutation = () => {
   return useMutation<void, ApiError, string[]>({
     mutationKey: organizationsKeys.delete(),

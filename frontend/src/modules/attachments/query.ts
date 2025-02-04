@@ -3,7 +3,10 @@ import { config } from 'config';
 
 import { type GetAttachmentsParams, getAttachments } from '~/modules/attachments/api';
 
-// Keys for attachments queries
+/**
+ * Query keys for attachments operations.
+ * These keys are used for caching and identifying queries related to attachments.
+ */
 export const attachmentsKeys = {
   all: ['attachments'] as const,
   list: () => [...attachmentsKeys.all, 'list'] as const,
@@ -14,7 +17,18 @@ export const attachmentsKeys = {
   delete: () => [...attachmentsKeys.all, 'delete'] as const,
 };
 
-// Infinite Query Options to get a paginated list of attachments
+/**
+ * Infinite Query Options for fetching a paginated list of attachments.
+ *
+ * This function returns the configuration for querying attachments from target organization with pagination support.
+ *
+ * @param orgIdOrSlug - Organization ID or slug.
+ * @param q - Optional search query for filtering attachments.
+ * @param sort - Field to sort by (default: 'createdAt').
+ * @param order - Order of sorting (default: 'desc').
+ * @param limit - Number of items per page (default: `config.requestLimits.attachments`).
+ * @returns Infinite query options.
+ */
 export const attachmentsQueryOptions = ({
   orgIdOrSlug,
   q = '',

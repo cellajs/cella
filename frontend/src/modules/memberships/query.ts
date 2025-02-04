@@ -3,7 +3,10 @@ import { config } from 'config';
 
 import { type GetMembersParams, getMembers } from '~/modules/memberships/api';
 
-// Keys for members queries
+/**
+ * Keys for members queries.
+ * This object contains different keys for identifying and caching queries related to members.
+ */
 export const membersKeys = {
   all: ['members'] as const,
   list: () => [...membersKeys.all, 'list'] as const,
@@ -13,7 +16,21 @@ export const membersKeys = {
   delete: () => [...membersKeys.all, 'delete'] as const,
 };
 
-// Infinite query options to get a paginated list of members
+/**
+ * Infinite query options to fetch a paginated list of members.
+ *
+ * This function returns the configuration needed to query a list of members from target entity with pagination.
+ *
+ * @param idOrSlug - ID or slug of entity.
+ * @param entityType - Type of entity.
+ * @param orgIdOrSlug - ID or slug of organization based of witch entity created.
+ * @param q - Optional search query to filter members by (default is an empty string).
+ * @param role - Role of the members to filter by.
+ * @param sort - Field to sort by (default is 'createdAt').
+ * @param order - Order of sorting (default is 'desc').
+ * @param limit - Number of items per page (default is configured in `config.requestLimits.members`).
+ * @returns Infinite query options.
+ */
 export const membersQueryOptions = ({
   idOrSlug,
   orgIdOrSlug,

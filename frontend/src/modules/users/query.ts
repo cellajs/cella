@@ -8,7 +8,9 @@ import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
-// Keys for users queries
+/**
+ * Keys for user queries to manage user-related data.
+ */
 export const usersKeys = {
   one: ['user'] as const,
   single: (idOrSlug: string) => [...usersKeys.one, idOrSlug] as const,
@@ -20,36 +22,48 @@ export const usersKeys = {
   delete: () => [...usersKeys.one, 'delete'] as const,
 };
 
-// Keys for meUser(self) query
+/**
+ * Keys for the current authenticated user(self).
+ * Used to manage self-related data.
+ */
 export const meKeys = {
   all: ['me'] as const,
   update: () => [...meKeys.all, 'update'] as const,
 };
 
-// Query Options to get a user by id or slug
-export const userQueryOptions = (idOrSlug: string) =>
-  queryOptions({
-    queryKey: usersKeys.single(idOrSlug),
-    queryFn: () => getUser(idOrSlug),
-  });
+/**
+ * Query options for fetching a user by ID or slug.
+ *
+ * @param idOrSlug - The ID or slug of the user to fetch.
+ * @returns Query options.
+ */
+export const userQueryOptions = (idOrSlug: string) => queryOptions({ queryKey: usersKeys.single(idOrSlug), queryFn: () => getUser(idOrSlug) });
 
-// Query Options to get current user(self)
-export const meQueryOptions = (retry = 0) =>
-  queryOptions({
-    queryKey: meKeys.all,
-    queryFn: getAndSetMe,
-    retry,
-  });
+/**
+ * Query options for fetching the current authenticated user's data.
+ *
+ * @param retry - The number of retry attempts on failure.
+ * @returns Query options.
+ */
+export const meQueryOptions = (retry = 0) => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe, retry });
 
-// Query Options to get current user's(self) menu
-export const menuQueryOptions = (retry = 0) =>
-  queryOptions({
-    queryKey: ['menu'],
-    queryFn: getAndSetMenu,
-    retry,
-  });
+/**
+ * Query options for fetching the current authenticated user's menu.
+ *
+ * @param retry - The number of retry attempts on failure.
+ * @returns Query options.
+ */
+export const menuQueryOptions = (retry = 0) => queryOptions({ queryKey: ['menu'], queryFn: getAndSetMenu, retry });
 
-// Infinite Query Options to get a paginated list of users
+/**
+ * Infinite query options to get a paginated list of users.
+ *
+ * @param q - Optional search query to filter users by (default is an empty string).
+ * @param sort - Field to sort by (default is 'createdAt').
+ * @param order - Order of sorting (default is 'desc').
+ * @param limit - Number of items per page (default is configured in `config.requestLimits.users`).
+ * @returns Infinite query options.
+ */
 export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrder, role, limit = config.requestLimits.users }: GetUsersParams) => {
   const sort = initialSort || 'createdAt';
   const order = initialOrder || 'desc';
@@ -66,12 +80,18 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
   });
 };
 
+/**
+ * Mutation hook for updating user
+ *
+ * @param idOrSlug - Optional ID or slug of the user to update. If not provided, it will update the current authenticated user (self).
+ * @returns The mutation hook for updating the user.
+ */
 export const useUpdateUserMutation = (idOrSlug?: string) => {
   const { user: currentUser } = useUserStore();
   const isSelf = currentUser.id === idOrSlug;
 
   return useMutation<User, ApiError, (UpdateUserParams & { idOrSlug: string }) | Omit<UpdateUserParams, 'role'>>({
-    mutationKey: isSelf ? meKeys.update() : usersKeys.update(),
+    mutationKey: idOrSlug && !isSelf ? usersKeys.update() : meKeys.update(),
     mutationFn: (params) => (idOrSlug && !isSelf ? updateUser({ idOrSlug, ...params }) : updateSelf(params)),
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
