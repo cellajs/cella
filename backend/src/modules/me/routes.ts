@@ -104,7 +104,7 @@ class MeRoutesConfig {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Terminate sessions',
-    description: 'Terminate all sessions of the current user, except for current session.',
+    description: 'Terminate sessions of the current user by list of ids.',
     request: {
       body: {
         content: { 'application/json': { schema: idsBodySchema } },
