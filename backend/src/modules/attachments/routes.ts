@@ -5,23 +5,23 @@ import { hasOrgAccess, isAuthenticated, isPublicAccess } from '#/middlewares/gua
 
 import { z } from 'zod';
 import { idOrSlugSchema, idSchema, idsBodySchema } from '#/utils/schema/common-schemas';
-import { attachmentSchema, attachmentsQuerySchema, createAttachmentSchema, updateAttachmentBodySchema } from './schema';
+import { attachmentSchema, attachmentsQuerySchema, createAttachmentsSchema, updateAttachmentBodySchema } from './schema';
 
 class AttachmentRoutesConfig {
-  public createAttachment = createRouteConfig({
+  public createAttachments = createRouteConfig({
     method: 'post',
     path: '/',
     guard: [isAuthenticated, hasOrgAccess],
     tags: ['attachments'],
-    summary: 'Create attachment',
-    description: 'Create a new attachment.',
+    summary: 'Create attachments',
+    description: 'Create one or more new attachments.',
     request: {
       params: z.object({ orgIdOrSlug: idOrSlugSchema }),
       body: {
         required: true,
         content: {
           'application/json': {
-            schema: createAttachmentSchema,
+            schema: createAttachmentsSchema,
           },
         },
       },

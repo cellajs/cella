@@ -22,7 +22,7 @@ export type CreateAttachmentParams = { attachments: Parameters<(typeof client.in
  * @param organizationId - Organization ID, used to check permissions and associate the attachment
  * @returns The created attachment data.
  */
-export const createAttachment = async ({ attachments, orgIdOrSlug }: CreateAttachmentParams) => {
+export const createAttachments = async ({ attachments, orgIdOrSlug }: CreateAttachmentParams) => {
   const response = await client.index.$post({ param: { orgIdOrSlug }, json: attachments });
   const json = await handleResponse(response);
   return json.data;

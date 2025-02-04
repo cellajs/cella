@@ -7,7 +7,7 @@ import {
   type CreateAttachmentParams,
   type DeleteAttachmentsParams,
   type UpdateAttachmentParams,
-  createAttachment,
+  createAttachments,
   deleteAttachments,
   updateAttachment,
 } from '~/modules/attachments/api';
@@ -27,7 +27,7 @@ const limit = config.requestLimits.attachments;
 export const useAttachmentCreateMutation = () =>
   useMutation<Attachment[], Error, CreateAttachmentParams>({
     mutationKey: attachmentsKeys.create(),
-    mutationFn: createAttachment,
+    mutationFn: createAttachments,
   });
 
 export const useAttachmentUpdateMutation = () =>
@@ -52,7 +52,7 @@ const onError = (_: Error, __: CreateAttachmentParams & UpdateAttachmentParams &
 };
 
 queryClient.setMutationDefaults(attachmentsKeys.create(), {
-  mutationFn: createAttachment,
+  mutationFn: createAttachments,
   onMutate: async (variables) => {
     const { attachments, orgIdOrSlug } = variables;
 

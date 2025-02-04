@@ -25,7 +25,7 @@ export const openUploadDialog = (organizationId: string) => {
   const maxAttachmentsUpload = 20;
 
   const UploadDialog = () => {
-    const { mutate: createAttachment } = useAttachmentCreateMutation();
+    const { mutate: createAttachments } = useAttachmentCreateMutation();
 
     const handleCallback = (result: UploadedUppyFile[]) => {
       const attachments = result.map((a) => ({
@@ -37,7 +37,7 @@ export const openUploadDialog = (organizationId: string) => {
         organizationId,
       }));
 
-      createAttachment({ attachments, orgIdOrSlug: organizationId });
+      createAttachments({ attachments, orgIdOrSlug: organizationId });
       dialog.remove(true, 'upload-attachment');
     };
 
