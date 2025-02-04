@@ -1,8 +1,12 @@
-import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions, useMutation } from '@tanstack/react-query';
 import { config } from 'config';
+import type { ApiError } from '~/lib/api';
+import { queryClient } from '~/lib/router';
 
-import { type GetUsersParams, getUser, getUsers } from '~/modules/users/api';
+import { type GetUsersParams, type UpdateUserParams, getUser, getUsers, updateSelf, updateUser } from '~/modules/users/api';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import { useUserStore } from '~/store/user';
+import type { User } from '~/types/common';
 
 // Keys for users queries
 export const usersKeys = {
@@ -14,19 +18,12 @@ export const usersKeys = {
   leaveEntity: () => [...usersKeys.one, 'leave'] as const,
   update: () => [...usersKeys.one, 'update'] as const,
   delete: () => [...usersKeys.one, 'delete'] as const,
-  deleteSelf: () => [...usersKeys.delete(), 'self'] as const,
-  terminateSessions: () => [...usersKeys.one, 'terminate', 'sessions'] as const,
 };
 
 // Keys for meUser(self) query
 export const meKeys = {
   all: ['me'] as const,
   update: () => [...meKeys.all, 'update'] as const,
-};
-
-// Keys for user(self) menu query
-export const menuKeys = {
-  all: ['menu'] as const,
 };
 
 // Query Options to get a user by id or slug
@@ -47,7 +44,7 @@ export const meQueryOptions = (retry = 0) =>
 // Query Options to get current user's(self) menu
 export const menuQueryOptions = (retry = 0) =>
   queryOptions({
-    queryKey: menuKeys.all,
+    queryKey: ['menu'],
     queryFn: getAndSetMenu,
     retry,
   });
@@ -66,5 +63,19 @@ export const usersQueryOptions = ({ q = '', sort: initialSort, order: initialOrd
     retry: 1,
     queryFn: async ({ pageParam: page, signal }) => await getUsers({ page, q, sort, order, role, limit, offset: page * limit }, signal),
     getNextPageParam: (_lastPage, allPages) => allPages.length,
+  });
+};
+
+export const useUpdateUserMutation = (idOrSlug?: string) => {
+  const { user: currentUser } = useUserStore();
+  const isSelf = currentUser.id === idOrSlug;
+
+  return useMutation<User, ApiError, (UpdateUserParams & { idOrSlug: string }) | Omit<UpdateUserParams, 'role'>>({
+    mutationKey: isSelf ? meKeys.update() : usersKeys.update(),
+    mutationFn: (params) => (idOrSlug && !isSelf ? updateUser({ idOrSlug, ...params }) : updateSelf(params)),
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(usersKeys.single(updatedUser.slug), updatedUser);
+    },
+    gcTime: 1000 * 10,
   });
 };

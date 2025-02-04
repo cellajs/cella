@@ -5,12 +5,11 @@ import type { RowsChangeData } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '~/modules/common/data-table';
 import { createToast } from '~/modules/common/toaster';
-import { usersKeys, usersQueryOptions } from '~/modules/users/query';
+import { useUpdateUserMutation, usersKeys, usersQueryOptions } from '~/modules/users/query';
 import type { UsersSearch } from '~/modules/users/table';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import type { BaseTableMethods, BaseTableProps, User } from '~/types/common';
-import { useUpdateUserMutation } from '../query-mutations';
 
 type BaseDataTableProps = BaseTableProps<User, UsersSearch> & {
   queryVars: { role: UsersSearch['role'] };

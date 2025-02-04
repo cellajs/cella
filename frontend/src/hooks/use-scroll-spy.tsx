@@ -74,7 +74,7 @@ export const useScrollSpy = ({ sectionIds = [] }: { sectionIds: string[] }) => {
 
         // If more than one fully intersects
       } else if (fullyIntersecting.length > 1) {
-        newSection = fullyIntersecting[0]; // First one if scrolling up
+        newSection = fullyIntersecting[0];
 
         // If none fully intersect, use highest ratio
       } else if (entriesArray.find(({ ratio }) => ratio > 0)) {

@@ -22,7 +22,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { createToast } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
-import { useUpdateUserMutation } from '~/modules/users/query-mutations';
+import { useUpdateUserMutation } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
 

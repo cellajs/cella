@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page-header';
-import { useUpdateUserMutation } from '~/modules/users/query-mutations';
+import { useUpdateUserMutation } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
