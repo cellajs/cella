@@ -2,7 +2,6 @@ import { config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { requestsHc } from '#/modules/requests/hc';
 
-// RPC
 export const client = requestsHc(config.backendUrl, clientConfig);
 
 export type CreateRequestBody = Parameters<(typeof client.index)['$post']>['0']['json'];

@@ -2,7 +2,6 @@ import { type ContextEntity, config } from 'config';
 import { clientConfig, handleResponse } from '~/lib/api';
 import { membershipsHc } from '#/modules/memberships/hc';
 
-// RPC
 export const client = membershipsHc(config.backendUrl, clientConfig);
 
 export type InviteMemberProps = Parameters<(typeof client.index)['$post']>['0']['json'] &

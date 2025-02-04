@@ -18,7 +18,7 @@ import { type HotkeyItem, getHotkeyMatcher, shouldFireEvent } from '~/hooks/use-
 export function useHotkeys(
   hotkeys: HotkeyItem[],
   tagsToIgnore: string[] = ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'], // HTML tags to ignore
-  triggerOnContentEditable = false, // Whether to trigger hotkeys in content editable elements
+  triggerOnContentEditable = false,
 ) {
   React.useEffect(() => {
     const keydownListener = (event: KeyboardEvent) => {

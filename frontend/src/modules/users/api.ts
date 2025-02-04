@@ -3,7 +3,6 @@ import { clientConfig, handleResponse } from '~/lib/api';
 import { meHc } from '#/modules/me/hc';
 import { usersHc } from '#/modules/users/hc';
 
-// RPC
 export const meClient = meHc(config.backendUrl, clientConfig);
 export const userClient = usersHc(config.backendUrl, clientConfig);
 
@@ -54,15 +53,6 @@ export const getUsers = async (
   return json.data;
 };
 
-// Delete users from system
-export const deleteUsers = async (userIds: string[]) => {
-  const response = await userClient.index.$delete({
-    json: { ids: userIds },
-  });
-
-  await handleResponse(response);
-};
-
 export type UpdateUserParams = Parameters<(typeof userClient)[':idOrSlug']['$put']>['0']['json'];
 
 // Update user
@@ -75,6 +65,15 @@ export const updateUser = async (info: UpdateUserParams & { idOrSlug: string }) 
 
   const json = await handleResponse(response);
   return json.data;
+};
+
+// Delete users from system
+export const deleteUsers = async (userIds: string[]) => {
+  const response = await userClient.index.$delete({
+    json: { ids: userIds },
+  });
+
+  await handleResponse(response);
 };
 
 // Get self
@@ -127,6 +126,7 @@ export const deletePasskey = async () => {
 };
 
 export type LeaveEntityQuery = { idOrSlug: string; entityType: ContextEntity };
+
 // Leave entity
 export const leaveEntity = async (query: LeaveEntityQuery) => {
   const response = await meClient.leave.$delete({
