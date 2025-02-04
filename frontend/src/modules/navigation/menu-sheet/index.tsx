@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { UserMenu, UserMenuItem } from '~/types/common';
+import type { UserMenu, UserMenuItem } from '~/modules/users/types';
 
 import { useNavigationStore } from '~/store/navigation';
 

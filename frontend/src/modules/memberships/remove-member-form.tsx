@@ -2,7 +2,7 @@ import type { ContextEntity } from 'config';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { useMembersDeleteMutation } from '~/modules/memberships/query-mutations';
-import type { Member } from '~/types/common';
+import type { Member } from '~/modules/memberships/types';
 
 interface Props {
   entityIdOrSlug: string;

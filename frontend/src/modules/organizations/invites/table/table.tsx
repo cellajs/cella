@@ -3,8 +3,9 @@ import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useState } f
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
+import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import type { InvitesProps, InvitesSearch } from '~/modules/organizations/invites/table';
-import type { BaseTableMethods, BaseTableProps, OrganizationInvites } from '~/types/common';
+import type { OrganizationInvites } from '~/modules/organizations/types';
 
 type BaseDataTableProps = InvitesProps & BaseTableProps<OrganizationInvites, InvitesSearch> & { queryVars: { role: InvitesSearch['role'] } };
 

@@ -1,11 +1,10 @@
-import type { Organization } from '~/types/common';
+import type { Organization } from '~/modules/organizations/types';
 
 import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { deleteMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
-import { organizationsKeys } from '~/modules/organizations/query';
-import { useOrganizationDeleteMutation } from '~/modules/organizations/query';
+import { organizationsKeys, useOrganizationDeleteMutation } from '~/modules/organizations/query';
 
 interface Props {
   organizations: Organization[];

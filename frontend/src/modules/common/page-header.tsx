@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 import useScrollTo from '~/hooks/use-scroll-to';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { PageCover } from '~/modules/common/page-cover';
+import type { MinimumEntityItem } from '~/modules/general/types';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { baseEntityRoutes } from '~/nav-config';
-import type { MinimumEntityItem } from '~/types/common';
 
 // PageHeaderProps Interface
 interface PageHeaderProps {

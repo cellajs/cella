@@ -10,13 +10,13 @@ import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { signUp, signUpWithToken } from '~/modules/auth/api';
+import type { TokenData } from '~/modules/auth/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import Spinner from '~/modules/common/spinner';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/form';
 import { Input } from '~/modules/ui/input';
 import { AuthenticateRoute } from '~/routes/auth';
-import type { TokenData } from '~/types/common';
 
 const PasswordStrength = lazy(() => import('~/modules/auth/password-strength'));
 const LegalText = lazy(() => import('~/modules/marketing/legal-texts'));

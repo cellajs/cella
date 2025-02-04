@@ -13,7 +13,7 @@ import {
   getOrganizations,
   updateOrganization,
 } from '~/modules/organizations/api';
-import type { OrganizationWithMembership } from '~/types/common';
+import type { OrganizationWithMembership } from '~/modules/organizations/types';
 
 export const organizationsKeys = {
   one: ['organization'] as const,

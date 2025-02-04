@@ -4,7 +4,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { menuSections } from '~/menu-config';
 
-import type { UserMenu } from '~/types/common';
+import type { UserMenu } from '~/modules/users/types';
 
 type EntitySubList = Record<string, string[]>;
 export type EntityConfig = Record<ContextEntity, { mainList: string[]; subList: EntitySubList }>;

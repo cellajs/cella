@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
-import type { Session } from '~/types/common';
+import type { Session } from '~/modules/users/types';
 import { dateShort } from '~/utils/date-short';
 
 interface SessionTileProps {

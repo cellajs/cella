@@ -8,16 +8,14 @@ import { useSearch } from '@tanstack/react-router';
 import { config } from 'config';
 import { useTranslation } from 'react-i18next';
 import { checkToken } from '~/modules/auth/api';
+import AuthNotice from '~/modules/auth/auth-notice';
 import OauthOptions from '~/modules/auth/oauth-options';
+import type { Step, TokenData } from '~/modules/auth/types';
 import { WaitlistForm } from '~/modules/auth/waitlist-form';
+import Spinner from '~/modules/common/spinner';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import type { TokenData } from '~/types/common';
 import { shouldShowDivider } from '~/utils';
-import Spinner from '../common/spinner';
-import AuthNotice from './auth-notice';
-
-export type Step = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist';
 
 const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;
 const emailEnabled = enabledStrategies.includes('password') || enabledStrategies.includes('passkey');

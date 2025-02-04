@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import type { OrganizationInvites } from '~/types/common';
 
 import { useMemo, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { OrganizationInvites } from '~/modules/organizations/types';
 import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {

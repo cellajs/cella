@@ -6,6 +6,7 @@ import type { z } from 'zod';
 import useSearchParams from '~/hooks/use-search-params';
 import { useUserSheet } from '~/hooks/use-user-sheet';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import type { BaseTableMethods } from '~/modules/common/data-table/types';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
 import DeleteUsers from '~/modules/users/delete-users';
@@ -13,9 +14,9 @@ import InviteUsers from '~/modules/users/invite-users';
 import { usersKeys } from '~/modules/users/query';
 import { useColumns } from '~/modules/users/table/columns';
 import { UsersTableHeader } from '~/modules/users/table/table-header';
+import type { User } from '~/modules/users/types';
 import { useMutateQueryData } from '~/query/hooks/use-mutate-query-data';
 import { UsersTableRoute, type usersSearchSchema } from '~/routes/system';
-import type { BaseTableMethods, User } from '~/types/common';
 import { arraysHaveSameElements } from '~/utils';
 
 const BaseDataTable = lazy(() => import('~/modules/users/table/table'));

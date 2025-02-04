@@ -6,9 +6,9 @@ import { dialog } from '~/modules/common/dialoger/state';
 import { useStepper } from '~/modules/common/stepper';
 import { onDefaultBoardingSteps } from '~/modules/home/onboarding/onboarding-config';
 import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
+import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
 import { useNavigationStore } from '~/store/navigation';
-import type { Organization } from '~/types/common';
 
 const StepperFooter = ({
   organization,

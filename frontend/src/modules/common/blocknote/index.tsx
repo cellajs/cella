@@ -17,8 +17,8 @@ import * as Tooltip from '~/modules/ui/tooltip';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import router from '~/lib/router';
 import { type CarouselAttachment, openAttachmentDialog } from '~/modules/attachments/helpers';
+import type { Member } from '~/modules/memberships/types';
 import { useThemeStore } from '~/store/theme';
-import type { Member } from '~/types/common';
 
 import {
   allowedFileTypes,

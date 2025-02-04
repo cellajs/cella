@@ -2,7 +2,7 @@ import { attachmentsQueryOptions } from '~/modules/attachments/query';
 import { membersQueryOptions } from '~/modules/memberships/query';
 import { organizationQueryOptions } from '~/modules/organizations/query';
 
-import type { UserMenuItem } from '~/types/common';
+import type { UserMenuItem } from '~/modules/users/types';
 
 // This function returns queries that need to be prefetched based on the entity of the item.
 // It is used to prefetch data for each unarchived item in user menu if offlineAccess is enabled, allowing the app to have necessary data while offline.

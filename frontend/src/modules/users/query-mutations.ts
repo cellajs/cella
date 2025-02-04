@@ -6,8 +6,8 @@ import { queryClient } from '~/lib/router';
 import { createToast } from '~/modules/common/toaster';
 import { type LeaveEntityQuery, type UpdateUserParams, deleteMySessions, deleteSelf, leaveEntity, updateSelf, updateUser } from '~/modules/users/api';
 import { meKeys, usersKeys } from '~/modules/users/query';
+import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
-import type { User } from '~/types/common';
 
 export const useUpdateUserMutation = (idOrSlug?: string) => {
   const { user: currentUser } = useUserStore();

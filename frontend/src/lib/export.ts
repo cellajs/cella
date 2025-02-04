@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import type { ReactElement } from 'react';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Mode } from '~/store/theme';
 
 dayjs.extend(localizedFormat);
