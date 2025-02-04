@@ -1,8 +1,9 @@
-import type { Entity } from 'config';
+import type { Entity, Severity } from 'config';
 import type { ClientResponse } from 'hono/client';
+import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import { ZodError } from 'zod';
-// TODO get from config?
-import type { HttpErrorStatus, Severity } from '#/lib/errors';
+
+type HttpErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
 
 /**
  * Handles an API response, parsing the JSON and throwing an error if necessary.

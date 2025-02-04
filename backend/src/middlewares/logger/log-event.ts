@@ -1,5 +1,6 @@
 import { Logtail } from '@logtail/node';
-import type { EventData, Severity } from '#/lib/errors';
+import type { Severity } from 'config';
+import type { EventData } from '#/lib/errors';
 import { env } from '../../../env';
 
 export const logtail = env.LOGTAIL_TOKEN ? new Logtail(env.LOGTAIL_TOKEN, {}) : undefined;

@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import type { ClientErrorStatusCode, ServerErrorStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
 
-import type { Entity } from 'config';
+import type { Entity, Severity } from 'config';
 import { logEvent, logtail } from '#/middlewares/logger/log-event';
 import type { errorSchema } from '#/utils/schema/common-schemas';
 import { getContextOrganization, getContextUser } from './context';
@@ -20,8 +20,6 @@ export type ErrorType = z.infer<typeof errorSchema> & {
   eventData?: EventData;
   name?: Error['name'];
 };
-
-export type Severity = ErrorType['severity'];
 
 export type EventData = {
   readonly [key: string]: number | string | boolean | null;

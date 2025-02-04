@@ -33,6 +33,11 @@ export type EnabledOauthProvider = (typeof _default.enabledOauthProviders)[numbe
  */
 export type Language = (typeof _default.languages)[number]['value'];
 
+/**
+ * Severity levels to be used in error handling
+ */
+export type Severity = (typeof _default.severityLevels)[number];
+
 function isObject(item: object) {
   return item && typeof item === 'object' && !Array.isArray(item);
 }
