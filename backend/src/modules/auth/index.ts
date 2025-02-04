@@ -2,8 +2,8 @@ import { getRandomValues } from 'node:crypto';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { encodeBase64 } from '@oslojs/encoding';
 import { OAuth2RequestError, generateCodeVerifier, generateState } from 'arctic';
-import { config } from 'config';
 import type { EnabledOauthProvider } from 'config';
+import { config } from 'config';
 import { and, eq, or } from 'drizzle-orm';
 import slugify from 'slugify';
 import { db } from '#/db/db';
@@ -421,16 +421,6 @@ const authRoutes = app
     //   sectionName: menuSections.find((el) => el.entityType === orgMembership.type)?.name,
     // };
 
-    // // SSE with organization data, to update user's menu
-    // sendSSEToUsers([user.id], 'add_entity', newMenuItem);
-
-    // // SSE to to update members queries
-    // sendSSEToUsers(
-    //   memberships.map(({ userId }) => userId).filter((id) => id !== user.id),
-    //   'member_accept_invite',
-    //   { id: organization.id, slug: organization.slug },
-    // );
-
     // if (membershipInfo) {
     //   const { parentEntity: parentInfo, targetEntity: targetInfo } = membershipInfo;
     //   const { entity: targetEntityType, idOrSlug: targetIdOrSlug } = targetInfo;
@@ -445,22 +435,6 @@ const authRoutes = app
     //     parentEntity ? insertMembership({ user, role, entity: parentEntity }) : Promise.resolve(null),
     //     insertMembership({ user, role, entity: targetEntity, parentEntity }),
     //   ]);
-
-    //   if (createdParentMembership && parentEntity) {
-    //     // SSE with parentEntity data, to update user's menu
-    //     sendSSEToUsers([user.id], 'add_entity', {
-    //       newItem: { ...parentEntity, membership: createdParentMembership },
-    //       sectionName: menuSections.find((el) => el.entityType === parentEntity.entity)?.name,
-    //     });
-    //   }
-
-    //   // SSE with entity data, to update user's menu
-    //   sendSSEToUsers([user.id], 'add_entity', {
-    //     newItem: { ...targetEntity, membership: createdMembership },
-    //     sectionName: menuSections.find((el) => el.entityType === targetEntity.entity)?.name,
-    //     ...(parentEntity && { parentSlug: parentEntity.slug }),
-    //   });
-    // }
 
     return ctx.json({ success: true }, 200);
   })

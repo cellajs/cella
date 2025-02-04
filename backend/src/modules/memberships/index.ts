@@ -52,13 +52,7 @@ const membershipsRoutes = app
     const normalizedEmails = emails.map((email) => email.toLowerCase());
 
     // Query existing memberships and users
-    const [allOrgMemberships, existingUsers] = await Promise.all([
-      db
-        .select()
-        .from(membershipsTable)
-        .where(and(eq(membershipsTable.organizationId, organization.id), eq(membershipsTable.type, 'organization'))),
-      getUsersByConditions([inArray(usersTable.email, normalizedEmails)]),
-    ]);
+    const existingUsers = await getUsersByConditions([inArray(usersTable.email, normalizedEmails)]);
 
     // Maps to store memberships by existing user
     const organizationMembershipsByUser = new Map<string, MembershipModel>();
@@ -205,15 +199,6 @@ const membershipsRoutes = app
 
     // Log event for user invitation
     logEvent('Users invited to organization', { organization: organization.id });
-
-    if (emailsToSendInvitation.length > 0) {
-      // SSE to update organizations invite info
-      sendSSEToUsers(
-        allOrgMemberships.map(({ userId }) => userId),
-        'new_member_invite',
-        { id: organization.id, slug: organization.slug },
-      );
-    }
 
     return ctx.json({ success: true }, 200);
   })

@@ -48,7 +48,8 @@ export const PublicRoute = createRoute({
         return offlineFetch({ ...queryOptions, ...{ retry: 0 } });
       };
 
-      await Promise.all([getSelf(), getMenu()]);
+      await getSelf();
+      await getMenu();
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -75,7 +76,8 @@ export const AppRoute = createRoute({
       const getSelf = async () => offlineFetch(meQueryOptions());
       const getMenu = async () => offlineFetch(menuQueryOptions());
 
-      await Promise.all([getSelf(), getMenu()]);
+      await getSelf();
+      await getMenu();
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
