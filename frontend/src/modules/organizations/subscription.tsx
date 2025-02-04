@@ -4,8 +4,8 @@ import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createToast } from '~/modules/common/toaster';
+import type { Organization } from '~/modules/organizations/types';
 import { Button } from '~/modules/ui/button';
-import type { Organization } from '~/types/common';
 
 const Subscription = ({ organization }: { organization: Organization }) => {
   const { t } = useTranslation();

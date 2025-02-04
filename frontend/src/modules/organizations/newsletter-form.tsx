@@ -12,16 +12,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { sendNewsletterBodySchema } from '#/modules/organizations/schema';
 
 import '@blocknote/shadcn/style.css';
-import '~/modules/common/blocknote/app-specific-custom/styles.css';
-import '~/modules/common/blocknote/styles.css';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
-import { MainAlert } from '../common/alerter';
-import InputFormField from '../common/form-fields/input';
-import { createToast } from '../common/toaster';
-import { Checkbox } from '../ui/checkbox';
-import { sendNewsletter } from './api';
+import { MainAlert } from '~/modules/common/alerter';
+import '~/modules/common/blocknote/app-specific-custom/styles.css';
+import '~/modules/common/blocknote/styles.css';
+import InputFormField from '~/modules/common/form-fields/input';
+import { createToast } from '~/modules/common/toaster';
+import { sendNewsletter } from '~/modules/organizations/api';
+import { Checkbox } from '~/modules/ui/checkbox';
 
 interface NewsletterFormProps {
   organizationIds: string[];

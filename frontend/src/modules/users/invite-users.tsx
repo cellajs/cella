@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MainAlert } from '~/modules/common/alerter';
 import { dialog } from '~/modules/common/dialoger/state';
+import type { EntityPage } from '~/modules/general/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import InviteEmailForm from '~/modules/users/invite-email-form';
 import InviteSearchForm from '~/modules/users/invite-search-form';
-import type { EntityPage } from '~/types/common';
 
 interface InviteUsersProps {
   entity?: EntityPage;

@@ -1,19 +1,19 @@
-import 'react-data-grid/lib/styles.css';
-
+import { config } from 'config';
 import { Search } from 'lucide-react';
-import { type Key, type ReactNode, useEffect, useState } from 'react';
+import { type Key, type ReactNode, useEffect, useRef, useState } from 'react';
 import DataGrid, { type CellClickArgs, type CellMouseEvent, type RenderRowProps, type RowsChangeData, type SortColumn } from 'react-data-grid';
 import { useTranslation } from 'react-i18next';
-
-import { config } from 'config';
-import { useRef } from 'react';
 import { useInView } from 'react-intersection-observer';
+
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
-import '~/modules/common/data-table/style.css';
 import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Checkbox } from '~/modules/ui/checkbox';
+
+import 'react-data-grid/lib/styles.css';
+import '~/modules/common/data-table/style.css';
+
 interface DataTableProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   rows: TData[];

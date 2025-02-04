@@ -1,5 +1,3 @@
-import type { User } from '~/types/common';
-
 import { onlineManager } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '~/hooks/use-mutations';
@@ -7,8 +5,9 @@ import { queryClient } from '~/lib/router';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dialog } from '~/modules/common/dialoger/state';
 import { createToast } from '~/modules/common/toaster';
+import { deleteUsers } from '~/modules/users/api';
 import { usersKeys } from '~/modules/users/query';
-import { deleteUsers } from './api';
+import type { User } from '~/modules/users/types';
 
 interface Props {
   users: User[];

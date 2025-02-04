@@ -5,8 +5,8 @@ import { queryClient } from '~/lib/router';
 
 import { type GetUsersParams, type UpdateUserParams, getUser, getUsers, updateSelf, updateUser } from '~/modules/users/api';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
-import type { User } from '~/types/common';
 
 // Keys for users queries
 export const usersKeys = {

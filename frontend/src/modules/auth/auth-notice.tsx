@@ -1,9 +1,9 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { MessageCircleQuestion } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { type ErrorNoticeError, getErrorText, getErrorTitle, handleAskForHelp } from '~/modules/common/error-notice';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
-import { type ErrorNoticeError, getErrorText, getErrorTitle, handleAskForHelp } from '../common/error-notice';
 
 // Notify user about an authentication related error
 const AuthNotice = ({ error, children }: { error: ErrorNoticeError; children?: React.ReactNode }) => {

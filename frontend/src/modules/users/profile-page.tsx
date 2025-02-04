@@ -1,15 +1,14 @@
 import { Link } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
-
-import type { LimitedUser } from '~/types/common';
-
 import { UserCog } from 'lucide-react';
+import { Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { PageHeader } from '~/modules/common/page-header';
 import { useUpdateUserMutation } from '~/modules/users/query';
 import { useUserStore } from '~/store/user';
+
+import type { LimitedUser } from '~/modules/users/types';
 
 const ProfilePageContent = lazy(() => import('~/modules/users/profile-page-content'));
 

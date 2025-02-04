@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import type { Request } from '~/types/common';
+import type { Request } from '~/modules/requests/types';
 
 import { useMemo, useState } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import CheckboxColumn from '~/modules/common/data-table/checkbox-column';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/columns-view';
 import HeaderCell from '~/modules/common/data-table/header-cell';
+import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
 

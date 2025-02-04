@@ -12,7 +12,7 @@ import { createToast } from '~/modules/common/toaster';
 import { updateMembership as baseUpdateMembership } from '~/modules/memberships/api';
 import { updateMenuItem } from '~/modules/navigation/menu-sheet/helpers/menu-operations';
 import { Button } from '~/modules/ui/button';
-import type { UserMenuItem } from '~/types/common';
+import type { UserMenuItem } from '~/modules/users/types';
 
 interface MenuItemEditProps {
   item: UserMenuItem;

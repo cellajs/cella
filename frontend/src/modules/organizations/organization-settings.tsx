@@ -13,9 +13,9 @@ import { PageAside } from '~/modules/common/page-aside';
 import StickyBox from '~/modules/common/sticky-box';
 import DeleteOrganizations from '~/modules/organizations/delete-organizations';
 import Subscription from '~/modules/organizations/subscription';
+import type { Organization } from '~/modules/organizations/types';
 import UpdateOrganizationForm from '~/modules/organizations/update-organization-form';
 import { OrganizationSettingsRoute } from '~/routes/organizations';
-import type { Organization } from '~/types/common';
 
 const tabs = [
   { id: 'general', label: 'common:general' },

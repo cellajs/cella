@@ -1,15 +1,13 @@
-import type { MeUser, User } from '~/types/common';
-
-import { VenetianMask } from 'lucide-react';
-
 import { useNavigate } from '@tanstack/react-router';
 import { config } from 'config';
+import { VenetianMask } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { impersonationStart } from '~/modules/auth/api';
 import { createToast } from '~/modules/common/toaster';
 import { Button } from '~/modules/ui/button';
 import { getAndSetMe, getAndSetMenu } from '~/modules/users/helpers';
+import type { MeUser, User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 
 interface Props {

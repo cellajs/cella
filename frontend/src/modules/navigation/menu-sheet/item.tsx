@@ -4,9 +4,9 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import { createToast } from '~/modules/common/toaster';
+import type { UserMenuItem } from '~/modules/users/types';
 import { getEntityRoute } from '~/nav-config';
 import { useGeneralStore } from '~/store/general';
-import type { UserMenuItem } from '~/types/common';
 import { cn } from '~/utils/cn';
 
 interface MenuSheetItemProps {

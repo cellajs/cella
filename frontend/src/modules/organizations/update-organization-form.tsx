@@ -1,12 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslation } from 'react-i18next';
-import type { z } from 'zod';
-import type { Organization } from '~/types/common';
-import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
-
 import { config } from 'config';
 import { isValidElement, useEffect } from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import type { z } from 'zod';
+import { updateOrganizationBodySchema } from '#/modules/organizations/schema';
+
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { useFormWithDraft } from '~/hooks/use-draft-form';
 import AvatarFormField from '~/modules/common/form-fields/avatar';
@@ -20,6 +19,7 @@ import { sheet } from '~/modules/common/sheeter/state';
 import { createToast } from '~/modules/common/toaster';
 import UnsavedBadge from '~/modules/common/unsaved-badge';
 import { useOrganizationUpdateMutation } from '~/modules/organizations/query';
+import type { Organization } from '~/modules/organizations/types';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/form';
 import { cleanUrl } from '~/utils/clean-url';

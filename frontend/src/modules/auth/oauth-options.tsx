@@ -4,11 +4,10 @@ import { Fingerprint } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { githubSignInUrl, googleSignInUrl, microsoftSignInUrl } from '~/modules/auth/api';
-import type { Step } from '~/modules/auth/auth-steps';
+import type { Step } from '~/modules/auth/types';
 import { Button } from '~/modules/ui/button';
 import { passkeyAuth } from '~/modules/users/helpers';
 import { AuthenticateRoute } from '~/routes/auth';
-(']');
 import { useThemeStore } from '~/store/theme';
 
 export const mapOauthProviders = [

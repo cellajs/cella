@@ -1,5 +1,5 @@
 import { config } from 'config';
-import type { Step } from '~/modules/auth/auth-steps';
+import type { Step } from '~/modules/auth/types';
 
 export const shouldShowDivider = (hasPasskey: boolean, step: Step): boolean => {
   const enabledStrategies: readonly string[] = config.enabledAuthenticationStrategies;

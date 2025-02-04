@@ -4,10 +4,10 @@ import { Minus, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
+import ErrorNotice from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
 import { useThemeStore } from '~/store/theme';
 import Logo from '/static/logo/logo-icon-only.svg';
-import ErrorNotice from '../error-notice';
 
 type MapConfig = {
   id: string;

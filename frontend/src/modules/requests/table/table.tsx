@@ -3,10 +3,11 @@ import { forwardRef, memo, useEffect, useImperativeHandle } from 'react';
 import { useTranslation } from 'react-i18next';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table';
+import type { BaseTableMethods, BaseTableProps } from '~/modules/common/data-table/types';
 import { requestsQueryOptions } from '~/modules/requests/query';
 import type { RequestsSearch } from '~/modules/requests/table';
+import type { Request } from '~/modules/requests/types';
 import { useDataFromSuspenseInfiniteQuery } from '~/query/hooks/use-data-from-query';
-import type { BaseTableMethods, BaseTableProps, Request } from '~/types/common';
 
 type BaseRequestsTableProps = BaseTableProps<Request, RequestsSearch>;
 

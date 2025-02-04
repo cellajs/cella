@@ -3,7 +3,7 @@ import About from '~/modules/marketing/about';
 import Accessibility from '~/modules/marketing/accessibility';
 import Contact from '~/modules/marketing/contact';
 import { LegalMenu } from '~/modules/marketing/legal';
-import { PublicRoute, rootRoute } from './general';
+import { PublicRoute, rootRoute } from '~/routes/general';
 
 export const AboutRoute = createRoute({
   path: '/about',

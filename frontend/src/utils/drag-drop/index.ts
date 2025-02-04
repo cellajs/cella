@@ -1,5 +1,5 @@
 import type { Entity } from 'config';
-import type { DraggableItemType } from '~/types/app';
+import type { DraggableItemType } from '~/utils/drag-drop/app-type';
 
 // Drag and drop data
 export type DraggableItemData<T> = {
