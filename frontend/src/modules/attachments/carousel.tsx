@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { useEventListener } from '~/hooks/use-event-listener';
 import { AttachmentRender } from '~/modules/attachments/attachment-render';
+import FilePlaceholder from '~/modules/attachments/file-placeholder';
 import { openAttachmentDialog } from '~/modules/attachments/helpers';
 import { dialog } from '~/modules/common/dialoger/state';
+import { Button } from '~/modules/ui/button';
 import { Carousel as BaseCarousel, CarouselContent, CarouselDots, CarouselItem, CarouselNext, CarouselPrevious } from '~/modules/ui/carousel';
 import { cn } from '~/utils/cn';
-import { Button } from '../ui/button';
-import FilePlaceholder from './file-placeholder';
 
 interface CarouselPropsBase {
   slide?: number;

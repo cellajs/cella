@@ -3,7 +3,7 @@ import { type BlockTypeSelectItem, type DragHandleMenuProps, useComponentsContex
 import { useMemo } from 'react';
 import { customBlockTypeSelectItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { focusEditor } from '~/modules/common/blocknote/helpers';
-import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema } from '../types';
+import type { BasicBlockTypes, CellaCustomBlockTypes, CustomBlockNoteSchema } from '~/modules/common/blocknote/types';
 
 interface ResetBlockTypeItemProp {
   editor: CustomBlockNoteSchema;

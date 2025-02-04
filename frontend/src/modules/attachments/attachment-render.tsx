@@ -1,8 +1,8 @@
 import DOMPurify from 'dompurify';
 import { Suspense, lazy, useMemo } from 'react';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
-import Spinner from '../common/spinner';
-import { useLocalFile } from './use-local-file';
+import { useLocalFile } from '~/modules/attachments/use-local-file';
+import Spinner from '~/modules/common/spinner';
 
 // Lazy-loaded components
 const ReactPanZoom = lazy(() => import('~/modules/attachments/render-image'));

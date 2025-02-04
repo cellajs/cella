@@ -3,7 +3,7 @@ import { useThemeStore } from '~/store/theme';
 
 import { useBreakpoints } from '~/hooks/use-breakpoints';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { features } from './about-config';
+import { features } from '~/modules/marketing/about/about-config';
 
 type FeatureProps = {
   icon: string;

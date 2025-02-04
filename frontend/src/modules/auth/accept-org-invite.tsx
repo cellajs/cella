@@ -5,12 +5,12 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { config } from 'config';
 import { Ban, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { acceptOrgInvite, checkToken } from '~/modules/auth/api';
+import AuthNotice from '~/modules/auth/auth-notice';
 import Spinner from '~/modules/common/spinner';
 import { SubmitButton, buttonVariants } from '~/modules/ui/button';
 import { AcceptOrgInviteRoute } from '~/routes/auth';
 import { cn } from '~/utils/cn';
-import { acceptOrgInvite, checkToken } from './api';
-import AuthNotice from './auth-notice';
 
 // Accept organization invitation when user is signed in
 const AcceptOrgInvite = () => {

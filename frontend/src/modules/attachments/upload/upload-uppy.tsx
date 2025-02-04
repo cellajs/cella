@@ -6,6 +6,7 @@ import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { useEffect, useState } from 'react';
 import { ImadoUppy, type UppyBody, type UppyMeta } from '~/lib/imado';
+import { getImageEditorOptions } from '~/modules/attachments/upload/image-editor-options';
 import { useThemeStore } from '~/store/theme';
 
 import '@uppy/audio/dist/style.css';
@@ -14,7 +15,6 @@ import '@uppy/image-editor/dist/style.css';
 import '@uppy/screen-capture/dist/style.css';
 import '@uppy/webcam/dist/style.css';
 import '~/modules/attachments/upload/uppy.css';
-import { getImageEditorOptions } from './image-editor-options';
 
 export interface UploadUppyProps {
   uploadType: 'organization' | 'personal';

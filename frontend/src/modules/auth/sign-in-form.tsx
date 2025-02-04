@@ -13,10 +13,10 @@ import { useMutation } from '@tanstack/react-query';
 import { config } from 'config';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import type { ApiError } from '~/lib/api';
+import { signIn } from '~/modules/auth/api';
 import { RequestPasswordDialog } from '~/modules/auth/request-password-dialog';
 import { AuthenticateRoute } from '~/routes/auth';
 import { useUserStore } from '~/store/user';
-import { signIn } from './api';
 
 const formSchema = emailPasswordBodySchema;
 

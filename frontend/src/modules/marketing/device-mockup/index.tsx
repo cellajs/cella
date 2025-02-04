@@ -4,7 +4,7 @@ import AttachmentsCarousel from '~/modules/attachments/carousel';
 import { useThemeStore } from '~/store/theme';
 import { cn } from '~/utils/cn';
 
-import DeviceFrame from './frame';
+import DeviceFrame from '~/modules/marketing/device-mockup/frame';
 
 type DeviceType = 'mobile' | 'tablet' | 'pc';
 
