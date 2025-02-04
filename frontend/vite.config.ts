@@ -1,4 +1,5 @@
 import path from 'node:path';
+
 import MillionLint from '@million/lint';
 import terser from '@rollup/plugin-terser';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
@@ -11,7 +12,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from '../config';
 import { env } from './env';
+
 // import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+const ReactCompilerConfig = {
+  /* ... */
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(() => {
@@ -42,7 +47,11 @@ export default defineConfig(() => {
     },
     plugins: [
       // TanStackRouterVite(),
-      react(),
+      react({
+        babel: {
+          plugins: [['babel-plugin-react-compiler', ReactCompilerConfig]],
+        },
+      }),
       config.sentSentrySourceMaps
         ? sentryVitePlugin({
             disable: config.mode === 'development',

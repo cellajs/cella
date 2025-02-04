@@ -113,7 +113,7 @@ const AppNav = () => {
   useEffect(() => {
     router.subscribe('onBeforeLoad', ({ pathChanged, toLocation, fromLocation }) => {
       const sheetOpen = useNavigationStore.getState().navSheetOpen;
-      if (toLocation.pathname !== fromLocation.pathname) {
+      if (toLocation.pathname !== fromLocation?.pathname) {
         if (useNavigationStore.getState().focusView) setFocusView(false);
 
         // Remove all sheets in content or
