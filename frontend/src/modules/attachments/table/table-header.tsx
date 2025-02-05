@@ -2,7 +2,7 @@ import { Trash, Upload, XSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import type { AttachmentSearch, AttachmentsTableProps } from '~/modules/attachments/table';
-import { openUploadDialog } from '~/modules/attachments/table/helpers';
+import { openAttachmentsUploadDialog } from '~/modules/attachments/table/helpers';
 import type { Attachment } from '~/modules/attachments/types';
 import ColumnsView from '~/modules/common/data-table/columns-view';
 import TableCount from '~/modules/common/data-table/table-count';
@@ -85,7 +85,7 @@ export const AttachmentsTableHeader = ({
             </>
           ) : (
             showUpload && (
-              <Button asChild onClick={() => openUploadDialog(organization.id)}>
+              <Button asChild onClick={() => openAttachmentsUploadDialog(organization.id)}>
                 <motion.button transition={{ duration: 0.1 }} layoutId="attachments-filter-bar-button">
                   <motion.span layoutId="attachments-filter-bar-icon">
                     <Upload size={16} />

@@ -10,12 +10,12 @@ import { useCallback, useEffect, useState } from 'react';
  */
 export function useDebounce<T>(value: T, delay = 1000): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  const debounceFn = useCallback(debounce(setDebouncedValue, delay), [delay]);
+
+  const debounceFn = useCallback(debounce(setDebouncedValue, delay), []);
 
   useEffect(() => {
     debounceFn(value);
-    return () => debounceFn.cancel?.(); // Cancel any pending execution on unmount
-  }, [value, debounceFn]);
+  }, [value, delay]);
 
   return debouncedValue;
 }

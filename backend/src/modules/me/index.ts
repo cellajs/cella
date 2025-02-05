@@ -6,14 +6,12 @@ import { db } from '#/db/db';
 import { usersTable } from '#/db/schema/users';
 import { type ErrorType, createError, errorResponse } from '#/lib/errors';
 import { logEvent } from '#/middlewares/logger/log-event';
-import { invalidateSession, invalidateUserSessions } from '../auth/helpers/session';
+import { invalidateSessionById, invalidateUserSessions, validateSession } from '../auth/helpers/session';
 import { checkSlugAvailable } from '../general/helpers/check-slug';
 import { transformDatabaseUserWithCount } from '../users/helpers/transform-database-user';
 import meRoutesConfig from './routes';
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { sha256 } from '@oslojs/crypto/sha2';
-import { encodeHexLowerCase } from '@oslojs/encoding';
 import { config } from 'config';
 import { membershipSelect, membershipsTable } from '#/db/schema/memberships';
 import { oauthAccountsTable } from '#/db/schema/oauth-accounts';
@@ -154,18 +152,17 @@ const meRoutes = app
 
     const sessionIds = Array.isArray(ids) ? ids : [ids];
 
-    const currentSessionId = await getAuthCookie(ctx, 'session');
-    const hashedCurrentSessionId = currentSessionId ? encodeHexLowerCase(sha256(new TextEncoder().encode(currentSessionId))) : '';
+    const currentSessionToken = (await getAuthCookie(ctx, 'session')) || '';
+    const { session } = await validateSession(currentSessionToken);
 
     const errors: ErrorType[] = [];
 
     await Promise.all(
       sessionIds.map(async (id) => {
         try {
-          if (id === hashedCurrentSessionId) {
-            deleteAuthCookie(ctx, 'session');
-          }
-          await invalidateSession(id);
+          if (session && id === session.id) deleteAuthCookie(ctx, 'session');
+
+          await invalidateSessionById(id);
         } catch (error) {
           errors.push(createError(ctx, 404, 'not_found', 'warn', undefined, { session: id }));
         }

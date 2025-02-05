@@ -9,7 +9,6 @@ import { OrganizationRoute } from '~/routes/organizations';
 import { Suspense, lazy } from 'react';
 import { toast } from 'sonner';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { queryClient } from '~/lib/router';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organizations/query';
 import { useUserStore } from '~/store/user';
 
@@ -27,8 +26,7 @@ const OrganizationPage = () => {
   const user = useUserStore((state) => state.user);
 
   const orgQueryOptions = organizationQueryOptions(idOrSlug);
-  const cachedData = queryClient.getQueryData(orgQueryOptions.queryKey);
-  const organization = cachedData ?? useSuspenseQuery(orgQueryOptions).data;
+  const { data: organization } = useSuspenseQuery(orgQueryOptions);
 
   const isAdmin = organization.membership?.role === 'admin' || user?.role === 'admin';
   const tabs = isAdmin ? organizationTabs : organizationTabs.slice(0, 1);

@@ -14,12 +14,9 @@ import { getAuthCookie } from '#/modules/auth/helpers/cookie';
  */
 export const getUserSessions = async (ctx: Context, userId: string) => {
   const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
-  const currentSessionId = (await getAuthCookie(ctx, 'session')) ?? '';
+  const currentSessionToken = (await getAuthCookie(ctx, 'session')) || '';
   // Destructure/remove token from response
-  const preparedSessions = sessions.map(({ token, ...session }) => ({
-    ...session,
-    isCurrent: currentSessionId === session.id,
-  }));
+  const preparedSessions = sessions.map(({ token, ...session }) => ({ ...session, isCurrent: currentSessionToken === token }));
 
   return preparedSessions;
 };

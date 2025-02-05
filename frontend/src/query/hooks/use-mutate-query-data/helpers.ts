@@ -133,7 +133,7 @@ const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action
       const existingIds = items.map(({ id }) => id);
       const newItems = dataItems.filter((i) => !existingIds.includes(i.id));
       // Concatenate to add only new entries
-      return [...items, ...newItems];
+      return [...newItems, ...items];
     }
 
     case 'update':

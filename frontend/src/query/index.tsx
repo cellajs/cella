@@ -19,42 +19,50 @@ const queryMutationFileImports = import.meta.glob('~/modules/**/query-mutations.
 const GC_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
 export const QueryClientProvider = ({ children }: { children: React.ReactNode }) => {
-  const { offlineAccess } = useGeneralStore();
   const { user } = useUserStore();
+  const { offlineAccess } = useGeneralStore();
+
   useEffect(() => {
     // Exit early if offline access is disabled or no stored user is available
     if (!offlineAccess || !user) return;
 
+    let isCancelled = false;
+
     (async () => {
       await waitFor(1000); // wait for a second to avoid server overload
 
-      // Prefetch the user and menu data
-      const userQueryOptions = meQueryOptions();
-      prefetchQuery({ ...userQueryOptions, ...{ gcTime: GC_TIME } });
+      if (isCancelled) return;
 
-      const userMenuQueryOptions = menuQueryOptions();
-      const menu = await prefetchQuery({ ...userMenuQueryOptions, ...{ gcTime: GC_TIME } });
+      // Prefetch user data
+      prefetchQuery({ ...meQueryOptions(), gcTime: GC_TIME });
+      const menu = await prefetchQuery({ ...menuQueryOptions(), ...{ gcTime: GC_TIME } });
 
+      if (!menu || isCancelled) return;
+
+      // Recursively prefetch menu items
       const prefetchMenuItems = async (items: UserMenuItem[]) => {
         for (const item of items) {
-          if (item.membership.archived) continue;
+          if (isCancelled) return;
 
-          // Prefetch queries for the item
-          const queries = queriesToMap(item);
-          for (const query of queries) {
+          if (item.membership.archived) continue; // Skip this item but continue with others
+
+          for (const query of queriesToMap(item)) {
             prefetchQuery(query);
             await waitFor(500);
+            if (isCancelled) return;
           }
 
           if (item.submenu) await prefetchMenuItems(item.submenu);
         }
       };
 
-      for (const section of Object.values(menu)) {
-        // TODO: assertion for UserMenuItem[]
-        await prefetchMenuItems(section as UserMenuItem[]);
-      }
+      // Prefetching each menu section
+      await Promise.all(Object.values(menu).map((section) => prefetchMenuItems(section as UserMenuItem[])));
     })();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [offlineAccess, user]);
 
   if (!offlineAccess) return <BaseQueryClientProvider client={queryClient}>{children}</BaseQueryClientProvider>;

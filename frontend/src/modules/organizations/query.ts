@@ -104,7 +104,6 @@ export const useOrganizationUpdateMutation = () => {
       queryClient.setQueryData(organizationsKeys.single(idOrSlug), updatedOrganization);
       queryClient.invalidateQueries({ queryKey: organizationsKeys.one });
     },
-    gcTime: 1000 * 10, // Garbage collect after 10 seconds
   });
 };
 

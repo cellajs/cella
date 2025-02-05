@@ -186,7 +186,7 @@ export const acceptOrgInvite = async ({ token }: TokenType) => {
 /**
  * Stop impersonation session, returning to user admin page
  */
-export const impersonationStop = () => client.impersonation.stop.$get();
+export const impersonationStop = async () => await client.impersonation.stop.$get();
 
 /**
  * Sign out the current user

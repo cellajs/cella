@@ -47,15 +47,7 @@ export const SessionTile = ({ session, deleteMySessions, isPending }: SessionTil
           </div>
         </div>
         {!session.isCurrent && (
-          <Button
-            variant="plain"
-            size="sm"
-            className="text-sm ml-auto"
-            disabled={isPending}
-            onClick={() => {
-              deleteMySessions([session.id]);
-            }}
-          >
+          <Button variant="plain" size="sm" className="text-sm ml-auto" disabled={isPending} onClick={() => deleteMySessions([session.id])}>
             <ZapOff size={16} />
             <span className="ml-1 max-md:hidden">{t('common:terminate')}</span>
           </Button>

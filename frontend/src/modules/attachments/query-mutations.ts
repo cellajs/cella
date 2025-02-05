@@ -13,6 +13,7 @@ import {
 } from '~/modules/attachments/api';
 import { attachmentsKeys } from '~/modules/attachments/query';
 import type { Attachment } from '~/modules/attachments/types';
+import { createToast } from '~/modules/common/toaster';
 import { compareQueryKeys } from '~/query/helpers';
 import { formatUpdatedData, getCancelingRefetchQueries, getQueries, getQueryItems, handleNoOldData } from '~/query/helpers/mutate-query';
 import type { ContextProp, InfiniteQueryData, QueryData } from '~/query/types';
@@ -127,7 +128,7 @@ queryClient.setMutationDefaults(attachmentsKeys.create(), {
           return createdItem ? { ...item, ...createdItem } : item;
         });
 
-        return formatUpdatedData(oldData, updatedItems, limit, createdAttachments.length);
+        return formatUpdatedData(oldData, updatedItems, limit); // Already update total in mutate
       });
     }
     toast.success(t('common:success.create_resources', { resources: t('common:attachments') }));
@@ -202,5 +203,6 @@ queryClient.setMutationDefaults(attachmentsKeys.delete(), {
 
     return context;
   },
+  onSuccess: () => createToast(t('common:success.delete_resources', { resources: t('common:attachments') }), 'success'),
   onError,
 });
