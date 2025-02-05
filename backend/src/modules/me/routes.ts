@@ -2,8 +2,8 @@ import { createRouteConfig } from '#/lib/route-config';
 import { isAuthenticated } from '#/middlewares/guard';
 import { errorResponses, successWithDataSchema, successWithErrorsSchema, successWithoutDataSchema } from '#/utils/schema/common-responses';
 import { idsBodySchema } from '#/utils/schema/common-schemas';
-import { updateUserBodySchema, updatedUserSchema } from '../users/schema';
-import { leaveEntityQuerySchema, meUserSchema, userMenuSchema } from './schema';
+import { updateUserBodySchema, userSchema } from '../users/schema';
+import { leaveEntityQuerySchema, meAuthInfoSchema, userMenuSchema } from './schema';
 
 class MeRoutesConfig {
   public getSelf = createRouteConfig({
@@ -12,13 +12,33 @@ class MeRoutesConfig {
     guard: isAuthenticated,
     tags: ['me'],
     summary: 'Get self',
-    description: 'Get the current user (self). It includes a `counts` object and a list of `sessions`.',
+    description: 'Get the current user (self). It includes a `counts` object.',
     responses: {
       200: {
         description: 'User',
         content: {
           'application/json': {
-            schema: successWithDataSchema(meUserSchema),
+            schema: successWithDataSchema(userSchema),
+          },
+        },
+      },
+      ...errorResponses,
+    },
+  });
+
+  public getSelfAuthData = createRouteConfig({
+    method: 'get',
+    path: '/auth',
+    guard: isAuthenticated,
+    tags: ['me'],
+    summary: 'Get self auth data',
+    description: 'Get the current user (self). It includes sessions, oauth accounts and sign in options.',
+    responses: {
+      200: {
+        description: 'User sign-up info',
+        content: {
+          'application/json': {
+            schema: successWithDataSchema(meAuthInfoSchema),
           },
         },
       },
@@ -49,7 +69,7 @@ class MeRoutesConfig {
         description: 'User',
         content: {
           'application/json': {
-            schema: successWithDataSchema(updatedUserSchema),
+            schema: successWithDataSchema(userSchema),
           },
         },
       },

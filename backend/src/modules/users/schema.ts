@@ -24,11 +24,6 @@ export const userSchema = z.object({
   counts: z.object({ memberships: z.number() }),
 });
 
-export const updatedUserSchema = z.object({
-  ...userSchema.shape,
-  ...signUpInfo.shape,
-});
-
 export const limitedUserSchema = createSelectSchema(usersTable, {
   email: z.string().email(),
 }).pick({

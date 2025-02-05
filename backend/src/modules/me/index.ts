@@ -40,32 +40,31 @@ const meRoutes = app
     const user = getContextUser();
     const memberships = getContextMemberships();
 
-    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    // Update last visit date
+    await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
 
-    // List enabled identity providers
-    const oauthAccounts = await db
-      .select({ providerId: oauthAccountsTable.providerId })
-      .from(oauthAccountsTable)
-      .where(eq(oauthAccountsTable.userId, user.id));
+    return ctx.json({ success: true, data: transformDatabaseUserWithCount(user, memberships.length) }, 200);
+  })
+  /*
+   * Get current user auth info
+   */
+  .openapi(meRoutesConfig.getSelfAuthData, async (ctx) => {
+    const user = getContextUser();
+
+    const getPasskey = db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, user.email));
+    const getOAuth = db.select({ providerId: oauthAccountsTable.providerId }).from(oauthAccountsTable).where(eq(oauthAccountsTable.userId, user.id));
+
+    const [passkeys, oauthAccounts, sessions] = await Promise.all([getPasskey, getOAuth, getUserSessions(ctx, user.id)]);
 
     const validOAuthAccounts = oauthAccounts
       .map((el) => el.providerId)
       .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
 
-    // Update last visit date
-    await db.update(usersTable).set({ lastStartedAt: new Date() }).where(eq(usersTable.id, user.id));
-
-    // Prepare data
-    const data = {
-      ...transformDatabaseUserWithCount(user, memberships.length),
-      oauth: validOAuthAccounts,
-      passkey: !!passkey.length,
-      sessions: await getUserSessions(ctx, user.id),
-    };
-
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json({ success: true, data: { oauth: validOAuthAccounts, passkey: !!passkeys.length, sessions } }, 200);
   })
-  // Your main function
+  /*
+   * Get current user menu
+   */
   .openapi(meRoutesConfig.getUserMenu, async (ctx) => {
     const user = getContextUser();
     const memberships = getContextMemberships();
@@ -209,27 +208,7 @@ const meRoutes = app
       .where(eq(usersTable.id, user.id))
       .returning();
 
-    const passkey = await db.select().from(passkeysTable).where(eq(passkeysTable.userEmail, updatedUser.email));
-
-    const oauthAccounts = await db
-      .select({
-        providerId: oauthAccountsTable.providerId,
-      })
-      .from(oauthAccountsTable)
-      .where(eq(oauthAccountsTable.userId, user.id));
-
-    const validOAuthAccounts = oauthAccounts
-      .map((el) => el.providerId)
-      .filter((provider): provider is EnabledOauthProvider => config.enabledOauthProviders.includes(provider as EnabledOauthProvider));
-    logEvent('User updated', { user: updatedUser.id });
-
-    const data = {
-      ...transformDatabaseUserWithCount(updatedUser, memberships.length),
-      oauth: validOAuthAccounts,
-      passkey: !!passkey.length,
-    };
-
-    return ctx.json({ success: true, data }, 200);
+    return ctx.json({ success: true, data: transformDatabaseUserWithCount(updatedUser, memberships.length) }, 200);
   })
   /*
    * Delete current user (self)

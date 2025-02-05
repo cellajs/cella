@@ -6,6 +6,12 @@ import { usersHc } from '#/modules/users/hc';
 export const meClient = meHc(config.backendUrl, clientConfig);
 export const userClient = usersHc(config.backendUrl, clientConfig);
 
+export type GetUsersParams = Omit<Parameters<(typeof userClient.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
+  limit?: number;
+  offset?: number;
+  page?: number;
+};
+
 /**
  * Get a user by slug or ID.
  *
@@ -19,12 +25,6 @@ export const getUser = async (idOrSlug: string) => {
 
   const json = await handleResponse(response);
   return json.data;
-};
-
-export type GetUsersParams = Omit<Parameters<(typeof userClient.index)['$get']>['0']['query'], 'limit' | 'offset'> & {
-  limit?: number;
-  offset?: number;
-  page?: number;
 };
 
 /**
@@ -117,6 +117,18 @@ export const deleteUsers = async (userIds: string[]) => {
  */
 export const getSelf = async () => {
   const response = await meClient.index.$get();
+
+  const json = await handleResponse(response);
+  return json.data;
+};
+
+/**
+ * Get the current user's auth details. Retrieves information like sessions, passkey and OAut.
+ *
+ * @returns User's auth data.
+ */
+export const getSelfAuthInfo = async () => {
+  const response = await meClient.auth.$get();
 
   const json = await handleResponse(response);
   return json.data;
