@@ -9,7 +9,7 @@ import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { Button } from '~/modules/ui/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 
@@ -100,7 +100,7 @@ const Combobox: React.FC<ComboboxProps> = ({
       </PopoverTrigger>
 
       <PopoverContent align="start" style={{ width: contentWidthMatchInput ? `${bounds.width}px` : '100%' }} className="p-0">
-        <Command>
+        <Command shouldFilter={false}>
           {!isMobile && (
             <CommandInput
               value={searchValue}
@@ -110,7 +110,7 @@ const Combobox: React.FC<ComboboxProps> = ({
             />
           )}
 
-          <div className="h-[30vh]">
+          <CommandList className="h-[30vh]">
             <CommandEmpty>
               <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t(`common:${name}`).toLowerCase() })} />
             </CommandEmpty>
@@ -139,7 +139,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                 </Virtualizer>
               </ScrollArea>
             </CommandGroup>
-          </div>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
