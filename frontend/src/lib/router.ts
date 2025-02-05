@@ -67,7 +67,7 @@ export const persister = createIDBPersister();
  */
 const router = createRouter({
   scrollRestoration: true,
-  scrollRestorationBehavior: 'smooth',
+  scrollRestorationBehavior: 'instant',
   routeTree,
   // notFoundRoute,
   defaultPreload: false,

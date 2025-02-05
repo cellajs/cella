@@ -1,8 +1,8 @@
 /* Custom gradients that are not easy to build using tailwind */
-@import './gradients.css' layer(base);
-@import './modules/common/blocknote/styles.css' layer(base);
+@import "./gradients.css" layer(base);
+@import "./modules/common/blocknote/styles.css" layer(base);
 
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @config '../tailwind.config.ts';
 
@@ -27,7 +27,7 @@
 @utility submenu-section {
   &:before {
     border-left: 2px dotted hsl(var(--foreground));
-    content: '';
+    content: "";
     display: block;
     position: absolute;
     margin-top: 0.5rem;

@@ -86,7 +86,7 @@
     "embla-carousel-react": "^8.5.2",
     "emblor": "^1.4.7",
     "gleap": "^14.2.5",
-    "hono": "4.6.19",
+    "hono": "4.6.20",
     "i18next": "^24.2.2",
     "i18next-browser-languagedetector": "^8.0.2",
     "i18next-http-backend": "^3.0.2",
