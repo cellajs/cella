@@ -119,8 +119,6 @@ export const nameSchema = z
   .min(2)
   .max(100)
   .refine(
-    (s) =>
-      /^[\p{L}\d\-. '&()]+$/u.test(s) && // Validate allowed characters
-      /^[a-z0-9].*[a-z0-9]$/i.test(s), // Ensure starts and ends with alphanumeric
-    "Name may only contain letters, numbers, spaces and these characters: .'-&()",
+    (s) => /^[\p{L}\d\-. '&()]+$/u.test(s), // Allow any order of the allowed characters
+    "Name may only contain letters, numbers, spaces, and these characters: .'-&()",
   );
