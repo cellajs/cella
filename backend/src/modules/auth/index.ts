@@ -45,7 +45,7 @@ import {
   updateExistingUser,
 } from './helpers/oauth';
 import { parseAndValidatePasskeyAttestation, verifyPassKeyPublic } from './helpers/passkey';
-import { invalidateSession, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
+import { invalidateSessionById, invalidateUserSessions, setUserSession, validateSession } from './helpers/session';
 import { handleCreateUser } from './helpers/user';
 import { sendVerificationEmail } from './helpers/verify-email';
 import authRoutesConfig from './routes';
@@ -469,16 +469,19 @@ const authRoutes = app
     const { session } = await validateSession(sessionToken);
 
     if (session) {
-      await invalidateSession(session.id);
+      await invalidateSessionById(session.id);
       if (session.adminUserId) {
         const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, session.adminUserId));
         const [lastSession] = sessions.sort((a, b) => b.expiresAt.getTime() - a.expiresAt.getTime());
 
-        const adminsLastSession = await validateSession(lastSession.id);
+        const adminsLastSession = await validateSession(lastSession.token);
+
         if (!adminsLastSession.session) {
           deleteAuthCookie(ctx, 'session');
           return errorResponse(ctx, 401, 'unauthorized', 'warn');
         }
+        const expireTimeSpan = new TimeSpan(lastSession.expiresAt.getTime() - Date.now(), 'ms');
+        await setAuthCookie(ctx, 'session', lastSession.token, expireTimeSpan);
       }
     } else deleteAuthCookie(ctx, 'session');
     logEvent('Admin user signed out from impersonate to his own account', { user: session?.adminUserId || 'na' });
@@ -498,7 +501,7 @@ const authRoutes = app
 
     // Find session & invalidate
     const { session } = await validateSession(sessionToken);
-    if (session) await invalidateSession(session.id);
+    if (session) await invalidateSessionById(session.id);
 
     // Delete session cookie
     deleteAuthCookie(ctx, 'session');
