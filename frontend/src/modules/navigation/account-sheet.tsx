@@ -38,7 +38,7 @@ const AccountButton: React.FC<AccountButtonProps> = ({ offlineAccess, isOnline, 
       to={action}
       className={cn(
         buttonVariants({ variant: 'ghost', size: 'lg' }),
-        'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        'data-[sign-out=true]:text-red-600 hover:bg-accent/50 w-full justify-start text-left outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
       )}
     >
       <Icon className="mr-2 h-4 w-4" aria-hidden="true" />

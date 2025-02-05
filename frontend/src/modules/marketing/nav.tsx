@@ -55,7 +55,7 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
 
   return (
     <>
-      <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-[121] h-16 w-full">
+      <header className="absolute top-2 sm:top-4 px-2 lg:top-8 lg:px-4 z-121 h-16 w-full">
         <div className="flex h-full items-center gap-2 max-w-[84rem] mx-auto justify-between transition-colors duration-300">
           <div className="flex h-full items-center gap-2 md:gap-6">
             <div className="md:hidden">
@@ -118,17 +118,17 @@ export function MarketingNav({ onHandleMismatch }: { onHandleMismatch?: (target:
           aria-describedby={undefined}
           side="top"
           hideClose={true}
-          className={`fixed z-[120] border-none pb-8 ${showSheet ? '' : 'delay-300'}`}
+          className={`fixed z-120 border-none pb-8 ${showSheet ? '' : 'delay-300'}`}
         >
           <SheetHiddenTitle>Navigation</SheetHiddenTitle>
           <div
             ref={ref}
             className={`bg-background flex mt-2 flex-col gap-2 md:hidden items-stretch transition-opacity duration-200 ease-in-out ${
-              inView && showSheet ? 'opacity-1 delay-300' : 'opacity-0'
+              inView && showSheet ? 'opacity-100 delay-300' : 'opacity-0'
             }`}
           >
             <div className="flex justify-between mb-4">
-              <HamburgerButton className="items-start -ml-2 mt-3 !opacity-0" isOpen={showSheet} toggle={setShowSheet} />
+              <HamburgerButton className="items-start -ml-2 mt-3 opacity-0!" isOpen={showSheet} toggle={setShowSheet} />
               <UserTheme className="absolute top-5 right-5 xs:hidden" />
             </div>
             {renderNavItems()}

@@ -49,7 +49,7 @@ const OrganizationSettings = ({ organization }: { organization: Organization }) 
   return (
     <div className="md:flex md:flex-row mx-auto gap-4 my-4">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] flex h-auto flex-col">
-        <StickyBox offsetTop={60} className="md:mt-2 z-10 max-md:!block">
+        <StickyBox offsetTop={60} className="md:mt-2 z-10 max-md:block!">
           <PageAside tabs={tabs} className="pb-2" />
         </StickyBox>
       </div>

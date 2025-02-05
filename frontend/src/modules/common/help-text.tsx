@@ -20,7 +20,7 @@ const HelpText = ({ content, children, className, type }: HelpTextProps) => {
         {children}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="w-6 h-6 opacity-50 hover:opacity-100 active:!translate-y-0">
+            <Button variant="ghost" size="icon" className="w-6 h-6 opacity-50 hover:opacity-100 active:translate-y-0!">
               <HelpCircle size={16} />
             </Button>
           </PopoverTrigger>
@@ -41,7 +41,7 @@ const HelpText = ({ content, children, className, type }: HelpTextProps) => {
           variant="ghost"
           size="icon"
           onClick={() => setCollapsed(!collapsed)}
-          className="w-6 h-6 opacity-50 hover:opacity-100 active:!translate-y-0"
+          className="w-6 h-6 opacity-50 hover:opacity-100 active:translate-y-0!"
         >
           {collapsed && <HelpCircle size={16} />}
           {!collapsed && <ChevronUp size={16} />}

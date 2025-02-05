@@ -35,7 +35,7 @@ const ScrollArea = React.forwardRef<
       // to prevent warning on autoscroll set from Pragmatic DnD
       style={{ overflowY: 'scroll', display: 'flex', flexDirection: 'column', height: '100%' }}
       ref={viewPortRef}
-      className={cn('h-full w-full [&>div]:!block rounded-[inherit]', viewPortClassName)}
+      className={cn('h-full w-full [&>div]:block! rounded-[inherit]', viewPortClassName)}
     >
       {children}
     </ScrollAreaPrimitive.Viewport>

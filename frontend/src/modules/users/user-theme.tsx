@@ -35,7 +35,7 @@ const UserTheme = ({ size = 24, className = '' }: UserThemeProps) => {
       <Switch
         size="sm"
         id="changeTheme"
-        className={cn(mode === 'light' && '!bg-border/50', 'scale-125 m-2', className)}
+        className={cn(mode === 'light' && 'bg-border/50!', 'scale-125 m-2', className)}
         checked={mode === 'light'}
         onCheckedChange={() => setMode(mode === 'light' ? 'dark' : 'light')}
         aria-label={'changeTheme'}

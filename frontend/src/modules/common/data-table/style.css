@@ -15,6 +15,7 @@
   --rdg-font-size: 0.888rem;
   --rdg-selection-color: hsl(var(--ring));
 
+  border: none;
   grid-template-rows: none !important;
 }
 
@@ -28,6 +29,8 @@
   display: flex;
   align-items: center;
   min-height: var(--rdg-header-row-height);
+  border-inline-end: none;
+  border-block-end: none;
 }
 
 .rdg-cell:not([role="columnheader"]) {
