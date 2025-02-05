@@ -21,10 +21,10 @@ export const formatBytes = (bytes: string): string => {
 };
 
 // Open the upload dialog
-export const openUploadDialog = (organizationId: string) => {
+export const openAttachmentsUploadDialog = (organizationId: string) => {
   const maxAttachmentsUpload = 20;
 
-  const UploadDialog = () => {
+  const UploadDialog = ({ organizationId }: { organizationId: string }) => {
     const { mutate: createAttachments } = useAttachmentCreateMutation();
 
     const handleCallback = (result: UploadedUppyFile[]) => {
@@ -65,7 +65,7 @@ export const openUploadDialog = (organizationId: string) => {
 
   dialog(
     <Suspense>
-      <UploadDialog />
+      <UploadDialog organizationId={organizationId} />
     </Suspense>,
     {
       id: 'upload-attachment',
