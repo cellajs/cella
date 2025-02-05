@@ -57,9 +57,7 @@ class MeRoutesConfig {
       body: {
         content: {
           'application/json': {
-            schema: updateUserBodySchema.omit({
-              role: true,
-            }),
+            schema: updateUserBodySchema,
           },
         },
       },

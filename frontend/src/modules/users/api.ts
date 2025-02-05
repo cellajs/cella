@@ -76,7 +76,6 @@ export type UpdateUserParams = Parameters<(typeof userClient)[':idOrSlug']['$put
  * Update user details by ID or slug.
  *
  *  @param info.idOrSlug - Target user ID or slug.
- *  @param info.email - Optional, email address.
  *  @param info.slug - Optional, URL-friendly string.
  *  @param info.firstName - Optional, first name.
  *  @param info.lastName -Optional, last name.
@@ -123,9 +122,9 @@ export const getSelf = async () => {
 };
 
 /**
- * Get the current user's auth details. Retrieves information like sessions, passkey and OAut.
+ * Get the current user auth details. Retrieves data like sessions, passkey and OAuth.
  *
- * @returns User's auth data.
+ * @returns Current user auth data.
  */
 export const getSelfAuthInfo = async () => {
   const response = await meClient.auth.$get();
@@ -135,9 +134,9 @@ export const getSelfAuthInfo = async () => {
 };
 
 /**
- * Get the current user's menu. Retrieves the menu associated with the currently authenticated user.
+ * Get current user menu. Retrieves menu associated with currently authenticated user.
  *
- * @returns The user's menu data.
+ * @returns The user menu data.
  */
 export const getUserMenu = async () => {
   const response = await meClient.menu.$get();
@@ -147,8 +146,9 @@ export const getUserMenu = async () => {
 };
 
 /**
- * Update the current user's details. Updates currently authenticated user information.
+ * Update current user details. Updates currently authenticated user information.
  *
+ * TODO: too detailed, consider sharing schema or type
  *  @param params.email - Optional, email address.
  *  @param params.slug - Optional, URL-friendly string.
  *  @param params.firstName - Optional, first name.
@@ -169,7 +169,7 @@ export const updateSelf = async (params: Omit<UpdateUserParams, 'role'>) => {
 };
 
 /**
- * Delete user who is currently authenticated from the system.
+ * Delete current user.
  */
 export const deleteSelf = async () => {
   const response = await meClient.index.$delete();

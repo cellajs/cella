@@ -176,7 +176,7 @@ const usersRoutes = app
     const [targetUser] = await getUsersByConditions([or(eq(usersTable.id, idOrSlug), eq(usersTable.slug, idOrSlug))]);
     if (!targetUser) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: idOrSlug });
 
-    const { email, bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug, role } = ctx.req.valid('json');
+    const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     // Check if slug is available
     if (slug && slug !== targetUser.slug) {
@@ -187,7 +187,6 @@ const usersRoutes = app
     const [updatedUser] = await db
       .update(usersTable)
       .set({
-        email,
         bannerUrl,
         firstName,
         lastName,
@@ -195,7 +194,6 @@ const usersRoutes = app
         newsletter,
         thumbnailUrl,
         slug,
-        role,
         name: [firstName, lastName].filter(Boolean).join(' ') || slug,
         modifiedAt: new Date(),
         modifiedBy: user.id,

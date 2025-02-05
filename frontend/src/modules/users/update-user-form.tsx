@@ -23,6 +23,7 @@ import { useUpdateUserMutation } from '~/modules/users/query';
 import type { User } from '~/modules/users/types';
 import { useUserStore } from '~/store/user';
 import { cleanUrl } from '~/utils/clean-url';
+import { Input } from '../ui/input';
 
 interface UpdateUserFormProps {
   user: User;
@@ -135,16 +136,14 @@ const UpdateUserForm = ({ user, callback, sheet: isSheet, hiddenFields, children
           />
         )}
 
-        <InputFormField
-          inputClassName="border"
-          control={form.control}
-          value={user.email}
-          name="email"
-          label={t('common:email')}
-          type="email"
-          readOnly
-          required
-        />
+        <div className="flex-col flex gap-2">
+          <FormLabel>{t('common:email')}</FormLabel>
+          <FormControl>
+            <Input value={user.email} autoComplete="off" disabled />
+          </FormControl>
+          <FormMessage />
+        </div>
+
         <FormField
           control={form.control}
           name="language"

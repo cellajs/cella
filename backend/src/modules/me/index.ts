@@ -183,7 +183,7 @@ const meRoutes = app
 
     if (!user) return errorResponse(ctx, 404, 'not_found', 'warn', 'user', { user: 'self' });
 
-    const { email, bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
+    const { bannerUrl, firstName, lastName, language, newsletter, thumbnailUrl, slug } = ctx.req.valid('json');
 
     if (slug && slug !== user.slug) {
       const slugAvailable = await checkSlugAvailable(slug);
@@ -193,7 +193,6 @@ const meRoutes = app
     const [updatedUser] = await db
       .update(usersTable)
       .set({
-        email,
         bannerUrl,
         firstName,
         lastName,
