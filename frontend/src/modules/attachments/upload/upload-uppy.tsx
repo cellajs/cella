@@ -4,6 +4,7 @@ import ImageEditor, { type ImageEditorOptions } from '@uppy/image-editor';
 import { Dashboard } from '@uppy/react';
 import ScreenCapture from '@uppy/screen-capture';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
+import { config } from 'config';
 import { useEffect, useState } from 'react';
 import { ImadoUppy, type UppyBody, type UppyMeta } from '~/lib/imado';
 import { getImageEditorOptions } from '~/modules/attachments/upload/image-editor-options';
@@ -20,7 +21,7 @@ export interface UploadUppyProps {
   uploadType: 'organization' | 'personal';
   isPublic: boolean;
   plugins?: ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | string)[];
-  uppyOptions: UppyOptions<UppyMeta, UppyBody>;
+  restrictions?: Partial<UppyOptions<UppyMeta, UppyBody>['restrictions']>;
   imageMode?: 'cover' | 'avatar' | 'attachment';
   organizationId?: string;
   callback?: (
@@ -31,13 +32,26 @@ export interface UploadUppyProps {
   ) => void;
 }
 
+const uppyRestrictions = config.uppy.defaultRestrictions;
+
 // Here we init imadoUppy, an enriched Uppy instance that we use to upload files.
 // For more info in Imado, see: https://imado.eu/
 // For more info on Uppy and its APIs, see: https://uppy.io/docs/
 
-export const UploadUppy = ({ uploadType, isPublic, organizationId, uppyOptions, plugins = [], imageMode, callback }: UploadUppyProps) => {
+export const UploadUppy = ({ uploadType, isPublic, organizationId, restrictions = {}, plugins = [], imageMode, callback }: UploadUppyProps) => {
   const [uppy, setUppy] = useState<Uppy | null>(null);
   const { mode } = useThemeStore();
+
+  // Set uppy options with restrictions
+  const uppyOptions: UppyOptions<UppyMeta, UppyBody> = {
+    restrictions: {
+      ...uppyRestrictions,
+      minFileSize: null,
+      minNumberOfFiles: null,
+      ...restrictions,
+      requiredMetaFields: restrictions.requiredMetaFields ?? [],
+    },
+  };
 
   useEffect(() => {
     const initializeUppy = async () => {
@@ -46,9 +60,8 @@ export const UploadUppy = ({ uploadType, isPublic, organizationId, uppyOptions, 
         organizationId: organizationId,
         statusEventHandler: {
           onComplete: (mappedResult) => {
-            if (callback) {
-              callback(mappedResult);
-            }
+            if (!callback) return;
+            callback(mappedResult);
           },
           onFileEditorComplete: () => {
             // If in image mode, start upload directly after editing

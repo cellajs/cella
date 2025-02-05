@@ -55,16 +55,11 @@ const UppyFilePanel: React.FC<UppyFilePanelProps & FilePanelProps> = ({ onCreate
         <UploadUppy
           isPublic
           uploadType="personal"
-          uppyOptions={{
-            restrictions: {
-              maxFileSize: 10 * 1024 * 1024, // 10MB
-              maxNumberOfFiles: 1,
-              allowedFileTypes: basicBlockTypes[type].allowedFileTypes,
-              minFileSize: null,
-              maxTotalFileSize: 10 * 1024 * 1024, // 10MB
-              minNumberOfFiles: null,
-              requiredMetaFields: [],
-            },
+          restrictions={{
+            maxFileSize: 10 * 1024 * 1024, // 10MB
+            maxNumberOfFiles: 1,
+            allowedFileTypes: basicBlockTypes[type].allowedFileTypes,
+            maxTotalFileSize: 10 * 1024 * 1024, // 10MB
           }}
           plugins={basicBlockTypes[type].plugins}
           imageMode="attachment"

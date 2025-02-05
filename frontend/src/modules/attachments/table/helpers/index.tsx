@@ -6,6 +6,12 @@ import UploadUppy from '~/modules/attachments/upload/upload-uppy';
 import { dialog } from '~/modules/common/dialoger/state';
 import { nanoid } from '~/utils/nanoid';
 
+/**
+ * Utility function to format bytes into human-readable format
+ *
+ * @param bytes The size in bytes
+ * @returns Nicely formatted size
+ */
 export const formatBytes = (bytes: string): string => {
   const parsedBytes = Number(bytes);
 
@@ -20,10 +26,13 @@ export const formatBytes = (bytes: string): string => {
   return `${formattedSize} ${sizes[index]}`;
 };
 
-// Open the upload dialog
-export const openAttachmentsUploadDialog = (organizationId: string) => {
-  const maxAttachmentsUpload = 20;
+const maxNumberOfFiles = 20;
+const maxTotalFileSize = 10 * 1024 * 1024 * maxNumberOfFiles; // for maxNumberOfFiles files at 10MB max each
 
+/**
+ * Open the upload dialog
+ */
+export const openAttachmentsUploadDialog = (organizationId: string) => {
   const UploadDialog = ({ organizationId }: { organizationId: string }) => {
     const { mutate: createAttachments } = useAttachmentCreateMutation();
 
@@ -45,17 +54,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
       <UploadUppy
         isPublic
         uploadType="personal"
-        uppyOptions={{
-          restrictions: {
-            maxFileSize: 10 * 1024 * 1024, // 10MB
-            maxNumberOfFiles: maxAttachmentsUpload,
-            allowedFileTypes: ['*/*'],
-            minFileSize: null,
-            maxTotalFileSize: 10 * 1024 * 1024 * maxAttachmentsUpload, // for maxAttachmentsUpload files at 10MB max each
-            minNumberOfFiles: null,
-            requiredMetaFields: [],
-          },
-        }}
+        restrictions={{ maxNumberOfFiles, allowedFileTypes: ['*/*'], maxTotalFileSize }}
         plugins={['webcam', 'image-editor', 'screen-capture', 'audio']}
         imageMode="attachment"
         callback={handleCallback}
@@ -71,7 +70,7 @@ export const openAttachmentsUploadDialog = (organizationId: string) => {
       id: 'upload-attachment',
       drawerOnMobile: false,
       title: t('common:upload_item', { item: t('common:attachments').toLowerCase() }),
-      description: t('common:upload_multiple.text', { item: t('common:attachments').toLowerCase(), count: maxAttachmentsUpload }),
+      description: t('common:upload_multiple.text', { item: t('common:attachments').toLowerCase(), count: maxNumberOfFiles }),
       className: 'md:max-w-xl',
     },
   );

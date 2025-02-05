@@ -196,6 +196,15 @@ export const config = {
     countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
     timezones: [],
   },
+
+  uppy: {
+    defaultRestrictions: {
+      maxFileSize: 10 * 1024 * 1024, // 10MB
+      maxNumberOfFiles: 1,
+      allowedFileTypes: ['.jpg', '.jpeg', '.png'],
+      maxTotalFileSize: 100 * 1024 * 1024, // 100MB
+    },
+  },
 };
 
 export default config;
