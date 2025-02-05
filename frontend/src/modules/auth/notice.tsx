@@ -25,7 +25,7 @@ const AuthNotice = ({ error, children }: { error: ErrorNoticeError; children?: R
       </CardHeader>
       <CardFooter className="flex gap-2 mt-8 justify-center">
         {children}
-        <Link to="/auth/authenticate" className={buttonVariants({ size: 'lg', variant: 'plain' })}>
+        <Link to="/auth/authenticate" reloadDocument className={buttonVariants({ size: 'lg', variant: 'plain' })}>
           {t('common:sign_in')}
         </Link>
         {severity && ['warn', 'error'].includes(severity) && (
