@@ -151,7 +151,8 @@ export const deletePasskey = async () => {
  * @returns The user data object.
  */
 export const getAndSetMe = async () => {
-  const [user, authInfo] = await Promise.all([getSelf(), getSelfAuthInfo()]);
+  const user = await getSelf();
+  const authInfo = await getSelfAuthInfo();
   const currentSession = authInfo.sessions.find((s) => s.isCurrent);
   // if impersonation session don't change the last user
   if (currentSession?.type === 'impersonation') useUserStore.getState().setUserWithoutSetLastUser({ ...user, ...authInfo });
