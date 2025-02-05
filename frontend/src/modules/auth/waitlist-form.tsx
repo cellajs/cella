@@ -84,7 +84,7 @@ export const WaitlistForm = ({ email, buttonContent, emailField, dialog: isDialo
               <FormControl>
                 <Input
                   {...field}
-                  className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-background/50 text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-none focus-visible:ring-primary/20"
+                  className="block xs:min-w-80 w-full py-6 h-14 px-8 rounded-full border border-gray-400/40 bg-background/50 text-base/6 ring-4 ring-primary/10 transition focus:border-gray-400 focus:outline-hidden focus-visible:ring-primary/20"
                   type="email"
                   disabled={!emailField}
                   readOnly={!emailField}

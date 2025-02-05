@@ -166,7 +166,7 @@ export const DataTable = <TData,>({
               <div
                 key={rows.length}
                 ref={measureRef}
-                className="h-4 w-0 bg-red-700 absolute bottom-0 z-[200]"
+                className="h-4 w-0 bg-red-700 absolute bottom-0 z-200"
                 style={{
                   height: `${Math.min(rows.length, 200) * 0.25 * rowHeight}px`,
                   maxHeight: `${rowHeight * limit}px`,

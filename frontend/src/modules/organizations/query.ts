@@ -13,7 +13,7 @@ import {
   getOrganizations,
   updateOrganization,
 } from '~/modules/organizations/api';
-import type { OrganizationWithMembership } from '~/modules/organizations/types';
+import type { Organization, OrganizationWithMembership } from '~/modules/organizations/types';
 
 /**
  * Keys for organizations related queries. These keys help to uniquely identify different query.
@@ -97,7 +97,7 @@ export const useOrganizationCreateMutation = () => {
  * @returns The mutation hook for updating an organization.
  */
 export const useOrganizationUpdateMutation = () => {
-  return useMutation<OrganizationWithMembership, ApiError, { idOrSlug: string; json: UpdateOrganizationBody }>({
+  return useMutation<Organization, ApiError, { idOrSlug: string; json: UpdateOrganizationBody }>({
     mutationKey: organizationsKeys.update(),
     mutationFn: updateOrganization,
     onSuccess: (updatedOrganization, { idOrSlug }) => {

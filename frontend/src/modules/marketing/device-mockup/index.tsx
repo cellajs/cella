@@ -24,7 +24,7 @@ const DeviceMockup = ({ lightSlides, darkSlides, type, className }: DeviceMockup
     triggerOnce: false,
     threshold: 0,
   });
-  const mockupClass = `transition-opacity duration-700 ease-out ${inView ? 'opacity-1' : 'opacity-0'}`;
+  const mockupClass = `transition-opacity duration-700 ease-out ${inView ? 'opacity-100' : 'opacity-0'}`;
 
   return (
     <div className={cn(mockupClass, className)} ref={ref}>

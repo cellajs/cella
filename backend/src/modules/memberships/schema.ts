@@ -7,6 +7,7 @@ import { userSchema } from '../users/schema';
 
 const membershipTableSchema = createSelectSchema(membershipsTable);
 
+// TODO what happens here?
 export const membershipSchema = membershipTableSchema.extend({
   archived: z.boolean(),
   muted: z.boolean(),

@@ -85,7 +85,7 @@ export const SignInForm = ({ email, resetSteps, emailEnabled }: Props) => {
         </Button>
       </h1>
       {emailEnabled && (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 !mt-0">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4 mt-0!">
           <FormField
             control={form.control}
             name="email"

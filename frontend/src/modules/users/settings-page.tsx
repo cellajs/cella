@@ -106,7 +106,7 @@ const UserSettingsPage = () => {
   return (
     <div className="container md:flex md:flex-row my-4 md:mt-8 mx-auto gap-4 ">
       <div className="max-md:hidden mx-auto md:min-w-48 md:w-[30%] md:mt-2">
-        <StickyBox className="z-10 max-md:!block">
+        <StickyBox className="z-10 max-md:block!">
           <SimpleHeader className="p-3" heading="common:settings" text="common:settings.text" />
           <PageAside tabs={tabs} className="py-2" />
         </StickyBox>

@@ -72,7 +72,7 @@ const MembersTable = ({ entity, invites, isSheet = false }: MembersTableProps) =
     dialog(<InviteUsers entity={entity} mode={null} dialog />, {
       id: `user-invite-${entity.id}`,
       drawerOnMobile: false,
-      className: 'w-auto shadow-none relative z-[60] max-w-4xl',
+      className: 'w-auto shadow-none relative z-60 max-w-4xl',
       container,
       containerBackdrop: true,
       containerBackdropClassName: 'z-50',

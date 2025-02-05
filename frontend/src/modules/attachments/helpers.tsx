@@ -16,14 +16,14 @@ export const openAttachmentDialog = (
 
   const { removeCallback } = dialogOptions || {};
   dialog(
-    <div className="flex flex-wrap relative -z-[1] h-screen justify-center p-2 grow">
+    <div className="flex flex-wrap relative -z-1 h-screen justify-center p-2 grow">
       <AttachmentsCarousel slides={attachments} isDialog slide={attachment} saveInSearchParams={saveInSearchParams} />
     </div>,
     {
       id: 'attachment-file-preview',
       drawerOnMobile: false,
       className: 'min-w-full h-screen border-0 p-0 rounded-none flex flex-col mt-0',
-      headerClassName: 'absolute p-4 w-full backdrop-blur-sm bg-background/50',
+      headerClassName: 'absolute p-4 w-full backdrop-blur-xs bg-background/50',
       hideClose: true,
       autoFocus: true,
       removeCallback,

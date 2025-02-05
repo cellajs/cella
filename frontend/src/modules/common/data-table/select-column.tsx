@@ -32,7 +32,7 @@ export const renderSelect = <TRow extends User | Member | Organization>({
       <SelectTrigger className="h-8 border-none p-2 text-xs tracking-wider">
         <SelectValue placeholder={role} />
       </SelectTrigger>
-      <SelectContent sideOffset={-41} alignOffset={-5} className="!duration-0">
+      <SelectContent sideOffset={-41} alignOffset={-5} className="duration-0!">
         {options.map((option) => (
           <SelectItem key={option} value={option}>
             {t(option)}

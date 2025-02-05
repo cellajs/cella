@@ -124,7 +124,7 @@ const organizationsRoutes = app
 
     const { entity: organization, isAllowed, membership } = await getValidEntity('organization', 'update', idOrSlug);
     if (!organization) return errorResponse(ctx, 404, 'not_found', 'warn', 'organization');
-    if (!isAllowed || !membership) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
+    if (!isAllowed) return errorResponse(ctx, 403, 'forbidden', 'warn', 'organization');
 
     const user = getContextUser();
 
@@ -152,8 +152,8 @@ const organizationsRoutes = app
       .where(and(eq(membershipsTable.type, 'organization'), eq(membershipsTable.organizationId, organization.id)));
 
     // Send SSE events to organization members
-    for (const membership of organizationMemberships) {
-      sendSSEToUsers([membership.userId], 'update_entity', { ...updatedOrganization, membership });
+    for (const member of organizationMemberships) {
+      sendSSEToUsers([member.userId], 'update_entity', { ...updatedOrganization, member });
     }
 
     logEvent('Organization updated', { organization: updatedOrganization.id });

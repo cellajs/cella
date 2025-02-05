@@ -24,7 +24,7 @@ const CallToAction = () => {
           variant="ghost"
           size="xl"
           onClick={handleContactUs}
-          className="glow-button bg-background/95 px-20 !rounded-full relative hover:!bg-background active:bg-background"
+          className="glow-button bg-background/95 px-20 rounded-full! relative hover:bg-background! active:bg-background"
           aria-label="Contact"
         >
           {t('common:contact_us')}

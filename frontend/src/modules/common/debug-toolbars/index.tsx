@@ -39,7 +39,7 @@ const DebugToolbars = () => {
       <TanStackRouterDevtools />
       <ReactQueryDevtools client={queryClient} />
       <div
-        className={`max-sm:hidden left-3 bottom-3 fixed z-[99] transition-transform ease-out'
+        className={`max-sm:hidden left-3 bottom-3 fixed z-99 transition-transform ease-out'
           ${!hasStarted && 'sm:-translate-x-full'}`}
       >
         <DropdownMenu>
@@ -48,7 +48,7 @@ const DebugToolbars = () => {
               🐞
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="end" sideOffset={24} className="w-48 z-[300]">
+          <DropdownMenuContent side="right" align="end" sideOffset={24} className="w-48 z-300">
             {debugOptions.map((item) => (
               <DropdownMenuItem key={item.id} onClick={() => debugToggle(item)}>
                 <span className="mr-2">{item.icon}</span>

@@ -94,7 +94,7 @@ class OrganizationRoutesConfig {
         description: 'Organization was updated',
         content: {
           'application/json': {
-            schema: successWithDataSchema(organizationWithMembershipSchema),
+            schema: successWithDataSchema(organizationSchema),
           },
         },
       },
