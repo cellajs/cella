@@ -99,7 +99,7 @@ export const offlineFetch = async (options: FetchQueryOptions<any, any, any, any
 
   try {
     // If online, fetch data (background revalidation)
-    return queryClient.fetchQuery(options);
+    return queryClient.fetchQuery({ ...options, staleTime: 0 });
   } catch (error) {
     // Fallback to cached data if available
     return cachedData ?? undefined;
@@ -122,7 +122,7 @@ export const offlineFetchInfinite = async (options: FetchInfiniteQueryOptions<an
 
   try {
     // If online, fetch data (background revalidation)
-    return queryClient.fetchInfiniteQuery(options);
+    return queryClient.fetchInfiniteQuery({ ...options, staleTime: 0 });
   } catch (error) {
     // Fallback to cached data if available
     return cachedData ?? undefined;
