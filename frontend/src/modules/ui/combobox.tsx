@@ -1,14 +1,15 @@
 import { Check, ChevronDown, Search } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Virtualizer } from 'virtua';
 import { useBreakpoints } from '~/hooks/use-breakpoints';
+import { useDebounce } from '~/hooks/use-debounce';
 import { useMeasure } from '~/hooks/use-measure';
 import { AvatarWrap } from '~/modules/common/avatar-wrap';
 import ContentPlaceholder from '~/modules/common/content-placeholder';
 import { Button } from '~/modules/ui/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '~/modules/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '~/modules/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 
@@ -50,6 +51,12 @@ const Combobox: React.FC<ComboboxProps> = ({
   const [selectedOption, setSelectedOption] = useState<ComboBoxOption | null>(options.find((o) => o.value === formValue) || null);
 
   const excludeAvatarWrapFields = ['timezone', 'country'];
+  const debouncedSearchQuery = useDebounce(searchValue, 300);
+
+  const filteredOptions = useMemo(
+    () => options.filter(({ label }) => label.toLowerCase().includes(debouncedSearchQuery.toLowerCase())),
+    [options, debouncedSearchQuery],
+  );
 
   const handleSelect = (newResult: string) => {
     const result = options.find((o) => o.label === newResult);
@@ -103,7 +110,7 @@ const Combobox: React.FC<ComboboxProps> = ({
             />
           )}
 
-          <CommandList>
+          <div className="h-[30vh]">
             <CommandEmpty>
               <ContentPlaceholder Icon={Search} title={t('common:no_resource_found', { resource: t(`common:${name}`).toLowerCase() })} />
             </CommandEmpty>
@@ -113,27 +120,26 @@ const Combobox: React.FC<ComboboxProps> = ({
               As this will cause all list elements to render at once in Virtualizer*/}
               <ScrollArea className="h-[30vh]" viewPortRef={scrollViewportRef}>
                 <ScrollBar />
-                <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef} overscan={1}>
-                  {options
-                    .filter(({ label }) => label.toLowerCase().includes(searchValue.toLowerCase()))
-                    .map((option, index) => (
-                      <CommandItem
-                        key={`${option.value}-${index}`}
-                        value={option.label}
-                        onSelect={handleSelect}
-                        className="group rounded-md flex justify-between items-center w-full leading-normal"
-                      >
-                        <div className="flex items-center gap-2">
-                          {!excludeAvatarWrapFields.includes(name) && <AvatarWrap id={option.value} name={name} url={option.url} />}
-                          {renderOption?.(option) ?? option.label}
-                        </div>
-                        <Check size={16} className={`text-success ${formValue !== option.value && 'invisible'}`} />
-                      </CommandItem>
-                    ))}
+
+                <Virtualizer as="ul" item="li" scrollRef={scrollViewportRef} overscan={2}>
+                  {filteredOptions.map((option, index) => (
+                    <CommandItem
+                      key={`${option.value}-${index}`}
+                      value={option.label}
+                      onSelect={handleSelect}
+                      className="group rounded-md flex justify-between items-center w-full leading-normal"
+                    >
+                      <div className="flex items-center gap-2">
+                        {!excludeAvatarWrapFields.includes(name) && <AvatarWrap id={option.value} name={name} url={option.url} />}
+                        {renderOption?.(option) ?? option.label}
+                      </div>
+                      <Check size={16} className={`text-success ${formValue !== option.value && 'invisible'}`} />
+                    </CommandItem>
+                  ))}
                 </Virtualizer>
               </ScrollArea>
             </CommandGroup>
-          </CommandList>
+          </div>
         </Command>
       </PopoverContent>
     </Popover>
