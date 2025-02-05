@@ -38,18 +38,11 @@ export const PublicRoute = createRoute({
 
     try {
       console.debug('Fetch me & menu in while entering public page ', location.pathname);
-      const getSelf = async () => {
-        const queryOptions = meQueryOptions();
-        return offlineFetch({ ...queryOptions, ...{ retry: 0 } });
-      };
 
-      const getMenu = async () => {
-        const queryOptions = menuQueryOptions();
-        return offlineFetch({ ...queryOptions, ...{ retry: 0 } });
-      };
-
-      await getSelf();
-      await getMenu();
+      // Fetch and set user and userAuth data to User store(with support of offline access)
+      await offlineFetch(meQueryOptions());
+      // Fetch and set user menu to navigation store(with support of offline access)
+      await offlineFetch(menuQueryOptions());
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);
@@ -73,11 +66,11 @@ export const AppRoute = createRoute({
 
     try {
       console.debug('Fetch me & menu while entering app ', location.pathname);
-      const getSelf = async () => offlineFetch(meQueryOptions());
-      const getMenu = async () => offlineFetch(menuQueryOptions());
 
-      await getSelf();
-      await getMenu();
+      // Fetch and set user and userAuth data to User store(with support of offline access)
+      await offlineFetch(meQueryOptions());
+      // Fetch and set user menu to navigation store(with support of offline access)
+      await offlineFetch(menuQueryOptions());
     } catch (error) {
       if (error instanceof Error) {
         Sentry.captureException(error);

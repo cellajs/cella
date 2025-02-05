@@ -28,7 +28,7 @@ export const idsBodySchema = z.object({
     .min(1)
     .max(50)
     .refine((ids) => ids.length <= 50, {
-      message: 'The number of ids cannot exceed 50',
+      message: 'The number of items cannot exceed 50',
     }),
 });
 

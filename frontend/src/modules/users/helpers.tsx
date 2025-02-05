@@ -6,7 +6,7 @@ import { type QueryKey, onlineManager } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { authenticateWithPasskey, getChallenge, registerPasskey } from '~/modules/auth/api';
 import { createToast } from '~/modules/common/toaster';
-import { deletePasskey as baseRemovePasskey, getSelf, getUserMenu } from '~/modules/users/api';
+import { deletePasskey as baseRemovePasskey, getSelf, getSelfAuthInfo, getUserMenu } from '~/modules/users/api';
 import type { LimitedUser } from '~/modules/users/types';
 import { getQueryItems } from '~/query/helpers/mutate-query';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
@@ -152,12 +152,13 @@ export const deletePasskey = async () => {
  */
 export const getAndSetMe = async () => {
   const user = await getSelf();
-  const currentSession = user.sessions.find((s) => s.isCurrent);
+  const authInfo = await getSelfAuthInfo();
+  const currentSession = authInfo.sessions.find((s) => s.isCurrent);
   // if impersonation session don't change the last user
-  if (currentSession?.type === 'impersonation') useUserStore.getState().setUserWithoutSetLastUser(user);
-  else useUserStore.getState().setUser(user);
+  if (currentSession?.type === 'impersonation') useUserStore.getState().setUserWithoutSetLastUser({ ...user, ...authInfo });
+  else useUserStore.getState().setUser({ ...user, ...authInfo });
 
-  return user;
+  return { ...user, ...authInfo };
 };
 
 /**

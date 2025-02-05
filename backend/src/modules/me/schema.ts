@@ -4,7 +4,7 @@ import { config } from 'config';
 import { type MenuSectionName, menuSections } from '#/entity-config';
 import { contextEntityTypeSchema, idOrSlugSchema, idSchema, imageUrlSchema, nameSchema, slugSchema } from '#/utils/schema/common-schemas';
 import { membershipInfoSchema } from '../memberships/schema';
-import { signUpInfo, userSchema } from '../users/schema';
+import { signUpInfo } from '../users/schema';
 
 export const sessionsSchema = z.object({
   sessions: z.array(
@@ -25,8 +25,7 @@ export const sessionsSchema = z.object({
   ),
 });
 
-export const meUserSchema = z.object({
-  ...userSchema.shape,
+export const meAuthInfoSchema = z.object({
   ...signUpInfo.shape,
   ...sessionsSchema.shape,
 });
